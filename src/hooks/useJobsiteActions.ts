@@ -15,17 +15,21 @@ export const useJobsiteActions = () => {
   const addJobsite = useMutation({
     mutationFn: async (data: JobsiteData) => {
       console.log('Adding jobsite:', data);
-      const { error } = await supabase
+      const { data: result, error } = await supabase
         .from('jobsites')
         .insert({
           name: data.name,
           address: data.address,
-        });
+        })
+        .select();
 
       if (error) {
         console.error('Error adding jobsite:', error);
         throw error;
       }
+      
+      console.log('Jobsite added successfully:', result);
+      return result;
     },
     onSuccess: () => {
       toast({
