@@ -12,6 +12,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Inbox, Search, Filter, Eye, Package, Calendar, MapPin, User } from 'lucide-react';
 import { format } from 'date-fns';
 
+type RequestStatus = 'pending' | 'ordered' | 'delivered' | 'archived';
+type DeliveryTime = 'morning' | 'afternoon';
+
 interface MaterialRequest {
   id: string;
   jobsite: {
@@ -19,10 +22,10 @@ interface MaterialRequest {
     address: string;
   };
   delivery_date: string;
-  delivery_time: 'morning' | 'afternoon';
+  delivery_time: DeliveryTime;
   floor_unit: string;
   material_list: string;
-  status: 'pending' | 'ordered' | 'delivered' | 'archived';
+  status: RequestStatus;
   created_at: string;
   submitted_by: string;
 }
@@ -53,7 +56,7 @@ const MaterialRequestInbox = () => {
 
   // Update request status
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status }: { id: string; status: RequestStatus }) => {
       const { error } = await supabase
         .from('material_requests')
         .update({ 
@@ -92,7 +95,7 @@ const MaterialRequestInbox = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: RequestStatus) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'ordered': return 'bg-blue-100 text-blue-800';
@@ -102,7 +105,7 @@ const MaterialRequestInbox = () => {
     }
   };
 
-  const getDeliveryTimeLabel = (time: string) => {
+  const getDeliveryTimeLabel = (time: DeliveryTime) => {
     return time === 'morning' ? 'Morning (8 AM - 12 PM)' : 'Afternoon (12 PM - 5 PM)';
   };
 
@@ -262,12 +265,12 @@ const MaterialRequestInbox = () => {
                                 <label className="font-semibold">Update Status:</label>
                                 <Select
                                   value={selectedRequest.status}
-                                  onValueChange={(value) => {
+                                  onValueChange={(value: RequestStatus) => {
                                     updateStatusMutation.mutate({
                                       id: selectedRequest.id,
                                       status: value
                                     });
-                                    setSelectedRequest({ ...selectedRequest, status: value as any });
+                                    setSelectedRequest({ ...selectedRequest, status: value });
                                   }}
                                 >
                                   <SelectTrigger className="w-40">
@@ -288,7 +291,7 @@ const MaterialRequestInbox = () => {
 
                       <Select
                         value={request.status}
-                        onValueChange={(value) =>
+                        onValueChange={(value: RequestStatus) =>
                           updateStatusMutation.mutate({ id: request.id, status: value })
                         }
                       >
