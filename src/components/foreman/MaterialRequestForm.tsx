@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -46,15 +45,20 @@ const MaterialRequestForm = () => {
   });
 
   // Fetch jobsites
-  const { data: jobsites = [], isLoading: jobsitesLoading } = useQuery({
+  const { data: jobsites = [], isLoading: jobsitesLoading, error: jobsitesError } = useQuery({
     queryKey: ['jobsites'],
     queryFn: async () => {
+      console.log('Fetching jobsites...');
       const { data, error } = await supabase
         .from('jobsites')
         .select('*')
         .order('name');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching jobsites:', error);
+        throw error;
+      }
+      console.log('Jobsites fetched:', data);
       return data;
     },
   });
@@ -67,7 +71,7 @@ const MaterialRequestForm = () => {
         .insert({
           jobsite_id: data.jobsiteId,
           delivery_date: format(data.deliveryDate, 'yyyy-MM-dd'),
-          delivery_time: data.deliveryTime as any, // Type assertion to work with updated schema
+          delivery_time: data.deliveryTime,
           floor_unit: data.floorUnit || null,
           material_list: data.materialList,
           submitted_by: user?.id,
@@ -97,6 +101,11 @@ const MaterialRequestForm = () => {
     submitMutation.mutate(data);
   };
 
+  // Debug logging
+  console.log('Jobsites data:', jobsites);
+  console.log('Jobsites loading:', jobsitesLoading);
+  console.log('Jobsites error:', jobsitesError);
+
   return (
     <Card>
       <CardHeader>
@@ -120,9 +129,13 @@ const MaterialRequestForm = () => {
                         <SelectValue placeholder="Select a jobsite" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="bg-white z-50">
                       {jobsitesLoading ? (
                         <SelectItem value="loading" disabled>Loading jobsites...</SelectItem>
+                      ) : jobsitesError ? (
+                        <SelectItem value="error" disabled>Error loading jobsites</SelectItem>
+                      ) : jobsites.length === 0 ? (
+                        <SelectItem value="empty" disabled>No jobsites available</SelectItem>
                       ) : (
                         jobsites.map((jobsite) => (
                           <SelectItem key={jobsite.id} value={jobsite.id}>
