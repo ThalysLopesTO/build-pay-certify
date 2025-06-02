@@ -12,8 +12,8 @@ import { useJobsites } from '@/hooks/useJobsites';
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Jobsite name is required'),
-  address: z.string().min(1, 'Address is required'),
+  name: z.string().min(1, 'Jobsite name is required').min(2, 'Jobsite name must be at least 2 characters'),
+  address: z.string().min(1, 'Address is required').min(5, 'Address must be at least 5 characters'),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -34,19 +34,43 @@ const JobsiteManagement = () => {
   const onSubmit = async (data: FormData) => {
     try {
       console.log('Form data being submitted:', data);
+      
+      // Validate required fields client-side
+      if (!data.name?.trim()) {
+        form.setError('name', { message: 'Jobsite name is required' });
+        return;
+      }
+      
+      if (!data.address?.trim()) {
+        form.setError('address', { message: 'Address is required' });
+        return;
+      }
+
       await addJobsite.mutateAsync({
-        name: data.name,
-        address: data.address,
+        name: data.name.trim(),
+        address: data.address.trim(),
       });
+      
       form.reset();
       setIsAdding(false);
     } catch (error) {
       console.error('Error adding jobsite:', error);
+      
+      // Handle specific error types
+      if (error?.message?.includes('required')) {
+        form.setError('root', { message: 'Missing required fields. Please check all fields are filled out.' });
+      } else if (error?.message?.includes('duplicate')) {
+        form.setError('name', { message: 'A jobsite with this name already exists.' });
+      } else if (error?.message?.includes('permission')) {
+        form.setError('root', { message: 'You do not have permission to add jobsites.' });
+      } else {
+        form.setError('root', { message: `Failed to add jobsite: ${error?.message || 'Unknown error'}` });
+      }
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this jobsite?')) {
+  const handleDelete = async (id: string, name: string) => {
+    if (window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
       try {
         await deleteJobsite.mutateAsync(id);
       } catch (error) {
@@ -96,9 +120,13 @@ const JobsiteManagement = () => {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Jobsite Name</FormLabel>
+                          <FormLabel>Jobsite Name *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter jobsite name" {...field} />
+                            <Input 
+                              placeholder="Enter jobsite name" 
+                              {...field} 
+                              required
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -110,14 +138,24 @@ const JobsiteManagement = () => {
                       name="address"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Address</FormLabel>
+                          <FormLabel>Address *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter full address" {...field} />
+                            <Input 
+                              placeholder="Enter full address" 
+                              {...field} 
+                              required
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                    {form.formState.errors.root && (
+                      <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                        {form.formState.errors.root.message}
+                      </div>
+                    )}
 
                     <div className="flex space-x-2">
                       <Button 
@@ -129,7 +167,10 @@ const JobsiteManagement = () => {
                       <Button 
                         type="button" 
                         variant="outline" 
-                        onClick={() => setIsAdding(false)}
+                        onClick={() => {
+                          setIsAdding(false);
+                          form.reset();
+                        }}
                       >
                         Cancel
                       </Button>
@@ -153,11 +194,14 @@ const JobsiteManagement = () => {
                       <div>
                         <h3 className="font-semibold text-lg">{jobsite.name}</h3>
                         <p className="text-gray-600">{jobsite.address}</p>
+                        <p className="text-sm text-gray-400">
+                          Created: {new Date(jobsite.created_at).toLocaleDateString()}
+                        </p>
                       </div>
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(jobsite.id)}
+                        onClick={() => handleDelete(jobsite.id, jobsite.name)}
                         disabled={deleteJobsite.isPending}
                       >
                         <Trash2 className="h-4 w-4" />

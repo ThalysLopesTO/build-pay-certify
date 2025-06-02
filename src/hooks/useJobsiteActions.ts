@@ -15,34 +15,51 @@ export const useJobsiteActions = () => {
   const addJobsite = useMutation({
     mutationFn: async (data: JobsiteData) => {
       console.log('Adding jobsite:', data);
+      
+      // Validate data before sending to database
+      if (!data.name?.trim() || !data.address?.trim()) {
+        throw new Error('Jobsite name and address are required');
+      }
+
       const { data: result, error } = await supabase
         .from('jobsites')
         .insert({
-          name: data.name,
-          address: data.address,
+          name: data.name.trim(),
+          address: data.address.trim(),
         })
         .select();
 
       if (error) {
         console.error('Error adding jobsite:', error);
-        throw error;
+        
+        // Provide more specific error messages
+        if (error.code === '23505') {
+          throw new Error('A jobsite with this name already exists');
+        } else if (error.code === '42501') {
+          throw new Error('You do not have permission to add jobsites');
+        } else if (error.message?.includes('violates row-level security')) {
+          throw new Error('Authentication required to add jobsites');
+        } else {
+          throw new Error(error.message || 'Failed to add jobsite');
+        }
       }
       
       console.log('Jobsite added successfully:', result);
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const jobsiteName = data?.[0]?.name || 'New jobsite';
       toast({
-        title: 'Jobsite Added',
-        description: 'The new jobsite has been successfully added.',
+        title: 'Success!',
+        description: `"${jobsiteName}" has been successfully added to the jobsites.`,
       });
       queryClient.invalidateQueries({ queryKey: ['jobsites'] });
     },
     onError: (error) => {
       console.error('Error adding jobsite:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to add jobsite. Please try again.',
+        title: 'Error Adding Jobsite',
+        description: error.message || 'Failed to add jobsite. Please try again.',
         variant: 'destructive',
       });
     },
@@ -51,6 +68,11 @@ export const useJobsiteActions = () => {
   const deleteJobsite = useMutation({
     mutationFn: async (id: string) => {
       console.log('Deleting jobsite:', id);
+      
+      if (!id) {
+        throw new Error('Jobsite ID is required for deletion');
+      }
+
       const { error } = await supabase
         .from('jobsites')
         .delete()
@@ -58,21 +80,28 @@ export const useJobsiteActions = () => {
 
       if (error) {
         console.error('Error deleting jobsite:', error);
-        throw error;
+        
+        if (error.code === '42501') {
+          throw new Error('You do not have permission to delete jobsites');
+        } else if (error.message?.includes('violates row-level security')) {
+          throw new Error('Authentication required to delete jobsites');
+        } else {
+          throw new Error(error.message || 'Failed to delete jobsite');
+        }
       }
     },
     onSuccess: () => {
       toast({
         title: 'Jobsite Deleted',
-        description: 'The jobsite has been successfully deleted.',
+        description: 'The jobsite has been successfully removed.',
       });
       queryClient.invalidateQueries({ queryKey: ['jobsites'] });
     },
     onError: (error) => {
       console.error('Error deleting jobsite:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete jobsite. Please try again.',
+        title: 'Error Deleting Jobsite',
+        description: error.message || 'Failed to delete jobsite. Please try again.',
         variant: 'destructive',
       });
     },
