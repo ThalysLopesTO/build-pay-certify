@@ -9,7 +9,74 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      jobsites: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      material_requests: {
+        Row: {
+          created_at: string
+          delivery_date: string
+          delivery_time: Database["public"]["Enums"]["delivery_time"]
+          floor_unit: string | null
+          id: string
+          jobsite_id: string
+          material_list: string
+          status: Database["public"]["Enums"]["request_status"]
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_date: string
+          delivery_time: Database["public"]["Enums"]["delivery_time"]
+          floor_unit?: string | null
+          id?: string
+          jobsite_id: string
+          material_list: string
+          status?: Database["public"]["Enums"]["request_status"]
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_date?: string
+          delivery_time?: Database["public"]["Enums"]["delivery_time"]
+          floor_unit?: string | null
+          id?: string
+          jobsite_id?: string
+          material_list?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_requests_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +85,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      delivery_time: "morning" | "afternoon"
+      request_status: "pending" | "ordered" | "delivered" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +201,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      delivery_time: ["morning", "afternoon"],
+      request_status: ["pending", "ordered", "delivered", "archived"],
+    },
   },
 } as const

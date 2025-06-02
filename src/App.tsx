@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LoginForm from "./components/LoginForm";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import ForemanDashboard from "./pages/ForemanDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,8 @@ const DashboardRouter = () => {
   // Route based on user role
   if (user.role === 'admin' || user.role === 'payroll') {
     return <AdminDashboard />;
+  } else if (user.role === 'foreman') {
+    return <ForemanDashboard />;
   } else {
     return <EmployeeDashboard />;
   }
