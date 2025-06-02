@@ -34,7 +34,7 @@ export type Database = {
         Row: {
           created_at: string
           delivery_date: string
-          delivery_time: Database["public"]["Enums"]["delivery_time"]
+          delivery_time: string
           floor_unit: string | null
           id: string
           jobsite_id: string
@@ -46,7 +46,7 @@ export type Database = {
         Insert: {
           created_at?: string
           delivery_date: string
-          delivery_time: Database["public"]["Enums"]["delivery_time"]
+          delivery_time: string
           floor_unit?: string | null
           id?: string
           jobsite_id: string
@@ -58,7 +58,7 @@ export type Database = {
         Update: {
           created_at?: string
           delivery_date?: string
-          delivery_time?: Database["public"]["Enums"]["delivery_time"]
+          delivery_time?: string
           floor_unit?: string | null
           id?: string
           jobsite_id?: string
@@ -85,7 +85,6 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      delivery_time: "morning" | "afternoon"
       request_status: "pending" | "ordered" | "delivered" | "archived"
     }
     CompositeTypes: {
@@ -202,7 +201,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      delivery_time: ["morning", "afternoon"],
       request_status: ["pending", "ordered", "delivered", "archived"],
     },
   },

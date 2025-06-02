@@ -67,7 +67,7 @@ const MaterialRequestForm = () => {
         .insert({
           jobsite_id: data.jobsiteId,
           delivery_date: format(data.deliveryDate, 'yyyy-MM-dd'),
-          delivery_time: data.deliveryTime,
+          delivery_time: data.deliveryTime as any, // Type assertion to work with updated schema
           floor_unit: data.floorUnit || null,
           material_list: data.materialList,
           submitted_by: user?.id,
