@@ -21,9 +21,9 @@ interface TimesheetEntry {
 
 const PayrollSummary = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedWeek, setSelectedWeek] = useState('');
-  const [selectedJobSite, setSelectedJobSite] = useState('');
-  const [selectedTrade, setSelectedTrade] = useState('');
+  const [selectedWeek, setSelectedWeek] = useState('all');
+  const [selectedJobSite, setSelectedJobSite] = useState('all');
+  const [selectedTrade, setSelectedTrade] = useState('all');
 
   // Mock payroll data
   const timesheetEntries: TimesheetEntry[] = [
@@ -80,9 +80,9 @@ const PayrollSummary = () => {
   const filteredEntries = timesheetEntries.filter(entry => {
     return (
       (searchTerm === '' || entry.employeeName.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (selectedWeek === '' || entry.weekEnding === selectedWeek) &&
-      (selectedJobSite === '' || entry.jobSite === selectedJobSite) &&
-      (selectedTrade === '' || entry.trade === selectedTrade)
+      (selectedWeek === 'all' || entry.weekEnding === selectedWeek) &&
+      (selectedJobSite === 'all' || entry.jobSite === selectedJobSite) &&
+      (selectedTrade === 'all' || entry.trade === selectedTrade)
     );
   });
 
@@ -171,7 +171,7 @@ const PayrollSummary = () => {
                   <SelectValue placeholder="All weeks" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All weeks</SelectItem>
+                  <SelectItem value="all">All weeks</SelectItem>
                   {weeks.map((week) => (
                     <SelectItem key={week} value={week}>
                       {new Date(week).toLocaleDateString()}
@@ -188,7 +188,7 @@ const PayrollSummary = () => {
                   <SelectValue placeholder="All sites" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All sites</SelectItem>
+                  <SelectItem value="all">All sites</SelectItem>
                   {jobSites.map((site) => (
                     <SelectItem key={site} value={site}>{site}</SelectItem>
                   ))}
@@ -203,7 +203,7 @@ const PayrollSummary = () => {
                   <SelectValue placeholder="All trades" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All trades</SelectItem>
+                  <SelectItem value="all">All trades</SelectItem>
                   {trades.map((trade) => (
                     <SelectItem key={trade} value={trade}>{trade}</SelectItem>
                   ))}
