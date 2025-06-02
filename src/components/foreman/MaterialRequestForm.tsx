@@ -24,9 +24,7 @@ const formSchema = z.object({
   deliveryDate: z.date({
     required_error: 'Please select a delivery date',
   }),
-  deliveryTime: z.enum(['morning', 'afternoon'], {
-    required_error: 'Please select a delivery time',
-  }),
+  deliveryTime: z.string().min(1, 'Please enter the delivery time'),
   floorUnit: z.string().optional(),
   materialList: z.string().min(1, 'Please enter the material list'),
 });
@@ -43,6 +41,7 @@ const MaterialRequestForm = () => {
     defaultValues: {
       floorUnit: '',
       materialList: '',
+      deliveryTime: '',
     },
   });
 
@@ -185,17 +184,12 @@ const MaterialRequestForm = () => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Delivery Time</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select delivery time" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="morning">Morning (8 AM - 12 PM)</SelectItem>
-                      <SelectItem value="afternoon">Afternoon (12 PM - 5 PM)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Input 
+                      placeholder="e.g., 9:00 AM, 2:30 PM, 14:00" 
+                      {...field} 
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

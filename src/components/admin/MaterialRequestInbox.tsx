@@ -13,7 +13,6 @@ import { Inbox, Search, Filter, Eye, Package, Calendar, MapPin, User } from 'luc
 import { format } from 'date-fns';
 
 type RequestStatus = 'pending' | 'ordered' | 'delivered' | 'archived';
-type DeliveryTime = 'morning' | 'afternoon';
 
 interface MaterialRequest {
   id: string;
@@ -22,7 +21,7 @@ interface MaterialRequest {
     address: string;
   };
   delivery_date: string;
-  delivery_time: DeliveryTime;
+  delivery_time: string;
   floor_unit: string;
   material_list: string;
   status: RequestStatus;
@@ -103,10 +102,6 @@ const MaterialRequestInbox = () => {
       case 'archived': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const getDeliveryTimeLabel = (time: DeliveryTime) => {
-    return time === 'morning' ? 'Morning (8 AM - 12 PM)' : 'Afternoon (12 PM - 5 PM)';
   };
 
   if (isLoading) {
@@ -201,7 +196,7 @@ const MaterialRequestInbox = () => {
                         </div>
                         <div className="flex items-center space-x-1">
                           <Package className="h-4 w-4" />
-                          <span>{getDeliveryTimeLabel(request.delivery_time)}</span>
+                          <span>{request.delivery_time}</span>
                         </div>
                         {request.floor_unit && (
                           <div className="flex items-center space-x-1">
@@ -243,7 +238,7 @@ const MaterialRequestInbox = () => {
                                 <div>
                                   <label className="font-semibold">Delivery:</label>
                                   <p>{format(new Date(selectedRequest.delivery_date), 'MMMM dd, yyyy')}</p>
-                                  <p className="text-sm text-gray-600">{getDeliveryTimeLabel(selectedRequest.delivery_time)}</p>
+                                  <p className="text-sm text-gray-600">{selectedRequest.delivery_time}</p>
                                 </div>
                               </div>
                               
