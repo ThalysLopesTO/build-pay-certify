@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,6 +32,7 @@ const JobsiteManagement = () => {
 
   const onSubmit = async (data: FormData) => {
     try {
+      // Type assertion since we know the form validation ensures these are non-empty strings
       await addJobsite.mutateAsync({
         name: data.name,
         address: data.address,
