@@ -33,7 +33,10 @@ const JobsiteManagement = () => {
 
   const onSubmit = async (data: FormData) => {
     try {
-      await addJobsite.mutateAsync(data);
+      await addJobsite.mutateAsync({
+        name: data.name,
+        address: data.address,
+      });
       form.reset();
       setIsAdding(false);
     } catch (error) {
