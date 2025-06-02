@@ -29,6 +29,7 @@ const MaterialRequestForm = () => {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      jobsiteId: '',
       floorUnit: '',
       materialList: '',
       deliveryTime: '',
@@ -38,7 +39,16 @@ const MaterialRequestForm = () => {
   const submitMutation = useMaterialRequestSubmission();
 
   const onSubmit = (data: FormData) => {
-    submitMutation.mutate(data);
+    // Transform the data to match MaterialRequestData interface
+    const requestData = {
+      jobsiteId: data.jobsiteId,
+      deliveryDate: data.deliveryDate,
+      deliveryTime: data.deliveryTime,
+      floorUnit: data.floorUnit,
+      materialList: data.materialList,
+    };
+    
+    submitMutation.mutate(requestData);
     form.reset();
   };
 
