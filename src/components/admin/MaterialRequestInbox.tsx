@@ -12,11 +12,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Inbox, Search, Filter, Eye, Package, Calendar, MapPin, User } from 'lucide-react';
 import { format } from 'date-fns';
 
-type RequestStatus = 'pending' | 'ordered' | 'delivered' | 'archived';
+type RequestStatus = 'pending' | 'approved' | 'rejected' | 'completed';
 
 interface MaterialRequest {
   id: string;
-  jobsite: {
+  jobsites: {
     name: string;
     address: string;
   };
@@ -36,19 +36,26 @@ const MaterialRequestInbox = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRequest, setSelectedRequest] = useState<MaterialRequest | null>(null);
 
-  // Fetch material requests
-  const { data: requests = [], isLoading } = useQuery({
-    queryKey: ['material-requests'],
+  // Fetch material requests for admin
+  const { data: requests = [], isLoading, error } = useQuery({
+    queryKey: ['admin-material-requests'],
     queryFn: async () => {
+      console.log('Fetching material requests for admin...');
+      
       const { data, error } = await supabase
         .from('material_requests')
         .select(`
           *,
-          jobsite:jobsites(name, address)
+          jobsites(name, address)
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching material requests:', error);
+        throw error;
+      }
+
+      console.log('Fetched material requests:', data);
       return data as MaterialRequest[];
     },
   });
@@ -67,7 +74,7 @@ const MaterialRequestInbox = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['material-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-material-requests'] });
       toast({
         title: 'Status Updated',
         description: 'Material request status has been updated.',
@@ -86,7 +93,7 @@ const MaterialRequestInbox = () => {
   // Filter requests
   const filteredRequests = requests.filter(request => {
     const matchesSearch = searchTerm === '' || 
-      request.jobsite.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.jobsites?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.submitted_by.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
@@ -97,9 +104,9 @@ const MaterialRequestInbox = () => {
   const getStatusColor = (status: RequestStatus) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'ordered': return 'bg-blue-100 text-blue-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
+      case 'approved': return 'bg-blue-100 text-blue-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'completed': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -110,6 +117,17 @@ const MaterialRequestInbox = () => {
         <div className="text-center">
           <Package className="h-8 w-8 mx-auto mb-2 text-gray-400" />
           <p>Loading material requests...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center text-red-600">
+          <Package className="h-8 w-8 mx-auto mb-2" />
+          <p>Error loading material requests: {error.message}</p>
         </div>
       </div>
     );
@@ -158,9 +176,9 @@ const MaterialRequestInbox = () => {
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="ordered">Ordered</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                  <SelectItem value="archived">Archived</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -183,7 +201,7 @@ const MaterialRequestInbox = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="font-semibold text-lg">{request.jobsite.name}</h3>
+                        <h3 className="font-semibold text-lg">{request.jobsites?.name || 'Unknown Jobsite'}</h3>
                         <Badge className={getStatusColor(request.status)}>
                           {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                         </Badge>
@@ -232,8 +250,8 @@ const MaterialRequestInbox = () => {
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <label className="font-semibold">Jobsite:</label>
-                                  <p>{selectedRequest.jobsite.name}</p>
-                                  <p className="text-sm text-gray-600">{selectedRequest.jobsite.address}</p>
+                                  <p>{selectedRequest.jobsites?.name || 'Unknown Jobsite'}</p>
+                                  <p className="text-sm text-gray-600">{selectedRequest.jobsites?.address}</p>
                                 </div>
                                 <div>
                                   <label className="font-semibold">Delivery:</label>
@@ -273,9 +291,9 @@ const MaterialRequestInbox = () => {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="ordered">Ordered</SelectItem>
-                                    <SelectItem value="delivered">Delivered</SelectItem>
-                                    <SelectItem value="archived">Archived</SelectItem>
+                                    <SelectItem value="approved">Approved</SelectItem>
+                                    <SelectItem value="rejected">Rejected</SelectItem>
+                                    <SelectItem value="completed">Completed</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -295,9 +313,9 @@ const MaterialRequestInbox = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="ordered">Ordered</SelectItem>
-                          <SelectItem value="delivered">Delivered</SelectItem>
-                          <SelectItem value="archived">Archived</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
