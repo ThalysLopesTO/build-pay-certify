@@ -12,7 +12,7 @@ export const useMaterialRequestsAdmin = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRequest, setSelectedRequest] = useState<MaterialRequest | null>(null);
 
-  // Fetch material requests for admin - simplified query without users table
+  // Fetch material requests for admin - no reference to users table
   const { data: requests = [], isLoading, error } = useQuery({
     queryKey: ['admin-material-requests'],
     queryFn: async () => {
