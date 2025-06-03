@@ -2,11 +2,18 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/SupabaseAuthContext';
 import { Shield, AlertTriangle, XCircle, CheckCircle } from 'lucide-react';
 
 const CertificateStatus = () => {
   const { user } = useAuth();
+
+  // Mock certificates data since Supabase auth doesn't have certificates
+  const mockCertificates = [
+    { id: '1', name: 'WHMIS', expiryDate: '2024-12-31', status: 'valid' },
+    { id: '2', name: '4 Steps', expiryDate: '2024-08-15', status: 'expiring' },
+    { id: '3', name: 'Working at Heights', expiryDate: '2024-10-20', status: 'valid' },
+  ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -58,7 +65,7 @@ const CertificateStatus = () => {
       
       <CardContent className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {user?.certificates.map((cert) => (
+          {mockCertificates.map((cert) => (
             <div key={cert.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold">{cert.name}</h3>
@@ -86,7 +93,7 @@ const CertificateStatus = () => {
           ))}
         </div>
         
-        {user?.certificates.length === 0 && (
+        {mockCertificates.length === 0 && (
           <div className="text-center py-8 text-slate-500">
             <Shield className="h-12 w-12 mx-auto mb-4 text-slate-300" />
             <p>No certificates on file</p>
