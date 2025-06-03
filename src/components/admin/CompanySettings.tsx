@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useCompanySettings, CompanySettings } from '@/hooks/useCompanySettings';
+import { useCompanySettings, type CompanySettings } from '@/hooks/useCompanySettings';
 import { Building2, Mail, Phone, MapPin, FileText, Upload } from 'lucide-react';
 
 const CompanySettings = () => {
