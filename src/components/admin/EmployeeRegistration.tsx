@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,32 +60,41 @@ const EmployeeRegistration = () => {
     setLoading(true);
     
     try {
-      // Create the user account in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: data.email,
-        password: data.password,
-        email_confirm: true, // Auto-confirm email
-        user_metadata: {
-          first_name: data.firstName,
-          last_name: data.lastName,
-          address: data.address,
-          phone_number: data.phoneNumber,
-          role: data.role,
-          trade: data.trade,
-          hourly_rate: data.hourlyRate,
-          // Certificate expiry dates
-          work_at_heights_expiry: data.workAtHeightsExpiry?.toISOString(),
-          whmis_expiry: data.whmisExpiry?.toISOString(),
-          four_steps_expiry: data.fourStepsExpiry?.toISOString(),
-          five_steps_expiry: data.fiveStepsExpiry?.toISOString(),
-          lift_operator_expiry: data.liftOperatorExpiry?.toISOString(),
-          must_change_password: true, // Force password change on first login
+      console.log('Submitting employee registration:', { email: data.email, role: data.role });
+
+      // Call the Edge Function to create the employee
+      const { data: result, error } = await supabase.functions.invoke('create-employee', {
+        body: {
+          employeeData: {
+            email: data.email,
+            password: data.password,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            address: data.address,
+            phoneNumber: data.phoneNumber,
+            role: data.role,
+            trade: data.trade,
+            hourlyRate: data.hourlyRate,
+            // Certificate expiry dates as ISO strings
+            workAtHeightsExpiry: data.workAtHeightsExpiry?.toISOString(),
+            whmisExpiry: data.whmisExpiry?.toISOString(),
+            fourStepsExpiry: data.fourStepsExpiry?.toISOString(),
+            fiveStepsExpiry: data.fiveStepsExpiry?.toISOString(),
+            liftOperatorExpiry: data.liftOperatorExpiry?.toISOString(),
+          }
         },
       });
 
-      if (authError) {
-        throw authError;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
       }
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to register employee');
+      }
+
+      console.log('Employee registered successfully:', result);
 
       toast({
         title: "Employee Registered Successfully",
