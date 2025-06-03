@@ -1,54 +1,63 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '../components/Header';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MaterialRequestForm from '../components/foreman/MaterialRequestForm';
 import ForemanTimesheetForm from '../components/foreman/ForemanTimesheetForm';
 import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
-import { Clock, Users, Package } from 'lucide-react';
+import ForemanSidebar from '../components/foreman/ForemanSidebar';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Inbox } from 'lucide-react';
 
 const ForemanDashboard = () => {
+  const [activeTab, setActiveTab] = useState('timesheet');
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'timesheet':
+        return <ForemanTimesheetForm />;
+      case 'employees':
+        return <EmployeeDirectory />;
+      case 'materials':
+        return (
+          <div className="max-w-2xl">
+            <MaterialRequestForm />
+          </div>
+        );
+      case 'material-requests':
+        return (
+          <div className="text-center py-12">
+            <Inbox className="h-16 w-16 mx-auto mb-4 text-slate-300" />
+            <h3 className="text-xl font-semibold mb-2">My Material Requests</h3>
+            <p className="text-slate-600">View and track your submitted material requests</p>
+          </div>
+        );
+      default:
+        return <ForemanTimesheetForm />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Foreman Dashboard</h1>
-          <p className="text-slate-600">Manage your team, timesheets, and material requests</p>
-        </div>
-        
-        <Tabs defaultValue="timesheet" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="timesheet" className="flex items-center space-x-2">
-              <Clock className="h-4 w-4" />
-              <span>Submit Weekly Timesheet</span>
-            </TabsTrigger>
-            <TabsTrigger value="employees" className="flex items-center space-x-2">
-              <Users className="h-4 w-4" />
-              <span>Employee Directory</span>
-            </TabsTrigger>
-            <TabsTrigger value="materials" className="flex items-center space-x-2">
-              <Package className="h-4 w-4" />
-              <span>Request Material Delivery</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="timesheet">
-            <ForemanTimesheetForm />
-          </TabsContent>
-          
-          <TabsContent value="employees">
-            <EmployeeDirectory />
-          </TabsContent>
-          
-          <TabsContent value="materials">
-            <div className="max-w-2xl">
-              <MaterialRequestForm />
+      <SidebarProvider>
+        <div className="flex w-full">
+          <ForemanSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          <SidebarInset>
+            <div className="container mx-auto px-4 py-8">
+              <div className="flex items-center mb-8">
+                <SidebarTrigger className="mr-4" />
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-900 mb-2">Foreman Dashboard</h1>
+                  <p className="text-slate-600">Manage your team, timesheets, and material requests</p>
+                </div>
+              </div>
+              
+              {renderContent()}
             </div>
-          </TabsContent>
-        </Tabs>
-      </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
     </div>
   );
 };
