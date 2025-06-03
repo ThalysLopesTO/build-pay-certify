@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -23,7 +22,8 @@ import {
   UserPlus,
   Clock,
   Award,
-  Home
+  Home,
+  FileText
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -49,6 +49,12 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
       id: 'jobsites',
       title: 'Job Sites',
       icon: MapPin,
+      section: 'operations'
+    },
+    {
+      id: 'invoices',
+      title: 'Invoice Management',
+      icon: FileText,
       section: 'operations'
     },
     {
