@@ -3,25 +3,26 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Inbox, Calendar, MapPin, Package, User } from 'lucide-react';
+import { Inbox, Calendar, MapPin, Package, User, AlertCircle, RefreshCw } from 'lucide-react';
 import { useMaterialRequests } from '@/hooks/useMaterialRequests';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
 
 const MyMaterialRequests = () => {
   const { user } = useAuth();
-  const { data: materialRequests = [], isLoading, error } = useMaterialRequests();
+  const { data: materialRequests = [], isLoading, error, refetch } = useMaterialRequests();
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'completed':
+      case 'ordered':
         return 'bg-blue-100 text-blue-800';
+      case 'delivered':
+        return 'bg-green-100 text-green-800';
+      case 'archived':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -31,7 +32,10 @@ const MyMaterialRequests = () => {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-center">Loading material requests...</div>
+          <div className="flex items-center justify-center space-x-2">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            <span>Loading material requests...</span>
+          </div>
         </CardContent>
       </Card>
     );
@@ -41,7 +45,17 @@ const MyMaterialRequests = () => {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-center text-red-600">Error loading material requests</div>
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <h3 className="text-lg font-semibold mb-2">Error Loading Material Requests</h3>
+            <p className="text-gray-600 mb-4">
+              We're having trouble loading your material requests. Please try again.
+            </p>
+            <Button onClick={() => refetch()} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );

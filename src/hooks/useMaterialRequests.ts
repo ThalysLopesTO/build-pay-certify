@@ -9,7 +9,10 @@ export const useMaterialRequests = () => {
   return useQuery({
     queryKey: ['material-requests', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.log('No user ID available');
+        return [];
+      }
 
       console.log('Fetching material requests for user:', user.id);
       
@@ -24,7 +27,7 @@ export const useMaterialRequests = () => {
           status,
           created_at,
           submitted_by,
-          jobsites!inner (
+          jobsites (
             name,
             address
           )
@@ -34,12 +37,14 @@ export const useMaterialRequests = () => {
 
       if (error) {
         console.error('Error fetching material requests:', error);
-        throw error;
+        throw new Error(`Failed to fetch material requests: ${error.message}`);
       }
 
       console.log('Fetched material requests:', data);
       return data || [];
     },
     enabled: !!user?.id,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
