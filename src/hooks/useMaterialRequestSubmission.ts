@@ -20,6 +20,10 @@ export const useMaterialRequestSubmission = () => {
 
   return useMutation({
     mutationFn: async (data: MaterialRequestData) => {
+      if (!user?.id || !user?.companyId) {
+        throw new Error('User not authenticated or company not assigned');
+      }
+
       const { error } = await supabase
         .from('material_requests')
         .insert({
@@ -28,7 +32,8 @@ export const useMaterialRequestSubmission = () => {
           delivery_time: data.deliveryTime,
           floor_unit: data.floorUnit || null,
           material_list: data.materialList,
-          submitted_by: user?.id,
+          submitted_by: user.id,
+          company_id: user.companyId,
         });
 
       if (error) throw error;

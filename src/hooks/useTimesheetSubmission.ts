@@ -23,8 +23,8 @@ export const useTimesheetSubmission = () => {
 
   return useMutation({
     mutationFn: async (data: TimesheetData) => {
-      if (!user) {
-        throw new Error('User not authenticated');
+      if (!user?.id || !user?.companyId) {
+        throw new Error('User not authenticated or company not assigned');
       }
 
       console.log('Submitting timesheet:', data);
@@ -33,6 +33,7 @@ export const useTimesheetSubmission = () => {
         .from('weekly_timesheets')
         .insert({
           submitted_by: user.id,
+          company_id: user.companyId,
           jobsite_id: data.jobsiteId,
           week_start_date: data.weekStartDate,
           monday_hours: data.mondayHours,

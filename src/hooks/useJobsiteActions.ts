@@ -2,6 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface JobsiteData {
   name: string;
@@ -11,10 +12,15 @@ interface JobsiteData {
 export const useJobsiteActions = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const addJobsite = useMutation({
     mutationFn: async (data: JobsiteData) => {
       console.log('Adding jobsite:', data);
+      
+      if (!user?.companyId) {
+        throw new Error('Company ID is required to add jobsites');
+      }
       
       // Validate data before sending to database
       if (!data.name?.trim() || !data.address?.trim()) {
@@ -26,6 +32,7 @@ export const useJobsiteActions = () => {
         .insert({
           name: data.name.trim(),
           address: data.address.trim(),
+          company_id: user.companyId,
         })
         .select();
 
@@ -53,7 +60,7 @@ export const useJobsiteActions = () => {
         title: 'Success!',
         description: `"${jobsiteName}" has been successfully added to the jobsites.`,
       });
-      queryClient.invalidateQueries({ queryKey: ['jobsites'] });
+      queryClient.invalidateQueries({ queryKey: ['jobsites', user?.companyId] });
     },
     onError: (error) => {
       console.error('Error adding jobsite:', error);
@@ -95,7 +102,7 @@ export const useJobsiteActions = () => {
         title: 'Jobsite Deleted',
         description: 'The jobsite has been successfully removed.',
       });
-      queryClient.invalidateQueries({ queryKey: ['jobsites'] });
+      queryClient.invalidateQueries({ queryKey: ['jobsites', user?.companyId] });
     },
     onError: (error) => {
       console.error('Error deleting jobsite:', error);

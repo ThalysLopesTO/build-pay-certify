@@ -4,20 +4,27 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MaterialRequest, RequestStatus } from '@/components/admin/types/materialRequest';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 export const useMaterialRequestsAdmin = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRequest, setSelectedRequest] = useState<MaterialRequest | null>(null);
 
-  // Fetch material requests for admin with enhanced error handling
+  // Fetch material requests for admin with company isolation
   const { data: requests = [], isLoading, error } = useQuery({
-    queryKey: ['admin-material-requests'],
+    queryKey: ['admin-material-requests', user?.companyId],
     queryFn: async () => {
       console.log('Fetching material requests for admin...');
       
+      if (!user?.companyId) {
+        console.log('No company ID available');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('material_requests')
         .select(`
@@ -29,8 +36,10 @@ export const useMaterialRequestsAdmin = () => {
           status,
           created_at,
           submitted_by,
+          company_id,
           jobsites(name, address)
         `)
+        .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -41,6 +50,7 @@ export const useMaterialRequestsAdmin = () => {
       console.log('Fetched material requests:', data);
       return data as MaterialRequest[];
     },
+    enabled: !!user?.companyId,
     retry: 2,
     retryDelay: 1000,
   });
@@ -54,12 +64,13 @@ export const useMaterialRequestsAdmin = () => {
           status,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('company_id', user?.companyId); // Ensure company isolation
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-material-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-material-requests', user?.companyId] });
       toast({
         title: 'Status Updated',
         description: 'Material request status has been updated.',

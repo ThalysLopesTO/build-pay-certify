@@ -17,20 +17,23 @@ export const useMaterialRequests = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['material-requests', user?.id],
+    queryKey: ['material-requests', user?.id, user?.companyId],
     queryFn: async (): Promise<EnrichedMaterialRequest[]> => {
-      if (!user?.id) {
-        console.log('No user ID available');
+      if (!user?.id || !user?.companyId) {
+        console.log('No user ID or company ID available');
         return [];
       }
 
-      console.log('Fetching material requests for user:', user.id);
+      console.log('Fetching material requests for user:', user.id, 'company:', user.companyId);
       
-      // First, let's try a simpler query without any joins to see if the basic query works
       const { data, error } = await supabase
         .from('material_requests')
-        .select('*')
+        .select(`
+          *,
+          jobsites(id, name, address)
+        `)
         .eq('submitted_by', user.id)
+        .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -38,45 +41,10 @@ export const useMaterialRequests = () => {
         throw new Error(`Failed to fetch material requests: ${error.message}`);
       }
 
-      console.log('Fetched material requests (basic):', data);
-
-      // If we have data, let's get the jobsite information separately
-      if (data && data.length > 0) {
-        const jobsiteIds = [...new Set(data.map(request => request.jobsite_id))];
-        
-        const { data: jobsites, error: jobsiteError } = await supabase
-          .from('jobsites')
-          .select('id, name, address')
-          .in('id', jobsiteIds);
-
-        if (jobsiteError) {
-          console.error('Error fetching jobsites:', jobsiteError);
-          // Return the material requests without jobsite data if jobsite fetch fails
-          return data.map(request => ({
-            ...request,
-            jobsites: null
-          }));
-        }
-
-        // Merge the jobsite data with material requests
-        const enrichedData: EnrichedMaterialRequest[] = data.map(request => {
-          const jobsite = jobsites?.find(j => j.id === request.jobsite_id);
-          return {
-            ...request,
-            jobsites: jobsite || null
-          };
-        });
-
-        console.log('Enriched material requests:', enrichedData);
-        return enrichedData;
-      }
-
-      return data.map(request => ({
-        ...request,
-        jobsites: null
-      }));
+      console.log('Fetched material requests:', data);
+      return data as EnrichedMaterialRequest[];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!user?.companyId,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
