@@ -7,6 +7,7 @@ import EmployeeRegistration from '../components/admin/EmployeeRegistration';
 import MaterialRequestInbox from '../components/admin/MaterialRequestInbox';
 import JobsiteManagement from '../components/admin/JobsiteManagement';
 import InvoiceManagement from '../components/admin/InvoiceManagement';
+import CompanySettings from '../components/admin/CompanySettings';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Building, Settings, Award, Home } from 'lucide-react';
@@ -53,13 +54,7 @@ const AdminDashboard = () => {
           </div>
         );
       case 'settings':
-        return (
-          <div className="text-center py-12">
-            <Settings className="h-16 w-16 mx-auto mb-4 text-slate-300" />
-            <h3 className="text-xl font-semibold mb-2">System Settings</h3>
-            <p className="text-slate-600">Application settings and configuration options coming soon</p>
-          </div>
-        );
+        return <CompanySettings />;
       default:
         return (
           <div className="text-center py-12">

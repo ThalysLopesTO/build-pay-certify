@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,13 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useJobsites } from '@/hooks/useJobsites';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { format } from 'date-fns';
-import { Download, FileText, FileSpreadsheet, Filter } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet, Filter, Mail, AlertTriangle } from 'lucide-react';
+import { generateBrandedInvoicePDF } from './BrandedInvoicePDF';
+import { InvoiceEmailSender } from './InvoiceEmailSender';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const ProjectBillingOverview = () => {
   const { invoices, isLoading } = useInvoices();
   const { data: jobsites } = useJobsites();
+  const { settings, isSettingsComplete } = useCompanySettings();
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [selectedInvoiceForEmail, setSelectedInvoiceForEmail] = useState<any>(null);
 
   // Filter invoices based on selected project
   const filteredInvoices = useMemo(() => {
@@ -64,70 +70,19 @@ const ProjectBillingOverview = () => {
   };
 
   const generateInvoicePDF = (invoice: any) => {
-    // Create a simple PDF content using HTML and CSS
-    const pdfContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Invoice ${invoice.invoice_number}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .invoice-details { margin-bottom: 20px; }
-          .line-items { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          .line-items th, .line-items td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          .line-items th { background-color: #f2f2f2; }
-          .totals { text-align: right; margin-top: 20px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>INVOICE</h1>
-          <h2>${invoice.invoice_number}</h2>
-        </div>
-        <div class="invoice-details">
-          <p><strong>Client:</strong> ${invoice.client_company}</p>
-          <p><strong>Email:</strong> ${invoice.client_email}</p>
-          <p><strong>Project:</strong> ${invoice.jobsites?.name || 'N/A'}</p>
-          <p><strong>Due Date:</strong> ${format(new Date(invoice.due_date), 'MMM dd, yyyy')}</p>
-        </div>
-        <table class="line-items">
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${invoice.invoice_line_items?.map((item: any) => `
-              <tr>
-                <td>${item.description}</td>
-                <td>$${item.amount.toFixed(2)}</td>
-              </tr>
-            `).join('') || '<tr><td colspan="2">No line items</td></tr>'}
-          </tbody>
-        </table>
-        <div class="totals">
-          <p><strong>Subtotal: $${invoice.subtotal.toFixed(2)}</strong></p>
-          <p><strong>Discount: $${(invoice.subtotal * (invoice.discount / 100)).toFixed(2)}</strong></p>
-          <p><strong>Tax: $${((invoice.subtotal - (invoice.subtotal * (invoice.discount / 100))) * (invoice.tax / 100)).toFixed(2)}</strong></p>
-          <h3><strong>Total: $${invoice.total_amount.toFixed(2)}</strong></h3>
-        </div>
-        ${invoice.notes ? `<div style="margin-top: 30px;"><strong>Notes:</strong><br>${invoice.notes}</div>` : ''}
-      </body>
-      </html>
-    `;
+    if (!settings) {
+      console.error('Company settings not loaded');
+      return;
+    }
+    generateBrandedInvoicePDF(invoice, settings);
+  };
 
-    // Create and download PDF
-    const blob = new Blob([pdfContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${invoice.invoice_number}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const handleSendEmail = (invoice: any) => {
+    if (!isSettingsComplete()) {
+      return;
+    }
+    setSelectedInvoiceForEmail(invoice);
+    setEmailDialogOpen(true);
   };
 
   const exportToCSV = () => {
@@ -206,6 +161,15 @@ const ProjectBillingOverview = () => {
         </div>
       </div>
 
+      {!isSettingsComplete() && (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Please complete your company information in Settings before sending invoices via email.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Filtered Summary Stats */}
       {selectedProjectId !== 'all' && (
         <Card>
@@ -265,6 +229,15 @@ const ProjectBillingOverview = () => {
                     </Badge>
                     
                     <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleSendEmail(invoice)}
+                        disabled={!isSettingsComplete()}
+                      >
+                        <Mail className="h-4 w-4 mr-1" />
+                        Send
+                      </Button>
                       {invoice.receipt_file_url && (
                         <Button size="sm" variant="outline">
                           <Download className="h-4 w-4 mr-1" />
@@ -361,6 +334,15 @@ const ProjectBillingOverview = () => {
                           </Badge>
                           
                           <div className="flex space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleSendEmail(invoice)}
+                              disabled={!isSettingsComplete()}
+                            >
+                              <Mail className="h-4 w-4 mr-1" />
+                              Send
+                            </Button>
                             {invoice.receipt_file_url && (
                               <Button size="sm" variant="outline">
                                 <Download className="h-4 w-4 mr-1" />
