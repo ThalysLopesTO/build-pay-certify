@@ -1,0 +1,148 @@
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Invoice, CreateInvoiceData } from '@/components/admin/types/invoice';
+
+export const useInvoices = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch invoices
+  const { data: invoices = [], isLoading, error } = useQuery({
+    queryKey: ['invoices'],
+    queryFn: async () => {
+      console.log('Fetching invoices...');
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .select(`
+          *,
+          jobsites(name, address),
+          invoice_line_items(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching invoices:', error);
+        throw error;
+      }
+
+      console.log('Fetched invoices:', data);
+      return data as Invoice[];
+    },
+  });
+
+  // Create invoice
+  const createInvoiceMutation = useMutation({
+    mutationFn: async (invoiceData: CreateInvoiceData) => {
+      console.log('Creating invoice:', invoiceData);
+      
+      // Create the invoice first
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .insert({
+          title: invoiceData.title,
+          client_company: invoiceData.client_company,
+          client_email: invoiceData.client_email,
+          jobsite_id: invoiceData.jobsite_id,
+          discount: invoiceData.discount,
+          tax: invoiceData.tax,
+          due_date: invoiceData.due_date,
+          notes: invoiceData.notes,
+        })
+        .select()
+        .single();
+
+      if (invoiceError) {
+        console.error('Error creating invoice:', invoiceError);
+        throw invoiceError;
+      }
+
+      // Create line items
+      if (invoiceData.line_items.length > 0) {
+        const { error: lineItemsError } = await supabase
+          .from('invoice_line_items')
+          .insert(
+            invoiceData.line_items.map(item => ({
+              invoice_id: invoice.id,
+              description: item.description,
+              amount: item.amount,
+            }))
+          );
+
+        if (lineItemsError) {
+          console.error('Error creating line items:', lineItemsError);
+          throw lineItemsError;
+        }
+      }
+
+      return invoice;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast({
+        title: 'Invoice Created',
+        description: 'Invoice has been created successfully.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating invoice:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create invoice. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Update invoice status
+  const updateInvoiceStatusMutation = useMutation({
+    mutationFn: async ({ id, status, receipt_file_url }: { 
+      id: string; 
+      status: 'pending' | 'paid' | 'expired';
+      receipt_file_url?: string;
+    }) => {
+      const updateData: any = { 
+        status,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (receipt_file_url) {
+        updateData.receipt_file_url = receipt_file_url;
+      }
+
+      const { error } = await supabase
+        .from('invoices')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast({
+        title: 'Invoice Updated',
+        description: 'Invoice status has been updated successfully.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating invoice:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update invoice status. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  return {
+    invoices,
+    isLoading,
+    error,
+    createInvoice: createInvoiceMutation.mutate,
+    isCreating: createInvoiceMutation.isPending,
+    updateInvoiceStatus: updateInvoiceStatusMutation.mutate,
+    isUpdating: updateInvoiceStatusMutation.isPending,
+  };
+};

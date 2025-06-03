@@ -9,6 +9,109 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      invoice_line_items: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_line_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          client_company: string
+          client_email: string
+          created_at: string
+          discount: number | null
+          due_date: string
+          id: string
+          invoice_number: string
+          jobsite_id: string | null
+          notes: string | null
+          receipt_file_url: string | null
+          sent_date: string | null
+          status: string
+          subtotal: number
+          tax: number | null
+          title: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          client_company: string
+          client_email: string
+          created_at?: string
+          discount?: number | null
+          due_date: string
+          id?: string
+          invoice_number: string
+          jobsite_id?: string | null
+          notes?: string | null
+          receipt_file_url?: string | null
+          sent_date?: string | null
+          status?: string
+          subtotal?: number
+          tax?: number | null
+          title: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          client_company?: string
+          client_email?: string
+          created_at?: string
+          discount?: number | null
+          due_date?: string
+          id?: string
+          invoice_number?: string
+          jobsite_id?: string | null
+          notes?: string | null
+          receipt_file_url?: string | null
+          sent_date?: string | null
+          status?: string
+          subtotal?: number
+          tax?: number | null
+          title?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobsites: {
         Row: {
           address: string | null
@@ -147,7 +250,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_invoice_totals: {
+        Args: { invoice_id_param: string }
+        Returns: undefined
+      }
+      generate_invoice_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       request_status: "pending" | "ordered" | "delivered" | "archived"

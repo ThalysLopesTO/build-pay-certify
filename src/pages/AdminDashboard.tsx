@@ -6,6 +6,7 @@ import EmployeeManagement from '../components/admin/EmployeeManagement';
 import EmployeeRegistration from '../components/admin/EmployeeRegistration';
 import MaterialRequestInbox from '../components/admin/MaterialRequestInbox';
 import JobsiteManagement from '../components/admin/JobsiteManagement';
+import InvoiceManagement from '../components/admin/InvoiceManagement';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Building, Settings, Award, Home } from 'lucide-react';
@@ -33,6 +34,8 @@ const AdminDashboard = () => {
         return <MaterialRequestInbox />;
       case 'jobsites':
         return <JobsiteManagement />;
+      case 'invoices':
+        return <InvoiceManagement />;
       case 'certificates':
         return (
           <div className="text-center py-12">
