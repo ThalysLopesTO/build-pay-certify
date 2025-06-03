@@ -24,7 +24,7 @@ export const useMaterialRequests = () => {
           status,
           created_at,
           submitted_by,
-          jobsites (
+          jobsites!inner (
             name,
             address
           )
