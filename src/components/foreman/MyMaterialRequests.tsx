@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Inbox, Calendar, MapPin, Package, User, AlertCircle, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Inbox, Calendar, MapPin, Package, User, AlertCircle, RefreshCw, Filter } from 'lucide-react';
 import { useMaterialRequests, EnrichedMaterialRequest } from '@/hooks/useMaterialRequests';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { format } from 'date-fns';
@@ -12,6 +13,32 @@ import { Button } from '@/components/ui/button';
 const MyMaterialRequests = () => {
   const { user } = useAuth();
   const { data: materialRequests = [], isLoading, error, refetch } = useMaterialRequests();
+  const [selectedProject, setSelectedProject] = useState<string>('all');
+
+  // Get unique projects from material requests
+  const projects = useMemo(() => {
+    const uniqueProjects = materialRequests
+      .filter(request => request.jobsites)
+      .map(request => ({
+        id: request.jobsites!.id,
+        name: request.jobsites!.name
+      }))
+      .filter((project, index, self) => 
+        index === self.findIndex(p => p.id === project.id)
+      );
+    
+    return uniqueProjects;
+  }, [materialRequests]);
+
+  // Filter material requests by selected project
+  const filteredRequests = useMemo(() => {
+    if (selectedProject === 'all') {
+      return materialRequests;
+    }
+    return materialRequests.filter(request => 
+      request.jobsites && request.jobsites.id === selectedProject
+    );
+  }, [materialRequests, selectedProject]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -71,11 +98,39 @@ const MyMaterialRequests = () => {
       </CardHeader>
       
       <CardContent>
-        {materialRequests.length === 0 ? (
+        {/* Filter Section */}
+        <div className="mb-6">
+          <div className="flex items-center space-x-2 mb-2">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">Filter by Project:</span>
+          </div>
+          <Select value={selectedProject} onValueChange={setSelectedProject}>
+            <SelectTrigger className="w-full max-w-xs">
+              <SelectValue placeholder="Select a project" />
+            </SelectTrigger>
+            <SelectContent className="bg-white z-50">
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {filteredRequests.length === 0 ? (
           <div className="text-center py-12">
             <Package className="h-16 w-16 mx-auto mb-4 text-slate-300" />
-            <h3 className="text-xl font-semibold mb-2">No Material Requests</h3>
-            <p className="text-slate-600">You haven't submitted any material requests yet.</p>
+            <h3 className="text-xl font-semibold mb-2">
+              {selectedProject === 'all' ? 'No Material Requests' : 'No Material Requests for Selected Project'}
+            </h3>
+            <p className="text-slate-600">
+              {selectedProject === 'all' 
+                ? "You haven't submitted any material requests yet." 
+                : "No material requests found for the selected project."
+              }
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -83,7 +138,7 @@ const MyMaterialRequests = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Foreman</TableHead>
-                  <TableHead>Jobsite</TableHead>
+                  <TableHead>Project</TableHead>
                   <TableHead>Delivery Date</TableHead>
                   <TableHead>Order Date</TableHead>
                   <TableHead>Status</TableHead>
@@ -91,7 +146,7 @@ const MyMaterialRequests = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {materialRequests.map((request: EnrichedMaterialRequest) => (
+                {filteredRequests.map((request: EnrichedMaterialRequest) => (
                   <TableRow key={request.id}>
                     <TableCell>
                       <div className="flex items-center space-x-2">
@@ -108,7 +163,7 @@ const MyMaterialRequests = () => {
                       <div className="flex items-center space-x-2">
                         <MapPin className="h-4 w-4 text-gray-500" />
                         <div>
-                          <div className="font-medium">{request.jobsites?.name || 'Unknown Jobsite'}</div>
+                          <div className="font-medium">{request.jobsites?.name || 'Unknown Project'}</div>
                           {request.jobsites?.address && (
                             <div className="text-sm text-gray-500">{request.jobsites.address}</div>
                           )}
