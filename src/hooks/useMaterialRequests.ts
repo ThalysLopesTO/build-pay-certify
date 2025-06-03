@@ -16,7 +16,14 @@ export const useMaterialRequests = () => {
       const { data, error } = await supabase
         .from('material_requests')
         .select(`
-          *,
+          id,
+          delivery_date,
+          delivery_time,
+          floor_unit,
+          material_list,
+          status,
+          created_at,
+          submitted_by,
           jobsites (
             name,
             address
