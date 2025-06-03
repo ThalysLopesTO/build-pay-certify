@@ -19,7 +19,7 @@ interface MaterialRequest {
   jobsites: {
     name: string;
     address: string;
-  };
+  } | null;
   delivery_date: string;
   delivery_time: string;
   floor_unit: string;
@@ -36,7 +36,7 @@ const MaterialRequestInbox = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRequest, setSelectedRequest] = useState<MaterialRequest | null>(null);
 
-  // Fetch material requests for admin
+  // Fetch material requests for admin - simplified query without users table
   const { data: requests = [], isLoading, error } = useQuery({
     queryKey: ['admin-material-requests'],
     queryFn: async () => {
@@ -45,7 +45,14 @@ const MaterialRequestInbox = () => {
       const { data, error } = await supabase
         .from('material_requests')
         .select(`
-          *,
+          id,
+          delivery_date,
+          delivery_time,
+          floor_unit,
+          material_list,
+          status,
+          created_at,
+          submitted_by,
           jobsites(name, address)
         `)
         .order('created_at', { ascending: false });
