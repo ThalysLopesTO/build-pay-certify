@@ -159,7 +159,7 @@ const MaterialRequestInbox = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search by jobsite or foreman..."
+                  placeholder="Search by jobsite or user ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -266,6 +266,11 @@ const MaterialRequestInbox = () => {
                                   <p>{selectedRequest.floor_unit}</p>
                                 </div>
                               )}
+
+                              <div>
+                                <label className="font-semibold">Submitted by:</label>
+                                <p className="text-sm text-gray-600">User ID: {selectedRequest.submitted_by}</p>
+                              </div>
                               
                               <div>
                                 <label className="font-semibold">Material List:</label>
