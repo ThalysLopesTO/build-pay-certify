@@ -30,6 +30,12 @@ const MaterialRequestItem = ({
     }
   };
 
+  // Helper function to format user ID for display
+  const formatUserDisplay = (userId: string) => {
+    // Extract the first 8 characters of the UUID for a cleaner display
+    return `User ${userId.substring(0, 8)}...`;
+  };
+
   return (
     <div className="p-4 hover:bg-gray-50">
       <div className="flex items-center justify-between">
@@ -58,8 +64,28 @@ const MaterialRequestItem = ({
             )}
             <div className="flex items-center space-x-1">
               <User className="h-4 w-4" />
-              <span>Submitted {format(new Date(request.created_at), 'MMM dd')}</span>
+              <span className="truncate" title={request.submitted_by}>
+                {formatUserDisplay(request.submitted_by)}
+              </span>
             </div>
+          </div>
+
+          {/* Jobsite address if available */}
+          {request.jobsites?.address && (
+            <div className="mt-2 text-sm text-gray-500">
+              <MapPin className="h-3 w-3 inline mr-1" />
+              {request.jobsites.address}
+            </div>
+          )}
+
+          {/* Material list preview */}
+          <div className="mt-2 text-sm">
+            <span className="font-medium text-gray-700">Materials: </span>
+            <span className="text-gray-600 truncate" title={request.material_list}>
+              {request.material_list.length > 100 
+                ? `${request.material_list.substring(0, 100)}...` 
+                : request.material_list}
+            </span>
           </div>
         </div>
 

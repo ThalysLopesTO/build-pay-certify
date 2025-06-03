@@ -3,7 +3,8 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Eye, Calendar, MapPin, Package, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { MaterialRequest, RequestStatus } from './types/materialRequest';
 
@@ -20,6 +21,20 @@ const MaterialRequestDetailsDialog = ({
   setSelectedRequest,
   onStatusUpdate
 }: MaterialRequestDetailsDialogProps) => {
+  const getStatusColor = (status: RequestStatus) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'ordered': return 'bg-blue-100 text-blue-800';
+      case 'delivered': return 'bg-green-100 text-green-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatUserDisplay = (userId: string) => {
+    return `User ID: ${userId.substring(0, 8)}...`;
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -29,57 +44,104 @@ const MaterialRequestDetailsDialog = ({
           onClick={() => setSelectedRequest(request)}
         >
           <Eye className="h-4 w-4 mr-1" />
-          View
+          View Details
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Material Request Details</DialogTitle>
+          <DialogTitle className="flex items-center space-x-2">
+            <Package className="h-5 w-5" />
+            <span>Material Request Details</span>
+          </DialogTitle>
         </DialogHeader>
-        {selectedRequest && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="font-semibold">Jobsite:</label>
-                <p>{selectedRequest.jobsites?.name || 'Unknown Jobsite'}</p>
-                <p className="text-sm text-gray-600">{selectedRequest.jobsites?.address}</p>
-              </div>
-              <div>
-                <label className="font-semibold">Delivery:</label>
-                <p>{format(new Date(selectedRequest.delivery_date), 'MMMM dd, yyyy')}</p>
-                <p className="text-sm text-gray-600">{selectedRequest.delivery_time}</p>
-              </div>
+        
+        <div className="space-y-6">
+          {/* Status and ID */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Request ID</p>
+              <p className="font-mono text-sm">{request.id}</p>
             </div>
-            
-            {selectedRequest.floor_unit && (
-              <div>
-                <label className="font-semibold">Floor/Unit:</label>
-                <p>{selectedRequest.floor_unit}</p>
-              </div>
-            )}
+            <Badge className={getStatusColor(request.status)}>
+              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+            </Badge>
+          </div>
 
-            <div>
-              <label className="font-semibold">Submitted by:</label>
-              <p className="text-sm text-gray-600">User ID: {selectedRequest.submitted_by}</p>
-            </div>
-            
-            <div>
-              <label className="font-semibold">Material List:</label>
-              <div className="mt-2 p-3 bg-gray-50 rounded-md whitespace-pre-wrap">
-                {selectedRequest.material_list}
+          {/* Jobsite Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <MapPin className="h-4 w-4 text-gray-500" />
+                <span className="font-semibold">Jobsite</span>
+              </div>
+              <div>
+                <p className="font-medium">{request.jobsites?.name || 'Unknown Jobsite'}</p>
+                {request.jobsites?.address && (
+                  <p className="text-sm text-gray-600">{request.jobsites.address}</p>
+                )}
               </div>
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <label className="font-semibold">Update Status:</label>
+
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-gray-500" />
+                <span className="font-semibold">Delivery</span>
+              </div>
+              <div>
+                <p className="font-medium">{format(new Date(request.delivery_date), 'MMMM dd, yyyy')}</p>
+                <p className="text-sm text-gray-600">{request.delivery_time}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Floor/Unit */}
+          {request.floor_unit && (
+            <div>
+              <div className="flex items-center space-x-2 mb-2">
+                <MapPin className="h-4 w-4 text-gray-500" />
+                <span className="font-semibold">Floor/Unit</span>
+              </div>
+              <p>{request.floor_unit}</p>
+            </div>
+          )}
+
+          {/* Submitted By */}
+          <div>
+            <div className="flex items-center space-x-2 mb-2">
+              <User className="h-4 w-4 text-gray-500" />
+              <span className="font-semibold">Submitted By</span>
+            </div>
+            <p className="text-sm text-gray-600 font-mono" title={request.submitted_by}>
+              {formatUserDisplay(request.submitted_by)}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Submitted on {format(new Date(request.created_at), 'MMM dd, yyyy \'at\' h:mm a')}
+            </p>
+          </div>
+          
+          {/* Material List */}
+          <div>
+            <div className="flex items-center space-x-2 mb-2">
+              <Package className="h-4 w-4 text-gray-500" />
+              <span className="font-semibold">Material List</span>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-md border">
+              <pre className="whitespace-pre-wrap text-sm">{request.material_list}</pre>
+            </div>
+          </div>
+          
+          {/* Status Update */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold">Update Status:</span>
               <Select
-                value={selectedRequest.status}
+                value={request.status}
                 onValueChange={(value: RequestStatus) => {
-                  onStatusUpdate(selectedRequest.id, value);
-                  setSelectedRequest({ ...selectedRequest, status: value });
+                  onStatusUpdate(request.id, value);
+                  setSelectedRequest({ ...request, status: value });
                 }}
               >
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -91,7 +153,7 @@ const MaterialRequestDetailsDialog = ({
               </Select>
             </div>
           </div>
-        )}
+        </div>
       </DialogContent>
     </Dialog>
   );
