@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +24,7 @@ interface AuthContextType {
   loading: boolean;
   isCompanyAdmin: boolean;
   isSuperAdmin: boolean;
+  companyError: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,10 +33,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [companyError, setCompanyError] = useState<string | null>(null);
 
   // Helper function to fetch user profile and company data
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching user profile for:', userId);
+      
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select(`
@@ -52,12 +55,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (profileError) {
         console.error('Error fetching user profile:', profileError);
+        
+        // Check if user profile doesn't exist
+        if (profileError.code === 'PGRST116') {
+          setCompanyError('Your user profile is not set up. Please contact your system administrator.');
+          return null;
+        }
+        
+        setCompanyError('Failed to load user profile. Please try logging in again.');
         return null;
       }
 
+      if (!profile) {
+        setCompanyError('User profile not found. Please contact your system administrator.');
+        return null;
+      }
+
+      if (!profile.company_id) {
+        setCompanyError('You are not assigned to a company. Please contact your system administrator.');
+        return null;
+      }
+
+      if (!profile.companies) {
+        setCompanyError('Company information is missing. Please contact your system administrator.');
+        return null;
+      }
+
+      if (profile.companies.status !== 'active') {
+        setCompanyError('Your company account is not active. Please contact your system administrator.');
+        return null;
+      }
+
+      console.log('User profile loaded successfully:', profile);
+      setCompanyError(null);
       return profile;
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
+      setCompanyError('An unexpected error occurred. Please try again.');
       return null;
     }
   };
@@ -87,18 +121,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             };
             setUser(authUser);
           } else {
-            // Fallback for users without profiles (shouldn't happen with trigger)
-            const authUser: AuthUser = {
-              ...session.user,
-              role: 'employee',
-              hourlyRate: 25,
-              trade: 'General',
-              position: 'Worker'
-            };
-            setUser(authUser);
+            // If profile fetch failed, keep user null to show error
+            setUser(null);
           }
         } else {
           setUser(null);
+          setCompanyError(null);
         }
         setLoading(false);
       }
@@ -125,6 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             lastName: profile.last_name || ''
           };
           setUser(authUser);
+        } else {
+          setUser(null);
         }
       }
       setLoading(false);
@@ -155,6 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    setCompanyError(null);
     await supabase.auth.signOut();
   };
 
@@ -168,10 +199,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login,
       signUp,
       logout,
-      isAuthenticated: !!session,
+      isAuthenticated: !!session && !!user,
       loading,
       isCompanyAdmin,
-      isSuperAdmin
+      isSuperAdmin,
+      companyError
     }}>
       {children}
     </AuthContext.Provider>

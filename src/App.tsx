@@ -10,11 +10,38 @@ import EmployeeDashboard from "./pages/EmployeeDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ForemanDashboard from "./pages/ForemanDashboard";
 import NotFound from "./pages/NotFound";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Building } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const queryClient = new QueryClient();
 
+const CompanyErrorFallback = ({ error, onLogout }: { error: string; onLogout: () => void }) => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+    <div className="max-w-md w-full">
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="mt-2">
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Building className="h-5 w-5" />
+              <span className="font-semibold">Company Access Required</span>
+            </div>
+            <p className="text-sm">{error}</p>
+            <div className="pt-2">
+              <Button onClick={onLogout} variant="outline" size="sm" className="w-full">
+                Sign Out and Try Again
+              </Button>
+            </div>
+          </div>
+        </AlertDescription>
+      </Alert>
+    </div>
+  </div>
+);
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, companyError, logout } = useAuth();
   
   if (loading) {
     return (
@@ -26,12 +53,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
+
+  if (companyError) {
+    return <CompanyErrorFallback error={companyError} onLogout={logout} />;
+  }
   
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 const DashboardRouter = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, companyError, logout } = useAuth();
   
   if (loading) {
     return (
@@ -42,6 +73,10 @@ const DashboardRouter = () => {
         </div>
       </div>
     );
+  }
+
+  if (companyError) {
+    return <CompanyErrorFallback error={companyError} onLogout={logout} />;
   }
   
   if (!user) return <Navigate to="/login" replace />;
@@ -57,7 +92,7 @@ const DashboardRouter = () => {
 };
 
 const AppContent = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, companyError, logout } = useAuth();
 
   if (loading) {
     return (
