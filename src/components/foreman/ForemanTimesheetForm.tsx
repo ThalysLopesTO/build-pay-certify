@@ -145,7 +145,7 @@ const ForemanTimesheetForm = () => {
                             min="0"
                             max="24"
                             placeholder="0"
-                            {...field}
+                            value={field.value || ''}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             className="text-center"
                           />

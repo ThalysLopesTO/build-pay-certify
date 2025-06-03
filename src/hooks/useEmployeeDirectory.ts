@@ -1,6 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 export const useEmployeeDirectory = () => {
   return useQuery({
@@ -16,7 +17,7 @@ export const useEmployeeDirectory = () => {
       }
 
       // Filter to only show employees (excluding admins and other roles)
-      const employees = data.users.filter(user => 
+      const employees = data.users.filter((user: User) => 
         user.user_metadata?.role === 'employee' || 
         user.user_metadata?.role === 'foreman'
       );
