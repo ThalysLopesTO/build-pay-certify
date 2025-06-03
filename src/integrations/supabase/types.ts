@@ -77,6 +77,71 @@ export type Database = {
           },
         ]
       }
+      weekly_timesheets: {
+        Row: {
+          created_at: string
+          friday_hours: number | null
+          gross_pay: number | null
+          hourly_rate: number
+          id: string
+          jobsite_id: string
+          monday_hours: number | null
+          saturday_hours: number | null
+          submitted_by: string
+          sunday_hours: number | null
+          thursday_hours: number | null
+          total_hours: number | null
+          tuesday_hours: number | null
+          updated_at: string
+          wednesday_hours: number | null
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          friday_hours?: number | null
+          gross_pay?: number | null
+          hourly_rate: number
+          id?: string
+          jobsite_id: string
+          monday_hours?: number | null
+          saturday_hours?: number | null
+          submitted_by: string
+          sunday_hours?: number | null
+          thursday_hours?: number | null
+          total_hours?: number | null
+          tuesday_hours?: number | null
+          updated_at?: string
+          wednesday_hours?: number | null
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          friday_hours?: number | null
+          gross_pay?: number | null
+          hourly_rate?: number
+          id?: string
+          jobsite_id?: string
+          monday_hours?: number | null
+          saturday_hours?: number | null
+          submitted_by?: string
+          sunday_hours?: number | null
+          thursday_hours?: number | null
+          total_hours?: number | null
+          tuesday_hours?: number | null
+          updated_at?: string
+          wednesday_hours?: number | null
+          week_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_timesheets_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
