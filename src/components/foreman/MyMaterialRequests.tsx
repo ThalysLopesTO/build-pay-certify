@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Inbox, Calendar, MapPin, Package, User, AlertCircle, RefreshCw } from 'lucide-react';
-import { useMaterialRequests } from '@/hooks/useMaterialRequests';
+import { useMaterialRequests, EnrichedMaterialRequest } from '@/hooks/useMaterialRequests';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -91,7 +91,7 @@ const MyMaterialRequests = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {materialRequests.map((request) => (
+                {materialRequests.map((request: EnrichedMaterialRequest) => (
                   <TableRow key={request.id}>
                     <TableCell>
                       <div className="flex items-center space-x-2">

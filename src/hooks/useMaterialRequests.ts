@@ -2,13 +2,23 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { Tables } from '@/integrations/supabase/types';
+
+// Define the enriched material request type
+export type EnrichedMaterialRequest = Tables<'material_requests'> & {
+  jobsites: {
+    id: string;
+    name: string;
+    address: string | null;
+  } | null;
+};
 
 export const useMaterialRequests = () => {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ['material-requests', user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<EnrichedMaterialRequest[]> => {
       if (!user?.id) {
         console.log('No user ID available');
         return [];
@@ -49,8 +59,8 @@ export const useMaterialRequests = () => {
         }
 
         // Merge the jobsite data with material requests
-        const enrichedData = data.map(request => {
-          const jobsite = jobsites.find(j => j.id === request.jobsite_id);
+        const enrichedData: EnrichedMaterialRequest[] = data.map(request => {
+          const jobsite = jobsites?.find(j => j.id === request.jobsite_id);
           return {
             ...request,
             jobsites: jobsite || null
@@ -61,7 +71,10 @@ export const useMaterialRequests = () => {
         return enrichedData;
       }
 
-      return data || [];
+      return data.map(request => ({
+        ...request,
+        jobsites: null
+      }));
     },
     enabled: !!user?.id,
     retry: 3,
