@@ -4,9 +4,9 @@ import Header from '../components/Header';
 import MaterialRequestForm from '../components/foreman/MaterialRequestForm';
 import ForemanTimesheetForm from '../components/foreman/ForemanTimesheetForm';
 import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
+import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
 import ForemanSidebar from '../components/foreman/ForemanSidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { Inbox } from 'lucide-react';
 
 const ForemanDashboard = () => {
   const [activeTab, setActiveTab] = useState('timesheet');
@@ -24,13 +24,7 @@ const ForemanDashboard = () => {
           </div>
         );
       case 'material-requests':
-        return (
-          <div className="text-center py-12">
-            <Inbox className="h-16 w-16 mx-auto mb-4 text-slate-300" />
-            <h3 className="text-xl font-semibold mb-2">My Material Requests</h3>
-            <p className="text-slate-600">View and track your submitted material requests</p>
-          </div>
-        );
+        return <MyMaterialRequests />;
       default:
         return <ForemanTimesheetForm />;
     }
