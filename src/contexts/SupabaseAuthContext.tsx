@@ -4,11 +4,12 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AuthUser extends User {
-  // We'll extend this with profile data when needed
   role?: 'admin' | 'foreman' | 'payroll' | 'employee';
   hourlyRate?: number;
   trade?: string;
   position?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 interface AuthContextType {
@@ -36,13 +37,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         
         if (session?.user) {
-          // For now, we'll set a default role. Later this could be fetched from a profiles table
+          // Extract user metadata for role and other info
+          const metadata = session.user.user_metadata || {};
           const authUser: AuthUser = {
             ...session.user,
-            role: 'admin', // Default role for demo
-            hourlyRate: 35,
-            trade: 'General',
-            position: 'Site Manager'
+            role: metadata.role || 'employee',
+            hourlyRate: metadata.hourly_rate || 25,
+            trade: metadata.trade || 'General',
+            position: metadata.position || 'Worker',
+            firstName: metadata.first_name || '',
+            lastName: metadata.last_name || ''
           };
           setUser(authUser);
         } else {
@@ -58,12 +62,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       
       if (session?.user) {
+        const metadata = session.user.user_metadata || {};
         const authUser: AuthUser = {
           ...session.user,
-          role: 'admin',
-          hourlyRate: 35,
-          trade: 'General',
-          position: 'Site Manager'
+          role: metadata.role || 'admin', // Default for testing
+          hourlyRate: metadata.hourly_rate || 35,
+          trade: metadata.trade || 'General',
+          position: metadata.position || 'Site Manager',
+          firstName: metadata.first_name || '',
+          lastName: metadata.last_name || ''
         };
         setUser(authUser);
       }
