@@ -147,6 +147,8 @@ const ForemanTimesheetForm = () => {
                             placeholder="0"
                             value={field.value || ''}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            onBlur={field.onBlur}
+                            name={field.name}
                             className="text-center"
                           />
                         </FormControl>
