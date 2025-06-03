@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (profile) {
             const authUser: AuthUser = {
               ...session.user,
-              role: profile.role,
+              role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
               companyId: profile.company_id,
               companyName: profile.companies?.name,
               hourlyRate: profile.hourly_rate || 25,
@@ -115,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (profile) {
           const authUser: AuthUser = {
             ...session.user,
-            role: profile.role,
+            role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
             companyId: profile.company_id,
             companyName: profile.companies?.name,
             hourlyRate: profile.hourly_rate || 25,

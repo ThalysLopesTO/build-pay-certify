@@ -11,13 +11,13 @@ const EmployeeDirectory = () => {
   const { data: employees = [], isLoading, error } = useEmployeeDirectory();
 
   const filteredEmployees = employees.filter(employee => {
-    const fullName = `${employee.user_metadata?.first_name || ''} ${employee.user_metadata?.last_name || ''}`.toLowerCase();
-    const trade = (employee.user_metadata?.trade || '').toLowerCase();
-    const phone = (employee.user_metadata?.phone_number || '').toLowerCase();
+    const fullName = `${employee.first_name || ''} ${employee.last_name || ''}`.toLowerCase();
+    const trade = (employee.trade || '').toLowerCase();
+    const position = (employee.position || '').toLowerCase();
     
     return fullName.includes(searchTerm.toLowerCase()) ||
            trade.includes(searchTerm.toLowerCase()) ||
-           phone.includes(searchTerm.toLowerCase());
+           position.includes(searchTerm.toLowerCase());
   });
 
   if (isLoading) {
@@ -50,7 +50,7 @@ const EmployeeDirectory = () => {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search by name, trade, or phone..."
+            placeholder="Search by name, trade, or position..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -70,21 +70,21 @@ const EmployeeDirectory = () => {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">
-                      {employee.user_metadata?.first_name} {employee.user_metadata?.last_name}
+                      {employee.first_name} {employee.last_name}
                     </h3>
                     
                     <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600">
-                      {employee.user_metadata?.trade && (
+                      {employee.trade && (
                         <div className="flex items-center space-x-1">
                           <Briefcase className="h-4 w-4" />
-                          <span>{employee.user_metadata.trade}</span>
+                          <span>{employee.trade}</span>
                         </div>
                       )}
                       
-                      {employee.user_metadata?.phone_number && (
+                      {employee.position && (
                         <div className="flex items-center space-x-1">
-                          <Phone className="h-4 w-4" />
-                          <span>{employee.user_metadata.phone_number}</span>
+                          <MapPin className="h-4 w-4" />
+                          <span>{employee.position}</span>
                         </div>
                       )}
                     </div>
@@ -92,12 +92,12 @@ const EmployeeDirectory = () => {
                   
                   <div className="flex flex-col md:items-end space-y-2">
                     <Badge variant="secondary">
-                      {employee.user_metadata?.role || 'Employee'}
+                      {employee.role || 'Employee'}
                     </Badge>
                     
-                    {employee.user_metadata?.hourly_rate && (
+                    {employee.hourly_rate && (
                       <div className="text-sm text-gray-600">
-                        ${employee.user_metadata.hourly_rate}/hr
+                        ${employee.hourly_rate}/hr
                       </div>
                     )}
                   </div>
