@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -46,15 +47,15 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
       section: 'payroll'
     },
     {
-      id: 'jobsites',
-      title: 'Job Sites',
-      icon: MapPin,
-      section: 'operations'
-    },
-    {
       id: 'invoices',
       title: 'Invoice Management',
       icon: FileText,
+      section: 'management'
+    },
+    {
+      id: 'jobsites',
+      title: 'Job Sites',
+      icon: MapPin,
       section: 'operations'
     },
     {
@@ -98,6 +99,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
   const groupedItems = {
     main: adminMenuItems.filter(item => item.section === 'main'),
     payroll: adminMenuItems.filter(item => item.section === 'payroll'),
+    management: adminMenuItems.filter(item => item.section === 'management'),
     employees: adminMenuItems.filter(item => item.section === 'employees'),
     operations: adminMenuItems.filter(item => item.section === 'operations'),
     system: adminMenuItems.filter(item => item.section === 'system')
@@ -140,6 +142,26 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
           <SidebarGroupContent>
             <SidebarMenu>
               {groupedItems.payroll.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    isActive={activeTab === item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className="w-full justify-start"
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Management</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {groupedItems.management.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={activeTab === item.id}
