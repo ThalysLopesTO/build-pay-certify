@@ -12,7 +12,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Inbox, Search, Filter, Eye, Package, Calendar, MapPin, User } from 'lucide-react';
 import { format } from 'date-fns';
 
-type RequestStatus = 'pending' | 'approved' | 'rejected' | 'completed';
+type RequestStatus = 'pending' | 'ordered' | 'delivered' | 'archived';
 
 interface MaterialRequest {
   id: string;
@@ -104,9 +104,9 @@ const MaterialRequestInbox = () => {
   const getStatusColor = (status: RequestStatus) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-blue-100 text-blue-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'completed': return 'bg-green-100 text-green-800';
+      case 'ordered': return 'bg-blue-100 text-blue-800';
+      case 'delivered': return 'bg-green-100 text-green-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -176,9 +176,9 @@ const MaterialRequestInbox = () => {
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="ordered">Ordered</SelectItem>
+                  <SelectItem value="delivered">Delivered</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -291,9 +291,9 @@ const MaterialRequestInbox = () => {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="approved">Approved</SelectItem>
-                                    <SelectItem value="rejected">Rejected</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
+                                    <SelectItem value="ordered">Ordered</SelectItem>
+                                    <SelectItem value="delivered">Delivered</SelectItem>
+                                    <SelectItem value="archived">Archived</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -313,9 +313,9 @@ const MaterialRequestInbox = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="approved">Approved</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="ordered">Ordered</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="archived">Archived</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
