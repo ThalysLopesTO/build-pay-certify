@@ -41,97 +41,11 @@ export const useCompanyRegistration = () => {
     try {
       console.log('🚀 Starting company registration process...');
       
-      // First, create the auth user
-      console.log('📝 Creating auth user for:', formData.adminEmail);
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.adminEmail,
-        password: formData.password,
-        options: {
-          data: {
-            first_name: formData.adminFirstName,
-            last_name: formData.adminLastName,
-            role: 'admin'
-          }
-        }
-      });
-
-      if (authError) {
-        console.error('❌ Auth user creation failed:', authError);
-        toast({
-          title: "Registration Error",
-          description: authError.message,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (!authData.user) {
-        console.error('❌ No user returned from auth signup');
-        toast({
-          title: "Registration Error",
-          description: "Failed to create user account",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('✅ Auth user created successfully:', authData.user.id);
-
-      // Create company with pending status
-      console.log('🏢 Creating company record...');
-      const { data: companyData, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: formData.companyName,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (companyError) {
-        console.error('❌ Company creation failed:', companyError);
-        toast({
-          title: "Registration Error",
-          description: `Failed to create company record: ${companyError.message}`,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('✅ Company created successfully:', companyData.id);
-
-      // Create user profile with pending approval
-      console.log('👤 Creating user profile...');
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          user_id: authData.user.id,
-          company_id: companyData.id,
-          role: 'admin',
-          first_name: formData.adminFirstName,
-          last_name: formData.adminLastName,
-          pending_approval: true
-        });
-
-      if (profileError) {
-        console.error('❌ User profile creation failed:', profileError);
-        toast({
-          title: "Registration Error",
-          description: `Failed to create user profile: ${profileError.message}`,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('✅ User profile created successfully');
-
-      // Create registration request record
+      // Only insert into company_registration_requests table
       console.log('📋 Creating registration request...');
       const { error: requestError } = await supabase
         .from('company_registration_requests')
         .insert({
-          company_id: companyData.id,
-          admin_user_id: authData.user.id,
           company_name: formData.companyName,
           company_email: formData.companyEmail,
           company_phone: formData.companyPhone,
@@ -146,7 +60,7 @@ export const useCompanyRegistration = () => {
         console.error('❌ Registration request creation failed:', requestError);
         toast({
           title: "Registration Error",
-          description: `Failed to create registration request: ${requestError.message}`,
+          description: `Failed to submit registration request: ${requestError.message}`,
           variant: "destructive"
         });
         return;
