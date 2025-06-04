@@ -58,7 +58,19 @@ export const useAttentionReports = () => {
       
       // Transform the data to match our interface
       return (data || []).map(report => ({
-        ...report,
+        id: report.id,
+        submitted_by: report.submitted_by,
+        company_id: report.company_id,
+        jobsite_id: report.jobsite_id,
+        report_date: report.report_date,
+        report_time: report.report_time,
+        message: report.message,
+        status: report.status,
+        reviewed_by: report.reviewed_by,
+        reviewed_at: report.reviewed_at,
+        created_at: report.created_at,
+        jobsites: report.jobsites,
+        user_profiles: Array.isArray(report.user_profiles) ? report.user_profiles[0] : report.user_profiles,
         attachments: report.attention_report_attachments || []
       })) as AttentionReport[];
     },
@@ -88,7 +100,18 @@ export const useMyAttentionReports = () => {
       
       // Transform the data to match our interface
       return (data || []).map(report => ({
-        ...report,
+        id: report.id,
+        submitted_by: report.submitted_by,
+        company_id: report.company_id,
+        jobsite_id: report.jobsite_id,
+        report_date: report.report_date,
+        report_time: report.report_time,
+        message: report.message,
+        status: report.status,
+        reviewed_by: report.reviewed_by,
+        reviewed_at: report.reviewed_at,
+        created_at: report.created_at,
+        jobsites: report.jobsites,
         attachments: report.attention_report_attachments || []
       })) as AttentionReport[];
     },
