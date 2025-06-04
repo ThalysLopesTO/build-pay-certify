@@ -20,12 +20,12 @@ export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndi
         .from('weekly_timesheets')
         .select(`
           *,
-          user_profiles!inner (
+          user_profiles:submitted_by (
             first_name,
             last_name,
             user_id
           ),
-          jobsites!inner (
+          jobsites:jobsite_id (
             name
           )
         `)
