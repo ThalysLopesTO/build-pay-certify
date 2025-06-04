@@ -17,6 +17,9 @@ const JobsiteSelect = ({ value, onValueChange }: JobsiteSelectProps) => {
   console.log('Jobsites loading:', jobsitesLoading);
   console.log('Jobsites error:', jobsitesError);
 
+  // Filter out jobsites with empty names
+  const validJobsites = jobsites.filter(jobsite => jobsite.name && jobsite.name.trim().length > 0);
+
   return (
     <FormItem>
       <FormLabel>Jobsite</FormLabel>
@@ -28,13 +31,13 @@ const JobsiteSelect = ({ value, onValueChange }: JobsiteSelectProps) => {
         </FormControl>
         <SelectContent className="bg-white z-50">
           {jobsitesLoading ? (
-            <SelectItem value="loading" disabled>Loading jobsites...</SelectItem>
+            <SelectItem value="loading-placeholder" disabled>Loading jobsites...</SelectItem>
           ) : jobsitesError ? (
-            <SelectItem value="error" disabled>Error loading jobsites</SelectItem>
-          ) : jobsites.length === 0 ? (
-            <SelectItem value="empty" disabled>No jobsites available</SelectItem>
+            <SelectItem value="error-placeholder" disabled>Error loading jobsites</SelectItem>
+          ) : validJobsites.length === 0 ? (
+            <SelectItem value="empty-placeholder" disabled>No jobsites available</SelectItem>
           ) : (
-            jobsites.map((jobsite) => (
+            validJobsites.map((jobsite) => (
               <SelectItem key={jobsite.id} value={jobsite.id}>
                 {jobsite.name}
               </SelectItem>

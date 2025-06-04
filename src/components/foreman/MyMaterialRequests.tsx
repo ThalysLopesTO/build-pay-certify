@@ -18,7 +18,7 @@ const MyMaterialRequests = () => {
   // Get unique projects from material requests
   const projects = useMemo(() => {
     const uniqueProjects = materialRequests
-      .filter(request => request.jobsites)
+      .filter(request => request.jobsites && request.jobsites.name && request.jobsites.name.trim().length > 0)
       .map(request => ({
         id: request.jobsites!.id,
         name: request.jobsites!.name

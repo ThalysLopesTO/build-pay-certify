@@ -44,6 +44,15 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
 
   const hasActiveFilters = filters.employeeName || filters.weekEndingDate;
 
+  // Filter employees with valid names and create display names
+  const validEmployees = employees?.filter(employee => {
+    const fullName = `${employee.first_name || ''} ${employee.last_name || ''}`.trim();
+    return fullName.length > 0;
+  }).map(employee => ({
+    ...employee,
+    displayName: `${employee.first_name || ''} ${employee.last_name || ''}`.trim()
+  })) || [];
+
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
       <CardContent className="p-4">
@@ -61,12 +70,12 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All employees</SelectItem>
-                {employees?.map((employee) => (
+                {validEmployees.map((employee) => (
                   <SelectItem 
                     key={employee.id} 
-                    value={`${employee.first_name || ''} ${employee.last_name || ''}`.trim()}
+                    value={employee.displayName}
                   >
-                    {employee.first_name || ''} {employee.last_name || ''}
+                    {employee.displayName}
                   </SelectItem>
                 ))}
               </SelectContent>
