@@ -16,36 +16,37 @@ export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndi
       console.log('Fetching employee timesheets for company:', user.companyId);
       console.log('Applied filters:', filters);
 
-      // First, let's get the timesheets with a simpler query
-      let query = supabase
+      // Start with the main timesheets query
+      let timesheetsQuery = supabase
         .from('weekly_timesheets')
         .select('*')
         .eq('company_id', user.companyId)
         .order('week_start_date', { ascending: false });
 
-      // Apply date filter first if provided
+      // Apply date filter if provided
       if (filters.weekEndingDate) {
         const weekStart = new Date(filters.weekEndingDate);
         weekStart.setDate(weekStart.getDate() - 6); // Get week start (7 days before)
-        query = query.eq('week_start_date', weekStart.toISOString().split('T')[0]);
+        timesheetsQuery = timesheetsQuery.eq('week_start_date', weekStart.toISOString().split('T')[0]);
       }
 
-      const { data: timesheets, error } = await query;
+      const { data: timesheets, error: timesheetsError } = await timesheetsQuery;
 
-      if (error) {
-        console.error('Error fetching timesheets:', error);
-        throw error;
+      if (timesheetsError) {
+        console.error('Error fetching timesheets:', timesheetsError);
+        throw timesheetsError;
       }
 
       if (!timesheets || timesheets.length === 0) {
+        console.log('No timesheets found');
         return [];
       }
 
-      // Get all unique user IDs and jobsite IDs
+      // Get unique user IDs and jobsite IDs from the timesheets
       const userIds = [...new Set(timesheets.map(t => t.submitted_by))];
       const jobsiteIds = [...new Set(timesheets.map(t => t.jobsite_id))];
 
-      // Fetch user profiles
+      // Fetch user profiles for the employees who submitted timesheets
       const { data: userProfiles, error: userError } = await supabase
         .from('user_profiles')
         .select('user_id, first_name, last_name')
@@ -56,7 +57,7 @@ export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndi
         throw userError;
       }
 
-      // Fetch jobsites
+      // Fetch jobsites for the timesheets
       const { data: jobsites, error: jobsiteError } = await supabase
         .from('jobsites')
         .select('id, name')
@@ -67,35 +68,40 @@ export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndi
         throw jobsiteError;
       }
 
-      // Create lookup maps
+      // Create lookup maps for efficient data joining
       const userMap = new Map(userProfiles?.map(u => [u.user_id, u]) || []);
       const jobsiteMap = new Map(jobsites?.map(j => [j.id, j]) || []);
 
-      // Combine the data
+      // Enrich timesheets with user and jobsite data
       let enrichedTimesheets = timesheets.map(timesheet => {
         const userProfile = userMap.get(timesheet.submitted_by);
         const jobsite = jobsiteMap.get(timesheet.jobsite_id);
         
+        const employeeName = userProfile 
+          ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim()
+          : 'Unknown Employee';
+
         return {
           ...timesheet,
           user_profiles: userProfile,
           jobsites: jobsite,
-          employee_name: userProfile ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() : 'Unknown Employee',
+          employee_name: employeeName,
           jobsite_name: jobsite?.name || 'Unknown Jobsite'
         };
       });
 
       // Apply employee name filter if provided
-      if (filters.employeeName) {
+      if (filters.employeeName && filters.employeeName.trim() !== '') {
         enrichedTimesheets = enrichedTimesheets.filter(timesheet => {
           return timesheet.employee_name.toLowerCase().includes(filters.employeeName?.toLowerCase() || '');
         });
       }
 
-      console.log('Fetched and enriched timesheets:', enrichedTimesheets);
+      console.log('Successfully fetched and enriched timesheets:', enrichedTimesheets.length, 'records');
       return enrichedTimesheets;
     },
     enabled: !!user?.companyId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes - reduced for better data freshness
+    cacheTime: 5 * 60 * 1000, // 5 minutes
   });
 };

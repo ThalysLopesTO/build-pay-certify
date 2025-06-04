@@ -61,9 +61,12 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All employees</SelectItem>
-                {employees.map((employee) => (
-                  <SelectItem key={employee.id} value={`${employee.first_name} ${employee.last_name}`}>
-                    {employee.first_name} {employee.last_name}
+                {employees?.map((employee) => (
+                  <SelectItem 
+                    key={employee.id} 
+                    value={`${employee.first_name || ''} ${employee.last_name || ''}`.trim()}
+                  >
+                    {employee.first_name || ''} {employee.last_name || ''}
                   </SelectItem>
                 ))}
               </SelectContent>
