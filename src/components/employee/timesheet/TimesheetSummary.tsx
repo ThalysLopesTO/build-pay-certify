@@ -19,8 +19,9 @@ const TimesheetSummary = ({ totalHours, hourlyRate, grossPay }: TimesheetSummary
         <p className="text-2xl font-bold text-green-600">${hourlyRate.toFixed(2)}</p>
       </div>
       <div className="text-center">
-        <p className="text-sm text-slate-600">Gross Pay</p>
+        <p className="text-sm text-slate-600">Total Pay</p>
         <p className="text-2xl font-bold text-orange-600">${grossPay.toFixed(2)}</p>
+        <p className="text-xs text-slate-500">Includes expenses</p>
       </div>
     </div>
   );

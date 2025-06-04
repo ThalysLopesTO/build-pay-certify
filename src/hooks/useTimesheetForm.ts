@@ -53,7 +53,8 @@ export const useTimesheetForm = () => {
   );
 
   const hourlyRate = parseFloat(user?.user_metadata?.hourly_rate || '25');
-  const grossPay = totalHours * hourlyRate;
+  // Fix: Include additional expense in gross pay calculation
+  const grossPay = (totalHours * hourlyRate) + (watchedValues.additionalExpense || 0);
 
   const onSubmit = (data: FormData) => {
     console.log('Form submission started with data:', data);
