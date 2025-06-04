@@ -26,7 +26,9 @@ export const useDashboardStats = () => {
         throw jobsitesError;
       }
 
-      // Fetch employees count
+      console.log('Jobsites count result:', jobsitesCount);
+
+      // Fetch employees count - using all roles that represent employees
       const { count: employeesCount, error: employeesError } = await supabase
         .from('user_profiles')
         .select('*', { count: 'exact', head: true })
@@ -37,6 +39,8 @@ export const useDashboardStats = () => {
         console.error('Error fetching employees count:', employeesError);
         throw employeesError;
       }
+
+      console.log('Employees count result:', employeesCount);
 
       // Fetch timesheets from last 7 days
       const sevenDaysAgo = new Date();
@@ -52,6 +56,8 @@ export const useDashboardStats = () => {
         console.error('Error fetching timesheets count:', timesheetsError);
         throw timesheetsError;
       }
+
+      console.log('Timesheets count result:', timesheetsCount);
 
       // Fetch invoices from current month
       const currentMonth = new Date();
@@ -69,6 +75,8 @@ export const useDashboardStats = () => {
         throw invoicesError;
       }
 
+      console.log('Invoices count result:', invoicesCount);
+
       const stats = {
         jobsitesCount: jobsitesCount || 0,
         employeesCount: employeesCount || 0,
@@ -76,10 +84,11 @@ export const useDashboardStats = () => {
         invoicesCount: invoicesCount || 0,
       };
 
-      console.log('Dashboard stats fetched:', stats);
+      console.log('Final dashboard stats:', stats);
       return stats;
     },
     enabled: !!user?.companyId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
   });
 };
