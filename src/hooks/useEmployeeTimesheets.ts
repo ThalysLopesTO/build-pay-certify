@@ -33,8 +33,7 @@ export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndi
 
       // Apply employee name filter
       if (filters.employeeName) {
-        // Note: This is a simplified filter. For better performance, 
-        // you might want to filter on the server side
+        // We'll need to fetch all data first, then filter by name since we can't filter by joined table fields directly
         const { data: allData, error } = await query;
         
         if (error) {
