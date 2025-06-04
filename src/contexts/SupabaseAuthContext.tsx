@@ -36,10 +36,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [companyError, setCompanyError] = useState<string | null>(null);
 
+  console.log('🔍 Auth State Debug:', { 
+    user: user ? { id: user.id, email: user.email, companyId: user.companyId } : null, 
+    hasSession: !!session, 
+    loading, 
+    companyError 
+  });
+
   // Helper function to fetch user profile and company data
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('Fetching user profile for:', userId);
+      console.log('📝 Fetching user profile for:', userId);
       
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
@@ -55,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (profileError) {
-        console.error('Error fetching user profile:', profileError);
+        console.error('❌ Error fetching user profile:', profileError);
         
         // Check if user profile doesn't exist
         if (profileError.code === 'PGRST116') {
@@ -68,30 +75,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (!profile) {
+        console.warn('⚠️ User profile not found');
         setCompanyError('User profile not found. Please contact your system administrator.');
         return null;
       }
 
       if (!profile.company_id) {
+        console.warn('⚠️ User not assigned to company');
         setCompanyError('You are not assigned to a company. Please contact your system administrator.');
         return null;
       }
 
       if (!profile.companies) {
+        console.warn('⚠️ Company information missing');
         setCompanyError('Company information is missing. Please contact your system administrator.');
         return null;
       }
 
       if (profile.companies.status !== 'active') {
+        console.warn('⚠️ Company not active');
         setCompanyError('Your company account is not active. Please contact your system administrator.');
         return null;
       }
 
-      console.log('User profile loaded successfully:', profile);
+      console.log('✅ User profile loaded successfully:', profile);
       setCompanyError(null);
       return profile;
     } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
+      console.error('💥 Error in fetchUserProfile:', error);
       setCompanyError('An unexpected error occurred. Please try again.');
       return null;
     }
@@ -100,92 +111,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    // Function to handle auth state changes
+    const handleAuthStateChange = async (event: string, session: Session | null) => {
+      if (!isMounted) return;
+      
+      console.log('🔄 Auth state changed:', event, session?.user?.email);
+      setSession(session);
+      
+      if (session?.user) {
+        console.log('👤 User session found, fetching profile...');
+        
+        // Fetch user profile and company data
+        const profile = await fetchUserProfile(session.user.id);
+        
         if (!isMounted) return;
         
-        console.log('Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        
-        if (session?.user) {
-          // Fetch user profile and company data
-          const profile = await fetchUserProfile(session.user.id);
-          
-          if (!isMounted) return;
-          
-          if (profile) {
-            const authUser: AuthUser = {
-              ...session.user,
-              role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
-              companyId: profile.company_id,
-              companyName: profile.companies?.name,
-              hourlyRate: profile.hourly_rate || 25,
-              trade: profile.trade || 'General',
-              position: profile.position || 'Worker',
-              firstName: profile.first_name || '',
-              lastName: profile.last_name || ''
-            };
-            setUser(authUser);
-          } else {
-            // If profile fetch failed, keep user null to show error
-            setUser(null);
-          }
+        if (profile) {
+          const authUser: AuthUser = {
+            ...session.user,
+            role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
+            companyId: profile.company_id,
+            companyName: profile.companies?.name,
+            hourlyRate: profile.hourly_rate || 25,
+            trade: profile.trade || 'General',
+            position: profile.position || 'Worker',
+            firstName: profile.first_name || '',
+            lastName: profile.last_name || ''
+          };
+          console.log('✅ Setting auth user:', authUser);
+          setUser(authUser);
         } else {
+          console.warn('⚠️ Profile fetch failed, keeping user null');
           setUser(null);
-          setCompanyError(null);
         }
-        
-        if (isMounted) {
-          setLoading(false);
-        }
+      } else {
+        console.log('🚪 No user session, clearing state');
+        setUser(null);
+        setCompanyError(null);
       }
-    );
+      
+      if (isMounted) {
+        console.log('🏁 Setting loading to false');
+        setLoading(false);
+      }
+    };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
     // Check for existing session
     const initializeAuth = async () => {
       try {
+        console.log('🚀 Initializing auth...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error getting session:', error);
+          console.error('❌ Error getting session:', error);
           if (isMounted) {
             setLoading(false);
           }
           return;
         }
         
-        console.log('Initial session check:', session?.user?.email);
-        
-        if (!isMounted) return;
-        
-        setSession(session);
-        
-        if (session?.user) {
-          const profile = await fetchUserProfile(session.user.id);
-          
-          if (!isMounted) return;
-          
-          if (profile) {
-            const authUser: AuthUser = {
-              ...session.user,
-              role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
-              companyId: profile.company_id,
-              companyName: profile.companies?.name,
-              hourlyRate: profile.hourly_rate || 25,
-              trade: profile.trade || 'General',
-              position: profile.position || 'Worker',
-              firstName: profile.first_name || '',
-              lastName: profile.last_name || ''
-            };
-            setUser(authUser);
-          } else {
-            setUser(null);
-          }
-        }
+        console.log('📋 Initial session check:', session?.user?.email || 'No session');
+        await handleAuthStateChange('initial', session);
       } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
+        console.error('💥 Error initializing auth:', error);
         if (isMounted) {
           setLoading(false);
         }
@@ -195,6 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
 
     return () => {
+      console.log('🧹 Cleaning up auth listener');
       isMounted = false;
       subscription.unsubscribe();
     };

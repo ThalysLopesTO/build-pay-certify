@@ -49,20 +49,37 @@ const LoadingScreen = () => (
   </div>
 );
 
+const DebugInfo = ({ user, session, loading, companyError }: any) => (
+  <div className="fixed top-4 right-4 bg-black text-white p-4 rounded text-xs max-w-xs z-50">
+    <div>Loading: {loading ? 'true' : 'false'}</div>
+    <div>Session: {session ? 'exists' : 'null'}</div>
+    <div>User: {user ? user.email : 'null'}</div>
+    <div>Company: {user?.companyId || 'null'}</div>
+    <div>Error: {companyError || 'none'}</div>
+  </div>
+);
+
 const DashboardRouter = () => {
   const { user, loading, companyError, logout } = useAuth();
   
+  console.log('📊 DashboardRouter state:', { user: user?.email, loading, companyError });
+  
   if (loading) {
+    console.log('⏳ Dashboard loading...');
     return <LoadingScreen />;
   }
 
   if (companyError) {
+    console.log('🚨 Company error in dashboard:', companyError);
     return <CompanyErrorFallback error={companyError} onLogout={logout} />;
   }
   
   if (!user) {
+    console.log('🔒 No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
+  
+  console.log('✅ Routing user to dashboard based on role:', user.role);
   
   // Route based on user role
   if (user.role === 'admin' || user.role === 'payroll') {
@@ -75,49 +92,75 @@ const DashboardRouter = () => {
 };
 
 const AppContent = () => {
-  const { isAuthenticated, loading, companyError, logout } = useAuth();
+  const { isAuthenticated, loading, companyError, logout, user, session } = useAuth();
+
+  console.log('🏠 AppContent render:', { isAuthenticated, loading, companyError });
+
+  // Show debug info in development
+  const showDebug = true; // Set to false in production
 
   if (loading) {
-    return <LoadingScreen />;
+    console.log('⏳ App loading...');
+    return (
+      <>
+        {showDebug && <DebugInfo user={user} session={session} loading={loading} companyError={companyError} />}
+        <LoadingScreen />
+      </>
+    );
   }
 
   if (companyError && isAuthenticated) {
-    return <CompanyErrorFallback error={companyError} onLogout={logout} />;
+    console.log('🚨 Company error in app:', companyError);
+    return (
+      <>
+        {showDebug && <DebugInfo user={user} session={session} loading={loading} companyError={companyError} />}
+        <CompanyErrorFallback error={companyError} onLogout={logout} />
+      </>
+    );
   }
 
+  console.log('🎯 Rendering main app routes');
+
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route 
-          path="/login" 
-          element={!isAuthenticated ? <LoginForm /> : <Navigate to="/" replace />} 
-        />
-        <Route 
-          path="/" 
-          element={
-            isAuthenticated ? (
-              <DashboardRouter />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <>
+      {showDebug && <DebugInfo user={user} session={session} loading={loading} companyError={companyError} />}
+      <BrowserRouter>
+        <Routes>
+          <Route 
+            path="/login" 
+            element={!isAuthenticated ? <LoginForm /> : <Navigate to="/" replace />} 
+          />
+          <Route 
+            path="/" 
+            element={
+              isAuthenticated ? (
+                <DashboardRouter />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } 
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <AppContent />
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  console.log('🚀 App component rendering');
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
