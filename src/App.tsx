@@ -10,6 +10,7 @@ import CompanyRegistration from "./pages/CompanyRegistration";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ForemanDashboard from "./pages/ForemanDashboard";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import NotFound from "./pages/NotFound";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Building } from "lucide-react";
@@ -72,7 +73,9 @@ const DashboardRouter = () => {
   
   console.log('✅ Routing user to dashboard based on role:', user.role);
   
-  if (user.role === 'admin' || user.role === 'payroll' || user.role === 'super_admin') {
+  if (user.role === 'super_admin') {
+    return <SuperAdminDashboard />;
+  } else if (user.role === 'admin' || user.role === 'payroll') {
     return <AdminDashboard />;
   } else if (user.role === 'foreman') {
     return <ForemanDashboard />;
