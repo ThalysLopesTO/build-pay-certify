@@ -40,6 +40,9 @@ export const useTimesheetSubmission = () => {
       const totalHours = data.mondayHours + data.tuesdayHours + data.wednesdayHours + 
                         data.thursdayHours + data.fridayHours + data.saturdayHours + data.sundayHours;
 
+      // Calculate gross pay
+      const grossPay = (totalHours * data.hourlyRate) + (data.additionalExpense || 0);
+
       const timesheetPayload = {
         submitted_by: user.id,
         company_id: user.companyId,
@@ -56,15 +59,17 @@ export const useTimesheetSubmission = () => {
         hourly_rate: data.hourlyRate,
         additional_expense: data.additionalExpense || 0,
         notes: data.notes || '',
+        gross_pay: grossPay,
         status: 'pending',
       };
 
       console.log('📝 Submitting timesheet to database with payload:', timesheetPayload);
 
+      // Use a more specific insert approach to avoid any RLS issues
       const { data: result, error } = await supabase
         .from('weekly_timesheets')
-        .insert(timesheetPayload)
-        .select()
+        .insert([timesheetPayload])
+        .select('*')
         .single();
 
       if (error) {
@@ -78,11 +83,15 @@ export const useTimesheetSubmission = () => {
         
         // Provide more specific error messages based on the actual error
         if (error.code === '42501') {
-          throw new Error('Permission denied: Unable to submit timesheet. Please ensure you are logged in and have the correct permissions.');
+          throw new Error('Permission denied: Unable to submit timesheet. Please contact your administrator.');
         }
         
-        if (error.message.includes('users')) {
-          throw new Error('Authentication error: Unable to verify user identity. Please try logging out and back in.');
+        if (error.code === 'PGRST301') {
+          throw new Error('Database constraint violation. Please check your timesheet data.');
+        }
+        
+        if (error.message?.includes('duplicate key')) {
+          throw new Error('A timesheet for this week already exists. Please edit the existing timesheet instead.');
         }
         
         throw new Error(error.message || 'Failed to submit timesheet');
