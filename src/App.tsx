@@ -50,16 +50,6 @@ const LoadingScreen = () => (
   </div>
 );
 
-const DebugInfo = ({ user, session, loading, companyError }: any) => (
-  <div className="fixed top-4 right-4 bg-black text-white p-4 rounded text-xs max-w-xs z-50">
-    <div>Loading: {loading ? 'true' : 'false'}</div>
-    <div>Session: {session ? 'exists' : 'null'}</div>
-    <div>User: {user ? user.email : 'null'}</div>
-    <div>Company: {user?.companyId || 'null'}</div>
-    <div>Error: {companyError || 'none'}</div>
-  </div>
-);
-
 const DashboardRouter = () => {
   const { user, loading, companyError, logout } = useAuth();
   
@@ -82,7 +72,6 @@ const DashboardRouter = () => {
   
   console.log('✅ Routing user to dashboard based on role:', user.role);
   
-  // Route based on user role
   if (user.role === 'admin' || user.role === 'payroll' || user.role === 'super_admin') {
     return <AdminDashboard />;
   } else if (user.role === 'foreman') {
@@ -93,63 +82,46 @@ const DashboardRouter = () => {
 };
 
 const AppContent = () => {
-  const { isAuthenticated, loading, companyError, logout, user, session } = useAuth();
+  const { isAuthenticated, loading, companyError, logout } = useAuth();
 
   console.log('🏠 AppContent render:', { isAuthenticated, loading, companyError });
 
-  // Show debug info in development
-  const showDebug = true; // Set to false in production
-
   if (loading) {
     console.log('⏳ App loading...');
-    return (
-      <>
-        {showDebug && <DebugInfo user={user} session={session} loading={loading} companyError={companyError} />}
-        <LoadingScreen />
-      </>
-    );
+    return <LoadingScreen />;
   }
 
-  // If Either Query Fails - Show fallback error UI
-  if (companyError && session) {
+  if (companyError && !isAuthenticated) {
     console.log('🚨 Company error in app:', companyError);
-    return (
-      <>
-        {showDebug && <DebugInfo user={user} session={session} loading={loading} companyError={companyError} />}
-        <CompanyErrorFallback error={companyError} onLogout={logout} />
-      </>
-    );
+    return <CompanyErrorFallback error={companyError} onLogout={logout} />;
   }
 
   console.log('🎯 Rendering main app routes');
 
   return (
-    <>
-      {showDebug && <DebugInfo user={user} session={session} loading={loading} companyError={companyError} />}
-      <BrowserRouter>
-        <Routes>
-          <Route 
-            path="/login" 
-            element={!isAuthenticated ? <LoginForm /> : <Navigate to="/" replace />} 
-          />
-          <Route 
-            path="/register-company" 
-            element={!isAuthenticated ? <CompanyRegistration /> : <Navigate to="/" replace />} 
-          />
-          <Route 
-            path="/" 
-            element={
-              isAuthenticated ? (
-                <DashboardRouter />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            } 
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route 
+          path="/login" 
+          element={!isAuthenticated ? <LoginForm /> : <Navigate to="/" replace />} 
+        />
+        <Route 
+          path="/register-company" 
+          element={!isAuthenticated ? <CompanyRegistration /> : <Navigate to="/" replace />} 
+        />
+        <Route 
+          path="/" 
+          element={
+            isAuthenticated ? (
+              <DashboardRouter />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
+        />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 
@@ -160,9 +132,9 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
+          <AppContent />
           <Toaster />
           <Sonner />
-          <AppContent />
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

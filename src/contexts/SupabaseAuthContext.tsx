@@ -16,8 +16,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isCompanyAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isSuperAdmin = user?.role === 'super_admin';
-
-  // Determine authentication status more carefully
   const isAuthenticated = !!session && !!user && !companyError;
 
   console.log('🏗️ AuthProvider state:', {
@@ -54,5 +52,4 @@ export const useAuth = () => {
   return context;
 };
 
-// Re-export types for backward compatibility
 export type { AuthUser } from './auth/types';

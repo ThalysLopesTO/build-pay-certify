@@ -12,7 +12,7 @@ export const useAuthState = () => {
   const [companyError, setCompanyError] = useState<string | null>(null);
 
   console.log('🔍 Auth State Debug:', { 
-    user: user ? { id: user.id, email: user.email, companyId: user.companyId, pendingApproval: user.pendingApproval } : null, 
+    user: user ? { id: user.id, email: user.email, companyId: user.companyId } : null, 
     hasSession: !!session, 
     loading, 
     companyError 
@@ -20,9 +20,7 @@ export const useAuthState = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let authSubscription: any = null;
 
-    // Function to handle auth state changes
     const handleAuthStateChange = async (event: string, session: Session | null) => {
       if (!isMounted) return;
       
@@ -30,28 +28,20 @@ export const useAuthState = () => {
       setSession(session);
       
       if (session?.user) {
-        console.log('👤 User session found, fetching profile...');
+        console.log('👤 User session found, fetching profile for:', session.user.id);
         
         try {
-          // Use supabase.auth.getSession() to reconfirm current session
-          const { data: { session: currentSession } } = await supabase.auth.getSession();
-          
-          if (!currentSession?.user || !isMounted) {
-            console.warn('⚠️ No current session found');
-            setUser(null);
-            setCompanyError('Session expired. Please log in again.');
-            setLoading(false);
-            return;
-          }
-
-          // Fetch user profile and company data using the session user ID
-          const { profile, company, error } = await fetchUserProfile(currentSession.user.id);
+          const { profile, company, error } = await fetchUserProfile(session.user.id);
           
           if (!isMounted) return;
           
-          if (profile && company) {
+          if (error) {
+            console.warn('⚠️ Profile fetch error:', error);
+            setUser(null);
+            setCompanyError(error);
+          } else if (profile && company) {
             const authUser: AuthUser = {
-              ...currentSession.user,
+              ...session.user,
               role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
               companyId: profile.company_id,
               companyName: company.name,
@@ -64,18 +54,15 @@ export const useAuthState = () => {
             };
             
             console.log('✅ Setting auth user:', authUser);
-            console.log('✅ Setting company:', company);
-            
-            // Set Auth Context State
             setUser(authUser);
             setCompanyError(null);
           } else {
-            console.warn('⚠️ Profile or company fetch failed');
+            console.warn('⚠️ No profile or company found');
             setUser(null);
-            setCompanyError(error);
+            setCompanyError('Profile or company not found. Please contact your administrator.');
           }
         } catch (error) {
-          console.error('💥 Error in auth state change handler:', error);
+          console.error('💥 Error fetching profile:', error);
           if (isMounted) {
             setUser(null);
             setCompanyError('An unexpected error occurred while loading your profile.');
@@ -93,17 +80,12 @@ export const useAuthState = () => {
       }
     };
 
-    // Set up auth state listener
-    const setupAuthListener = () => {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
-      authSubscription = subscription;
-      return subscription;
-    };
-
-    // Check for existing session using supabase.auth.getSession()
+    // Initialize auth state
     const initializeAuth = async () => {
       try {
         console.log('🚀 Initializing auth...');
+        
+        // Get current session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -115,7 +97,16 @@ export const useAuthState = () => {
         }
         
         console.log('📋 Initial session check:', session?.user?.email || 'No session');
+        
+        // Set up listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+        
+        // Handle initial session
         await handleAuthStateChange('initial', session);
+        
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
         console.error('💥 Error initializing auth:', error);
         if (isMounted) {
@@ -125,16 +116,11 @@ export const useAuthState = () => {
       }
     };
 
-    // Set up listener first, then check for existing session
-    setupAuthListener();
     initializeAuth();
 
     return () => {
       console.log('🧹 Cleaning up auth listener');
       isMounted = false;
-      if (authSubscription) {
-        authSubscription.unsubscribe();
-      }
     };
   }, []);
 
