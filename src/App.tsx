@@ -110,7 +110,7 @@ const AppContent = () => {
     );
   }
 
-  // Show company error even if not authenticated to handle edge cases
+  // If Either Query Fails - Show fallback error UI
   if (companyError && session) {
     console.log('🚨 Company error in app:', companyError);
     return (

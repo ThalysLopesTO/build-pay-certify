@@ -33,17 +33,28 @@ export const useAuthState = () => {
         console.log('👤 User session found, fetching profile...');
         
         try {
-          // Fetch user profile and company data
-          const { profile, error } = await fetchUserProfile(session.user.id);
+          // Use supabase.auth.getSession() to reconfirm current session
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          
+          if (!currentSession?.user || !isMounted) {
+            console.warn('⚠️ No current session found');
+            setUser(null);
+            setCompanyError('Session expired. Please log in again.');
+            setLoading(false);
+            return;
+          }
+
+          // Fetch user profile and company data using the session user ID
+          const { profile, company, error } = await fetchUserProfile(currentSession.user.id);
           
           if (!isMounted) return;
           
-          if (profile) {
+          if (profile && company) {
             const authUser: AuthUser = {
-              ...session.user,
+              ...currentSession.user,
               role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
               companyId: profile.company_id,
-              companyName: profile.companies?.name,
+              companyName: company.name,
               hourlyRate: profile.hourly_rate || 25,
               trade: profile.trade || 'General',
               position: profile.position || 'Worker',
@@ -51,11 +62,15 @@ export const useAuthState = () => {
               lastName: profile.last_name || '',
               pendingApproval: profile.pending_approval || false
             };
+            
             console.log('✅ Setting auth user:', authUser);
+            console.log('✅ Setting company:', company);
+            
+            // Set Auth Context State
             setUser(authUser);
             setCompanyError(null);
           } else {
-            console.warn('⚠️ Profile fetch failed, setting user to null');
+            console.warn('⚠️ Profile or company fetch failed');
             setUser(null);
             setCompanyError(error);
           }
@@ -85,7 +100,7 @@ export const useAuthState = () => {
       return subscription;
     };
 
-    // Check for existing session
+    // Check for existing session using supabase.auth.getSession()
     const initializeAuth = async () => {
       try {
         console.log('🚀 Initializing auth...');

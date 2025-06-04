@@ -5,16 +5,10 @@ export const fetchUserProfile = async (userId: string) => {
   try {
     console.log('📝 Fetching user profile for:', userId);
     
+    // Query user_profiles using user_id (matching auth.users.id)
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
-      .select(`
-        *,
-        companies:company_id (
-          id,
-          name,
-          status
-        )
-      `)
+      .select('*')
       .eq('user_id', userId)
       .single();
 
@@ -25,15 +19,15 @@ export const fetchUserProfile = async (userId: string) => {
       
       // Check if user profile doesn't exist
       if (profileError.code === 'PGRST116') {
-        return { profile: null, error: 'You are not linked to any company. Please contact your administrator.' };
+        return { profile: null, company: null, error: 'You are not linked to any company. Please contact your administrator.' };
       }
       
-      return { profile: null, error: 'Failed to load user profile. Please try logging in again.' };
+      return { profile: null, company: null, error: 'Failed to load user profile. Please try logging in again.' };
     }
 
     if (!profile) {
       console.warn('⚠️ User profile not found');
-      return { profile: null, error: 'You are not linked to any company. Please contact your administrator.' };
+      return { profile: null, company: null, error: 'You are not linked to any company. Please contact your administrator.' };
     }
 
     console.log('📊 Profile loaded:', profile);
@@ -41,35 +35,40 @@ export const fetchUserProfile = async (userId: string) => {
     // Check if user is pending approval
     if (profile.pending_approval) {
       console.warn('⚠️ User is pending approval');
-      return { profile: null, error: 'Your company account is pending approval. You will receive an email notification once approved.' };
+      return { profile: null, company: null, error: 'Your company account is pending approval. You will receive an email notification once approved.' };
     }
 
     if (!profile.company_id) {
       console.warn('⚠️ User not assigned to company');
-      return { profile: null, error: 'You are not linked to any company. Please contact your administrator.' };
+      return { profile: null, company: null, error: 'You are not linked to any company. Please contact your administrator.' };
     }
 
-    if (!profile.companies) {
-      console.warn('⚠️ Company information missing');
-      return { profile: null, error: 'Company information is missing. Please contact your administrator.' };
+    // Query companies using company_id from profile
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('id', profile.company_id)
+      .eq('status', 'active')
+      .single();
+
+    console.log('🏢 Company query result:', { company, companyError });
+
+    if (companyError || !company) {
+      console.warn('⚠️ Company not found or not active:', companyError);
+      return { profile: null, company: null, error: 'Your company account is not active. Please contact your system administrator.' };
     }
 
-    console.log('🏢 Company loaded:', profile.companies);
-
-    if (profile.companies.status === 'pending') {
-      console.warn('⚠️ Company is pending approval');
-      return { profile: null, error: 'Your company account is pending approval. You will receive an email notification once approved.' };
+    if (company.status !== 'active') {
+      console.warn('⚠️ Company not active, status:', company.status);
+      return { profile: null, company: null, error: 'Your company account is not active. Please contact your system administrator.' };
     }
 
-    if (profile.companies.status !== 'active') {
-      console.warn('⚠️ Company not active, status:', profile.companies.status);
-      return { profile: null, error: 'Your company account is not active. Please contact your system administrator.' };
-    }
-
-    console.log('✅ User profile and company loaded successfully');
-    return { profile, error: null };
+    console.log('✅ Resolved Profile:', profile);
+    console.log('✅ Resolved Company:', company);
+    
+    return { profile, company, error: null };
   } catch (error) {
     console.error('💥 Error in fetchUserProfile:', error);
-    return { profile: null, error: 'An unexpected error occurred. Please try again.' };
+    return { profile: null, company: null, error: 'An unexpected error occurred. Please try again.' };
   }
 };
