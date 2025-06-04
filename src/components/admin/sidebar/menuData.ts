@@ -30,8 +30,6 @@ export const groupedMenuItems = {
   ],
   invoices: [
     { id: 'invoice-management', label: 'Invoice Management', icon: FileText },
-    { id: 'invoice-tracker', label: 'Invoice Tracker', icon: FileText },
-    { id: 'project-billing', label: 'Project Billing', icon: Building },
   ],
   system: [
     { id: 'system-settings', label: 'System Settings', icon: Settings },

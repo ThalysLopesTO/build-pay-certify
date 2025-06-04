@@ -30,7 +30,7 @@ const InvoiceManagement = () => {
           </TabsTrigger>
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <BarChart3 className="h-4 w-4" />
-            <span>Project Billing</span>
+            <span>Project Budgets</span>
           </TabsTrigger>
         </TabsList>
 
