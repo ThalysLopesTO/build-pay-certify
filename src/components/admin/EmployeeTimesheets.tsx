@@ -2,14 +2,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, Edit, Filter, Search } from 'lucide-react';
+import { Calendar, Edit } from 'lucide-react';
 import { useEmployeeTimesheets } from '@/hooks/useEmployeeTimesheets';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useJobsites } from '@/hooks/useJobsites';
+import { useTimesheetApproval } from '@/hooks/useTimesheetApproval';
 import TimesheetEditModal from './timesheets/TimesheetEditModal';
 import TimesheetFilters from './timesheets/TimesheetFilters';
 
@@ -24,6 +23,7 @@ const EmployeeTimesheets = () => {
   const { data: timesheets = [], isLoading, refetch } = useEmployeeTimesheets(filters);
   const { data: employees = [] } = useEmployeeDirectory();
   const { data: jobsites = [] } = useJobsites();
+  const approvalMutation = useTimesheetApproval();
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -38,8 +38,11 @@ const EmployeeTimesheets = () => {
   };
 
   const handleApprove = async (timesheetId: string) => {
-    // Implementation will be added in the hook
-    console.log('Approving timesheet:', timesheetId);
+    try {
+      await approvalMutation.mutateAsync(timesheetId);
+    } catch (error) {
+      console.error('Failed to approve timesheet:', error);
+    }
   };
 
   const handleEdit = (timesheet: any) => {
@@ -147,9 +150,10 @@ const EmployeeTimesheets = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => handleApprove(timesheet.id)}
+                              disabled={approvalMutation.isPending}
                               className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
                             >
-                              Approve
+                              {approvalMutation.isPending ? 'Approving...' : 'Approve'}
                             </Button>
                           )}
                         </div>
