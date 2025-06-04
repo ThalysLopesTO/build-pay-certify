@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -97,15 +98,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+        
         console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         
         if (session?.user) {
           // Fetch user profile and company data
           const profile = await fetchUserProfile(session.user.id);
+          
+          if (!isMounted) return;
           
           if (profile) {
             const authUser: AuthUser = {
@@ -128,39 +135,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
           setCompanyError(null);
         }
-        setLoading(false);
+        
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.email);
-      setSession(session);
-      
-      if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (profile) {
-          const authUser: AuthUser = {
-            ...session.user,
-            role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
-            companyId: profile.company_id,
-            companyName: profile.companies?.name,
-            hourlyRate: profile.hourly_rate || 25,
-            trade: profile.trade || 'General',
-            position: profile.position || 'Worker',
-            firstName: profile.first_name || '',
-            lastName: profile.last_name || ''
-          };
-          setUser(authUser);
-        } else {
-          setUser(null);
+        if (error) {
+          console.error('Error getting session:', error);
+          if (isMounted) {
+            setLoading(false);
+          }
+          return;
+        }
+        
+        console.log('Initial session check:', session?.user?.email);
+        
+        if (!isMounted) return;
+        
+        setSession(session);
+        
+        if (session?.user) {
+          const profile = await fetchUserProfile(session.user.id);
+          
+          if (!isMounted) return;
+          
+          if (profile) {
+            const authUser: AuthUser = {
+              ...session.user,
+              role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
+              companyId: profile.company_id,
+              companyName: profile.companies?.name,
+              hourlyRate: profile.hourly_rate || 25,
+              trade: profile.trade || 'General',
+              position: profile.position || 'Worker',
+              firstName: profile.first_name || '',
+              lastName: profile.last_name || ''
+            };
+            setUser(authUser);
+          } else {
+            setUser(null);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
         }
       }
-      setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {

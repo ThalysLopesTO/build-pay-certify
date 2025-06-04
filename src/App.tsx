@@ -40,46 +40,29 @@ const CompanyErrorFallback = ({ error, onLogout }: { error: string; onLogout: ()
   </div>
 );
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, loading, companyError, logout } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (companyError) {
-    return <CompanyErrorFallback error={companyError} onLogout={logout} />;
-  }
-  
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
-};
+const LoadingScreen = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+      <p>Loading...</p>
+    </div>
+  </div>
+);
 
 const DashboardRouter = () => {
   const { user, loading, companyError, logout } = useAuth();
   
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (companyError) {
     return <CompanyErrorFallback error={companyError} onLogout={logout} />;
   }
   
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
   
   // Route based on user role
   if (user.role === 'admin' || user.role === 'payroll') {
@@ -95,14 +78,11 @@ const AppContent = () => {
   const { isAuthenticated, loading, companyError, logout } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
+  }
+
+  if (companyError && isAuthenticated) {
+    return <CompanyErrorFallback error={companyError} onLogout={logout} />;
   }
 
   return (
@@ -115,9 +95,11 @@ const AppContent = () => {
         <Route 
           path="/" 
           element={
-            <ProtectedRoute>
+            isAuthenticated ? (
               <DashboardRouter />
-            </ProtectedRoute>
+            ) : (
+              <Navigate to="/login" replace />
+            )
           } 
         />
         <Route path="*" element={<NotFound />} />
