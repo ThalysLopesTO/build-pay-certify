@@ -12,28 +12,34 @@ export type Database = {
       companies: {
         Row: {
           created_at: string
+          expiration_date: string | null
           id: string
           license_key: string
           name: string
           plan: string | null
+          registration_date: string | null
           status: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          expiration_date?: string | null
           id?: string
           license_key?: string
           name: string
           plan?: string | null
+          registration_date?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          expiration_date?: string | null
           id?: string
           license_key?: string
           name?: string
           plan?: string | null
+          registration_date?: string | null
           status?: string
           updated_at?: string
         }
@@ -494,6 +500,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_companies_with_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          status: string
+          registration_date: string
+          expiration_date: string
+          created_at: string
+          is_expired: boolean
+          days_until_expiry: number
+        }[]
+      }
       get_user_company_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -504,6 +523,10 @@ export type Database = {
       }
       is_company_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_company_license_expired: {
+        Args: { company_id_param: string }
         Returns: boolean
       }
       is_super_admin: {
