@@ -25,11 +25,18 @@ export const useTimesheetSubmission = () => {
 
   return useMutation({
     mutationFn: async (data: TimesheetData) => {
+      console.log('🔍 Starting timesheet submission with user:', { 
+        userId: user?.id, 
+        companyId: user?.companyId,
+        email: user?.email 
+      });
+
       if (!user?.id || !user?.companyId) {
+        console.error('❌ Authentication check failed:', { userId: user?.id, companyId: user?.companyId });
         throw new Error('User not authenticated or company not assigned');
       }
 
-      console.log('Submitting timesheet to database:', {
+      const timesheetPayload = {
         submitted_by: user.id,
         company_id: user.companyId,
         jobsite_id: data.jobsiteId,
@@ -45,40 +52,42 @@ export const useTimesheetSubmission = () => {
         additional_expense: data.additionalExpense || 0,
         notes: data.notes || '',
         status: 'pending',
-      });
+      };
+
+      console.log('📝 Submitting timesheet to database with payload:', timesheetPayload);
 
       const { data: result, error } = await supabase
         .from('weekly_timesheets')
-        .insert({
-          submitted_by: user.id,
-          company_id: user.companyId,
-          jobsite_id: data.jobsiteId,
-          week_start_date: data.weekStartDate,
-          monday_hours: data.mondayHours,
-          tuesday_hours: data.tuesdayHours,
-          wednesday_hours: data.wednesdayHours,
-          thursday_hours: data.thursdayHours,
-          friday_hours: data.fridayHours,
-          saturday_hours: data.saturdayHours,
-          sunday_hours: data.sundayHours,
-          hourly_rate: data.hourlyRate,
-          additional_expense: data.additionalExpense || 0,
-          notes: data.notes || '',
-          status: 'pending',
-        })
+        .insert(timesheetPayload)
         .select()
         .single();
 
       if (error) {
-        console.error('Timesheet submission error:', error);
+        console.error('💥 Timesheet submission error details:', {
+          error: error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
+        // Provide more specific error messages
+        if (error.message.includes('permission denied')) {
+          throw new Error('Permission denied: Unable to submit timesheet. Please ensure you are logged in and have the correct permissions.');
+        }
+        
+        if (error.message.includes('users')) {
+          throw new Error('Authentication error: Unable to verify user identity. Please try logging out and back in.');
+        }
+        
         throw error;
       }
 
-      console.log('Timesheet submitted successfully:', result);
+      console.log('✅ Timesheet submitted successfully:', result);
       return result;
     },
     onSuccess: (data) => {
-      console.log('Timesheet submitted successfully:', data);
+      console.log('🎉 Timesheet submission successful, invalidating queries');
       toast({
         title: "Timesheet Submitted",
         description: `Weekly timesheet for ${data.total_hours || 0} hours submitted successfully`,
@@ -87,7 +96,7 @@ export const useTimesheetSubmission = () => {
       queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
     },
     onError: (error) => {
-      console.error('Failed to submit timesheet:', error);
+      console.error('🚨 Timesheet submission failed:', error);
       toast({
         title: "Submission Failed",
         description: error.message || "Failed to submit timesheet. Please try again.",

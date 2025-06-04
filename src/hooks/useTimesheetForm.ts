@@ -57,8 +57,15 @@ export const useTimesheetForm = () => {
   const grossPay = (totalHours * hourlyRate) + (watchedValues.additionalExpense || 0);
 
   const onSubmit = (data: FormData) => {
-    console.log('Form submission started with data:', data);
+    console.log('📋 Form submission started with data:', data);
+    console.log('👤 Current user state:', { 
+      userId: user?.id, 
+      companyId: user?.companyId, 
+      email: user?.email,
+      isAuthenticated: !!user?.id 
+    });
     
+    // Enhanced validation checks
     if (totalHours === 0) {
       toast({
         title: "No Hours Entered",
@@ -69,9 +76,20 @@ export const useTimesheetForm = () => {
     }
 
     if (!user?.id) {
+      console.error('❌ Authentication validation failed: No user ID');
       toast({
         title: "Authentication Error",
-        description: "You must be logged in to submit a timesheet",
+        description: "You must be logged in to submit a timesheet. Please log out and log back in.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.companyId) {
+      console.error('❌ Company validation failed: No company ID');
+      toast({
+        title: "Company Assignment Error", 
+        description: "No company assigned to your account. Please contact your administrator.",
         variant: "destructive",
       });
       return;
@@ -97,7 +115,7 @@ export const useTimesheetForm = () => {
       notes: data.notes || '',
     };
     
-    console.log('Submitting timesheet with processed data:', timesheetData);
+    console.log('🚀 Submitting timesheet with processed data:', timesheetData);
     submitMutation.mutate(timesheetData);
   };
 
