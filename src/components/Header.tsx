@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { useAuth } from '../contexts/SupabaseAuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, User, HardHat } from 'lucide-react';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { LogOut, Crown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -12,32 +13,40 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-slate-900 text-white border-b-4 border-orange-600 w-full">
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <HardHat className="h-8 w-8 text-orange-600" />
-            <div>
-              <h1 className="text-xl font-bold">Construction Payroll Manager</h1>
-              <p className="text-sm text-slate-300">Safety First • Quality Work • Fair Pay</p>
+    <header className="bg-white border-b border-slate-200 px-6 py-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-xl font-semibold text-slate-900">
+            Construction Payroll Manager
+          </h1>
+          {user?.role === 'super_admin' && (
+            <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
+              <Crown className="h-3 w-3 mr-1" />
+              Super Admin
+            </Badge>
+          )}
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          {user && (
+            <div className="flex items-center space-x-3">
+              <div className="text-sm">
+                <div className="font-medium text-slate-900">
+                  {user.firstName} {user.lastName}
+                </div>
+                <div className="text-slate-500">{user.email}</div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleLogout}
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </Button>
             </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <p className="font-medium">{user?.email}</p>
-              <p className="text-sm text-slate-300 capitalize">{user?.role} • {user?.trade}</p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="border-slate-600 text-slate-300 hover:bg-slate-800"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </div>
+          )}
         </div>
       </div>
     </header>

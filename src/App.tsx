@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -111,6 +110,16 @@ const AppContent = () => {
         <Route 
           path="/register-company" 
           element={!isAuthenticated ? <CompanyRegistration /> : <Navigate to="/" replace />} 
+        />
+        <Route 
+          path="/super-admin" 
+          element={
+            isAuthenticated ? (
+              <SuperAdminDashboard />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
         />
         <Route 
           path="/" 
