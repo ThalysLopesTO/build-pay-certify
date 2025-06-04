@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import Header from '@/components/Header';
+import AdminDashboardContent from '@/components/admin/dashboard/AdminDashboardContent';
 import PayrollSummary from '@/components/admin/PayrollSummary';
 import EmployeeManagement from '@/components/admin/EmployeeManagement';
 import EmployeeRegistration from '@/components/admin/EmployeeRegistration';
@@ -22,17 +23,7 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-2">Quick Stats</h3>
-                <p className="text-gray-600">Dashboard overview coming soon...</p>
-              </div>
-            </div>
-          </div>
-        );
+        return <AdminDashboardContent setActiveTab={setActiveTab} />;
       case 'payroll-summary':
         return <PayrollSummary />;
       case 'employee-timesheets':
@@ -63,12 +54,7 @@ const AdminDashboard = () => {
       case 'system-settings':
         return <SystemSettings />;
       default:
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
-            <p>Select a section from the sidebar to get started.</p>
-          </div>
-        );
+        return <AdminDashboardContent setActiveTab={setActiveTab} />;
     }
   };
 
