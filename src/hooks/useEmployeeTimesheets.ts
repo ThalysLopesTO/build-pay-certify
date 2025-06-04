@@ -102,6 +102,6 @@ export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndi
     },
     enabled: !!user?.companyId,
     staleTime: 2 * 60 * 1000, // 2 minutes - reduced for better data freshness
-    cacheTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes (replaced cacheTime with gcTime)
   });
 };
