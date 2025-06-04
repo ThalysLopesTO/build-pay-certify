@@ -24,7 +24,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export const useTimesheetForm = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const submitMutation = useTimesheetSubmission();
 
   const form = useForm<FormData>({
@@ -53,7 +53,7 @@ export const useTimesheetForm = () => {
   );
 
   const hourlyRate = parseFloat(user?.user_metadata?.hourly_rate || '25');
-  // Fix: Include additional expense in gross pay calculation
+  // Calculate gross pay for preview only - this won't be sent to the database
   const grossPay = (totalHours * hourlyRate) + (watchedValues.additionalExpense || 0);
 
   const onSubmit = (data: FormData) => {
@@ -62,7 +62,9 @@ export const useTimesheetForm = () => {
       userId: user?.id, 
       companyId: user?.companyId, 
       email: user?.email,
-      isAuthenticated: !!user?.id 
+      isAuthenticated: !!user?.id,
+      hasSession: !!session,
+      sessionValid: !!session?.access_token
     });
     
     // Enhanced validation checks
@@ -70,6 +72,16 @@ export const useTimesheetForm = () => {
       toast({
         title: "No Hours Entered",
         description: "Please enter at least one hour for the week",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!session?.access_token) {
+      console.error('❌ Session validation failed: No valid session');
+      toast({
+        title: "Authentication Error",
+        description: "Your session has expired. Please log out and log back in.",
         variant: "destructive",
       });
       return;

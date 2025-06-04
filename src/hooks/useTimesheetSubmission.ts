@@ -20,7 +20,7 @@ interface TimesheetData {
 }
 
 export const useTimesheetSubmission = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -28,12 +28,33 @@ export const useTimesheetSubmission = () => {
       console.log('🔍 Starting timesheet submission with user:', { 
         userId: user?.id, 
         companyId: user?.companyId,
-        email: user?.email 
+        email: user?.email,
+        hasSession: !!session,
+        sessionValid: !!session?.access_token
       });
 
-      if (!user?.id || !user?.companyId) {
-        console.error('❌ Authentication check failed:', { userId: user?.id, companyId: user?.companyId });
-        throw new Error('User not authenticated or company not assigned');
+      // Enhanced authentication checks
+      if (!session?.access_token) {
+        console.error('❌ No valid session found');
+        throw new Error('Please log out and log back in to submit timesheets');
+      }
+
+      if (!user?.id) {
+        console.error('❌ No user ID found');
+        throw new Error('User not authenticated. Please log out and log back in.');
+      }
+
+      if (!user?.companyId) {
+        console.error('❌ No company ID found for user');
+        throw new Error('No company assigned to your account. Please contact your administrator.');
+      }
+
+      // Validate timesheet data
+      const totalHours = data.mondayHours + data.tuesdayHours + data.wednesdayHours + 
+                        data.thursdayHours + data.fridayHours + data.saturdayHours + data.sundayHours;
+      
+      if (totalHours === 0) {
+        throw new Error('Please enter at least one hour for the week');
       }
 
       // Only send the required fields - let database calculate total_hours and gross_pay
@@ -57,6 +78,7 @@ export const useTimesheetSubmission = () => {
 
       console.log('📝 Submitting timesheet to database with payload:', timesheetPayload);
 
+      // Make sure we're using the authenticated session
       const { data: result, error } = await supabase
         .from('weekly_timesheets')
         .insert([timesheetPayload])
@@ -74,7 +96,7 @@ export const useTimesheetSubmission = () => {
         
         // Provide more specific error messages based on the actual error
         if (error.code === '42501') {
-          throw new Error('Permission denied: Unable to submit timesheet. Please contact your administrator.');
+          throw new Error('Permission denied. Please ensure you are logged in and try again. If the problem persists, contact your administrator.');
         }
         
         if (error.code === 'PGRST301') {
@@ -83,6 +105,10 @@ export const useTimesheetSubmission = () => {
         
         if (error.message?.includes('duplicate key')) {
           throw new Error('A timesheet for this week already exists. Please edit the existing timesheet instead.');
+        }
+
+        if (error.message?.includes('violates row-level security')) {
+          throw new Error('Security policy violation. Please log out and log back in, then try again.');
         }
         
         throw new Error(error.message || 'Failed to submit timesheet');
