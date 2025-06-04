@@ -423,6 +423,7 @@ export type Database = {
           id: string
           jobsite_id: string
           monday_hours: number | null
+          notes: string | null
           saturday_hours: number | null
           status: string
           submitted_by: string
@@ -444,6 +445,7 @@ export type Database = {
           id?: string
           jobsite_id: string
           monday_hours?: number | null
+          notes?: string | null
           saturday_hours?: number | null
           status?: string
           submitted_by: string
@@ -465,6 +467,7 @@ export type Database = {
           id?: string
           jobsite_id?: string
           monday_hours?: number | null
+          notes?: string | null
           saturday_hours?: number | null
           status?: string
           submitted_by?: string

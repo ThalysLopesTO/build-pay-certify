@@ -16,6 +16,7 @@ interface TimesheetData {
   sundayHours: number;
   hourlyRate: number;
   additionalExpense?: number;
+  notes?: string;
 }
 
 export const useTimesheetSubmission = () => {
@@ -42,6 +43,7 @@ export const useTimesheetSubmission = () => {
         sunday_hours: data.sundayHours,
         hourly_rate: data.hourlyRate,
         additional_expense: data.additionalExpense || 0,
+        notes: data.notes || '',
         status: 'pending',
       });
 
@@ -61,6 +63,7 @@ export const useTimesheetSubmission = () => {
           sunday_hours: data.sundayHours,
           hourly_rate: data.hourlyRate,
           additional_expense: data.additionalExpense || 0,
+          notes: data.notes || '',
           status: 'pending',
         })
         .select()
