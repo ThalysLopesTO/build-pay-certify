@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -74,11 +73,8 @@ const DashboardRouter = () => {
   
   console.log('✅ Routing user to dashboard based on role:', user.role);
   
-  // Super admin gets their own dashboard with full access
-  if (user.role === 'super_admin') {
-    console.log('🔥 Redirecting to Super Admin Dashboard');
-    return <SuperAdminDashboard />;
-  } else if (user.role === 'admin' || user.role === 'payroll') {
+  // Route based on user role
+  if (user.role === 'admin' || user.role === 'payroll') {
     return <AdminDashboard />;
   } else if (user.role === 'foreman') {
     return <ForemanDashboard />;
@@ -88,7 +84,7 @@ const DashboardRouter = () => {
 };
 
 const AppContent = () => {
-  const { isAuthenticated, loading, companyError, logout } = useAuth();
+  const { isAuthenticated, loading, companyError, logout, user } = useAuth();
 
   console.log('🏠 AppContent render:', { isAuthenticated, loading, companyError });
 
@@ -122,7 +118,7 @@ const AppContent = () => {
         <Route 
           path="/super-admin" 
           element={
-            isAuthenticated ? (
+            isAuthenticated && user?.role === 'super_admin' ? (
               <SuperAdminDashboard />
             ) : (
               <Navigate to="/super-admin-login" replace />

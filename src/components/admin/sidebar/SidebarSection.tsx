@@ -8,13 +8,11 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface MenuItem {
   id: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  superAdminOnly?: boolean;
 }
 
 interface SidebarSectionProps {
@@ -25,27 +23,12 @@ interface SidebarSectionProps {
 }
 
 const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectionProps) => {
-  const { user } = useAuth();
-  
-  // Filter items based on user role
-  const filteredItems = items.filter(item => {
-    if (item.superAdminOnly) {
-      return user?.role === 'super_admin';
-    }
-    return true;
-  });
-
-  // Don't render section if no items remain after filtering
-  if (filteredItems.length === 0) {
-    return null;
-  }
-
   return (
     <SidebarGroup>
       {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarGroupContent>
         <SidebarMenu>
-          {filteredItems.map((item) => {
+          {items.map((item) => {
             const Icon = item.icon;
             return (
               <SidebarMenuItem key={item.id}>

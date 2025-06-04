@@ -13,8 +13,6 @@ import InvoiceTracker from '@/components/admin/InvoiceTracker';
 import ProjectBillingOverview from '@/components/admin/ProjectBillingOverview';
 import CompanySettings from '@/components/admin/CompanySettings';
 import SystemSettings from '@/components/admin/SystemSettings';
-import LicenseRequests from '@/components/admin/LicenseRequests';
-import SuperAdminDashboard from './SuperAdminDashboard';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const AdminDashboard = () => {
@@ -35,20 +33,17 @@ const AdminDashboard = () => {
             </div>
           </div>
         );
-      case 'super-admin':
-        if (user?.role === 'super_admin') {
-          return <SuperAdminDashboard />;
-        }
+      case 'payroll-summary':
+        return <PayrollSummary />;
+      case 'employee-timesheets':
         return (
           <div className="p-6">
-            <div className="text-center text-red-600">
-              <h2 className="text-xl font-bold mb-2">Access Denied</h2>
-              <p>You do not have permission to access the Super Admin Panel.</p>
+            <h1 className="text-2xl font-bold mb-6">Employee Timesheets</h1>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <p className="text-gray-600">Employee timesheet management coming soon...</p>
             </div>
           </div>
         );
-      case 'payroll-summary':
-        return <PayrollSummary />;
       case 'employee-management':
         return <EmployeeManagement />;
       case 'employee-registration':
@@ -67,8 +62,6 @@ const AdminDashboard = () => {
         return <CompanySettings />;
       case 'system-settings':
         return <SystemSettings />;
-      case 'license-requests':
-        return <LicenseRequests />;
       default:
         return (
           <div className="p-6">

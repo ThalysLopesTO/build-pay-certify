@@ -8,18 +8,13 @@ import {
   DollarSign, 
   Calendar,
   Package,
-  Settings,
-  UserCheck,
-  TrendingUp,
-  Shield,
-  Crown
+  Settings
 } from 'lucide-react';
 
-// Menu items grouped by category
+// Menu items grouped by category for regular admin users
 export const groupedMenuItems = {
   main: [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'super-admin', label: 'Super Admin Panel', icon: Crown, superAdminOnly: true },
   ],
   payroll: [
     { id: 'payroll-summary', label: 'Payroll Summary', icon: DollarSign },
@@ -29,12 +24,11 @@ export const groupedMenuItems = {
     { id: 'jobsite-management', label: 'Jobsite Management', icon: MapPin },
     { id: 'material-requests', label: 'Material Requests', icon: Package },
     { id: 'invoice-management', label: 'Invoice Management', icon: FileText },
-    { id: 'invoice-tracker', label: 'Invoice Tracker', icon: TrendingUp },
+    { id: 'invoice-tracker', label: 'Invoice Tracker', icon: FileText },
   ],
   employees: [
     { id: 'employee-management', label: 'Employee Management', icon: Users },
-    { id: 'employee-registration', label: 'Employee Registration', icon: UserCheck },
-    { id: 'license-requests', label: 'License Requests', icon: Shield },
+    { id: 'employee-registration', label: 'Employee Registration', icon: Users },
   ],
   operations: [
     { id: 'project-billing', label: 'Project Billing', icon: Building },

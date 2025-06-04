@@ -14,7 +14,7 @@ const InvoiceManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Invoice Management</h1>
-          <p className="text-slate-600">Create, track, and manage client invoices</p>
+          <p className="text-slate-600">Create, track, and manage client invoices for your construction projects</p>
         </div>
       </div>
 
