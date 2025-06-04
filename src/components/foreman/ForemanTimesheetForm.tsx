@@ -57,11 +57,13 @@ const ForemanTimesheetForm = () => {
   );
 
   const hourlyRate = parseFloat(user?.user_metadata?.hourly_rate || '0');
+  // Calculate gross pay for preview only - this won't be sent to the database
   const grossPay = totalHours * hourlyRate;
 
   const onSubmit = (data: FormData) => {
     const weekStart = startOfWeek(data.weekStartDate, { weekStartsOn: 1 });
     
+    // Only send required fields - let database calculate totals
     const timesheetData = {
       jobsiteId: data.jobsiteId,
       weekStartDate: format(weekStart, 'yyyy-MM-dd'),
@@ -168,8 +170,9 @@ const ForemanTimesheetForm = () => {
                 <p className="text-2xl font-bold text-green-600">${hourlyRate.toFixed(2)}</p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-slate-600">Gross Pay</p>
+                <p className="text-sm text-slate-600">Preview Pay</p>
                 <p className="text-2xl font-bold text-orange-600">${grossPay.toFixed(2)}</p>
+                <p className="text-xs text-slate-500">Calculated by system</p>
               </div>
             </div>
 

@@ -36,13 +36,7 @@ export const useTimesheetSubmission = () => {
         throw new Error('User not authenticated or company not assigned');
       }
 
-      // Calculate total hours for verification
-      const totalHours = data.mondayHours + data.tuesdayHours + data.wednesdayHours + 
-                        data.thursdayHours + data.fridayHours + data.saturdayHours + data.sundayHours;
-
-      // Calculate gross pay
-      const grossPay = (totalHours * data.hourlyRate) + (data.additionalExpense || 0);
-
+      // Only send the required fields - let database calculate total_hours and gross_pay
       const timesheetPayload = {
         submitted_by: user.id,
         company_id: user.companyId,
@@ -55,17 +49,14 @@ export const useTimesheetSubmission = () => {
         friday_hours: data.fridayHours,
         saturday_hours: data.saturdayHours,
         sunday_hours: data.sundayHours,
-        total_hours: totalHours,
         hourly_rate: data.hourlyRate,
         additional_expense: data.additionalExpense || 0,
         notes: data.notes || '',
-        gross_pay: grossPay,
         status: 'pending',
       };
 
       console.log('📝 Submitting timesheet to database with payload:', timesheetPayload);
 
-      // Use a more specific insert approach to avoid any RLS issues
       const { data: result, error } = await supabase
         .from('weekly_timesheets')
         .insert([timesheetPayload])
