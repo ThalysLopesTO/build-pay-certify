@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +12,7 @@ export interface AuthUser extends User {
   position?: string;
   firstName?: string;
   lastName?: string;
+  pendingApproval?: boolean;
 }
 
 interface AuthContextType {
@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [companyError, setCompanyError] = useState<string | null>(null);
 
   console.log('🔍 Auth State Debug:', { 
-    user: user ? { id: user.id, email: user.email, companyId: user.companyId } : null, 
+    user: user ? { id: user.id, email: user.email, companyId: user.companyId, pendingApproval: user.pendingApproval } : null, 
     hasSession: !!session, 
     loading, 
     companyError 
@@ -80,6 +80,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null;
       }
 
+      // Check if user is pending approval
+      if (profile.pending_approval) {
+        console.warn('⚠️ User is pending approval');
+        setCompanyError('Your company account is pending approval. You will receive an email notification once approved.');
+        return null;
+      }
+
       if (!profile.company_id) {
         console.warn('⚠️ User not assigned to company');
         setCompanyError('You are not assigned to a company. Please contact your system administrator.');
@@ -89,6 +96,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!profile.companies) {
         console.warn('⚠️ Company information missing');
         setCompanyError('Company information is missing. Please contact your system administrator.');
+        return null;
+      }
+
+      if (profile.companies.status === 'pending') {
+        console.warn('⚠️ Company is pending approval');
+        setCompanyError('Your company account is pending approval. You will receive an email notification once approved.');
         return null;
       }
 
@@ -136,7 +149,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             trade: profile.trade || 'General',
             position: profile.position || 'Worker',
             firstName: profile.first_name || '',
-            lastName: profile.last_name || ''
+            lastName: profile.last_name || '',
+            pendingApproval: profile.pending_approval || false
           };
           console.log('✅ Setting auth user:', authUser);
           setUser(authUser);

@@ -1,87 +1,40 @@
 
 import { 
+  Home, 
   DollarSign, 
   Users, 
-  Building, 
-  Settings, 
-  Inbox, 
+  UserPlus, 
+  Package, 
   MapPin, 
-  UserPlus,
-  Clock,
-  Award,
-  Home,
-  FileText
+  FileText, 
+  Award, 
+  Building, 
+  Settings,
+  Shield
 } from 'lucide-react';
-import { AdminMenuItem } from './types';
-
-export const adminMenuItems: AdminMenuItem[] = [
-  {
-    id: 'dashboard',
-    title: 'Dashboard',
-    icon: Home,
-    section: 'main'
-  },
-  {
-    id: 'payroll',
-    title: 'Weekly Timesheets',
-    icon: Clock,
-    section: 'payroll'
-  },
-  {
-    id: 'invoices',
-    title: 'Invoice Management',
-    icon: FileText,
-    section: 'management'
-  },
-  {
-    id: 'jobsites',
-    title: 'Job Sites',
-    icon: MapPin,
-    section: 'operations'
-  },
-  {
-    id: 'register',
-    title: 'Add New Employee',
-    icon: UserPlus,
-    section: 'employees'
-  },
-  {
-    id: 'employees',
-    title: 'Employee Directory',
-    icon: Users,
-    section: 'employees'
-  },
-  {
-    id: 'materials',
-    title: 'Material Request Inbox',
-    icon: Inbox,
-    section: 'operations'
-  },
-  {
-    id: 'certificates',
-    title: 'Certificate Tracker',
-    icon: Award,
-    section: 'employees'
-  },
-  {
-    id: 'projects',
-    title: 'Projects',
-    icon: Building,
-    section: 'operations'
-  },
-  {
-    id: 'settings',
-    title: 'Settings',
-    icon: Settings,
-    section: 'system'
-  }
-];
 
 export const groupedMenuItems = {
-  main: adminMenuItems.filter(item => item.section === 'main'),
-  payroll: adminMenuItems.filter(item => item.section === 'payroll'),
-  management: adminMenuItems.filter(item => item.section === 'management'),
-  employees: adminMenuItems.filter(item => item.section === 'employees'),
-  operations: adminMenuItems.filter(item => item.section === 'operations'),
-  system: adminMenuItems.filter(item => item.section === 'system')
+  main: [
+    { id: 'dashboard', label: 'Dashboard', icon: Home }
+  ],
+  payroll: [
+    { id: 'payroll', label: 'Payroll Summary', icon: DollarSign }
+  ],
+  management: [
+    { id: 'jobsites', label: 'Jobsite Management', icon: MapPin },
+    { id: 'projects', label: 'Project Management', icon: Building },
+    { id: 'invoices', label: 'Invoice Management', icon: FileText }
+  ],
+  employees: [
+    { id: 'employees', label: 'Employee Management', icon: Users },
+    { id: 'register', label: 'Employee Registration', icon: UserPlus },
+    { id: 'certificates', label: 'Certificate Tracker', icon: Award }
+  ],
+  operations: [
+    { id: 'materials', label: 'Material Requests', icon: Package }
+  ],
+  system: [
+    { id: 'license-requests', label: 'License Requests', icon: Shield, superAdminOnly: true },
+    { id: 'settings', label: 'System Settings', icon: Settings }
+  ]
 };

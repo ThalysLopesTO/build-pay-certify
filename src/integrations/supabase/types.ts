@@ -39,6 +39,71 @@ export type Database = {
         }
         Relationships: []
       }
+      company_registration_requests: {
+        Row: {
+          admin_email: string
+          admin_first_name: string
+          admin_last_name: string
+          admin_user_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          company_address: string | null
+          company_email: string
+          company_id: string | null
+          company_name: string
+          company_phone: string | null
+          created_at: string
+          id: string
+          rejection_reason: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_email: string
+          admin_first_name: string
+          admin_last_name: string
+          admin_user_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          company_address?: string | null
+          company_email: string
+          company_id?: string | null
+          company_name: string
+          company_phone?: string | null
+          created_at?: string
+          id?: string
+          rejection_reason?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_email?: string
+          admin_first_name?: string
+          admin_last_name?: string
+          admin_user_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          company_address?: string | null
+          company_email?: string
+          company_id?: string | null
+          company_name?: string
+          company_phone?: string | null
+          created_at?: string
+          id?: string
+          rejection_reason?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_registration_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_settings: {
         Row: {
           company_address: string | null
@@ -296,6 +361,7 @@ export type Database = {
           hourly_rate: number | null
           id: string
           last_name: string | null
+          pending_approval: boolean | null
           position: string | null
           role: string
           trade: string | null
@@ -309,6 +375,7 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           last_name?: string | null
+          pending_approval?: boolean | null
           position?: string | null
           role?: string
           trade?: string | null
@@ -322,6 +389,7 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           last_name?: string | null
+          pending_approval?: boolean | null
           position?: string | null
           role?: string
           trade?: string | null

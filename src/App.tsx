@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/SupabaseAuthContext";
 import LoginForm from "./components/LoginForm";
+import CompanyRegistration from "./pages/CompanyRegistration";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ForemanDashboard from "./pages/ForemanDashboard";
@@ -82,7 +83,7 @@ const DashboardRouter = () => {
   console.log('✅ Routing user to dashboard based on role:', user.role);
   
   // Route based on user role
-  if (user.role === 'admin' || user.role === 'payroll') {
+  if (user.role === 'admin' || user.role === 'payroll' || user.role === 'super_admin') {
     return <AdminDashboard />;
   } else if (user.role === 'foreman') {
     return <ForemanDashboard />;
@@ -129,6 +130,10 @@ const AppContent = () => {
           <Route 
             path="/login" 
             element={!isAuthenticated ? <LoginForm /> : <Navigate to="/" replace />} 
+          />
+          <Route 
+            path="/register-company" 
+            element={!isAuthenticated ? <CompanyRegistration /> : <Navigate to="/" replace />} 
           />
           <Route 
             path="/" 
