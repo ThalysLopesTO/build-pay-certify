@@ -85,7 +85,7 @@ export const useAuthState = () => {
       try {
         console.log('🚀 Initializing auth...');
         
-        // Get current session
+        // Get current session without making any user table queries
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {

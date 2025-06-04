@@ -36,6 +36,10 @@ export const useTimesheetSubmission = () => {
         throw new Error('User not authenticated or company not assigned');
       }
 
+      // Calculate total hours for verification
+      const totalHours = data.mondayHours + data.tuesdayHours + data.wednesdayHours + 
+                        data.thursdayHours + data.fridayHours + data.saturdayHours + data.sundayHours;
+
       const timesheetPayload = {
         submitted_by: user.id,
         company_id: user.companyId,
@@ -48,6 +52,7 @@ export const useTimesheetSubmission = () => {
         friday_hours: data.fridayHours,
         saturday_hours: data.saturdayHours,
         sunday_hours: data.sundayHours,
+        total_hours: totalHours,
         hourly_rate: data.hourlyRate,
         additional_expense: data.additionalExpense || 0,
         notes: data.notes || '',
@@ -71,8 +76,8 @@ export const useTimesheetSubmission = () => {
           code: error.code
         });
         
-        // Provide more specific error messages
-        if (error.message.includes('permission denied')) {
+        // Provide more specific error messages based on the actual error
+        if (error.code === '42501') {
           throw new Error('Permission denied: Unable to submit timesheet. Please ensure you are logged in and have the correct permissions.');
         }
         
@@ -80,7 +85,7 @@ export const useTimesheetSubmission = () => {
           throw new Error('Authentication error: Unable to verify user identity. Please try logging out and back in.');
         }
         
-        throw error;
+        throw new Error(error.message || 'Failed to submit timesheet');
       }
 
       console.log('✅ Timesheet submitted successfully:', result);
