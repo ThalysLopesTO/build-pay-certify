@@ -15,6 +15,7 @@ interface TimesheetData {
   saturdayHours: number;
   sundayHours: number;
   hourlyRate: number;
+  additionalExpense?: number;
 }
 
 export const useTimesheetSubmission = () => {
@@ -27,7 +28,22 @@ export const useTimesheetSubmission = () => {
         throw new Error('User not authenticated or company not assigned');
       }
 
-      console.log('Submitting timesheet:', data);
+      console.log('Submitting timesheet to database:', {
+        submitted_by: user.id,
+        company_id: user.companyId,
+        jobsite_id: data.jobsiteId,
+        week_start_date: data.weekStartDate,
+        monday_hours: data.mondayHours,
+        tuesday_hours: data.tuesdayHours,
+        wednesday_hours: data.wednesdayHours,
+        thursday_hours: data.thursdayHours,
+        friday_hours: data.fridayHours,
+        saturday_hours: data.saturdayHours,
+        sunday_hours: data.sundayHours,
+        hourly_rate: data.hourlyRate,
+        additional_expense: data.additionalExpense || 0,
+        status: 'pending',
+      });
 
       const { data: result, error } = await supabase
         .from('weekly_timesheets')
@@ -44,6 +60,8 @@ export const useTimesheetSubmission = () => {
           saturday_hours: data.saturdayHours,
           sunday_hours: data.sundayHours,
           hourly_rate: data.hourlyRate,
+          additional_expense: data.additionalExpense || 0,
+          status: 'pending',
         })
         .select()
         .single();
@@ -53,21 +71,23 @@ export const useTimesheetSubmission = () => {
         throw error;
       }
 
+      console.log('Timesheet submitted successfully:', result);
       return result;
     },
     onSuccess: (data) => {
       console.log('Timesheet submitted successfully:', data);
       toast({
         title: "Timesheet Submitted",
-        description: `Weekly timesheet for ${data.total_hours} hours submitted successfully`,
+        description: `Weekly timesheet for ${data.total_hours || 0} hours submitted successfully`,
       });
       queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
     },
     onError: (error) => {
       console.error('Failed to submit timesheet:', error);
       toast({
         title: "Submission Failed",
-        description: "Failed to submit timesheet. Please try again.",
+        description: error.message || "Failed to submit timesheet. Please try again.",
         variant: "destructive",
       });
     },

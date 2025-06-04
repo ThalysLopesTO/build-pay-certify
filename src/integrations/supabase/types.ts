@@ -414,6 +414,7 @@ export type Database = {
       }
       weekly_timesheets: {
         Row: {
+          additional_expense: number | null
           company_id: string | null
           created_at: string
           friday_hours: number | null
@@ -434,6 +435,7 @@ export type Database = {
           week_start_date: string
         }
         Insert: {
+          additional_expense?: number | null
           company_id?: string | null
           created_at?: string
           friday_hours?: number | null
@@ -454,6 +456,7 @@ export type Database = {
           week_start_date: string
         }
         Update: {
+          additional_expense?: number | null
           company_id?: string | null
           created_at?: string
           friday_hours?: number | null

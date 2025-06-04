@@ -17,6 +17,7 @@ const formSchema = z.object({
   fridayHours: z.number().min(0).max(24),
   saturdayHours: z.number().min(0).max(24),
   sundayHours: z.number().min(0).max(24),
+  additionalExpense: z.number().min(0).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -37,6 +38,7 @@ export const useTimesheetForm = () => {
       fridayHours: 0,
       saturdayHours: 0,
       sundayHours: 0,
+      additionalExpense: 0,
     },
   });
 
@@ -52,10 +54,21 @@ export const useTimesheetForm = () => {
   const grossPay = totalHours * hourlyRate;
 
   const onSubmit = (data: FormData) => {
+    console.log('Form submission started with data:', data);
+    
     if (totalHours === 0) {
       toast({
         title: "No Hours Entered",
         description: "Please enter at least one hour for the week",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.id) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to submit a timesheet",
         variant: "destructive",
       });
       return;
@@ -77,14 +90,11 @@ export const useTimesheetForm = () => {
       saturdayHours: data.saturdayHours,
       sundayHours: data.sundayHours,
       hourlyRate: hourlyRate,
+      additionalExpense: data.additionalExpense || 0,
     };
     
+    console.log('Submitting timesheet with processed data:', timesheetData);
     submitMutation.mutate(timesheetData);
-    
-    // Reset form on successful submission
-    if (!submitMutation.isError) {
-      form.reset();
-    }
   };
 
   // Generate week ending dates for the select dropdown (next 8 weeks)

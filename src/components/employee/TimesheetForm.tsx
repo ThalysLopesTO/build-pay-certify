@@ -7,6 +7,7 @@ import { useTimesheetForm } from '@/hooks/useTimesheetForm';
 import TimesheetHeader from './timesheet/TimesheetHeader';
 import JobsiteWeekSelector from './timesheet/JobsiteWeekSelector';
 import DailyHoursGrid from './timesheet/DailyHoursGrid';
+import ExpenseField from './timesheet/ExpenseField';
 import TimesheetSummary from './timesheet/TimesheetSummary';
 
 const TimesheetForm = () => {
@@ -33,6 +34,8 @@ const TimesheetForm = () => {
             />
 
             <DailyHoursGrid control={form.control} />
+
+            <ExpenseField control={form.control} />
 
             <TimesheetSummary 
               totalHours={totalHours}
