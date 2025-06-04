@@ -57,7 +57,7 @@ export const useTimesheetSubmission = () => {
         throw new Error('Please enter at least one hour for the week');
       }
 
-      // Only send the required fields - let database calculate total_hours and gross_pay
+      // Create the payload - do NOT include total_hours or gross_pay as they are calculated by the trigger
       const timesheetPayload = {
         submitted_by: user.id,
         company_id: user.companyId,
@@ -78,7 +78,6 @@ export const useTimesheetSubmission = () => {
 
       console.log('📝 Submitting timesheet to database with payload:', timesheetPayload);
 
-      // Make sure we're using the authenticated session
       const { data: result, error } = await supabase
         .from('weekly_timesheets')
         .insert([timesheetPayload])
