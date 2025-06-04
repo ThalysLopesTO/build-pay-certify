@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/SupabaseAuthContext";
 import LoginForm from "./components/LoginForm";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
 import CompanyRegistration from "./pages/CompanyRegistration";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -110,6 +112,10 @@ const AppContent = () => {
           element={!isAuthenticated ? <LoginForm /> : <Navigate to="/" replace />} 
         />
         <Route 
+          path="/super-admin-login" 
+          element={!isAuthenticated ? <SuperAdminLogin /> : <Navigate to="/" replace />} 
+        />
+        <Route 
           path="/register-company" 
           element={!isAuthenticated ? <CompanyRegistration /> : <Navigate to="/" replace />} 
         />
@@ -119,7 +125,7 @@ const AppContent = () => {
             isAuthenticated ? (
               <SuperAdminDashboard />
             ) : (
-              <Navigate to="/login" replace />
+              <Navigate to="/super-admin-login" replace />
             )
           } 
         />

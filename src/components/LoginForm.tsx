@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/SupabaseAuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,8 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { Building } from 'lucide-react';
-import AdminUserCreator from './AdminUserCreator';
-import SuperAdminUserChecker from './SuperAdminUserChecker';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -49,8 +48,7 @@ const LoginForm = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900">
-      <div className="w-full max-w-md space-y-6">
-        {/* Login Form */}
+      <div className="w-full max-w-md">
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-orange-600">
@@ -115,12 +113,6 @@ const LoginForm = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Admin User Creator - Temporary for testing */}
-        <AdminUserCreator />
-        
-        {/* Super Admin User Checker */}
-        <SuperAdminUserChecker />
       </div>
     </div>
   );
