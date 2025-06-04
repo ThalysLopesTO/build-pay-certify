@@ -11,7 +11,7 @@ import {
 
 interface MenuItem {
   id: string;
-  label: string;
+  title: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
@@ -37,7 +37,7 @@ const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectio
                   isActive={activeTab === item.id}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
+                  <span>{item.title}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );

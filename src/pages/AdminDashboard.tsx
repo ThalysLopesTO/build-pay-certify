@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import AdminSidebar from '../components/admin/AdminSidebar';
-import AdminDashboardContent from '../components/admin/AdminDashboardContent';
+import AdminDashboardContent from '../components/admin/dashboard/AdminDashboardContent';
 import EmployeeManagement from '../components/admin/EmployeeManagement';
 import EmployeeRegistration from '../components/admin/EmployeeRegistration';
 import EmployeeTimesheets from '../components/admin/EmployeeTimesheets';
@@ -20,7 +21,7 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <AdminDashboardContent />;
+        return <AdminDashboardContent setActiveTab={setActiveTab} />;
       case 'employees':
         return <EmployeeManagement />;
       case 'employee-registration':
@@ -42,7 +43,7 @@ const AdminDashboard = () => {
       case 'settings':
         return <UserSettings />;
       default:
-        return <AdminDashboardContent />;
+        return <AdminDashboardContent setActiveTab={setActiveTab} />;
     }
   };
 

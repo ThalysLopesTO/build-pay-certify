@@ -55,7 +55,12 @@ export const useAttentionReports = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as AttentionReport[];
+      
+      // Transform the data to match our interface
+      return (data || []).map(report => ({
+        ...report,
+        attachments: report.attention_report_attachments || []
+      })) as AttentionReport[];
     },
     enabled: !!user?.companyId,
   });
@@ -80,7 +85,12 @@ export const useMyAttentionReports = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as AttentionReport[];
+      
+      // Transform the data to match our interface
+      return (data || []).map(report => ({
+        ...report,
+        attachments: report.attention_report_attachments || []
+      })) as AttentionReport[];
     },
     enabled: !!user?.id,
   });
