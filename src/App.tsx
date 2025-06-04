@@ -53,7 +53,7 @@ const LoadingScreen = () => (
 const DashboardRouter = () => {
   const { user, loading, companyError, logout } = useAuth();
   
-  console.log('📊 DashboardRouter state:', { user: user?.email, loading, companyError });
+  console.log('📊 DashboardRouter state:', { user: user?.email, loading, companyError, role: user?.role });
   
   if (loading) {
     console.log('⏳ Dashboard loading...');
@@ -72,7 +72,9 @@ const DashboardRouter = () => {
   
   console.log('✅ Routing user to dashboard based on role:', user.role);
   
+  // Super admin gets their own dashboard with full access
   if (user.role === 'super_admin') {
+    console.log('🔥 Redirecting to Super Admin Dashboard');
     return <SuperAdminDashboard />;
   } else if (user.role === 'admin' || user.role === 'payroll') {
     return <AdminDashboard />;

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/SupabaseAuthContext';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { Building } from 'lucide-react';
 import AdminUserCreator from './AdminUserCreator';
+import SuperAdminUserChecker from './SuperAdminUserChecker';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -118,6 +118,9 @@ const LoginForm = () => {
 
         {/* Admin User Creator - Temporary for testing */}
         <AdminUserCreator />
+        
+        {/* Super Admin User Checker */}
+        <SuperAdminUserChecker />
       </div>
     </div>
   );
