@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +34,10 @@ const CompanyRegistration = () => {
     setIsLoading(true);
 
     try {
+      console.log('🚀 Starting company registration process...');
+      
       // First, create the auth user
+      console.log('📝 Creating auth user for:', formData.adminEmail);
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.adminEmail,
         password: formData.password,
@@ -49,6 +51,7 @@ const CompanyRegistration = () => {
       });
 
       if (authError) {
+        console.error('❌ Auth user creation failed:', authError);
         toast({
           title: "Registration Error",
           description: authError.message,
@@ -58,6 +61,7 @@ const CompanyRegistration = () => {
       }
 
       if (!authData.user) {
+        console.error('❌ No user returned from auth signup');
         toast({
           title: "Registration Error",
           description: "Failed to create user account",
@@ -66,7 +70,10 @@ const CompanyRegistration = () => {
         return;
       }
 
+      console.log('✅ Auth user created successfully:', authData.user.id);
+
       // Create company with pending status
+      console.log('🏢 Creating company record...');
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert({
@@ -77,15 +84,19 @@ const CompanyRegistration = () => {
         .single();
 
       if (companyError) {
+        console.error('❌ Company creation failed:', companyError);
         toast({
           title: "Registration Error",
-          description: "Failed to create company record",
+          description: `Failed to create company record: ${companyError.message}`,
           variant: "destructive"
         });
         return;
       }
 
+      console.log('✅ Company created successfully:', companyData.id);
+
       // Create user profile with pending approval
+      console.log('👤 Creating user profile...');
       const { error: profileError } = await supabase
         .from('user_profiles')
         .insert({
@@ -98,15 +109,19 @@ const CompanyRegistration = () => {
         });
 
       if (profileError) {
+        console.error('❌ User profile creation failed:', profileError);
         toast({
           title: "Registration Error",
-          description: "Failed to create user profile",
+          description: `Failed to create user profile: ${profileError.message}`,
           variant: "destructive"
         });
         return;
       }
 
+      console.log('✅ User profile created successfully');
+
       // Create registration request record
+      console.log('📋 Creating registration request...');
       const { error: requestError } = await supabase
         .from('company_registration_requests')
         .insert({
@@ -123,13 +138,17 @@ const CompanyRegistration = () => {
         });
 
       if (requestError) {
+        console.error('❌ Registration request creation failed:', requestError);
         toast({
           title: "Registration Error",
-          description: "Failed to create registration request",
+          description: `Failed to create registration request: ${requestError.message}`,
           variant: "destructive"
         });
         return;
       }
+
+      console.log('✅ Registration request created successfully');
+      console.log('🎉 Company registration process completed successfully!');
 
       setIsSubmitted(true);
       toast({
@@ -138,10 +157,10 @@ const CompanyRegistration = () => {
       });
 
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('💥 Unexpected error during registration:', error);
       toast({
         title: "Registration Error",
-        description: "An unexpected error occurred during registration",
+        description: "Something went wrong. Please try again later or contact support.",
         variant: "destructive"
       });
     } finally {
