@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -61,6 +62,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('user_id', userId)
         .single();
 
+      console.log('📋 Profile query result:', { profile, profileError });
+
       if (profileError) {
         console.error('❌ Error fetching user profile:', profileError);
         
@@ -79,6 +82,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCompanyError('User profile not found. Please contact your system administrator.');
         return null;
       }
+
+      console.log('📊 Profile loaded:', profile);
 
       // Check if user is pending approval
       if (profile.pending_approval) {
@@ -99,6 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null;
       }
 
+      console.log('🏢 Company loaded:', profile.companies);
+
       if (profile.companies.status === 'pending') {
         console.warn('⚠️ Company is pending approval');
         setCompanyError('Your company account is pending approval. You will receive an email notification once approved.');
@@ -106,12 +113,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (profile.companies.status !== 'active') {
-        console.warn('⚠️ Company not active');
+        console.warn('⚠️ Company not active, status:', profile.companies.status);
         setCompanyError('Your company account is not active. Please contact your system administrator.');
         return null;
       }
 
-      console.log('✅ User profile loaded successfully:', profile);
+      console.log('✅ User profile and company loaded successfully');
       setCompanyError(null);
       return profile;
     } catch (error) {
@@ -155,7 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('✅ Setting auth user:', authUser);
           setUser(authUser);
         } else {
-          console.warn('⚠️ Profile fetch failed, keeping user null');
+          console.warn('⚠️ Profile fetch failed, setting user to null');
           setUser(null);
         }
       } else {
