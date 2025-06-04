@@ -20,6 +20,7 @@ export const useAuthState = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let authSubscription: any = null;
 
     // Function to handle auth state changes
     const handleAuthStateChange = async (event: string, session: Session | null) => {
@@ -31,31 +32,39 @@ export const useAuthState = () => {
       if (session?.user) {
         console.log('👤 User session found, fetching profile...');
         
-        // Fetch user profile and company data
-        const { profile, error } = await fetchUserProfile(session.user.id);
-        
-        if (!isMounted) return;
-        
-        if (profile) {
-          const authUser: AuthUser = {
-            ...session.user,
-            role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
-            companyId: profile.company_id,
-            companyName: profile.companies?.name,
-            hourlyRate: profile.hourly_rate || 25,
-            trade: profile.trade || 'General',
-            position: profile.position || 'Worker',
-            firstName: profile.first_name || '',
-            lastName: profile.last_name || '',
-            pendingApproval: profile.pending_approval || false
-          };
-          console.log('✅ Setting auth user:', authUser);
-          setUser(authUser);
-          setCompanyError(null);
-        } else {
-          console.warn('⚠️ Profile fetch failed, setting user to null');
-          setUser(null);
-          setCompanyError(error);
+        try {
+          // Fetch user profile and company data
+          const { profile, error } = await fetchUserProfile(session.user.id);
+          
+          if (!isMounted) return;
+          
+          if (profile) {
+            const authUser: AuthUser = {
+              ...session.user,
+              role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
+              companyId: profile.company_id,
+              companyName: profile.companies?.name,
+              hourlyRate: profile.hourly_rate || 25,
+              trade: profile.trade || 'General',
+              position: profile.position || 'Worker',
+              firstName: profile.first_name || '',
+              lastName: profile.last_name || '',
+              pendingApproval: profile.pending_approval || false
+            };
+            console.log('✅ Setting auth user:', authUser);
+            setUser(authUser);
+            setCompanyError(null);
+          } else {
+            console.warn('⚠️ Profile fetch failed, setting user to null');
+            setUser(null);
+            setCompanyError(error);
+          }
+        } catch (error) {
+          console.error('💥 Error in auth state change handler:', error);
+          if (isMounted) {
+            setUser(null);
+            setCompanyError('An unexpected error occurred while loading your profile.');
+          }
         }
       } else {
         console.log('🚪 No user session, clearing state');
@@ -70,7 +79,11 @@ export const useAuthState = () => {
     };
 
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+    const setupAuthListener = () => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+      authSubscription = subscription;
+      return subscription;
+    };
 
     // Check for existing session
     const initializeAuth = async () => {
@@ -92,16 +105,21 @@ export const useAuthState = () => {
         console.error('💥 Error initializing auth:', error);
         if (isMounted) {
           setLoading(false);
+          setCompanyError('Failed to initialize authentication.');
         }
       }
     };
 
+    // Set up listener first, then check for existing session
+    setupAuthListener();
     initializeAuth();
 
     return () => {
       console.log('🧹 Cleaning up auth listener');
       isMounted = false;
-      subscription.unsubscribe();
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
     };
   }, []);
 

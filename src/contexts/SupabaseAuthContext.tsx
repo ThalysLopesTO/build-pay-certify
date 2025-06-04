@@ -17,6 +17,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isCompanyAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isSuperAdmin = user?.role === 'super_admin';
 
+  // Determine authentication status more carefully
+  const isAuthenticated = !!session && !!user && !companyError;
+
+  console.log('🏗️ AuthProvider state:', {
+    hasSession: !!session,
+    hasUser: !!user,
+    hasCompanyError: !!companyError,
+    isAuthenticated,
+    loading
+  });
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -24,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login,
       signUp,
       logout: handleLogout,
-      isAuthenticated: !!session && !!user,
+      isAuthenticated,
       loading,
       isCompanyAdmin,
       isSuperAdmin,

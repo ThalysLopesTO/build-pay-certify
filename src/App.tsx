@@ -110,7 +110,8 @@ const AppContent = () => {
     );
   }
 
-  if (companyError && isAuthenticated) {
+  // Show company error even if not authenticated to handle edge cases
+  if (companyError && session) {
     console.log('🚨 Company error in app:', companyError);
     return (
       <>

@@ -25,7 +25,7 @@ export const fetchUserProfile = async (userId: string) => {
       
       // Check if user profile doesn't exist
       if (profileError.code === 'PGRST116') {
-        return { profile: null, error: 'Your user profile is not set up. Please contact your system administrator.' };
+        return { profile: null, error: 'You are not linked to any company. Please contact your administrator.' };
       }
       
       return { profile: null, error: 'Failed to load user profile. Please try logging in again.' };
@@ -33,7 +33,7 @@ export const fetchUserProfile = async (userId: string) => {
 
     if (!profile) {
       console.warn('⚠️ User profile not found');
-      return { profile: null, error: 'User profile not found. Please contact your system administrator.' };
+      return { profile: null, error: 'You are not linked to any company. Please contact your administrator.' };
     }
 
     console.log('📊 Profile loaded:', profile);
@@ -46,12 +46,12 @@ export const fetchUserProfile = async (userId: string) => {
 
     if (!profile.company_id) {
       console.warn('⚠️ User not assigned to company');
-      return { profile: null, error: 'You are not assigned to a company. Please contact your system administrator.' };
+      return { profile: null, error: 'You are not linked to any company. Please contact your administrator.' };
     }
 
     if (!profile.companies) {
       console.warn('⚠️ Company information missing');
-      return { profile: null, error: 'Company information is missing. Please contact your system administrator.' };
+      return { profile: null, error: 'Company information is missing. Please contact your administrator.' };
     }
 
     console.log('🏢 Company loaded:', profile.companies);
