@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -14,6 +13,7 @@ import InvoiceTracker from '@/components/admin/InvoiceTracker';
 import ProjectBillingOverview from '@/components/admin/ProjectBillingOverview';
 import CompanySettings from '@/components/admin/CompanySettings';
 import SystemSettings from '@/components/admin/SystemSettings';
+import EmployeeTimesheets from '@/components/admin/EmployeeTimesheets';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const AdminDashboard = () => {
@@ -27,14 +27,7 @@ const AdminDashboard = () => {
       case 'payroll-summary':
         return <PayrollSummary />;
       case 'employee-timesheets':
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6">Employee Timesheets</h1>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <p className="text-gray-600">Employee timesheet management coming soon...</p>
-            </div>
-          </div>
-        );
+        return <EmployeeTimesheets />;
       case 'employee-management':
         return <EmployeeManagement />;
       case 'employee-registration':
