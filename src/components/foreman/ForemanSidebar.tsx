@@ -17,7 +17,9 @@ import {
   Users, 
   Package,
   Inbox,
-  HardHat
+  HardHat,
+  Bell,
+  Settings
 } from 'lucide-react';
 
 interface ForemanSidebarProps {
@@ -50,13 +52,27 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
       title: 'Employee Directory',
       icon: Users,
       section: 'team'
+    },
+    {
+      id: 'attention-reports',
+      title: 'Attention Reports',
+      icon: Bell,
+      section: 'reports'
+    },
+    {
+      id: 'settings',
+      title: 'Settings',
+      icon: Settings,
+      section: 'account'
     }
   ];
 
   const groupedItems = {
     timesheet: foremanMenuItems.filter(item => item.section === 'timesheet'),
     materials: foremanMenuItems.filter(item => item.section === 'materials'),
-    team: foremanMenuItems.filter(item => item.section === 'team')
+    team: foremanMenuItems.filter(item => item.section === 'team'),
+    reports: foremanMenuItems.filter(item => item.section === 'reports'),
+    account: foremanMenuItems.filter(item => item.section === 'account')
   };
 
   return (
@@ -117,6 +133,46 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
           <SidebarGroupContent>
             <SidebarMenu>
               {groupedItems.team.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    isActive={activeTab === item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className="w-full justify-start"
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Reports</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {groupedItems.reports.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    isActive={activeTab === item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className="w-full justify-start"
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {groupedItems.account.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={activeTab === item.id}

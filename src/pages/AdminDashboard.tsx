@@ -1,66 +1,71 @@
 import React, { useState } from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import AdminSidebar from '@/components/admin/AdminSidebar';
-import Header from '@/components/Header';
-import AdminDashboardContent from '@/components/admin/dashboard/AdminDashboardContent';
-import PayrollSummary from '@/components/admin/PayrollSummary';
-import EmployeeManagement from '@/components/admin/EmployeeManagement';
-import EmployeeRegistration from '@/components/admin/EmployeeRegistration';
-import JobsiteManagement from '@/components/admin/JobsiteManagement';
-import MaterialRequestInbox from '@/components/admin/MaterialRequestInbox';
-import InvoiceManagement from '@/components/admin/InvoiceManagement';
-import InvoiceTracker from '@/components/admin/InvoiceTracker';
-import ProjectBillingOverview from '@/components/admin/ProjectBillingOverview';
-import CompanySettings from '@/components/admin/CompanySettings';
-import SystemSettings from '@/components/admin/SystemSettings';
-import EmployeeTimesheets from '@/components/admin/EmployeeTimesheets';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
+import Header from '../components/Header';
+import AdminSidebar from '../components/admin/AdminSidebar';
+import AdminDashboardContent from '../components/admin/AdminDashboardContent';
+import EmployeeManagement from '../components/admin/EmployeeManagement';
+import EmployeeRegistration from '../components/admin/EmployeeRegistration';
+import EmployeeTimesheets from '../components/admin/EmployeeTimesheets';
+import PayrollSummary from '../components/admin/PayrollSummary';
+import MaterialRequestInbox from '../components/admin/MaterialRequestInbox';
+import InvoiceManagement from '../components/admin/InvoiceManagement';
+import JobsiteManagement from '../components/admin/JobsiteManagement';
+import CompanySettings from '../components/admin/CompanySettings';
+import UserSettings from '../components/common/UserSettings';
+import AttentionReportsInbox from '../components/admin/AttentionReportsInbox';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { user } = useAuth();
 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <AdminDashboardContent setActiveTab={setActiveTab} />;
-      case 'payroll-summary':
-        return <PayrollSummary />;
-      case 'employee-timesheets':
-        return <EmployeeTimesheets />;
-      case 'employee-management':
+        return <AdminDashboardContent />;
+      case 'employees':
         return <EmployeeManagement />;
       case 'employee-registration':
         return <EmployeeRegistration />;
-      case 'jobsite-management':
-        return <JobsiteManagement />;
+      case 'timesheets':
+        return <EmployeeTimesheets />;
+      case 'payroll-summary':
+        return <PayrollSummary />;
       case 'material-requests':
         return <MaterialRequestInbox />;
-      case 'invoice-management':
+      case 'attention-reports':
+        return <AttentionReportsInbox />;
+      case 'invoices':
         return <InvoiceManagement />;
-      case 'invoice-tracker':
-        return <InvoiceTracker />;
-      case 'project-billing':
-        return <ProjectBillingOverview />;
+      case 'jobsites':
+        return <JobsiteManagement />;
       case 'company-settings':
         return <CompanySettings />;
-      case 'system-settings':
-        return <SystemSettings />;
+      case 'settings':
+        return <UserSettings />;
       default:
-        return <AdminDashboardContent setActiveTab={setActiveTab} />;
+        return <AdminDashboardContent />;
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
       <SidebarProvider>
-        <div className="flex w-full">
+        <div className="flex w-full min-h-screen">
           <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           <div className="flex-1 flex flex-col">
             <Header />
-            <main className="flex-1">
-              {renderContent()}
-            </main>
+            <SidebarInset className="flex-1">
+              <div className="p-6">
+                <div className="flex items-center mb-8">
+                  <SidebarTrigger className="mr-4" />
+                  <div>
+                    <h1 className="text-3xl font-bold text-slate-900 mb-2">Admin Dashboard</h1>
+                    <p className="text-slate-600">Manage your company, employees, and payroll</p>
+                  </div>
+                </div>
+                
+                {renderContent()}
+              </div>
+            </SidebarInset>
           </div>
         </div>
       </SidebarProvider>

@@ -6,6 +6,8 @@ import ForemanTimesheetForm from '../components/foreman/ForemanTimesheetForm';
 import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
 import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
 import ForemanSidebar from '../components/foreman/ForemanSidebar';
+import AttentionReportsInbox from '../components/admin/AttentionReportsInbox';
+import UserSettings from '../components/common/UserSettings';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 
 const ForemanDashboard = () => {
@@ -25,6 +27,10 @@ const ForemanDashboard = () => {
         );
       case 'material-requests':
         return <MyMaterialRequests />;
+      case 'attention-reports':
+        return <AttentionReportsInbox />;
+      case 'settings':
+        return <UserSettings />;
       default:
         return <ForemanTimesheetForm />;
     }
