@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Building } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import CompanyStatusBadge from '@/components/admin/CompanyStatusBadge';
 
 const CompanyOverviewCard = () => {
   const { user } = useAuth();
@@ -17,41 +17,30 @@ const CompanyOverviewCard = () => {
     });
   };
 
-  const getStatusBadge = () => {
-    // This would need to be enhanced with actual expiration logic
-    return (
-      <Badge variant="default" className="bg-green-500">
-        🟢 Active
-      </Badge>
-    );
-  };
-
   return (
-    <Card className="border-2 border-gray-200">
-      <CardHeader className="pb-3">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-orange-100 rounded-lg">
-            <Building className="h-6 w-6 text-orange-600" />
+    <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <CardHeader className="p-6 pb-4">
+        <div className="flex items-center space-x-4">
+          <div className="p-3 bg-orange-100 rounded-lg">
+            <Building className="h-8 w-8 text-orange-600" />
           </div>
           <div className="flex-1">
-            <CardTitle className="text-xl font-bold text-gray-900">
+            <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
               {user?.companyName || 'Company Name'}
             </CardTitle>
-            <div className="flex items-center space-x-2 mt-1">
-              {getStatusBadge()}
-            </div>
+            <CompanyStatusBadge status="active" />
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <CardContent className="p-6 pt-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <span className="font-medium text-gray-600">📅 License Expires:</span>
-            <p className="text-gray-900 mt-1">Not set</p>
+            <span className="text-sm font-medium text-gray-600">License Expiration</span>
+            <p className="text-lg text-gray-900 mt-1">Not set</p>
           </div>
           <div>
-            <span className="font-medium text-gray-600">🆔 Plan Type:</span>
-            <p className="text-gray-900 mt-1">Free Plan</p>
+            <span className="text-sm font-medium text-gray-600">Plan Type</span>
+            <p className="text-lg text-gray-900 mt-1">Free Plan</p>
           </div>
         </div>
       </CardContent>
