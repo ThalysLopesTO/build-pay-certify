@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
+import { Building } from 'lucide-react';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -87,6 +89,18 @@ const LoginForm = () => {
               {loading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
+          
+          <div className="mt-6 pt-4 border-t border-slate-200">
+            <div className="text-center">
+              <p className="text-sm text-slate-600 mb-3">New to the system?</p>
+              <Link to="/register-company">
+                <Button variant="outline" className="w-full">
+                  <Building className="h-4 w-4 mr-2" />
+                  Register Your Company
+                </Button>
+              </Link>
+            </div>
+          </div>
           
           <div className="mt-6 p-4 bg-slate-50 rounded-lg">
             <p className="text-sm font-medium mb-2">System Access:</p>
