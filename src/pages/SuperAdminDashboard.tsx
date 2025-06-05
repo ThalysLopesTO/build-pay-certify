@@ -8,8 +8,11 @@ import CompanyManagementTable from '@/components/admin/CompanyManagementTable';
 import CancellationRequestsManagement from '@/components/admin/CancellationRequestsManagement';
 import LicenseApprovalDialog from '@/components/admin/LicenseApprovalDialog';
 import RejectionConfirmationDialog from '@/components/admin/RejectionConfirmationDialog';
+import EditCompanyDialog from '@/components/admin/EditCompanyDialog';
+import RevokeCompanyDialog from '@/components/admin/RevokeCompanyDialog';
 import { useSuperAdminData } from '@/hooks/useSuperAdminData';
 import { useSuperAdminMutations } from '@/hooks/useSuperAdminMutations';
+import { useCompanyMutations } from '@/hooks/useCompanyMutations';
 
 interface RegistrationRequest {
   id: string;
@@ -33,17 +36,23 @@ interface Company {
   created_at: string;
   is_expired: boolean;
   days_until_expiry: number | null;
+  admin_email?: string;
+  admin_phone?: string;
 }
 
 const SuperAdminDashboard = () => {
   const [selectedRequest, setSelectedRequest] = useState<RegistrationRequest | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showRevokeDialog, setShowRevokeDialog] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   
   const { toast } = useToast();
   const { requests, companies, isLoading, pendingCount } = useSuperAdminData();
   const { approveRequestMutation, rejectRequestMutation } = useSuperAdminMutations();
+  const { editCompanyMutation, revokeCompanyMutation } = useCompanyMutations();
 
   const handleApprove = (request: RegistrationRequest) => {
     setSelectedRequest(request);
@@ -89,19 +98,40 @@ const SuperAdminDashboard = () => {
   };
 
   const handleEditCompany = (company: Company) => {
-    // TODO: Implement edit company functionality
-    toast({
-      title: "Edit Company",
-      description: "Edit company functionality coming soon"
-    });
+    setSelectedCompany(company);
+    setShowEditDialog(true);
   };
 
   const handleRevokeCompany = (company: Company) => {
-    // TODO: Implement revoke company functionality
-    toast({
-      title: "Revoke Company",
-      description: "Revoke company functionality coming soon"
-    });
+    setSelectedCompany(company);
+    setShowRevokeDialog(true);
+  };
+
+  const confirmEdit = (companyId: string, data: { name: string; email: string; phone?: string }) => {
+    setProcessingId(companyId);
+    editCompanyMutation.mutate(
+      { companyId, data },
+      {
+        onSettled: () => {
+          setProcessingId(null);
+          setShowEditDialog(false);
+          setSelectedCompany(null);
+        }
+      }
+    );
+  };
+
+  const confirmRevoke = () => {
+    if (selectedCompany) {
+      setProcessingId(selectedCompany.id);
+      revokeCompanyMutation.mutate(selectedCompany.id, {
+        onSettled: () => {
+          setProcessingId(null);
+          setShowRevokeDialog(false);
+          setSelectedCompany(null);
+        }
+      });
+    }
   };
 
   if (isLoading) {
@@ -144,6 +174,22 @@ const SuperAdminDashboard = () => {
         onConfirm={confirmRejection}
         request={selectedRequest}
         isProcessing={processingId === selectedRequest?.id}
+      />
+
+      <EditCompanyDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        company={selectedCompany}
+        onConfirm={confirmEdit}
+        isProcessing={processingId === selectedCompany?.id}
+      />
+
+      <RevokeCompanyDialog
+        open={showRevokeDialog}
+        onOpenChange={setShowRevokeDialog}
+        company={selectedCompany}
+        onConfirm={confirmRevoke}
+        isProcessing={processingId === selectedCompany?.id}
       />
     </div>
   );
