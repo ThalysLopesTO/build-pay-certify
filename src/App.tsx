@@ -95,10 +95,10 @@ const DashboardRouter = () => {
   );
 };
 
-const AppContent = () => {
+const AppRoutes = () => {
   const { isAuthenticated, loading, companyError, logout, user } = useAuth();
 
-  console.log('🏠 AppContent render:', { isAuthenticated, loading, companyError });
+  console.log('🏠 AppRoutes render:', { isAuthenticated, loading, companyError });
 
   if (loading) {
     console.log('⏳ App loading...');
@@ -164,7 +164,7 @@ const App: React.FC = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <AppContent />
+          <AppRoutes />
           <Toaster />
           <Sonner />
         </AuthProvider>
