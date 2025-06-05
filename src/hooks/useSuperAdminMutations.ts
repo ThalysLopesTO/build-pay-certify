@@ -47,13 +47,14 @@ export const useSuperAdminMutations = () => {
 
       console.log('Company created successfully:', companyData);
 
-      // Step 2: Use the edge function to create the admin user
+      // Step 2: Use the edge function to create the admin user with company ID
       const { data: createUserData, error: createUserError } = await supabase.functions.invoke('create-super-admin', {
         body: { 
           email: request.admin_email,
           password: 'TempPassword123!',
           firstName: request.admin_first_name,
-          lastName: request.admin_last_name
+          lastName: request.admin_last_name,
+          companyId: companyData.id // Pass the company ID
         }
       });
 
@@ -73,28 +74,7 @@ export const useSuperAdminMutations = () => {
 
       console.log('Admin user created successfully:', createUserData);
 
-      // Step 3: Update the user profile to link to the correct company and set role to admin
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .update({
-          company_id: companyData.id,
-          role: 'admin',
-          first_name: request.admin_first_name,
-          last_name: request.admin_last_name,
-          pending_approval: false
-        })
-        .eq('user_id', createUserData.user.id);
-
-      if (profileError) {
-        console.error('Profile update error:', profileError);
-        // Clean up created resources
-        await supabase.from('companies').delete().eq('id', companyData.id);
-        throw new Error(`Failed to update user profile: ${profileError.message}`);
-      }
-
-      console.log('User profile updated successfully');
-
-      // Step 4: Update the registration request to approved status
+      // Step 3: Update the registration request to approved status
       const { error: requestError } = await supabase
         .from('company_registration_requests')
         .update({ 

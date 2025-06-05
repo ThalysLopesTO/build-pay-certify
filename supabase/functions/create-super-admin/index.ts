@@ -26,7 +26,32 @@ serve(async (req) => {
       }
     )
 
-    const { email, password, firstName, lastName } = await req.json()
+    const { email, password, firstName, lastName, companyId } = await req.json()
+
+    // Validate required fields
+    if (!email) {
+      return new Response(
+        JSON.stringify({ error: 'Email is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    if (!password) {
+      return new Response(
+        JSON.stringify({ error: 'Password is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Set default names if not provided
+    const defaultFirstName = firstName || 'Super'
+    const defaultLastName = lastName || 'Admin'
 
     console.log('Creating user account for:', email)
 
@@ -49,8 +74,10 @@ serve(async (req) => {
         const { data: updatedProfile, error: profileError } = await supabaseAdmin
           .from('user_profiles')
           .update({
-            first_name: firstName || profile.first_name,
-            last_name: lastName || profile.last_name,
+            first_name: defaultFirstName,
+            last_name: defaultLastName,
+            company_id: companyId || profile.company_id,
+            role: companyId ? 'admin' : 'super_admin',
             updated_at: new Date().toISOString()
           })
           .eq('user_id', userExists.id)
@@ -86,9 +113,10 @@ serve(async (req) => {
           .from('user_profiles')
           .insert({
             user_id: userExists.id,
-            role: 'admin',
-            first_name: firstName || 'Admin',
-            last_name: lastName || 'User',
+            company_id: companyId,
+            role: companyId ? 'admin' : 'super_admin',
+            first_name: defaultFirstName,
+            last_name: defaultLastName,
             pending_approval: false
           })
           .select()
@@ -120,34 +148,9 @@ serve(async (req) => {
       }
     }
 
-    // Create new user with Admin API
-    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
-      password: password,
-      email_confirm: true, // Skip email confirmation
-      user_metadata: {
-        role: firstName && lastName && email.includes('thalyslopesdev') ? 'super_admin' : 'admin',
-        first_name: firstName || 'Admin',
-        last_name: lastName || 'User'
-      }
-    })
-
-    if (authError) {
-      console.error('Error creating auth user:', authError)
-      return new Response(
-        JSON.stringify({ error: authError.message }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    console.log('Auth user created successfully:', authUser.user?.email)
-
     // Determine if this is a super admin (Thalys) or regular admin
-    const userRole = firstName && lastName && email.includes('thalyslopesdev') ? 'super_admin' : 'admin'
-    let companyId = null
+    const userRole = email.includes('thalyslopesdev') ? 'super_admin' : 'admin'
+    let finalCompanyId = companyId
 
     if (userRole === 'super_admin') {
       // Get or create the super admin company
@@ -170,7 +173,6 @@ serve(async (req) => {
 
         if (newCompanyError) {
           console.error('Error creating Super Admin company:', newCompanyError)
-          await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
           return new Response(
             JSON.stringify({ error: 'Failed to create Super Admin company' }),
             { 
@@ -179,23 +181,63 @@ serve(async (req) => {
             }
           )
         }
-        companyId = newCompany.id
+        finalCompanyId = newCompany.id
       } else {
-        companyId = company.id
+        finalCompanyId = company.id
       }
     }
 
-    // Create user profile
+    // Create new user with Admin API
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: email,
+      password: password,
+      email_confirm: true, // Skip email confirmation
+      user_metadata: {
+        role: userRole,
+        first_name: defaultFirstName,
+        last_name: defaultLastName
+      }
+    })
+
+    if (authError) {
+      console.error('Error creating auth user:', authError)
+      return new Response(
+        JSON.stringify({ error: authError.message }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    if (!authUser.user?.id) {
+      console.error('No user ID returned from auth creation')
+      return new Response(
+        JSON.stringify({ error: 'Failed to create user - no ID returned' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log('Auth user created successfully:', authUser.user?.email)
+
+    // Create user profile with proper validation
+    const profileData = {
+      user_id: authUser.user.id,
+      company_id: finalCompanyId,
+      role: userRole,
+      first_name: defaultFirstName,
+      last_name: defaultLastName,
+      pending_approval: false
+    }
+
+    console.log('Creating profile with data:', profileData)
+
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
-      .insert({
-        user_id: authUser.user.id,
-        company_id: companyId,
-        role: userRole,
-        first_name: firstName || (userRole === 'super_admin' ? 'Super' : 'Admin'),
-        last_name: lastName || (userRole === 'super_admin' ? 'Admin' : 'User'),
-        pending_approval: false
-      })
+      .insert(profileData)
       .select()
       .single()
 
@@ -206,7 +248,10 @@ serve(async (req) => {
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
       
       return new Response(
-        JSON.stringify({ error: 'Failed to create user profile' }),
+        JSON.stringify({ 
+          error: `Failed to create user profile: ${profileError.message}`,
+          details: profileError
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -232,7 +277,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Unexpected error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message 
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
