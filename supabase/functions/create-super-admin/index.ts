@@ -63,14 +63,25 @@ serve(async (req) => {
       console.log('User already exists, checking profile...')
       
       // Check if user profile exists
-      const { data: profile } = await supabaseAdmin
+      const { data: profile, error: profileCheckError } = await supabaseAdmin
         .from('user_profiles')
         .select('*')
         .eq('user_id', userExists.id)
         .single()
 
+      if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+        console.error('Error checking existing profile:', profileCheckError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to check existing user profile' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
       if (profile) {
-        // Update existing profile
+        // Profile exists, update it if needed
         const { data: updatedProfile, error: profileError } = await supabaseAdmin
           .from('user_profiles')
           .update({
@@ -100,7 +111,8 @@ serve(async (req) => {
             success: true, 
             user: userExists,
             profile: updatedProfile,
-            message: 'User already exists, profile updated' 
+            message: 'User already exists, profile updated',
+            status: 200
           }),
           { 
             status: 200, 
@@ -108,7 +120,7 @@ serve(async (req) => {
           }
         )
       } else {
-        // Create profile for existing user
+        // User exists but no profile, create profile
         const { data: newProfile, error: profileError } = await supabaseAdmin
           .from('user_profiles')
           .insert({
@@ -138,7 +150,8 @@ serve(async (req) => {
             success: true, 
             user: userExists,
             profile: newProfile,
-            message: 'Profile created for existing user' 
+            message: 'Profile created for existing user',
+            status: 201
           }),
           { 
             status: 200, 
@@ -223,6 +236,65 @@ serve(async (req) => {
 
     console.log('Auth user created successfully:', authUser.user?.email)
 
+    // Check if user profile already exists (defensive check)
+    const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', authUser.user.id)
+      .single()
+
+    if (existingProfileError && existingProfileError.code !== 'PGRST116') {
+      console.error('Error checking for existing profile:', existingProfileError)
+      // Continue with creation attempt anyway
+    }
+
+    if (existingProfile) {
+      console.log('Profile already exists for new user, updating...')
+      const { data: updatedProfile, error: updateError } = await supabaseAdmin
+        .from('user_profiles')
+        .update({
+          company_id: finalCompanyId,
+          role: userRole,
+          first_name: defaultFirstName,
+          last_name: defaultLastName,
+          pending_approval: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', authUser.user.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        console.error('Error updating existing profile for new user:', updateError)
+        // Clean up the auth user if profile update fails
+        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+        return new Response(
+          JSON.stringify({ 
+            error: `Failed to update user profile: ${updateError.message}`,
+            details: updateError
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          user: authUser.user,
+          profile: updatedProfile,
+          message: `${userRole === 'super_admin' ? 'Super Admin' : 'Admin'} user created with updated profile`,
+          status: 200
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     // Create user profile with proper validation
     const profileData = {
       user_id: authUser.user.id,
@@ -266,7 +338,8 @@ serve(async (req) => {
         success: true, 
         user: authUser.user,
         profile: profile,
-        message: `${userRole === 'super_admin' ? 'Super Admin' : 'Admin'} user created successfully` 
+        message: `${userRole === 'super_admin' ? 'Super Admin' : 'Admin'} user created successfully`,
+        status: 201
       }),
       { 
         status: 200, 
