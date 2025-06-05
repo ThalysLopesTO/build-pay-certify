@@ -27,7 +27,15 @@ const ProfileTab = () => {
   });
 
   const onProfileSubmit = (data: ProfileFormData) => {
-    updateProfile.mutate(data);
+    // Transform the data to match UpdateProfileData interface
+    const updateData = {
+      first_name: data.first_name,
+      last_name: data.last_name,
+      trade: data.trade || undefined,
+      position: data.position || undefined,
+      hourly_rate: data.hourly_rate || undefined,
+    };
+    updateProfile.mutate(updateData);
   };
 
   return (
