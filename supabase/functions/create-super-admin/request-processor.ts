@@ -183,36 +183,51 @@ async function handleNewUser(
     }
   }
 
-  // Double-check if profile was created by trigger (defensive check)
+  // Check if profile already exists (defensive check)
   const existingProfile = await checkExistingProfile(supabaseAdmin, authUser.user.id)
 
   if (existingProfile) {
-    console.log('Profile already exists for user (created by trigger), updating...')
-    try {
-      const updatedProfile = await updateUserProfile(
-        supabaseAdmin, 
-        authUser.user.id, 
-        finalCompanyId!, 
-        userRole, 
-        defaultFirstName, 
-        defaultLastName
-      )
+    console.log('Profile already exists for user, checking if update is needed...')
+    
+    // Check if profile needs updating
+    if (companyId && (existingProfile.company_id !== companyId || existingProfile.role !== userRole)) {
+      console.log('Updating existing profile with correct company and role...')
+      try {
+        const updatedProfile = await updateUserProfile(
+          supabaseAdmin, 
+          authUser.user.id, 
+          finalCompanyId!, 
+          userRole, 
+          defaultFirstName, 
+          defaultLastName
+        )
 
-      // Send welcome email for new admin users only
-      if (userRole === 'admin' && companyId) {
-        await sendWelcomeEmailSafely(email, defaultFirstName, defaultLastName, companyName)
+        // Send welcome email for new admin users only
+        if (userRole === 'admin' && companyId) {
+          await sendWelcomeEmailSafely(email, defaultFirstName, defaultLastName, companyName)
+        }
+
+        return {
+          success: true, 
+          user: authUser.user,
+          profile: updatedProfile,
+          message: `${userRole === 'super_admin' ? 'Super Admin' : 'Admin'} user updated with correct profile`,
+          status: 200
+        }
+      } catch (error) {
+        console.error('Profile update failed:', error)
+        throw error
       }
-
+    } else {
+      // Profile exists and is correct, return success
+      console.log('Profile already exists with correct assignment')
       return {
         success: true, 
         user: authUser.user,
-        profile: updatedProfile,
-        message: `${userRole === 'super_admin' ? 'Super Admin' : 'Admin'} user created with updated profile`,
+        profile: existingProfile,
+        message: `${userRole === 'super_admin' ? 'Super Admin' : 'Admin'} user and profile already exist`,
         status: 200
       }
-    } catch (error) {
-      console.error('Profile update failed:', error)
-      throw error
     }
   }
 
@@ -245,12 +260,14 @@ async function handleNewUser(
     }
   } catch (error) {
     console.error('Profile creation failed:', error)
-    // Only clean up the auth user if we just created it
-    try {
-      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
-      console.log('Cleaned up auth user after profile creation failure')
-    } catch (cleanupError) {
-      console.error('Failed to clean up auth user:', cleanupError)
+    // Only clean up the auth user if we just created it and profile creation failed
+    if (!existingProfile) {
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+        console.log('Cleaned up auth user after profile creation failure')
+      } catch (cleanupError) {
+        console.error('Failed to clean up auth user:', cleanupError)
+      }
     }
     throw error
   }
