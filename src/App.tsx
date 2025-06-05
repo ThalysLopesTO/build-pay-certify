@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +12,9 @@ import EmployeeDashboard from "./pages/EmployeeDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ForemanDashboard from "./pages/ForemanDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import LicenseExpired from "./pages/LicenseExpired";
 import NotFound from "./pages/NotFound";
+import LicenseGuard from "./components/common/LicenseGuard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,14 +76,22 @@ const DashboardRouter = () => {
   
   console.log('✅ Routing user to dashboard based on role:', user.role);
   
-  // Route based on user role
-  if (user.role === 'admin' || user.role === 'payroll') {
-    return <AdminDashboard />;
-  } else if (user.role === 'foreman') {
-    return <ForemanDashboard />;
-  } else {
-    return <EmployeeDashboard />;
-  }
+  // Route based on user role with license protection
+  const DashboardComponent = () => {
+    if (user.role === 'admin' || user.role === 'payroll') {
+      return <AdminDashboard />;
+    } else if (user.role === 'foreman') {
+      return <ForemanDashboard />;
+    } else {
+      return <EmployeeDashboard />;
+    }
+  };
+
+  return (
+    <LicenseGuard>
+      <DashboardComponent />
+    </LicenseGuard>
+  );
 };
 
 const AppContent = () => {
@@ -114,6 +125,10 @@ const AppContent = () => {
         <Route 
           path="/register-company" 
           element={!isAuthenticated ? <CompanyRegistration /> : <Navigate to="/" replace />} 
+        />
+        <Route 
+          path="/license-expired" 
+          element={isAuthenticated ? <LicenseExpired /> : <Navigate to="/login" replace />} 
         />
         <Route 
           path="/super-admin" 

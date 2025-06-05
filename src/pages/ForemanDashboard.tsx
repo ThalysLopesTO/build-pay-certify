@@ -1,14 +1,15 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import Header from '../components/Header';
-import MaterialRequestForm from '../components/foreman/MaterialRequestForm';
-import ForemanTimesheetForm from '../components/foreman/ForemanTimesheetForm';
-import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
-import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
 import ForemanSidebar from '../components/foreman/ForemanSidebar';
-import AttentionReportsInbox from '../components/admin/AttentionReportsInbox';
+import ForemanTimesheetForm from '../components/foreman/ForemanTimesheetForm';
+import MaterialRequestForm from '../components/foreman/MaterialRequestForm';
+import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
+import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
 import UserSettings from '../components/common/UserSettings';
+import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { useState } from 'react';
 
 const ForemanDashboard = () => {
   const [activeTab, setActiveTab] = useState('timesheet');
@@ -17,18 +18,12 @@ const ForemanDashboard = () => {
     switch (activeTab) {
       case 'timesheet':
         return <ForemanTimesheetForm />;
+      case 'material-request':
+        return <MaterialRequestForm />;
+      case 'my-requests':
+        return <MyMaterialRequests />;
       case 'employees':
         return <EmployeeDirectory />;
-      case 'materials':
-        return (
-          <div className="max-w-2xl">
-            <MaterialRequestForm />
-          </div>
-        );
-      case 'material-requests':
-        return <MyMaterialRequests />;
-      case 'attention-reports':
-        return <AttentionReportsInbox />;
       case 'settings':
         return <UserSettings />;
       default:
@@ -49,9 +44,12 @@ const ForemanDashboard = () => {
                   <SidebarTrigger className="mr-4" />
                   <div>
                     <h1 className="text-3xl font-bold text-slate-900 mb-2">Foreman Dashboard</h1>
-                    <p className="text-slate-600">Manage your team, timesheets, and material requests</p>
+                    <p className="text-slate-600">Manage your crew and submit requests</p>
                   </div>
                 </div>
+                
+                {/* License Warning Banner */}
+                <LicenseWarningBanner />
                 
                 {renderContent()}
               </div>

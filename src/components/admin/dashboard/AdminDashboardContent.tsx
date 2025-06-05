@@ -1,6 +1,7 @@
 
 import React from 'react';
 import CompanyOverviewCard from './CompanyOverviewCard';
+import LicenseWarningBanner from '../../common/LicenseWarningBanner';
 
 interface AdminDashboardContentProps {
   setActiveTab: (tab: string) => void;
@@ -13,6 +14,9 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Dashboard</h1>
         <p className="text-slate-600">Welcome to your company admin panel</p>
       </div>
+
+      {/* License Warning Banner */}
+      <LicenseWarningBanner />
 
       {/* Company Overview - Single centered card */}
       <div className="flex justify-center">

@@ -112,6 +112,7 @@ export type Database = {
           created_at: string
           expiration_date: string | null
           id: string
+          license_expires_at: string | null
           license_key: string
           name: string
           plan: string | null
@@ -123,6 +124,7 @@ export type Database = {
           created_at?: string
           expiration_date?: string | null
           id?: string
+          license_expires_at?: string | null
           license_key?: string
           name: string
           plan?: string | null
@@ -134,6 +136,7 @@ export type Database = {
           created_at?: string
           expiration_date?: string | null
           id?: string
+          license_expires_at?: string | null
           license_key?: string
           name?: string
           plan?: string | null
@@ -629,6 +632,10 @@ export type Database = {
         Returns: boolean
       }
       is_company_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_company_license_active: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

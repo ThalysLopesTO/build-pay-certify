@@ -2,83 +2,58 @@
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import TimesheetForm from '../components/employee/TimesheetForm';
-import CertificateStatus from '../components/employee/CertificateStatus';
 import AttentionReportForm from '../components/employee/AttentionReportForm';
 import MyAttentionReports from '../components/employee/MyAttentionReports';
+import CertificateStatus from '../components/employee/CertificateStatus';
 import UserSettings from '../components/common/UserSettings';
+import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, AlertTriangle, FileText, Settings } from 'lucide-react';
 
 const EmployeeDashboard = () => {
-  const [activeTab, setActiveTab] = useState('timesheet');
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'timesheet':
-        return <TimesheetForm />;
-      case 'attention-report':
-        return <AttentionReportForm />;
-      case 'my-reports':
-        return <MyAttentionReports />;
-      case 'settings':
-        return <UserSettings />;
-      default:
-        return <TimesheetForm />;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
-      
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Employee Dashboard</h1>
-          <p className="text-slate-600">Manage your timesheets, reports, and account settings</p>
-        </div>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-            <TabsTrigger value="timesheet" className="flex items-center space-x-2">
-              <Clock className="h-4 w-4" />
-              <span>Timesheet</span>
-            </TabsTrigger>
-            <TabsTrigger value="attention-report" className="flex items-center space-x-2">
-              <AlertTriangle className="h-4 w-4" />
-              <span>Attention Report</span>
-            </TabsTrigger>
-            <TabsTrigger value="my-reports" className="flex items-center space-x-2">
-              <FileText className="h-4 w-4" />
-              <span>My Reports</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2">
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
-            </TabsTrigger>
-          </TabsList>
+      <div className="p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">Employee Dashboard</h1>
+            <p className="text-slate-600">Submit timesheets and manage your information</p>
+          </div>
 
-          <div className="mt-6">
-            <TabsContent value="timesheet">
-              <div className="space-y-8">
-                <TimesheetForm />
-                <CertificateStatus />
-              </div>
+          {/* License Warning Banner */}
+          <LicenseWarningBanner />
+
+          <Tabs defaultValue="timesheet" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="timesheet">Timesheet</TabsTrigger>
+              <TabsTrigger value="attention-report">Report Issue</TabsTrigger>
+              <TabsTrigger value="my-reports">My Reports</TabsTrigger>
+              <TabsTrigger value="certificates">Certificates</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="timesheet" className="space-y-6">
+              <TimesheetForm />
             </TabsContent>
-            
-            <TabsContent value="attention-report">
+
+            <TabsContent value="attention-report" className="space-y-6">
               <AttentionReportForm />
             </TabsContent>
-            
-            <TabsContent value="my-reports">
+
+            <TabsContent value="my-reports" className="space-y-6">
               <MyAttentionReports />
             </TabsContent>
-            
-            <TabsContent value="settings">
+
+            <TabsContent value="certificates" className="space-y-6">
+              <CertificateStatus />
+            </TabsContent>
+
+            <TabsContent value="settings" className="space-y-6">
               <UserSettings />
             </TabsContent>
-          </div>
-        </Tabs>
-      </main>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 };
