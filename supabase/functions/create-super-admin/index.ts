@@ -26,9 +26,75 @@ serve(async (req) => {
       }
     )
 
-    const { email, password } = await req.json()
+    const { email, password, firstName, lastName } = await req.json()
 
     console.log('Creating super admin user:', email)
+
+    // Check if user already exists
+    const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
+    const userExists = existingUser.users.find(user => user.email === email)
+
+    if (userExists) {
+      console.log('User already exists, updating profile...')
+      
+      // Get the super admin company
+      const { data: company, error: companyError } = await supabaseAdmin
+        .from('companies')
+        .select('id')
+        .eq('name', 'Super Admin Company')
+        .single()
+
+      if (companyError) {
+        console.error('Error finding super admin company:', companyError)
+        return new Response(
+          JSON.stringify({ error: 'Super Admin company not found' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      // Update or create user profile
+      const { data: profile, error: profileError } = await supabaseAdmin
+        .from('user_profiles')
+        .upsert({
+          user_id: userExists.id,
+          company_id: company.id,
+          role: 'super_admin',
+          first_name: firstName || 'Super',
+          last_name: lastName || 'Admin',
+          pending_approval: false
+        }, {
+          onConflict: 'user_id'
+        })
+        .select()
+        .single()
+
+      if (profileError) {
+        console.error('Error updating user profile:', profileError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to update user profile' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          user: userExists,
+          profile: profile,
+          message: 'Super Admin user profile updated successfully' 
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
 
     // Create user with Admin API
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -37,8 +103,8 @@ serve(async (req) => {
       email_confirm: true, // Skip email confirmation
       user_metadata: {
         role: 'super_admin',
-        first_name: 'Test',
-        last_name: 'Super Admin'
+        first_name: firstName || 'Super',
+        last_name: lastName || 'Admin'
       }
     })
 
@@ -64,6 +130,10 @@ serve(async (req) => {
 
     if (companyError) {
       console.error('Error finding super admin company:', companyError)
+      
+      // Clean up the auth user if company not found
+      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+      
       return new Response(
         JSON.stringify({ error: 'Super Admin company not found' }),
         { 
@@ -80,8 +150,8 @@ serve(async (req) => {
         user_id: authUser.user.id,
         company_id: company.id,
         role: 'super_admin',
-        first_name: 'Test',
-        last_name: 'Super Admin',
+        first_name: firstName || 'Super',
+        last_name: lastName || 'Admin',
         pending_approval: false
       })
       .select()

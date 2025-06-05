@@ -1,12 +1,24 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export const createSuperAdminUser = async () => {
+interface CreateSuperAdminParams {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+export const createSuperAdminUser = async (params: CreateSuperAdminParams = {
+  email: 'testsuperadmin@groundzero.ca',
+  password: 'Test1234!'
+}) => {
   try {
     const { data, error } = await supabase.functions.invoke('create-super-admin', {
       body: { 
-        email: 'testsuperadmin@groundzero.ca', 
-        password: 'Test1234!' 
+        email: params.email, 
+        password: params.password,
+        firstName: params.firstName,
+        lastName: params.lastName
       }
     });
 
@@ -26,4 +38,14 @@ export const createSuperAdminUser = async () => {
     console.error('Unexpected error creating super admin:', error);
     return { error: 'Failed to create Super Admin user' };
   }
+};
+
+// Specific function for creating Thalys's account
+export const createThalysAdminUser = async () => {
+  return createSuperAdminUser({
+    email: 'thalyslopesdev@gmail.com',
+    password: 'Admin@1234',
+    firstName: 'Thalys',
+    lastName: 'Lopes'
+  });
 };
