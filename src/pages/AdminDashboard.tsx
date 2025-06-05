@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminDashboardContent from '../components/admin/dashboard/AdminDashboardContent';
@@ -17,6 +17,19 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Listen for navigation events from EmployeeManagement
+  useEffect(() => {
+    const handleNavigateToEmployeeRegistration = () => {
+      setActiveTab('employee-registration');
+    };
+
+    window.addEventListener('navigateToEmployeeRegistration', handleNavigateToEmployeeRegistration);
+
+    return () => {
+      window.removeEventListener('navigateToEmployeeRegistration', handleNavigateToEmployeeRegistration);
+    };
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
