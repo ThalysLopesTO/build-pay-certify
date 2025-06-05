@@ -1,56 +1,67 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
-interface UserProfileUpdate {
-  first_name?: string;
-  last_name?: string;
+interface UpdateProfileData {
+  first_name: string;
+  last_name: string;
   trade?: string;
   position?: string;
   hourly_rate?: number;
 }
 
-interface PasswordUpdate {
+interface UpdatePasswordData {
   password: string;
 }
 
-export const useUpdateUserProfile = () => {
-  const { user } = useAuth();
+export const useUpdateProfile = () => {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (updates: UserProfileUpdate) => {
-      if (!user?.id) throw new Error('User not authenticated');
+    mutationFn: async (data: UpdateProfileData) => {
+      if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
         .from('user_profiles')
-        .update(updates)
+        .update({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          trade: data.trade,
+          position: data.position,
+          hourly_rate: data.hourly_rate,
+          updated_at: new Date().toISOString()
+        })
         .eq('user_id', user.id);
 
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       toast({
         title: "Profile Updated",
-        description: "Your profile has been updated successfully",
+        description: "Your profile has been updated successfully"
       });
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
     onError: (error) => {
+      console.error('Profile update error:', error);
       toast({
         title: "Update Failed",
-        description: error.message || "Failed to update profile",
-        variant: "destructive",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive"
       });
-    },
+    }
   });
 };
 
 export const useUpdatePassword = () => {
+  const { toast } = useToast();
+
   return useMutation({
-    mutationFn: async (data: PasswordUpdate) => {
+    mutationFn: async (data: UpdatePasswordData) => {
       const { error } = await supabase.auth.updateUser({
         password: data.password
       });
@@ -60,15 +71,16 @@ export const useUpdatePassword = () => {
     onSuccess: () => {
       toast({
         title: "Password Updated",
-        description: "Your password has been changed successfully",
+        description: "Your password has been updated successfully"
       });
     },
     onError: (error) => {
+      console.error('Password update error:', error);
       toast({
-        title: "Password Update Failed",
-        description: error.message || "Failed to update password",
-        variant: "destructive",
+        title: "Update Failed",
+        description: "Failed to update password. Please try again.",
+        variant: "destructive"
       });
-    },
+    }
   });
 };

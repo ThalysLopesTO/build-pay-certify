@@ -8,12 +8,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { useUpdateUserProfile } from '@/hooks/useUserSettings';
+import { useUpdateProfile } from '@/hooks/useUserSettings';
 import { profileSchema, ProfileFormData } from './schemas';
 
 const ProfileTab = () => {
   const { user } = useAuth();
-  const updateProfile = useUpdateUserProfile();
+  const updateProfile = useUpdateProfile();
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -22,7 +22,7 @@ const ProfileTab = () => {
       last_name: user?.lastName || '',
       trade: user?.trade || '',
       position: user?.position || '',
-      hourly_rate: user?.hourlyRate || 0,
+      hourly_rate: user?.hourlyRate || 25,
     },
   });
 
@@ -66,7 +66,9 @@ const ProfileTab = () => {
                   </FormItem>
                 )}
               />
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={profileForm.control}
                 name="trade"
@@ -88,34 +90,33 @@ const ProfileTab = () => {
                   <FormItem>
                     <FormLabel>Position</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g. Journeyman, Apprentice" />
+                      <Input {...field} placeholder="e.g. Lead, Helper" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              {user?.role !== 'employee' && (
-                <FormField
-                  control={profileForm.control}
-                  name="hourly_rate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hourly Rate ($)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
             </div>
+
+            <FormField
+              control={profileForm.control}
+              name="hourly_rate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hourly Rate ($)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <Separator />
 
@@ -124,7 +125,7 @@ const ProfileTab = () => {
                 type="submit"
                 disabled={updateProfile.isPending}
               >
-                {updateProfile.isPending ? 'Saving...' : 'Save Profile'}
+                {updateProfile.isPending ? 'Updating...' : 'Update Profile'}
               </Button>
             </div>
           </form>
