@@ -2,7 +2,6 @@
 import React from 'react';
 import CompanyOverviewCard from './CompanyOverviewCard';
 import LicenseWarningBanner from '../../common/LicenseWarningBanner';
-import PlanCancellationCard from '../PlanCancellationCard';
 
 interface AdminDashboardContentProps {
   setActiveTab: (tab: string) => void;
@@ -24,11 +23,6 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
         {/* Company Overview - Full width */}
         <div className="w-full">
           <CompanyOverviewCard />
-        </div>
-
-        {/* Plan Management - Smaller width */}
-        <div className="w-full max-w-md">
-          <PlanCancellationCard />
         </div>
       </div>
     </div>
