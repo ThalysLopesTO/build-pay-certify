@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -47,14 +46,15 @@ export const useSuperAdminMutations = () => {
 
       console.log('Company created successfully:', companyData);
 
-      // Step 2: Use the edge function to create the admin user with company ID
+      // Step 2: Use the edge function to create the admin user with company ID and company name
       const { data: createUserData, error: createUserError } = await supabase.functions.invoke('create-super-admin', {
         body: { 
           email: request.admin_email,
           password: 'TempPassword123!',
           firstName: request.admin_first_name,
           lastName: request.admin_last_name,
-          companyId: companyData.id // Pass the company ID
+          companyId: companyData.id,
+          companyName: request.company_name // Pass company name for email
         }
       });
 
@@ -103,7 +103,7 @@ export const useSuperAdminMutations = () => {
       queryClient.invalidateQueries({ queryKey: ['super-admin-companies'] });
       toast({
         title: "Request Approved",
-        description: `${data.company.name} has been approved and the admin account created successfully.`
+        description: `${data.company.name} has been approved and the admin account created successfully. Welcome email sent to the administrator.`
       });
       console.log('Approval completed successfully:', data);
     },

@@ -17,6 +17,7 @@ import {
   createSuccessResponse, 
   createOptionsResponse 
 } from './response-helpers.ts'
+import { sendWelcomeEmail } from './email-service.ts'
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -45,7 +46,7 @@ serve(async (req) => {
       return createErrorResponse(validation.errors[0])
     }
 
-    const { email, password, firstName, lastName, companyId } = body
+    const { email, password, firstName, lastName, companyId, companyName } = body
 
     // Set default names if not provided
     const { defaultFirstName, defaultLastName } = getDefaultNames(firstName, lastName)
@@ -91,6 +92,16 @@ serve(async (req) => {
           pending_approval: false
         })
 
+        // Send welcome email for new admin profiles only
+        if (userRole === 'admin' && companyId) {
+          try {
+            await sendWelcomeEmail(email, defaultFirstName, defaultLastName, companyName || 'Your Company')
+            console.log('Welcome email sent successfully')
+          } catch (emailError) {
+            console.error('Failed to send welcome email, but continuing:', emailError)
+          }
+        }
+
         return createSuccessResponse({
           success: true, 
           user: existingUser,
@@ -132,6 +143,16 @@ serve(async (req) => {
           defaultLastName
         )
 
+        // Send welcome email for new admin users only
+        if (userRole === 'admin' && companyId) {
+          try {
+            await sendWelcomeEmail(email, defaultFirstName, defaultLastName, companyName || 'Your Company')
+            console.log('Welcome email sent successfully')
+          } catch (emailError) {
+            console.error('Failed to send welcome email, but continuing:', emailError)
+          }
+        }
+
         return createSuccessResponse({
           success: true, 
           user: authUser.user,
@@ -160,6 +181,16 @@ serve(async (req) => {
       const profile = await createUserProfile(supabaseAdmin, profileData)
 
       console.log('User profile created successfully')
+
+      // Send welcome email for new admin users only
+      if (userRole === 'admin' && companyId) {
+        try {
+          await sendWelcomeEmail(email, defaultFirstName, defaultLastName, companyName || 'Your Company')
+          console.log('Welcome email sent successfully')
+        } catch (emailError) {
+          console.error('Failed to send welcome email, but continuing:', emailError)
+        }
+      }
 
       return createSuccessResponse({
         success: true, 

@@ -1,10 +1,10 @@
-
 export interface CreateSuperAdminRequest {
   email: string;
   password: string;
   firstName?: string;
   lastName?: string;
   companyId?: string;
+  companyName?: string;
 }
 
 export interface CreateSuperAdminResponse {
