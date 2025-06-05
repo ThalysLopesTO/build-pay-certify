@@ -26,7 +26,9 @@ export const useSuperAdminMutations = () => {
       registrationDate: string;
       expirationDate: string;
     }) => {
-      // Create company with dates
+      console.log('Starting approval process for:', request.company_name);
+
+      // Step 1: Create the company first
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert({
@@ -38,63 +40,98 @@ export const useSuperAdminMutations = () => {
         .select()
         .single();
 
-      if (companyError) throw companyError;
+      if (companyError) {
+        console.error('Company creation error:', companyError);
+        throw new Error(`Failed to create company: ${companyError.message}`);
+      }
 
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: request.admin_email,
-        password: 'TempPassword123!',
-        email_confirm: true,
-        user_metadata: {
-          first_name: request.admin_first_name,
-          last_name: request.admin_last_name,
-          role: 'admin'
+      console.log('Company created successfully:', companyData);
+
+      // Step 2: Use the edge function to create the admin user
+      const { data: createUserData, error: createUserError } = await supabase.functions.invoke('create-super-admin', {
+        body: { 
+          email: request.admin_email,
+          password: 'TempPassword123!',
+          firstName: request.admin_first_name,
+          lastName: request.admin_last_name
         }
       });
 
-      if (authError) throw authError;
+      if (createUserError) {
+        console.error('User creation error:', createUserError);
+        // Clean up the company if user creation fails
+        await supabase.from('companies').delete().eq('id', companyData.id);
+        throw new Error(`Failed to create admin user: ${createUserError.message}`);
+      }
 
-      // Create user profile
+      if (createUserData.error) {
+        console.error('Edge function error:', createUserData.error);
+        // Clean up the company if user creation fails
+        await supabase.from('companies').delete().eq('id', companyData.id);
+        throw new Error(`Failed to create admin user: ${createUserData.error}`);
+      }
+
+      console.log('Admin user created successfully:', createUserData);
+
+      // Step 3: Update the user profile to link to the correct company and set role to admin
       const { error: profileError } = await supabase
         .from('user_profiles')
-        .insert({
-          user_id: authData.user.id,
+        .update({
           company_id: companyData.id,
           role: 'admin',
           first_name: request.admin_first_name,
           last_name: request.admin_last_name,
           pending_approval: false
-        });
+        })
+        .eq('user_id', createUserData.user.id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        // Clean up created resources
+        await supabase.from('companies').delete().eq('id', companyData.id);
+        throw new Error(`Failed to update user profile: ${profileError.message}`);
+      }
 
-      // Update registration request
+      console.log('User profile updated successfully');
+
+      // Step 4: Update the registration request to approved status
       const { error: requestError } = await supabase
         .from('company_registration_requests')
         .update({ 
           status: 'approved',
           company_id: companyData.id,
-          admin_user_id: authData.user.id
+          admin_user_id: createUserData.user.id,
+          approved_at: new Date().toISOString()
         })
         .eq('id', request.id);
 
-      if (requestError) throw requestError;
+      if (requestError) {
+        console.error('Registration request update error:', requestError);
+        throw new Error(`Failed to update registration request: ${requestError.message}`);
+      }
 
-      return { company: companyData, user: authData.user };
+      console.log('Registration request updated successfully');
+
+      return { 
+        company: companyData, 
+        user: createUserData.user,
+        message: 'Company registration approved successfully'
+      };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['super-admin-registration-requests'] });
       queryClient.invalidateQueries({ queryKey: ['super-admin-companies'] });
       toast({
         title: "Request Approved",
-        description: "Company registration has been approved and accounts created successfully"
+        description: `${data.company.name} has been approved and the admin account created successfully.`
       });
+      console.log('Approval completed successfully:', data);
     },
     onError: (error) => {
-      console.error('Approval error:', error);
+      console.error('Approval process failed:', error);
       toast({
         title: "Approval Failed",
-        description: "Failed to approve the registration request. Please try again.",
+        description: error.message || "Failed to approve the registration request. Please try again.",
         variant: "destructive"
       });
     }
@@ -104,10 +141,16 @@ export const useSuperAdminMutations = () => {
     mutationFn: async (request: RegistrationRequest) => {
       const { error } = await supabase
         .from('company_registration_requests')
-        .update({ status: 'rejected' })
+        .update({ 
+          status: 'rejected',
+          approved_at: new Date().toISOString()
+        })
         .eq('id', request.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Rejection error:', error);
+        throw new Error(`Failed to reject request: ${error.message}`);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['super-admin-registration-requests'] });
@@ -120,7 +163,7 @@ export const useSuperAdminMutations = () => {
       console.error('Rejection error:', error);
       toast({
         title: "Rejection Failed",
-        description: "Failed to reject the registration request",
+        description: error.message || "Failed to reject the registration request",
         variant: "destructive"
       });
     }
