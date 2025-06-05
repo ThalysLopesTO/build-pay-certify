@@ -4,28 +4,36 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { LogOut, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 
 const Header = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      await logout();
-      navigate('/login', { replace: true });
+      console.log('🚪 Header logout clicked');
+      
       toast({
-        title: "Logged out successfully",
-        description: "You have been signed out of the system.",
+        title: "Signing out...",
+        description: "Please wait while we sign you out.",
       });
+      
+      await logout();
+      
+      // The logout function will handle the redirect via window.location.reload()
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Header logout error:', error);
+      
       toast({
         title: "Logout failed",
-        description: "There was an error signing out. Please try again.",
+        description: "There was an error signing out. The page will refresh.",
         variant: "destructive",
       });
+      
+      // Force reload as fallback
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     }
   };
 

@@ -10,8 +10,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user, session, loading, companyError, setCompanyError } = useAuthState();
 
   const handleLogout = async () => {
-    setCompanyError(null);
-    await logout();
+    console.log('🔄 Logout requested...');
+    
+    try {
+      // Clear company error first
+      setCompanyError(null);
+      
+      // Call logout service
+      await logout();
+      
+      // Force reload to clear all state
+      window.location.reload();
+    } catch (error) {
+      console.error('💥 Logout handler error:', error);
+      // Force reload anyway to clear state
+      window.location.reload();
+    }
   };
 
   const isCompanyAdmin = user?.role === 'admin' || user?.role === 'super_admin';
