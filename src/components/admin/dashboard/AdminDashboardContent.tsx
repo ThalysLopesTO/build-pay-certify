@@ -19,16 +19,15 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
       {/* License Warning Banner */}
       <LicenseWarningBanner />
 
-      {/* Company Overview - Single centered card */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-2xl">
+      {/* Main content grid */}
+      <div className="grid gap-6">
+        {/* Company Overview - Full width */}
+        <div className="w-full">
           <CompanyOverviewCard />
         </div>
-      </div>
 
-      {/* Plan Cancellation Card */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-2xl">
+        {/* Plan Management - Smaller width */}
+        <div className="w-full max-w-md">
           <PlanCancellationCard />
         </div>
       </div>
