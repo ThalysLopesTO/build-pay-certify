@@ -50,40 +50,42 @@ serve(async (req) => {
     // Set default names if not provided
     const { defaultFirstName, defaultLastName } = getDefaultNames(firstName, lastName)
 
-    console.log('Creating user account for:', email)
+    console.log('Processing user account for:', email)
 
     // Check if user already exists
-    const userExists = await findExistingUser(supabaseAdmin, email)
+    const existingUser = await findExistingUser(supabaseAdmin, email)
 
-    if (userExists) {
+    if (existingUser) {
       console.log('User already exists, checking profile...')
       
-      const profile = await checkExistingProfile(supabaseAdmin, userExists.id)
+      const existingProfile = await checkExistingProfile(supabaseAdmin, existingUser.id)
 
-      if (profile) {
-        // Profile exists, update it if needed
-        const updatedProfile = await updateUserProfile(
-          supabaseAdmin, 
-          userExists.id, 
-          companyId || profile.company_id, 
-          companyId ? 'admin' : 'super_admin', 
-          defaultFirstName, 
-          defaultLastName
-        )
-
+      if (existingProfile) {
+        // Both user and profile exist - return success without changes
+        console.log('User and profile both exist, returning success')
         return createSuccessResponse({
           success: true, 
-          user: userExists,
-          profile: updatedProfile,
-          message: 'User already exists, profile updated',
+          user: existingUser,
+          profile: existingProfile,
+          message: 'User and profile already exist',
           status: 200
         })
       } else {
         // User exists but no profile, create profile
+        console.log('User exists but no profile found, creating profile...')
+        
+        // Determine user role and company
+        const userRole = determineUserRole(email)
+        let finalCompanyId = companyId
+
+        if (userRole === 'super_admin' && !companyId) {
+          finalCompanyId = await getOrCreateSuperAdminCompany(supabaseAdmin)
+        }
+
         const newProfile = await createUserProfile(supabaseAdmin, {
-          user_id: userExists.id,
-          company_id: companyId || '',
-          role: companyId ? 'admin' : 'super_admin',
+          user_id: existingUser.id,
+          company_id: finalCompanyId || '',
+          role: userRole,
           first_name: defaultFirstName,
           last_name: defaultLastName,
           pending_approval: false
@@ -91,7 +93,7 @@ serve(async (req) => {
 
         return createSuccessResponse({
           success: true, 
-          user: userExists,
+          user: existingUser,
           profile: newProfile,
           message: 'Profile created for existing user',
           status: 201
@@ -99,11 +101,14 @@ serve(async (req) => {
       }
     }
 
+    // User doesn't exist, create new user
+    console.log('Creating new user account for:', email)
+
     // Determine if this is a super admin (Thalys) or regular admin
     const userRole = determineUserRole(email)
     let finalCompanyId = companyId
 
-    if (userRole === 'super_admin') {
+    if (userRole === 'super_admin' && !companyId) {
       finalCompanyId = await getOrCreateSuperAdminCompany(supabaseAdmin)
     }
 
@@ -112,11 +117,11 @@ serve(async (req) => {
 
     console.log('Auth user created successfully:', authUser.user?.email)
 
-    // Check if user profile already exists (defensive check)
+    // Double-check if profile was created by trigger (defensive check)
     const existingProfile = await checkExistingProfile(supabaseAdmin, authUser.user.id)
 
     if (existingProfile) {
-      console.log('Profile already exists for new user, updating...')
+      console.log('Profile already exists for new user (created by trigger), updating...')
       try {
         const updatedProfile = await updateUserProfile(
           supabaseAdmin, 
@@ -141,7 +146,7 @@ serve(async (req) => {
       }
     }
 
-    // Create user profile with proper validation
+    // Create user profile
     const profileData = {
       user_id: authUser.user.id,
       company_id: finalCompanyId!,
