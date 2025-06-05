@@ -2,6 +2,7 @@
 import React from 'react';
 import CompanyOverviewCard from './CompanyOverviewCard';
 import LicenseWarningBanner from '../../common/LicenseWarningBanner';
+import PlanCancellationCard from '../PlanCancellationCard';
 
 interface AdminDashboardContentProps {
   setActiveTab: (tab: string) => void;
@@ -22,6 +23,13 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
       <div className="flex justify-center">
         <div className="w-full max-w-2xl">
           <CompanyOverviewCard />
+        </div>
+      </div>
+
+      {/* Plan Cancellation Card */}
+      <div className="flex justify-center">
+        <div className="w-full max-w-2xl">
+          <PlanCancellationCard />
         </div>
       </div>
     </div>

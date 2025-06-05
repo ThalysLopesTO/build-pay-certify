@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import SuperAdminHeader from '@/components/admin/SuperAdminHeader';
 import SuperAdminLoading from '@/components/admin/SuperAdminLoading';
 import CompanyManagementTable from '@/components/admin/CompanyManagementTable';
+import CancellationRequestsManagement from '@/components/admin/CancellationRequestsManagement';
 import LicenseApprovalDialog from '@/components/admin/LicenseApprovalDialog';
 import RejectionConfirmationDialog from '@/components/admin/RejectionConfirmationDialog';
 import { useSuperAdminData } from '@/hooks/useSuperAdminData';
@@ -123,6 +124,9 @@ const SuperAdminDashboard = () => {
             onRevokeCompany={handleRevokeCompany}
             isProcessing={processingId}
           />
+
+          {/* Cancellation Requests Section */}
+          <CancellationRequestsManagement />
         </div>
       </div>
 
