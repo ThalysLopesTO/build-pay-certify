@@ -62,13 +62,46 @@ serve(async (req) => {
       const existingProfile = await checkExistingProfile(supabaseAdmin, existingUser.id)
 
       if (existingProfile) {
-        // Both user and profile exist - return success without changes
-        console.log('User and profile both exist, returning success')
+        console.log('User and profile both exist, checking company assignment...')
+        
+        // Check if user is assigned to the correct company with admin role
+        if (companyId && (existingProfile.company_id !== companyId || existingProfile.role !== 'admin')) {
+          console.log('Updating profile with correct company and admin role...')
+          
+          const updatedProfile = await updateUserProfile(
+            supabaseAdmin, 
+            existingUser.id, 
+            companyId, 
+            'admin', 
+            defaultFirstName, 
+            defaultLastName
+          )
+
+          // Send welcome email for new admin assignment
+          if (companyId) {
+            try {
+              await sendWelcomeEmail(email, defaultFirstName, defaultLastName, companyName || 'Your Company')
+              console.log('Welcome email sent successfully')
+            } catch (emailError) {
+              console.error('Failed to send welcome email, but continuing:', emailError)
+            }
+          }
+
+          return createSuccessResponse({
+            success: true, 
+            user: existingUser,
+            profile: updatedProfile,
+            message: 'User profile updated with admin role and company assignment',
+            status: 200
+          })
+        }
+
+        // User and profile exist with correct assignment - return success
         return createSuccessResponse({
           success: true, 
           user: existingUser,
           profile: existingProfile,
-          message: 'User and profile already exist',
+          message: 'User and profile already exist with correct assignment',
           status: 200
         })
       } else {
@@ -76,7 +109,7 @@ serve(async (req) => {
         console.log('User exists but no profile found, creating profile...')
         
         // Determine user role and company
-        const userRole = determineUserRole(email)
+        const userRole = companyId ? 'admin' : determineUserRole(email)
         let finalCompanyId = companyId
 
         if (userRole === 'super_admin' && !companyId) {
@@ -116,7 +149,7 @@ serve(async (req) => {
     console.log('Creating new user account for:', email)
 
     // Determine if this is a super admin (Thalys) or regular admin
-    const userRole = determineUserRole(email)
+    const userRole = companyId ? 'admin' : determineUserRole(email)
     let finalCompanyId = companyId
 
     if (userRole === 'super_admin' && !companyId) {
@@ -124,15 +157,32 @@ serve(async (req) => {
     }
 
     // Create new user with Admin API
-    const authUser = await createAuthUser(supabaseAdmin, email, password, userRole, defaultFirstName, defaultLastName)
-
-    console.log('Auth user created successfully:', authUser.user?.email)
+    let authUser
+    try {
+      authUser = await createAuthUser(supabaseAdmin, email, password, userRole, defaultFirstName, defaultLastName)
+      console.log('Auth user created successfully:', authUser.user?.email)
+    } catch (authError) {
+      console.error('Auth user creation failed:', authError)
+      // If user creation fails due to existing email, try to find the existing user
+      if (authError.message?.includes('already been registered')) {
+        console.log('User already exists, attempting to find existing user...')
+        const existingUser = await findExistingUser(supabaseAdmin, email)
+        if (existingUser) {
+          authUser = { user: existingUser }
+          console.log('Found existing user, proceeding with profile creation/update')
+        } else {
+          throw new Error('User creation failed and could not find existing user')
+        }
+      } else {
+        throw authError
+      }
+    }
 
     // Double-check if profile was created by trigger (defensive check)
     const existingProfile = await checkExistingProfile(supabaseAdmin, authUser.user.id)
 
     if (existingProfile) {
-      console.log('Profile already exists for new user (created by trigger), updating...')
+      console.log('Profile already exists for user (created by trigger), updating...')
       try {
         const updatedProfile = await updateUserProfile(
           supabaseAdmin, 
@@ -161,8 +211,8 @@ serve(async (req) => {
           status: 200
         })
       } catch (error) {
-        // Clean up the auth user if profile update fails
-        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+        console.error('Profile update failed:', error)
+        // Don't clean up the auth user if it already existed
         throw error
       }
     }
@@ -200,8 +250,16 @@ serve(async (req) => {
         status: 201
       })
     } catch (error) {
-      // Clean up the auth user if profile creation fails
-      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+      console.error('Profile creation failed:', error)
+      // Only clean up the auth user if we just created it (not if it already existed)
+      if (!existingUser) {
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+          console.log('Cleaned up auth user after profile creation failure')
+        } catch (cleanupError) {
+          console.error('Failed to clean up auth user:', cleanupError)
+        }
+      }
       throw error
     }
 
