@@ -28,31 +28,45 @@ export async function processCreateSuperAdminRequest(
 
   console.log('Processing user account for:', email)
 
-  // Check if user already exists
-  const existingUser = await findExistingUser(supabaseAdmin, email)
+  try {
+    // Check if user already exists
+    const existingUser = await findExistingUser(supabaseAdmin, email)
 
-  if (existingUser) {
-    return await handleExistingUser(
+    if (existingUser) {
+      console.log('User already exists, processing existing user...')
+      return await handleExistingUser(
+        supabaseAdmin, 
+        existingUser, 
+        companyId, 
+        defaultFirstName, 
+        defaultLastName, 
+        email, 
+        companyName
+      )
+    }
+
+    // User doesn't exist, create new user
+    console.log('User does not exist, creating new user...')
+    return await handleNewUser(
       supabaseAdmin, 
-      existingUser, 
+      email, 
+      password, 
       companyId, 
       defaultFirstName, 
       defaultLastName, 
-      email, 
       companyName
     )
+  } catch (error) {
+    console.error('Error in processCreateSuperAdminRequest:', error)
+    
+    // Return a structured error response instead of throwing
+    return {
+      success: false,
+      error: error.message || 'Unknown error occurred',
+      message: 'Failed to process user creation request',
+      status: 500
+    }
   }
-
-  // User doesn't exist, create new user
-  return await handleNewUser(
-    supabaseAdmin, 
-    email, 
-    password, 
-    companyId, 
-    defaultFirstName, 
-    defaultLastName, 
-    companyName
-  )
 }
 
 async function handleExistingUser(
@@ -64,52 +78,11 @@ async function handleExistingUser(
   email: string,
   companyName: string | undefined
 ) {
-  console.log('User already exists, checking profile...')
-  
-  const existingProfile = await checkExistingProfile(supabaseAdmin, existingUser.id)
-
-  if (existingProfile) {
-    console.log('User and profile both exist, checking company assignment...')
+  try {
+    console.log('Checking existing user profile...')
     
-    // Check if user is assigned to the correct company with admin role
-    if (companyId && (existingProfile.company_id !== companyId || existingProfile.role !== 'admin')) {
-      console.log('Updating profile with correct company and admin role...')
-      
-      const updatedProfile = await updateUserProfile(
-        supabaseAdmin, 
-        existingUser.id, 
-        companyId, 
-        'admin', 
-        defaultFirstName, 
-        defaultLastName
-      )
+    const existingProfile = await checkExistingProfile(supabaseAdmin, existingUser.id)
 
-      // Send welcome email for new admin assignment
-      if (companyId) {
-        await sendWelcomeEmailSafely(email, defaultFirstName, defaultLastName, companyName)
-      }
-
-      return {
-        success: true, 
-        user: existingUser,
-        profile: updatedProfile,
-        message: 'User profile updated with admin role and company assignment',
-        status: 200
-      }
-    }
-
-    // User and profile exist with correct assignment - return success
-    return {
-      success: true, 
-      user: existingUser,
-      profile: existingProfile,
-      message: 'User and profile already exist with correct assignment',
-      status: 200
-    }
-  } else {
-    // User exists but no profile, create profile
-    console.log('User exists but no profile found, creating profile...')
-    
     // Determine user role and company
     const userRole = companyId ? 'admin' : determineUserRole(email)
     let finalCompanyId = companyId
@@ -118,26 +91,99 @@ async function handleExistingUser(
       finalCompanyId = await getOrCreateSuperAdminCompany(supabaseAdmin)
     }
 
-    const newProfile = await createUserProfile(supabaseAdmin, {
-      user_id: existingUser.id,
-      company_id: finalCompanyId || '',
-      role: userRole,
-      first_name: defaultFirstName,
-      last_name: defaultLastName,
-      pending_approval: false
-    })
+    if (existingProfile) {
+      console.log('Profile exists, checking if update is needed...')
+      
+      // Check if profile needs updating
+      const needsUpdate = finalCompanyId && (
+        existingProfile.company_id !== finalCompanyId || 
+        existingProfile.role !== userRole
+      )
 
-    // Send welcome email for new admin profiles only
-    if (userRole === 'admin' && companyId) {
-      await sendWelcomeEmailSafely(email, defaultFirstName, defaultLastName, companyName)
+      if (needsUpdate) {
+        console.log('Updating existing profile with correct company and role...')
+        
+        const updatedProfile = await updateUserProfile(
+          supabaseAdmin, 
+          existingUser.id, 
+          finalCompanyId!, 
+          userRole, 
+          defaultFirstName, 
+          defaultLastName
+        )
+
+        // Send welcome email for admin users only
+        if (userRole === 'admin' && companyId) {
+          await sendWelcomeEmailSafely(email, defaultFirstName, defaultLastName, companyName)
+        }
+
+        // Update registration request as approved
+        if (companyId) {
+          await updateRegistrationRequestStatus(supabaseAdmin, companyId, 'approved')
+        }
+
+        return {
+          success: true, 
+          user: existingUser,
+          profile: updatedProfile,
+          message: 'Admin user updated successfully',
+          status: 200
+        }
+      } else {
+        // Profile exists and is correct
+        console.log('Profile already exists with correct assignment')
+        
+        // Update registration request as approved
+        if (companyId) {
+          await updateRegistrationRequestStatus(supabaseAdmin, companyId, 'approved')
+        }
+
+        return {
+          success: true, 
+          user: existingUser,
+          profile: existingProfile,
+          message: 'Admin user already exists with correct configuration',
+          status: 200
+        }
+      }
+    } else {
+      // User exists but no profile, create profile
+      console.log('User exists but no profile found, creating profile...')
+      
+      const newProfile = await createUserProfile(supabaseAdmin, {
+        user_id: existingUser.id,
+        company_id: finalCompanyId || '',
+        role: userRole,
+        first_name: defaultFirstName,
+        last_name: defaultLastName,
+        pending_approval: false
+      })
+
+      // Send welcome email for admin users only
+      if (userRole === 'admin' && companyId) {
+        await sendWelcomeEmailSafely(email, defaultFirstName, defaultLastName, companyName)
+      }
+
+      // Update registration request as approved
+      if (companyId) {
+        await updateRegistrationRequestStatus(supabaseAdmin, companyId, 'approved')
+      }
+
+      return {
+        success: true, 
+        user: existingUser,
+        profile: newProfile,
+        message: 'Admin user created successfully',
+        status: 201
+      }
     }
-
+  } catch (error) {
+    console.error('Error handling existing user:', error)
     return {
-      success: true, 
-      user: existingUser,
-      profile: newProfile,
-      message: 'Profile created for existing user',
-      status: 201
+      success: false,
+      error: error.message || 'Failed to handle existing user',
+      message: 'Error processing existing user',
+      status: 500
     }
   }
 }
@@ -151,48 +197,58 @@ async function handleNewUser(
   defaultLastName: string,
   companyName: string | undefined
 ) {
-  console.log('Creating new user account for:', email)
-
-  // Determine if this is a super admin (Thalys) or regular admin
-  const userRole = companyId ? 'admin' : determineUserRole(email)
-  let finalCompanyId = companyId
-
-  if (userRole === 'super_admin' && !companyId) {
-    finalCompanyId = await getOrCreateSuperAdminCompany(supabaseAdmin)
-  }
-
-  // Create new user with Admin API
-  let authUser
   try {
-    authUser = await createAuthUser(supabaseAdmin, email, password, userRole, defaultFirstName, defaultLastName)
-    console.log('Auth user created successfully:', authUser.user?.email)
-  } catch (authError) {
-    console.error('Auth user creation failed:', authError)
-    // If user creation fails due to existing email, try to find the existing user
-    if (authError.message?.includes('already been registered')) {
-      console.log('User already exists, attempting to find existing user...')
-      const existingUser = await findExistingUser(supabaseAdmin, email)
-      if (existingUser) {
-        authUser = { user: existingUser }
-        console.log('Found existing user, proceeding with profile creation/update')
-      } else {
-        throw new Error('User creation failed and could not find existing user')
-      }
-    } else {
-      throw authError
+    console.log('Creating new user account for:', email)
+
+    // Determine if this is a super admin (Thalys) or regular admin
+    const userRole = companyId ? 'admin' : determineUserRole(email)
+    let finalCompanyId = companyId
+
+    if (userRole === 'super_admin' && !companyId) {
+      finalCompanyId = await getOrCreateSuperAdminCompany(supabaseAdmin)
     }
-  }
 
-  // Check if profile already exists (defensive check)
-  const existingProfile = await checkExistingProfile(supabaseAdmin, authUser.user.id)
+    // Create new user with Admin API
+    let authUser
+    try {
+      authUser = await createAuthUser(supabaseAdmin, email, password, userRole, defaultFirstName, defaultLastName)
+      console.log('Auth user created successfully:', authUser.user?.email)
+    } catch (authError) {
+      console.error('Auth user creation failed:', authError)
+      
+      // If user creation fails due to existing email, try to find the existing user
+      if (authError.message?.includes('already been registered')) {
+        console.log('User already exists, attempting to find existing user...')
+        const existingUser = await findExistingUser(supabaseAdmin, email)
+        if (existingUser) {
+          // Recursively handle as existing user
+          return await handleExistingUser(
+            supabaseAdmin, 
+            existingUser, 
+            companyId, 
+            defaultFirstName, 
+            defaultLastName, 
+            email, 
+            companyName
+          )
+        } else {
+          throw new Error('User exists but could not be found by email')
+        }
+      } else {
+        throw authError
+      }
+    }
 
-  if (existingProfile) {
-    console.log('Profile already exists for user, checking if update is needed...')
-    
-    // Check if profile needs updating
-    if (companyId && (existingProfile.company_id !== companyId || existingProfile.role !== userRole)) {
-      console.log('Updating existing profile with correct company and role...')
-      try {
+    // Check if profile already exists (defensive check)
+    const existingProfile = await checkExistingProfile(supabaseAdmin, authUser.user.id)
+
+    if (existingProfile) {
+      console.log('Profile already exists for user, checking if update is needed...')
+      
+      // Check if profile needs updating
+      if (companyId && (existingProfile.company_id !== companyId || existingProfile.role !== userRole)) {
+        console.log('Updating existing profile with correct company and role...')
+        
         const updatedProfile = await updateUserProfile(
           supabaseAdmin, 
           authUser.user.id, 
@@ -202,74 +258,80 @@ async function handleNewUser(
           defaultLastName
         )
 
-        // Send welcome email for new admin users only
+        // Send welcome email for admin users only
         if (userRole === 'admin' && companyId) {
           await sendWelcomeEmailSafely(email, defaultFirstName, defaultLastName, companyName)
+        }
+
+        // Update registration request as approved
+        if (companyId) {
+          await updateRegistrationRequestStatus(supabaseAdmin, companyId, 'approved')
         }
 
         return {
           success: true, 
           user: authUser.user,
           profile: updatedProfile,
-          message: `${userRole === 'super_admin' ? 'Super Admin' : 'Admin'} user updated with correct profile`,
+          message: 'Admin user updated with correct profile',
           status: 200
         }
-      } catch (error) {
-        console.error('Profile update failed:', error)
-        throw error
-      }
-    } else {
-      // Profile exists and is correct, return success
-      console.log('Profile already exists with correct assignment')
-      return {
-        success: true, 
-        user: authUser.user,
-        profile: existingProfile,
-        message: `${userRole === 'super_admin' ? 'Super Admin' : 'Admin'} user and profile already exist`,
-        status: 200
+      } else {
+        // Profile exists and is correct, return success
+        console.log('Profile already exists with correct assignment')
+        
+        // Update registration request as approved
+        if (companyId) {
+          await updateRegistrationRequestStatus(supabaseAdmin, companyId, 'approved')
+        }
+
+        return {
+          success: true, 
+          user: authUser.user,
+          profile: existingProfile,
+          message: 'Admin user and profile already exist',
+          status: 200
+        }
       }
     }
-  }
 
-  // Create user profile
-  const profileData = {
-    user_id: authUser.user.id,
-    company_id: finalCompanyId!,
-    role: userRole,
-    first_name: defaultFirstName,
-    last_name: defaultLastName,
-    pending_approval: false
-  }
+    // Create user profile
+    const profileData = {
+      user_id: authUser.user.id,
+      company_id: finalCompanyId!,
+      role: userRole,
+      first_name: defaultFirstName,
+      last_name: defaultLastName,
+      pending_approval: false
+    }
 
-  try {
     const profile = await createUserProfile(supabaseAdmin, profileData)
-
     console.log('User profile created successfully')
 
-    // Send welcome email for new admin users only
+    // Send welcome email for admin users only
     if (userRole === 'admin' && companyId) {
       await sendWelcomeEmailSafely(email, defaultFirstName, defaultLastName, companyName)
+    }
+
+    // Update registration request as approved
+    if (companyId) {
+      await updateRegistrationRequestStatus(supabaseAdmin, companyId, 'approved')
     }
 
     return {
       success: true, 
       user: authUser.user,
       profile: profile,
-      message: `${userRole === 'super_admin' ? 'Super Admin' : 'Admin'} user created successfully`,
+      message: 'Admin user created successfully',
       status: 201
     }
   } catch (error) {
-    console.error('Profile creation failed:', error)
-    // Only clean up the auth user if we just created it and profile creation failed
-    if (!existingProfile) {
-      try {
-        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
-        console.log('Cleaned up auth user after profile creation failure')
-      } catch (cleanupError) {
-        console.error('Failed to clean up auth user:', cleanupError)
-      }
+    console.error('Error handling new user:', error)
+    return {
+      success: false,
+      error: error.message || 'Failed to create new user',
+      message: 'Error creating new user',
+      status: 500
     }
-    throw error
   }
 }
 
@@ -284,5 +346,29 @@ async function sendWelcomeEmailSafely(
     console.log('Welcome email sent successfully')
   } catch (emailError) {
     console.error('Failed to send welcome email, but continuing:', emailError)
+  }
+}
+
+async function updateRegistrationRequestStatus(
+  supabaseAdmin: any,
+  companyId: string,
+  status: string
+) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('company_registration_requests')
+      .update({ 
+        status: status,
+        approved_at: new Date().toISOString()
+      })
+      .eq('company_id', companyId)
+
+    if (error) {
+      console.error('Failed to update registration request status:', error)
+    } else {
+      console.log('Registration request status updated to:', status)
+    }
+  } catch (error) {
+    console.error('Error updating registration request status:', error)
   }
 }

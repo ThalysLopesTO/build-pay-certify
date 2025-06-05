@@ -24,10 +24,16 @@ serve(async (req) => {
 
     const result = await processCreateSuperAdminRequest(supabaseAdmin, body)
 
+    // Check if the result indicates a failure
+    if (!result.success) {
+      console.error('Request processing failed:', result.error)
+      return createErrorResponse(result.message, result.status, result.error)
+    }
+
     return createSuccessResponse(result)
 
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('Unexpected error in main handler:', error)
     return createErrorResponse('Internal server error', 500, error.message)
   }
 })
