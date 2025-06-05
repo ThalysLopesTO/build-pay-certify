@@ -19,10 +19,13 @@ import { useCancellationRequests } from '@/hooks/useCancellationRequests';
 const PlanCancellationCard = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [notes, setNotes] = useState('');
-  const { pendingRequest, submitRequest, isSubmitting } = useCancellationRequests();
+  const { requests, submitCancellationRequest } = useCancellationRequests();
+
+  // Find pending request for current user's company
+  const pendingRequest = requests.find(request => request.status === 'pending');
 
   const handleSubmit = async () => {
-    await submitRequest(notes);
+    await submitCancellationRequest.mutateAsync({ notes });
     setIsDialogOpen(false);
     setNotes('');
   };
@@ -89,16 +92,16 @@ const PlanCancellationCard = () => {
               <Button
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
-                disabled={isSubmitting}
+                disabled={submitCancellationRequest.isPending}
               >
                 Keep Plan
               </Button>
               <Button
                 variant="destructive"
                 onClick={handleSubmit}
-                disabled={isSubmitting}
+                disabled={submitCancellationRequest.isPending}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Cancellation Request'}
+                {submitCancellationRequest.isPending ? 'Submitting...' : 'Submit Cancellation Request'}
               </Button>
             </DialogFooter>
           </DialogContent>
