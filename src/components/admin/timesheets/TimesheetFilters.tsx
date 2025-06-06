@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Filter, Search, X } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
 
 interface TimesheetFiltersProps {
   filters: {
     employeeName: string;
     weekEndingDate: string;
+    status: string;
   };
   onFiltersChange: (filters: any) => void;
   employees: any[];
@@ -35,14 +36,22 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
     });
   };
 
-  const clearFilters = () => {
+  const handleStatusChange = (value: string) => {
     onFiltersChange({
-      employeeName: '',
-      weekEndingDate: ''
+      ...filters,
+      status: value
     });
   };
 
-  const hasActiveFilters = filters.employeeName || filters.weekEndingDate;
+  const clearFilters = () => {
+    onFiltersChange({
+      employeeName: '',
+      weekEndingDate: '',
+      status: 'all'
+    });
+  };
+
+  const hasActiveFilters = filters.employeeName || filters.weekEndingDate || filters.status !== 'all';
 
   // Filter employees with valid names and create display names
   const validEmployees = employees?.filter(employee => {
@@ -91,6 +100,21 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
               onChange={handleDateChange}
               className="w-48"
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label htmlFor="status-filter" className="text-sm text-gray-600">Status:</Label>
+            <Select value={filters.status} onValueChange={handleStatusChange}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="All status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {hasActiveFilters && (

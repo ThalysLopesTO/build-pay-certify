@@ -3,7 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
-export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndingDate?: string }) => {
+export const useEmployeeTimesheets = (filters: { 
+  employeeName?: string; 
+  weekEndingDate?: string;
+  status?: string;
+}) => {
   const { user } = useAuth();
 
   return useQuery({
@@ -23,10 +27,11 @@ export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndi
         .eq('company_id', user.companyId)
         .order('week_start_date', { ascending: false });
 
-      // Apply date filter if provided
+      // Apply date filter if provided (convert week ending to week start)
       if (filters.weekEndingDate) {
-        const weekStart = new Date(filters.weekEndingDate);
-        weekStart.setDate(weekStart.getDate() - 6); // Get week start (7 days before)
+        const weekEnd = new Date(filters.weekEndingDate);
+        const weekStart = new Date(weekEnd);
+        weekStart.setDate(weekEnd.getDate() - 6); // Get week start (7 days before)
         timesheetsQuery = timesheetsQuery.eq('week_start_date', weekStart.toISOString().split('T')[0]);
       }
 
@@ -38,7 +43,7 @@ export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndi
       }
 
       if (!timesheets || timesheets.length === 0) {
-        console.log('No timesheets found');
+        console.log('No timesheets found for company:', user.companyId);
         return [];
       }
 
@@ -50,7 +55,8 @@ export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndi
       const { data: userProfiles, error: userError } = await supabase
         .from('user_profiles')
         .select('user_id, first_name, last_name')
-        .in('user_id', userIds);
+        .in('user_id', userIds)
+        .eq('company_id', user.companyId); // Ensure we only get profiles from the same company
 
       if (userError) {
         console.error('Error fetching user profiles:', userError);
@@ -61,7 +67,8 @@ export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndi
       const { data: jobsites, error: jobsiteError } = await supabase
         .from('jobsites')
         .select('id, name')
-        .in('id', jobsiteIds);
+        .in('id', jobsiteIds)
+        .eq('company_id', user.companyId); // Ensure we only get jobsites from the same company
 
       if (jobsiteError) {
         console.error('Error fetching jobsites:', jobsiteError);
@@ -101,7 +108,9 @@ export const useEmployeeTimesheets = (filters: { employeeName?: string; weekEndi
       return enrichedTimesheets;
     },
     enabled: !!user?.companyId,
-    staleTime: 2 * 60 * 1000, // 2 minutes - reduced for better data freshness
-    gcTime: 5 * 60 * 1000, // 5 minutes (replaced cacheTime with gcTime)
+    staleTime: 1 * 60 * 1000, // 1 minute - more frequent updates for admin view
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
