@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, Edit, Check, X, AlertCircle } from 'lucide-react';
+import { Calendar, Edit, Check, X, AlertCircle, RefreshCw } from 'lucide-react';
 import { useEmployeeTimesheets } from '@/hooks/useEmployeeTimesheets';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useJobsites } from '@/hooks/useJobsites';
@@ -93,6 +93,12 @@ const EmployeeTimesheets = () => {
     setCurrentPage(page);
   };
 
+  const isPermissionError = (error: any) => {
+    return error?.message?.includes('permission denied') || 
+           error?.message?.includes('auth.users') ||
+           error?.code === 'PGRST301';
+  };
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -110,15 +116,46 @@ const EmployeeTimesheets = () => {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Failed to load timesheets: {error.message}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => refetch()} 
-              className="ml-2"
-            >
-              Retry
-            </Button>
+            {isPermissionError(error) ? (
+              <div className="space-y-2">
+                <p className="font-semibold">Access Permission Error</p>
+                <p>Unable to load timesheets due to database permissions. This might be a temporary issue.</p>
+                <div className="flex gap-2 mt-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => refetch()} 
+                    disabled={isLoading}
+                    className="flex items-center gap-1"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    Retry
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => window.location.reload()}
+                  >
+                    Refresh Page
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  If this issue persists, please contact support or try logging out and back in.
+                </p>
+              </div>
+            ) : (
+              <div>
+                Failed to load timesheets: {error.message}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => refetch()} 
+                  className="ml-2"
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       </div>

@@ -52,6 +52,7 @@ export const useEmployeeTimesheets = (filters: {
       const jobsiteIds = [...new Set(timesheets.map(t => t.jobsite_id))];
 
       // Fetch user profiles for the employees who submitted timesheets
+      // Only use user_profiles table, never auth.users
       const { data: userProfiles, error: userError } = await supabase
         .from('user_profiles')
         .select('user_id, first_name, last_name')
