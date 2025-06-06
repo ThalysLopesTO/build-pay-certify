@@ -299,6 +299,51 @@ export type Database = {
           },
         ]
       }
+      employee_certificates: {
+        Row: {
+          certificate_name: string
+          certificate_type: string
+          company_id: string
+          created_at: string
+          employee_id: string
+          expiry_date: string
+          file_url: string | null
+          id: string
+          status: string
+          updated_at: string
+          upload_date: string
+          uploaded_by: string
+        }
+        Insert: {
+          certificate_name: string
+          certificate_type: string
+          company_id: string
+          created_at?: string
+          employee_id: string
+          expiry_date: string
+          file_url?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          upload_date?: string
+          uploaded_by: string
+        }
+        Update: {
+          certificate_name?: string
+          certificate_type?: string
+          company_id?: string
+          created_at?: string
+          employee_id?: string
+          expiry_date?: string
+          file_url?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          upload_date?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
       invoice_line_items: {
         Row: {
           amount: number

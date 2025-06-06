@@ -1,20 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, AlertTriangle, CheckCircle, XCircle, Upload, Trash2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-
-interface Certificate {
-  id: string;
-  name: string;
-  expiryDate: string;
-  uploadDate: string;
-  status: 'valid' | 'expiring' | 'expired';
-}
+import { Shield, AlertTriangle, CheckCircle, XCircle, Upload, Trash2, ExternalLink } from 'lucide-react';
+import { useEmployeeCertificates } from '@/hooks/useEmployeeCertificates';
+import CertificateUploadModal from './CertificateUploadModal';
 
 interface Employee {
   id: string;
@@ -33,44 +25,15 @@ const EmployeeCertificatesModal: React.FC<EmployeeCertificatesModalProps> = ({
   onClose,
   employee
 }) => {
-  const [certificates, setCertificates] = useState<Certificate[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
-  // Mock certificate data - in a real app, this would come from the database
-  useEffect(() => {
-    if (employee && isOpen) {
-      setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        const mockCertificates: Certificate[] = [
-          {
-            id: '1',
-            name: 'WHMIS',
-            expiryDate: '2024-12-31',
-            uploadDate: '2024-01-15',
-            status: 'valid'
-          },
-          {
-            id: '2',
-            name: 'Working at Heights',
-            expiryDate: '2024-07-15',
-            uploadDate: '2024-01-10',
-            status: 'expiring'
-          },
-          {
-            id: '3',
-            name: '4 Steps Safety',
-            expiryDate: '2024-05-01',
-            uploadDate: '2023-12-20',
-            status: 'expired'
-          }
-        ];
-        setCertificates(mockCertificates);
-        setLoading(false);
-      }, 500);
-    }
-  }, [employee, isOpen]);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const { 
+    certificates, 
+    isLoading, 
+    error, 
+    deleteCertificate, 
+    refreshCertificates,
+    isDeletingCertificate 
+  } = useEmployeeCertificates(employee?.id);
 
   const getCertStatusIcon = (status: string) => {
     switch (status) {
@@ -111,139 +74,177 @@ const EmployeeCertificatesModal: React.FC<EmployeeCertificatesModalProps> = ({
     }
   };
 
-  const handleDeleteCertificate = async (certId: string) => {
-    try {
-      setCertificates(prev => prev.filter(cert => cert.id !== certId));
-      toast({
-        title: "Certificate Deleted",
-        description: "Certificate has been removed successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Delete Failed",
-        description: "Failed to delete certificate",
-        variant: "destructive",
-      });
+  const handleDeleteCertificate = (certId: string) => {
+    if (window.confirm('Are you sure you want to delete this certificate?')) {
+      deleteCertificate(certId);
     }
   };
 
-  const handleUploadCertificate = () => {
-    toast({
-      title: "Upload Feature",
-      description: "Certificate upload functionality would be implemented here.",
-    });
+  const handleViewFile = (fileUrl: string) => {
+    window.open(fileUrl, '_blank');
+  };
+
+  const handleUploadSuccess = () => {
+    refreshCertificates();
+    setUploadModalOpen(false);
   };
 
   if (!employee) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Shield className="h-5 w-5" />
-            <span>Certificates - {employee.first_name} {employee.last_name}</span>
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Shield className="h-5 w-5" />
+              <span>Certificates - {employee.first_name} {employee.last_name}</span>
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Upload button */}
-          <div className="flex justify-end">
-            <Button onClick={handleUploadCertificate} className="bg-orange-600 hover:bg-orange-700">
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Certificate
-            </Button>
-          </div>
-
-          {/* Certificates list */}
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
-              <p className="mt-2 text-slate-600">Loading certificates...</p>
+          <div className="space-y-4">
+            {/* Upload button */}
+            <div className="flex justify-end">
+              <Button 
+                onClick={() => setUploadModalOpen(true)} 
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Certificate
+              </Button>
             </div>
-          ) : certificates.length === 0 ? (
-            <Alert>
-              <Shield className="h-4 w-4" />
-              <AlertDescription>
-                No certificates found for this employee.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <div className="space-y-3">
-              {certificates.map((cert) => (
-                <div key={cert.id} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        {getCertStatusIcon(cert.status)}
-                        <h3 className="font-semibold">{cert.name}</h3>
-                        <Badge className={getCertStatusColor(cert.status)}>
-                          {getCertStatusText(cert.status)}
-                        </Badge>
+
+            {/* Error state */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Error loading certificates: {error.message}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Loading state */}
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+                <p className="mt-2 text-slate-600">Loading certificates...</p>
+              </div>
+            ) : certificates.length === 0 ? (
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  No certificates found for this employee.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-3">
+                {certificates.map((cert) => (
+                  <div key={cert.id} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          {getCertStatusIcon(cert.status)}
+                          <h3 className="font-semibold">{cert.certificate_name}</h3>
+                          <Badge className={getCertStatusColor(cert.status)}>
+                            {getCertStatusText(cert.status)}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm text-slate-600">
+                          <div>
+                            <span className="font-medium">Type:</span>
+                            <p>{cert.certificate_type}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium">Expiry Date:</span>
+                            <p>{new Date(cert.expiry_date).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium">Upload Date:</span>
+                            <p>{new Date(cert.upload_date).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium">File:</span>
+                            {cert.file_url ? (
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="p-0 h-auto text-blue-600"
+                                onClick={() => handleViewFile(cert.file_url!)}
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                View File
+                              </Button>
+                            ) : (
+                              <p className="text-slate-400">No file attached</p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4 text-sm text-slate-600">
-                        <div>
-                          <span className="font-medium">Expiry Date:</span>
-                          <p>{new Date(cert.expiryDate).toLocaleDateString()}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium">Upload Date:</span>
-                          <p>{new Date(cert.uploadDate).toLocaleDateString()}</p>
-                        </div>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteCertificate(cert.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        disabled={isDeletingCertificate}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteCertificate(cert.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Status summary */}
+            {certificates.length > 0 && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Shield className="h-4 w-4 text-blue-600" />
+                  <span className="font-semibold text-blue-900">Certificate Status Summary</span>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="text-center">
+                    <div className="text-green-600 font-semibold">
+                      {certificates.filter(c => c.status === 'valid').length}
+                    </div>
+                    <div className="text-slate-600">Valid</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-yellow-600 font-semibold">
+                      {certificates.filter(c => c.status === 'expiring').length}
+                    </div>
+                    <div className="text-slate-600">Expiring</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-red-600 font-semibold">
+                      {certificates.filter(c => c.status === 'expired').length}
+                    </div>
+                    <div className="text-slate-600">Expired</div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            )}
 
-          {/* Status summary */}
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <Shield className="h-4 w-4 text-blue-600" />
-              <span className="font-semibold text-blue-900">Certificate Status Summary</span>
-            </div>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div className="text-center">
-                <div className="text-green-600 font-semibold">
-                  {certificates.filter(c => c.status === 'valid').length}
-                </div>
-                <div className="text-slate-600">Valid</div>
-              </div>
-              <div className="text-center">
-                <div className="text-yellow-600 font-semibold">
-                  {certificates.filter(c => c.status === 'expiring').length}
-                </div>
-                <div className="text-slate-600">Expiring</div>
-              </div>
-              <div className="text-center">
-                <div className="text-red-600 font-semibold">
-                  {certificates.filter(c => c.status === 'expired').length}
-                </div>
-                <div className="text-slate-600">Expired</div>
-              </div>
+            <div className="flex justify-end pt-4">
+              <Button variant="outline" onClick={onClose}>
+                Close
+              </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          <div className="flex justify-end pt-4">
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+      {/* Upload Modal */}
+      <CertificateUploadModal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        employee={employee}
+        onSuccess={handleUploadSuccess}
+      />
+    </>
   );
 };
 

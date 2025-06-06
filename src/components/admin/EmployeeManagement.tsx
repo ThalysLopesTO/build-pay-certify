@@ -128,7 +128,7 @@ const EmployeeManagement = () => {
       {/* Employee List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredEmployees.map((employee) => {
-          const certStatus = getCertStatus(); // Mock status
+          const certStatus = getCertStatus(); // Mock status - will be replaced with real data
           return (
             <Card key={employee.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
