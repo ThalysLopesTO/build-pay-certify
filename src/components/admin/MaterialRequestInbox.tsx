@@ -23,6 +23,12 @@ const MaterialRequestInbox = () => {
     handleStatusUpdate
   } = useMaterialRequestsAdmin();
 
+  const isPermissionError = (error: any) => {
+    return error?.message?.includes('permission denied') || 
+           error?.message?.includes('auth.users') ||
+           error?.code === 'PGRST301';
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -35,10 +41,6 @@ const MaterialRequestInbox = () => {
   }
 
   if (error) {
-    const isPermissionError = error.message?.includes('permission denied') || 
-                             error.message?.includes('RLS') ||
-                             error.message?.includes('not allowed');
-
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -51,16 +53,24 @@ const MaterialRequestInbox = () => {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            {isPermissionError ? (
+            {isPermissionError(error) ? (
               <div className="space-y-2">
-                <p className="font-semibold">Permission Error</p>
-                <p>You currently don't have permission to view this data. This may be due to:</p>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>Missing admin role permissions</li>
-                  <li>Database Row Level Security (RLS) policies</li>
-                  <li>Insufficient access to linked data (Users, Jobsites)</li>
-                </ul>
-                <p className="text-sm mt-2">Please contact your system administrator to resolve this issue.</p>
+                <p className="font-semibold">Access Permission Error</p>
+                <p>Unable to load material requests due to database permissions. This might be a temporary issue.</p>
+                <div className="flex gap-2 mt-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => window.location.reload()}
+                    className="flex items-center gap-1"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Refresh Page
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  If this issue persists, please contact support or try logging out and back in.
+                </p>
               </div>
             ) : (
               <div className="space-y-2">

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -25,7 +24,8 @@ export const useMaterialRequestsAdmin = () => {
         return [];
       }
 
-      const { data, error } = await supabase
+      // First, get the material requests with jobsite data
+      const { data: materialRequests, error: requestsError } = await supabase
         .from('material_requests')
         .select(`
           id,
@@ -37,18 +37,70 @@ export const useMaterialRequestsAdmin = () => {
           created_at,
           submitted_by,
           company_id,
-          jobsites(name, address)
+          jobsite_id
         `)
         .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching material requests:', error);
-        throw error;
+      if (requestsError) {
+        console.error('Error fetching material requests:', requestsError);
+        throw requestsError;
       }
 
-      console.log('Fetched material requests:', data);
-      return data as MaterialRequest[];
+      if (!materialRequests || materialRequests.length === 0) {
+        console.log('No material requests found');
+        return [];
+      }
+
+      // Get unique jobsite IDs and user IDs
+      const jobsiteIds = [...new Set(materialRequests.map(r => r.jobsite_id))];
+      const userIds = [...new Set(materialRequests.map(r => r.submitted_by))];
+
+      // Fetch jobsites data
+      const { data: jobsites, error: jobsitesError } = await supabase
+        .from('jobsites')
+        .select('id, name, address')
+        .in('id', jobsiteIds)
+        .eq('company_id', user.companyId);
+
+      if (jobsitesError) {
+        console.error('Error fetching jobsites:', jobsitesError);
+        throw jobsitesError;
+      }
+
+      // Fetch user profiles for submitted_by names
+      const { data: userProfiles, error: usersError } = await supabase
+        .from('user_profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', userIds)
+        .eq('company_id', user.companyId);
+
+      if (usersError) {
+        console.error('Error fetching user profiles:', usersError);
+        throw usersError;
+      }
+
+      // Create lookup maps
+      const jobsiteMap = new Map(jobsites?.map(j => [j.id, j]) || []);
+      const userMap = new Map(userProfiles?.map(u => [u.user_id, u]) || []);
+
+      // Enrich material requests with related data
+      const enrichedRequests = materialRequests.map(request => {
+        const jobsite = jobsiteMap.get(request.jobsite_id);
+        const userProfile = userMap.get(request.submitted_by);
+        
+        return {
+          ...request,
+          jobsites: jobsite || null,
+          // Keep submitted_by as user_id for compatibility, but add user name for display
+          submitted_by_name: userProfile 
+            ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim()
+            : 'Unknown User'
+        };
+      });
+
+      console.log('Fetched and enriched material requests:', enrichedRequests);
+      return enrichedRequests as MaterialRequest[];
     },
     enabled: !!user?.companyId,
     retry: 2,
