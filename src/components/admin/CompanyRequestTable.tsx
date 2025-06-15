@@ -1,12 +1,11 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Building, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { Search, Building, CheckCircle, XCircle } from 'lucide-react';
 import CompanyStatusBadge from './CompanyStatusBadge';
 
 interface Company {
@@ -34,32 +33,39 @@ interface RegistrationRequest {
   created_at: string;
 }
 
-interface CompanyManagementTableProps {
-  companies: Company[];
+interface CompanyRequestTableProps {
   requests: RegistrationRequest[];
   onApproveRequest: (request: RegistrationRequest) => void;
   onRejectRequest: (request: RegistrationRequest) => void;
-  onEditCompany: (company: Company) => void;
-  onRevokeCompany: (company: Company) => void;
   isProcessing: string | null;
 }
 
-const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
-  companies,
-  onEditCompany,
-  onRevokeCompany,
+export default function CompanyRequestTable({
+  requests,
+  onApproveRequest,
+  onRejectRequest,
   isProcessing
-}) => {
+}: CompanyRequestTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('newest');
 
   // Combine requests and companies for unified display
   const allItems = [
-    ...companies.map(company => ({
-      ...company,
-      type: 'company' as const,
-      original: company
+    // Map registration requests
+    ...requests.map(request => ({
+      id: request.id,
+      name: request.company_name,
+      status: request.status,
+      registration_date: null,
+      expiration_date: null,
+      created_at: request.created_at,
+      is_expired: false,
+      days_until_expiry: null,
+      admin_email: request.admin_email,
+      admin_phone: request.company_phone,
+      type: 'request' as const,
+      original: request
     }))
   ];
 
@@ -96,9 +102,9 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="revoked">Revoked</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortOrder} onValueChange={setSortOrder}>
@@ -117,10 +123,10 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center">
             <Building className="h-5 w-5 mr-2" />
-            Company Management
+            Company Request
           </CardTitle>
           <CardDescription>
-            Manage company registrations, licenses, and access
+            Manage company registrations
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -129,9 +135,9 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
               <TableHeader>
                 <TableRow>
                   <TableHead>Company Name</TableHead>
+                  <TableHead>Admin Email</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Registration Date</TableHead>
-                  <TableHead>Expiration Date</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -146,6 +152,8 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                   filteredItems.map((item) => (
                     <TableRow key={item.id} className={item.is_expired ? 'bg-red-50' : ''}>
                       <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>{item.admin_email || '--'}</TableCell>
+                      <TableCell>{item.admin_phone || '--'}</TableCell>
                       <TableCell>
                         <CompanyStatusBadge 
                           status={item.status} 
@@ -154,32 +162,26 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                         />
                       </TableCell>
                       <TableCell>
-                        {item.registration_date ? format(new Date(item.registration_date), 'MMM dd, yyyy') : '--'}
-                      </TableCell>
-                      <TableCell>
-                        {item.expiration_date ? format(new Date(item.expiration_date), 'MMM dd, yyyy') : '--'}
-                      </TableCell>
-                      <TableCell>
                         <div className="flex space-x-2">
-                          {item.type === 'company' && item.status === 'active' && (
+                          {item.type === 'request' && item.status === 'pending' && (
                             <>
                               <Button
                                 size="sm"
-                                variant="outline"
-                                onClick={() => onEditCompany(item.original as Company)}
+                                onClick={() => onApproveRequest(item.original as RegistrationRequest)}
                                 disabled={isProcessing === item.id}
+                                className="bg-green-500 hover:bg-green-600"
                               >
-                                <Edit className="h-3 w-3 mr-1" />
-                                Edit
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                {isProcessing === item.id ? 'Processing...' : 'Approve'}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                onClick={() => onRevokeCompany(item.original as Company)}
+                                onClick={() => onRejectRequest(item.original as RegistrationRequest)}
                                 disabled={isProcessing === item.id}
                               >
-                                <Trash2 className="h-3 w-3 mr-1" />
-                                Revoke
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Reject
                               </Button>
                             </>
                           )}
@@ -196,5 +198,3 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
     </div>
   );
 };
-
-export default CompanyManagementTable;

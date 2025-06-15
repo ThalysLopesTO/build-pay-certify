@@ -45,9 +45,9 @@ export const useSuperAdminMutations = () => {
       }
 
       console.log('Company created successfully:', companyData);
-
+      
       // Step 2: Use the edge function to create the admin user with company ID and company name
-      const { data: createUserData, error: createUserError } = await supabase.functions.invoke('create-super-admin', {
+      const { data: createUserData, error: createUserError } = await supabase.functions.invoke('quick-processor', {
         body: { 
           email: request.admin_email,
           password: 'TempPassword123!',
@@ -72,7 +72,7 @@ export const useSuperAdminMutations = () => {
         throw new Error(`Failed to create admin user: ${createUserData.error}`);
       }
 
-      console.log('Admin user created successfully:', createUserData);
+      console.log('created admin: ',{createUserData})
 
       // Step 3: Update the registration request to approved status
       const { error: requestError } = await supabase

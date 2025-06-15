@@ -74,10 +74,21 @@ export const useCompanyMutations = () => {
         .from('companies')
         .update({ status: 'revoked' })
         .eq('id', companyId);
-
       if (error) {
         console.error('Company revocation error:', error);
         throw new Error(`Failed to revoke company access: ${error.message}`);
+      }
+
+      // Revoked user
+      const { error: errorBannedUser } = await supabase.functions.invoke('banned-user', {
+        body: { companyId }
+      });
+
+      if (errorBannedUser) {
+        console.error('User banned error:', errorBannedUser);
+        // Clean up the company if user creation fails
+        await supabase.from('companies').update({ status: 'active' }).eq('id', companyId);
+        throw new Error(`Failed to banned user: ${errorBannedUser.message}`);
       }
 
       console.log('Company access revoked successfully');

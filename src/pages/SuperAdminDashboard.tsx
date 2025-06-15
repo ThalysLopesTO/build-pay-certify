@@ -5,7 +5,6 @@ import Header from '@/components/Header';
 import SuperAdminHeader from '@/components/admin/SuperAdminHeader';
 import SuperAdminLoading from '@/components/admin/SuperAdminLoading';
 import CompanyManagementTable from '@/components/admin/CompanyManagementTable';
-import CancellationRequestsManagement from '@/components/admin/CancellationRequestsManagement';
 import LicenseApprovalDialog from '@/components/admin/LicenseApprovalDialog';
 import RejectionConfirmationDialog from '@/components/admin/RejectionConfirmationDialog';
 import EditCompanyDialog from '@/components/admin/EditCompanyDialog';
@@ -13,6 +12,7 @@ import RevokeCompanyDialog from '@/components/admin/RevokeCompanyDialog';
 import { useSuperAdminData } from '@/hooks/useSuperAdminData';
 import { useSuperAdminMutations } from '@/hooks/useSuperAdminMutations';
 import { useCompanyMutations } from '@/hooks/useCompanyMutations';
+import CompanyRequestTable from '@/components/admin/CompanyRequestTable';
 
 interface RegistrationRequest {
   id: string;
@@ -155,8 +155,12 @@ const SuperAdminDashboard = () => {
             isProcessing={processingId}
           />
 
-          {/* Cancellation Requests Section */}
-          <CancellationRequestsManagement />
+          <CompanyRequestTable
+            requests={requests}
+            onApproveRequest={handleApprove}
+            onRejectRequest={handleReject}
+            isProcessing={processingId}
+          />
         </div>
       </div>
 

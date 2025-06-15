@@ -46,6 +46,9 @@ interface CompanyManagementTableProps {
 
 const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
   companies,
+  requests,
+  onApproveRequest,
+  onRejectRequest,
   onEditCompany,
   onRevokeCompany,
   isProcessing
@@ -56,6 +59,22 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
 
   // Combine requests and companies for unified display
   const allItems = [
+    // Map registration requests
+    ...requests.map(request => ({
+      id: request.id,
+      name: request.company_name,
+      status: request.status,
+      registration_date: null,
+      expiration_date: null,
+      created_at: request.created_at,
+      is_expired: false,
+      days_until_expiry: null,
+      admin_email: request.admin_email,
+      admin_phone: request.company_phone,
+      type: 'request' as const,
+      original: request
+    })),
+    // Map existing companies
     ...companies.map(company => ({
       ...company,
       type: 'company' as const,
@@ -96,7 +115,9 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
             <SelectItem value="revoked">Revoked</SelectItem>
             <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
@@ -129,6 +150,8 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
               <TableHeader>
                 <TableRow>
                   <TableHead>Company Name</TableHead>
+                  <TableHead>Admin Email</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Registration Date</TableHead>
                   <TableHead>Expiration Date</TableHead>
@@ -146,6 +169,8 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                   filteredItems.map((item) => (
                     <TableRow key={item.id} className={item.is_expired ? 'bg-red-50' : ''}>
                       <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>{item.admin_email || '--'}</TableCell>
+                      <TableCell>{item.admin_phone || '--'}</TableCell>
                       <TableCell>
                         <CompanyStatusBadge 
                           status={item.status} 
@@ -161,6 +186,28 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
+                          {item.type === 'request' && item.status === 'pending' && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => onApproveRequest(item.original as RegistrationRequest)}
+                                disabled={isProcessing === item.id}
+                                className="bg-green-500 hover:bg-green-600"
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                {isProcessing === item.id ? 'Processing...' : 'Approve'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => onRejectRequest(item.original as RegistrationRequest)}
+                                disabled={isProcessing === item.id}
+                              >
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
                           {item.type === 'company' && item.status === 'active' && (
                             <>
                               <Button

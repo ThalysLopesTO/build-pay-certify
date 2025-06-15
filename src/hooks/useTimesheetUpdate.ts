@@ -23,7 +23,7 @@ export const useTimesheetUpdate = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: TimesheetUpdateData }) => {
-      console.log('Updating timesheet:', id, data);
+      console.log('Updating timesheet:', {company_id: user?.companyId, id}, data);
 
       const { data: result, error } = await supabase
         .from('weekly_timesheets')

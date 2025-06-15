@@ -23,17 +23,17 @@ const CompanyStatusBadge: React.FC<CompanyStatusBadgeProps> = ({
 
   switch (status) {
     case 'active':
-      return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">✅ Active</Badge>;
+      return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100 cursor-default">Active</Badge>;
     case 'pending':
-      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">⌛ Pending</Badge>;
+      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200 whitespace-nowrap hover:bg-yellow-100 cursor-default">⌛ Pending</Badge>;
     case 'rejected':
-      return <Badge variant="destructive">❌ Rejected</Badge>;
+      return <Badge variant="default" className="whitespace-nowrap bg-red-100 text-red-500 border border-red-200 hover:bg-red-100 cursor-default">Rejected</Badge>;
     case 'revoked':
-      return <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-200">🚫 Revoked</Badge>;
+      return <Badge variant="secondary" className="bg-red-100 text-red-500 border-red-200 cursor-default hover:bg-red-100">🚫 Revoked</Badge>;
     case 'inactive':
-      return <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-200">⏸️ Inactive</Badge>;
+      return <Badge variant="secondary" className="bg-red-100 text-red-500 border-red-200 cursor-default hover:bg-red-100">Inactive</Badge>;
     default:
-      return <Badge variant="secondary">{status}</Badge>;
+      return <Badge variant="secondary" className="capitalize cursor-default">{status}</Badge>;
   }
 };
 
