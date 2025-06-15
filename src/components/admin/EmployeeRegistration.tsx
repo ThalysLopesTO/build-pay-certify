@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserPlus, Save, User, Shield, Phone, MapPin } from 'lucide-react';
 import DatePickerField from '../foreman/DatePickerField';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const employeeSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -35,6 +36,7 @@ type EmployeeFormData = z.infer<typeof employeeSchema>;
 
 const EmployeeRegistration = () => {
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth()
 
   const form = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeSchema),
@@ -66,6 +68,7 @@ const EmployeeRegistration = () => {
       const { data: result, error } = await supabase.functions.invoke('create-employee', {
         body: {
           employeeData: {
+            companyId: user.companyId,
             email: data.email,
             password: data.password,
             firstName: data.firstName,
