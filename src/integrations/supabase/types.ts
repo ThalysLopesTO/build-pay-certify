@@ -155,6 +155,7 @@ export type Database = {
           id: string
           license_expires_at: string | null
           license_key: string
+          logo_url: string | null
           name: string
           plan: string | null
           registration_date: string | null
@@ -167,6 +168,7 @@ export type Database = {
           id?: string
           license_expires_at?: string | null
           license_key?: string
+          logo_url?: string | null
           name: string
           plan?: string | null
           registration_date?: string | null
@@ -179,6 +181,7 @@ export type Database = {
           id?: string
           license_expires_at?: string | null
           license_key?: string
+          logo_url?: string | null
           name?: string
           plan?: string | null
           registration_date?: string | null
