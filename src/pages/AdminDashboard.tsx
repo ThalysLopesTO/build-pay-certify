@@ -23,7 +23,7 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <AdminDashboardContent />;
+        return <AdminDashboardContent setActiveTab={setActiveTab} />;
       case 'employees':
         return <EmployeeManagement />;
       case 'employee-registration':
@@ -51,7 +51,7 @@ const AdminDashboard = () => {
       case 'settings':
         return <UserSettings />;
       default:
-        return <AdminDashboardContent />;
+        return <AdminDashboardContent setActiveTab={setActiveTab} />;
     }
   };
 
