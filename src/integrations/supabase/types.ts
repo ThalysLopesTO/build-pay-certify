@@ -344,6 +344,63 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory: {
+        Row: {
+          brand: string
+          company_id: string
+          created_at: string
+          created_by: string
+          equipment_name: string
+          id: string
+          jobsite_id: string
+          return_date: string | null
+          sku: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          company_id: string
+          created_at?: string
+          created_by: string
+          equipment_name: string
+          id?: string
+          jobsite_id: string
+          return_date?: string | null
+          sku: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          equipment_name?: string
+          id?: string
+          jobsite_id?: string
+          return_date?: string | null
+          sku?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_line_items: {
         Row: {
           amount: number
@@ -681,6 +738,13 @@ export type Database = {
             referencedRelation: "jobsites"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "weekly_timesheets_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
     }
@@ -712,6 +776,13 @@ export type Database = {
       get_user_company_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_users_banned_this_hour: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          banned_until: string
+        }[]
       }
       is_admin: {
         Args: Record<PropertyKey, never>
