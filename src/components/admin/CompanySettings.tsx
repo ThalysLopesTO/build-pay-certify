@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useCompanySettings, type CompanySettings } from '@/hooks/useCompanySettings';
+import CompanyBrandingSection from './CompanyBrandingSection';
 import { Building2, Mail, Phone, MapPin, FileText, Upload } from 'lucide-react';
 
 const CompanySettings = () => {
@@ -53,6 +54,10 @@ const CompanySettings = () => {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Company Branding Section */}
+      <CompanyBrandingSection />
+
+      {/* Company Information */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">

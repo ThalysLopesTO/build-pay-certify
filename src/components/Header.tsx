@@ -2,12 +2,14 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { LogOut, Crown } from 'lucide-react';
+import { LogOut, Crown, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const { logoUrl, isLoading } = useCompanyLogo();
 
   const handleLogout = async () => {
     try {
@@ -41,9 +43,22 @@ const Header = () => {
     <header className="bg-white border-b border-slate-200 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <h1 className="text-xl font-semibold text-slate-900">
-            Construction Payroll Manager
-          </h1>
+          {/* Company Logo or Default Icon */}
+          <div className="flex items-center space-x-3">
+            {!isLoading && logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="Company Logo"
+                className="h-8 w-auto object-contain rounded"
+              />
+            ) : (
+              <Building className="h-8 w-8 text-orange-600" />
+            )}
+            <h1 className="text-xl font-semibold text-slate-900">
+              Construction Payroll Manager
+            </h1>
+          </div>
+          
           {user?.role === 'super_admin' && (
             <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
               <Crown className="h-3 w-3 mr-1" />

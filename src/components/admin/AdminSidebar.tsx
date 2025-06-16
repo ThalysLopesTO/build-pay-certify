@@ -10,13 +10,24 @@ import { Building } from 'lucide-react';
 import SidebarSection from './sidebar/SidebarSection';
 import { groupedMenuItems } from './sidebar/menuData';
 import { AdminSidebarProps } from './sidebar/types';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 
 const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
+  const { logoUrl, isLoading } = useCompanyLogo();
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
         <div className="flex items-center space-x-2">
-          <Building className="h-6 w-6 text-orange-600" />
+          {!isLoading && logoUrl ? (
+            <img
+              src={logoUrl}
+              alt="Company Logo"
+              className="h-6 w-auto object-contain rounded"
+            />
+          ) : (
+            <Building className="h-6 w-6 text-orange-600" />
+          )}
           <div>
             <h2 className="font-bold text-sm">Admin Panel</h2>
             <p className="text-xs text-muted-foreground">Construction Manager</p>

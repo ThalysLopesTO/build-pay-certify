@@ -77,10 +77,6 @@ const AdminDashboard = () => {
               <div className="p-6">
                 <div className="flex items-center mb-8">
                   <SidebarTrigger className="mr-4" />
-                  <div>
-                    <h1 className="text-3xl font-bold text-slate-900 mb-2">Admin Dashboard</h1>
-                    <p className="text-slate-600">Manage your company, employees, and payroll</p>
-                  </div>
                 </div>
                 
                 {renderContent()}
