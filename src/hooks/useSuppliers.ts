@@ -40,7 +40,7 @@ export const useSuppliers = () => {
     isLoading,
     error
   } = useQuery({
-    queryKey: ['suppliers', user?.company_id],
+    queryKey: ['suppliers', user?.companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('suppliers')
@@ -50,7 +50,7 @@ export const useSuppliers = () => {
       if (error) throw error;
       return data as Supplier[];
     },
-    enabled: !!user?.company_id,
+    enabled: !!user?.companyId,
   });
 
   const createSupplierMutation = useMutation({
@@ -59,7 +59,7 @@ export const useSuppliers = () => {
         .from('suppliers')
         .insert({
           ...supplierData,
-          company_id: user?.company_id,
+          company_id: user?.companyId,
         })
         .select()
         .single();
