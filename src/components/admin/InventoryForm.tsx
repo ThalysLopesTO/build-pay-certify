@@ -92,8 +92,13 @@ const InventoryForm = ({ isOpen, onClose, onSubmit, initialData, isSubmitting }:
   }, [initialData, form]);
 
   const handleSubmit = async (data: InventoryFormData) => {
+    // Ensure all required fields are present
     const submitData: CreateInventoryItem = {
-      ...data,
+      jobsite_id: data.jobsite_id,
+      equipment_name: data.equipment_name,
+      brand: data.brand,
+      sku: data.sku,
+      start_date: data.start_date,
       return_date: data.return_date || null,
     };
     await onSubmit(submitData);
