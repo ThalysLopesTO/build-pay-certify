@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 interface JobsiteData {
   name: string;
   address: string;
+  starting_date?: string;
 }
 
 export const useJobsiteActions = () => {
@@ -27,13 +28,20 @@ export const useJobsiteActions = () => {
         throw new Error('Jobsite name and address are required');
       }
 
+      const insertData: any = {
+        name: data.name.trim(),
+        address: data.address.trim(),
+        company_id: user.companyId,
+      };
+
+      // Add starting_date if provided
+      if (data.starting_date) {
+        insertData.starting_date = data.starting_date;
+      }
+
       const { data: result, error } = await supabase
         .from('jobsites')
-        .insert({
-          name: data.name.trim(),
-          address: data.address.trim(),
-          company_id: user.companyId,
-        })
+        .insert(insertData)
         .select();
 
       if (error) {

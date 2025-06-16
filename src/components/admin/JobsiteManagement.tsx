@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, MapPin, Trash2 } from 'lucide-react';
+import { Plus, MapPin, Trash2, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -14,6 +14,7 @@ import { useJobsiteActions } from '@/hooks/useJobsiteActions';
 const formSchema = z.object({
   name: z.string().min(1, 'Jobsite name is required').min(2, 'Jobsite name must be at least 2 characters'),
   address: z.string().min(1, 'Address is required').min(5, 'Address must be at least 5 characters'),
+  starting_date: z.string().min(1, 'Starting date is required'),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -28,6 +29,7 @@ const JobsiteManagement = () => {
     defaultValues: {
       name: '',
       address: '',
+      starting_date: '',
     },
   });
 
@@ -46,9 +48,15 @@ const JobsiteManagement = () => {
         return;
       }
 
+      if (!data.starting_date?.trim()) {
+        form.setError('starting_date', { message: 'Starting date is required' });
+        return;
+      }
+
       await addJobsite.mutateAsync({
         name: data.name.trim(),
         address: data.address.trim(),
+        starting_date: data.starting_date,
       });
       
       form.reset();
@@ -77,6 +85,16 @@ const JobsiteManagement = () => {
         console.error('Error deleting jobsite:', error);
       }
     }
+  };
+
+  const formatStartingDate = (dateString: string) => {
+    if (!dateString) return 'Not set';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric'
+    });
   };
 
   if (isLoading) {
@@ -151,6 +169,25 @@ const JobsiteManagement = () => {
                       )}
                     />
 
+                    <FormField
+                      control={form.control}
+                      name="starting_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Starting Date *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="date"
+                              placeholder="Select starting date" 
+                              {...field} 
+                              required
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     {form.formState.errors.root && (
                       <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
                         {form.formState.errors.root.message}
@@ -194,6 +231,12 @@ const JobsiteManagement = () => {
                       <div>
                         <h3 className="font-semibold text-lg">{jobsite.name}</h3>
                         <p className="text-gray-600">{jobsite.address}</p>
+                        {jobsite.starting_date && (
+                          <p className="text-sm text-gray-500 flex items-center mt-1">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            Starting: {formatStartingDate(jobsite.starting_date)}
+                          </p>
+                        )}
                         <p className="text-sm text-gray-400">
                           Created: {new Date(jobsite.created_at).toLocaleDateString()}
                         </p>
