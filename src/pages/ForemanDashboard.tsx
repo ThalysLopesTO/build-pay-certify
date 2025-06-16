@@ -6,6 +6,7 @@ import ForemanTimesheetForm from '../components/foreman/ForemanTimesheetForm';
 import MaterialRequestForm from '../components/foreman/MaterialRequestForm';
 import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
 import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
+import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
@@ -24,6 +25,8 @@ const ForemanDashboard = () => {
         return <MyMaterialRequests />;
       case 'employees':
         return <EmployeeDirectory />;
+      case 'company-rules':
+        return <CompanyRules />;
       case 'settings':
         return <UserSettings />;
       default:

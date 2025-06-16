@@ -1,0 +1,77 @@
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useCompanyRules, useUpdateCompanyRules } from '@/hooks/useCompanyRules';
+import { FileText, Save } from 'lucide-react';
+
+export const CompanyRulesTab = () => {
+  const { rules, isLoading } = useCompanyRules();
+  const updateRulesMutation = useUpdateCompanyRules();
+  const [rulesText, setRulesText] = useState('');
+
+  useEffect(() => {
+    if (rules?.company_rules_text) {
+      setRulesText(rules.company_rules_text);
+    }
+  }, [rules]);
+
+  const handleSave = () => {
+    updateRulesMutation.mutate(rulesText);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p>Loading company rules...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <FileText className="h-5 w-5" />
+            <span>Company Rules Editor</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="company-rules">Company Rules & Policies</Label>
+            <Textarea
+              id="company-rules"
+              value={rulesText}
+              onChange={(e) => setRulesText(e.target.value)}
+              placeholder="Enter your company rules, safety policies, and guidelines here. You can use multiple paragraphs and format as needed..."
+              className="min-h-[400px] resize-vertical"
+            />
+          </div>
+
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 className="font-medium text-blue-900 mb-2">Visibility Information</h4>
+            <p className="text-sm text-blue-700">
+              These rules will be visible to all Foremen and Employees in the "Company Rules" page in their sidebar. 
+              They cannot edit this content - it's read-only for them.
+            </p>
+          </div>
+
+          <Button 
+            onClick={handleSave} 
+            disabled={updateRulesMutation.isPending}
+            className="w-full flex items-center space-x-2"
+          >
+            <Save className="h-4 w-4" />
+            <span>{updateRulesMutation.isPending ? 'Saving...' : 'Save Company Rules'}</span>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};

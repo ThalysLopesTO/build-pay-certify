@@ -150,6 +150,7 @@ export type Database = {
       }
       companies: {
         Row: {
+          company_rules_text: string | null
           created_at: string
           expiration_date: string | null
           id: string
@@ -159,10 +160,12 @@ export type Database = {
           name: string
           plan: string | null
           registration_date: string | null
+          rules_updated_at: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          company_rules_text?: string | null
           created_at?: string
           expiration_date?: string | null
           id?: string
@@ -172,10 +175,12 @@ export type Database = {
           name: string
           plan?: string | null
           registration_date?: string | null
+          rules_updated_at?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          company_rules_text?: string | null
           created_at?: string
           expiration_date?: string | null
           id?: string
@@ -185,6 +190,7 @@ export type Database = {
           name?: string
           plan?: string | null
           registration_date?: string | null
+          rules_updated_at?: string | null
           status?: string
           updated_at?: string
         }

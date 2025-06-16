@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -16,6 +15,7 @@ import AttentionReportsInbox from '@/components/admin/AttentionReportsInbox';
 import InvoiceManagement from '@/components/admin/InvoiceManagement';
 import CompanySettings from '@/components/admin/CompanySettings';
 import UserSettings from '@/components/common/UserSettings';
+import SystemSettings from '@/components/admin/SystemSettings';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -47,7 +47,7 @@ const AdminDashboard = () => {
       case 'invoices':
         return <InvoiceManagement />;
       case 'company-settings':
-        return <CompanySettings />;
+        return <SystemSettings />;
       case 'settings':
         return <UserSettings />;
       default:
