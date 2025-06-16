@@ -1,4 +1,3 @@
-
 import { 
   BarChart3, 
   Users, 
@@ -13,7 +12,8 @@ import {
   CreditCard,
   Bell,
   Archive,
-  Truck
+  Truck,
+  Shield
 } from 'lucide-react';
 
 export const groupedMenuItems = {
@@ -39,6 +39,12 @@ export const groupedMenuItems = {
       id: 'jobsites',
       title: 'Jobsite Management',
       icon: MapPin,
+    },
+    {
+      id: 'safety-templates',
+      title: 'Safety Templates',
+      icon: Shield,
+      requiredRoles: ['admin', 'foreman', 'super_admin']
     },
     {
       id: 'inventory',

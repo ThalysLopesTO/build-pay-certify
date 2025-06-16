@@ -609,6 +609,42 @@ export type Database = {
           },
         ]
       }
+      safety_templates: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          file_url: string
+          id: string
+          template_name: string
+          updated_at: string
+          upload_date: string
+          uploaded_by: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          file_url: string
+          id?: string
+          template_name: string
+          updated_at?: string
+          upload_date?: string
+          uploaded_by: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          file_url?: string
+          id?: string
+          template_name?: string
+          updated_at?: string
+          upload_date?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           address: string | null
