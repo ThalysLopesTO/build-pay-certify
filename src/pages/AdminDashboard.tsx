@@ -11,6 +11,7 @@ import MaterialRequestInbox from '../components/admin/MaterialRequestInbox';
 import InvoiceManagement from '../components/admin/InvoiceManagement';
 import JobsiteManagement from '../components/admin/JobsiteManagement';
 import InventoryManagement from '../components/admin/InventoryManagement';
+import SuppliersManagement from '../components/admin/SuppliersManagement';
 import CompanySettings from '../components/admin/CompanySettings';
 import UserSettings from '../components/common/UserSettings';
 import AttentionReportsInbox from '../components/admin/AttentionReportsInbox';
@@ -54,6 +55,8 @@ const AdminDashboard = () => {
         return <JobsiteManagement />;
       case 'inventory':
         return <InventoryManagement />;
+      case 'suppliers':
+        return <SuppliersManagement />;
       case 'company-settings':
         return <CompanySettings />;
       case 'settings':

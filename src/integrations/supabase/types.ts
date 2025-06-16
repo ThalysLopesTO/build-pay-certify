@@ -603,6 +603,53 @@ export type Database = {
           },
         ]
       }
+      suppliers: {
+        Row: {
+          address: string | null
+          company_id: string
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone_number: string | null
+          supplier_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          company_id: string
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone_number?: string | null
+          supplier_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          company_id?: string
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone_number?: string | null
+          supplier_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           company_id: string

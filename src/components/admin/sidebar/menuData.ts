@@ -12,7 +12,8 @@ import {
   MapPin,
   CreditCard,
   Bell,
-  Archive
+  Archive,
+  Truck
 } from 'lucide-react';
 
 export const groupedMenuItems = {
@@ -43,6 +44,11 @@ export const groupedMenuItems = {
       id: 'inventory',
       title: 'Inventory',
       icon: Archive,
+    },
+    {
+      id: 'suppliers',
+      title: 'Suppliers',
+      icon: Truck,
     }
   ],
   payroll: [
