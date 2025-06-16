@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useInvoices } from '@/hooks/useInvoices';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { format } from 'date-fns';
 import { Download, FileText, FileSpreadsheet, Filter, Mail, AlertTriangle } from 'lucide-react';
 import { generateBrandedInvoicePDF } from './BrandedInvoicePDF';
@@ -16,6 +17,7 @@ const ProjectBillingOverview = () => {
   const { invoices, isLoading } = useInvoices();
   const { data: jobsites } = useJobsites();
   const { settings, isSettingsComplete } = useCompanySettings();
+  const { logoUrl } = useCompanyLogo();
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedInvoiceForEmail, setSelectedInvoiceForEmail] = useState<any>(null);
@@ -74,7 +76,7 @@ const ProjectBillingOverview = () => {
       console.error('Company settings not loaded');
       return;
     }
-    generateBrandedInvoicePDF(invoice, settings);
+    generateBrandedInvoicePDF(invoice, settings, logoUrl);
   };
 
   const handleSendEmail = (invoice: any) => {

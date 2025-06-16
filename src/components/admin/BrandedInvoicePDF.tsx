@@ -7,9 +7,10 @@ import { CompanySettings } from '@/hooks/useCompanySettings';
 interface BrandedInvoicePDFProps {
   invoice: Invoice;
   companySettings: CompanySettings;
+  logoUrl?: string | null;
 }
 
-export const generateBrandedInvoicePDF = (invoice: Invoice, companySettings: CompanySettings) => {
+export const generateBrandedInvoicePDF = (invoice: Invoice, companySettings: CompanySettings, logoUrl?: string | null) => {
   const pdfContent = `
     <!DOCTYPE html>
     <html>
@@ -33,6 +34,12 @@ export const generateBrandedInvoicePDF = (invoice: Invoice, companySettings: Com
         }
         .company-info {
           flex: 1;
+        }
+        .company-logo {
+          max-width: 200px;
+          max-height: 50px;
+          object-fit: contain;
+          margin-bottom: 16px;
         }
         .company-name { 
           font-size: 28px; 
@@ -168,6 +175,7 @@ export const generateBrandedInvoicePDF = (invoice: Invoice, companySettings: Com
     <body>
       <div class="header">
         <div class="company-info">
+          ${logoUrl ? `<img src="${logoUrl}" alt="Company Logo" class="company-logo" />` : ''}
           <div class="company-name">${companySettings.company_name}</div>
           <div class="company-details">
             ${companySettings.company_address ? `<div>${companySettings.company_address}</div>` : ''}

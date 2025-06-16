@@ -43,20 +43,25 @@ const Header = () => {
     <header className="bg-white border-b border-slate-200 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          {/* Company Logo or Default Icon */}
-          <div className="flex items-center space-x-3">
+          {/* Company Logo Container */}
+          <div className="flex items-center">
             {!isLoading && logoUrl ? (
-              <img
-                src={logoUrl}
-                alt="Company Logo"
-                className="h-8 w-auto object-contain rounded"
-              />
+              <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-3 flex items-center justify-center">
+                <img
+                  src={logoUrl}
+                  alt="Company Logo"
+                  className="max-w-[400px] max-h-[70px] w-auto h-auto object-contain"
+                  style={{ maxWidth: '400px', maxHeight: '70px' }}
+                />
+              </div>
             ) : (
-              <Building className="h-8 w-8 text-orange-600" />
+              <div className="flex items-center space-x-3">
+                <Building className="h-8 w-8 text-orange-600" />
+                <h1 className="text-xl font-semibold text-slate-900">
+                  Construction Payroll Manager
+                </h1>
+              </div>
             )}
-            <h1 className="text-xl font-semibold text-slate-900">
-              Construction Payroll Manager
-            </h1>
           </div>
           
           {user?.role === 'super_admin' && (
