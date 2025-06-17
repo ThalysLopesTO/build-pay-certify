@@ -18,9 +18,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Call logout service
       await logout();
-      
-      // Force reload to clear all state
-      window.location.reload();
     } catch (error) {
       console.error('💥 Logout handler error:', error);
       // Force reload anyway to clear state

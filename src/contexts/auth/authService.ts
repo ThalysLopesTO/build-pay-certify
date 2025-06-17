@@ -38,7 +38,8 @@ export const logout = async () => {
     }
     
     console.log('✅ Logout completed');
-    return { error: null };
+    window.location.reload();
+
   } catch (error) {
     console.error('💥 Logout error:', error);
     // Even if there's an error, we should clear local state
