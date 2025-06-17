@@ -10,6 +10,28 @@ export const useInvoices = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
+  // Fetch company logo URL for invoices
+  const { data: companyLogoUrl } = useQuery({
+    queryKey: ['company-logo-url', user?.companyId],
+    queryFn: async () => {
+      if (!user?.companyId) return null;
+      
+      const { data, error } = await supabase
+        .from('companies')
+        .select('logo_url')
+        .eq('id', user.companyId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching company logo URL:', error);
+        return null;
+      }
+
+      return data?.logo_url || null;
+    },
+    enabled: !!user?.companyId,
+  });
+
   // Fetch invoices with company isolation
   const { data: invoices = [], isLoading, error } = useQuery({
     queryKey: ['invoices', user?.companyId],
@@ -97,6 +119,7 @@ export const useInvoices = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices', user?.companyId] });
+      queryClient.invalidateQueries({ queryKey: ['company-logo-url', user?.companyId] });
       toast({
         title: 'Invoice Created',
         description: 'Invoice has been created successfully.',
@@ -157,6 +180,7 @@ export const useInvoices = () => {
     invoices,
     isLoading,
     error,
+    companyLogoUrl,
     createInvoice: createInvoiceMutation.mutate,
     isCreating: createInvoiceMutation.isPending,
     updateInvoiceStatus: updateInvoiceStatusMutation.mutate,

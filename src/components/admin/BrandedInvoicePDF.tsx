@@ -7,9 +7,10 @@ import { CompanySettings } from '@/hooks/useCompanySettings';
 interface BrandedInvoicePDFProps {
   invoice: Invoice;
   companySettings: CompanySettings;
+  logoUrl?: string | null;
 }
 
-export const generateBrandedInvoicePDF = (invoice: Invoice, companySettings: CompanySettings) => {
+export const generateBrandedInvoicePDF = (invoice: Invoice, companySettings: CompanySettings, logoUrl?: string | null) => {
   const pdfContent = `
     <!DOCTYPE html>
     <html>
@@ -33,12 +34,22 @@ export const generateBrandedInvoicePDF = (invoice: Invoice, companySettings: Com
         }
         .company-info {
           flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+        .company-logo {
+          max-width: 200px;
+          max-height: 50px;
+          object-fit: contain;
+          margin-bottom: 16px;
+          align-self: flex-start;
         }
         .company-name { 
           font-size: 28px; 
           font-weight: bold; 
           color: #f97316; 
           margin-bottom: 10px;
+          ${logoUrl ? 'margin-top: 0;' : 'margin-top: 16px;'}
         }
         .company-details {
           font-size: 14px;
@@ -163,11 +174,19 @@ export const generateBrandedInvoicePDF = (invoice: Invoice, companySettings: Com
           font-weight: bold;
           display: inline-block;
         }
+        .logo-placeholder {
+          height: 50px;
+          margin-bottom: 16px;
+        }
       </style>
     </head>
     <body>
       <div class="header">
         <div class="company-info">
+          ${logoUrl ? 
+            `<img src="${logoUrl}" alt="Company Logo" class="company-logo" />` : 
+            `<div class="logo-placeholder"></div>`
+          }
           <div class="company-name">${companySettings.company_name}</div>
           <div class="company-details">
             ${companySettings.company_address ? `<div>${companySettings.company_address}</div>` : ''}

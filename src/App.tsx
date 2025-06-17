@@ -20,7 +20,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const queryClient = new QueryClient();
+// Create a stable query client instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const CompanyErrorFallback = ({ error, onLogout }: { error: string; onLogout: () => void }) => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useCompanySettings, type CompanySettings } from '@/hooks/useCompanySettings';
-import { Building2, Mail, Phone, MapPin, FileText, Upload } from 'lucide-react';
+import CompanyBrandingSection from './CompanyBrandingSection';
+import { Building2, Mail, Phone, MapPin, FileText } from 'lucide-react';
 
 const CompanySettings = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useCompanySettings();
@@ -19,7 +20,6 @@ const CompanySettings = () => {
       company_phone: settings?.company_phone || '',
       company_email: settings?.company_email || '',
       hst_number: settings?.hst_number || '',
-      company_logo_url: settings?.company_logo_url || '',
     },
   });
 
@@ -31,7 +31,6 @@ const CompanySettings = () => {
         company_phone: settings.company_phone || '',
         company_email: settings.company_email || '',
         hst_number: settings.hst_number || '',
-        company_logo_url: settings.company_logo_url || '',
       });
     }
   }, [settings, form]);
@@ -53,6 +52,10 @@ const CompanySettings = () => {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Company Branding Section */}
+      <CompanyBrandingSection />
+
+      {/* Company Information */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -144,23 +147,6 @@ const CompanySettings = () => {
                     </FormLabel>
                     <FormControl>
                       <Input placeholder="Enter your HST or tax registration number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="company_logo_url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Upload className="h-4 w-4" />
-                      <span>Company Logo URL (Optional)</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/logo.png" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

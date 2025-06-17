@@ -6,6 +6,7 @@ import ForemanTimesheetForm from '../components/foreman/ForemanTimesheetForm';
 import MaterialRequestForm from '../components/foreman/MaterialRequestForm';
 import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
 import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
+import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
@@ -24,6 +25,8 @@ const ForemanDashboard = () => {
         return <MyMaterialRequests />;
       case 'employees':
         return <EmployeeDirectory />;
+      case 'company-rules':
+        return <CompanyRules />;
       case 'settings':
         return <UserSettings />;
       default:
@@ -32,32 +35,32 @@ const ForemanDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <SidebarProvider>
-        <div className="flex w-full min-h-screen">
-          <ForemanSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-          <div className="flex-1 flex flex-col">
-            <Header />
-            <SidebarInset className="flex-1">
-              <div className="p-6">
-                <div className="flex items-center mb-8">
-                  <SidebarTrigger className="mr-4" />
-                  <div>
-                    <h1 className="text-3xl font-bold text-slate-900 mb-2">Foreman Dashboard</h1>
-                    <p className="text-slate-600">Manage your crew and submit requests</p>
-                  </div>
+    <SidebarProvider>
+      <div className="flex min-h-screen bg-white w-full">
+        <ForemanSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <SidebarInset className="flex flex-col flex-1 min-w-0">
+          <Header />
+          <main className="flex-1 flex flex-col">
+            <div className="flex-1 w-full">
+              <div className="w-full p-6">
+                <div className="flex items-center mb-6 w-full">
+                  <SidebarTrigger className="mr-4 text-black hover:bg-gray-100" />
                 </div>
                 
                 {/* License Warning Banner */}
-                <LicenseWarningBanner />
+                <div className="w-full mb-6">
+                  <LicenseWarningBanner />
+                </div>
                 
-                {renderContent()}
+                <div className="w-full">
+                  {renderContent()}
+                </div>
               </div>
-            </SidebarInset>
-          </div>
-        </div>
-      </SidebarProvider>
-    </div>
+            </div>
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 

@@ -150,38 +150,47 @@ export type Database = {
       }
       companies: {
         Row: {
+          company_rules_text: string | null
           created_at: string
           expiration_date: string | null
           id: string
           license_expires_at: string | null
           license_key: string
+          logo_url: string | null
           name: string
           plan: string | null
           registration_date: string | null
+          rules_updated_at: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          company_rules_text?: string | null
           created_at?: string
           expiration_date?: string | null
           id?: string
           license_expires_at?: string | null
           license_key?: string
+          logo_url?: string | null
           name: string
           plan?: string | null
           registration_date?: string | null
+          rules_updated_at?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          company_rules_text?: string | null
           created_at?: string
           expiration_date?: string | null
           id?: string
           license_expires_at?: string | null
           license_key?: string
+          logo_url?: string | null
           name?: string
           plan?: string | null
           registration_date?: string | null
+          rules_updated_at?: string | null
           status?: string
           updated_at?: string
         }
@@ -344,6 +353,63 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory: {
+        Row: {
+          brand: string
+          company_id: string
+          created_at: string
+          created_by: string
+          equipment_name: string
+          id: string
+          jobsite_id: string
+          return_date: string | null
+          sku: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          company_id: string
+          created_at?: string
+          created_by: string
+          equipment_name: string
+          id?: string
+          jobsite_id: string
+          return_date?: string | null
+          sku: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          equipment_name?: string
+          id?: string
+          jobsite_id?: string
+          return_date?: string | null
+          sku?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_line_items: {
         Row: {
           amount: number
@@ -464,6 +530,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          starting_date: string | null
         }
         Insert: {
           address?: string | null
@@ -471,6 +538,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          starting_date?: string | null
         }
         Update: {
           address?: string | null
@@ -478,6 +546,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          starting_date?: string | null
         }
         Relationships: [
           {
@@ -542,6 +611,89 @@ export type Database = {
             columns: ["jobsite_id"]
             isOneToOne: false
             referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_templates: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          file_url: string
+          id: string
+          template_name: string
+          updated_at: string
+          upload_date: string
+          uploaded_by: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          file_url: string
+          id?: string
+          template_name: string
+          updated_at?: string
+          upload_date?: string
+          uploaded_by: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          file_url?: string
+          id?: string
+          template_name?: string
+          updated_at?: string
+          upload_date?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          company_id: string
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone_number: string | null
+          supplier_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          company_id: string
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone_number?: string | null
+          supplier_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          company_id?: string
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone_number?: string | null
+          supplier_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -681,6 +833,13 @@ export type Database = {
             referencedRelation: "jobsites"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "weekly_timesheets_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
     }
@@ -691,6 +850,10 @@ export type Database = {
       calculate_invoice_totals: {
         Args: { invoice_id_param: string }
         Returns: undefined
+      }
+      delete_employee: {
+        Args: { employee_user_id: string }
+        Returns: Json
       }
       generate_invoice_number: {
         Args: Record<PropertyKey, never>
@@ -712,6 +875,13 @@ export type Database = {
       get_user_company_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_users_banned_this_hour: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          banned_until: string
+        }[]
       }
       is_admin: {
         Args: Record<PropertyKey, never>

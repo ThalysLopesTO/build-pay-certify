@@ -1,35 +1,26 @@
 
-import React, { useState, useEffect } from 'react';
-import Header from '../components/Header';
-import AdminSidebar from '../components/admin/AdminSidebar';
-import AdminDashboardContent from '../components/admin/dashboard/AdminDashboardContent';
-import EmployeeManagement from '../components/admin/EmployeeManagement';
-import EmployeeRegistration from '../components/admin/EmployeeRegistration';
-import EmployeeTimesheets from '../components/admin/EmployeeTimesheets';
-import PayrollSummary from '../components/admin/PayrollSummary';
-import MaterialRequestInbox from '../components/admin/MaterialRequestInbox';
-import InvoiceManagement from '../components/admin/InvoiceManagement';
-import JobsiteManagement from '../components/admin/JobsiteManagement';
-import CompanySettings from '../components/admin/CompanySettings';
-import UserSettings from '../components/common/UserSettings';
-import AttentionReportsInbox from '../components/admin/AttentionReportsInbox';
+import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import Header from '../components/Header';
+import AdminSidebar from '@/components/admin/AdminSidebar';
+import AdminDashboardContent from '@/components/admin/dashboard/AdminDashboardContent';
+import EmployeeManagement from '@/components/admin/EmployeeManagement';
+import EmployeeRegistration from '@/components/admin/EmployeeRegistration';
+import JobsiteManagement from '@/components/admin/JobsiteManagement';
+import SafetyTemplatesManagement from '@/components/admin/SafetyTemplatesManagement';
+import InventoryManagement from '@/components/admin/InventoryManagement';
+import SuppliersManagement from '@/components/admin/SuppliersManagement';
+import EmployeeTimesheets from '@/components/admin/EmployeeTimesheets';
+import PayrollSummary from '@/components/admin/PayrollSummary';
+import MaterialRequestInbox from '@/components/admin/MaterialRequestInbox';
+import AttentionReportsInbox from '@/components/admin/AttentionReportsInbox';
+import InvoiceManagement from '@/components/admin/InvoiceManagement';
+import CompanySettings from '@/components/admin/CompanySettings';
+import UserSettings from '@/components/common/UserSettings';
+import SystemSettings from '@/components/admin/SystemSettings';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-
-  // Listen for navigation events from EmployeeManagement
-  useEffect(() => {
-    const handleNavigateToEmployeeRegistration = () => {
-      setActiveTab('employee-registration');
-    };
-
-    window.addEventListener('navigateToEmployeeRegistration', handleNavigateToEmployeeRegistration);
-
-    return () => {
-      window.removeEventListener('navigateToEmployeeRegistration', handleNavigateToEmployeeRegistration);
-    };
-  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -39,6 +30,14 @@ const AdminDashboard = () => {
         return <EmployeeManagement />;
       case 'employee-registration':
         return <EmployeeRegistration />;
+      case 'jobsites':
+        return <JobsiteManagement />;
+      case 'safety-templates':
+        return <SafetyTemplatesManagement />;
+      case 'inventory':
+        return <InventoryManagement />;
+      case 'suppliers':
+        return <SuppliersManagement />;
       case 'timesheets':
         return <EmployeeTimesheets />;
       case 'payroll-summary':
@@ -49,10 +48,8 @@ const AdminDashboard = () => {
         return <AttentionReportsInbox />;
       case 'invoices':
         return <InvoiceManagement />;
-      case 'jobsites':
-        return <JobsiteManagement />;
       case 'company-settings':
-        return <CompanySettings />;
+        return <SystemSettings />;
       case 'settings':
         return <UserSettings />;
       default:
@@ -61,29 +58,22 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <SidebarProvider>
-        <div className="flex w-full min-h-screen">
-          <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-          <div className="flex-1 flex flex-col">
-            <Header />
-            <SidebarInset className="flex-1">
-              <div className="p-6">
-                <div className="flex items-center mb-8">
-                  <SidebarTrigger className="mr-4" />
-                  <div>
-                    <h1 className="text-3xl font-bold text-slate-900 mb-2">Admin Dashboard</h1>
-                    <p className="text-slate-600">Manage your company, employees, and payroll</p>
-                  </div>
-                </div>
-                
-                {renderContent()}
+    <SidebarProvider>
+      <div className="flex h-screen bg-gray-50 w-full">
+        <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <SidebarInset className="flex flex-col flex-1 min-w-0">
+          <Header />
+          <main className="flex-1 overflow-auto min-w-0">
+            <div className="p-6 w-full">
+              <div className="flex items-center mb-6 w-full">
+                <SidebarTrigger className="mr-4 text-black hover:bg-gray-100" />
               </div>
-            </SidebarInset>
-          </div>
-        </div>
-      </SidebarProvider>
-    </div>
+              {renderContent()}
+            </div>
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 

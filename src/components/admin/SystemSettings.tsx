@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompanySettingsTab } from './system-settings/CompanySettingsTab';
+import { CompanyRulesTab } from './system-settings/CompanyRulesTab';
 import { UserRolesTab } from './system-settings/UserRolesTab';
 import { EmailPreferencesTab } from './system-settings/EmailPreferencesTab';
 import { FinancialDefaultsTab } from './system-settings/FinancialDefaultsTab';
@@ -14,7 +15,8 @@ import {
   Mail, 
   DollarSign, 
   Settings, 
-  BarChart3 
+  BarChart3,
+  FileText
 } from 'lucide-react';
 
 const SystemSettings = () => {
@@ -33,10 +35,14 @@ const SystemSettings = () => {
       <Card>
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="company" className="flex items-center space-x-2">
                 <Building2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Company</span>
+              </TabsTrigger>
+              <TabsTrigger value="rules" className="flex items-center space-x-2">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Rules</span>
               </TabsTrigger>
               <TabsTrigger value="roles" className="flex items-center space-x-2">
                 <Users className="h-4 w-4" />
@@ -62,6 +68,10 @@ const SystemSettings = () => {
 
             <TabsContent value="company" className="mt-6">
               <CompanySettingsTab />
+            </TabsContent>
+
+            <TabsContent value="rules" className="mt-6">
+              <CompanyRulesTab />
             </TabsContent>
 
             <TabsContent value="roles" className="mt-6">

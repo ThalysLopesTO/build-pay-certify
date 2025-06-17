@@ -8,11 +8,13 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface MenuItem {
   id: string;
   title: string;
   icon: React.ComponentType<{ className?: string }>;
+  requiredRoles?: string[];
 }
 
 interface SidebarSectionProps {
@@ -23,12 +25,22 @@ interface SidebarSectionProps {
 }
 
 const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectionProps) => {
+  const { user } = useAuth();
+
+  // Filter items based on user role
+  const filteredItems = items.filter(item => {
+    if (!item.requiredRoles) return true;
+    return user?.role && item.requiredRoles.includes(user.role);
+  });
+
+  if (filteredItems.length === 0) return null;
+
   return (
     <SidebarGroup>
       {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => {
+          {filteredItems.map((item) => {
             const Icon = item.icon;
             return (
               <SidebarMenuItem key={item.id}>

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useCompanySettings, type CompanySettings as CompanySettingsType } from '@/hooks/useCompanySettings';
-import { Building2, Mail, Phone, MapPin, FileText, Upload, Globe, Share2 } from 'lucide-react';
+import CompanyBrandingSection from '../CompanyBrandingSection';
+import { Building2, Mail, Phone, MapPin, FileText, Globe, Share2 } from 'lucide-react';
 
 export const CompanySettingsTab = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useCompanySettings();
@@ -19,7 +20,6 @@ export const CompanySettingsTab = () => {
       company_phone: settings?.company_phone || '',
       company_email: settings?.company_email || '',
       hst_number: settings?.hst_number || '',
-      company_logo_url: settings?.company_logo_url || '',
       website: '',
       social_media: '',
     },
@@ -33,7 +33,6 @@ export const CompanySettingsTab = () => {
         company_phone: settings.company_phone || '',
         company_email: settings.company_email || '',
         hst_number: settings.hst_number || '',
-        company_logo_url: settings.company_logo_url || '',
         website: '',
         social_media: '',
       });
@@ -59,6 +58,9 @@ export const CompanySettingsTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Company Branding Section */}
+      <CompanyBrandingSection />
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -157,23 +159,6 @@ export const CompanySettingsTab = () => {
                   )}
                 />
               </div>
-
-              <FormField
-                control={form.control}
-                name="company_logo_url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Upload className="h-4 w-4" />
-                      <span>Company Logo URL</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/logo.png" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField

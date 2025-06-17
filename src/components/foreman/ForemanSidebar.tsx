@@ -12,15 +12,8 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { 
-  Clock, 
-  Users, 
-  Package,
-  Inbox,
-  HardHat,
-  Bell,
-  Settings
-} from 'lucide-react';
+import { HardHat } from 'lucide-react';
+import { groupedForemanItems } from './sidebar/foremanMenuData';
 
 interface ForemanSidebarProps {
   activeTab: string;
@@ -28,53 +21,6 @@ interface ForemanSidebarProps {
 }
 
 const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
-  const foremanMenuItems = [
-    {
-      id: 'timesheet',
-      title: 'Submit Timesheet',
-      icon: Clock,
-      section: 'timesheet'
-    },
-    {
-      id: 'materials',
-      title: 'Request Material',
-      icon: Package,
-      section: 'materials'
-    },
-    {
-      id: 'material-requests',
-      title: 'My Material Requests',
-      icon: Inbox,
-      section: 'materials'
-    },
-    {
-      id: 'employees',
-      title: 'Employee Directory',
-      icon: Users,
-      section: 'team'
-    },
-    {
-      id: 'attention-reports',
-      title: 'Attention Reports',
-      icon: Bell,
-      section: 'reports'
-    },
-    {
-      id: 'settings',
-      title: 'Settings',
-      icon: Settings,
-      section: 'account'
-    }
-  ];
-
-  const groupedItems = {
-    timesheet: foremanMenuItems.filter(item => item.section === 'timesheet'),
-    materials: foremanMenuItems.filter(item => item.section === 'materials'),
-    team: foremanMenuItems.filter(item => item.section === 'team'),
-    reports: foremanMenuItems.filter(item => item.section === 'reports'),
-    account: foremanMenuItems.filter(item => item.section === 'account')
-  };
-
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -92,7 +38,7 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
           <SidebarGroupLabel>Timesheet Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {groupedItems.timesheet.map((item) => (
+              {groupedForemanItems.timesheet.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={activeTab === item.id}
@@ -112,7 +58,7 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
           <SidebarGroupLabel>Material Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {groupedItems.materials.map((item) => (
+              {groupedForemanItems.materials.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={activeTab === item.id}
@@ -132,7 +78,27 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
           <SidebarGroupLabel>Team Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {groupedItems.team.map((item) => (
+              {groupedForemanItems.team.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    isActive={activeTab === item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className="w-full justify-start"
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Company Information</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {groupedForemanItems.company.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={activeTab === item.id}
@@ -152,7 +118,7 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
           <SidebarGroupLabel>Reports</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {groupedItems.reports.map((item) => (
+              {groupedForemanItems.reports.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={activeTab === item.id}
@@ -172,7 +138,7 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {groupedItems.account.map((item) => (
+              {groupedForemanItems.account.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={activeTab === item.id}
