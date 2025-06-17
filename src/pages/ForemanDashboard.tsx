@@ -35,26 +35,32 @@ const ForemanDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white w-full">
       <SidebarProvider>
         <div className="flex w-full min-h-screen">
           <ForemanSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-          <SidebarInset className="flex-1 flex flex-col min-w-0">
+          <SidebarInset className="flex-1 flex flex-col w-full min-w-0">
             <Header />
-            <div className="flex-1 p-6">
-              <div className="flex items-center mb-8">
-                <SidebarTrigger className="mr-4 text-black hover:bg-gray-100" />
-                <div>
-                  <h1 className="text-3xl font-bold text-black mb-2">Foreman Dashboard</h1>
-                  <p className="text-gray-600">Manage your crew and submit requests</p>
+            <main className="flex-1 w-full">
+              <div className="w-full p-6">
+                <div className="flex items-center mb-8 w-full">
+                  <SidebarTrigger className="mr-4 text-black hover:bg-gray-100" />
+                  <div className="flex-1">
+                    <h1 className="text-3xl font-bold text-black mb-2">Foreman Dashboard</h1>
+                    <p className="text-gray-600">Manage your crew and submit requests</p>
+                  </div>
+                </div>
+                
+                {/* License Warning Banner */}
+                <div className="w-full mb-6">
+                  <LicenseWarningBanner />
+                </div>
+                
+                <div className="w-full">
+                  {renderContent()}
                 </div>
               </div>
-              
-              {/* License Warning Banner */}
-              <LicenseWarningBanner />
-              
-              {renderContent()}
-            </div>
+            </main>
           </SidebarInset>
         </div>
       </SidebarProvider>

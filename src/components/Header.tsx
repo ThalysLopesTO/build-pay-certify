@@ -40,9 +40,9 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 w-full">
-      <div className="flex items-center justify-between w-full min-w-0">
-        <div className="flex items-center space-x-4 min-w-0 flex-shrink-0">
+    <header className="bg-white border-b border-gray-200 w-full">
+      <div className="flex items-center justify-between w-full px-6 py-4">
+        <div className="flex items-center space-x-4 min-w-0">
           {/* Company Logo Container */}
           <div className="flex items-center">
             {!isLoading && logoUrl ? (
@@ -65,14 +65,14 @@ const Header = () => {
           </div>
           
           {user?.role === 'super_admin' && (
-            <Badge variant="secondary" className="bg-gray-100 text-black border-gray-300 flex-shrink-0">
+            <Badge variant="secondary" className="bg-gray-100 text-black border-gray-300">
               <Crown className="h-3 w-3 mr-1" />
               Super Admin
             </Badge>
           )}
         </div>
         
-        <div className="flex items-center space-x-4 flex-shrink-0 ml-4">
+        <div className="flex items-center space-x-4 ml-auto">
           {user && (
             <div className="flex items-center space-x-3">
               <div className="text-sm text-right">
@@ -85,7 +85,7 @@ const Header = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="flex items-center space-x-2 bg-white border-black text-black hover:bg-gray-100 flex-shrink-0"
+                className="flex items-center space-x-2 bg-white border-black text-black hover:bg-gray-100"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
