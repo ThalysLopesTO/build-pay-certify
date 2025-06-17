@@ -6,7 +6,7 @@ import { useCompanyRules } from '@/hooks/useCompanyRules';
 import { format } from 'date-fns';
 
 const CompanyRules = () => {
-  const { data: companyRules, isLoading, error } = useCompanyRules();
+  const { rules: companyRules, isLoading, error } = useCompanyRules();
 
   if (isLoading) {
     return (
