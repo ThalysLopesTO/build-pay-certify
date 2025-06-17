@@ -28,7 +28,7 @@ export const useEmployeeDelete = () => {
       }
 
       // Type check and cast the response
-      const response = data as DeleteEmployeeResponse;
+      const response = data as unknown as DeleteEmployeeResponse;
       
       // Check if the function returned an error result
       if (response && !response.success) {
