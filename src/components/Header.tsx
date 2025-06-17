@@ -5,11 +5,9 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { LogOut, Crown, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 
 const Header = () => {
   const { user, logout } = useAuth();
-  const { logoUrl, isLoading } = useCompanyLogo();
 
   const handleLogout = async () => {
     try {
@@ -40,28 +38,15 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 w-full">
+    <header className="bg-white border-b border-gray-200 w-full flex-shrink-0">
       <div className="flex items-center justify-between w-full px-6 py-4">
         <div className="flex items-center space-x-4 min-w-0">
-          {/* Company Logo Container */}
-          <div className="flex items-center">
-            {!isLoading && logoUrl ? (
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-3 flex items-center justify-center">
-                <img
-                  src={logoUrl}
-                  alt="Company Logo"
-                  className="max-w-[400px] max-h-[70px] w-auto h-auto object-contain"
-                  style={{ maxWidth: '400px', maxHeight: '70px' }}
-                />
-              </div>
-            ) : (
-              <div className="flex items-center space-x-3">
-                <Building className="h-8 w-8 text-black" />
-                <h1 className="text-xl font-semibold text-black whitespace-nowrap">
-                  Construction Payroll Manager
-                </h1>
-              </div>
-            )}
+          {/* App Title */}
+          <div className="flex items-center space-x-3">
+            <Building className="h-8 w-8 text-black" />
+            <h1 className="text-xl font-semibold text-black whitespace-nowrap">
+              Construction Payroll Manager
+            </h1>
           </div>
           
           {user?.role === 'super_admin' && (
@@ -72,7 +57,7 @@ const Header = () => {
           )}
         </div>
         
-        <div className="flex items-center space-x-4 ml-auto">
+        <div className="flex items-center space-x-4 ml-auto flex-shrink-0">
           {user && (
             <div className="flex items-center space-x-3">
               <div className="text-sm text-right">
@@ -85,7 +70,7 @@ const Header = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="flex items-center space-x-2 bg-white border-black text-black hover:bg-gray-100"
+                className="flex items-center space-x-2 bg-white border-black text-black hover:bg-gray-100 flex-shrink-0"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>

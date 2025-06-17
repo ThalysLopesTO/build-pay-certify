@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -57,10 +58,10 @@ const AdminDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-gray-50">
+      <div className="flex h-screen bg-gray-50 w-full">
         <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        <main className="flex-1 overflow-auto">
-          <div className="p-6">
+        <main className="flex-1 overflow-auto min-w-0">
+          <div className="p-6 w-full">
             {renderContent()}
           </div>
         </main>
