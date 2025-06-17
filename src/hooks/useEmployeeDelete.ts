@@ -11,16 +11,22 @@ export const useEmployeeDelete = () => {
     mutationFn: async (employeeUserId: string) => {
       console.log('Deleting employee with user ID:', employeeUserId);
       
-      // Use type assertion to work around the auto-generated types limitation
-      const { data, error } = await (supabase.rpc as any)('delete_employee', {
+      const { data, error } = await supabase.rpc('delete_employee', {
         employee_user_id: employeeUserId
       });
 
       if (error) {
-        console.error('Error deleting employee:', error);
+        console.error('Error calling delete_employee function:', error);
         throw error;
       }
 
+      // Check if the function returned an error result
+      if (data && !data.success) {
+        console.error('Delete employee function error:', data.error);
+        throw new Error(data.error);
+      }
+
+      console.log('Employee deleted successfully:', data);
       return data;
     },
     onSuccess: () => {

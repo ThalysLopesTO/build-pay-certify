@@ -851,6 +851,10 @@ export type Database = {
         Args: { invoice_id_param: string }
         Returns: undefined
       }
+      delete_employee: {
+        Args: { employee_user_id: string }
+        Returns: Json
+      }
       generate_invoice_number: {
         Args: Record<PropertyKey, never>
         Returns: string
