@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { LogOut, Crown, Building } from 'lucide-react';
+import { LogOut, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
@@ -41,23 +41,9 @@ const Header = () => {
 
   return (
     <header className="bg-white border-b border-gray-200 w-full flex-shrink-0">
-      <div className="grid grid-cols-3 items-center w-full px-6 py-4 gap-4">
-        {/* Left: App Title */}
-        <div className="flex items-center space-x-3">
-          <Building className="h-8 w-8 text-black" />
-          <h1 className="text-xl font-semibold text-black whitespace-nowrap">
-            Construction Payroll Manager
-          </h1>
-          {user?.role === 'super_admin' && (
-            <Badge variant="secondary" className="bg-gray-100 text-black border-gray-300">
-              <Crown className="h-3 w-3 mr-1" />
-              Super Admin
-            </Badge>
-          )}
-        </div>
-        
-        {/* Center: Company Logo */}
-        <div className="flex justify-center">
+      <div className="flex items-center justify-between w-full px-6 py-4">
+        {/* Left: Company Logo */}
+        <div className="flex items-center">
           {!isLoading && logoUrl && (
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
               <img
@@ -68,10 +54,16 @@ const Header = () => {
               />
             </div>
           )}
+          {user?.role === 'super_admin' && (
+            <Badge variant="secondary" className="bg-gray-100 text-black border-gray-300 ml-3">
+              <Crown className="h-3 w-3 mr-1" />
+              Super Admin
+            </Badge>
+          )}
         </div>
         
         {/* Right: User Profile & Logout */}
-        <div className="flex items-center justify-end space-x-4">
+        <div className="flex items-center space-x-4">
           {user && (
             <div className="flex items-center space-x-3">
               <div className="text-sm text-right">
