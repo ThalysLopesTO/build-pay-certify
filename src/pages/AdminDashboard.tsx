@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import Header from '../components/Header';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminDashboardContent from '@/components/admin/dashboard/AdminDashboardContent';
 import EmployeeManagement from '@/components/admin/EmployeeManagement';
@@ -60,11 +61,21 @@ const AdminDashboard = () => {
     <SidebarProvider>
       <div className="flex h-screen bg-gray-50 w-full">
         <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        <main className="flex-1 overflow-auto min-w-0">
-          <div className="p-6 w-full">
-            {renderContent()}
-          </div>
-        </main>
+        <SidebarInset className="flex flex-col flex-1 min-w-0">
+          <Header />
+          <main className="flex-1 overflow-auto min-w-0">
+            <div className="p-6 w-full">
+              <div className="flex items-center mb-6 w-full">
+                <SidebarTrigger className="mr-4 text-black hover:bg-gray-100" />
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-black mb-2">Admin Dashboard</h1>
+                  <p className="text-gray-600">Manage your company operations</p>
+                </div>
+              </div>
+              {renderContent()}
+            </div>
+          </main>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );
