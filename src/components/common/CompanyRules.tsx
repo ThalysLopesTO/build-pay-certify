@@ -1,54 +1,33 @@
 
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { FileText, Calendar } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCompanyRules } from '@/hooks/useCompanyRules';
+import { FileText, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
 const CompanyRules = () => {
-  const { rules: companyRules, isLoading, error } = useCompanyRules();
+  const { rules, isLoading } = useCompanyRules();
 
   if (isLoading) {
     return (
-      <Card className="card-modern">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center h-32">
-            <div className="text-gray-600">Loading company rules...</div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p>Loading company rules...</p>
+        </div>
+      </div>
     );
   }
 
-  if (error) {
+  if (!rules?.company_rules_text) {
     return (
-      <Card className="card-modern">
-        <CardContent className="p-6">
-          <div className="text-center text-red-600">
-            Error loading company rules: {error.message}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const rulesText = companyRules?.company_rules_text;
-  const lastUpdated = companyRules?.rules_updated_at;
-
-  if (!rulesText) {
-    return (
-      <Card className="card-modern">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-black">
-            <FileText className="h-6 w-6" />
-            <span>Company Rules & Policies</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center text-gray-600 py-8">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p>No company rules have been set up yet.</p>
-            <p className="text-sm">Please contact your administrator.</p>
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center text-gray-500">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium mb-2">No Company Rules Available</h3>
+            <p>Company rules have not been set up yet. Please contact your administrator.</p>
           </div>
         </CardContent>
       </Card>
@@ -56,30 +35,38 @@ const CompanyRules = () => {
   }
 
   return (
-    <Card className="card-modern">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2 text-black">
-          <FileText className="h-6 w-6" />
-          <span>Company Rules & Policies</span>
-        </CardTitle>
-        {lastUpdated && (
-          <div className="flex items-center space-x-2 text-sm text-gray-600 mt-2">
-            <Calendar className="h-4 w-4" />
-            <span>Last Updated: {format(new Date(lastUpdated), 'PPP')}</span>
-          </div>
-        )}
-      </CardHeader>
-      <CardContent>
-        <div className="prose prose-sm max-w-none">
-          <div 
-            className="whitespace-pre-wrap text-black leading-relaxed"
-            style={{ maxHeight: '70vh', overflowY: 'auto' }}
-          >
-            {rulesText}
-          </div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex items-center space-x-3">
+        <FileText className="h-8 w-8 text-orange-600" />
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Company Rules & Policies</h1>
+          <p className="text-slate-600">Important guidelines and safety policies</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Company Policies</span>
+            {rules.rules_updated_at && (
+              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <Calendar className="h-4 w-4" />
+                <span>Last updated: {format(new Date(rules.rules_updated_at), 'PPP')}</span>
+              </div>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[600px] w-full rounded-md border p-6">
+            <div className="prose prose-slate max-w-none">
+              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                {rules.company_rules_text}
+              </div>
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

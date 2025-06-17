@@ -35,7 +35,7 @@ const ForemanDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50">
       <SidebarProvider>
         <div className="flex w-full min-h-screen">
           <ForemanSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -46,17 +46,15 @@ const ForemanDashboard = () => {
                 <div className="flex items-center mb-8">
                   <SidebarTrigger className="mr-4" />
                   <div>
-                    <h1 className="text-3xl font-bold text-black mb-2">Foreman Dashboard</h1>
-                    <p className="text-gray-600">Manage your crew and submit requests</p>
+                    <h1 className="text-3xl font-bold text-slate-900 mb-2">Foreman Dashboard</h1>
+                    <p className="text-slate-600">Manage your crew and submit requests</p>
                   </div>
                 </div>
                 
                 {/* License Warning Banner */}
                 <LicenseWarningBanner />
                 
-                <div className="card-modern p-6">
-                  {renderContent()}
-                </div>
+                {renderContent()}
               </div>
             </SidebarInset>
           </div>
