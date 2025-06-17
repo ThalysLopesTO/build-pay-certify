@@ -35,29 +35,27 @@ const ForemanDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-white">
       <SidebarProvider>
         <div className="flex w-full min-h-screen">
           <ForemanSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-          <div className="flex-1 flex flex-col">
+          <SidebarInset className="flex-1 flex flex-col min-w-0">
             <Header />
-            <SidebarInset className="flex-1">
-              <div className="p-6">
-                <div className="flex items-center mb-8">
-                  <SidebarTrigger className="mr-4" />
-                  <div>
-                    <h1 className="text-3xl font-bold text-slate-900 mb-2">Foreman Dashboard</h1>
-                    <p className="text-slate-600">Manage your crew and submit requests</p>
-                  </div>
+            <div className="flex-1 p-6">
+              <div className="flex items-center mb-8">
+                <SidebarTrigger className="mr-4 text-black hover:bg-gray-100" />
+                <div>
+                  <h1 className="text-3xl font-bold text-black mb-2">Foreman Dashboard</h1>
+                  <p className="text-gray-600">Manage your crew and submit requests</p>
                 </div>
-                
-                {/* License Warning Banner */}
-                <LicenseWarningBanner />
-                
-                {renderContent()}
               </div>
-            </SidebarInset>
-          </div>
+              
+              {/* License Warning Banner */}
+              <LicenseWarningBanner />
+              
+              {renderContent()}
+            </div>
+          </SidebarInset>
         </div>
       </SidebarProvider>
     </div>

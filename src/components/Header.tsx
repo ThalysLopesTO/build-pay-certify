@@ -40,9 +40,9 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white border-b border-slate-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+    <header className="bg-white border-b border-gray-200 px-6 py-4 w-full">
+      <div className="flex items-center justify-between w-full min-w-0">
+        <div className="flex items-center space-x-4 min-w-0 flex-shrink-0">
           {/* Company Logo Container */}
           <div className="flex items-center">
             {!isLoading && logoUrl ? (
@@ -56,8 +56,8 @@ const Header = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-3">
-                <Building className="h-8 w-8 text-orange-600" />
-                <h1 className="text-xl font-semibold text-slate-900">
+                <Building className="h-8 w-8 text-black" />
+                <h1 className="text-xl font-semibold text-black whitespace-nowrap">
                   Construction Payroll Manager
                 </h1>
               </div>
@@ -65,27 +65,27 @@ const Header = () => {
           </div>
           
           {user?.role === 'super_admin' && (
-            <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
+            <Badge variant="secondary" className="bg-gray-100 text-black border-gray-300 flex-shrink-0">
               <Crown className="h-3 w-3 mr-1" />
               Super Admin
             </Badge>
           )}
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 flex-shrink-0 ml-4">
           {user && (
             <div className="flex items-center space-x-3">
-              <div className="text-sm">
-                <div className="font-medium text-slate-900">
+              <div className="text-sm text-right">
+                <div className="font-medium text-black whitespace-nowrap">
                   {user.firstName} {user.lastName}
                 </div>
-                <div className="text-slate-500">{user.email}</div>
+                <div className="text-gray-600 whitespace-nowrap">{user.email}</div>
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 bg-white border-black text-black hover:bg-gray-100 flex-shrink-0"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
