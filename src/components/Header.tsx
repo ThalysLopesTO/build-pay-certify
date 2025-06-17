@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { LogOut, Crown } from 'lucide-react';
+import { LogOut, Crown, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
@@ -44,14 +44,28 @@ const Header = () => {
       <div className="flex items-center justify-between w-full px-6 py-4">
         {/* Left: Company Logo */}
         <div className="flex items-center">
-          {!isLoading && logoUrl && (
+          {!isLoading && (
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-              <img
-                src={logoUrl}
-                alt="Company Logo"
-                className="max-w-[400px] max-h-[70px] w-auto h-auto object-contain"
-                style={{ maxWidth: '400px', maxHeight: '70px' }}
-              />
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="Company Logo"
+                  className="max-w-[400px] max-h-[70px] w-auto h-auto object-contain"
+                  style={{ maxWidth: '400px', maxHeight: '70px' }}
+                />
+              ) : (
+                <div className="flex items-center justify-center w-[200px] h-[50px] text-gray-400">
+                  <Building2 className="h-8 w-8 mr-2" />
+                  <span className="text-sm font-medium">No Logo Uploaded</span>
+                </div>
+              )}
+            </div>
+          )}
+          {isLoading && (
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+              <div className="flex items-center justify-center w-[200px] h-[50px]">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
+              </div>
             </div>
           )}
           {user?.role === 'super_admin' && (
