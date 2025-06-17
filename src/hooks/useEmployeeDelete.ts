@@ -3,6 +3,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface DeleteEmployeeResponse {
+  success: boolean;
+  error?: string;
+  deleted_user_id?: string;
+  deleted_profile_id?: string;
+}
+
 export const useEmployeeDelete = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -20,14 +27,17 @@ export const useEmployeeDelete = () => {
         throw error;
       }
 
+      // Type check and cast the response
+      const response = data as DeleteEmployeeResponse;
+      
       // Check if the function returned an error result
-      if (data && !data.success) {
-        console.error('Delete employee function error:', data.error);
-        throw new Error(data.error);
+      if (response && !response.success) {
+        console.error('Delete employee function error:', response.error);
+        throw new Error(response.error || 'Unknown error occurred during deletion');
       }
 
-      console.log('Employee deleted successfully:', data);
-      return data;
+      console.log('Employee deleted successfully:', response);
+      return response;
     },
     onSuccess: () => {
       // Invalidate and refetch employee directory
