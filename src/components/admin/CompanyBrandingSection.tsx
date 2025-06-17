@@ -77,10 +77,10 @@ const CompanyBrandingSection = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <Label className="text-sm font-medium">Company Logo</Label>
+          <Label className="text-sm font-medium">Upload Company Logo</Label>
           <p className="text-sm text-muted-foreground mb-4">
-            Upload your company logo to appear in the header across all user roles and on invoice PDFs. 
-            Max size: 2MB. Supported formats: PNG, JPG. 
+            Recommended size: 400px x 70px. Max file size: 2MB. 
+            Supported formats: PNG, JPG, JPEG. 
             <span className="font-medium text-orange-600">Admin access only.</span>
           </p>
 
