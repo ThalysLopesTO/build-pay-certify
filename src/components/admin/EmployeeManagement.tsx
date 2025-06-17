@@ -1,20 +1,27 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Users, UserPlus, Shield, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Users, UserPlus, Shield, AlertTriangle, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
+import { useEmployeeDelete } from '@/hooks/useEmployeeDelete';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import EmployeeEditModal from './EmployeeEditModal';
 import EmployeeCertificatesModal from './EmployeeCertificatesModal';
+import EmployeeDeleteDialog from './EmployeeDeleteDialog';
 
 const EmployeeManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingEmployee, setEditingEmployee] = useState<any>(null);
   const [viewingCertificates, setViewingCertificates] = useState<any>(null);
+  const [deletingEmployee, setDeletingEmployee] = useState<any>(null);
   
+  const { user } = useAuth();
   const { data: employees = [], isLoading, error, refetch } = useEmployeeDirectory();
+  const deleteEmployeeMutation = useEmployeeDelete();
+
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const filteredEmployees = employees.filter(employee =>
     `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -71,6 +78,21 @@ const EmployeeManagement = () => {
     // This will be handled by the parent component (AdminDashboard)
     // by setting the activeTab to 'employee-registration'
     window.dispatchEvent(new CustomEvent('navigateToEmployeeRegistration'));
+  };
+
+  const handleDeleteEmployee = (employee: any) => {
+    setDeletingEmployee(employee);
+  };
+
+  const confirmDeleteEmployee = () => {
+    if (deletingEmployee?.user_id) {
+      deleteEmployeeMutation.mutate(deletingEmployee.user_id, {
+        onSuccess: () => {
+          setDeletingEmployee(null);
+          refetch();
+        }
+      });
+    }
   };
 
   if (isLoading) {
@@ -183,6 +205,17 @@ const EmployeeManagement = () => {
                   >
                     View Certs
                   </Button>
+                  {isAdmin && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={() => handleDeleteEmployee(employee)}
+                      disabled={deleteEmployeeMutation.isPending}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -215,6 +248,15 @@ const EmployeeManagement = () => {
         isOpen={!!viewingCertificates}
         onClose={() => setViewingCertificates(null)}
         employee={viewingCertificates}
+      />
+
+      {/* Delete Employee Dialog */}
+      <EmployeeDeleteDialog
+        isOpen={!!deletingEmployee}
+        onClose={() => setDeletingEmployee(null)}
+        onConfirm={confirmDeleteEmployee}
+        employeeName={deletingEmployee ? `${deletingEmployee.first_name} ${deletingEmployee.last_name}` : ''}
+        isDeleting={deleteEmployeeMutation.isPending}
       />
     </div>
   );
