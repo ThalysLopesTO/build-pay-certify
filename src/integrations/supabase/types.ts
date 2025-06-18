@@ -162,6 +162,9 @@ export type Database = {
           registration_date: string | null
           rules_updated_at: string | null
           status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          stripe_verified: boolean | null
           updated_at: string
         }
         Insert: {
@@ -177,6 +180,9 @@ export type Database = {
           registration_date?: string | null
           rules_updated_at?: string | null
           status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_verified?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -192,6 +198,9 @@ export type Database = {
           registration_date?: string | null
           rules_updated_at?: string | null
           status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_verified?: boolean | null
           updated_at?: string
         }
         Relationships: []
@@ -201,6 +210,7 @@ export type Database = {
           admin_email: string
           admin_first_name: string
           admin_last_name: string
+          admin_password: string | null
           admin_user_id: string | null
           approved_at: string | null
           approved_by: string | null
@@ -219,6 +229,7 @@ export type Database = {
           admin_email: string
           admin_first_name: string
           admin_last_name: string
+          admin_password?: string | null
           admin_user_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
@@ -237,6 +248,7 @@ export type Database = {
           admin_email?: string
           admin_first_name?: string
           admin_last_name?: string
+          admin_password?: string | null
           admin_user_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
@@ -651,6 +663,30 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_webhook_events: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          processed_at: string | null
+          stripe_event_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          processed_at?: string | null
+          stripe_event_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          processed_at?: string | null
+          stripe_event_id?: string
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           address: string | null
@@ -709,6 +745,8 @@ export type Database = {
           pending_approval: boolean | null
           position: string | null
           role: string
+          stripe_verification_status: string | null
+          stripe_verified: boolean | null
           trade: string | null
           updated_at: string
           user_id: string
@@ -723,6 +761,8 @@ export type Database = {
           pending_approval?: boolean | null
           position?: string | null
           role?: string
+          stripe_verification_status?: string | null
+          stripe_verified?: boolean | null
           trade?: string | null
           updated_at?: string
           user_id: string
@@ -737,6 +777,8 @@ export type Database = {
           pending_approval?: boolean | null
           position?: string | null
           role?: string
+          stripe_verification_status?: string | null
+          stripe_verified?: boolean | null
           trade?: string | null
           updated_at?: string
           user_id?: string

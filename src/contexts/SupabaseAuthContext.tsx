@@ -1,13 +1,20 @@
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { AuthContextType } from './auth/types';
 import { useAuthState } from './auth/useAuthState';
-import { login, signUp, logout } from './auth/authService';
+import { login, signUp, logout, checkSubscriptionStatus } from './auth/authService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, session, loading, companyError, setCompanyError } = useAuthState();
+
+  // Check subscription status when user logs in
+  useEffect(() => {
+    if (user && session && !loading) {
+      checkSubscriptionStatus();
+    }
+  }, [user, session, loading]);
 
   const handleLogout = async () => {
     console.log('🔄 Logout requested...');

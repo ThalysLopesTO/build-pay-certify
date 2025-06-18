@@ -46,3 +46,27 @@ export const logout = async () => {
     return { error };
   }
 };
+
+// New function to check subscription status after login
+export const checkSubscriptionStatus = async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+
+    const { data, error } = await supabase.functions.invoke('check-subscription', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (error) {
+      console.warn('Failed to check subscription status:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error checking subscription status:', error);
+    return null;
+  }
+};
