@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import * as CryptoJS from "crypto-js";
+
+export const SECRET_KEY = "my-temp-sec";
 
 interface RegistrationFormData {
   companyName: string;
@@ -40,9 +43,10 @@ export const useCompanyRegistration = () => {
 
     try {
       console.log('🚀 Starting company registration process...');
-      
       // Only insert into company_registration_requests table
       console.log('📋 Creating registration request...');
+      const encrypted = CryptoJS.AES.encrypt(formData.password, SECRET_KEY).toString();
+
       const { error: requestError } = await supabase
         .from('company_registration_requests')
         .insert({
@@ -53,6 +57,7 @@ export const useCompanyRegistration = () => {
           admin_first_name: formData.adminFirstName,
           admin_last_name: formData.adminLastName,
           admin_email: formData.adminEmail,
+          admin_password: encrypted,
           status: 'pending'
         });
 

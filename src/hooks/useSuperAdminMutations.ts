@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import * as CryptoJS from "crypto-js";
+import { SECRET_KEY } from './useCompanyRegistration';
 
 interface RegistrationRequest {
   id: string;
@@ -11,6 +13,7 @@ interface RegistrationRequest {
   admin_first_name: string;
   admin_last_name: string;
   admin_email: string;
+  admin_password?: string;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
 }
@@ -25,8 +28,8 @@ export const useSuperAdminMutations = () => {
       registrationDate: string;
       expirationDate: string;
     }) => {
-      console.log('Starting approval process for:', request.company_name);
 
+      console.log('Starting approval process for:', request.company_name);
       // Step 1: Create the company first
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
@@ -45,12 +48,16 @@ export const useSuperAdminMutations = () => {
       }
 
       console.log('Company created successfully:', companyData);
-      
+
+      const encrypted = request?.admin_password ?? "TempPassword123!";
+      const decrypted = CryptoJS.AES.decrypt(encrypted, SECRET_KEY);
+      const originalText = decrypted.toString(CryptoJS.enc.Utf8);
+
       // Step 2: Use the edge function to create the admin user with company ID and company name
       const { data: createUserData, error: createUserError } = await supabase.functions.invoke('quick-processor', {
         body: { 
           email: request.admin_email,
-          password: 'TempPassword123!',
+          password: originalText,
           firstName: request.admin_first_name,
           lastName: request.admin_last_name,
           companyId: companyData.id,
