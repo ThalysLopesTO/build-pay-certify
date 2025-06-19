@@ -116,10 +116,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, supabas
     return;
   }
 
-  logStep("Customer email retrieved", { email: customerEmail });
+  logStep("Customer email retrieved for pre-registration", { email: customerEmail, customerId });
   
-  // This will be handled when the user completes registration
-  // The registration form will link the Stripe customer to the company
+  // Store pre-registration data for linking during company registration
+  await supabaseClient.from('company_registration_requests').upsert({
+    company_email: customerEmail,
+    admin_email: customerEmail,
+    company_name: 'Pending Registration',
+    admin_first_name: 'Pending',
+    admin_last_name: 'Registration',
+    status: 'stripe_pending',
+    stripe_customer_id: customerId,
+    stripe_session_id: session.id
+  }, { onConflict: 'company_email' });
 }
 
 async function handleSubscriptionChange(subscription: Stripe.Subscription, supabaseClient: any, stripe: Stripe) {
@@ -140,7 +149,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
   
   const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString().split('T')[0];
   
-  // Update or create company record based on customer
+  // Update company record if it exists
   const { data: existingCompany } = await supabaseClient
     .from('companies')
     .select('id')
@@ -155,14 +164,23 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
         stripe_subscription_id: subscription.id,
         plan: plan,
         expiration_date: subscriptionEnd,
-        status: subscription.status === 'active' ? 'active' : 'inactive'
+        status: subscription.status === 'active' ? 'active' : 'inactive',
+        stripe_verified: true
       })
       .eq('stripe_customer_id', customerId);
       
     logStep("Updated existing company", { customerId, plan, expiration: subscriptionEnd });
   } else {
-    logStep("No existing company found for customer", { customerId });
-    // Company will be created during registration process
+    // Update registration request status
+    await supabaseClient
+      .from('company_registration_requests')
+      .update({
+        status: 'stripe_verified',
+        stripe_subscription_id: subscription.id
+      })
+      .eq('stripe_customer_id', customerId);
+      
+    logStep("Updated registration request for pre-registration", { customerId });
   }
 }
 
@@ -177,7 +195,8 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, supa
       stripe_subscription_id: null,
       plan: 'free',
       expiration_date: null,
-      status: 'inactive'
+      status: 'inactive',
+      stripe_verified: false
     })
     .eq('stripe_customer_id', customerId);
     

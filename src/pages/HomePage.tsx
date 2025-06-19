@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { CreditCard, CheckCircle, Building } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,7 +35,7 @@ const HomePage = () => {
   }, [searchParams, toast]);
 
   const handleStartSubscription = () => {
-    // Always allow subscription for both authenticated and unauthenticated users
+    // Create checkout for guest users (pre-registration flow)
     createCheckout({ 
       priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM', 
       planName: 'StackBuild' 
@@ -129,6 +129,14 @@ const HomePage = () => {
                 <p className="mt-2 text-xs">
                   After payment, you'll be redirected to complete your company registration
                 </p>
+                <div className="mt-4 pt-4 border-t border-slate-300">
+                  <p className="text-xs mb-2">Already have an account?</p>
+                  <Link to="/login">
+                    <Button variant="outline" size="sm">
+                      Sign In
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </CardContent>

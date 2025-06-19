@@ -18,11 +18,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-  );
-
   try {
     logStep("Function started");
 
@@ -39,68 +34,15 @@ serve(async (req) => {
     }
     logStep("Stripe key verified");
 
-    // Check for authentication (optional for subscription flow)
-    const authHeader = req.headers.get("Authorization");
-    let user = null;
-    let userEmail = null;
-    let userId = null;
-
-    if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      const { data } = await supabaseClient.auth.getUser(token);
-      
-      if (data.user?.email) {
-        user = data.user;
-        userEmail = data.user.email;
-        userId = data.user.id;
-        logStep("User authenticated", { userId, email: userEmail });
-      }
-    }
-
-    // If no authenticated user, this will be a guest checkout
-    if (!user) {
-      logStep("Guest checkout - no authentication provided");
-    }
-
-    const { priceId, planName = "StackBuild Plan" } = await req.json();
-    if (!priceId) {
-      logStep("ERROR: Price ID missing from request");
-      return new Response(JSON.stringify({ 
-        error: "Price ID is required" 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
+    const { priceId = "price_1RbVmQEuB2J4BS43bsSzcSQM", planName = "StackBuild Plan", customerEmail } = await req.json();
+    
+    logStep("Request data", { priceId, planName, customerEmail });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     
-    let customerId = null;
-    
-    // Only check for existing customer if we have an authenticated user
-    if (userEmail) {
-      const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
-      
-      if (customers.data.length > 0) {
-        customerId = customers.data[0].id;
-        logStep("Found existing customer", { customerId });
-      } else {
-        const customer = await stripe.customers.create({
-          email: userEmail,
-          metadata: { 
-            user_id: userId || "",
-            plan_name: planName,
-            source: "stackbuild_app"
-          }
-        });
-        customerId = customer.id;
-        logStep("Created new customer", { customerId });
-      }
-    }
-
     const origin = req.headers.get("origin") || "http://localhost:3000";
     
-    // Create checkout session
+    // Create checkout session for guest checkout (pre-registration)
     const sessionConfig: any = {
       line_items: [
         {
@@ -109,26 +51,18 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${origin}/register-company?payment=success`,
+      success_url: `${origin}/register-company?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?payment=cancelled`,
+      customer_creation: "always", // Always create a customer
       metadata: {
         plan_name: planName,
-        source: "stackbuild_app"
-      }
+        source: "stackbuild_app",
+        flow: "pre_registration"
+      },
+      // Collect customer email during checkout
+      billing_address_collection: "required",
+      customer_email: customerEmail, // Pre-fill if provided
     };
-
-    // Add customer info if available
-    if (customerId) {
-      sessionConfig.customer = customerId;
-    } else {
-      // For guest checkout, let Stripe collect email
-      sessionConfig.customer_creation = "always";
-    }
-
-    // Add user_id to metadata if available
-    if (userId) {
-      sessionConfig.metadata.user_id = userId;
-    }
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
