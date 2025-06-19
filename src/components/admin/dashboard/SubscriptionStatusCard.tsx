@@ -23,7 +23,6 @@ const SubscriptionStatusCard = () => {
     );
   }
 
-  const currentPlan = subscriptionStatus?.plan || 'free';
   const isSubscribed = subscriptionStatus?.subscribed || false;
   const subscriptionEnd = subscriptionStatus?.subscription_end;
   
@@ -32,13 +31,8 @@ const SubscriptionStatusCard = () => {
     isAfter(new Date(subscriptionEnd), new Date()) && 
     !isAfter(new Date(subscriptionEnd), subDays(new Date(), -7));
 
-  const getPlanColor = (plan: string) => {
-    switch (plan.toLowerCase()) {
-      case 'basic': return 'bg-blue-100 text-blue-800';
-      case 'standard': return 'bg-green-100 text-green-800';
-      case 'pro': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const handleSubscribe = () => {
+    createCheckout({ priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM', planName: 'StackBuild' });
   };
 
   return (
@@ -50,8 +44,8 @@ const SubscriptionStatusCard = () => {
       <CardContent>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Badge className={getPlanColor(currentPlan)}>
-              {currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} Plan
+            <Badge className={isSubscribed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+              {isSubscribed ? 'StackBuild Plan' : 'No Subscription'}
             </Badge>
             {isExpiringSoon && (
               <div className="flex items-center text-amber-600">
@@ -68,16 +62,15 @@ const SubscriptionStatusCard = () => {
           )}
           
           <div className="flex space-x-2">
-            {currentPlan === 'free' && (
+            {!isSubscribed ? (
               <Button 
                 size="sm" 
-                className="text-xs"
-                onClick={() => createCheckout({ priceId: 'price_standard', planName: 'Standard' })}
+                className="text-xs bg-orange-600 hover:bg-orange-700"
+                onClick={handleSubscribe}
               >
-                Upgrade Now
+                Subscribe Now
               </Button>
-            )}
-            {isSubscribed && (
+            ) : (
               <Button 
                 variant="outline" 
                 size="sm" 

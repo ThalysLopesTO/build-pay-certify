@@ -4,24 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
-import { CreditCard, RefreshCw, Settings } from 'lucide-react';
+import { CreditCard, RefreshCw, Settings, CheckCircle, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-// Example pricing - you can modify these based on your actual Stripe prices
-const PRICING_PLANS = [
-  {
-    name: 'StackBuild',
-    priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM', 
-    price: '$197.00',
-    features: [
-      'Unlimited employees',
-      'Payroll & Invoice System',
-      'Certificate & Safety Tracking',
-      'Multi-role Access: Admin, Foreman, Worker',
-      'Project & Jobsite Control'
-    ]
-  }
-];
+// Single pricing plan configuration
+const STACKBUILD_PLAN = {
+  name: 'StackBuild',
+  priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM',
+  price: '$197 CAD',
+  features: [
+    'Unlimited employees',
+    'Payroll & Invoice System',
+    'Certificate & Safety Tracking',
+    'Multi-role Access: Admin, Foreman, Worker',
+    'Project & Jobsite Control'
+  ]
+};
 
 const SubscriptionManagement = () => {
   const {
@@ -35,17 +34,8 @@ const SubscriptionManagement = () => {
     checkSubscription,
   } = useStripeSubscription();
 
-  const getPlanColor = (plan: string) => {
-    switch (plan.toLowerCase()) {
-      case 'basic': return 'bg-blue-100 text-blue-800';
-      case 'standard': return 'bg-green-100 text-green-800';
-      case 'pro': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getCurrentPlan = () => {
-    return subscriptionStatus?.plan || 'free';
+  const handleRenewSubscription = () => {
+    createCheckout({ priceId: STACKBUILD_PLAN.priceId, planName: STACKBUILD_PLAN.name });
   };
 
   if (isLoadingStatus) {
@@ -59,47 +49,76 @@ const SubscriptionManagement = () => {
     );
   }
 
+  const isSubscribed = subscriptionStatus?.subscribed || false;
+
   return (
     <div className="space-y-6">
       {/* Current Subscription Status */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <CreditCard className="h-5 w-5" />
-            <span>Current Subscription</span>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <CreditCard className="h-5 w-5" />
+              <span>Current Subscription</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={checkSubscription}
+              disabled={isCheckingSubscription}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isCheckingSubscription ? 'animate-spin' : ''}`} />
+              Refresh Status
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Badge className={getPlanColor(getCurrentPlan())}>
-                {getCurrentPlan().charAt(0).toUpperCase() + getCurrentPlan().slice(1)} Plan
-              </Badge>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Badge className={isSubscribed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                  {isSubscribed ? 'StackBuild Plan - Active' : 'Subscription Required'}
+                </Badge>
+                <span className="text-lg font-semibold text-orange-600">
+                  {STACKBUILD_PLAN.price}/month
+                </span>
+              </div>
               {subscriptionStatus?.subscription_end && (
                 <span className="text-sm text-gray-600">
-                  Expires: {format(new Date(subscriptionStatus.subscription_end), 'MMM dd, yyyy')}
+                  {isSubscribed ? 'Renews' : 'Expired'}: {format(new Date(subscriptionStatus.subscription_end), 'MMM dd, yyyy')}
                 </span>
               )}
             </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={checkSubscription}
-                disabled={isCheckingSubscription}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isCheckingSubscription ? 'animate-spin' : ''}`} />
-                Refresh Status
-              </Button>
-              {subscriptionStatus?.subscribed && (
+
+            <div className="mt-4">
+              <h4 className="font-medium mb-2">Plan Features:</h4>
+              <ul className="space-y-1">
+                {STACKBUILD_PLAN.features.map((feature, index) => (
+                  <li key={index} className="text-sm flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="flex space-x-2 pt-4">
+              {isSubscribed ? (
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => openCustomerPortal()}
                   disabled={isOpeningPortal}
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Manage Subscription
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleRenewSubscription}
+                  disabled={isCreatingCheckout}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  {isCreatingCheckout ? 'Processing...' : 'Subscribe Now'}
                 </Button>
               )}
             </div>
@@ -107,59 +126,25 @@ const SubscriptionManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Available Plans */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Plans</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-3 gap-6">
-            {PRICING_PLANS.map((plan) => {
-              const isCurrentPlan = getCurrentPlan().toLowerCase() === plan.name.toLowerCase();
-              
-              return (
-                <div
-                  key={plan.name}
-                  className={`border rounded-lg p-6 ${
-                    isCurrentPlan ? 'border-orange-500 bg-orange-50' : 'border-gray-200'
-                  }`}
-                >
-                  <div className="text-center mb-4">
-                    <h3 className="text-lg font-semibold">{plan.name}</h3>
-                    <div className="text-3xl font-bold text-orange-600">{plan.price}</div>
-                    <div className="text-sm text-gray-600">per month</div>
-                    {isCurrentPlan && (
-                      <Badge className="mt-2 bg-orange-600 text-white">Current Plan</Badge>
-                    )}
-                  </div>
-                  
-                  <ul className="space-y-2 mb-6">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="text-sm flex items-center">
-                        <span className="text-green-500 mr-2">✓</span>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  {!isCurrentPlan && (
-                    <Button
-                      className="w-full"
-                      onClick={() => createCheckout({ priceId: plan.priceId, planName: plan.name })}
-                      disabled={isCreatingCheckout}
-                    >
-                      {getCurrentPlan() === 'free' ? 'Subscribe' : 'Upgrade'}
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Subscription Required Alert */}
+      {!isSubscribed && (
+        <Card className="border-orange-200">
+          <CardHeader>
+            <CardTitle className="text-orange-700">Subscription Required</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Alert className="border-orange-200 bg-orange-50">
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                A StackBuild subscription is required to access all features. Subscribe now to continue using the system.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Billing History */}
-      {subscriptionStatus?.subscribed && (
+      {isSubscribed && (
         <Card>
           <CardHeader>
             <CardTitle>Billing & Invoices</CardTitle>

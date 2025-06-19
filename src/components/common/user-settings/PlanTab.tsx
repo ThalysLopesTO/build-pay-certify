@@ -20,42 +20,19 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-// Pricing plans configuration
-const PRICING_PLANS = [
-  {
-    name: 'Basic',
-    priceId: 'price_basic_monthly',
-    price: '$29',
-    features: [
-      'Up to 10 employees',
-      'Basic payroll system',
-      'Essential reporting',
-      'Email support'
-    ]
-  },
-  {
-    name: 'Standard',
-    priceId: 'price_standard_monthly',
-    price: '$79',
-    features: [
-      'Up to 50 employees',
-      'Advanced payroll & invoicing',
-      'Certificate tracking',
-      'Priority support'
-    ]
-  },
-  {
-    name: 'Pro',
-    priceId: 'price_pro_monthly',
-    price: '$149',
-    features: [
-      'Unlimited employees',
-      'Full project management',
-      'Advanced analytics',
-      'Phone & email support'
-    ]
-  }
-];
+// Single pricing plan configuration
+const STACKBUILD_PLAN = {
+  name: 'StackBuild',
+  priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM',
+  price: '$197 CAD',
+  features: [
+    'Unlimited employees',
+    'Payroll & Invoice System',
+    'Certificate & Safety Tracking',
+    'Multi-role Access: Admin, Foreman, Worker',
+    'Project & Jobsite Control'
+  ]
+};
 
 const PlanTab = () => {
   const { user, isCompanyAdmin } = useAuth();
@@ -83,22 +60,8 @@ const PlanTab = () => {
     setNotes('');
   };
 
-  const getPlanColor = (plan: string) => {
-    switch (plan.toLowerCase()) {
-      case 'basic': return 'bg-blue-100 text-blue-800';
-      case 'standard': return 'bg-green-100 text-green-800';
-      case 'pro': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getCurrentPlan = () => {
-    return subscriptionStatus?.plan || 'free';
-  };
-
-  const getCurrentPlanDetails = () => {
-    const currentPlan = getCurrentPlan();
-    return PRICING_PLANS.find(plan => plan.name.toLowerCase() === currentPlan.toLowerCase());
+  const handleRenewSubscription = () => {
+    createCheckout({ priceId: STACKBUILD_PLAN.priceId, planName: STACKBUILD_PLAN.name });
   };
 
   // Only show subscription management for admins
@@ -138,8 +101,6 @@ const PlanTab = () => {
     );
   }
 
-  const currentPlan = getCurrentPlan();
-  const currentPlanDetails = getCurrentPlanDetails();
   const isSubscribed = subscriptionStatus?.subscribed || false;
 
   return (
@@ -167,38 +128,34 @@ const PlanTab = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <Badge className={getPlanColor(currentPlan)}>
-                  {currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} Plan
+                <Badge className={isSubscribed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                  {isSubscribed ? 'StackBuild Plan - Active' : 'Subscription Required'}
                 </Badge>
-                {currentPlanDetails && (
-                  <span className="text-lg font-semibold text-orange-600">
-                    {currentPlanDetails.price}/month
-                  </span>
-                )}
+                <span className="text-lg font-semibold text-orange-600">
+                  {STACKBUILD_PLAN.price}/month
+                </span>
               </div>
               {subscriptionStatus?.subscription_end && (
                 <span className="text-sm text-muted-foreground">
-                  {isSubscribed ? 'Renews' : 'Expires'}: {format(new Date(subscriptionStatus.subscription_end), 'MMM dd, yyyy')}
+                  {isSubscribed ? 'Renews' : 'Expired'}: {format(new Date(subscriptionStatus.subscription_end), 'MMM dd, yyyy')}
                 </span>
               )}
             </div>
             
-            {currentPlanDetails && (
-              <div className="mt-4">
-                <h4 className="font-medium mb-2">Plan Features:</h4>
-                <ul className="space-y-1">
-                  {currentPlanDetails.features.map((feature, index) => (
-                    <li key={index} className="text-sm flex items-center">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <div className="mt-4">
+              <h4 className="font-medium mb-2">Plan Features:</h4>
+              <ul className="space-y-1">
+                {STACKBUILD_PLAN.features.map((feature, index) => (
+                  <li key={index} className="text-sm flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-            {isSubscribed && (
-              <div className="flex space-x-2 pt-4">
+            <div className="flex space-x-2 pt-4">
+              {isSubscribed ? (
                 <Button
                   variant="outline"
                   onClick={() => openCustomerPortal()}
@@ -207,142 +164,114 @@ const PlanTab = () => {
                   <Settings className="h-4 w-4 mr-2" />
                   Manage Billing
                 </Button>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Available Plans for Upgrade/Downgrade */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Plans</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {currentPlan === 'free' ? 'Choose a plan to get started' : 'Upgrade or change your current plan'}
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            {PRICING_PLANS.map((plan) => {
-              const isCurrentPlan = currentPlan.toLowerCase() === plan.name.toLowerCase();
-              
-              return (
-                <div
-                  key={plan.name}
-                  className={`border rounded-lg p-4 ${
-                    isCurrentPlan ? 'border-orange-500 bg-orange-50' : 'border-gray-200'
-                  }`}
+              ) : (
+                <Button
+                  onClick={handleRenewSubscription}
+                  disabled={isCreatingCheckout}
+                  className="bg-orange-600 hover:bg-orange-700"
                 >
-                  <div className="text-center mb-3">
-                    <h3 className="font-semibold">{plan.name}</h3>
-                    <div className="text-2xl font-bold text-orange-600">{plan.price}</div>
-                    <div className="text-xs text-muted-foreground">per month</div>
-                    {isCurrentPlan && (
-                      <Badge className="mt-2 bg-orange-600 text-white">Current Plan</Badge>
-                    )}
-                  </div>
-                  
-                  <ul className="space-y-1 mb-4">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="text-xs flex items-center">
-                        <CheckCircle className="h-3 w-3 text-green-500 mr-1" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  {!isCurrentPlan && (
-                    <Button
-                      className="w-full"
-                      size="sm"
-                      onClick={() => createCheckout({ priceId: plan.priceId, planName: plan.name })}
-                      disabled={isCreatingCheckout}
-                    >
-                      {currentPlan === 'free' ? 'Subscribe' : 'Change Plan'}
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
+                  {isCreatingCheckout ? 'Processing...' : 'Renew Now'}
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Cancellation Section */}
-      <Card className="border-red-200">
-        <CardHeader>
-          <CardTitle className="text-red-700">Plan Cancellation</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {pendingRequest ? (
+      {/* Subscription Details */}
+      {!isSubscribed && (
+        <Card className="border-orange-200">
+          <CardHeader>
+            <CardTitle className="text-orange-700">Subscription Required</CardTitle>
+          </CardHeader>
+          <CardContent>
             <Alert className="border-orange-200 bg-orange-50">
               <AlertCircle className="h-4 w-4 text-orange-600" />
               <AlertDescription className="text-orange-800">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Cancellation request pending review</span>
-                  <span className="text-xs text-orange-600">
-                    Submitted {new Date(pendingRequest.request_date).toLocaleDateString()}
-                  </span>
-                </div>
+                Your subscription has expired. Please renew to continue using StackBuild.
               </AlertDescription>
             </Alert>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Need to cancel your subscription? Submit a cancellation request for review.
-              </p>
-              
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    Cancel My Plan
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Cancel Your Plan</DialogTitle>
-                    <DialogDescription>
-                      Are you sure you want to cancel your plan? Your access will end at the end of your billing cycle.
-                      This action requires approval from our team.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">
-                        Reason for cancellation (optional)
-                      </label>
-                      <Textarea
-                        placeholder="Please let us know why you're cancelling..."
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        className="min-h-[80px]"
-                      />
-                    </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cancellation Section - Only show if subscribed */}
+      {isSubscribed && (
+        <Card className="border-red-200">
+          <CardHeader>
+            <CardTitle className="text-red-700">Plan Cancellation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {pendingRequest ? (
+              <Alert className="border-orange-200 bg-orange-50">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-orange-800">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Cancellation request pending review</span>
+                    <span className="text-xs text-orange-600">
+                      Submitted {new Date(pendingRequest.request_date).toLocaleDateString()}
+                    </span>
                   </div>
-                  
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsDialogOpen(false)}
-                      disabled={submitCancellationRequest.isPending}
-                    >
-                      Keep Plan
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Need to cancel your subscription? Submit a cancellation request for review.
+                </p>
+                
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      Cancel My Plan
                     </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={handleCancellationSubmit}
-                      disabled={submitCancellationRequest.isPending}
-                    >
-                      {submitCancellationRequest.isPending ? 'Submitting...' : 'Submit Cancellation Request'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Cancel Your Plan</DialogTitle>
+                      <DialogDescription>
+                        Are you sure you want to cancel your plan? Your access will end at the end of your billing cycle.
+                        This action requires approval from our team.
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Reason for cancellation (optional)
+                        </label>
+                        <Textarea
+                          placeholder="Please let us know why you're cancelling..."
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          className="min-h-[80px]"
+                        />
+                      </div>
+                    </div>
+                    
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsDialogOpen(false)}
+                        disabled={submitCancellationRequest.isPending}
+                      >
+                        Keep Plan
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={handleCancellationSubmit}
+                        disabled={submitCancellationRequest.isPending}
+                      >
+                        {submitCancellationRequest.isPending ? 'Submitting...' : 'Submit Cancellation Request'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
