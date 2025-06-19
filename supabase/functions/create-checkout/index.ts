@@ -39,34 +39,28 @@ serve(async (req) => {
     }
     logStep("Stripe key verified");
 
-    // Require authentication
+    // Check for authentication (optional for subscription flow)
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      logStep("ERROR: No authorization header provided");
-      return new Response(JSON.stringify({ 
-        error: "Authentication required. Please log in to subscribe." 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
+    let user = null;
+    let userEmail = null;
+    let userId = null;
+
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data } = await supabaseClient.auth.getUser(token);
+      
+      if (data.user?.email) {
+        user = data.user;
+        userEmail = data.user.email;
+        userId = data.user.id;
+        logStep("User authenticated", { userId, email: userEmail });
+      }
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    
-    if (!data.user?.email) {
-      logStep("ERROR: Invalid or expired session");
-      return new Response(JSON.stringify({ 
-        error: "Invalid session. Please log in again." 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
+    // If no authenticated user, this will be a guest checkout
+    if (!user) {
+      logStep("Guest checkout - no authentication provided");
     }
-
-    const userEmail = data.user.email;
-    const userId = data.user.id;
-    logStep("User authenticated", { userId, email: userEmail });
 
     const { priceId, planName = "StackBuild Plan" } = await req.json();
     if (!priceId) {
@@ -81,25 +75,33 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     
-    // Check for existing customer
-    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
-    let customerId;
+    let customerId = null;
     
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-      logStep("Found existing customer", { customerId });
-    } else {
-      const customer = await stripe.customers.create({
-        email: userEmail,
-        metadata: { user_id: userId }
-      });
-      customerId = customer.id;
-      logStep("Created new customer", { customerId });
+    // Only check for existing customer if we have an authenticated user
+    if (userEmail) {
+      const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
+      
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        logStep("Found existing customer", { customerId });
+      } else {
+        const customer = await stripe.customers.create({
+          email: userEmail,
+          metadata: { 
+            user_id: userId || "",
+            plan_name: planName,
+            source: "stackbuild_app"
+          }
+        });
+        customerId = customer.id;
+        logStep("Created new customer", { customerId });
+      }
     }
 
     const origin = req.headers.get("origin") || "http://localhost:3000";
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
+    
+    // Create checkout session
+    const sessionConfig: any = {
       line_items: [
         {
           price: priceId,
@@ -110,10 +112,25 @@ serve(async (req) => {
       success_url: `${origin}/register-company?payment=success`,
       cancel_url: `${origin}/?payment=cancelled`,
       metadata: {
-        user_id: userId,
-        plan_name: planName
+        plan_name: planName,
+        source: "stackbuild_app"
       }
-    });
+    };
+
+    // Add customer info if available
+    if (customerId) {
+      sessionConfig.customer = customerId;
+    } else {
+      // For guest checkout, let Stripe collect email
+      sessionConfig.customer_creation = "always";
+    }
+
+    // Add user_id to metadata if available
+    if (userId) {
+      sessionConfig.metadata.user_id = userId;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 

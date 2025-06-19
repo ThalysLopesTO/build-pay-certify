@@ -70,10 +70,13 @@ serve(async (req) => {
     switch (event.type) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
-        await handleSubscriptionChange(event.data.object as Stripe.Subscription, supabaseClient);
+        await handleSubscriptionChange(event.data.object as Stripe.Subscription, supabaseClient, stripe);
         break;
       case 'customer.subscription.deleted':
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription, supabaseClient);
+        break;
+      case 'checkout.session.completed':
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session, supabaseClient, stripe);
         break;
       case 'invoice.payment_succeeded':
         await handlePaymentSucceeded(event.data.object as Stripe.Invoice, supabaseClient);
@@ -99,7 +102,27 @@ serve(async (req) => {
   }
 });
 
-async function handleSubscriptionChange(subscription: Stripe.Subscription, supabaseClient: any) {
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session, supabaseClient: any, stripe: Stripe) {
+  logStep("Handling checkout completion", { sessionId: session.id, customerId: session.customer });
+  
+  const customerId = session.customer as string;
+  
+  // Get customer details from Stripe
+  const customer = await stripe.customers.retrieve(customerId);
+  const customerEmail = (customer as Stripe.Customer).email;
+  
+  if (!customerEmail) {
+    logStep("ERROR: No customer email found");
+    return;
+  }
+
+  logStep("Customer email retrieved", { email: customerEmail });
+  
+  // This will be handled when the user completes registration
+  // The registration form will link the Stripe customer to the company
+}
+
+async function handleSubscriptionChange(subscription: Stripe.Subscription, supabaseClient: any, stripe: Stripe) {
   logStep("Handling subscription change", { subscriptionId: subscription.id, status: subscription.status });
   
   const customerId = subscription.customer as string;
@@ -117,17 +140,30 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
   
   const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString().split('T')[0];
   
-  await supabaseClient
+  // Update or create company record based on customer
+  const { data: existingCompany } = await supabaseClient
     .from('companies')
-    .update({
-      stripe_subscription_id: subscription.id,
-      plan: plan,
-      expiration_date: subscriptionEnd,
-      status: subscription.status === 'active' ? 'active' : 'inactive'
-    })
-    .eq('stripe_customer_id', customerId);
-    
-  logStep("Company updated for subscription change", { customerId, plan, expiration: subscriptionEnd });
+    .select('id')
+    .eq('stripe_customer_id', customerId)
+    .single();
+
+  if (existingCompany) {
+    // Update existing company
+    await supabaseClient
+      .from('companies')
+      .update({
+        stripe_subscription_id: subscription.id,
+        plan: plan,
+        expiration_date: subscriptionEnd,
+        status: subscription.status === 'active' ? 'active' : 'inactive'
+      })
+      .eq('stripe_customer_id', customerId);
+      
+    logStep("Updated existing company", { customerId, plan, expiration: subscriptionEnd });
+  } else {
+    logStep("No existing company found for customer", { customerId });
+    // Company will be created during registration process
+  }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription, supabaseClient: any) {
