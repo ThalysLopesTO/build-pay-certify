@@ -22,6 +22,8 @@ serve(async (req) => {
 
     // Check for Stripe secret key first
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    logStep("Checking Stripe secret key", { hasKey: !!stripeKey, keyLength: stripeKey?.length });
+    
     if (!stripeKey) {
       logStep("ERROR: Stripe secret key not configured");
       return new Response(JSON.stringify({ 
@@ -63,6 +65,7 @@ serve(async (req) => {
       customer_email: customerEmail, // Pre-fill if provided
     };
 
+    logStep("Creating checkout session", sessionConfig);
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
@@ -73,7 +76,7 @@ serve(async (req) => {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in create-checkout", { message: errorMessage });
+    logStep("ERROR in create-checkout", { message: errorMessage, stack: error instanceof Error ? error.stack : undefined });
     return new Response(JSON.stringify({ 
       error: "Failed to create checkout session. Please try again." 
     }), {
