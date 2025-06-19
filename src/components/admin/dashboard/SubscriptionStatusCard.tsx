@@ -32,7 +32,7 @@ const SubscriptionStatusCard = () => {
     !isAfter(new Date(subscriptionEnd), subDays(new Date(), -7));
 
   const handleSubscribe = () => {
-    createCheckout({ priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM', planName: 'StackBuild' });
+    createCheckout({ planName: 'StackBuild' });
   };
 
   return (

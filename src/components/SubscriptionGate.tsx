@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
@@ -15,7 +14,7 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
   const { subscriptionStatus, isLoadingStatus, createCheckout, isCreatingCheckout } = useStripeSubscription();
 
   const handleSubscribe = () => {
-    createCheckout({ priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM', planName: 'StackBuild' });
+    createCheckout({ planName: 'StackBuild' });
   };
 
   if (isLoadingStatus) {

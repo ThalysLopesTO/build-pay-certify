@@ -10,7 +10,7 @@ const SubscriptionLanding = () => {
   const { createCheckout, isCreatingCheckout } = useStripeSubscription();
 
   const handleSubscribe = () => {
-    createCheckout({ priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM', planName: 'StackBuild' });
+    createCheckout({ planName: 'StackBuild' });
   };
 
   return (

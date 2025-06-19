@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 // Single pricing plan configuration
 const STACKBUILD_PLAN = {
   name: 'StackBuild',
-  priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM',
   price: '$197 CAD',
   features: [
     'Unlimited employees',
@@ -35,7 +33,7 @@ const SubscriptionManagement = () => {
   } = useStripeSubscription();
 
   const handleRenewSubscription = () => {
-    createCheckout({ priceId: STACKBUILD_PLAN.priceId, planName: STACKBUILD_PLAN.name });
+    createCheckout({ planName: STACKBUILD_PLAN.name });
   };
 
   if (isLoadingStatus) {

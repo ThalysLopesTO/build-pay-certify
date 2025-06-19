@@ -23,7 +23,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 // Single pricing plan configuration
 const STACKBUILD_PLAN = {
   name: 'StackBuild',
-  priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM',
   price: '$197 CAD',
   features: [
     'Unlimited employees',
@@ -61,7 +60,7 @@ const PlanTab = () => {
   };
 
   const handleRenewSubscription = () => {
-    createCheckout({ priceId: STACKBUILD_PLAN.priceId, planName: STACKBUILD_PLAN.name });
+    createCheckout({ planName: STACKBUILD_PLAN.name });
   };
 
   // Only show subscription management for admins
