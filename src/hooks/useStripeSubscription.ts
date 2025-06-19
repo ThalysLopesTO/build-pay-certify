@@ -36,16 +36,19 @@ export const useStripeSubscription = () => {
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 
-  // Create checkout session
+  // Create checkout session - now supports unauthenticated users
   const createCheckoutMutation = useMutation({
     mutationFn: async ({ priceId, planName }: { priceId: string; planName: string }) => {
-      if (!session) throw new Error('No session');
+      const headers: Record<string, string> = {};
+      
+      // Only add authorization header if user is authenticated
+      if (session) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
       
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { priceId, planName },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers,
       });
 
       if (error) throw error;
@@ -65,7 +68,7 @@ export const useStripeSubscription = () => {
     },
   });
 
-  // Open customer portal
+  // Open customer portal - requires authentication
   const customerPortalMutation = useMutation({
     mutationFn: async () => {
       if (!session) throw new Error('No session');
