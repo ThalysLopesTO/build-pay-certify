@@ -68,7 +68,7 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "http://localhost:3000";
     
-    // Create checkout session for guest checkout (pre-registration)
+    // Create checkout session for subscription mode
     const sessionConfig: any = {
       line_items: [
         {
@@ -79,7 +79,6 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${origin}/register-company?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?payment=cancelled`,
-      customer_creation: "always", // Always create a customer
       metadata: {
         plan_name: planName,
         source: "stackbuild_app",
@@ -89,7 +88,7 @@ serve(async (req) => {
       billing_address_collection: "required",
     };
 
-    // Only add customer_email if provided
+    // Only add customer_email if provided (for guest checkout)
     if (customerEmail) {
       sessionConfig.customer_email = customerEmail;
     }
