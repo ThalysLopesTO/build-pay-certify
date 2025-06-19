@@ -35,12 +35,37 @@ serve(async (req) => {
     }
     logStep("Stripe key verified");
 
-    const { priceId = "price_1RbVmQEuB2J4BS43bsSzcSQM", planName = "StackBuild Plan", customerEmail } = await req.json();
-    
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+
+    // First, let's verify the price exists
+    let priceId = "price_1RbVmQEuB2J4BS43bsSzcSQM";
+    try {
+      const price = await stripe.prices.retrieve(priceId);
+      logStep("Price verified", { priceId, amount: price.unit_amount, currency: price.currency });
+    } catch (priceError) {
+      logStep("Price verification failed, attempting to create a fallback price", { originalPriceId: priceId, error: priceError.message });
+      
+      // Create a product first
+      const product = await stripe.products.create({
+        name: "StackBuild Plan",
+        description: "Payroll & Management for Construction Companies"
+      });
+      
+      // Create a price for the product
+      const fallbackPrice = await stripe.prices.create({
+        unit_amount: 19700, // $197.00 CAD
+        currency: "cad",
+        recurring: { interval: "month" },
+        product: product.id,
+      });
+      
+      priceId = fallbackPrice.id;
+      logStep("Created fallback price", { newPriceId: priceId, amount: fallbackPrice.unit_amount });
+    }
+
+    const { planName = "StackBuild Plan", customerEmail } = await req.json();
     logStep("Request data", { priceId, planName, customerEmail });
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
-    
     const origin = req.headers.get("origin") || "http://localhost:3000";
     
     // Create checkout session for guest checkout (pre-registration)
@@ -62,8 +87,12 @@ serve(async (req) => {
       },
       // Collect customer email during checkout
       billing_address_collection: "required",
-      customer_email: customerEmail, // Pre-fill if provided
     };
+
+    // Only add customer_email if provided
+    if (customerEmail) {
+      sessionConfig.customer_email = customerEmail;
+    }
 
     logStep("Creating checkout session", sessionConfig);
     const session = await stripe.checkout.sessions.create(sessionConfig);

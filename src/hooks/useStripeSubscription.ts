@@ -38,21 +38,32 @@ export const useStripeSubscription = () => {
 
   // Create checkout session - now supports guest checkout
   const createCheckoutMutation = useMutation({
-    mutationFn: async ({ priceId, planName, customerEmail }: { priceId: string; planName: string; customerEmail?: string }) => {
+    mutationFn: async ({ planName, customerEmail }: { planName: string; customerEmail?: string }) => {
+      console.log('Creating checkout session with params:', { planName, customerEmail });
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId, planName, customerEmail },
+        body: { planName, customerEmail },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Checkout creation error:', error);
+        throw error;
+      }
+      
+      console.log('Checkout session created:', data);
       return data;
     },
     onSuccess: (data) => {
+      console.log('Checkout success, redirecting to:', data.url);
       if (data.url) {
         // Redirect to Stripe checkout in the same tab for better UX
         window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL received');
       }
     },
     onError: (error: any) => {
+      console.error('Checkout mutation error:', error);
       toast({
         title: "Checkout Error",
         description: error.message || "Failed to create checkout session",

@@ -34,12 +34,21 @@ const HomePage = () => {
     }
   }, [searchParams, toast]);
 
-  const handleStartSubscription = () => {
-    // Create checkout for guest users (pre-registration flow)
-    createCheckout({ 
-      priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM', 
-      planName: 'StackBuild' 
-    });
+  const handleStartSubscription = async () => {
+    try {
+      console.log('Starting subscription process...');
+      // Create checkout for guest users (pre-registration flow)
+      await createCheckout({ 
+        planName: 'StackBuild'
+      });
+    } catch (error) {
+      console.error('Subscription error:', error);
+      toast({
+        title: "Subscription Error",
+        description: "There was an issue starting your subscription. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // If user is authenticated, redirect them to their dashboard
