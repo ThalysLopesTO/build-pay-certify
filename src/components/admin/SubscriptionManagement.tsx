@@ -10,22 +10,16 @@ import { format } from 'date-fns';
 // Example pricing - you can modify these based on your actual Stripe prices
 const PRICING_PLANS = [
   {
-    name: 'Basic',
-    priceId: 'price_basic', // Replace with your actual Stripe price ID
-    price: '$9.99',
-    features: ['Up to 10 employees', 'Basic reporting', 'Email support']
-  },
-  {
-    name: 'Standard',
-    priceId: 'price_standard', // Replace with your actual Stripe price ID
-    price: '$29.99',
-    features: ['Up to 50 employees', 'Advanced reporting', 'Priority support', 'Invoice management']
-  },
-  {
-    name: 'Pro',
-    priceId: 'price_pro', // Replace with your actual Stripe price ID
-    price: '$99.99',
-    features: ['Unlimited employees', 'Custom reporting', '24/7 support', 'API access', 'White-label options']
+    name: 'StackBuild',
+    priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM', 
+    price: '$197.00',
+    features: [
+      'Unlimited employees',
+      'Payroll & Invoice System',
+      'Certificate & Safety Tracking',
+      'Multi-role Access: Admin, Foreman, Worker',
+      'Project & Jobsite Control'
+    ]
   }
 ];
 
