@@ -3,13 +3,20 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { CreditCard, CheckCircle, Building } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const HomePage = () => {
   const { createCheckout, isCreatingCheckout } = useStripeSubscription();
+  const { isAuthenticated } = useAuth();
 
   const handleStartSubscription = () => {
+    if (!isAuthenticated) {
+      // User will be redirected to login first
+      return;
+    }
+    
     createCheckout({ 
       priceId: 'price_1RbVmQEuB2J4BS43bsSzcSQM', 
       planName: 'StackBuild' 
@@ -63,15 +70,35 @@ const HomePage = () => {
             </div>
             
             <div className="space-y-4">
-              <Button
-                onClick={handleStartSubscription}
-                disabled={isCreatingCheckout}
-                className="w-full bg-orange-600 hover:bg-orange-700 py-4 text-lg font-semibold"
-                size="lg"
-              >
-                <CreditCard className="h-5 w-5 mr-2" />
-                {isCreatingCheckout ? 'Processing...' : 'Start My Subscription'}
-              </Button>
+              {isAuthenticated ? (
+                <Button
+                  onClick={handleStartSubscription}
+                  disabled={isCreatingCheckout}
+                  className="w-full bg-orange-600 hover:bg-orange-700 py-4 text-lg font-semibold"
+                  size="lg"
+                >
+                  <CreditCard className="h-5 w-5 mr-2" />
+                  {isCreatingCheckout ? 'Processing...' : 'Start My Subscription'}
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-center text-sm text-slate-600">
+                    Please log in or register to start your subscription
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link to="/login">
+                      <Button variant="outline" size="lg" className="w-full">
+                        Log In
+                      </Button>
+                    </Link>
+                    <Link to="/register-company">
+                      <Button variant="outline" size="lg" className="w-full">
+                        Register
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
               
               <div className="text-center text-sm text-slate-500">
                 <p className="mb-2">30-day money-back guarantee • Cancel anytime</p>
@@ -79,16 +106,18 @@ const HomePage = () => {
               </div>
             </div>
             
-            <div className="text-center pt-6 border-t border-slate-200">
-              <p className="text-sm text-slate-600 mb-3">
-                Already have an account?
-              </p>
-              <Link to="/login">
-                <Button variant="outline" size="sm">
-                  Sign In
-                </Button>
-              </Link>
-            </div>
+            {isAuthenticated && (
+              <div className="text-center pt-6 border-t border-slate-200">
+                <p className="text-sm text-slate-600 mb-3">
+                  Already have an account?
+                </p>
+                <Link to="/login">
+                  <Button variant="outline" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

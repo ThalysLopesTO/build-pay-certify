@@ -36,19 +36,18 @@ export const useStripeSubscription = () => {
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 
-  // Create checkout session - now supports unauthenticated users
+  // Create checkout session - requires authentication
   const createCheckoutMutation = useMutation({
     mutationFn: async ({ priceId, planName }: { priceId: string; planName: string }) => {
-      const headers: Record<string, string> = {};
-      
-      // Only add authorization header if user is authenticated
-      if (session) {
-        headers.Authorization = `Bearer ${session.access_token}`;
+      if (!session) {
+        throw new Error('Please log in to subscribe to our service.');
       }
       
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { priceId, planName },
-        headers,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
