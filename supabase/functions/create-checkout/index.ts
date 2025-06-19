@@ -30,20 +30,34 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     logStep("Stripe key verified");
 
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    const authHeader = req.headers.get("Authorization");
+    let userEmail = "guest@stackbuild.com"; // Default for non-authenticated users
+    let userId = null;
 
-    const { priceId, planName = "Premium Plan" } = await req.json();
+    // Check if user is authenticated (optional for subscription landing)
+    if (authHeader) {
+      try {
+        const token = authHeader.replace("Bearer ", "");
+        const { data } = await supabaseClient.auth.getUser(token);
+        if (data.user?.email) {
+          userEmail = data.user.email;
+          userId = data.user.id;
+          logStep("User authenticated", { userId, email: userEmail });
+        }
+      } catch (error) {
+        logStep("Authentication optional, using guest email");
+      }
+    } else {
+      logStep("No auth header, using guest email for checkout");
+    }
+
+    const { priceId, planName = "StackBuild Plan" } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     
     // Check for existing customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
     let customerId;
     
     if (customers.data.length > 0) {
@@ -51,8 +65,8 @@ serve(async (req) => {
       logStep("Found existing customer", { customerId });
     } else {
       const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: { user_id: user.id }
+        email: userEmail,
+        metadata: userId ? { user_id: userId } : {}
       });
       customerId = customer.id;
       logStep("Created new customer", { customerId });
@@ -68,10 +82,10 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${origin}/admin?payment=success`,
-      cancel_url: `${origin}/admin?payment=cancelled`,
+      success_url: `${origin}/register-company?payment=success`,
+      cancel_url: `${origin}/?payment=cancelled`,
       metadata: {
-        user_id: user.id,
+        user_id: userId || "",
         plan_name: planName
       }
     });

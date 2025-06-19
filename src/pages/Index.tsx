@@ -1,18 +1,11 @@
 
 import React from 'react';
-import { useAuth } from '../contexts/SupabaseAuthContext';
-import SubscriptionLanding from '../components/SubscriptionLanding';
+import { Navigate } from 'react-router-dom';
 
+// This component is no longer needed as HomePage.tsx handles the entry point
+// Redirecting to home for any direct access
 const Index = () => {
-  const { isAuthenticated } = useAuth();
-  
-  // Show subscription landing for non-authenticated users
-  if (!isAuthenticated) {
-    return <SubscriptionLanding />;
-  }
-  
-  // Authenticated users will be handled by the DashboardRouter in App.tsx
-  return null;
+  return <Navigate to="/" replace />;
 };
 
 export default Index;

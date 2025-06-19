@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/SupabaseAuthContext";
+import HomePage from "./pages/HomePage";
 import LoginForm from "./components/LoginForm";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import CompanyRegistration from "./pages/CompanyRegistration";
@@ -16,6 +17,7 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import LicenseExpired from "./pages/LicenseExpired";
 import NotFound from "./pages/NotFound";
 import LicenseGuard from "./components/common/LicenseGuard";
+import SubscriptionGate from "./components/SubscriptionGate";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -85,7 +87,7 @@ const DashboardRouter = () => {
   
   console.log('✅ Routing user to dashboard based on role:', user.role);
   
-  // Route based on user role with license protection
+  // Route based on user role with subscription and license protection
   const DashboardComponent = () => {
     if (user.role === 'admin' || user.role === 'payroll') {
       return <AdminDashboard />;
@@ -97,9 +99,11 @@ const DashboardRouter = () => {
   };
 
   return (
-    <LicenseGuard>
-      <DashboardComponent />
-    </LicenseGuard>
+    <SubscriptionGate>
+      <LicenseGuard>
+        <DashboardComponent />
+      </LicenseGuard>
+    </SubscriptionGate>
   );
 };
 
@@ -123,6 +127,18 @@ const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Home page - shows subscription landing for non-authenticated users */}
+        <Route 
+          path="/" 
+          element={
+            !isAuthenticated ? (
+              <HomePage />
+            ) : (
+              <DashboardRouter />
+            )
+          } 
+        />
+        
         <Route 
           path="/login" 
           element={!isAuthenticated ? <LoginForm /> : <Navigate to="/" replace />} 
@@ -146,16 +162,6 @@ const AppRoutes = () => {
               <SuperAdminDashboard />
             ) : (
               <Navigate to="/super-admin-login" replace />
-            )
-          } 
-        />
-        <Route 
-          path="/" 
-          element={
-            isAuthenticated ? (
-              <DashboardRouter />
-            ) : (
-              <Navigate to="/login" replace />
             )
           } 
         />
