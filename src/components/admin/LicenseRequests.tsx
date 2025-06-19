@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, XCircle, Building, User, Mail, Phone, MapPin, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Building, User, Mail, Phone, MapPin, Clock, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface RegistrationRequest {
@@ -18,7 +18,7 @@ interface RegistrationRequest {
   admin_first_name: string;
   admin_last_name: string;
   admin_email: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'stripe_verified';
   created_at: string;
   company_id: string;
   admin_user_id: string;
@@ -101,13 +101,15 @@ const LicenseRequests = () => {
 
       if (requestError) throw requestError;
 
-      // Update company status to inactive
-      const { error: companyError } = await supabase
-        .from('companies')
-        .update({ status: 'inactive' })
-        .eq('id', request.company_id);
+      // Update company status to inactive if it exists
+      if (request.company_id) {
+        const { error: companyError } = await supabase
+          .from('companies')
+          .update({ status: 'inactive' })
+          .eq('id', request.company_id);
 
-      if (companyError) throw companyError;
+        if (companyError) console.warn('Failed to update company status:', companyError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['registration-requests'] });
@@ -142,11 +144,13 @@ const LicenseRequests = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="secondary">Pending</Badge>;
+        return <Badge variant="secondary">Pending Manual Review</Badge>;
       case 'approved':
-        return <Badge variant="default" className="bg-green-600">Approved</Badge>;
+        return <Badge variant="default" className="bg-green-600">Manually Approved</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Rejected</Badge>;
+      case 'stripe_verified':
+        return <Badge variant="default" className="bg-blue-600"><CreditCard className="h-3 w-3 mr-1" />Stripe Verified</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -167,24 +171,40 @@ const LicenseRequests = () => {
     );
   }
 
+  // Filter to show only requests that need manual review
+  const pendingRequests = requests?.filter(req => req.status === 'pending') || [];
+  const allRequests = requests || [];
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-slate-900 mb-2">License Requests</h2>
-        <p className="text-slate-600">Review and approve company registration requests</p>
+        <p className="text-slate-600">
+          Review and approve company registration requests. 
+          <span className="text-blue-600 font-medium"> Stripe-verified registrations are automatically approved.</span>
+        </p>
       </div>
 
-      {!requests || requests.length === 0 ? (
+      {pendingRequests.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
             <Building className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500">No registration requests found</p>
+            <p className="text-slate-500 mb-2">No pending registration requests</p>
+            <p className="text-sm text-slate-400">
+              All new requests will appear here for review
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {requests.map((request) => (
-            <Card key={request.id}>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-sm text-yellow-800">
+              <span className="font-medium">{pendingRequests.length}</span> registration request{pendingRequests.length !== 1 ? 's' : ''} pending your review
+            </p>
+          </div>
+          
+          {pendingRequests.map((request) => (
+            <Card key={request.id} className="border-yellow-200 bg-yellow-50/30">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
@@ -241,29 +261,51 @@ const LicenseRequests = () => {
                   </div>
                 </div>
 
-                {request.status === 'pending' && (
-                  <div className="flex space-x-3 mt-6 pt-4 border-t">
-                    <Button
-                      onClick={() => handleApprove(request)}
-                      disabled={processingId === request.id}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      {processingId === request.id ? 'Approving...' : 'Approve'}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleReject(request)}
-                      disabled={processingId === request.id}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      {processingId === request.id ? 'Rejecting...' : 'Reject'}
-                    </Button>
-                  </div>
-                )}
+                <div className="flex space-x-3 mt-6 pt-4 border-t">
+                  <Button
+                    onClick={() => handleApprove(request)}
+                    disabled={processingId === request.id}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    {processingId === request.id ? 'Approving...' : 'Approve'}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleReject(request)}
+                    disabled={processingId === request.id}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    {processingId === request.id ? 'Rejecting...' : 'Reject'}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Show recent activity */}
+      {allRequests.length > pendingRequests.length && (
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+          <div className="space-y-3">
+            {allRequests.filter(req => req.status !== 'pending').slice(0, 5).map((request) => (
+              <Card key={request.id} className="bg-slate-50">
+                <CardContent className="py-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium">{request.company_name}</p>
+                      <p className="text-sm text-slate-500">
+                        {format(new Date(request.created_at), 'MMM dd, yyyy')}
+                      </p>
+                    </div>
+                    {getStatusBadge(request.status)}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
     </div>

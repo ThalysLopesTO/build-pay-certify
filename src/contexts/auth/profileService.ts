@@ -32,8 +32,11 @@ export const fetchUserProfile = async (userId: string) => {
 
     console.log('📊 Profile loaded:', profile);
 
-    // Check if user is pending approval
-    if (profile.pending_approval) {
+    // For paid users (Stripe verified), skip approval check
+    if (profile.stripe_verified) {
+      console.log('💳 User is Stripe verified - bypassing approval check');
+    } else if (profile.pending_approval) {
+      // Only check pending approval for non-Stripe users
       console.warn('⚠️ User is pending approval');
       return { profile: null, company: null, error: 'Your company account is pending approval. You will receive an email notification once approved.' };
     }
@@ -48,17 +51,20 @@ export const fetchUserProfile = async (userId: string) => {
       .from('companies')
       .select('*')
       .eq('id', profile.company_id)
-      .eq('status', 'active')
       .single();
 
     console.log('🏢 Company query result:', { company, companyError });
 
     if (companyError || !company) {
-      console.warn('⚠️ Company not found or not active:', companyError);
-      return { profile: null, company: null, error: 'Your company account is not active. Please contact your system administrator.' };
+      console.warn('⚠️ Company not found:', companyError);
+      return { profile: null, company: null, error: 'Your company account was not found. Please contact your system administrator.' };
     }
 
-    if (company.status !== 'active') {
+    // For Stripe verified companies, only check subscription status (handled by SubscriptionGate)
+    if (company.stripe_verified) {
+      console.log('💳 Company is Stripe verified - subscription status will be checked by SubscriptionGate');
+    } else if (company.status !== 'active') {
+      // Only check company status for non-Stripe companies
       console.warn('⚠️ Company not active, status:', company.status);
       return { profile: null, company: null, error: 'Your company account is not active. Please contact your system administrator.' };
     }
