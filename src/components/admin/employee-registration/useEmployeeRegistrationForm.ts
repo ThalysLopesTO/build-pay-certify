@@ -73,9 +73,15 @@ export const useEmployeeRegistrationForm = () => {
         },
       });
 
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(`Connection error: ${error.message || 'Unable to reach employee registration service'}`);
+      if (error) 
+      {
+      // Try to show the actual JSON error message
+        try {
+        const parsed = JSON.parse(error.message);
+        throw new Error(parsed.error || 'Unknown edge function error');
+      } catch {
+        throw new Error(error.message || 'Edge Function failed');
+      }
       }
 
       // Check if the result contains an error (from the edge function)
