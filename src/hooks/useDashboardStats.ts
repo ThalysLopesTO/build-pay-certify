@@ -10,12 +10,13 @@ export const useDashboardStats = () => {
     queryKey: ['dashboard-stats', user?.companyId],
     queryFn: async () => {
       if (!user?.companyId) {
+        console.error('❌ No company ID available for dashboard stats');
         throw new Error('Company ID is required');
       }
 
-      console.log('Fetching dashboard stats for company:', user.companyId);
+      console.log('📊 Fetching dashboard stats for company:', user.companyId);
 
-      // Fetch jobsites count
+      // Fetch jobsites count - STRICTLY scoped by company_id
       const { count: jobsitesCount, error: jobsitesError } = await supabase
         .from('jobsites')
         .select('*', { count: 'exact', head: true })
@@ -26,9 +27,7 @@ export const useDashboardStats = () => {
         throw jobsitesError;
       }
 
-      console.log('Jobsites count result:', jobsitesCount);
-
-      // Fetch employees count - using all roles that represent employees
+      // Fetch employees count - STRICTLY scoped by company_id
       const { count: employeesCount, error: employeesError } = await supabase
         .from('user_profiles')
         .select('*', { count: 'exact', head: true })
@@ -40,9 +39,7 @@ export const useDashboardStats = () => {
         throw employeesError;
       }
 
-      console.log('Employees count result:', employeesCount);
-
-      // Fetch timesheets from last 7 days
+      // Fetch timesheets from last 7 days - STRICTLY scoped by company_id
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
@@ -57,9 +54,7 @@ export const useDashboardStats = () => {
         throw timesheetsError;
       }
 
-      console.log('Timesheets count result:', timesheetsCount);
-
-      // Fetch invoices from current month
+      // Fetch invoices from current month - STRICTLY scoped by company_id
       const currentMonth = new Date();
       currentMonth.setDate(1);
       currentMonth.setHours(0, 0, 0, 0);
@@ -75,8 +70,6 @@ export const useDashboardStats = () => {
         throw invoicesError;
       }
 
-      console.log('Invoices count result:', invoicesCount);
-
       const stats = {
         jobsitesCount: jobsitesCount || 0,
         employeesCount: employeesCount || 0,
@@ -84,7 +77,7 @@ export const useDashboardStats = () => {
         invoicesCount: invoicesCount || 0,
       };
 
-      console.log('Final dashboard stats:', stats);
+      console.log('✅ Dashboard stats for company', user.companyId, ':', stats);
       return stats;
     },
     enabled: !!user?.companyId,

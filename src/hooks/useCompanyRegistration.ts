@@ -40,183 +40,215 @@ export const useCompanyRegistration = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoading(true);
+    e.preventDefault();
+    setIsLoading(true);
 
-  try {
-    console.log('🚀 Starting company registration process...');
-    
-    const paymentSuccess = searchParams.get('payment') === 'success';
-    const sessionId = searchParams.get('session_id');
-    
-    console.log('💳 Payment status:', { paymentSuccess, sessionId });
-
-    if (paymentSuccess && sessionId) {
-      console.log('✅ Processing paid registration - auto-approval enabled');
+    try {
+      console.log('🚀 Starting company registration process...');
       
-      // 1. Create company
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: formData.companyName,
-          status: 'active',
-          registration_date: new Date().toISOString().split('T')[0]
-        })
-        .select()
-        .single();
+      const paymentSuccess = searchParams.get('payment') === 'success';
+      const sessionId = searchParams.get('session_id');
+      
+      console.log('💳 Payment status:', { paymentSuccess, sessionId });
 
-      if (companyError) {
-        throw new Error(`Failed to create company: ${companyError.message}`);
-      }
+      if (paymentSuccess && sessionId) {
+        console.log('✅ Processing paid registration - creating new isolated company');
+        
+        // 1. ALWAYS create a NEW company for paid registrations
+        const { data: company, error: companyError } = await supabase
+          .from('companies')
+          .insert({
+            name: formData.companyName,
+            status: 'active',
+            registration_date: new Date().toISOString().split('T')[0],
+            stripe_verified: true,  // Mark as Stripe verified
+            plan: 'basic'  // Default plan for paid subscriptions
+          })
+          .select()
+          .single();
 
-      console.log('✅ Company created:', company);
+        if (companyError) {
+          console.error('❌ Failed to create company:', companyError);
+          throw new Error(`Failed to create company: ${companyError.message}`);
+        }
 
-      // 2. Sign up the admin
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.adminEmail,
-        password: formData.password,
-        options: {
-          data: {
-            first_name: formData.adminFirstName,
-            last_name: formData.adminLastName,
-            role: 'admin'
+        console.log('✅ New company created with ID:', company.id);
+
+        // 2. Sign up the admin user
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.adminEmail,
+          password: formData.password,
+          options: {
+            data: {
+              first_name: formData.adminFirstName,
+              last_name: formData.adminLastName,
+              role: 'admin',
+              company_id: company.id  // Ensure company_id is in user metadata
+            }
+          }
+        });
+
+        if (authError) {
+          console.error('❌ User signup failed:', authError);
+          throw new Error(`Failed to create user account: ${authError.message}`);
+        }
+
+        console.log('✅ User signed up with ID:', authData.user?.id);
+
+        // 3. Sign the user in immediately
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.adminEmail,
+          password: formData.password
+        });
+
+        if (signInError) {
+          console.error('❌ Sign-in failed:', signInError);
+          throw new Error(`Sign-in failed after registration: ${signInError.message}`);
+        }
+
+        console.log('✅ User signed in successfully');
+
+        // 4. Create user profile with the NEW company_id
+        const { data: existingProfile, error: profileCheckError } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('user_id', authData.user.id)
+          .maybeSingle();
+
+        if (profileCheckError) {
+          console.error('❌ Profile existence check failed:', profileCheckError);
+          throw new Error(`Failed to check profile existence: ${profileCheckError.message}`);
+        }
+
+        if (!existingProfile) {
+          const { error: profileError } = await supabase
+            .from('user_profiles')
+            .insert({
+              user_id: authData.user.id,
+              company_id: company.id,  // Use the NEW company ID
+              first_name: formData.adminFirstName,
+              last_name: formData.adminLastName,
+              role: 'admin',
+              pending_approval: false,
+              stripe_verified: true
+            });
+
+          if (profileError) {
+            console.error('❌ Profile creation failed:', profileError);
+            throw new Error(`Failed to create user profile: ${profileError.message}`);
+          }
+          
+          console.log('✅ User profile created with company_id:', company.id);
+        } else {
+          console.log('ℹ️ User profile already exists — updating with correct company_id');
+          
+          // Update existing profile to ensure correct company_id
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({
+              company_id: company.id,
+              pending_approval: false,
+              stripe_verified: true
+            })
+            .eq('user_id', authData.user.id);
+
+          if (updateError) {
+            console.error('❌ Profile update failed:', updateError);
+            throw new Error(`Failed to update user profile: ${updateError.message}`);
           }
         }
-      });
 
-      if (authError) {
-        throw new Error(`Failed to create user account: ${authError.message}`);
-      }
+        // 5. Create initial company settings for the new company
+        const { error: settingsError } = await supabase
+          .from('company_settings')
+          .insert({
+            company_id: company.id,
+            company_name: formData.companyName,
+            company_email: formData.companyEmail,
+            company_phone: formData.companyPhone,
+            company_address: formData.companyAddress
+          });
 
-      console.log('✅ User signed up:', authData.user?.id);
+        if (settingsError) {
+          console.warn('⚠️ Failed to create company settings:', settingsError);
+          // Don't fail the whole registration for this
+        }
 
-      // 3. Sign the user in immediately so auth.uid() works
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.adminEmail,
-        password: formData.password
-      });
+        // 6. Insert into registration_requests for tracking
+        const encrypted = CryptoJS.AES.encrypt(formData.password, SECRET_KEY).toString();
 
-      if (signInError) {
-        throw new Error(`Sign-in failed after registration: ${signInError.message}`);
-      }
+        const { error: requestError } = await supabase
+          .from('company_registration_requests')
+          .insert({
+            company_name: formData.companyName,
+            company_email: formData.companyEmail,
+            company_phone: formData.companyPhone,
+            company_address: formData.companyAddress,
+            admin_first_name: formData.adminFirstName,
+            admin_last_name: formData.adminLastName,
+            admin_email: formData.adminEmail,
+            admin_password: encrypted,
+            status: 'approved',
+            company_id: company.id,  // Link to the NEW company
+            admin_user_id: authData.user.id,
+            approved_at: new Date().toISOString()
+          });
 
-      // 4. Get current authenticated user (needed for auth.uid())
-      const { data: sessionUser, error: sessionError } = await supabase.auth.getUser();
+        if (requestError) {
+          console.warn('⚠️ Failed to insert registration request log:', requestError);
+        }
 
-      if (!sessionUser?.user || sessionError) {
-        throw new Error("Failed to fetch authenticated user session.");
-      }
+        console.log('🎉 Registration completed successfully for new company:', company.id);
 
-      // 5. Insert user profile with auth.uid()
-      const { data: existingProfile, error: profileCheckError } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', authData.user.id)
-      .maybeSingle();
-
-      if (profileCheckError) 
-      {
-        console.error('❌ Profile existence check failed:', profileCheckError);
-      throw new Error(`Failed to check profile existence: ${profileCheckError.message}`);
-      }
-
-      if (!existingProfile) {
-        const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert
-        ({
-          user_id: authData.user.id,
-          company_id: company.id,
-          first_name: formData.adminFirstName,
-          last_name: formData.adminLastName,
-          role: 'admin',
-          pending_approval: false
+        toast({
+          title: "Registration Complete!",
+          description: `Welcome to StackBuild! Your company "${formData.companyName}" has been created and activated.`,
         });
 
-     if (profileError) 
-     {
-        console.error('❌ Profile creation failed:', profileError);
-        throw new Error(`Failed to create user profile: ${profileError.message}`);
-    }
-  
-      console.log('✅ User profile created');
-    } 
-    else 
-    {
-      console.log('ℹ️ User profile already exists — skipping creation');
-    }
+      } else {
+        // Free user registration (pending approval) - still create new company
+        console.log('📝 Processing free registration - creating new company pending approval');
+        
+        const encrypted = CryptoJS.AES.encrypt(formData.password, SECRET_KEY).toString();
 
-      // 6. Insert into registration_requests for tracking
-      const encrypted = CryptoJS.AES.encrypt(formData.password, SECRET_KEY).toString();
+        const { error: requestError } = await supabase
+          .from('company_registration_requests')
+          .insert({
+            company_name: formData.companyName,
+            company_email: formData.companyEmail,
+            company_phone: formData.companyPhone,
+            company_address: formData.companyAddress,
+            admin_first_name: formData.adminFirstName,
+            admin_last_name: formData.adminLastName,
+            admin_email: formData.adminEmail,
+            admin_password: encrypted,
+            status: 'pending'
+          });
 
-      const { error: requestError } = await supabase
-        .from('company_registration_requests')
-        .insert({
-          company_name: formData.companyName,
-          company_email: formData.companyEmail,
-          company_phone: formData.companyPhone,
-          company_address: formData.companyAddress,
-          admin_first_name: formData.adminFirstName,
-          admin_last_name: formData.adminLastName,
-          admin_email: formData.adminEmail,
-          admin_password: encrypted,
-          status: 'approved',
-          company_id: company.id,
-          admin_user_id: sessionUser.user.id,
-          approved_at: new Date().toISOString()
+        if (requestError) {
+          console.error('❌ Free registration failed:', requestError);
+          throw new Error(`Failed to submit registration request: ${requestError.message}`);
+        }
+
+        toast({
+          title: "Registration Submitted",
+          description: "Your company registration has been submitted for approval.",
         });
-
-      if (requestError) {
-        console.warn('⚠️ Failed to insert registration request log:', requestError);
       }
 
+      setIsSubmitted(true);
+
+    } catch (error) {
+      console.error('💥 Registration error:', error);
       toast({
-        title: "Registration Complete!",
-        description: "Your account has been created and activated. You can now sign in.",
+        title: "Registration Error",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive"
       });
-
-    } else {
-      // Free user registration (pending approval)
-      const encrypted = CryptoJS.AES.encrypt(formData.password, SECRET_KEY).toString();
-
-      const { error: requestError } = await supabase
-        .from('company_registration_requests')
-        .insert({
-          company_name: formData.companyName,
-          company_email: formData.companyEmail,
-          company_phone: formData.companyPhone,
-          company_address: formData.companyAddress,
-          admin_first_name: formData.adminFirstName,
-          admin_last_name: formData.adminLastName,
-          admin_email: formData.adminEmail,
-          admin_password: encrypted,
-          status: 'pending'
-        });
-
-      if (requestError) {
-        throw new Error(`Failed to submit registration request: ${requestError.message}`);
-      }
-
-      toast({
-        title: "Registration Submitted",
-        description: "Your company registration has been submitted for approval.",
-      });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsSubmitted(true);
-
-  } catch (error) {
-    console.error('💥 Registration error:', error);
-    toast({
-      title: "Registration Error",
-      description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
-      variant: "destructive"
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   return {
     formData,
