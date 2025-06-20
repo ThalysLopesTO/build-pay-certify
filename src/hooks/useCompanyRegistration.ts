@@ -62,7 +62,7 @@ export const useCompanyRegistration = () => {
             status: 'active',
             registration_date: new Date().toISOString().split('T')[0],
             stripe_verified: true,  // Mark as Stripe verified
-            plan: 'basic'  // Default plan for paid subscriptions
+            plan: 'free',  // Make sure it matches the constraint
           })
           .select()
           .single();
