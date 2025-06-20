@@ -73,29 +73,22 @@ export const useEmployeeRegistrationForm = () => {
         },
       });
 
+      // Check if there was a network/connection error
       if (error) {
-  console.error("🛑 Raw Edge Function Error:", error);
-
-  try {
-    const parsed = JSON.parse(error.message);
-    console.error("❗Parsed Edge Function Error:", parsed);
-    throw new Error(parsed.error || 'Unknown edge function error');
-  } catch (parseError) {
-    console.error("⚠️ Could not parse error.message:", error.message);
-    throw new Error("Edge Function failed: " + error.message);
-  }
-}
+        console.error('Edge Function connection error:', error);
+        throw new Error(`Failed to connect to employee registration service: ${error.message}`);
+      }
 
       // Check if the result contains an error (from the edge function)
-      if (result?.error) {
+      if (result && !result.success) {
         console.error('Employee registration error from edge function:', result.error);
-        throw new Error(result.error);
+        throw new Error(result.error || 'Employee registration failed');
       }
 
       // Check if the operation was successful
-      if (!result?.success) {
-        console.error('Employee registration failed:', result);
-        throw new Error(result?.message || 'Employee registration failed - please try again');
+      if (!result || !result.success) {
+        console.error('Employee registration failed - no success response:', result);
+        throw new Error('Employee registration failed - please try again');
       }
 
       console.log('Employee registered successfully:', result);

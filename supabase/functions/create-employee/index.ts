@@ -5,6 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Content-Type': 'application/json',
 }
 
 serve(async (req) => {
@@ -14,6 +15,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Employee creation request received')
+
     // Create a Supabase client with service role privileges
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -27,9 +30,43 @@ serve(async (req) => {
     )
 
     // Get the request data
-    const { employeeData } = await req.json()
+    let employeeData
+    try {
+      const requestBody = await req.json()
+      employeeData = requestBody.employeeData
+      
+      if (!employeeData) {
+        console.error('Missing employeeData in request body')
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Missing employee data in request' 
+          }),
+          {
+            headers: corsHeaders,
+            status: 400,
+          },
+        )
+      }
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Invalid request body format' 
+        }),
+        {
+          headers: corsHeaders,
+          status: 400,
+        },
+      )
+    }
 
-    console.log('Creating employee with data:', { email: employeeData.email, role: employeeData.role, companyId: employeeData.companyId })
+    console.log('Creating employee with data:', { 
+      email: employeeData.email, 
+      role: employeeData.role, 
+      companyId: employeeData.companyId 
+    })
 
     // First, check if the company can add more employees
     const { data: canAdd, error: checkError } = await supabaseAdmin
@@ -39,11 +76,11 @@ serve(async (req) => {
       console.error('Error checking employee limit:', checkError)
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to check employee limit',
-          details: checkError.message 
+          success: false,
+          error: 'Failed to check employee limit: ' + checkError.message
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: corsHeaders,
           status: 500,
         },
       )
@@ -53,10 +90,11 @@ serve(async (req) => {
       console.log('Employee limit reached for company:', employeeData.companyId)
       return new Response(
         JSON.stringify({ 
+          success: false,
           error: 'Employee limit reached for your current plan. Please upgrade to add more employees.' 
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: corsHeaders,
           status: 400,
         },
       )
@@ -69,11 +107,11 @@ serve(async (req) => {
       console.error('Error checking existing users:', userCheckError)
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to verify user uniqueness',
-          details: userCheckError.message 
+          success: false,
+          error: 'Failed to verify user uniqueness: ' + userCheckError.message
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: corsHeaders,
           status: 500,
         },
       )
@@ -85,10 +123,11 @@ serve(async (req) => {
       console.log('User with email already exists:', employeeData.email)
       return new Response(
         JSON.stringify({ 
+          success: false,
           error: `An account with email ${employeeData.email} already exists. Please use a different email address.` 
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: corsHeaders,
           status: 400,
         },
       )
@@ -122,11 +161,11 @@ serve(async (req) => {
       console.error('Error creating user:', authError)
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to create user account',
-          details: authError.message 
+          success: false,
+          error: 'Failed to create user account: ' + authError.message
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: corsHeaders,
           status: 400,
         },
       )
@@ -151,14 +190,19 @@ serve(async (req) => {
     if (profileError) {
       console.error('Error creating user profile:', profileError)
       // Try to delete the auth user if profile creation fails
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+        console.log('Cleaned up auth user after profile creation failure')
+      } catch (cleanupError) {
+        console.error('Failed to cleanup auth user:', cleanupError)
+      }
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to create user profile',
-          details: profileError.message 
+          success: false,
+          error: 'Failed to create user profile: ' + profileError.message
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: corsHeaders,
           status: 500,
         },
       )
@@ -173,20 +217,20 @@ serve(async (req) => {
         message: 'Employee registered successfully' 
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: corsHeaders,
         status: 200,
       },
     )
 
   } catch (error) {
-    console.error('Function error:', error)
+    console.error('Unexpected error in create-employee function:', error)
     return new Response(
       JSON.stringify({ 
-        error: 'Internal server error',
-        details: error.message 
+        success: false,
+        error: 'Employee creation failed: ' + (error?.message || 'Unknown error occurred')
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: corsHeaders,
         status: 500,
       },
     )
