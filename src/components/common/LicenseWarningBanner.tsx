@@ -3,12 +3,15 @@ import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { useLicenseStatus } from '@/hooks/useLicenseStatus';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { format } from 'date-fns';
 
 const LicenseWarningBanner = () => {
   const { data: licenseStatus, isLoading } = useLicenseStatus();
+  const { isCompanyAdmin } = useAuth();
 
-  if (isLoading || !licenseStatus?.isExpiringSoon) {
+  // Only show warning banner to admins
+  if (!isCompanyAdmin || isLoading || !licenseStatus?.isExpiringSoon) {
     return null;
   }
 

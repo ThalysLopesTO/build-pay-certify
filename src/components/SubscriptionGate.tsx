@@ -1,6 +1,9 @@
+
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
+import { useLicenseStatus } from '@/hooks/useLicenseStatus';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, CreditCard } from 'lucide-react';
@@ -12,12 +15,14 @@ interface SubscriptionGateProps {
 
 const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
   const { subscriptionStatus, isLoadingStatus, createCheckout, isCreatingCheckout } = useStripeSubscription();
+  const { data: licenseStatus, isLoading: isLoadingLicense } = useLicenseStatus();
+  const { user, isCompanyAdmin } = useAuth();
 
   const handleSubscribe = () => {
     createCheckout({ planName: 'StackBuild' });
   };
 
-  if (isLoadingStatus) {
+  if (isLoadingStatus || isLoadingLicense) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -28,39 +33,56 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
     );
   }
 
-  if (!subscriptionStatus?.subscribed) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-        <div className="max-w-md w-full">
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold text-orange-600 flex items-center justify-center">
-                <CreditCard className="h-6 w-6 mr-2" />
-                StackBuild
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Your subscription has expired. Please renew to continue using StackBuild.
-                </AlertDescription>
-              </Alert>
+  // Determine if user has access based on role and subscription status
+  const hasActiveSubscription = subscriptionStatus?.subscribed || licenseStatus?.isActive;
+  
+  // For employees, grant access if company has any active subscription
+  if (!isCompanyAdmin && hasActiveSubscription) {
+    return <>{children}</>;
+  }
+
+  // For admins, check both Stripe and legacy subscription status
+  if (isCompanyAdmin && hasActiveSubscription) {
+    return <>{children}</>;
+  }
+
+  // No active subscription found - show subscription gate
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="max-w-md w-full">
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-orange-600 flex items-center justify-center">
+              <CreditCard className="h-6 w-6 mr-2" />
+              StackBuild
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {isCompanyAdmin 
+                  ? "Your company's subscription has expired. Please renew to continue using StackBuild."
+                  : "Your company's subscription has expired. Please contact your administrator to renew access."
+                }
+              </AlertDescription>
+            </Alert>
+            
+            <div className="text-center space-y-4">
+              <div>
+                <h3 className="font-semibold text-lg">StackBuild Plan</h3>
+                <p className="text-2xl font-bold text-orange-600">$197 CAD/month</p>
+              </div>
               
-              <div className="text-center space-y-4">
-                <div>
-                  <h3 className="font-semibold text-lg">StackBuild Plan</h3>
-                  <p className="text-2xl font-bold text-orange-600">$197 CAD/month</p>
-                </div>
-                
-                <ul className="text-sm text-left space-y-1">
-                  <li>• Unlimited employees</li>
-                  <li>• Payroll & Invoice System</li>
-                  <li>• Certificate & Safety Tracking</li>
-                  <li>• Multi-role Access: Admin, Foreman, Worker</li>
-                  <li>• Project & Jobsite Control</li>
-                </ul>
-                
+              <ul className="text-sm text-left space-y-1">
+                <li>• Unlimited employees</li>
+                <li>• Payroll & Invoice System</li>
+                <li>• Certificate & Safety Tracking</li>
+                <li>• Multi-role Access: Admin, Foreman, Worker</li>
+                <li>• Project & Jobsite Control</li>
+              </ul>
+              
+              {isCompanyAdmin && (
                 <Button
                   onClick={handleSubscribe}
                   disabled={isCreatingCheckout}
@@ -68,15 +90,13 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
                 >
                   {isCreatingCheckout ? 'Processing...' : 'Renew Now'}
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    );
-  }
-
-  return <>{children}</>;
+    </div>
+  );
 };
 
 export default SubscriptionGate;

@@ -8,6 +8,11 @@ export interface LicenseStatus {
   expiresAt: string | null;
   daysUntilExpiry: number | null;
   isExpiringSoon: boolean; // within 7 days
+  subscriptionStatus?: {
+    subscribed: boolean;
+    plan: string;
+    subscription_end: string | null;
+  };
 }
 
 export const useLicenseStatus = () => {
@@ -25,9 +30,10 @@ export const useLicenseStatus = () => {
         };
       }
 
+      // Get company details including Stripe status
       const { data: company, error } = await supabase
         .from('companies')
-        .select('license_expires_at')
+        .select('license_expires_at, stripe_verified, stripe_subscription_id, plan, expiration_date')
         .eq('id', user.companyId)
         .single();
 
@@ -42,15 +48,48 @@ export const useLicenseStatus = () => {
       }
 
       const now = new Date();
+      
+      // Check if company has active Stripe subscription
+      const hasActiveStripeSubscription = company.stripe_verified && 
+        company.stripe_subscription_id && 
+        company.plan !== 'free';
+
+      // If company has active Stripe subscription, check expiration date
+      if (hasActiveStripeSubscription && company.expiration_date) {
+        const expiresAt = new Date(company.expiration_date);
+        const isActive = expiresAt > now;
+        const timeDiff = expiresAt.getTime() - now.getTime();
+        const daysUntilExpiry = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        const isExpiringSoon = isActive && daysUntilExpiry <= 7;
+
+        return {
+          isActive,
+          expiresAt: company.expiration_date,
+          daysUntilExpiry: isActive ? daysUntilExpiry : null,
+          isExpiringSoon,
+          subscriptionStatus: {
+            subscribed: true,
+            plan: company.plan || 'pro',
+            subscription_end: company.expiration_date,
+          },
+        };
+      }
+
+      // Fallback to license_expires_at for legacy companies
       const expiresAt = company.license_expires_at ? new Date(company.license_expires_at) : null;
       
       if (!expiresAt) {
-        // No expiration date means active
+        // No expiration date means active (legacy behavior)
         return {
           isActive: true,
           expiresAt: null,
           daysUntilExpiry: null,
           isExpiringSoon: false,
+          subscriptionStatus: {
+            subscribed: hasActiveStripeSubscription,
+            plan: company.plan || 'free',
+            subscription_end: company.expiration_date,
+          },
         };
       }
 
@@ -64,6 +103,11 @@ export const useLicenseStatus = () => {
         expiresAt: company.license_expires_at,
         daysUntilExpiry: isActive ? daysUntilExpiry : null,
         isExpiringSoon,
+        subscriptionStatus: {
+          subscribed: hasActiveStripeSubscription,
+          plan: company.plan || 'free',
+          subscription_end: company.expiration_date || company.license_expires_at,
+        },
       };
     },
     enabled: !!user?.companyId,

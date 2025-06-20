@@ -4,13 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
+import { useLicenseStatus } from '@/hooks/useLicenseStatus';
 import { CreditCard, AlertTriangle } from 'lucide-react';
 import { format, isAfter, subDays } from 'date-fns';
 
 const SubscriptionStatusCard = () => {
   const { subscriptionStatus, isLoadingStatus, createCheckout, openCustomerPortal } = useStripeSubscription();
+  const { data: licenseStatus, isLoading: isLoadingLicense } = useLicenseStatus();
 
-  if (isLoadingStatus) {
+  if (isLoadingStatus || isLoadingLicense) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -23,8 +25,9 @@ const SubscriptionStatusCard = () => {
     );
   }
 
-  const isSubscribed = subscriptionStatus?.subscribed || false;
-  const subscriptionEnd = subscriptionStatus?.subscription_end;
+  // Use company-level subscription status
+  const isSubscribed = licenseStatus?.subscriptionStatus?.subscribed || licenseStatus?.isActive || false;
+  const subscriptionEnd = licenseStatus?.subscriptionStatus?.subscription_end || licenseStatus?.expiresAt;
   
   // Check if subscription is expiring soon (within 7 days)
   const isExpiringSoon = subscriptionEnd && 
