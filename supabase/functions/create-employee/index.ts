@@ -37,14 +37,22 @@ serve(async (req) => {
 
     if (checkError) {
       console.error('Error checking employee limit:', checkError)
-      throw new Error('Failed to check employee limit')
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to check employee limit',
+          details: checkError.message 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        },
+      )
     }
 
     if (!canAdd) {
       console.log('Employee limit reached for company:', employeeData.companyId)
       return new Response(
         JSON.stringify({ 
-          success: false, 
           error: 'Employee limit reached for your current plan. Please upgrade to add more employees.' 
         }),
         {
@@ -80,7 +88,16 @@ serve(async (req) => {
 
     if (authError) {
       console.error('Error creating user:', authError)
-      throw authError
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to create user account',
+          details: authError.message 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
     }
 
     console.log('User created successfully:', authData.user?.email)
@@ -103,7 +120,16 @@ serve(async (req) => {
       console.error('Error creating user profile:', profileError)
       // Try to delete the auth user if profile creation fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-      throw new Error('Failed to create user profile')
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to create user profile',
+          details: profileError.message 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        },
+      )
     }
 
     console.log('User profile created successfully for company:', employeeData.companyId)
@@ -124,12 +150,12 @@ serve(async (req) => {
     console.error('Function error:', error)
     return new Response(
       JSON.stringify({ 
-        success: false, 
-        error: error.message 
+        error: 'Internal server error',
+        details: error.message 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 500,
       },
     )
   }
