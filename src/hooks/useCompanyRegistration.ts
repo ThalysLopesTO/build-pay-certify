@@ -108,10 +108,24 @@ export const useCompanyRegistration = () => {
       }
 
       // 5. Insert user profile with auth.uid()
-      const { error: profileError } = await supabase
+      const { data: existingProfile, error: profileCheckError } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('user_id', authData.user.id)
+      .maybeSingle();
+
+      if (profileCheckError) 
+      {
+        console.error('❌ Profile existence check failed:', profileCheckError);
+      throw new Error(`Failed to check profile existence: ${profileCheckError.message}`);
+      }
+
+      if (!existingProfile) {
+        const { error: profileError } = await supabase
         .from('user_profiles')
-        .insert({
-          user_id: sessionUser.user.id,
+        .insert
+        ({
+          user_id: authData.user.id,
           company_id: company.id,
           first_name: formData.adminFirstName,
           last_name: formData.adminLastName,
@@ -119,11 +133,18 @@ export const useCompanyRegistration = () => {
           pending_approval: false
         });
 
-      if (profileError) {
+     if (profileError) 
+     {
+        console.error('❌ Profile creation failed:', profileError);
         throw new Error(`Failed to create user profile: ${profileError.message}`);
-      }
-
+    }
+  
       console.log('✅ User profile created');
+    } 
+    else 
+    {
+      console.log('ℹ️ User profile already exists — skipping creation');
+    }
 
       // 6. Insert into registration_requests for tracking
       const encrypted = CryptoJS.AES.encrypt(formData.password, SECRET_KEY).toString();
