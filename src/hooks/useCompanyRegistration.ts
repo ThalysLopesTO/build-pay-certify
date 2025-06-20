@@ -62,7 +62,8 @@ export const useCompanyRegistration = () => {
             status: 'active',
             registration_date: new Date().toISOString().split('T')[0],
             stripe_verified: true,  // Mark as Stripe verified
-            plan: 'free',  // Make sure it matches the constraint
+            plan: 'starter',  // Default to starter plan for paid registrations
+            employee_limit: 5,  // Default starter limit
           })
           .select()
           .single();
@@ -202,7 +203,7 @@ export const useCompanyRegistration = () => {
 
         toast({
           title: "Registration Complete!",
-          description: `Welcome to StackBuild! Your company "${formData.companyName}" has been created and activated.`,
+          description: `Welcome to StackBuild! Your company "${formData.companyName}" has been created and activated with a Starter plan (5 employees).`,
         });
 
       } else {

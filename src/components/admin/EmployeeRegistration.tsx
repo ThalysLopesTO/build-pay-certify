@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,9 +11,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, Save, User, Shield, Phone, MapPin } from 'lucide-react';
+import { UserPlus, Save, User, Shield, Phone, MapPin, AlertTriangle } from 'lucide-react';
 import DatePickerField from '../foreman/DatePickerField';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useEmployeeLimit } from '@/hooks/useEmployeeLimit';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const employeeSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -36,7 +39,8 @@ type EmployeeFormData = z.infer<typeof employeeSchema>;
 
 const EmployeeRegistration = () => {
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth()
+  const { user } = useAuth();
+  const { data: employeeLimit, isLoading: isLoadingLimit } = useEmployeeLimit();
 
   const form = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeSchema),
@@ -59,6 +63,16 @@ const EmployeeRegistration = () => {
   });
 
   const handleSubmit = async (data: EmployeeFormData) => {
+    // Check employee limit before submission
+    if (!employeeLimit?.canAddEmployee) {
+      toast({
+        title: "Employee Limit Reached",
+        description: `You have reached your plan's employee limit of ${employeeLimit?.employeeLimit} employees. Please upgrade your plan to add more employees.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -126,6 +140,29 @@ const EmployeeRegistration = () => {
     }).format(value);
   };
 
+  const getPlanName = (plan: string) => {
+    switch (plan) {
+      case 'starter': return 'Starter';
+      case 'pro': return 'Pro';
+      case 'enterprise': return 'Enterprise';
+      default: return plan;
+    }
+  };
+
+  if (isLoadingLimit) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-3">
+          <UserPlus className="h-6 w-6 text-orange-600" />
+          <div>
+            <h2 className="text-2xl font-bold">Employee Registration</h2>
+            <p className="text-slate-600">Loading employee limit information...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-3">
@@ -135,6 +172,22 @@ const EmployeeRegistration = () => {
           <p className="text-slate-600">Register new employees and set their permissions and certificates</p>
         </div>
       </div>
+
+      {/* Employee Limit Status */}
+      {employeeLimit && (
+        <Alert className={employeeLimit.canAddEmployee ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50"}>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Current Plan: {getPlanName(employeeLimit.plan)}</strong> - 
+            Using {employeeLimit.currentCount} of {employeeLimit.employeeLimit} employee slots.
+            {employeeLimit.canAddEmployee ? (
+              <span className="text-green-600"> You can add {employeeLimit.remainingSlots} more employees.</span>
+            ) : (
+              <span className="text-orange-600"> Employee limit reached. Please upgrade your plan to add more employees.</span>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card className="max-w-4xl">
         <CardHeader>
@@ -422,7 +475,7 @@ const EmployeeRegistration = () => {
                 <Button 
                   type="submit" 
                   className="bg-orange-600 hover:bg-orange-700"
-                  disabled={loading}
+                  disabled={loading || !employeeLimit?.canAddEmployee}
                 >
                   {loading ? (
                     'Registering...'

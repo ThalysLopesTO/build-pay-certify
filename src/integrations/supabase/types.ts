@@ -152,6 +152,7 @@ export type Database = {
         Row: {
           company_rules_text: string | null
           created_at: string
+          employee_limit: number | null
           expiration_date: string | null
           id: string
           license_expires_at: string | null
@@ -170,6 +171,7 @@ export type Database = {
         Insert: {
           company_rules_text?: string | null
           created_at?: string
+          employee_limit?: number | null
           expiration_date?: string | null
           id?: string
           license_expires_at?: string | null
@@ -188,6 +190,7 @@ export type Database = {
         Update: {
           company_rules_text?: string | null
           created_at?: string
+          employee_limit?: number | null
           expiration_date?: string | null
           id?: string
           license_expires_at?: string | null
@@ -893,6 +896,10 @@ export type Database = {
         Args: { invoice_id_param: string }
         Returns: undefined
       }
+      can_add_employee: {
+        Args: { company_id_param: string }
+        Returns: boolean
+      }
       delete_employee: {
         Args: { employee_user_id: string }
         Returns: Json
@@ -913,6 +920,10 @@ export type Database = {
           is_expired: boolean
           days_until_expiry: number
         }[]
+      }
+      get_company_employee_count: {
+        Args: { company_id_param: string }
+        Returns: number
       }
       get_user_company_id: {
         Args: Record<PropertyKey, never>

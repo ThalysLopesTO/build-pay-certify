@@ -29,7 +29,30 @@ serve(async (req) => {
     // Get the request data
     const { employeeData } = await req.json()
 
-    console.log('Creating employee with data:', { email: employeeData.email, role: employeeData.role })
+    console.log('Creating employee with data:', { email: employeeData.email, role: employeeData.role, companyId: employeeData.companyId })
+
+    // First, check if the company can add more employees
+    const { data: canAdd, error: checkError } = await supabaseAdmin
+      .rpc('can_add_employee', { company_id_param: employeeData.companyId })
+
+    if (checkError) {
+      console.error('Error checking employee limit:', checkError)
+      throw new Error('Failed to check employee limit')
+    }
+
+    if (!canAdd) {
+      console.log('Employee limit reached for company:', employeeData.companyId)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Employee limit reached for your current plan. Please upgrade to add more employees.' 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
 
     // Create the user account with admin privileges
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -44,6 +67,7 @@ serve(async (req) => {
         role: employeeData.role,
         trade: employeeData.trade,
         hourly_rate: employeeData.hourlyRate,
+        company_id: employeeData.companyId, // Ensure company_id is in metadata
         // Certificate expiry dates
         work_at_heights_expiry: employeeData.workAtHeightsExpiry,
         whmis_expiry: employeeData.whmisExpiry,
@@ -60,6 +84,29 @@ serve(async (req) => {
     }
 
     console.log('User created successfully:', authData.user?.email)
+
+    // Create user profile with the correct company_id
+    const { error: profileError } = await supabaseAdmin
+      .from('user_profiles')
+      .insert({
+        user_id: authData.user.id,
+        company_id: employeeData.companyId,
+        first_name: employeeData.firstName,
+        last_name: employeeData.lastName,
+        role: employeeData.role,
+        trade: employeeData.trade,
+        hourly_rate: employeeData.hourlyRate,
+        pending_approval: false
+      })
+
+    if (profileError) {
+      console.error('Error creating user profile:', profileError)
+      // Try to delete the auth user if profile creation fails
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      throw new Error('Failed to create user profile')
+    }
+
+    console.log('User profile created successfully for company:', employeeData.companyId)
 
     return new Response(
       JSON.stringify({ 
