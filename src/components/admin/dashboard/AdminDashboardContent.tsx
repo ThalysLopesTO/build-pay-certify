@@ -4,6 +4,7 @@ import CompanyOverviewCard from './CompanyOverviewCard';
 import LicenseWarningBanner from '../../common/LicenseWarningBanner';
 import StatsCard from './StatsCard';
 import QuickActionsSection from './QuickActionsSection';
+import EmployeeLimitCard from './EmployeeLimitCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 interface AdminDashboardContentProps {
@@ -22,6 +23,9 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
 
       {/* License Warning Banner */}
       <LicenseWarningBanner />
+
+      {/* Employee Limit Card - Prominently displayed */}
+      <EmployeeLimitCard />
 
       {/* Company Overview Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
