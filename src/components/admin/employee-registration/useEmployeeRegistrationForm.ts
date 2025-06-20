@@ -73,16 +73,18 @@ export const useEmployeeRegistrationForm = () => {
         },
       });
 
-      if (error) 
-      {
-      // Try to show the actual JSON error message
-        try {
-        const parsed = JSON.parse(error.message);
-        throw new Error(parsed.error || 'Unknown edge function error');
-      } catch {
-        throw new Error(error.message || 'Edge Function failed');
-      }
-      }
+      if (error) {
+  console.error("🛑 Raw Edge Function Error:", error);
+
+  try {
+    const parsed = JSON.parse(error.message);
+    console.error("❗Parsed Edge Function Error:", parsed);
+    throw new Error(parsed.error || 'Unknown edge function error');
+  } catch (parseError) {
+    console.error("⚠️ Could not parse error.message:", error.message);
+    throw new Error("Edge Function failed: " + error.message);
+  }
+}
 
       // Check if the result contains an error (from the edge function)
       if (result?.error) {
