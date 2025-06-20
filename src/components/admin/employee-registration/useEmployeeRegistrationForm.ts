@@ -78,8 +78,9 @@ export const useEmployeeRegistrationForm = () => {
         throw error;
       }
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to register employee');
+      if (result?.error) 
+      {
+      throw new Error(result.error);
       }
 
       console.log('Employee registered successfully:', result);
