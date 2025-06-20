@@ -62,6 +62,38 @@ serve(async (req) => {
       )
     }
 
+    // Check if a user with this email already exists
+    const { data: existingUser, error: userCheckError } = await supabaseAdmin.auth.admin.listUsers()
+    
+    if (userCheckError) {
+      console.error('Error checking existing users:', userCheckError)
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to verify user uniqueness',
+          details: userCheckError.message 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        },
+      )
+    }
+
+    // Check if user with this email already exists
+    const emailExists = existingUser.users.some(user => user.email === employeeData.email)
+    if (emailExists) {
+      console.log('User with email already exists:', employeeData.email)
+      return new Response(
+        JSON.stringify({ 
+          error: `An account with email ${employeeData.email} already exists. Please use a different email address.` 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
     // Create the user account with admin privileges
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: employeeData.email,

@@ -75,7 +75,7 @@ export const useEmployeeRegistrationForm = () => {
 
       if (error) {
         console.error('Edge function error:', error);
-        throw new Error('Failed to connect to employee registration service');
+        throw new Error(`Connection error: ${error.message || 'Unable to reach employee registration service'}`);
       }
 
       // Check if the result contains an error (from the edge function)
@@ -87,7 +87,7 @@ export const useEmployeeRegistrationForm = () => {
       // Check if the operation was successful
       if (!result?.success) {
         console.error('Employee registration failed:', result);
-        throw new Error('Employee registration failed');
+        throw new Error(result?.message || 'Employee registration failed - please try again');
       }
 
       console.log('Employee registered successfully:', result);
