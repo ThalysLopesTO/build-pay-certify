@@ -173,33 +173,26 @@ serve(async (req) => {
 
     console.log('User created successfully:', authData.user?.email)
 
-    // Create user profile with the correct company_id
-    const { error: profileError } = await supabaseAdmin
+    // Check if user profile already exists before creating one
+    const { data: existingProfile, error: profileCheckError } = await supabaseAdmin
       .from('user_profiles')
-      .insert({
-        user_id: authData.user.id,
-        company_id: employeeData.companyId,
-        first_name: employeeData.firstName,
-        last_name: employeeData.lastName,
-        role: employeeData.role,
-        trade: employeeData.trade,
-        hourly_rate: employeeData.hourlyRate,
-        pending_approval: false
-      })
+      .select('id')
+      .eq('user_id', authData.user.id)
+      .single()
 
-    if (profileError) {
-      console.error('Error creating user profile:', profileError)
-      // Try to delete the auth user if profile creation fails
+    if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+      console.error('Error checking existing profile:', profileCheckError)
+      // Try to delete the auth user if profile check fails
       try {
         await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-        console.log('Cleaned up auth user after profile creation failure')
+        console.log('Cleaned up auth user after profile check failure')
       } catch (cleanupError) {
         console.error('Failed to cleanup auth user:', cleanupError)
       }
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: 'Failed to create user profile: ' + profileError.message
+          error: 'Failed to check existing user profile: ' + profileCheckError.message
         }),
         {
           headers: corsHeaders,
@@ -208,7 +201,46 @@ serve(async (req) => {
       )
     }
 
-    console.log('User profile created successfully for company:', employeeData.companyId)
+    // Only create profile if it doesn't exist
+    if (!existingProfile) {
+      const { error: profileError } = await supabaseAdmin
+        .from('user_profiles')
+        .insert({
+          user_id: authData.user.id,
+          company_id: employeeData.companyId,
+          first_name: employeeData.firstName,
+          last_name: employeeData.lastName,
+          role: employeeData.role,
+          trade: employeeData.trade,
+          hourly_rate: employeeData.hourlyRate,
+          pending_approval: false
+        })
+
+      if (profileError) {
+        console.error('Error creating user profile:', profileError)
+        // Try to delete the auth user if profile creation fails
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+          console.log('Cleaned up auth user after profile creation failure')
+        } catch (cleanupError) {
+          console.error('Failed to cleanup auth user:', cleanupError)
+        }
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Failed to create user profile: ' + profileError.message
+          }),
+          {
+            headers: corsHeaders,
+            status: 500,
+          },
+        )
+      }
+
+      console.log('User profile created successfully for company:', employeeData.companyId)
+    } else {
+      console.log('User profile already exists for user:', authData.user.id)
+    }
 
     return new Response(
       JSON.stringify({ 
