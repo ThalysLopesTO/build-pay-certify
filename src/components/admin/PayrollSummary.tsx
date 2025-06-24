@@ -90,10 +90,10 @@ const PayrollSummary = () => {
       'Job Site': entry.jobSite,
       'Project': entry.project,
       'Week Ending': entry.weekEndDate,
-      'Hours': entry.totalHours,
-      'Hourly Rate': entry.hourlyRate,
-      'Expenses': entry.additionalExpense,
-      'Gross Pay': entry.grossPay
+      'Hours': safeParseNumber(entry.totalHours),
+      'Hourly Rate': safeParseNumber(entry.hourlyRate),
+      'Expenses': safeParseNumber(entry.additionalExpense),
+      'Gross Pay': safeParseNumber(entry.grossPay)
     }));
 
     // Add summary row
@@ -103,10 +103,10 @@ const PayrollSummary = () => {
       'Job Site': '',
       'Project': '',
       'Week Ending': '',
-      'Hours': totalHours,
+      'Hours': safeParseNumber(totalHours),
       'Hourly Rate': '',
-      'Expenses': filteredEntries.reduce((sum, entry) => sum + entry.additionalExpense, 0),
-      'Gross Pay': totalPayroll
+      'Expenses': safeParseNumber(filteredEntries.reduce((sum, entry) => sum + entry.additionalExpense, 0)),
+      'Gross Pay': safeParseNumber(totalPayroll)
     });
 
     // Create workbook and worksheet
