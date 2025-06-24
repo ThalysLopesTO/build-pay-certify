@@ -21,6 +21,7 @@ export interface Quote {
   accepted_date?: string;
   declined_date?: string;
   invoice_id?: string;
+  template?: string;
   created_by: string;
   created_at: string;
   updated_at: string;

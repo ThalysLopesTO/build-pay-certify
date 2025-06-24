@@ -36,6 +36,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
     tax: 0,
     discount: 0,
     notes: '',
+    template: 'classic',
   });
 
   const [lineItems, setLineItems] = useState<Partial<QuoteLineItem>[]>([
@@ -54,7 +55,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
   // Initialize form data only when modal opens and quote changes
   useEffect(() => {
     if (isOpen && !isInitialized) {
-      console.log('Initializing form data for quote:', quote?.id); // Debug log
+      console.log('Initializing form data for quote:', quote?.id);
       
       if (quote) {
         setFormData({
@@ -69,6 +70,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
           tax: quote.tax || 0,
           discount: quote.discount || 0,
           notes: quote.notes || '',
+          template: quote.template || 'classic',
         });
         
         if (existingLineItems.length > 0) {
@@ -88,6 +90,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
           tax: 0,
           discount: 0,
           notes: '',
+          template: 'classic',
         });
         setLineItems([{ description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }]);
       }
