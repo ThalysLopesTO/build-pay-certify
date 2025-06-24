@@ -9,6 +9,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useCompanySettings, type CompanySettings as CompanySettingsType } from '@/hooks/useCompanySettings';
 import CompanyBrandingSection from '../CompanyBrandingSection';
 import { Building2, Mail, Phone, MapPin, FileText, Globe, Share2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+
 
 export const CompanySettingsTab = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useCompanySettings();
