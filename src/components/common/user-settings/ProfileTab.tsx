@@ -12,7 +12,7 @@ import { useUpdateProfile } from '@/hooks/useUserSettings';
 import { profileSchema, ProfileFormData } from './schemas';
 
 const ProfileTab = () => {
-  const { user } = useAuth();
+  const { user, isCompanyAdmin } = useAuth();
   const updateProfile = useUpdateProfile();
 
   const profileForm = useForm<ProfileFormData>({
@@ -84,7 +84,12 @@ const ProfileTab = () => {
                   <FormItem>
                     <FormLabel>Trade</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g. Electrician, Plumber" />
+                      <Input 
+                        {...field} 
+                        placeholder="e.g. Electrician, Plumber" 
+                        disabled={!isCompanyAdmin}
+                        className={!isCompanyAdmin ? "bg-gray-50 text-gray-600 cursor-not-allowed" : ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -98,7 +103,12 @@ const ProfileTab = () => {
                   <FormItem>
                     <FormLabel>Position</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g. Lead, Helper" />
+                      <Input 
+                        {...field} 
+                        placeholder="e.g. Lead, Helper" 
+                        disabled={!isCompanyAdmin}
+                        className={!isCompanyAdmin ? "bg-gray-50 text-gray-600 cursor-not-allowed" : ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -119,6 +129,8 @@ const ProfileTab = () => {
                       min="0"
                       {...field}
                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      disabled={!isCompanyAdmin}
+                      className={!isCompanyAdmin ? "bg-gray-50 text-gray-600 cursor-not-allowed" : ""}
                     />
                   </FormControl>
                   <FormMessage />
