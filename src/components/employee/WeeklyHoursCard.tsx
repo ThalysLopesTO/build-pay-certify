@@ -28,7 +28,7 @@ const WeeklyHoursCard: React.FC = () => {
         <div className="text-center">
           <h3 className="text-lg font-semibold text-slate-900 mb-1">This Week's Hours</h3>
           <p className="text-slate-600 mb-1">Track your weekly progress</p>
-          <p className="text-sm text-slate-500 mb-4">{workWeek.rangeFormatted}</p>
+          <p className="text-sm text-slate-500 mb-4">{workWeek.currentWeek.rangeFormatted}</p>
           <div className="text-4xl font-bold text-blue-600">
             {totalHours || 0}h
           </div>

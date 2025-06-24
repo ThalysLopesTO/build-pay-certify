@@ -9,15 +9,15 @@ export const useWeeklyHoursSummary = () => {
   const workWeek = useWorkWeek();
 
   return useQuery({
-    queryKey: ['weekly-hours-summary', user?.id, workWeek?.weekStartDateString],
+    queryKey: ['weekly-hours-summary', user?.id, workWeek?.currentWeek?.weekStartDateString],
     queryFn: async () => {
-      if (!user?.id || !workWeek) return 0;
+      if (!user?.id || !workWeek?.currentWeek) return 0;
 
       const { data, error } = await supabase
         .from('weekly_timesheets')
         .select('total_hours')
         .eq('submitted_by', user.id)
-        .eq('week_start_date', workWeek.weekStartDateString);
+        .eq('week_start_date', workWeek.currentWeek.weekStartDateString);
 
       if (error) {
         console.error('Error fetching weekly hours:', error);
@@ -33,7 +33,7 @@ export const useWeeklyHoursSummary = () => {
 
       return totalHours;
     },
-    enabled: !!user?.id && !!workWeek,
+    enabled: !!user?.id && !!workWeek?.currentWeek,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
