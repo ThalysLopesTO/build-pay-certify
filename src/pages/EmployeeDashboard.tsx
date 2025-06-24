@@ -8,6 +8,7 @@ import CertificateStatus from '../components/employee/CertificateStatus';
 import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
+import CompanyHandbook from './CompanyHandbook';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const EmployeeDashboard = () => {
@@ -25,11 +26,12 @@ const EmployeeDashboard = () => {
           <LicenseWarningBanner />
 
           <Tabs defaultValue="timesheet" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="timesheet">Timesheet</TabsTrigger>
               <TabsTrigger value="attention-report">Report Issue</TabsTrigger>
               <TabsTrigger value="my-reports">My Reports</TabsTrigger>
               <TabsTrigger value="certificates">Certificates</TabsTrigger>
+              <TabsTrigger value="handbook">📘 Handbook</TabsTrigger>
               <TabsTrigger value="company-rules">Company Rules</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
@@ -48,6 +50,10 @@ const EmployeeDashboard = () => {
 
             <TabsContent value="certificates" className="space-y-6">
               <CertificateStatus />
+            </TabsContent>
+
+            <TabsContent value="handbook" className="space-y-6">
+              <CompanyHandbook />
             </TabsContent>
 
             <TabsContent value="company-rules" className="space-y-6">
