@@ -8,13 +8,17 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { FileText, Save } from 'lucide-react';
 
 export const CompanyRulesTab = () => {
-  const { rules, isLoading } = useCompanyRules();
+  const { rules, isLoading, error } = useCompanyRules();
   const updateRulesMutation = useUpdateCompanyRules();
   const [rulesText, setRulesText] = useState('');
 
+  // Update rulesText when rules data is loaded
   useEffect(() => {
     if (rules?.company_rules_text) {
       setRulesText(rules.company_rules_text);
+    } else {
+      // Default to empty string if no rules exist
+      setRulesText('');
     }
   }, [rules]);
 
@@ -28,6 +32,16 @@ export const CompanyRulesTab = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
           <p>Loading company rules...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center text-red-600">
+          <p>Error loading company rules. Please try again.</p>
         </div>
       </div>
     );
