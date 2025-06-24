@@ -28,19 +28,70 @@ export const useCompanyMutations = () => {
         throw new Error(`Failed to update company: ${companyError.message}`);
       }
 
-      // Update company settings (email and phone)
-      const { error: settingsError } = await supabase
+      // Check if company_settings exists for this company
+      const { data: existingSettings, error: checkError } = await supabase
         .from('company_settings')
-        .upsert({
-          company_id: companyId,
-          company_name: data.name,
-          company_email: data.email,
-          company_phone: data.phone || null,
-        });
+        .select('id, company_rules_text')
+        .eq('company_id', companyId)
+        .maybeSingle();
 
-      if (settingsError) {
-        console.error('Company settings update error:', settingsError);
-        throw new Error(`Failed to update company settings: ${settingsError.message}`);
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking existing company settings:', checkError);
+        throw new Error(`Failed to check company settings: ${checkError.message}`);
+      }
+
+      if (existingSettings) {
+        // Update existing company settings (email and phone)
+        const { error: settingsError } = await supabase
+          .from('company_settings')
+          .update({
+            company_name: data.name,
+            company_email: data.email,
+            company_phone: data.phone || null,
+          })
+          .eq('company_id', companyId);
+
+        if (settingsError) {
+          console.error('Company settings update error:', settingsError);
+          throw new Error(`Failed to update company settings: ${settingsError.message}`);
+        }
+      } else {
+        // Create company_settings if it doesn't exist
+        // Fetch default rules if they exist
+        let defaultRuleContent = null;
+        try {
+          const { data: defaultRule, error: ruleError } = await supabase
+            .from('default_rules')
+            .select('content')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (!ruleError && defaultRule?.content) {
+            defaultRuleContent = defaultRule.content;
+            console.log('Default rules fetched for new company settings');
+          }
+        } catch (ruleError) {
+          console.error('Error fetching default rules:', ruleError);
+          // Continue without default rules
+        }
+
+        const { error: settingsError } = await supabase
+          .from('company_settings')
+          .insert({
+            company_id: companyId,
+            company_name: data.name,
+            company_email: data.email,
+            company_phone: data.phone || null,
+            company_rules_text: defaultRuleContent
+          });
+
+        if (settingsError) {
+          console.error('Company settings creation error:', settingsError);
+          throw new Error(`Failed to create company settings: ${settingsError.message}`);
+        }
+
+        console.log('Company settings created with default rules applied');
       }
 
       console.log('Company updated successfully');

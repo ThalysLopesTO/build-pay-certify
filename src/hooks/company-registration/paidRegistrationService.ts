@@ -16,14 +16,17 @@ export const processPaidRegistration = async (
     const { data: defaultRule, error: ruleError } = await supabase
       .from('default_rules')
       .select('content')
+      .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (ruleError) {
       console.error('⚠️ Error fetching default rule:', ruleError);
     } else if (defaultRule?.content) {
       defaultRuleContent = defaultRule.content;
       console.log('✅ Default rules fetched successfully');
+    } else {
+      console.log('ℹ️ No default rules found in database');
     }
   } catch (ruleApplyError) {
     console.error('⚠️ Unexpected error fetching default rules:', ruleApplyError);
@@ -137,27 +140,55 @@ export const processPaidRegistration = async (
 
   // 6. Create company settings for the new company with default rules
   try {
-    const { error: settingsError } = await supabase
+    // Check if company_settings already exists for this company
+    const { data: existingSettings, error: checkError } = await supabase
       .from('company_settings')
-      .insert({
-        company_id: company.id,
-        company_name: formData.companyName,
-        company_email: formData.companyEmail,
-        company_phone: formData.companyPhone,
-        company_address: formData.companyAddress,
-        company_rules_text: defaultRuleContent
-      });
+      .select('id, company_rules_text')
+      .eq('company_id', company.id)
+      .maybeSingle();
 
-    if (settingsError) {
-      console.warn('⚠️ Failed to create company settings:', settingsError);
-      // Don't fail the whole registration for this
-    } else if (defaultRuleContent) {
-      console.log('✅ Company settings created with default rules applied');
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('⚠️ Error checking existing company settings:', checkError);
+    }
+
+    if (existingSettings) {
+      // Settings exist, only update rules if they're null/empty
+      if (!existingSettings.company_rules_text && defaultRuleContent) {
+        const { error: updateError } = await supabase
+          .from('company_settings')
+          .update({ company_rules_text: defaultRuleContent })
+          .eq('company_id', company.id);
+
+        if (updateError) {
+          console.error('⚠️ Failed to update company settings with default rules:', updateError);
+        } else {
+          console.log('✅ Updated existing company settings with default rules');
+        }
+      }
     } else {
-      console.log('✅ Company settings created (no default rules available)');
+      // Create new settings with default rules
+      const { error: settingsError } = await supabase
+        .from('company_settings')
+        .insert({
+          company_id: company.id,
+          company_name: formData.companyName,
+          company_email: formData.companyEmail,
+          company_phone: formData.companyPhone,
+          company_address: formData.companyAddress,
+          company_rules_text: defaultRuleContent
+        });
+
+      if (settingsError) {
+        console.error('⚠️ Failed to create company settings:', settingsError);
+        // Don't fail the whole registration for this
+      } else if (defaultRuleContent) {
+        console.log('✅ Company settings created with default rules applied');
+      } else {
+        console.log('✅ Company settings created (no default rules available)');
+      }
     }
   } catch (settingsCreateError) {
-    console.error('⚠️ Unexpected error creating company settings:', settingsCreateError);
+    console.error('⚠️ Unexpected error creating/updating company settings:', settingsCreateError);
     // Continue with function execution
   }
 
