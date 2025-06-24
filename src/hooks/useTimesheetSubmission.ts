@@ -116,14 +116,23 @@ export const useTimesheetSubmission = () => {
       console.log('✅ Timesheet submitted successfully:', result);
       return result;
     },
-    onSuccess: (data) => {
-      console.log('🎉 Timesheet submission successful, invalidating queries');
+    onSuccess: (data, variables) => {
+      console.log('🎉 Timesheet submission successful, updating cache immediately');
+      
+      // Immediately update the existing timesheets cache
+      queryClient.setQueryData(['existing-timesheets', user?.id], (oldData: string[] = []) => {
+        return [...oldData, variables.weekStartDate];
+      });
+      
+      // Invalidate related queries to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-hours-summary'] });
+      
       toast({
         title: "Timesheet Submitted",
         description: `Weekly timesheet for ${data.total_hours || 0} hours submitted successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['timesheets'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
     },
     onError: (error) => {
       console.error('🚨 Timesheet submission failed:', error);

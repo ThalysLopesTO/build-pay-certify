@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, AlertTriangle } from 'lucide-react';
+import { Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useTimesheetForm } from '@/hooks/useTimesheetForm';
 import TimesheetHeader from './timesheet/TimesheetHeader';
 import JobsiteSelector from './timesheet/JobsiteSelector';
@@ -28,6 +27,9 @@ const TimesheetForm = () => {
     existingTimesheets,
     isWeekSubmitted,
   } = useTimesheetForm();
+
+  const isSubmitting = submitMutation.isPending;
+  const isFormDisabled = isWeekSubmitted || isSubmitting;
 
   if (!workWeeks) {
     return (
@@ -64,7 +66,9 @@ const TimesheetForm = () => {
             <AlertDescription className={isWeekSubmitted ? 'text-orange-800' : 'text-blue-800'}>
               <strong>You're submitting hours for:</strong> {selectedWeek.rangeFormatted}
               {isWeekSubmitted && (
-                <span className="ml-2 text-orange-700">- Already submitted</span>
+                <span className="ml-2 text-orange-700 flex items-center gap-1">
+                  - Already submitted <CheckCircle className="h-4 w-4 text-green-600" />
+                </span>
               )}
             </AlertDescription>
           </Alert>
@@ -87,13 +91,13 @@ const TimesheetForm = () => {
 
             <DailyHoursGrid 
               control={form.control} 
-              disabled={isWeekSubmitted} 
+              disabled={isFormDisabled} 
               selectedWeek={selectedWeek}
             />
 
-            <ExpenseField control={form.control} disabled={isWeekSubmitted} />
+            <ExpenseField control={form.control} disabled={isFormDisabled} />
 
-            <NotesField control={form.control} disabled={isWeekSubmitted} />
+            <NotesField control={form.control} disabled={isFormDisabled} />
 
             <TimesheetSummary 
               totalHours={totalHours}
@@ -103,16 +107,16 @@ const TimesheetForm = () => {
 
             <Button 
               type="submit" 
-              className={`w-full text-lg py-3 ${
-                isWeekSubmitted 
+              className={`w-full text-lg py-3 transition-all duration-200 ${
+                isFormDisabled
                   ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
                   : 'bg-orange-600 hover:bg-orange-700'
               }`}
-              disabled={submitMutation.isPending || isWeekSubmitted || !selectedWeek}
+              disabled={isFormDisabled || !selectedWeek}
             >
               {isWeekSubmitted 
-                ? 'Already Submitted' 
-                : submitMutation.isPending 
+                ? 'Already Submitted ✅' 
+                : isSubmitting 
                   ? 'Submitting...' 
                   : 'Submit Timesheet'
               }

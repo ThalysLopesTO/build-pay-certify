@@ -43,9 +43,9 @@ const WeekSelector = ({ availableWeeks, selectedWeek, submittedWeeks, onWeekSele
               <Button
                 key={week.weekStartDateString}
                 variant={isSelected ? "default" : "outline"}
-                className={`h-auto p-4 flex flex-col items-start space-y-2 ${
+                className={`h-auto p-4 flex flex-col items-start space-y-2 transition-all duration-200 ${
                   isSubmitted ? 'opacity-60' : ''
-                } ${isSelected ? 'bg-orange-600 hover:bg-orange-700' : ''}`}
+                } ${isSelected ? 'bg-orange-600 hover:bg-orange-700 border-orange-600' : ''}`}
                 onClick={() => onWeekSelect(week)}
               >
                 <div className="flex items-center justify-between w-full">
@@ -56,7 +56,7 @@ const WeekSelector = ({ availableWeeks, selectedWeek, submittedWeeks, onWeekSele
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   )}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 flex-wrap">
                   <Badge 
                     variant={week.isCurrent ? "default" : "secondary"}
                     className={week.isCurrent ? "bg-orange-100 text-orange-800" : ""}
@@ -64,7 +64,8 @@ const WeekSelector = ({ availableWeeks, selectedWeek, submittedWeeks, onWeekSele
                     {week.label}
                   </Badge>
                   {isSubmitted && (
-                    <Badge variant="outline" className="text-green-700 border-green-300">
+                    <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
+                      <CheckCircle className="h-3 w-3 mr-1" />
                       Submitted
                     </Badge>
                   )}
