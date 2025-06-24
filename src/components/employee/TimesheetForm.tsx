@@ -85,7 +85,11 @@ const TimesheetForm = () => {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <JobsiteSelector control={form.control} />
 
-            <DailyHoursGrid control={form.control} disabled={isWeekSubmitted} />
+            <DailyHoursGrid 
+              control={form.control} 
+              disabled={isWeekSubmitted} 
+              selectedWeek={selectedWeek}
+            />
 
             <ExpenseField control={form.control} disabled={isWeekSubmitted} />
 
