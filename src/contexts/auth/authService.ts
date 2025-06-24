@@ -26,23 +26,19 @@ export const logout = async () => {
   try {
     console.log('🚪 Starting logout process...');
     
-    // Clear any local storage first
-    localStorage.removeItem('supabase.auth.token');
-    
-    // Sign out from Supabase
+    // Sign out from Supabase first
     const { error } = await supabase.auth.signOut();
     
     if (error) {
-      console.warn('⚠️ Supabase signOut error (continuing anyway):', error);
-      // Don't throw error here - we still want to clear local state
+      console.error('❌ Supabase signOut error:', error);
+      throw error;
     }
     
-    console.log('✅ Logout completed');
-    window.location.reload();
+    console.log('✅ Logout completed successfully');
+    return { error: null };
 
   } catch (error) {
     console.error('💥 Logout error:', error);
-    // Even if there's an error, we should clear local state
     return { error };
   }
 };

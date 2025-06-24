@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { AuthContextType } from './auth/types';
 import { useAuthState } from './auth/useAuthState';
 import { login, signUp, logout, checkSubscriptionStatus } from './auth/authService';
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -24,11 +25,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCompanyError(null);
       
       // Call logout service
-      await logout();
+      const { error } = await logout();
+      
+      if (error) {
+        console.error('❌ Logout failed:', error);
+        throw error;
+      }
+      
+      console.log('✅ Logout successful');
+      
+      // Navigate to login page after successful logout
+      window.location.href = '/login';
+      
     } catch (error) {
       console.error('💥 Logout handler error:', error);
-      // Force reload anyway to clear state
-      window.location.reload();
+      // Force navigation to login even if logout fails
+      window.location.href = '/login';
     }
   };
 

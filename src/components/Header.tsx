@@ -22,19 +22,18 @@ const Header = () => {
       
       await logout();
       
-      // The logout function will handle the redirect via window.location.reload()
     } catch (error) {
       console.error('Header logout error:', error);
       
       toast({
-        title: "Logout failed",
-        description: "There was an error signing out. The page will refresh.",
+        title: "Logout Error",
+        description: "There was an error signing out. Redirecting to login.",
         variant: "destructive",
       });
       
-      // Force reload as fallback
+      // Force redirect as fallback
       setTimeout(() => {
-        window.location.reload();
+        window.location.href = '/login';
       }, 1000);
     }
   };
