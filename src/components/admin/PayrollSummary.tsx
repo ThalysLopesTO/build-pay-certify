@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -99,7 +100,7 @@ const PayrollSummary = () => {
       'Gross Pay': entry.grossPay
     }));
 
-    // Add summary row
+    // Add summary row with proper types
     excelData.push({
       'Employee': 'TOTALS',
       'Trade/Position': '',
@@ -107,7 +108,7 @@ const PayrollSummary = () => {
       'Project': '',
       'Week Ending': '',
       'Hours': totalHours,
-      'Hourly Rate': '',
+      'Hourly Rate': 0, // Use 0 instead of empty string for numeric field
       'Expenses': totalExpenses,
       'Gross Pay': totalPayroll
     });
