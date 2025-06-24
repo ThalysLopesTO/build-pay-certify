@@ -116,6 +116,28 @@ export const processPaidRegistration = async (
   }
 
   // 5. Create initial company settings for the new company
+  let companyRulesText = null;
+
+  // Apply default company rules if available
+  try {
+    // Fetch default rule from default_rules table
+    const { data: defaultRule, error: ruleError } = await supabase
+      .from('default_rules')
+      .select('content')
+      .limit(1)
+      .single();
+
+    if (ruleError) {
+      console.error('⚠️ Error fetching default rule:', ruleError);
+    } else if (defaultRule?.content) {
+      companyRulesText = defaultRule.content;
+      console.log('✅ Default rules fetched successfully');
+    }
+  } catch (ruleApplyError) {
+    console.error('⚠️ Unexpected error fetching default rules:', ruleApplyError);
+    // Continue with function execution
+  }
+
   const { error: settingsError } = await supabase
     .from('company_settings')
     .insert({
@@ -123,12 +145,17 @@ export const processPaidRegistration = async (
       company_name: formData.companyName,
       company_email: formData.companyEmail,
       company_phone: formData.companyPhone,
-      company_address: formData.companyAddress
+      company_address: formData.companyAddress,
+      company_rules_text: companyRulesText
     });
 
   if (settingsError) {
     console.warn('⚠️ Failed to create company settings:', settingsError);
     // Don't fail the whole registration for this
+  } else if (companyRulesText) {
+    console.log('✅ Company settings created with default rules applied');
+  } else {
+    console.log('✅ Company settings created (no default rules available)');
   }
 
   // 6. Insert into registration_requests for tracking

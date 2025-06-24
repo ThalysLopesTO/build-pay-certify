@@ -323,6 +323,27 @@ export type Database = {
           },
         ]
       }
+      default_rules: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          title: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          title?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          title?: string | null
+        }
+        Relationships: []
+      }
       employee_certificates: {
         Row: {
           certificate_name: string

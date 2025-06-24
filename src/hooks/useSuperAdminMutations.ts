@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -54,7 +55,7 @@ export const useSuperAdminMutations = () => {
       const originalText = decrypted.toString(CryptoJS.enc.Utf8);
 
       // Step 2: Use the edge function to create the admin user with company ID and company name
-      const { data: createUserData, error: createUserError } = await supabase.functions.invoke('quick-processor', {
+      const { data: createUserData, error: createUserError } = await supabase.functions.invoke('create-super-admin', {
         body: { 
           email: request.admin_email,
           password: originalText,
@@ -81,7 +82,66 @@ export const useSuperAdminMutations = () => {
 
       console.log('created admin: ',{createUserData})
 
-      // Step 3: Update the registration request to approved status
+      // Step 3: Apply default company rules if available
+      try {
+        // Fetch default rule from default_rules table
+        const { data: defaultRule, error: ruleError } = await supabase
+          .from('default_rules')
+          .select('content')
+          .limit(1)
+          .single();
+
+        if (ruleError) {
+          console.error('Error fetching default rule:', ruleError);
+        } else if (defaultRule?.content) {
+          // Check if company_settings already exists
+          const { data: existingSettings } = await supabase
+            .from('company_settings')
+            .select('id')
+            .eq('company_id', companyData.id)
+            .single();
+
+          if (!existingSettings) {
+            // Insert default rule into company_settings
+            const { error: settingsError } = await supabase
+              .from('company_settings')
+              .insert({
+                company_id: companyData.id,
+                company_name: request.company_name,
+                company_email: request.company_email,
+                company_phone: request.company_phone,
+                company_address: request.company_address,
+                company_rules_text: defaultRule.content
+              });
+
+            if (settingsError) {
+              console.error('Error inserting default rules to company settings:', settingsError);
+              // Don't fail the function, just log the error
+            } else {
+              console.log('Default rules applied successfully to company:', companyData.id);
+            }
+          } else {
+            // Update existing settings with default rules
+            const { error: updateError } = await supabase
+              .from('company_settings')
+              .update({
+                company_rules_text: defaultRule.content
+              })
+              .eq('company_id', companyData.id);
+
+            if (updateError) {
+              console.error('Error updating company settings with default rules:', updateError);
+            } else {
+              console.log('Default rules updated successfully for company:', companyData.id);
+            }
+          }
+        }
+      } catch (ruleApplyError) {
+        console.error('Unexpected error applying default rules:', ruleApplyError);
+        // Continue with function execution
+      }
+
+      // Step 4: Update the registration request to approved status
       const { error: requestError } = await supabase
         .from('company_registration_requests')
         .update({ 
