@@ -13,6 +13,7 @@ export interface CompanySettings {
   hst_number: string | null;
   company_logo_url: string | null;
   company_id: string | null;
+  company_rules_text: string | null; // ← ✅ Add this line
   created_at: string;
   updated_at: string;
 }

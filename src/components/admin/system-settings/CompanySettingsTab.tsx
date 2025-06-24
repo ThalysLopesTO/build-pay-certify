@@ -15,14 +15,15 @@ export const CompanySettingsTab = () => {
   
   const form = useForm<Partial<CompanySettingsType & { website?: string; social_media?: string }>>({
     defaultValues: {
-      company_name: settings?.company_name || '',
-      company_address: settings?.company_address || '',
-      company_phone: settings?.company_phone || '',
-      company_email: settings?.company_email || '',
-      hst_number: settings?.hst_number || '',
-      website: '',
-      social_media: '',
-    },
+  company_name: settings?.company_name || '',
+  company_address: settings?.company_address || '',
+  company_phone: settings?.company_phone || '',
+  company_email: settings?.company_email || '',
+  hst_number: settings?.hst_number || '',
+  website: '',
+  social_media: '',
+  company_rules_text: settings?.company_rules_text || '', // ✅ ADD THIS LINE
+}
   });
 
   React.useEffect(() => {
@@ -83,6 +84,19 @@ export const CompanySettingsTab = () => {
                       </FormLabel>
                       <FormControl>
                         <Input placeholder="Enter your company name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="company_rules_text"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company Rules & Policies</FormLabel>
+                      <FormControl>
+                        <Textarea rows={10} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
