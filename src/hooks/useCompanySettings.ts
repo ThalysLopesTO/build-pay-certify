@@ -13,7 +13,8 @@ export interface CompanySettings {
   hst_number: string | null;
   company_logo_url: string | null;
   company_id: string | null;
-  company_rules_text: string | null; // ← ✅ Add this line
+  company_rules_text: string | null;
+  week_ending_day: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
   created_at: string;
   updated_at: string;
 }
@@ -92,7 +93,8 @@ export const useCompanySettings = () => {
           .insert({
             ...updatedSettings,
             company_id: user.companyId,
-            company_name: updatedSettings.company_name || user.companyName || 'Unnamed Company'
+            company_name: updatedSettings.company_name || user.companyName || 'Unnamed Company',
+            week_ending_day: updatedSettings.week_ending_day ?? 0 // Default to Sunday
           })
           .select()
           .single();

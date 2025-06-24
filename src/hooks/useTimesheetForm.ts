@@ -2,14 +2,13 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
 import { useAuth } from '../contexts/SupabaseAuthContext';
 import { useTimesheetSubmission } from './useTimesheetSubmission';
+import { useWorkWeek } from './useWorkWeek';
 import { toast } from './use-toast';
 
 const formSchema = z.object({
   jobsiteId: z.string().min(1, 'Please select a jobsite'),
-  weekStartDate: z.string().min(1, 'Please select week ending date'),
   mondayHours: z.number().min(0).max(24),
   tuesdayHours: z.number().min(0).max(24),
   wednesdayHours: z.number().min(0).max(24),
@@ -26,12 +25,12 @@ type FormData = z.infer<typeof formSchema>;
 export const useTimesheetForm = () => {
   const { user, session } = useAuth();
   const submitMutation = useTimesheetSubmission();
+  const workWeek = useWorkWeek();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       jobsiteId: '',
-      weekStartDate: '',
       mondayHours: 0,
       tuesdayHours: 0,
       wednesdayHours: 0,
@@ -108,14 +107,19 @@ export const useTimesheetForm = () => {
       return;
     }
 
-    // Calculate week start date from the selected week ending date
-    const weekEndDate = new Date(data.weekStartDate);
-    const weekStart = new Date(weekEndDate);
-    weekStart.setDate(weekEndDate.getDate() - 6); // Get Monday (7 days before Sunday)
-    
+    if (!workWeek) {
+      console.error('❌ Work week not available');
+      toast({
+        title: "Configuration Error",
+        description: "Unable to determine current work week. Please contact your administrator.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const timesheetData = {
       jobsiteId: data.jobsiteId,
-      weekStartDate: format(weekStart, 'yyyy-MM-dd'),
+      weekStartDate: workWeek.weekStartDateString,
       mondayHours: data.mondayHours,
       tuesdayHours: data.tuesdayHours,
       wednesdayHours: data.wednesdayHours,
@@ -132,22 +136,6 @@ export const useTimesheetForm = () => {
     submitMutation.mutate(timesheetData);
   };
 
-  // Generate week ending dates for the select dropdown (next 8 weeks)
-  const getWeekEndingDates = () => {
-    const dates = [];
-    const today = new Date();
-    
-    for (let i = 0; i < 8; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + (7 * i) - today.getDay()); // Get next Sunday
-      dates.push({
-        value: format(date, 'yyyy-MM-dd'),
-        label: format(date, 'MMM dd, yyyy')
-      });
-    }
-    return dates;
-  };
-
   return {
     form,
     totalHours,
@@ -155,6 +143,6 @@ export const useTimesheetForm = () => {
     grossPay,
     onSubmit,
     submitMutation,
-    weekEndingDates: getWeekEndingDates(),
+    workWeek,
   };
 };

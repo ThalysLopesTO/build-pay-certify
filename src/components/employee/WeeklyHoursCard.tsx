@@ -2,11 +2,13 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useWeeklyHoursSummary } from '@/hooks/useWeeklyHoursSummary';
+import { useWorkWeek } from '@/hooks/useWorkWeek';
 
 const WeeklyHoursCard: React.FC = () => {
   const { data: totalHours, isLoading } = useWeeklyHoursSummary();
+  const workWeek = useWorkWeek();
 
-  if (isLoading) {
+  if (isLoading || !workWeek) {
     return (
       <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
         <CardContent className="p-6">
@@ -25,7 +27,8 @@ const WeeklyHoursCard: React.FC = () => {
       <CardContent className="p-6">
         <div className="text-center">
           <h3 className="text-lg font-semibold text-slate-900 mb-1">This Week's Hours</h3>
-          <p className="text-slate-600 mb-4">Track your weekly progress</p>
+          <p className="text-slate-600 mb-1">Track your weekly progress</p>
+          <p className="text-sm text-slate-500 mb-4">{workWeek.rangeFormatted}</p>
           <div className="text-4xl font-bold text-blue-600">
             {totalHours || 0}h
           </div>

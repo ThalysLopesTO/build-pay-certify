@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,25 +6,37 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useCompanySettings, type CompanySettings as CompanySettingsType } from '@/hooks/useCompanySettings';
 import CompanyBrandingSection from '../CompanyBrandingSection';
-import { Building2, Mail, Phone, MapPin, FileText, Globe, Share2 } from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, FileText, Globe, Share2, Calendar } from 'lucide-react';
+
+const WEEK_ENDING_DAYS = [
+  { value: 0, label: 'Sunday' },
+  { value: 1, label: 'Monday' },
+  { value: 2, label: 'Tuesday' },
+  { value: 3, label: 'Wednesday' },
+  { value: 4, label: 'Thursday' },
+  { value: 5, label: 'Friday' },
+  { value: 6, label: 'Saturday' },
+];
 
 export const CompanySettingsTab = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useCompanySettings();
   
   const form = useForm<Partial<CompanySettingsType & { website?: string; social_media?: string }>>({
     defaultValues: {
-  company_name: settings?.company_name || '',
-  company_address: settings?.company_address || '',
-  company_phone: settings?.company_phone || '',
-  company_email: settings?.company_email || '',
-  hst_number: settings?.hst_number || '',
-  website: '',
-  social_media: '',
-  company_rules_text: settings?.company_rules_text || '', // ✅ ADD THIS LINE
-}
+      company_name: settings?.company_name || '',
+      company_address: settings?.company_address || '',
+      company_phone: settings?.company_phone || '',
+      company_email: settings?.company_email || '',
+      hst_number: settings?.hst_number || '',
+      website: '',
+      social_media: '',
+      company_rules_text: settings?.company_rules_text || '',
+      week_ending_day: settings?.week_ending_day ?? 0,
+    }
   });
 
   React.useEffect(() => {
@@ -36,6 +49,8 @@ export const CompanySettingsTab = () => {
         hst_number: settings.hst_number || '',
         website: '',
         social_media: '',
+        company_rules_text: settings.company_rules_text || '',
+        week_ending_day: settings.week_ending_day ?? 0,
       });
     }
   }, [settings, form]);
@@ -84,19 +99,6 @@ export const CompanySettingsTab = () => {
                       </FormLabel>
                       <FormControl>
                         <Input placeholder="Enter your company name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="company_rules_text"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company Rules & Policies</FormLabel>
-                      <FormControl>
-                        <Textarea rows={10} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -174,7 +176,7 @@ export const CompanySettingsTab = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField
                   control={form.control}
                   name="website"
@@ -208,13 +210,56 @@ export const CompanySettingsTab = () => {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="week_ending_day"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>Week Ending Day</span>
+                      </FormLabel>
+                      <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select week ending day" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {WEEK_ENDING_DAYS.map((day) => (
+                            <SelectItem key={day.value} value={day.value.toString()}>
+                              {day.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
+
+              <FormField
+                control={form.control}
+                name="company_rules_text"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Company Rules & Policies</FormLabel>
+                    <FormControl>
+                      <Textarea rows={10} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <h4 className="font-medium text-blue-900 mb-2">Usage Information</h4>
                 <p className="text-sm text-blue-700">
                   These settings automatically appear in invoice PDFs, outgoing emails, and dashboard header branding. 
-                  Fields marked with * are required for generating professional invoices.
+                  Fields marked with * are required for generating professional invoices. The week ending day determines 
+                  when your company's work week ends for timesheet submissions.
                 </p>
               </div>
 

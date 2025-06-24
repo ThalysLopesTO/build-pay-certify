@@ -289,6 +289,7 @@ export type Database = {
           hst_number: string | null
           id: string
           updated_at: string
+          week_ending_day: number | null
         }
         Insert: {
           company_address?: string | null
@@ -302,6 +303,7 @@ export type Database = {
           hst_number?: string | null
           id?: string
           updated_at?: string
+          week_ending_day?: number | null
         }
         Update: {
           company_address?: string | null
@@ -315,6 +317,7 @@ export type Database = {
           hst_number?: string | null
           id?: string
           updated_at?: string
+          week_ending_day?: number | null
         }
         Relationships: [
           {
