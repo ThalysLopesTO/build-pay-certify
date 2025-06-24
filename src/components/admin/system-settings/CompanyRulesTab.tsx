@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useCompanyRules, useUpdateCompanyRules } from '@/hooks/useCompanyRules';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { FileText, Save } from 'lucide-react';
 
 export const CompanyRulesTab = () => {
@@ -45,12 +45,11 @@ export const CompanyRulesTab = () => {
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="company-rules">Company Rules & Policies</Label>
-            <Textarea
-              id="company-rules"
+            <RichTextEditor
               value={rulesText}
-              onChange={(e) => setRulesText(e.target.value)}
-              placeholder="Enter your company rules, safety policies, and guidelines here. You can use multiple paragraphs and format as needed..."
-              className="min-h-[400px] resize-vertical"
+              onChange={setRulesText}
+              placeholder="Enter your company rules, safety policies, and guidelines here. Use the toolbar above to format your content with headings, lists, images, and more..."
+              className="w-full"
             />
           </div>
 
@@ -58,7 +57,7 @@ export const CompanyRulesTab = () => {
             <h4 className="font-medium text-blue-900 mb-2">Visibility Information</h4>
             <p className="text-sm text-blue-700">
               These rules will be visible to all Foremen and Employees in the "Company Rules" page in their sidebar. 
-              They cannot edit this content - it's read-only for them.
+              They cannot edit this content - it's read-only for them. Rich formatting, images, and links will be preserved in the display.
             </p>
           </div>
 

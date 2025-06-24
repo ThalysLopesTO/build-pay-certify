@@ -58,11 +58,10 @@ const CompanyRules = () => {
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[600px] w-full rounded-md border p-6">
-            <div className="prose prose-slate max-w-none">
-              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
-                {rules.company_rules_text}
-              </div>
-            </div>
+            <div 
+              className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-p:text-gray-700 prose-a:text-orange-600 prose-strong:text-slate-900 prose-ul:text-gray-700 prose-ol:text-gray-700 prose-img:rounded-lg prose-img:shadow-md"
+              dangerouslySetInnerHTML={{ __html: rules.company_rules_text }}
+            />
           </ScrollArea>
         </CardContent>
       </Card>
