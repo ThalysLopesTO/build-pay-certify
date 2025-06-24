@@ -23,7 +23,7 @@ export const useCompanyRules = () => {
         return null;
       }
       
-      // First try to get rules from company_settings
+      // Get rules from company_settings (should exist due to trigger)
       const { data, error } = await supabase
         .from('company_settings')
         .select('id, company_rules_text, updated_at')
@@ -31,44 +31,6 @@ export const useCompanyRules = () => {
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          // No company_settings found, create one with default rules
-          console.log('No company settings found, creating with default rules...');
-          
-          // Fetch default rules
-          let defaultRuleContent = null;
-          try {
-            const { data: defaultRule, error: ruleError } = await supabase
-              .from('default_rules')
-              .select('content')
-              .limit(1)
-              .single();
-
-            if (!ruleError && defaultRule?.content) {
-              defaultRuleContent = defaultRule.content;
-            }
-          } catch (defaultRuleError) {
-            console.error('Error fetching default rules:', defaultRuleError);
-          }
-
-          // Create company_settings with default rules
-          const { data: newSettings, error: createError } = await supabase
-            .from('company_settings')
-            .insert({
-              company_id: user.companyId,
-              company_name: user.companyName || 'Company',
-              company_rules_text: defaultRuleContent
-            })
-            .select('id, company_rules_text, updated_at')
-            .single();
-
-          if (createError) {
-            console.error('Error creating company settings:', createError);
-            throw createError;
-          }
-
-          return newSettings as CompanyRulesData;
-        }
         console.error('Error fetching company rules:', error);
         throw error;
       }

@@ -56,26 +56,9 @@ export const useCompanyMutations = () => {
           throw new Error(`Failed to update company settings: ${settingsError.message}`);
         }
       } else {
-        // Create company_settings if it doesn't exist
-        // Fetch default rules if they exist
-        let defaultRuleContent = null;
-        try {
-          const { data: defaultRule, error: ruleError } = await supabase
-            .from('default_rules')
-            .select('content')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (!ruleError && defaultRule?.content) {
-            defaultRuleContent = defaultRule.content;
-            console.log('Default rules fetched for new company settings');
-          }
-        } catch (ruleError) {
-          console.error('Error fetching default rules:', ruleError);
-          // Continue without default rules
-        }
-
+        // Company settings should have been created by trigger, but create if missing
+        console.warn('Company settings not found, creating manually');
+        
         const { error: settingsError } = await supabase
           .from('company_settings')
           .insert({
@@ -83,7 +66,6 @@ export const useCompanyMutations = () => {
             company_name: data.name,
             company_email: data.email,
             company_phone: data.phone || null,
-            company_rules_text: defaultRuleContent
           });
 
         if (settingsError) {
@@ -91,7 +73,7 @@ export const useCompanyMutations = () => {
           throw new Error(`Failed to create company settings: ${settingsError.message}`);
         }
 
-        console.log('Company settings created with default rules applied');
+        console.log('Company settings created manually');
       }
 
       console.log('Company updated successfully');
