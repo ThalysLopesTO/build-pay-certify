@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { RegistrationFormData } from './types';
 import * as CryptoJS from "crypto-js";
@@ -29,7 +30,7 @@ export const processPaidRegistration = async (
     // Continue with function execution
   }
 
-  // 2. ALWAYS create a NEW company for paid registrations with default rules
+  // 2. Create a NEW company for paid registrations
   const { data: company, error: companyError } = await supabase
     .from('companies')
     .insert({
@@ -38,8 +39,7 @@ export const processPaidRegistration = async (
       registration_date: new Date().toISOString().split('T')[0],
       stripe_verified: true,  // Mark as Stripe verified
       plan: 'starter',  // Default to starter plan for paid registrations
-      employee_limit: 5,  // Default starter limit
-      company_rules_text: defaultRuleContent  // Apply default rules
+      employee_limit: 5  // Default starter limit
     })
     .select()
     .single();
@@ -49,7 +49,7 @@ export const processPaidRegistration = async (
     throw new Error(`Failed to create company: ${companyError.message}`);
   }
 
-  console.log('✅ New company created with ID and default rules:', company.id);
+  console.log('✅ New company created with ID:', company.id);
 
   // 3. Sign up the admin user
   const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -135,47 +135,30 @@ export const processPaidRegistration = async (
     }
   }
 
-  // 6. Create initial company settings for the new company
-  let companyRulesText = null;
-
-  // Apply default company rules if available
+  // 6. Create company settings for the new company with default rules
   try {
-    // Fetch default rule from default_rules table
-    const { data: defaultRule, error: ruleError } = await supabase
-      .from('default_rules')
-      .select('content')
-      .limit(1)
-      .single();
+    const { error: settingsError } = await supabase
+      .from('company_settings')
+      .insert({
+        company_id: company.id,
+        company_name: formData.companyName,
+        company_email: formData.companyEmail,
+        company_phone: formData.companyPhone,
+        company_address: formData.companyAddress,
+        company_rules_text: defaultRuleContent
+      });
 
-    if (ruleError) {
-      console.error('⚠️ Error fetching default rule:', ruleError);
-    } else if (defaultRule?.content) {
-      companyRulesText = defaultRule.content;
-      console.log('✅ Default rules fetched successfully');
+    if (settingsError) {
+      console.warn('⚠️ Failed to create company settings:', settingsError);
+      // Don't fail the whole registration for this
+    } else if (defaultRuleContent) {
+      console.log('✅ Company settings created with default rules applied');
+    } else {
+      console.log('✅ Company settings created (no default rules available)');
     }
-  } catch (ruleApplyError) {
-    console.error('⚠️ Unexpected error fetching default rules:', ruleApplyError);
+  } catch (settingsCreateError) {
+    console.error('⚠️ Unexpected error creating company settings:', settingsCreateError);
     // Continue with function execution
-  }
-
-  const { error: settingsError } = await supabase
-    .from('company_settings')
-    .insert({
-      company_id: company.id,
-      company_name: formData.companyName,
-      company_email: formData.companyEmail,
-      company_phone: formData.companyPhone,
-      company_address: formData.companyAddress,
-      company_rules_text: companyRulesText
-    });
-
-  if (settingsError) {
-    console.warn('⚠️ Failed to create company settings:', settingsError);
-    // Don't fail the whole registration for this
-  } else if (companyRulesText) {
-    console.log('✅ Company settings created with default rules applied');
-  } else {
-    console.log('✅ Company settings created (no default rules available)');
   }
 
   // 7. Insert into registration_requests for tracking

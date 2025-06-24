@@ -70,39 +70,6 @@ serve(async (req) => {
       )
     }
 
-    // Apply default company rules if available
-    try {
-      // Fetch default rule from default_rules table
-      const { data: defaultRule, error: ruleError } = await supabaseAdmin
-        .from('default_rules')
-        .select('content')
-        .limit(1)
-        .single()
-
-      if (ruleError) {
-        console.error('Error fetching default rule:', ruleError)
-      } else if (defaultRule?.content) {
-        // Insert default rule into company_settings
-        const { error: settingsError } = await supabaseAdmin
-          .from('company_settings')
-          .insert({
-            company_id: companyId,
-            company_name: companyName,
-            company_rules_text: defaultRule.content
-          })
-
-        if (settingsError) {
-          console.error('Error inserting default rules to company settings:', settingsError)
-          // Don't fail the function, just log the error
-        } else {
-          console.log('Default rules applied successfully to company:', companyId)
-        }
-      }
-    } catch (ruleApplyError) {
-      console.error('Unexpected error applying default rules:', ruleApplyError)
-      // Continue with function execution
-    }
-
     console.log('User created successfully:', user.user?.email)
 
     return new Response(

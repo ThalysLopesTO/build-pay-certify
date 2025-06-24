@@ -48,10 +48,10 @@ const CompanyRules = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Company Policies</span>
-            {rules.rules_updated_at && (
+            {rules.updated_at && (
               <div className="flex items-center space-x-2 text-sm text-gray-500">
                 <Calendar className="h-4 w-4" />
-                <span>Last updated: {format(new Date(rules.rules_updated_at), 'PPP')}</span>
+                <span>Last updated: {format(new Date(rules.updated_at), 'PPP')}</span>
               </div>
             )}
           </CardTitle>

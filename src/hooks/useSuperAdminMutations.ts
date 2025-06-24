@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -50,15 +51,14 @@ export const useSuperAdminMutations = () => {
         console.error('Unexpected error fetching default rules:', ruleApplyError);
       }
 
-      // Step 2: Create the company with default rules
+      // Step 2: Create the company
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert({
           name: request.company_name,
           status: 'active',
           registration_date: registrationDate,
-          expiration_date: expirationDate,
-          company_rules_text: defaultRuleContent
+          expiration_date: expirationDate
         })
         .select()
         .single();
@@ -68,7 +68,7 @@ export const useSuperAdminMutations = () => {
         throw new Error(`Failed to create company: ${companyError.message}`);
       }
 
-      console.log('Company created successfully with default rules:', companyData);
+      console.log('Company created successfully:', companyData);
 
       const encrypted = request?.admin_password ?? "TempPassword123!";
       const decrypted = CryptoJS.AES.decrypt(encrypted, SECRET_KEY);
@@ -102,7 +102,7 @@ export const useSuperAdminMutations = () => {
 
       console.log('created admin: ',{createUserData})
 
-      // Step 4: Create company_settings entry
+      // Step 4: Create company_settings entry with default rules
       try {
         const { error: settingsError } = await supabase
           .from('company_settings')
@@ -111,14 +111,17 @@ export const useSuperAdminMutations = () => {
             company_name: request.company_name,
             company_email: request.company_email,
             company_phone: request.company_phone,
-            company_address: request.company_address
+            company_address: request.company_address,
+            company_rules_text: defaultRuleContent
           });
 
         if (settingsError) {
           console.error('Error creating company settings:', settingsError);
           // Don't fail the function, just log the error
+        } else if (defaultRuleContent) {
+          console.log('Company settings created with default rules applied for company:', companyData.id);
         } else {
-          console.log('Company settings created successfully for company:', companyData.id);
+          console.log('Company settings created (no default rules available) for company:', companyData.id);
         }
       } catch (settingsCreateError) {
         console.error('Unexpected error creating company settings:', settingsCreateError);

@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 interface CompanyRulesData {
   id: string;
   company_rules_text: string | null;
-  rules_updated_at: string | null;
+  updated_at: string | null;
 }
 
 export const useCompanyRules = () => {
@@ -23,13 +23,52 @@ export const useCompanyRules = () => {
         return null;
       }
       
+      // First try to get rules from company_settings
       const { data, error } = await supabase
-        .from('companies')
-        .select('id, company_rules_text, rules_updated_at')
-        .eq('id', user.companyId)
+        .from('company_settings')
+        .select('id, company_rules_text, updated_at')
+        .eq('company_id', user.companyId)
         .single();
 
       if (error) {
+        if (error.code === 'PGRST116') {
+          // No company_settings found, create one with default rules
+          console.log('No company settings found, creating with default rules...');
+          
+          // Fetch default rules
+          let defaultRuleContent = null;
+          try {
+            const { data: defaultRule, error: ruleError } = await supabase
+              .from('default_rules')
+              .select('content')
+              .limit(1)
+              .single();
+
+            if (!ruleError && defaultRule?.content) {
+              defaultRuleContent = defaultRule.content;
+            }
+          } catch (defaultRuleError) {
+            console.error('Error fetching default rules:', defaultRuleError);
+          }
+
+          // Create company_settings with default rules
+          const { data: newSettings, error: createError } = await supabase
+            .from('company_settings')
+            .insert({
+              company_id: user.companyId,
+              company_name: user.companyName || 'Company',
+              company_rules_text: defaultRuleContent
+            })
+            .select('id, company_rules_text, updated_at')
+            .single();
+
+          if (createError) {
+            console.error('Error creating company settings:', createError);
+            throw createError;
+          }
+
+          return newSettings as CompanyRulesData;
+        }
         console.error('Error fetching company rules:', error);
         throw error;
       }
@@ -61,12 +100,12 @@ export const useUpdateCompanyRules = () => {
       }
       
       const { data, error } = await supabase
-        .from('companies')
+        .from('company_settings')
         .update({
           company_rules_text: rulesText,
-          rules_updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString()
         })
-        .eq('id', user.companyId)
+        .eq('company_id', user.companyId)
         .select()
         .single();
 
