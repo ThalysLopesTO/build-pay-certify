@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, Send, Download, Trash2, CheckCircle, XCircle, FileText } from 'lucide-react';
-import { Quote, useUpdateQuote, useDeleteQuote, useConvertQuoteToInvoice } from '@/hooks/useQuotes';
+import { Quote, useUpdateQuote, useDeleteQuote, useConvertQuoteToInvoice } from '@/hooks/quotes';
 import { useToast } from '@/hooks/use-toast';
 import QuotePDFGenerator from './QuotePDFGenerator';
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2 } from 'lucide-react';
-import { Quote, QuoteLineItem, useCreateQuote, useUpdateQuote, useQuoteLineItems, useCreateQuoteLineItem, useUpdateQuoteLineItem, useDeleteQuoteLineItem } from '@/hooks/useQuotes';
+import { 
+  Quote, 
+  QuoteLineItem, 
+  useCreateQuote, 
+  useUpdateQuote, 
+  useQuoteLineItems, 
+  useCreateQuoteLineItem, 
+  useUpdateQuoteLineItem, 
+  useDeleteQuoteLineItem 
+} from '@/hooks/quotes';
 
 interface QuoteFormModalProps {
   quote: Quote | null;

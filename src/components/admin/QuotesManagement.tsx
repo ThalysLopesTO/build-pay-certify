@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useQuotes } from '@/hooks/useQuotes';
+import { useQuotes } from '@/hooks/quotes';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import QuotesTable from './quotes/QuotesTable';

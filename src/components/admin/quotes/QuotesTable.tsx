@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { FileText } from 'lucide-react';
-import { Quote } from '@/hooks/useQuotes';
+import { Quote } from '@/hooks/quotes';
 import QuoteStatusBadge from './QuoteStatusBadge';
 import QuoteActions from './QuoteActions';
 
