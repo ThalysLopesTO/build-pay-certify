@@ -657,6 +657,128 @@ export type Database = {
           },
         ]
       }
+      quote_line_items: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          quantity: number
+          quote_id: string
+          unit_price: number
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description: string
+          id?: string
+          quantity?: number
+          quote_id: string
+          unit_price?: number
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          quantity?: number
+          quote_id?: string
+          unit_price?: number
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_line_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          accepted_date: string | null
+          client_address: string | null
+          client_company: string | null
+          client_email: string
+          client_name: string
+          client_phone: string | null
+          company_id: string
+          created_at: string
+          created_by: string
+          declined_date: string | null
+          discount: number | null
+          expiry_date: string | null
+          id: string
+          notes: string | null
+          project_name: string
+          quote_date: string
+          quote_number: string
+          sent_date: string | null
+          status: string
+          subtotal: number
+          tax: number | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          accepted_date?: string | null
+          client_address?: string | null
+          client_company?: string | null
+          client_email: string
+          client_name: string
+          client_phone?: string | null
+          company_id: string
+          created_at?: string
+          created_by: string
+          declined_date?: string | null
+          discount?: number | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          project_name: string
+          quote_date?: string
+          quote_number: string
+          sent_date?: string | null
+          status?: string
+          subtotal?: number
+          tax?: number | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          accepted_date?: string | null
+          client_address?: string | null
+          client_company?: string | null
+          client_email?: string
+          client_name?: string
+          client_phone?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          declined_date?: string | null
+          discount?: number | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          project_name?: string
+          quote_date?: string
+          quote_number?: string
+          sent_date?: string | null
+          status?: string
+          subtotal?: number
+          tax?: number | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       safety_templates: {
         Row: {
           company_id: string
@@ -923,6 +1045,10 @@ export type Database = {
         Args: { invoice_id_param: string }
         Returns: undefined
       }
+      calculate_quote_totals: {
+        Args: { quote_id_param: string }
+        Returns: undefined
+      }
       can_add_employee: {
         Args: { company_id_param: string }
         Returns: boolean
@@ -932,6 +1058,10 @@ export type Database = {
         Returns: Json
       }
       generate_invoice_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_quote_number: {
         Args: Record<PropertyKey, never>
         Returns: string
       }

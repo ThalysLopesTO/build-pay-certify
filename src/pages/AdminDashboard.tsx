@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import Header from '../components/Header';
@@ -15,6 +14,7 @@ import PayrollSummary from '@/components/admin/PayrollSummary';
 import MaterialRequestInbox from '@/components/admin/MaterialRequestInbox';
 import AttentionReportsInbox from '@/components/admin/AttentionReportsInbox';
 import InvoiceManagement from '@/components/admin/InvoiceManagement';
+import QuotesManagement from '@/components/admin/QuotesManagement';
 import CompanySettings from '@/components/admin/CompanySettings';
 import UserSettings from '@/components/common/UserSettings';
 import SystemSettings from '@/components/admin/SystemSettings';
@@ -48,6 +48,8 @@ const AdminDashboard = () => {
         return <AttentionReportsInbox />;
       case 'invoices':
         return <InvoiceManagement />;
+      case 'quotes':
+        return <QuotesManagement />;
       case 'company-settings':
         return <SystemSettings />;
       case 'settings':

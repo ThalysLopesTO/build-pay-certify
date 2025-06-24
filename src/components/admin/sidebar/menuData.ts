@@ -1,3 +1,4 @@
+
 import { 
   BarChart3, 
   Users, 
@@ -13,7 +14,8 @@ import {
   Bell,
   Archive,
   Truck,
-  Shield
+  Shield,
+  Calculator
 } from 'lucide-react';
 
 export const groupedMenuItems = {
@@ -86,6 +88,11 @@ export const groupedMenuItems = {
       id: 'invoices',
       title: 'Invoice Management',
       icon: FileText,
+    },
+    {
+      id: 'quotes',
+      title: 'Quotes',
+      icon: Calculator,
     }
   ],
   system: [
