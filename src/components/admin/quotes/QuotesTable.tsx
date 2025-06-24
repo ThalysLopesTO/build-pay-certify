@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
+import { FileText } from 'lucide-react';
 import { Quote } from '@/hooks/useQuotes';
 import QuoteStatusBadge from './QuoteStatusBadge';
 import QuoteActions from './QuoteActions';
@@ -40,7 +41,14 @@ const QuotesTable: React.FC<QuotesTableProps> = ({ quotes, onEdit, onRefresh }) 
               ) : (
                 quotes.map((quote) => (
                   <TableRow key={quote.id} className="hover:bg-gray-50">
-                    <TableCell className="font-medium">{quote.quote_number}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {quote.quote_number}
+                        {quote.invoice_id && (
+                          <FileText className="h-4 w-4 text-green-600" title="Converted to Invoice" />
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">{quote.client_name}</div>

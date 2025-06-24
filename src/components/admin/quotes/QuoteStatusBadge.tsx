@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 
 interface QuoteStatusBadgeProps {
-  status: 'draft' | 'sent' | 'accepted' | 'declined';
+  status: 'draft' | 'sent' | 'accepted' | 'declined' | 'invoiced';
 }
 
 const QuoteStatusBadge: React.FC<QuoteStatusBadgeProps> = ({ status }) => {
@@ -15,6 +15,8 @@ const QuoteStatusBadge: React.FC<QuoteStatusBadgeProps> = ({ status }) => {
         return 'secondary'; // Blue
       case 'declined':
         return 'destructive'; // Red
+      case 'invoiced':
+        return 'default'; // Green (similar to accepted)
       case 'draft':
         return 'outline'; // Gray
       default:
@@ -30,6 +32,8 @@ const QuoteStatusBadge: React.FC<QuoteStatusBadgeProps> = ({ status }) => {
         return 'Sent';
       case 'declined':
         return 'Declined';
+      case 'invoiced':
+        return 'Invoiced';
       case 'draft':
         return 'Draft';
       default:

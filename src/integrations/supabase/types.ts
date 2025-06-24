@@ -716,6 +716,7 @@ export type Database = {
           discount: number | null
           expiry_date: string | null
           id: string
+          invoice_id: string | null
           notes: string | null
           project_name: string
           quote_date: string
@@ -741,6 +742,7 @@ export type Database = {
           discount?: number | null
           expiry_date?: string | null
           id?: string
+          invoice_id?: string | null
           notes?: string | null
           project_name: string
           quote_date?: string
@@ -766,6 +768,7 @@ export type Database = {
           discount?: number | null
           expiry_date?: string | null
           id?: string
+          invoice_id?: string | null
           notes?: string | null
           project_name?: string
           quote_date?: string
@@ -777,7 +780,15 @@ export type Database = {
           total_amount?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quotes_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       safety_templates: {
         Row: {
@@ -1052,6 +1063,10 @@ export type Database = {
       can_add_employee: {
         Args: { company_id_param: string }
         Returns: boolean
+      }
+      convert_quote_to_invoice: {
+        Args: { quote_id_param: string }
+        Returns: string
       }
       delete_employee: {
         Args: { employee_user_id: string }

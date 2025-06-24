@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CreateInvoiceForm from './CreateInvoiceForm';
 import InvoiceTracker from './InvoiceTracker';
@@ -8,6 +8,24 @@ import { FileText, Plus, BarChart3 } from 'lucide-react';
 
 const InvoiceManagement = () => {
   const [activeTab, setActiveTab] = useState('create');
+
+  useEffect(() => {
+    // Check if there's an invoice parameter in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const invoiceParam = urlParams.get('invoice');
+    
+    if (invoiceParam) {
+      // If there's an invoice parameter, switch to the tracker tab
+      setActiveTab('tracker');
+      
+      // Store the invoice ID for the tracker to highlight
+      sessionStorage.setItem('highlightInvoiceId', invoiceParam);
+      
+      // Clean up the URL parameter
+      const newUrl = window.location.pathname + window.location.search.replace(/[?&]invoice=[^&]*/g, '');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
