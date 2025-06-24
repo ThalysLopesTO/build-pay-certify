@@ -2,10 +2,10 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Filter, X } from 'lucide-react';
+import { useWorkWeek } from '@/hooks/useWorkWeek';
 
 interface TimesheetFiltersProps {
   filters: {
@@ -22,6 +22,9 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
   onFiltersChange,
   employees
 }) => {
+  // Get work weeks based on company settings
+  const workWeeks = useWorkWeek();
+
   const handleEmployeeChange = (value: string) => {
     onFiltersChange({
       ...filters,
@@ -29,10 +32,10 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
     });
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleWeekChange = (value: string) => {
     onFiltersChange({
       ...filters,
-      weekEndingDate: e.target.value
+      weekEndingDate: value === 'all' ? '' : value
     });
   };
 
@@ -92,14 +95,20 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <Label htmlFor="date-filter" className="text-sm text-gray-600">Week Ending:</Label>
-            <Input
-              id="date-filter"
-              type="date"
-              value={filters.weekEndingDate}
-              onChange={handleDateChange}
-              className="w-48"
-            />
+            <Label htmlFor="week-filter" className="text-sm text-gray-600">Week Range:</Label>
+            <Select value={filters.weekEndingDate || 'all'} onValueChange={handleWeekChange}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="All weeks" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All weeks</SelectItem>
+                {workWeeks?.availableWeeks.map((week) => (
+                  <SelectItem key={week.weekStartDateString} value={week.weekStartDateString}>
+                    {week.rangeFormatted}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-center gap-2">

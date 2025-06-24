@@ -1,11 +1,10 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 export const useEmployeeTimesheets = (filters: { 
   employeeName?: string; 
-  weekEndingDate?: string;
+  weekStartDate?: string; // Changed from weekEndingDate to weekStartDate
   status?: string;
 }) => {
   const { user } = useAuth();
@@ -27,12 +26,9 @@ export const useEmployeeTimesheets = (filters: {
         .eq('company_id', user.companyId)
         .order('week_start_date', { ascending: false });
 
-      // Apply date filter if provided (convert week ending to week start)
-      if (filters.weekEndingDate) {
-        const weekEnd = new Date(filters.weekEndingDate);
-        const weekStart = new Date(weekEnd);
-        weekStart.setDate(weekEnd.getDate() - 6); // Get week start (7 days before)
-        timesheetsQuery = timesheetsQuery.eq('week_start_date', weekStart.toISOString().split('T')[0]);
+      // Apply week start date filter if provided
+      if (filters.weekStartDate) {
+        timesheetsQuery = timesheetsQuery.eq('week_start_date', filters.weekStartDate);
       }
 
       const { data: timesheets, error: timesheetsError } = await timesheetsQuery;

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,11 +22,18 @@ const EmployeeTimesheets = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     employeeName: '',
-    weekEndingDate: '',
+    weekEndingDate: '', // This now stores the week start date string
     status: 'all', // all, pending, approved, rejected
   });
 
-  const { data: timesheets = [], isLoading, error, refetch } = useEmployeeTimesheets(filters);
+  // Convert the weekEndingDate filter (which is now week start date) to the format expected by the hook
+  const queryFilters = {
+    employeeName: filters.employeeName,
+    weekStartDate: filters.weekEndingDate, // Pass week start date for filtering
+    status: filters.status
+  };
+
+  const { data: timesheets = [], isLoading, error, refetch } = useEmployeeTimesheets(queryFilters);
   const { data: employees = [] } = useEmployeeDirectory();
   const { data: jobsites = [] } = useJobsites();
   const approvalMutation = useTimesheetApproval();
