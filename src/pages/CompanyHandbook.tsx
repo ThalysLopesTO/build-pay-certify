@@ -55,9 +55,10 @@ const CompanyHandbook = () => {
               ) : settings?.company_rules_text ? (
                 <div className="prose max-w-none">
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-6">
-                    <pre className="whitespace-pre-wrap font-sans text-slate-700 leading-relaxed">
-                      {settings.company_rules_text}
-                    </pre>
+                    <div
+                      className="prose max-w-none"
+                      dangerouslySetInnerHTML={{ __html: settings.company_rules_text }}
+                    />
                   </div>
                 </div>
               ) : (
