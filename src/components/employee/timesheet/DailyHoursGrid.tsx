@@ -6,41 +6,42 @@ import { Input } from '@/components/ui/input';
 
 interface DailyHoursGridProps {
   control: Control<any>;
+  disabled?: boolean;
 }
 
-const DailyHoursGrid = ({ control }: DailyHoursGridProps) => {
-  const daysOfWeek = [
-    { key: 'mondayHours', label: 'Monday' },
-    { key: 'tuesdayHours', label: 'Tuesday' },
-    { key: 'wednesdayHours', label: 'Wednesday' },
-    { key: 'thursdayHours', label: 'Thursday' },
-    { key: 'fridayHours', label: 'Friday' },
-    { key: 'saturdayHours', label: 'Saturday' },
-    { key: 'sundayHours', label: 'Sunday' }
+const DailyHoursGrid = ({ control, disabled = false }: DailyHoursGridProps) => {
+  const days = [
+    { name: 'mondayHours', label: 'Monday' },
+    { name: 'tuesdayHours', label: 'Tuesday' },
+    { name: 'wednesdayHours', label: 'Wednesday' },
+    { name: 'thursdayHours', label: 'Thursday' },
+    { name: 'fridayHours', label: 'Friday' },
+    { name: 'saturdayHours', label: 'Saturday' },
+    { name: 'sundayHours', label: 'Sunday' },
   ];
 
   return (
     <div className="space-y-4">
-      <FormLabel className="text-lg font-semibold">Daily Hours</FormLabel>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {daysOfWeek.map((day) => (
+      <h3 className="text-lg font-semibold text-gray-900">Daily Hours</h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        {days.map((day) => (
           <FormField
-            key={day.key}
+            key={day.name}
             control={control}
-            name={day.key}
+            name={day.name}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{day.label}</FormLabel>
+                <FormLabel className="text-sm font-medium">{day.label}</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
-                    step="0.5"
                     min="0"
                     max="24"
-                    placeholder="0"
-                    value={field.value?.toString() || ''}
+                    step="0.25"
+                    disabled={disabled}
+                    className={disabled ? 'bg-gray-100 cursor-not-allowed' : ''}
+                    {...field}
                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    className="text-center"
                   />
                 </FormControl>
                 <FormMessage />

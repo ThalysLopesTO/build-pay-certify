@@ -1,17 +1,21 @@
 
 import React from 'react';
 import { Control } from 'react-hook-form';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { MapPin } from 'lucide-react';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useJobsites } from '@/hooks/useJobsites';
-import { Building2 } from 'lucide-react';
 
 interface JobsiteSelectorProps {
   control: Control<any>;
+  disabled?: boolean;
 }
 
-const JobsiteSelector: React.FC<JobsiteSelectorProps> = ({ control }) => {
-  const { data: jobsites = [], isLoading } = useJobsites();
+const JobsiteSelector = ({ control, disabled = false }: JobsiteSelectorProps) => {
+  const { data: jobsites = [], isLoading: jobsitesLoading } = useJobsites();
+  
+  // Filter out jobsites with empty names
+  const validJobsites = jobsites.filter(jobsite => jobsite.name && jobsite.name.trim().length > 0);
 
   return (
     <FormField
@@ -20,21 +24,27 @@ const JobsiteSelector: React.FC<JobsiteSelectorProps> = ({ control }) => {
       render={({ field }) => (
         <FormItem>
           <FormLabel className="flex items-center space-x-2">
-            <Building2 className="h-4 w-4" />
-            <span>Jobsite *</span>
+            <MapPin className="h-4 w-4 text-orange-600" />
+            <span>Job Site</span>
           </FormLabel>
-          <Select onValueChange={field.onChange} value={field.value}>
+          <Select onValueChange={field.onChange} value={field.value} disabled={disabled}>
             <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder={isLoading ? "Loading jobsites..." : "Select a jobsite"} />
+              <SelectTrigger className={disabled ? 'bg-gray-100 cursor-not-allowed' : ''}>
+                <SelectValue placeholder="Select job site" />
               </SelectTrigger>
             </FormControl>
-            <SelectContent>
-              {jobsites.map((jobsite) => (
-                <SelectItem key={jobsite.id} value={jobsite.id}>
-                  {jobsite.name}
-                </SelectItem>
-              ))}
+            <SelectContent className="bg-white z-50">
+              {jobsitesLoading ? (
+                <SelectItem value="loading-placeholder" disabled>Loading jobsites...</SelectItem>
+              ) : validJobsites.length === 0 ? (
+                <SelectItem value="empty-placeholder" disabled>No jobsites available</SelectItem>
+              ) : (
+                validJobsites.map((jobsite) => (
+                  <SelectItem key={jobsite.id} value={jobsite.id}>
+                    {jobsite.name}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
           <FormMessage />

@@ -1,10 +1,11 @@
-
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../contexts/SupabaseAuthContext';
 import { useTimesheetSubmission } from './useTimesheetSubmission';
 import { useWorkWeek } from './useWorkWeek';
+import { useExistingTimesheets } from './useExistingTimesheets';
 import { toast } from './use-toast';
 
 const formSchema = z.object({
@@ -25,7 +26,13 @@ type FormData = z.infer<typeof formSchema>;
 export const useTimesheetForm = () => {
   const { user, session } = useAuth();
   const submitMutation = useTimesheetSubmission();
-  const workWeek = useWorkWeek();
+  const workWeeks = useWorkWeek();
+  const { data: existingTimesheets = [] } = useExistingTimesheets();
+  
+  // Initialize with current week
+  const [selectedWeek, setSelectedWeek] = useState(() => 
+    workWeeks?.currentWeek || null
+  );
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -43,6 +50,13 @@ export const useTimesheetForm = () => {
     },
   });
 
+  // Update selected week when workWeeks loads
+  React.useEffect(() => {
+    if (workWeeks?.currentWeek && !selectedWeek) {
+      setSelectedWeek(workWeeks.currentWeek);
+    }
+  }, [workWeeks, selectedWeek]);
+
   const watchedValues = form.watch();
   const totalHours = (
     watchedValues.mondayHours + watchedValues.tuesdayHours + 
@@ -51,10 +65,10 @@ export const useTimesheetForm = () => {
     watchedValues.sundayHours
   );
 
-  // Use the hourly rate directly from the user profile to ensure consistency
   const hourlyRate = user?.hourlyRate || 25;
-  // Calculate gross pay for preview only - this won't be sent to the database
   const grossPay = (totalHours * hourlyRate) + (watchedValues.additionalExpense || 0);
+
+  const isWeekSubmitted = selectedWeek ? existingTimesheets.includes(selectedWeek.weekStartDateString) : false;
 
   const onSubmit = (data: FormData) => {
     console.log('📋 Form submission started with data:', data);
@@ -107,11 +121,20 @@ export const useTimesheetForm = () => {
       return;
     }
 
-    if (!workWeek) {
-      console.error('❌ Work week not available');
+    if (!selectedWeek) {
+      console.error('❌ Week selection validation failed');
       toast({
-        title: "Configuration Error",
-        description: "Unable to determine current work week. Please contact your administrator.",
+        title: "Week Selection Error",
+        description: "Please select a week to submit timesheet for.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isWeekSubmitted) {
+      toast({
+        title: "Duplicate Submission",
+        description: "You have already submitted a timesheet for this week.",
         variant: "destructive",
       });
       return;
@@ -119,7 +142,7 @@ export const useTimesheetForm = () => {
 
     const timesheetData = {
       jobsiteId: data.jobsiteId,
-      weekStartDate: workWeek.weekStartDateString,
+      weekStartDate: selectedWeek.weekStartDateString,
       mondayHours: data.mondayHours,
       tuesdayHours: data.tuesdayHours,
       wednesdayHours: data.wednesdayHours,
@@ -143,6 +166,10 @@ export const useTimesheetForm = () => {
     grossPay,
     onSubmit,
     submitMutation,
-    workWeek,
+    workWeeks,
+    selectedWeek,
+    setSelectedWeek,
+    existingTimesheets,
+    isWeekSubmitted,
   };
 };
