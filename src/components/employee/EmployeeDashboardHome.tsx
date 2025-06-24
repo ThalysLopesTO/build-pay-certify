@@ -7,7 +7,7 @@ import { useWeeklyHoursSummary } from '@/hooks/useWeeklyHoursSummary';
 import { 
   FileText, 
   AlertTriangle, 
-  Certificate, 
+  Award, 
   BookOpen, 
   Book, 
   Settings 
@@ -26,7 +26,7 @@ interface EmployeeDashboardHomeProps {
 
 const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigateToTab }) => {
   const { user } = useAuth();
-  const { totalHours, isLoading } = useWeeklyHoursSummary();
+  const { data: totalHours, isLoading } = useWeeklyHoursSummary();
 
   const dashboardCards: DashboardCard[] = [
     {
@@ -43,7 +43,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
     },
     {
       title: 'Certificates',
-      icon: <Certificate className="h-8 w-8" />,
+      icon: <Award className="h-8 w-8" />,
       onClick: () => onNavigateToTab('certificates'),
       color: 'bg-green-500 hover:bg-green-600'
     },
@@ -94,7 +94,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
                 </div>
               ) : (
                 <div className="text-3xl font-bold text-blue-600">
-                  {totalHours}h
+                  {totalHours || 0}h
                 </div>
               )}
               <p className="text-sm text-slate-500">total hours</p>
