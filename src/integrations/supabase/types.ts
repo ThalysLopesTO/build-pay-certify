@@ -284,6 +284,7 @@ export type Database = {
           company_logo_url: string | null
           company_name: string
           company_phone: string | null
+          company_rules_text: string | null
           created_at: string
           hst_number: string | null
           id: string
@@ -296,6 +297,7 @@ export type Database = {
           company_logo_url?: string | null
           company_name: string
           company_phone?: string | null
+          company_rules_text?: string | null
           created_at?: string
           hst_number?: string | null
           id?: string
@@ -308,6 +310,7 @@ export type Database = {
           company_logo_url?: string | null
           company_name?: string
           company_phone?: string | null
+          company_rules_text?: string | null
           created_at?: string
           hst_number?: string | null
           id?: string
