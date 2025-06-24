@@ -1,12 +1,10 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { format } from 'date-fns';
-import { Quote } from '@/hooks/useQuotes';
+import { Quote, useQuoteLineItems } from '@/hooks/quotes';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
-import { useQuoteLineItems } from '@/hooks/useQuotes';
 
 interface QuotePDFGeneratorProps {
   quote: Quote;
