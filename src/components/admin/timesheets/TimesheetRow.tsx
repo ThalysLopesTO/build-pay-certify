@@ -1,8 +1,10 @@
 
 import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
+import { format, addDays } from 'date-fns';
 import TimesheetStatusBadge from './TimesheetStatusBadge';
 import TimesheetActions from './TimesheetActions';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 
 interface TimesheetRowProps {
   timesheet: any;
@@ -21,6 +23,18 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
   isApproving,
   isRejecting
 }) => {
+  const { settings } = useCompanySettings();
+
+  const formatWeekRange = (weekStartDate: string) => {
+    const startDate = new Date(weekStartDate);
+    const endDate = addDays(startDate, 6); // Week is always 7 days, so add 6 to get the end
+    
+    const startFormatted = format(startDate, 'MMM dd');
+    const endFormatted = format(endDate, 'MMM dd');
+    
+    return `${startFormatted} – ${endFormatted}`;
+  };
+
   return (
     <TableRow className="hover:bg-gray-50">
       <TableCell className="font-medium">
@@ -28,7 +42,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
       </TableCell>
       <TableCell>{timesheet.jobsite_name || 'Unknown Jobsite'}</TableCell>
       <TableCell>
-        {new Date(timesheet.week_start_date).toLocaleDateString()}
+        {timesheet.week_start_date ? formatWeekRange(timesheet.week_start_date) : '--'}
       </TableCell>
       <TableCell className="text-center">{timesheet.monday_hours || 0}</TableCell>
       <TableCell className="text-center">{timesheet.tuesday_hours || 0}</TableCell>

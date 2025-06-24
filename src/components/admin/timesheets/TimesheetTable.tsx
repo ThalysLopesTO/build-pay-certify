@@ -40,7 +40,7 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
               <TableRow>
                 <TableHead className="font-semibold text-gray-900">Employee</TableHead>
                 <TableHead className="font-semibold text-gray-900">Job Site</TableHead>
-                <TableHead className="font-semibold text-gray-900">Week Ending</TableHead>
+                <TableHead className="font-semibold text-gray-900">Week Range</TableHead>
                 <TableHead className="font-semibold text-gray-900 text-center">Mon</TableHead>
                 <TableHead className="font-semibold text-gray-900 text-center">Tue</TableHead>
                 <TableHead className="font-semibold text-gray-900 text-center">Wed</TableHead>
