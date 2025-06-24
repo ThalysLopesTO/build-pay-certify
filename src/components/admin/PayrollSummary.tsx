@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,13 @@ import { useWorkWeek } from '@/hooks/useWorkWeek';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
+
+// Helper function to safely parse numbers
+const safeParseNumber = (value: any): number => {
+  if (value === null || value === undefined || value === '') return 0;
+  const parsed = typeof value === 'string' ? parseFloat(value) : Number(value);
+  return isNaN(parsed) ? 0 : parsed;
+};
 
 const PayrollSummary = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,12 +50,12 @@ const PayrollSummary = () => {
       position: employee?.position || 'Worker',
       jobSite: timesheet.jobsite_name,
       project: timesheet.jobsite_name, // Using jobsite as project for now
-      totalHours: Number(timesheet.total_hours) || 0,
-      hourlyRate: Number(timesheet.hourly_rate) || 0,
-      grossPay: Number(timesheet.gross_pay) || 0,
+      totalHours: safeParseNumber(timesheet.total_hours),
+      hourlyRate: safeParseNumber(timesheet.hourly_rate),
+      grossPay: safeParseNumber(timesheet.gross_pay),
       weekStartDate: timesheet.week_start_date,
       weekEndDate: format(new Date(new Date(timesheet.week_start_date).getTime() + 6 * 24 * 60 * 60 * 1000), 'MMM dd, yyyy'),
-      additionalExpense: Number(timesheet.additional_expense) || 0
+      additionalExpense: safeParseNumber(timesheet.additional_expense)
     };
   });
 
