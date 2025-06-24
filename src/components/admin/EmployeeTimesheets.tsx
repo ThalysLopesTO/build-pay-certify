@@ -1,9 +1,5 @@
+
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, Edit, Check, X, AlertCircle, RefreshCw } from 'lucide-react';
 import { useEmployeeTimesheets } from '@/hooks/useEmployeeTimesheets';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useJobsites } from '@/hooks/useJobsites';
@@ -12,7 +8,8 @@ import { useTimesheetRejection } from '@/hooks/useTimesheetRejection';
 import TimesheetEditModal from './timesheets/TimesheetEditModal';
 import TimesheetFilters from './timesheets/TimesheetFilters';
 import TimesheetPagination from './timesheets/TimesheetPagination';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import TimesheetTable from './timesheets/TimesheetTable';
+import TimesheetErrorAlert from './timesheets/TimesheetErrorAlert';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -53,20 +50,6 @@ const EmployeeTimesheets = () => {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedTimesheets = filteredTimesheets.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  const getStatusBadge = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800 border-green-200">✅ Approved</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 border-red-200">❌ Rejected</Badge>;
-      case 'edited':
-        return <Badge className="bg-orange-100 text-orange-800 border-orange-200">✏️ Edited</Badge>;
-      case 'pending':
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">🟡 Pending</Badge>;
-    }
-  };
-
   const handleApprove = async (timesheetId: string) => {
     try {
       await approvalMutation.mutateAsync(timesheetId);
@@ -99,10 +82,8 @@ const EmployeeTimesheets = () => {
     setCurrentPage(page);
   };
 
-  const isPermissionError = (error: any) => {
-    return error?.message?.includes('permission denied') || 
-           error?.message?.includes('auth.users') ||
-           error?.code === 'PGRST301';
+  const handleClearFilters = () => {
+    handleFilterChange({ employeeName: '', weekEndingDate: '', status: 'all' });
   };
 
   if (isLoading) {
@@ -117,55 +98,7 @@ const EmployeeTimesheets = () => {
   }
 
   if (error) {
-    return (
-      <div className="p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {isPermissionError(error) ? (
-              <div className="space-y-2">
-                <p className="font-semibold">Access Permission Error</p>
-                <p>Unable to load timesheets due to database permissions. This might be a temporary issue.</p>
-                <div className="flex gap-2 mt-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => refetch()} 
-                    disabled={isLoading}
-                    className="flex items-center gap-1"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    Retry
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => window.location.reload()}
-                  >
-                    Refresh Page
-                  </Button>
-                </div>
-                <p className="text-sm text-gray-600 mt-2">
-                  If this issue persists, please contact support or try logging out and back in.
-                </p>
-              </div>
-            ) : (
-              <div>
-                Failed to load timesheets: {error.message}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => refetch()} 
-                  className="ml-2"
-                >
-                  Retry
-                </Button>
-              </div>
-            )}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+    return <TimesheetErrorAlert error={error} isLoading={isLoading} onRefetch={refetch} />;
   }
 
   return (
@@ -181,121 +114,15 @@ const EmployeeTimesheets = () => {
         employees={employees}
       />
 
-      <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <CardHeader className="p-6 pb-4">
-          <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-orange-600" />
-            Weekly Timesheets ({filteredTimesheets.length} total)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="sticky top-0 bg-gray-50">
-                <TableRow>
-                  <TableHead className="font-semibold text-gray-900">Employee</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Job Site</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Week Ending</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-center">Mon</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-center">Tue</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-center">Wed</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-center">Thu</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-center">Fri</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-center">Sat</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-center">Sun</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-center">Total</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Status</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedTimesheets.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={13} className="text-center py-8 text-gray-500">
-                      {timesheets.length === 0 ? (
-                        <div className="space-y-2">
-                          <p>No timesheets found for the selected filters</p>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleFilterChange({ employeeName: '', weekEndingDate: '', status: 'all' })}
-                          >
-                            Clear Filters
-                          </Button>
-                        </div>
-                      ) : (
-                        <p>No timesheets match the current filters</p>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedTimesheets.map((timesheet) => (
-                    <TableRow key={timesheet.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">
-                        {timesheet.employee_name || 'Unknown Employee'}
-                      </TableCell>
-                      <TableCell>{timesheet.jobsite_name || 'Unknown Jobsite'}</TableCell>
-                      <TableCell>
-                        {new Date(timesheet.week_start_date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-center">{timesheet.monday_hours || 0}</TableCell>
-                      <TableCell className="text-center">{timesheet.tuesday_hours || 0}</TableCell>
-                      <TableCell className="text-center">{timesheet.wednesday_hours || 0}</TableCell>
-                      <TableCell className="text-center">{timesheet.thursday_hours || 0}</TableCell>
-                      <TableCell className="text-center">{timesheet.friday_hours || 0}</TableCell>
-                      <TableCell className="text-center">{timesheet.saturday_hours || 0}</TableCell>
-                      <TableCell className="text-center">{timesheet.sunday_hours || 0}</TableCell>
-                      <TableCell className="text-center font-semibold">
-                        {timesheet.total_hours || 0}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(timesheet.status || 'pending')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(timesheet)}
-                            className="h-8 w-8 p-0"
-                            title="Edit timesheet"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          {timesheet.status !== 'approved' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleApprove(timesheet.id)}
-                              disabled={approvalMutation.isPending}
-                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              title="Approve timesheet"
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {timesheet.status !== 'rejected' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleReject(timesheet.id)}
-                              disabled={rejectionMutation.isPending}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              title="Reject timesheet"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <TimesheetTable
+        timesheets={paginatedTimesheets}
+        onEdit={handleEdit}
+        onApprove={handleApprove}
+        onReject={handleReject}
+        isApproving={approvalMutation.isPending}
+        isRejecting={rejectionMutation.isPending}
+        onClearFilters={handleClearFilters}
+      />
 
       {totalPages > 1 && (
         <TimesheetPagination
