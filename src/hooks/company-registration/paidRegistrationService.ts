@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { RegistrationFormData } from './types';
 import * as CryptoJS from "crypto-js";
@@ -10,7 +9,27 @@ export const processPaidRegistration = async (
 ) => {
   console.log('✅ Processing paid registration - creating new isolated company');
   
-  // 1. ALWAYS create a NEW company for paid registrations
+  // 1. Fetch default rule first
+  let defaultRuleContent = null;
+  try {
+    const { data: defaultRule, error: ruleError } = await supabase
+      .from('default_rules')
+      .select('content')
+      .limit(1)
+      .single();
+
+    if (ruleError) {
+      console.error('⚠️ Error fetching default rule:', ruleError);
+    } else if (defaultRule?.content) {
+      defaultRuleContent = defaultRule.content;
+      console.log('✅ Default rules fetched successfully');
+    }
+  } catch (ruleApplyError) {
+    console.error('⚠️ Unexpected error fetching default rules:', ruleApplyError);
+    // Continue with function execution
+  }
+
+  // 2. ALWAYS create a NEW company for paid registrations with default rules
   const { data: company, error: companyError } = await supabase
     .from('companies')
     .insert({
@@ -20,6 +39,7 @@ export const processPaidRegistration = async (
       stripe_verified: true,  // Mark as Stripe verified
       plan: 'starter',  // Default to starter plan for paid registrations
       employee_limit: 5,  // Default starter limit
+      company_rules_text: defaultRuleContent  // Apply default rules
     })
     .select()
     .single();
@@ -29,9 +49,9 @@ export const processPaidRegistration = async (
     throw new Error(`Failed to create company: ${companyError.message}`);
   }
 
-  console.log('✅ New company created with ID:', company.id);
+  console.log('✅ New company created with ID and default rules:', company.id);
 
-  // 2. Sign up the admin user
+  // 3. Sign up the admin user
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: formData.adminEmail,
     password: formData.password,
@@ -52,7 +72,7 @@ export const processPaidRegistration = async (
 
   console.log('✅ User signed up with ID:', authData.user?.id);
 
-  // 3. Sign the user in immediately
+  // 4. Sign the user in immediately
   const { error: signInError } = await supabase.auth.signInWithPassword({
     email: formData.adminEmail,
     password: formData.password
@@ -65,7 +85,7 @@ export const processPaidRegistration = async (
 
   console.log('✅ User signed in successfully');
 
-  // 4. Create user profile with the NEW company_id
+  // 5. Create user profile with the NEW company_id
   const { data: existingProfile, error: profileCheckError } = await supabase
     .from('user_profiles')
     .select('id')
@@ -115,7 +135,7 @@ export const processPaidRegistration = async (
     }
   }
 
-  // 5. Create initial company settings for the new company
+  // 6. Create initial company settings for the new company
   let companyRulesText = null;
 
   // Apply default company rules if available
@@ -158,7 +178,7 @@ export const processPaidRegistration = async (
     console.log('✅ Company settings created (no default rules available)');
   }
 
-  // 6. Insert into registration_requests for tracking
+  // 7. Insert into registration_requests for tracking
   const encrypted = CryptoJS.AES.encrypt(formData.password, SECRET_KEY).toString();
 
   const { error: requestError } = await supabase
