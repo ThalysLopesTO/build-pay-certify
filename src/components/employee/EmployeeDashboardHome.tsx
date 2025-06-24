@@ -2,13 +2,12 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import WeeklyHoursChart from './WeeklyHoursChart';
+import WeeklyHoursCard from './WeeklyHoursCard';
 import { 
   FileText, 
   AlertTriangle, 
   Award, 
   BookOpen, 
-  Book, 
   Settings 
 } from 'lucide-react';
 
@@ -71,8 +70,8 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
         </p>
       </div>
 
-      {/* Weekly Hours Chart */}
-      <WeeklyHoursChart />
+      {/* Weekly Hours Card */}
+      <WeeklyHoursCard />
 
       {/* Dashboard Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
