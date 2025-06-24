@@ -1,3 +1,13 @@
+
+import { Quote, QuoteLineItem } from '@/hooks/quotes';
+
+interface ClassicTemplateProps {
+  quote: Quote;
+  lineItems: QuoteLineItem[];
+  settings: any;
+  logoUrl?: string;
+}
+
 export const generateClassicTemplate = ({ quote, lineItems, settings, logoUrl }: ClassicTemplateProps) => {
   const discountAmount = quote.subtotal * (quote.discount / 100);
   const taxAmount = (quote.subtotal - discountAmount) * (quote.tax / 100);
@@ -11,8 +21,8 @@ export const generateClassicTemplate = ({ quote, lineItems, settings, logoUrl }:
     <tr>
       <td>${item.description}</td>
       <td align="center">${item.quantity}</td>
-      <td align="right">$${item.unitPrice.toFixed(2)}</td>
-      <td align="right">$${(item.quantity * item.unitPrice).toFixed(2)}</td>
+      <td align="right">$${item.unit_price.toFixed(2)}</td>
+      <td align="right">$${(item.quantity * item.unit_price).toFixed(2)}</td>
     </tr>
   `).join('');
 
@@ -72,17 +82,17 @@ export const generateClassicTemplate = ({ quote, lineItems, settings, logoUrl }:
         </div>
         <div>
           <strong>Client:</strong><br />
-          ${quote.clientName}<br />
-          ${quote.company || ''}<br />
-          ${quote.email}<br />
-          ${quote.phone || ''}
+          ${quote.client_name}<br />
+          ${quote.client_company || ''}<br />
+          ${quote.client_email}<br />
+          ${quote.client_phone || ''}
         </div>
       </div>
 
       <div style="margin-top: 30px;">
-        <strong>Project:</strong> ${quote.projectName}<br />
-        <strong>Quote Date:</strong> ${quote.quoteDate}<br />
-        <strong>Expiry Date:</strong> ${quote.expiryDate}
+        <strong>Project:</strong> ${quote.project_name}<br />
+        <strong>Quote Date:</strong> ${quote.quote_date}<br />
+        <strong>Expiry Date:</strong> ${quote.expiry_date}
       </div>
 
       <table>
