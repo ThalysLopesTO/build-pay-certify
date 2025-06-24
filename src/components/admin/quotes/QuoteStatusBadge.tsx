@@ -27,11 +27,11 @@ const QuoteStatusBadge: React.FC<QuoteStatusBadgeProps> = ({ status }) => {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'accepted':
-        return 'Accepted';
+        return 'Approved';
       case 'sent':
         return 'Sent';
       case 'declined':
-        return 'Declined';
+        return 'Rejected';
       case 'invoiced':
         return 'Invoiced';
       case 'draft':

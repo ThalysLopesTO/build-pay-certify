@@ -25,6 +25,7 @@ const QuotesTable: React.FC<QuotesTableProps> = ({ quotes, onEdit, onRefresh }) 
                 <TableHead>Quote #</TableHead>
                 <TableHead>Client Name</TableHead>
                 <TableHead>Project</TableHead>
+                <TableHead>Created At</TableHead>
                 <TableHead>Date Sent</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Total</TableHead>
@@ -34,7 +35,7 @@ const QuotesTable: React.FC<QuotesTableProps> = ({ quotes, onEdit, onRefresh }) 
             <TableBody>
               {quotes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-slate-500">
+                  <TableCell colSpan={8} className="text-center py-8 text-slate-500">
                     No quotes found
                   </TableCell>
                 </TableRow>
@@ -63,6 +64,9 @@ const QuotesTable: React.FC<QuotesTableProps> = ({ quotes, onEdit, onRefresh }) 
                       </div>
                     </TableCell>
                     <TableCell>{quote.project_name}</TableCell>
+                    <TableCell>
+                      {format(new Date(quote.created_at), 'MMM dd, yyyy')}
+                    </TableCell>
                     <TableCell>
                       {quote.sent_date ? format(new Date(quote.sent_date), 'MMM dd, yyyy') : '--'}
                     </TableCell>

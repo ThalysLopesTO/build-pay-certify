@@ -21,6 +21,8 @@ export const useConvertQuoteToInvoice = () => {
     },
     onSuccess: (invoiceId, quoteId) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      
       toast({
         title: "Success",
         description: "Quote successfully converted to invoice",

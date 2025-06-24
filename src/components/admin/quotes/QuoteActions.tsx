@@ -2,7 +2,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Send, Download, Trash2, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MoreHorizontal, Edit, Send, FileText, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { Quote, useUpdateQuote, useDeleteQuote, useConvertQuoteToInvoice } from '@/hooks/quotes';
 import { useToast } from '@/hooks/use-toast';
 import QuotePDFGenerator from './QuotePDFGenerator';
@@ -19,7 +20,7 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
   const convertToInvoice = useConvertQuoteToInvoice();
   const { toast } = useToast();
 
-  const handleStatusChange = async (newStatus: 'sent' | 'accepted' | 'declined') => {
+  const handleStatusChange = async (newStatus: 'draft' | 'sent' | 'accepted' | 'declined') => {
     try {
       const updates: any = { status: newStatus };
       
@@ -33,8 +34,18 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
 
       await updateQuote.mutateAsync({ id: quote.id, updates });
       onRefresh();
+      
+      toast({
+        title: "Status Updated",
+        description: `Quote status changed to ${newStatus}`,
+      });
     } catch (error) {
       console.error('Failed to update quote status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update quote status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -68,8 +79,27 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
     <div className="flex items-center gap-2">
       <QuotePDFGenerator quote={quote} />
       
-      {/* Show convert to invoice button for accepted quotes that haven't been converted */}
-      {quote.status === 'accepted' && !quote.invoice_id && (
+      {/* Status Control - Only show for non-invoiced quotes */}
+      {quote.status !== 'invoiced' && (
+        <Select
+          value={quote.status}
+          onValueChange={(value) => handleStatusChange(value as 'draft' | 'sent' | 'accepted' | 'declined')}
+          disabled={updateQuote.isPending}
+        >
+          <SelectTrigger className="w-28">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="sent">Sent</SelectItem>
+            <SelectItem value="accepted">Approved</SelectItem>
+            <SelectItem value="declined">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+      
+      {/* Convert to Invoice button for accepted quotes that haven't been converted */}
+      {(quote.status === 'accepted' || quote.status === 'sent') && !quote.invoice_id && (
         <Button 
           variant="outline" 
           size="sm"
@@ -106,11 +136,11 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
             <>
               <DropdownMenuItem onClick={() => handleStatusChange('accepted')}>
                 <CheckCircle className="mr-2 h-4 w-4" />
-                Mark Accepted
+                Mark Approved
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleStatusChange('declined')}>
                 <XCircle className="mr-2 h-4 w-4" />
-                Mark Declined
+                Mark Rejected
               </DropdownMenuItem>
             </>
           )}
