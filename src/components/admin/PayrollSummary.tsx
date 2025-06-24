@@ -83,6 +83,9 @@ const PayrollSummary = () => {
       return;
     }
 
+    // Calculate total expenses for summary
+    const totalExpenses = filteredEntries.reduce((sum, entry) => sum + entry.additionalExpense, 0);
+
     // Prepare data for Excel
     const excelData = filteredEntries.map(entry => ({
       'Employee': entry.employeeName,
@@ -90,10 +93,10 @@ const PayrollSummary = () => {
       'Job Site': entry.jobSite,
       'Project': entry.project,
       'Week Ending': entry.weekEndDate,
-      'Hours': safeParseNumber(entry.totalHours),
-      'Hourly Rate': safeParseNumber(entry.hourlyRate),
-      'Expenses': safeParseNumber(entry.additionalExpense),
-      'Gross Pay': safeParseNumber(entry.grossPay)
+      'Hours': entry.totalHours,
+      'Hourly Rate': entry.hourlyRate,
+      'Expenses': entry.additionalExpense,
+      'Gross Pay': entry.grossPay
     }));
 
     // Add summary row
@@ -103,10 +106,10 @@ const PayrollSummary = () => {
       'Job Site': '',
       'Project': '',
       'Week Ending': '',
-      'Hours': safeParseNumber(totalHours),
+      'Hours': totalHours,
       'Hourly Rate': '',
-      'Expenses': safeParseNumber(filteredEntries.reduce((sum, entry) => sum + entry.additionalExpense, 0)),
-      'Gross Pay': safeParseNumber(totalPayroll)
+      'Expenses': totalExpenses,
+      'Gross Pay': totalPayroll
     });
 
     // Create workbook and worksheet
