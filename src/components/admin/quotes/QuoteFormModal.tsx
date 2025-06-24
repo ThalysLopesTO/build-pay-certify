@@ -42,6 +42,8 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
     { description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }
   ]);
 
+  const [isInitialized, setIsInitialized] = useState(false);
+
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
   const { data: existingLineItems = [] } = useQuoteLineItems(quote?.id || '');
@@ -49,9 +51,11 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
   const updateLineItem = useUpdateQuoteLineItem();
   const deleteLineItem = useDeleteQuoteLineItem();
 
-  // Reset form when modal opens/closes or quote changes
+  // Initialize form data only when modal opens and quote changes
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isInitialized) {
+      console.log('Initializing form data for quote:', quote?.id); // Debug log
+      
       if (quote) {
         setFormData({
           client_name: quote.client_name || '',
@@ -87,30 +91,44 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
         });
         setLineItems([{ description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }]);
       }
+      
+      setIsInitialized(true);
     }
-  }, [quote, existingLineItems, isOpen]);
+  }, [isOpen, quote?.id, existingLineItems.length, isInitialized]);
+
+  // Reset initialization flag when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsInitialized(false);
+    }
+  }, [isOpen]);
 
   const handleInputChange = (field: string, value: string | number) => {
     console.log('Input change:', field, value); // Debug log
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      [field]: value 
+    }));
   };
 
   const handleLineItemChange = (index: number, field: string, value: string | number) => {
     console.log('Line item change:', index, field, value); // Debug log
-    const updatedItems = [...lineItems];
-    updatedItems[index] = { ...updatedItems[index], [field]: value };
-    
-    if (field === 'quantity' || field === 'unit_price') {
-      const quantity = Number(updatedItems[index].quantity || 0);
-      const unitPrice = Number(updatedItems[index].unit_price || 0);
-      updatedItems[index].amount = quantity * unitPrice;
-    }
-    
-    setLineItems(updatedItems);
+    setLineItems(prevItems => {
+      const updatedItems = [...prevItems];
+      updatedItems[index] = { ...updatedItems[index], [field]: value };
+      
+      if (field === 'quantity' || field === 'unit_price') {
+        const quantity = Number(updatedItems[index].quantity || 0);
+        const unitPrice = Number(updatedItems[index].unit_price || 0);
+        updatedItems[index].amount = quantity * unitPrice;
+      }
+      
+      return updatedItems;
+    });
   };
 
   const addLineItem = () => {
-    setLineItems([...lineItems, { description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }]);
+    setLineItems(prev => [...prev, { description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }]);
   };
 
   const removeLineItem = async (index: number) => {
@@ -120,8 +138,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
       await deleteLineItem.mutateAsync({ id: item.id, quoteId: quote!.id });
     }
     
-    const updatedItems = lineItems.filter((_, i) => i !== index);
-    setLineItems(updatedItems);
+    setLineItems(prev => prev.filter((_, i) => i !== index));
   };
 
   const calculateSubtotal = () => {
