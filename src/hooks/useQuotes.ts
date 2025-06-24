@@ -102,18 +102,20 @@ export const useCreateQuote = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (quoteData: Partial<Quote>) => {
+    mutationFn: async (quoteData: Omit<Quote, 'id' | 'created_at' | 'updated_at' | 'company_id' | 'created_by'>) => {
+      const user = await supabase.auth.getUser();
+      const userProfile = await supabase
+        .from('user_profiles')
+        .select('company_id')
+        .eq('user_id', user.data.user?.id)
+        .single();
+
       const { data, error } = await supabase
         .from('quotes')
         .insert([{
           ...quoteData,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
-          company_id: (await supabase
-            .from('user_profiles')
-            .select('company_id')
-            .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-            .single()
-          ).data?.company_id
+          created_by: user.data.user?.id!,
+          company_id: userProfile.data?.company_id!
         }])
         .select()
         .single();
@@ -213,7 +215,7 @@ export const useCreateQuoteLineItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (lineItem: Partial<QuoteLineItem>) => {
+    mutationFn: async (lineItem: Omit<QuoteLineItem, 'id' | 'created_at' | 'updated_at' | 'amount'>) => {
       const { data, error } = await supabase
         .from('quote_line_items')
         .insert([lineItem])
