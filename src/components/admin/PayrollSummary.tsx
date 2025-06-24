@@ -5,16 +5,22 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DollarSign, Users, Search, Filter, RefreshCw } from 'lucide-react';
+import { DollarSign, Users, Search, Filter, RefreshCw, Download } from 'lucide-react';
 import { useEmployeeTimesheets } from '@/hooks/useEmployeeTimesheets';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
+import { useWorkWeek } from '@/hooks/useWorkWeek';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
 
 const PayrollSummary = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWeek, setSelectedWeek] = useState('all');
   const [selectedJobSite, setSelectedJobSite] = useState('all');
   const [selectedTrade, setSelectedTrade] = useState('all');
+
+  // Get work weeks based on company settings
+  const workWeeks = useWorkWeek();
 
   // Fetch actual timesheet data
   const { data: timesheets = [], isLoading, error, refetch } = useEmployeeTimesheets({});
@@ -41,7 +47,8 @@ const PayrollSummary = () => {
       totalHours: Number(timesheet.total_hours) || 0,
       hourlyRate: Number(timesheet.hourly_rate) || 0,
       grossPay: Number(timesheet.gross_pay) || 0,
-      weekEnding: timesheet.week_start_date,
+      weekStartDate: timesheet.week_start_date,
+      weekEndDate: format(new Date(new Date(timesheet.week_start_date).getTime() + 6 * 24 * 60 * 60 * 1000), 'MMM dd, yyyy'),
       additionalExpense: Number(timesheet.additional_expense) || 0
     };
   });
@@ -49,7 +56,7 @@ const PayrollSummary = () => {
   const filteredEntries = timesheetEntries.filter(entry => {
     return (
       (searchTerm === '' || entry.employeeName.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (selectedWeek === 'all' || entry.weekEnding === selectedWeek) &&
+      (selectedWeek === 'all' || entry.weekStartDate === selectedWeek) &&
       (selectedJobSite === 'all' || entry.jobSite === selectedJobSite) &&
       (selectedTrade === 'all' || entry.trade === selectedTrade)
     );
@@ -60,9 +67,81 @@ const PayrollSummary = () => {
   const totalEmployees = new Set(filteredEntries.map(entry => entry.employeeName)).size;
 
   // Get unique values for filters
-  const weeks = [...new Set(timesheetEntries.map(entry => entry.weekEnding))].sort().reverse();
   const jobSites = [...new Set(timesheetEntries.map(entry => entry.jobSite))].filter(Boolean);
   const trades = [...new Set(timesheetEntries.map(entry => entry.trade))].filter(Boolean);
+
+  // Download Excel function
+  const downloadPayrollExcel = () => {
+    if (filteredEntries.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    // Prepare data for Excel
+    const excelData = filteredEntries.map(entry => ({
+      'Employee': entry.employeeName,
+      'Trade/Position': `${entry.trade} - ${entry.position}`,
+      'Job Site': entry.jobSite,
+      'Project': entry.project,
+      'Week Ending': entry.weekEndDate,
+      'Hours': entry.totalHours,
+      'Hourly Rate': entry.hourlyRate,
+      'Expenses': entry.additionalExpense,
+      'Gross Pay': entry.grossPay
+    }));
+
+    // Add summary row
+    excelData.push({
+      'Employee': 'TOTALS',
+      'Trade/Position': '',
+      'Job Site': '',
+      'Project': '',
+      'Week Ending': '',
+      'Hours': totalHours,
+      'Hourly Rate': '',
+      'Expenses': filteredEntries.reduce((sum, entry) => sum + entry.additionalExpense, 0),
+      'Gross Pay': totalPayroll
+    });
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Format currency columns
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      const hourlyRateCell = XLSX.utils.encode_cell({ r: R, c: 6 }); // Hourly Rate column
+      const expensesCell = XLSX.utils.encode_cell({ r: R, c: 7 }); // Expenses column
+      const grossPayCell = XLSX.utils.encode_cell({ r: R, c: 8 }); // Gross Pay column
+      
+      if (ws[hourlyRateCell] && ws[hourlyRateCell].v !== 'Hourly Rate' && ws[hourlyRateCell].v !== '') {
+        ws[hourlyRateCell].z = '"$"#,##0.00';
+      }
+      if (ws[expensesCell] && ws[expensesCell].v !== 'Expenses') {
+        ws[expensesCell].z = '"$"#,##0.00';
+      }
+      if (ws[grossPayCell] && ws[grossPayCell].v !== 'Gross Pay') {
+        ws[grossPayCell].z = '"$"#,##0.00';
+      }
+    }
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Payroll Summary');
+
+    // Generate filename based on selected week
+    let filename = 'Payroll-Summary';
+    if (selectedWeek !== 'all' && workWeeks) {
+      const selectedWeekData = workWeeks.availableWeeks.find(week => week.weekStartDateString === selectedWeek);
+      if (selectedWeekData) {
+        filename = `Payroll-Summary-${selectedWeekData.startDateFormatted.replace(' ', '-')}-to-${selectedWeekData.endDateFormatted.replace(' ', '-')}`;
+      }
+    } else {
+      filename += `-${format(new Date(), 'MMM-dd-yyyy')}`;
+    }
+
+    // Download file
+    XLSX.writeFile(wb, `${filename}.xlsx`);
+  };
 
   if (error) {
     return (
@@ -144,7 +223,7 @@ const PayrollSummary = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Search Employee</label>
               <div className="relative">
@@ -159,16 +238,16 @@ const PayrollSummary = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Week Ending</label>
+              <label className="text-sm font-medium">Week Range</label>
               <Select value={selectedWeek} onValueChange={setSelectedWeek}>
                 <SelectTrigger>
                   <SelectValue placeholder="All weeks" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All weeks</SelectItem>
-                  {weeks.map((week) => (
-                    <SelectItem key={week} value={week}>
-                      {new Date(week).toLocaleDateString()}
+                  {workWeeks?.availableWeeks.map((week) => (
+                    <SelectItem key={week.weekStartDateString} value={week.weekStartDateString}>
+                      {week.rangeFormatted}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -217,6 +296,18 @@ const PayrollSummary = () => {
                 Refresh
               </Button>
             </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Export</label>
+              <Button 
+                onClick={downloadPayrollExcel}
+                disabled={filteredEntries.length === 0}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download (.xlsx)
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -241,6 +332,7 @@ const PayrollSummary = () => {
                     <th className="text-left p-3 font-semibold">Trade/Position</th>
                     <th className="text-left p-3 font-semibold">Job Site</th>
                     <th className="text-left p-3 font-semibold">Project</th>
+                    <th className="text-left p-3 font-semibold">Week Ending</th>
                     <th className="text-right p-3 font-semibold">Hours</th>
                     <th className="text-right p-3 font-semibold">Rate</th>
                     <th className="text-right p-3 font-semibold">Expenses</th>
@@ -259,6 +351,7 @@ const PayrollSummary = () => {
                       </td>
                       <td className="p-3 text-sm">{entry.jobSite}</td>
                       <td className="p-3 text-sm">{entry.project}</td>
+                      <td className="p-3 text-sm">{entry.weekEndDate}</td>
                       <td className="p-3 text-right font-mono">{entry.totalHours}</td>
                       <td className="p-3 text-right font-mono">${entry.hourlyRate}</td>
                       <td className="p-3 text-right font-mono">${entry.additionalExpense.toFixed(2)}</td>
