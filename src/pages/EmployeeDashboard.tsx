@@ -9,24 +9,27 @@ import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import CompanyHandbook from './CompanyHandbook';
+import EmployeeDashboardHome from '../components/employee/EmployeeDashboardHome';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const EmployeeDashboard = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  const handleNavigateToTab = (tab: string) => {
+    setActiveTab(tab);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
       <div className="p-6">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Employee Dashboard</h1>
-            <p className="text-slate-600">Submit timesheets and manage your information</p>
-          </div>
-
           {/* License Warning Banner */}
           <LicenseWarningBanner />
 
-          <Tabs defaultValue="timesheet" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-8">
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="timesheet">Timesheet</TabsTrigger>
               <TabsTrigger value="attention-report">Report Issue</TabsTrigger>
               <TabsTrigger value="my-reports">My Reports</TabsTrigger>
@@ -35,6 +38,10 @@ const EmployeeDashboard = () => {
               <TabsTrigger value="company-rules">Company Rules</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="dashboard" className="space-y-6">
+              <EmployeeDashboardHome onNavigateToTab={handleNavigateToTab} />
+            </TabsContent>
 
             <TabsContent value="timesheet" className="space-y-6">
               <TimesheetForm />
