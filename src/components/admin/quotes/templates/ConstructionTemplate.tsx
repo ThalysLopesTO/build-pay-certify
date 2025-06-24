@@ -1,3 +1,12 @@
+import { Quote, QuoteLineItem } from '@/hooks/quotes';
+
+interface ClassicTemplateProps {
+  quote: Quote;
+  lineItems: QuoteLineItem[];
+  settings: any;
+  logoUrl?: string;
+}
+
 export const generateConstructionTemplate = ({ quote, lineItems, settings, logoUrl }: ClassicTemplateProps) => {
   const discountAmount = quote.subtotal * (quote.discount / 100);
   const taxAmount = (quote.subtotal - discountAmount) * (quote.tax / 100);
@@ -11,8 +20,8 @@ export const generateConstructionTemplate = ({ quote, lineItems, settings, logoU
     <tr>
       <td>${item.description}</td>
       <td>${item.quantity}</td>
-      <td>$${item.unitPrice.toFixed(2)}</td>
-      <td>$${(item.quantity * item.unitPrice).toFixed(2)}</td>
+      <td>$${item.unit_price.toFixed(2)}</td>
+      <td>$${(item.quantity * item.unit_price).toFixed(2)}</td>
     </tr>
   `).join('');
 
@@ -104,18 +113,18 @@ export const generateConstructionTemplate = ({ quote, lineItems, settings, logoU
         </div>
         <div>
           <strong>TO:</strong><br/>
-          ${quote.clientName}<br/>
-          ${quote.company || ''}<br/>
-          ${quote.email}<br/>
-          ${quote.phone || ''}
+          ${quote.client_name}<br/>
+          ${quote.client_company || ''}<br/>
+          ${quote.client_email}<br/>
+          ${quote.client_phone || ''}
         </div>
       </div>
 
       <div class="details">
         <div><strong>Quote #:</strong> ${quote.quote_number}</div>
-        <div><strong>Project:</strong> ${quote.projectName}</div>
-        <div><strong>Quote Date:</strong> ${quote.quoteDate}</div>
-        <div><strong>Expiry Date:</strong> ${quote.expiryDate}</div>
+        <div><strong>Project:</strong> ${quote.project_name}</div>
+        <div><strong>Quote Date:</strong> ${quote.quote_date}</div>
+        <div><strong>Expiry Date:</strong> ${quote.expiry_date}</div>
       </div>
 
       <table>
@@ -140,7 +149,7 @@ export const generateConstructionTemplate = ({ quote, lineItems, settings, logoU
       </div>
 
       <footer>
-        This quote is valid until ${quote.expiryDate}. Thank you for the opportunity to work with you.
+        This quote is valid until ${quote.expiry_date}. Thank you for the opportunity to work with you.
       </footer>
     </body>
   </html>
