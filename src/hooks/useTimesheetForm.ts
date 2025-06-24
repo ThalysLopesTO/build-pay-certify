@@ -52,7 +52,8 @@ export const useTimesheetForm = () => {
     watchedValues.sundayHours
   );
 
-  const hourlyRate = parseFloat(user?.user_metadata?.hourly_rate || '25');
+  // Use the hourly rate directly from the user profile to ensure consistency
+  const hourlyRate = user?.hourlyRate || 25;
   // Calculate gross pay for preview only - this won't be sent to the database
   const grossPay = (totalHours * hourlyRate) + (watchedValues.additionalExpense || 0);
 
