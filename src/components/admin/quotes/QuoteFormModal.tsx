@@ -42,48 +42,54 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
   const updateLineItem = useUpdateQuoteLineItem();
   const deleteLineItem = useDeleteQuoteLineItem();
 
+  // Reset form when modal opens/closes or quote changes
   useEffect(() => {
-    if (quote) {
-      setFormData({
-        client_name: quote.client_name || '',
-        client_company: quote.client_company || '',
-        client_email: quote.client_email || '',
-        client_phone: quote.client_phone || '',
-        client_address: quote.client_address || '',
-        project_name: quote.project_name || '',
-        quote_date: quote.quote_date || new Date().toISOString().split('T')[0],
-        expiry_date: quote.expiry_date || '',
-        tax: quote.tax || 0,
-        discount: quote.discount || 0,
-        notes: quote.notes || '',
-      });
-      
-      if (existingLineItems.length > 0) {
-        setLineItems(existingLineItems);
+    if (isOpen) {
+      if (quote) {
+        setFormData({
+          client_name: quote.client_name || '',
+          client_company: quote.client_company || '',
+          client_email: quote.client_email || '',
+          client_phone: quote.client_phone || '',
+          client_address: quote.client_address || '',
+          project_name: quote.project_name || '',
+          quote_date: quote.quote_date || new Date().toISOString().split('T')[0],
+          expiry_date: quote.expiry_date || '',
+          tax: quote.tax || 0,
+          discount: quote.discount || 0,
+          notes: quote.notes || '',
+        });
+        
+        if (existingLineItems.length > 0) {
+          setLineItems(existingLineItems);
+        }
+      } else {
+        // Reset form for new quote
+        setFormData({
+          client_name: '',
+          client_company: '',
+          client_email: '',
+          client_phone: '',
+          client_address: '',
+          project_name: '',
+          quote_date: new Date().toISOString().split('T')[0],
+          expiry_date: '',
+          tax: 0,
+          discount: 0,
+          notes: '',
+        });
+        setLineItems([{ description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }]);
       }
-    } else {
-      setFormData({
-        client_name: '',
-        client_company: '',
-        client_email: '',
-        client_phone: '',
-        client_address: '',
-        project_name: '',
-        quote_date: new Date().toISOString().split('T')[0],
-        expiry_date: '',
-        tax: 0,
-        discount: 0,
-        notes: '',
-      });
-      setLineItems([{ description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }]);
     }
-  }, [quote, existingLineItems]);
+  }, [quote, existingLineItems, isOpen]);
 
   const handleInputChange = (field: string, value: string | number) => {
+    console.log('Input change:', field, value); // Debug log
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleLineItemChange = (index: number, field: string, value: string | number) => {
+    console.log('Line item change:', index, field, value); // Debug log
     const updatedItems = [...lineItems];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     
@@ -117,6 +123,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted:', formData); // Debug log
     
     try {
       if (quote) {
@@ -188,9 +195,14 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
   const taxAmount = (subtotal - discountAmount) * (Number(formData.tax) / 100);
   const total = subtotal - discountAmount + taxAmount;
 
+  // Add click handler to prevent event propagation issues
+  const handleDialogClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" onClick={handleDialogClick}>
         <DialogHeader>
           <DialogTitle>{quote ? 'Edit Quote' : 'Create New Quote'}</DialogTitle>
         </DialogHeader>
@@ -207,35 +219,46 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
                   <Label htmlFor="client_name">Client Name *</Label>
                   <Input
                     id="client_name"
+                    name="client_name"
+                    type="text"
                     value={formData.client_name}
                     onChange={(e) => handleInputChange('client_name', e.target.value)}
                     required
+                    autoComplete="off"
                   />
                 </div>
                 <div>
                   <Label htmlFor="client_company">Company</Label>
                   <Input
                     id="client_company"
+                    name="client_company"
+                    type="text"
                     value={formData.client_company}
                     onChange={(e) => handleInputChange('client_company', e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
                 <div>
                   <Label htmlFor="client_email">Email *</Label>
                   <Input
                     id="client_email"
+                    name="client_email"
                     type="email"
                     value={formData.client_email}
                     onChange={(e) => handleInputChange('client_email', e.target.value)}
                     required
+                    autoComplete="off"
                   />
                 </div>
                 <div>
                   <Label htmlFor="client_phone">Phone</Label>
                   <Input
                     id="client_phone"
+                    name="client_phone"
+                    type="tel"
                     value={formData.client_phone}
                     onChange={(e) => handleInputChange('client_phone', e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -243,8 +266,10 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
                 <Label htmlFor="client_address">Address</Label>
                 <Textarea
                   id="client_address"
+                  name="client_address"
                   value={formData.client_address}
                   onChange={(e) => handleInputChange('client_address', e.target.value)}
+                  autoComplete="off"
                 />
               </div>
             </CardContent>
@@ -261,15 +286,19 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
                   <Label htmlFor="project_name">Project Name *</Label>
                   <Input
                     id="project_name"
+                    name="project_name"
+                    type="text"
                     value={formData.project_name}
                     onChange={(e) => handleInputChange('project_name', e.target.value)}
                     required
+                    autoComplete="off"
                   />
                 </div>
                 <div>
                   <Label htmlFor="quote_date">Quote Date</Label>
                   <Input
                     id="quote_date"
+                    name="quote_date"
                     type="date"
                     value={formData.quote_date}
                     onChange={(e) => handleInputChange('quote_date', e.target.value)}
@@ -279,6 +308,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
                   <Label htmlFor="expiry_date">Expiry Date</Label>
                   <Input
                     id="expiry_date"
+                    name="expiry_date"
                     type="date"
                     value={formData.expiry_date}
                     onChange={(e) => handleInputChange('expiry_date', e.target.value)}
@@ -319,6 +349,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
                           value={item.description || ''}
                           onChange={(e) => handleLineItemChange(index, 'description', e.target.value)}
                           placeholder="Item description"
+                          autoComplete="off"
                         />
                       </TableCell>
                       <TableCell>
@@ -326,6 +357,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
                           value={item.vendor || ''}
                           onChange={(e) => handleLineItemChange(index, 'vendor', e.target.value)}
                           placeholder="Vendor"
+                          autoComplete="off"
                         />
                       </TableCell>
                       <TableCell>
@@ -335,6 +367,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
                           onChange={(e) => handleLineItemChange(index, 'quantity', Number(e.target.value))}
                           min="0"
                           step="0.01"
+                          autoComplete="off"
                         />
                       </TableCell>
                       <TableCell>
@@ -344,6 +377,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
                           onChange={(e) => handleLineItemChange(index, 'unit_price', Number(e.target.value))}
                           min="0"
                           step="0.01"
+                          autoComplete="off"
                         />
                       </TableCell>
                       <TableCell>
@@ -385,6 +419,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
                         max="100"
                         step="0.01"
                         className="w-20"
+                        autoComplete="off"
                       />
                       <span>%</span>
                       <span>-${discountAmount.toFixed(2)}</span>
@@ -402,6 +437,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
                         max="100"
                         step="0.01"
                         className="w-20"
+                        autoComplete="off"
                       />
                       <span>%</span>
                       <span>${taxAmount.toFixed(2)}</span>
@@ -428,6 +464,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
                 onChange={(e) => handleInputChange('notes', e.target.value)}
                 placeholder="Any additional notes or terms..."
                 rows={4}
+                autoComplete="off"
               />
             </CardContent>
           </Card>

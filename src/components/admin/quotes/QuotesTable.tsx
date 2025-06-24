@@ -45,7 +45,12 @@ const QuotesTable: React.FC<QuotesTableProps> = ({ quotes, onEdit, onRefresh }) 
                       <div className="flex items-center gap-2">
                         {quote.quote_number}
                         {quote.invoice_id && (
-                          <FileText className="h-4 w-4 text-green-600" title="Converted to Invoice" />
+                          <div className="relative group">
+                            <FileText className="h-4 w-4 text-green-600" />
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Converted to Invoice
+                            </div>
+                          </div>
                         )}
                       </div>
                     </TableCell>
