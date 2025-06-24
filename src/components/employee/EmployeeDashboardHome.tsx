@@ -1,9 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { useWeeklyHoursSummary } from '@/hooks/useWeeklyHoursSummary';
+import WeeklyHoursChart from './WeeklyHoursChart';
 import { 
   FileText, 
   AlertTriangle, 
@@ -26,7 +25,6 @@ interface EmployeeDashboardHomeProps {
 
 const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigateToTab }) => {
   const { user } = useAuth();
-  const { data: totalHours, isLoading } = useWeeklyHoursSummary();
 
   const dashboardCards: DashboardCard[] = [
     {
@@ -54,12 +52,6 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       color: 'bg-purple-500 hover:bg-purple-600'
     },
     {
-      title: 'Handbook',
-      icon: <Book className="h-8 w-8" />,
-      onClick: () => onNavigateToTab('handbook'),
-      color: 'bg-indigo-500 hover:bg-indigo-600'
-    },
-    {
       title: 'Settings',
       icon: <Settings className="h-8 w-8" />,
       onClick: () => onNavigateToTab('settings'),
@@ -79,29 +71,8 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
         </p>
       </div>
 
-      {/* Weekly Hours Summary */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">This Week's Hours</h3>
-              <p className="text-slate-600">Track your weekly progress</p>
-            </div>
-            <div className="text-right">
-              {isLoading ? (
-                <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-slate-200 rounded"></div>
-                </div>
-              ) : (
-                <div className="text-3xl font-bold text-blue-600">
-                  {totalHours || 0}h
-                </div>
-              )}
-              <p className="text-sm text-slate-500">total hours</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Weekly Hours Chart */}
+      <WeeklyHoursChart />
 
       {/* Dashboard Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
