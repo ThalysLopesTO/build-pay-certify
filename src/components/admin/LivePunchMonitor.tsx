@@ -23,10 +23,10 @@ interface PunchEntry {
   user_profiles: {
     first_name: string;
     last_name: string;
-  };
+  } | null;
   jobsites: {
     name: string;
-  };
+  } | null;
 }
 
 const LivePunchMonitor = () => {
@@ -64,7 +64,7 @@ const LivePunchMonitor = () => {
         throw error;
       }
 
-      return data as PunchEntry[];
+      return data;
     },
     enabled: !!user?.companyId,
     refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
@@ -301,9 +301,12 @@ const LivePunchMonitor = () => {
                 filteredEntries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className="font-medium">
-                      {entry.user_profiles.first_name} {entry.user_profiles.last_name}
+                      {entry.user_profiles ? 
+                        `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : 
+                        'Unknown Employee'
+                      }
                     </TableCell>
-                    <TableCell>{entry.jobsites.name}</TableCell>
+                    <TableCell>{entry.jobsites?.name || 'Unknown Jobsite'}</TableCell>
                     <TableCell>
                       {entry.check_in_time 
                         ? format(new Date(entry.check_in_time), 'h:mm a')
