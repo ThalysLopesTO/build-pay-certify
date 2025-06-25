@@ -25,7 +25,7 @@ export const useForemanAttentionReportsQuery = () => {
             id,
             name
           ),
-          user_profiles!attention_reports_submitted_by_fkey(
+          user_profiles!inner(
             first_name,
             last_name
           ),
@@ -38,6 +38,7 @@ export const useForemanAttentionReportsQuery = () => {
           )
         `)
         .eq('company_id', user.companyId)
+        .eq('user_profiles.user_id', 'attention_reports.submitted_by')
         .order('created_at', { ascending: false });
 
       if (error) {
