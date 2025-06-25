@@ -10,7 +10,12 @@ export const useForemanAttentionReportsQuery = () => {
   return useQuery({
     queryKey: ['foreman-attention-reports', user?.companyId],
     queryFn: async () => {
-      if (!user?.companyId) return [];
+      console.log('Fetching attention reports for foreman, company:', user?.companyId);
+      
+      if (!user?.companyId) {
+        console.log('No company ID available');
+        return [];
+      }
 
       const { data, error } = await supabase
         .from('attention_reports')
@@ -23,7 +28,12 @@ export const useForemanAttentionReportsQuery = () => {
         .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching attention reports:', error);
+        throw error;
+      }
+      
+      console.log('Fetched attention reports:', data);
       
       // Transform the data to match our interface
       return (data || []).map(report => ({
@@ -44,5 +54,7 @@ export const useForemanAttentionReportsQuery = () => {
       })) as AttentionReport[];
     },
     enabled: !!user?.companyId,
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // Refetch every minute to keep data fresh
   });
 };

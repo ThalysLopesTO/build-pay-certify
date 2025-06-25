@@ -8,11 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bell, Calendar as CalendarIcon, Filter, Search, Eye } from 'lucide-react';
+import { Bell, Calendar as CalendarIcon, Filter, Search, Eye, AlertTriangle, FileText } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useForemanAttentionReports } from '@/hooks/useAttentionReports';
 import { useJobsites } from '@/hooks/useJobsites';
+import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { AttentionReport } from '@/hooks/useAttentionReports';
 
 const EmployeeReports = () => {
@@ -23,29 +24,19 @@ const EmployeeReports = () => {
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedReport, setSelectedReport] = useState<AttentionReport | null>(null);
 
-  const { data: reports = [], isLoading } = useForemanAttentionReports();
+  const { data: reports = [], isLoading, error } = useForemanAttentionReports();
   const { data: jobsites = [] } = useJobsites();
+  const { data: employees = [] } = useEmployeeDirectory();
 
-  // Get unique employees from reports
-  const employees = Array.from(
-    new Map(
-      reports
-        .filter(report => report.user_profiles)
-        .map(report => [
-          report.submitted_by,
-          {
-            id: report.submitted_by,
-            name: `${report.user_profiles?.first_name} ${report.user_profiles?.last_name}`
-          }
-        ])
-    ).values()
-  );
+  console.log('Employee Reports - Reports:', reports);
+  console.log('Employee Reports - Loading:', isLoading);
+  console.log('Employee Reports - Error:', error);
 
   // Filter reports
   const filteredReports = reports.filter(report => {
     const matchesSearch = 
       report.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${report.user_profiles?.first_name} ${report.user_profiles?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase());
+      `${report.user_profiles?.first_name || ''} ${report.user_profiles?.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesJobsite = selectedJobsite === 'all' || report.jobsite_id === selectedJobsite;
     const matchesEmployee = selectedEmployee === 'all' || report.submitted_by === selectedEmployee;
@@ -76,9 +67,25 @@ const EmployeeReports = () => {
       <div className="flex items-center justify-center h-48">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
-          <p className="mt-2 text-gray-500">Loading reports...</p>
+          <p className="mt-2 text-gray-500">Loading employee reports...</p>
         </div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <p className="text-lg font-semibold mb-2 text-red-600">Error Loading Reports</p>
+            <p className="text-gray-500">
+              Unable to load attention reports. Please try refreshing the page.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -135,8 +142,8 @@ const EmployeeReports = () => {
               <SelectContent>
                 <SelectItem value="all">All Employees</SelectItem>
                 {employees.map((employee) => (
-                  <SelectItem key={employee.id} value={employee.id}>
-                    {employee.name}
+                  <SelectItem key={employee.user_id} value={employee.user_id}>
+                    {employee.first_name} {employee.last_name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -217,14 +224,19 @@ const EmployeeReports = () => {
           <Card>
             <CardContent className="py-8">
               <div className="text-center">
-                <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-lg font-semibold mb-2">No Reports Found</p>
                 <p className="text-gray-500">
                   {reports.length === 0 
-                    ? "No attention reports have been submitted yet."
-                    : "No reports match your current filters."
+                    ? "No attention reports have been submitted by employees yet."
+                    : "No reports match your current filters. Try adjusting the search criteria."
                   }
                 </p>
+                {reports.length === 0 && (
+                  <p className="text-sm text-gray-400 mt-2">
+                    Employees can submit reports using the "Report Issue" tab in their dashboard.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
