@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { JobsiteTask, JobsiteTaskInput, useJobsiteTaskActions } from '@/hooks/useJobsiteTasks';
+import { JobsiteTask, JobsiteTaskInput, JobsiteTaskUpdateInput, useJobsiteTaskActions } from '@/hooks/useJobsiteTasks';
 
 const formSchema = z.object({
   task_name: z.string().min(1, 'Task name is required').min(2, 'Task name must be at least 2 characters'),
@@ -55,14 +55,30 @@ const JobsiteTaskForm: React.FC<JobsiteTaskFormProps> = ({
       console.log('Form data being submitted:', data);
       
       if (isEditing && task) {
+        // For updates, we can pass the full data as JobsiteTaskUpdateInput
+        const updateData: JobsiteTaskUpdateInput = {
+          task_name: data.task_name,
+          start_date: data.start_date,
+          end_date: data.end_date,
+          status: data.status,
+        };
+        
         await updateTask.mutateAsync({
           taskId: task.id,
-          taskData: data
+          taskData: updateData
         });
       } else {
+        // For creation, we need all required fields
+        const createData: JobsiteTaskInput = {
+          task_name: data.task_name,
+          start_date: data.start_date,
+          end_date: data.end_date,
+          status: data.status,
+        };
+        
         await addTask.mutateAsync({
           jobsiteId,
-          taskData: data
+          taskData: createData
         });
       }
       

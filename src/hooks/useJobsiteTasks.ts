@@ -24,6 +24,14 @@ export interface JobsiteTaskInput {
   status: 'pending' | 'in_progress' | 'completed';
 }
 
+// Create a separate interface for updates where fields can be optional
+export interface JobsiteTaskUpdateInput {
+  task_name?: string;
+  start_date?: string;
+  end_date?: string;
+  status?: 'pending' | 'in_progress' | 'completed';
+}
+
 export const useJobsiteTasks = (jobsiteId?: string) => {
   const { user } = useAuth();
 
@@ -110,7 +118,7 @@ export const useJobsiteTaskActions = () => {
   });
 
   const updateTask = useMutation({
-    mutationFn: async ({ taskId, taskData }: { taskId: string; taskData: Partial<JobsiteTaskInput> }) => {
+    mutationFn: async ({ taskId, taskData }: { taskId: string; taskData: JobsiteTaskUpdateInput }) => {
       console.log('Updating task:', taskId, taskData);
 
       const { data, error } = await supabase
