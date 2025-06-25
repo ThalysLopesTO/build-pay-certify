@@ -959,6 +959,72 @@ export type Database = {
           },
         ]
       }
+      vehicles: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          jobsite_id: string | null
+          license_plate: string | null
+          make: string
+          model: string
+          notes: string | null
+          status: string
+          updated_at: string
+          vehicle_name: string
+          vehicle_type: string
+          vin: string | null
+          year: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          jobsite_id?: string | null
+          license_plate?: string | null
+          make: string
+          model: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_name: string
+          vehicle_type: string
+          vin?: string | null
+          year?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          jobsite_id?: string | null
+          license_plate?: string | null
+          make?: string
+          model?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_name?: string
+          vehicle_type?: string
+          vin?: string | null
+          year?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_timesheets: {
         Row: {
           additional_expense: number | null
