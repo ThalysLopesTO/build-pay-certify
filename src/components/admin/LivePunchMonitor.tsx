@@ -19,7 +19,7 @@ interface PunchEntry {
   jobsite_id: string;
   check_in_time: string | null;
   check_out_time: string | null;
-  status: 'pending' | 'approved' | 'rejected';
+  status: string;
   user_profiles: {
     first_name: string;
     last_name: string;
@@ -50,9 +50,14 @@ const LivePunchMonitor = () => {
       const { data, error } = await supabase
         .from('timesheets')
         .select(`
-          *,
-          user_profiles!inner(first_name, last_name),
-          jobsites!inner(name)
+          id,
+          user_id,
+          jobsite_id,
+          check_in_time,
+          check_out_time,
+          status,
+          user_profiles!user_id(first_name, last_name),
+          jobsites!jobsite_id(name)
         `)
         .eq('company_id', user.companyId)
         .gte('check_in_time', today.toISOString())
