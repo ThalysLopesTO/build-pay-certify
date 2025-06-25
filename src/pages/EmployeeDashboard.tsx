@@ -10,69 +10,57 @@ import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import EmployeeDashboardHome from '../components/employee/EmployeeDashboardHome';
 import TimeTracker from '../components/employee/TimeTracker';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import EmployeeBottomNav from '../components/employee/EmployeeBottomNav';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const EmployeeDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const isMobile = useIsMobile();
 
   const handleNavigateToTab = (tab: string) => {
     setActiveTab(tab);
   };
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <EmployeeDashboardHome onNavigateToTab={handleNavigateToTab} />;
+      case 'time-tracker':
+        return <TimeTracker />;
+      case 'timesheet':
+        return <TimesheetForm />;
+      case 'attention-report':
+        return <AttentionReportForm />;
+      case 'my-reports':
+        return <MyAttentionReports />;
+      case 'certificates':
+        return <CertificateStatus />;
+      case 'company-rules':
+        return <CompanyRules />;
+      case 'settings':
+        return <UserSettings />;
+      default:
+        return <EmployeeDashboardHome onNavigateToTab={handleNavigateToTab} />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <Header />
-      <div className="p-6">
-        <div className="max-w-6xl mx-auto">
-          {/* License Warning Banner */}
+      <div className="flex-1 p-4 pb-20 md:pb-6">
+        <div className="max-w-4xl mx-auto">
           <LicenseWarningBanner />
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-8">
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              <TabsTrigger value="time-tracker">Time Tracker</TabsTrigger>
-              <TabsTrigger value="timesheet">Timesheet</TabsTrigger>
-              <TabsTrigger value="attention-report">Report Issue</TabsTrigger>
-              <TabsTrigger value="my-reports">My Reports</TabsTrigger>
-              <TabsTrigger value="certificates">Certificates</TabsTrigger>
-              <TabsTrigger value="company-rules">Company Rules</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="dashboard" className="space-y-6">
-              <EmployeeDashboardHome onNavigateToTab={handleNavigateToTab} />
-            </TabsContent>
-
-            <TabsContent value="time-tracker" className="space-y-6">
-              <TimeTracker />
-            </TabsContent>
-
-            <TabsContent value="timesheet" className="space-y-6">
-              <TimesheetForm />
-            </TabsContent>
-
-            <TabsContent value="attention-report" className="space-y-6">
-              <AttentionReportForm />
-            </TabsContent>
-
-            <TabsContent value="my-reports" className="space-y-6">
-              <MyAttentionReports />
-            </TabsContent>
-
-            <TabsContent value="certificates" className="space-y-6">
-              <CertificateStatus />
-            </TabsContent>
-
-            <TabsContent value="company-rules" className="space-y-6">
-              <CompanyRules />
-            </TabsContent>
-
-            <TabsContent value="settings" className="space-y-6">
-              <UserSettings />
-            </TabsContent>
-          </Tabs>
+          <div className="space-y-6">
+            {renderContent()}
+          </div>
         </div>
       </div>
+      {isMobile && (
+        <EmployeeBottomNav 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+        />
+      )}
     </div>
   );
 };
