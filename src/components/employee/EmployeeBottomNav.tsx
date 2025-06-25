@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, FileText, AlertTriangle, Settings } from 'lucide-react';
+import { Clock, FileText, AlertTriangle, Settings, Home } from 'lucide-react';
 
 interface EmployeeBottomNavProps {
   activeTab: string;
@@ -9,6 +9,12 @@ interface EmployeeBottomNavProps {
 
 const EmployeeBottomNav: React.FC<EmployeeBottomNavProps> = ({ activeTab, onTabChange }) => {
   const navItems = [
+    {
+      id: 'dashboard',
+      label: 'Home',
+      icon: Home,
+      color: 'text-slate-600'
+    },
     {
       id: 'timesheet',
       label: 'Timesheet',
@@ -36,8 +42,8 @@ const EmployeeBottomNav: React.FC<EmployeeBottomNavProps> = ({ activeTab, onTabC
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-2 safe-area-pb">
-      <div className="flex justify-around items-center max-w-md mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1 safe-area-pb shadow-lg">
+      <div className="flex justify-around items-center max-w-lg mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -46,14 +52,14 @@ const EmployeeBottomNav: React.FC<EmployeeBottomNavProps> = ({ activeTab, onTabC
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors ${
+              className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-200 min-w-0 flex-1 ${
                 isActive 
-                  ? `${item.color} bg-slate-100` 
-                  : 'text-slate-400 hover:text-slate-600'
+                  ? `${item.color} bg-slate-50 scale-105 shadow-sm` 
+                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <Icon className="h-5 w-5" />
-              <span className="text-xs font-medium">{item.label}</span>
+              <Icon className={`h-5 w-5 ${isActive ? 'animate-pulse' : ''}`} />
+              <span className="text-xs font-medium truncate">{item.label}</span>
             </button>
           );
         })}

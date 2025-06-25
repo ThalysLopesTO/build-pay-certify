@@ -45,10 +45,10 @@ const EmployeeDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
       <Header />
-      <div className="flex-1 p-4 pb-20 md:pb-6">
-        <div className="max-w-4xl mx-auto">
+      <div className={`flex-1 ${isMobile ? 'pb-20' : 'pb-6'} transition-all duration-300`}>
+        <div className="max-w-4xl mx-auto px-2 py-4">
           <LicenseWarningBanner />
           <div className="space-y-6">
             {renderContent()}
