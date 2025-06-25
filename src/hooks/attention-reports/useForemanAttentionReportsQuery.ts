@@ -21,16 +21,28 @@ export const useForemanAttentionReportsQuery = () => {
         .from('attention_reports')
         .select(`
           *,
-          jobsites(name),
-          user_profiles!attention_reports_submitted_by_fkey(first_name, last_name),
-          attention_report_attachments(*)
+          jobsites!inner(
+            id,
+            name
+          ),
+          user_profiles!inner(
+            first_name,
+            last_name
+          ),
+          attention_report_attachments(
+            id,
+            file_name,
+            file_url,
+            file_size,
+            mime_type
+          )
         `)
         .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching attention reports:', error);
-        throw error;
+        throw new Error(`Failed to fetch attention reports: ${error.message}`);
       }
       
       console.log('Fetched attention reports:', data);
@@ -49,12 +61,14 @@ export const useForemanAttentionReportsQuery = () => {
         reviewed_at: report.reviewed_at,
         created_at: report.created_at,
         jobsites: report.jobsites,
-        user_profiles: Array.isArray(report.user_profiles) ? report.user_profiles[0] : report.user_profiles,
+        user_profiles: report.user_profiles,
         attachments: report.attention_report_attachments || []
       })) as AttentionReport[];
     },
     enabled: !!user?.companyId,
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // Refetch every minute to keep data fresh
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };

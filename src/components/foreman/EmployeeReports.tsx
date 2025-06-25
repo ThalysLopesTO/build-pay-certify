@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bell, Calendar as CalendarIcon, Filter, Search, Eye, AlertTriangle, FileText } from 'lucide-react';
+import { Bell, Calendar as CalendarIcon, Filter, Search, Eye, AlertTriangle, FileText, RefreshCw } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useForemanAttentionReports } from '@/hooks/useAttentionReports';
@@ -24,7 +24,7 @@ const EmployeeReports = () => {
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedReport, setSelectedReport] = useState<AttentionReport | null>(null);
 
-  const { data: reports = [], isLoading, error } = useForemanAttentionReports();
+  const { data: reports = [], isLoading, error, refetch } = useForemanAttentionReports();
   const { data: jobsites = [] } = useJobsites();
   const { data: employees = [] } = useEmployeeDirectory();
 
@@ -80,9 +80,17 @@ const EmployeeReports = () => {
           <div className="text-center">
             <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
             <p className="text-lg font-semibold mb-2 text-red-600">Error Loading Reports</p>
-            <p className="text-gray-500">
-              Unable to load attention reports. Please try refreshing the page.
+            <p className="text-gray-500 mb-4">
+              {error instanceof Error ? error.message : 'Unable to load attention reports. Please try refreshing the page.'}
             </p>
+            <Button 
+              onClick={() => refetch()} 
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -96,9 +104,20 @@ const EmployeeReports = () => {
           <Bell className="h-6 w-6 text-orange-600" />
           <h1 className="text-2xl font-bold text-gray-900">Employee Reports</h1>
         </div>
-        <Badge variant="outline" className="text-sm">
-          {filteredReports.length} report{filteredReports.length !== 1 ? 's' : ''}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-sm">
+            {filteredReports.length} report{filteredReports.length !== 1 ? 's' : ''}
+          </Badge>
+          <Button 
+            onClick={() => refetch()} 
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
