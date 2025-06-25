@@ -179,7 +179,7 @@ const VehicleForm = () => {
                     <SelectValue placeholder="Select jobsite" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
                     {jobsites.map((jobsite) => (
                       <SelectItem key={jobsite.id} value={jobsite.id}>
                         {jobsite.name}
