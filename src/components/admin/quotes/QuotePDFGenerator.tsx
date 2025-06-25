@@ -26,7 +26,10 @@ const QuotePDFGenerator: React.FC<QuotePDFGeneratorProps> = ({ quote }) => {
       logoUrl
     };
 
-    switch (quote.template || 'classic') {
+    // Default to 'classic' template if no template is specified
+    const selectedTemplate = quote.template || 'classic';
+
+    switch (selectedTemplate) {
       case 'modern':
         return generateModernTemplate(templateProps);
       case 'construction':

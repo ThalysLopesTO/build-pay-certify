@@ -16,6 +16,7 @@ import QuoteClientSection from './sections/QuoteClientSection';
 import QuoteDetailsSection from './sections/QuoteDetailsSection';
 import QuoteLineItemsSection from './sections/QuoteLineItemsSection';
 import QuoteNotesSection from './sections/QuoteNotesSection';
+import QuoteTemplateSection from './sections/QuoteTemplateSection';
 
 interface QuoteFormModalProps {
   quote: Quote | null;
@@ -222,6 +223,10 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
     e.stopPropagation();
   };
 
+  const handleTemplateChange = (template: string) => {
+    handleInputChange('template', template);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" onClick={handleDialogClick}>
@@ -253,6 +258,11 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
           <QuoteNotesSection
             notes={formData.notes}
             handleInputChange={handleInputChange}
+          />
+
+          <QuoteTemplateSection
+            selectedTemplate={formData.template}
+            onTemplateChange={handleTemplateChange}
           />
 
           {/* Form Actions */}
