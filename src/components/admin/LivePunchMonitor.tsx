@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -6,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Clock, User, MapPin, Filter, RefreshCw, Calendar } from 'lucide-react';
+import { Clock, User, MapPin, Filter, RefreshCw, Calendar, Flag } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useQuery } from '@tanstack/react-query';
@@ -39,6 +38,44 @@ const LivePunchMonitor = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [flaggedEntries, setFlaggedEntries] = useState<Set<string>>(new Set());
+
+  // Fetch jobsites for filter
+  const { data: jobsites } = useQuery({
+    queryKey: ['jobsites', user?.companyId],
+    queryFn: async () => {
+      if (!user?.companyId) return [];
+
+      const { data, error } = await supabase
+        .from('jobsites')
+        .select('id, name')
+        .eq('company_id', user.companyId)
+        .order('name');
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.companyId,
+  });
+
+  // Fetch employees for filter
+  const { data: employees } = useQuery({
+    queryKey: ['employees', user?.companyId],
+    queryFn: async () => {
+      if (!user?.companyId) return [];
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('user_id, first_name, last_name')
+        .eq('company_id', user.companyId)
+        .in('role', ['employee', 'foreman'])
+        .order('first_name');
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.companyId,
+  });
 
   // Fetch punch entries for the selected date
   const { data: punchEntries, isLoading, refetch } = useQuery({
@@ -123,43 +160,6 @@ const LivePunchMonitor = () => {
     refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
   });
 
-  // Fetch jobsites for filter
-  const { data: jobsites } = useQuery({
-    queryKey: ['jobsites', user?.companyId],
-    queryFn: async () => {
-      if (!user?.companyId) return [];
-
-      const { data, error } = await supabase
-        .from('jobsites')
-        .select('id, name')
-        .eq('company_id', user.companyId)
-        .order('name');
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.companyId,
-  });
-
-  // Fetch employees for filter
-  const { data: employees } = useQuery({
-    queryKey: ['employees', user?.companyId],
-    queryFn: async () => {
-      if (!user?.companyId) return [];
-
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('user_id, first_name, last_name')
-        .eq('company_id', user.companyId)
-        .in('role', ['employee', 'foreman'])
-        .order('first_name');
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.companyId,
-  });
-
   const calculateTotalTime = (checkIn: string | null, checkOut: string | null) => {
     if (!checkIn) return '0h 0m';
     
@@ -179,6 +179,32 @@ const LivePunchMonitor = () => {
     } else {
       return <Badge variant="secondary">Clocked Out</Badge>;
     }
+  };
+
+  const toggleFlag = (entryId: string) => {
+    setFlaggedEntries(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(entryId)) {
+        newSet.delete(entryId);
+      } else {
+        newSet.add(entryId);
+      }
+      return newSet;
+    });
+  };
+
+  const formatEmployeeNameWithDate = (entry: PunchEntry) => {
+    const employeeName = entry.user_profiles ? 
+      `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : 
+      'Unknown Employee';
+    
+    if (entry.check_in_time) {
+      const checkInDate = new Date(entry.check_in_time);
+      const dayDate = format(checkInDate, 'EEE, MMM dd');
+      return `${dayDate} – ${employeeName}`;
+    }
+    
+    return employeeName;
   };
 
   // Filter entries
@@ -397,23 +423,24 @@ const LivePunchMonitor = () => {
                 <TableHead>Check-out Time</TableHead>
                 <TableHead>Total Time</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Flag</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredEntries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No punch entries found for {format(selectedDate, 'MMMM dd, yyyy')}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredEntries.map((entry) => (
-                  <TableRow key={entry.id}>
+                  <TableRow 
+                    key={entry.id}
+                    className={flaggedEntries.has(entry.id) ? 'bg-red-50 border-l-4 border-l-red-500' : ''}
+                  >
                     <TableCell className="font-medium">
-                      {entry.user_profiles ? 
-                        `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : 
-                        'Unknown Employee'
-                      }
+                      {formatEmployeeNameWithDate(entry)}
                     </TableCell>
                     <TableCell>{entry.jobsites?.name || 'Unknown Jobsite'}</TableCell>
                     <TableCell>
@@ -433,6 +460,21 @@ const LivePunchMonitor = () => {
                     </TableCell>
                     <TableCell>
                       {getStatusBadge(entry)}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleFlag(entry.id)}
+                        className={cn(
+                          "p-2 h-8 w-8",
+                          flaggedEntries.has(entry.id) 
+                            ? "text-red-600 hover:text-red-700" 
+                            : "text-gray-400 hover:text-red-500"
+                        )}
+                      >
+                        <Flag className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
