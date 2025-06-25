@@ -25,7 +25,7 @@ export const useForemanAttentionReportsQuery = () => {
             id,
             name
           ),
-          user_profiles!inner(
+          user_profiles!attention_reports_submitted_by_fkey(
             first_name,
             last_name
           ),
