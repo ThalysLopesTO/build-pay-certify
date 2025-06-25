@@ -25,10 +25,6 @@ export const useForemanAttentionReportsQuery = () => {
             id,
             name
           ),
-          user_profiles!inner(
-            first_name,
-            last_name
-          ),
           attention_report_attachments(
             id,
             file_name,
@@ -38,7 +34,6 @@ export const useForemanAttentionReportsQuery = () => {
           )
         `)
         .eq('company_id', user.companyId)
-        .eq('user_profiles.user_id', 'attention_reports.submitted_by')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -47,6 +42,23 @@ export const useForemanAttentionReportsQuery = () => {
       }
       
       console.log('Fetched attention reports:', data);
+      
+      // Fetch user profiles separately to avoid join issues
+      const userIds = [...new Set(data?.map(report => report.submitted_by) || [])];
+      const { data: userProfiles, error: userProfilesError } = await supabase
+        .from('user_profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', userIds);
+
+      if (userProfilesError) {
+        console.error('Error fetching user profiles:', userProfilesError);
+        throw new Error(`Failed to fetch user profiles: ${userProfilesError.message}`);
+      }
+
+      // Create a map of user profiles for quick lookup
+      const userProfilesMap = new Map(
+        userProfiles?.map(profile => [profile.user_id, profile]) || []
+      );
       
       // Transform the data to match our interface
       return (data || []).map(report => ({
@@ -62,7 +74,7 @@ export const useForemanAttentionReportsQuery = () => {
         reviewed_at: report.reviewed_at,
         created_at: report.created_at,
         jobsites: report.jobsites,
-        user_profiles: report.user_profiles,
+        user_profiles: userProfilesMap.get(report.submitted_by) || { first_name: 'Unknown', last_name: 'User' },
         attachments: report.attention_report_attachments || []
       })) as AttentionReport[];
     },
