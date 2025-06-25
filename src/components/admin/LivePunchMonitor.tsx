@@ -35,7 +35,7 @@ const LivePunchMonitor = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Fetch today's punch entries
+  // Fetch today's punch entries with proper joins
   const { data: punchEntries, isLoading, refetch } = useQuery({
     queryKey: ['live-punch-monitor', user?.companyId],
     queryFn: async () => {
@@ -46,7 +46,8 @@ const LivePunchMonitor = () => {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const { data, error } = await supabase
+      // First get timesheets
+      const { data: timesheets, error: timesheetsError } = await supabase
         .from('timesheets')
         .select(`
           id,
@@ -54,21 +55,64 @@ const LivePunchMonitor = () => {
           jobsite_id,
           check_in_time,
           check_out_time,
-          status,
-          user_profiles!timesheets_user_id_fkey(first_name, last_name),
-          jobsites!timesheets_jobsite_id_fkey(name)
+          status
         `)
         .eq('company_id', user.companyId)
         .gte('check_in_time', today.toISOString())
         .lt('check_in_time', tomorrow.toISOString())
         .order('check_in_time', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching punch entries:', error);
-        throw error;
+      if (timesheetsError) {
+        console.error('Error fetching timesheets:', timesheetsError);
+        throw timesheetsError;
       }
 
-      return data as PunchEntry[];
+      if (!timesheets || timesheets.length === 0) {
+        return [];
+      }
+
+      // Get user profiles for the timesheets
+      const userIds = [...new Set(timesheets.map(t => t.user_id))];
+      const { data: userProfiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching user profiles:', profilesError);
+        throw profilesError;
+      }
+
+      // Get jobsites for the timesheets
+      const jobsiteIds = [...new Set(timesheets.map(t => t.jobsite_id))];
+      const { data: jobsites, error: jobsitesError } = await supabase
+        .from('jobsites')
+        .select('id, name')
+        .in('id', jobsiteIds);
+
+      if (jobsitesError) {
+        console.error('Error fetching jobsites:', jobsitesError);
+        throw jobsitesError;
+      }
+
+      // Combine the data
+      const combinedData: PunchEntry[] = timesheets.map(timesheet => {
+        const userProfile = userProfiles?.find(profile => profile.user_id === timesheet.user_id);
+        const jobsite = jobsites?.find(js => js.id === timesheet.jobsite_id);
+        
+        return {
+          ...timesheet,
+          user_profiles: userProfile ? {
+            first_name: userProfile.first_name || '',
+            last_name: userProfile.last_name || ''
+          } : null,
+          jobsites: jobsite ? {
+            name: jobsite.name
+          } : null
+        };
+      });
+
+      return combinedData;
     },
     enabled: !!user?.companyId,
     refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
