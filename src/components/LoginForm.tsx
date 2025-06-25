@@ -47,23 +47,23 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-orange-50 via-slate-50 to-orange-100">
+    <div className="min-h-screen flex bg-gradient-to-br from-orange-50 via-slate-50 to-orange-100">
       {/* Left Side - Login Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-8">
         <div className="w-full max-w-md">
           {/* StackBuild Logo */}
           <div className="text-center mb-8">
             <img 
-              src="/lovable-uploads/bef9bd69-be4a-4d88-bbc9-2f3c22bf3643.png" 
+              src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png" 
               alt="StackBuild Logo" 
-              className="h-20 w-auto mx-auto mb-8"
+              className="h-16 w-auto mx-auto mb-8"
             />
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Log In</h1>
             <p className="text-slate-600">Welcome back to StackBuild</p>
           </div>
 
-          {/* Login Form Card */}
-          <Card className="border-0 shadow-2xl bg-white">
+          {/* Login Form Card with Light Background */}
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
             <CardContent className="p-8">
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
@@ -79,7 +79,7 @@ const LoginForm = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 text-slate-700"
+                      className="pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 text-slate-700 bg-white/60"
                     />
                   </div>
                 </div>
@@ -97,7 +97,7 @@ const LoginForm = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 text-slate-700"
+                      className="pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 text-slate-700 bg-white/60"
                     />
                   </div>
                 </div>
@@ -127,7 +127,7 @@ const LoginForm = () => {
                 <Link to="/register-company">
                   <Button 
                     variant="outline" 
-                    className="w-full h-12 border-2 border-slate-300 hover:border-orange-500 hover:bg-orange-50 text-slate-700 hover:text-orange-600 font-medium transition-all duration-200"
+                    className="w-full h-12 border-2 border-slate-300 hover:border-orange-500 hover:bg-orange-50 text-slate-700 hover:text-orange-600 font-medium transition-all duration-200 bg-white/60"
                   >
                     <Building className="h-4 w-4 mr-2" />
                     Register Your Company
