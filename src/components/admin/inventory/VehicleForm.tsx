@@ -25,7 +25,7 @@ const VehicleForm = () => {
   });
   const [loading, setLoading] = useState(false);
   
-  const { jobsites } = useJobsites();
+  const { data: jobsites = [] } = useJobsites();
   const { toast } = useToast();
 
   const handleInputChange = (field: string, value: string) => {
