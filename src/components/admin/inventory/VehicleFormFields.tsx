@@ -33,7 +33,7 @@ const VehicleFormFields: React.FC<VehicleFormFieldsProps> = ({
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="vehicle_name">Vehicle Name/ID</Label>
+          <Label htmlFor="vehicle_name">Vehicle Name/ID *</Label>
           <Input
             id="vehicle_name"
             placeholder="e.g., Company Truck #1"
@@ -44,18 +44,19 @@ const VehicleFormFields: React.FC<VehicleFormFieldsProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="vehicle_type">Vehicle Type</Label>
+          <Label htmlFor="vehicle_type">Vehicle Type *</Label>
           <Select value={formData.vehicle_type} onValueChange={(value) => onInputChange('vehicle_type', value)}>
             <SelectTrigger>
               <SelectValue placeholder="Select vehicle type" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="small_car">Small Car</SelectItem>
               <SelectItem value="pickup_truck">Pickup Truck</SelectItem>
               <SelectItem value="cargo_van">Cargo Van</SelectItem>
               <SelectItem value="box_truck">Box Truck</SelectItem>
-              <SelectItem value="flatbed">Flatbed Truck</SelectItem>
-              <SelectItem value="dump_truck">Dump Truck</SelectItem>
               <SelectItem value="crane_truck">Crane Truck</SelectItem>
+              <SelectItem value="dump_truck">Dump Truck</SelectItem>
+              <SelectItem value="flatbed">Flatbed Truck</SelectItem>
               <SelectItem value="trailer">Trailer</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
@@ -63,10 +64,10 @@ const VehicleFormFields: React.FC<VehicleFormFieldsProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="make">Make</Label>
+          <Label htmlFor="make">Make *</Label>
           <Input
             id="make"
-            placeholder="e.g., Ford, Chevrolet, Isuzu"
+            placeholder="e.g., Ford, Chevrolet, Toyota"
             value={formData.make}
             onChange={(e) => onInputChange('make', e.target.value)}
             required
@@ -74,10 +75,10 @@ const VehicleFormFields: React.FC<VehicleFormFieldsProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="model">Model</Label>
+          <Label htmlFor="model">Model *</Label>
           <Input
             id="model"
-            placeholder="e.g., F-150, Silverado, NPR"
+            placeholder="e.g., F-150, Silverado, Corolla"
             value={formData.model}
             onChange={(e) => onInputChange('model', e.target.value)}
             required
@@ -119,10 +120,10 @@ const VehicleFormFields: React.FC<VehicleFormFieldsProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="jobsite_id">Assigned Jobsite</Label>
+          <Label htmlFor="jobsite_id">Optional: Assigned Jobsite</Label>
           <Select value={formData.jobsite_id} onValueChange={(value) => onInputChange('jobsite_id', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select jobsite" />
+              <SelectValue placeholder="Select jobsite (optional)" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="unassigned">Unassigned</SelectItem>
@@ -136,7 +137,7 @@ const VehicleFormFields: React.FC<VehicleFormFieldsProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status">Status *</Label>
           <Select value={formData.status} onValueChange={(value) => onInputChange('status', value)}>
             <SelectTrigger>
               <SelectValue placeholder="Select status" />
@@ -152,7 +153,7 @@ const VehicleFormFields: React.FC<VehicleFormFieldsProps> = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
+        <Label htmlFor="notes">Notes (Optional)</Label>
         <Textarea
           id="notes"
           placeholder="Additional notes about the vehicle..."

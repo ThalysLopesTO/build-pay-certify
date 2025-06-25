@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useJobsites } from '@/hooks/useJobsites';
-import { useToast } from '@/hooks/use-toast';
+import { useVehicles } from '@/hooks/useVehicles';
 import { Plus, Car } from 'lucide-react';
 import VehicleFormFields from './VehicleFormFields';
 import VehicleList from './VehicleList';
@@ -17,14 +17,13 @@ const VehicleForm = () => {
     year: '',
     license_plate: '',
     vin: '',
-    jobsite_id: '',
+    jobsite_id: 'unassigned',
     status: 'active',
     notes: ''
   });
-  const [loading, setLoading] = useState(false);
   
   const { data: jobsites = [] } = useJobsites();
-  const { toast } = useToast();
+  const { createVehicle, isCreating } = useVehicles();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -35,15 +34,19 @@ const VehicleForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
-      // TODO: Implement vehicle creation API call
-      console.log('Vehicle form data:', formData);
-      
-      toast({
-        title: "Success",
-        description: "Vehicle added successfully",
+      await createVehicle({
+        vehicle_name: formData.vehicle_name,
+        vehicle_type: formData.vehicle_type,
+        make: formData.make,
+        model: formData.model,
+        year: formData.year,
+        license_plate: formData.license_plate,
+        vin: formData.vin,
+        jobsite_id: formData.jobsite_id === 'unassigned' ? null : formData.jobsite_id,
+        status: formData.status,
+        notes: formData.notes
       });
 
       // Reset form
@@ -55,19 +58,12 @@ const VehicleForm = () => {
         year: '',
         license_plate: '',
         vin: '',
-        jobsite_id: '',
+        jobsite_id: 'unassigned',
         status: 'active',
         notes: ''
       });
     } catch (error) {
       console.error('Error adding vehicle:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add vehicle",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -92,9 +88,9 @@ const VehicleForm = () => {
             <Button 
               type="submit" 
               className="w-full bg-orange-500 hover:bg-orange-600"
-              disabled={loading}
+              disabled={isCreating}
             >
-              {loading ? (
+              {isCreating ? (
                 <div className="flex items-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Adding Vehicle...</span>
