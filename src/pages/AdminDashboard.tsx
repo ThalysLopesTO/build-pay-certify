@@ -10,6 +10,7 @@ import JobsiteManagement from '@/components/admin/JobsiteManagement';
 import SafetyTemplatesManagement from '@/components/admin/SafetyTemplatesManagement';
 import InventoryIndex from '@/pages/admin/inventory/Index';
 import SuppliersManagement from '@/components/admin/SuppliersManagement';
+import LivePunchMonitor from '@/components/admin/LivePunchMonitor';
 import EmployeeTimesheets from '@/components/admin/EmployeeTimesheets';
 import PayrollSummary from '@/components/admin/PayrollSummary';
 import MaterialRequestInbox from '@/components/admin/MaterialRequestInbox';
@@ -39,6 +40,8 @@ const AdminDashboard = () => {
         return <InventoryIndex />;
       case 'suppliers':
         return <SuppliersManagement />;
+      case 'live-punch-monitor':
+        return <LivePunchMonitor />;
       case 'timesheets':
         return <EmployeeTimesheets />;
       case 'payroll-summary':

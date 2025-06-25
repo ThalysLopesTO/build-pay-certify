@@ -17,11 +17,6 @@ export const foremanMenuItems = [
     icon: FileText,
   },
   {
-    id: 'timesheet-approval',
-    title: 'Timesheet Approval',
-    icon: CheckSquare,
-  },
-  {
     id: 'material-request',
     title: 'Material Request',
     icon: Package,
@@ -55,11 +50,6 @@ export const groupedForemanItems = {
       id: 'timesheet',
       title: 'Submit Timesheet',
       icon: FileText,
-    },
-    {
-      id: 'timesheet-approval',
-      title: 'Timesheet Approval',
-      icon: CheckSquare,
     }
   ],
   materials: [

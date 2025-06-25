@@ -15,7 +15,8 @@ import {
   Archive,
   Truck,
   Shield,
-  Calculator
+  Calculator,
+  Eye
 } from 'lucide-react';
 
 export const groupedMenuItems = {
@@ -61,9 +62,16 @@ export const groupedMenuItems = {
   ],
   payroll: [
     {
+      id: 'live-punch-monitor',
+      title: 'Live Punch Monitor',
+      icon: Eye,
+      requiredRoles: ['admin', 'super_admin']
+    },
+    {
       id: 'timesheets',
       title: 'Employee Timesheets',
       icon: Clock,
+      requiredRoles: ['admin', 'super_admin']
     },
     {
       id: 'payroll-summary',
