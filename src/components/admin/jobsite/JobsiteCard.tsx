@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Trash2, Calendar } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
+import JobsiteProgressCard from './JobsiteProgressCard';
 
 interface Jobsite {
   id: string;
@@ -15,9 +15,10 @@ interface Jobsite {
 
 interface JobsiteCardProps {
   jobsite: Jobsite;
+  showProgress?: boolean;
 }
 
-const JobsiteCard: React.FC<JobsiteCardProps> = ({ jobsite }) => {
+const JobsiteCard: React.FC<JobsiteCardProps> = ({ jobsite, showProgress = false }) => {
   const { deleteJobsite } = useJobsiteActions();
 
   const handleDelete = async () => {
@@ -40,6 +41,12 @@ const JobsiteCard: React.FC<JobsiteCardProps> = ({ jobsite }) => {
     });
   };
 
+  // If showProgress is true, use the JobsiteProgressCard
+  if (showProgress) {
+    return <JobsiteProgressCard jobsite={jobsite} />;
+  }
+
+  // Otherwise, show the original simple card
   return (
     <Card className="border">
       <CardContent className="p-4">

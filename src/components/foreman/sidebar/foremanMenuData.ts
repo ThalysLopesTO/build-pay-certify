@@ -1,96 +1,54 @@
 
 import { 
-  FileText, 
   Clock, 
-  Package,
-  Users,
-  BookOpen,
+  FileText, 
+  Inbox, 
+  Users, 
+  BarChart3, 
+  BookOpen, 
   Settings,
-  CheckSquare,
-  BarChart3,
-  Bell
+  Building
 } from 'lucide-react';
 
 export const foremanMenuItems = [
   {
-    id: 'timesheet',
-    title: 'Submit Timesheet',
-    icon: FileText,
-  },
-  {
-    id: 'material-request',
-    title: 'Material Request',
-    icon: Package,
-  },
-  {
-    id: 'my-requests',
-    title: 'My Requests',
+    title: 'Timesheet',
     icon: Clock,
+    id: 'timesheet',
   },
   {
-    id: 'employees',
-    title: 'Employee Directory',
+    title: 'Material Request',
+    icon: FileText,
+    id: 'material-request',
+  },
+  {
+    title: 'My Requests',
+    icon: Inbox,
+    id: 'my-requests',
+  },
+  {
+    title: 'Employees',
     icon: Users,
+    id: 'employees',
   },
   {
-    id: 'company-rules',
+    title: 'Employee Reports',
+    icon: BarChart3,
+    id: 'employee-reports',
+  },
+  {
+    title: 'Jobsite Progress',
+    icon: Building,
+    id: 'jobsite-progress',
+  },
+  {
     title: 'Company Rules',
     icon: BookOpen,
+    id: 'company-rules',
   },
   {
-    id: 'settings',
     title: 'Settings',
     icon: Settings,
-  }
+    id: 'settings',
+  },
 ];
-
-// Grouped menu items for sidebar organization
-export const groupedForemanItems = {
-  timesheet: [
-    {
-      id: 'timesheet',
-      title: 'Submit Timesheet',
-      icon: FileText,
-    }
-  ],
-  materials: [
-    {
-      id: 'material-request',
-      title: 'Material Request',
-      icon: Package,
-    },
-    {
-      id: 'my-requests',
-      title: 'My Requests',
-      icon: Clock,
-    }
-  ],
-  team: [
-    {
-      id: 'employees',
-      title: 'Employee Directory',
-      icon: Users,
-    }
-  ],
-  company: [
-    {
-      id: 'company-rules',
-      title: 'Company Rules',
-      icon: BookOpen,
-    }
-  ],
-  reports: [
-    {
-      id: 'employee-reports',
-      title: 'Employee Reports',
-      icon: Bell,
-    }
-  ],
-  account: [
-    {
-      id: 'settings',
-      title: 'Settings',
-      icon: Settings,
-    }
-  ]
-};

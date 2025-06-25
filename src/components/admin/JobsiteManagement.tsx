@@ -1,41 +1,92 @@
 
 import React, { useState } from 'react';
-import { Plus, MapPin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Building, BarChart3 } from 'lucide-react';
 import { useJobsites } from '@/hooks/useJobsites';
 import JobsiteForm from './jobsite/JobsiteForm';
 import JobsiteList from './jobsite/JobsiteList';
+import JobsiteCard from './jobsite/JobsiteCard';
 
 const JobsiteManagement = () => {
-  const [isAdding, setIsAdding] = useState(false);
-  const { data: jobsites = [], isLoading } = useJobsites();
+  const [showForm, setShowForm] = useState(false);
+  const { data: jobsites = [], isLoading, error } = useJobsites();
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-red-600">
+            <p>Error loading jobsites: {error.message}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
-            <MapPin className="h-5 w-5" />
-            <span>Jobsite Management</span>
-          </CardTitle>
-          <Button 
-            onClick={() => setIsAdding(!isAdding)}
-            className="flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Jobsite</span>
-          </Button>
-        </CardHeader>
-        
-        <CardContent>
-          {isAdding && (
-            <JobsiteForm onCancel={() => setIsAdding(false)} />
-          )}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Jobsite Management</h1>
+          <p className="text-gray-600">Manage your company's jobsites and track progress</p>
+        </div>
+        <Button onClick={() => setShowForm(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Jobsite
+        </Button>
+      </div>
 
-          <JobsiteList jobsites={jobsites} isLoading={isLoading} />
-        </CardContent>
-      </Card>
+      {showForm && (
+        <JobsiteForm onCancel={() => setShowForm(false)} />
+      )}
+
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="basic" className="flex items-center gap-2">
+            <Building className="h-4 w-4" />
+            Basic View
+          </TabsTrigger>
+          <TabsTrigger value="progress" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Progress Tracking
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="basic" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Jobsites</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <JobsiteList jobsites={jobsites} isLoading={isLoading} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="progress" className="space-y-4">
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="text-center py-8 text-gray-500">
+                Loading jobsites...
+              </div>
+            ) : jobsites.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No jobsites found. Add your first jobsite to get started.
+              </div>
+            ) : (
+              jobsites.map((jobsite) => (
+                <JobsiteCard 
+                  key={jobsite.id} 
+                  jobsite={jobsite} 
+                  showProgress={true}
+                />
+              ))
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

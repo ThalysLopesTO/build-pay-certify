@@ -565,6 +565,53 @@ export type Database = {
           },
         ]
       }
+      jobsite_tasks: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          end_date: string
+          id: string
+          jobsite_id: string
+          start_date: string
+          status: string
+          task_name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          end_date: string
+          id?: string
+          jobsite_id: string
+          start_date: string
+          status?: string
+          task_name: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          end_date?: string
+          id?: string
+          jobsite_id?: string
+          start_date?: string
+          status?: string
+          task_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobsite_tasks_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobsites: {
         Row: {
           address: string | null

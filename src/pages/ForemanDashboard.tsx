@@ -7,6 +7,7 @@ import MaterialRequestForm from '../components/foreman/MaterialRequestForm';
 import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
 import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
 import EmployeeReports from '../components/foreman/EmployeeReports';
+import JobsiteProgress from '../components/foreman/JobsiteProgress';
 import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
@@ -28,6 +29,8 @@ const ForemanDashboard = () => {
         return <EmployeeDirectory />;
       case 'employee-reports':
         return <EmployeeReports />;
+      case 'jobsite-progress':
+        return <JobsiteProgress />;
       case 'company-rules':
         return <CompanyRules />;
       case 'settings':
