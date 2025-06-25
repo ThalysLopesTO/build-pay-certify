@@ -7,7 +7,8 @@ import {
   BookOpen,
   Settings,
   CheckSquare,
-  BarChart3
+  BarChart3,
+  Bell
 } from 'lucide-react';
 
 export const foremanMenuItems = [
@@ -79,7 +80,11 @@ export const groupedForemanItems = {
     }
   ],
   reports: [
-    // Empty for now, can be populated later if needed
+    {
+      id: 'employee-reports',
+      title: 'Employee Reports',
+      icon: Bell,
+    }
   ],
   account: [
     {
