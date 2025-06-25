@@ -1,127 +1,101 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useEmployeeTimesheets } from '@/hooks/useEmployeeTimesheets';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
-import { useJobsites } from '@/hooks/useJobsites';
 import { useTimesheetApproval } from '@/hooks/useTimesheetApproval';
 import { useTimesheetRejection } from '@/hooks/useTimesheetRejection';
-import TimesheetEditModal from './timesheets/TimesheetEditModal';
-import TimesheetFilters from './timesheets/TimesheetFilters';
-import TimesheetPagination from './timesheets/TimesheetPagination';
+import { useTimesheetUpdate } from '@/hooks/useTimesheetUpdate';
 import TimesheetTable from './timesheets/TimesheetTable';
+import TimesheetFilters from './timesheets/TimesheetFilters';
+import TimesheetEditModal from './timesheets/TimesheetEditModal';
 import TimesheetErrorAlert from './timesheets/TimesheetErrorAlert';
-import TimesheetPDFGenerator from './timesheets/TimesheetPDFGenerator';
-
-const ITEMS_PER_PAGE = 20;
+import TimesheetPagination from './timesheets/TimesheetPagination';
+import { Clock } from 'lucide-react';
 
 const EmployeeTimesheets = () => {
-  const [selectedTimesheet, setSelectedTimesheet] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [filters, setFilters] = useState({
     employeeName: '',
     weekEndingDate: '',
-    status: 'all',
+    status: 'all'
   });
+  const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const queryFilters = {
-    employeeName: filters.employeeName,
-    weekStartDate: filters.weekEndingDate,
-    status: filters.status
-  };
-
-  const { data: timesheets = [], isLoading, error, refetch } = useEmployeeTimesheets(queryFilters);
   const { data: employees = [] } = useEmployeeDirectory();
-  const { data: jobsites = [] } = useJobsites();
-  const approvalMutation = useTimesheetApproval();
-  const rejectionMutation = useTimesheetRejection();
+  const { data: timesheets = [], isLoading, error } = useEmployeeTimesheets(filters);
+  const approveMutation = useTimesheetApproval();
+  const rejectMutation = useTimesheetRejection();
+  const updateMutation = useTimesheetUpdate();
 
-  const filteredTimesheets = timesheets.filter(timesheet => {
-    if (filters.status === 'rejected') return timesheet.status === 'rejected';
-    if (filters.status === 'approved') return timesheet.status === 'approved';
-    if (filters.status === 'pending') return !timesheet.status || timesheet.status === 'pending';
-    return timesheet.status !== 'rejected';
-  });
-
-  const totalPages = Math.ceil(filteredTimesheets.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedTimesheets = filteredTimesheets.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-  const handleApprove = async (timesheetId: string) => {
-    try {
-      await approvalMutation.mutateAsync(timesheetId);
-      refetch();
-    } catch (error) {
-      console.error('Failed to approve timesheet:', error);
-    }
+  const handleApprove = (timesheetId: string) => {
+    approveMutation.mutate(timesheetId);
   };
 
-  const handleReject = async (timesheetId: string) => {
-    try {
-      await rejectionMutation.mutateAsync(timesheetId);
-      refetch();
-    } catch (error) {
-      console.error('Failed to reject timesheet:', error);
-    }
+  const handleReject = (timesheetId: string) => {
+    rejectMutation.mutate(timesheetId);
   };
 
   const handleEdit = (timesheet: any) => {
-    setSelectedTimesheet(timesheet);
-    setIsEditModalOpen(true);
+    setEditingTimesheet(timesheet);
   };
 
-  const handleFilterChange = (newFilters: any) => {
-    setFilters(newFilters);
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+  const handleSaveEdit = (updatedData: any) => {
+    if (editingTimesheet) {
+      updateMutation.mutate(
+        { id: editingTimesheet.id, data: updatedData },
+        {
+          onSuccess: () => {
+            setEditingTimesheet(null);
+          }
+        }
+      );
+    }
   };
 
   const handleClearFilters = () => {
-    handleFilterChange({ employeeName: '', weekEndingDate: '', status: 'all' });
+    setFilters({
+      employeeName: '',
+      weekEndingDate: '',
+      status: 'all'
+    });
+    setCurrentPage(1);
   };
 
-  const handleDownloadAll = () => {
-    setIsDownloadingAll(true);
-    console.log('Downloading all timesheets as PDF...');
-    setTimeout(() => setIsDownloadingAll(false), 2000);
-  };
+  // Apply status filter
+  const filteredTimesheets = filters.status === 'all' 
+    ? timesheets 
+    : timesheets.filter(timesheet => timesheet.status === filters.status);
 
-  if (isLoading) {
-    return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
+  // Pagination
+  const totalItems = filteredTimesheets.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTimesheets = filteredTimesheets.slice(startIndex, startIndex + itemsPerPage);
 
   if (error) {
-    return <TimesheetErrorAlert error={error} isLoading={isLoading} onRefetch={refetch} />;
+    return <TimesheetErrorAlert error={error} />;
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Employee Timesheets</h1>
-          <p className="text-slate-600">Manage and approve weekly timesheets</p>
-        </div>
-        <TimesheetPDFGenerator
-          timesheets={filteredTimesheets}
-          isDownloadingAll={isDownloadingAll}
-          onDownloadAll={handleDownloadAll}
-        />
-      </div>
+    <div className="space-y-6">
+      <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <CardHeader className="p-6 pb-4">
+          <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Clock className="h-6 w-6 text-orange-600" />
+            Employee Timesheets Management
+          </CardTitle>
+          <p className="text-gray-600 mt-2">
+            Review, approve, and manage employee timesheets
+          </p>
+        </CardHeader>
+      </Card>
 
-      <TimesheetFilters 
+      <TimesheetFilters
         filters={filters}
-        onFiltersChange={handleFilterChange}
+        onFiltersChange={setFilters}
         employees={employees}
       />
 
@@ -130,8 +104,8 @@ const EmployeeTimesheets = () => {
         onEdit={handleEdit}
         onApprove={handleApprove}
         onReject={handleReject}
-        isApproving={approvalMutation.isPending}
-        isRejecting={rejectionMutation.isPending}
+        isApproving={approveMutation.isPending}
+        isRejecting={rejectMutation.isPending}
         onClearFilters={handleClearFilters}
       />
 
@@ -139,26 +113,20 @@ const EmployeeTimesheets = () => {
         <TimesheetPagination
           currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={handlePageChange}
-          totalItems={filteredTimesheets.length}
-          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
         />
       )}
 
-      <TimesheetEditModal
-        timesheet={selectedTimesheet}
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedTimesheet(null);
-        }}
-        onSave={() => {
-          refetch();
-          setIsEditModalOpen(false);
-          setSelectedTimesheet(null);
-        }}
-        jobsites={jobsites}
-      />
+      {editingTimesheet && (
+        <TimesheetEditModal
+          timesheet={editingTimesheet}
+          onClose={() => setEditingTimesheet(null)}
+          onSave={handleSaveEdit}
+          isSaving={updateMutation.isPending}
+        />
+      )}
     </div>
   );
 };

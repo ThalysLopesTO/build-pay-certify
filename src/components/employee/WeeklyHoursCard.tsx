@@ -1,21 +1,24 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { useWeeklyHoursSummary } from '@/hooks/useWeeklyHoursSummary';
-import { useWorkWeek } from '@/hooks/useWorkWeek';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Clock, TrendingUp } from 'lucide-react';
+import { useTimesheets } from '@/hooks/useTimesheets';
 
-const WeeklyHoursCard: React.FC = () => {
-  const { data: totalHours, isLoading } = useWeeklyHoursSummary();
-  const workWeek = useWorkWeek();
+const WeeklyHoursCard = () => {
+  const { totalWeeklyHours, isLoading } = useTimesheets();
 
-  if (isLoading || !workWeek) {
+  if (isLoading) {
     return (
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
         <CardContent className="p-6">
-          <div className="animate-pulse">
-            <div className="h-6 bg-slate-200 rounded mb-2"></div>
-            <div className="h-4 bg-slate-200 rounded mb-4 w-2/3"></div>
-            <div className="h-8 bg-slate-200 rounded w-16 mx-auto"></div>
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-white/20 rounded-full">
+              <Clock className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold mb-1">This Week's Hours</h3>
+              <div className="text-2xl font-bold">Loading...</div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -23,14 +26,19 @@ const WeeklyHoursCard: React.FC = () => {
   }
 
   return (
-    <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+    <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
       <CardContent className="p-6">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-slate-900 mb-1">This Week's Hours</h3>
-          <p className="text-slate-600 mb-1">Track your weekly progress</p>
-          <p className="text-sm text-slate-500 mb-4">{workWeek.currentWeek.rangeFormatted}</p>
-          <div className="text-4xl font-bold text-blue-600">
-            {totalHours || 0}h
+        <div className="flex items-center space-x-4">
+          <div className="p-3 bg-white/20 rounded-full">
+            <Clock className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold mb-1">This Week's Hours</h3>
+            <div className="text-2xl font-bold">{totalWeeklyHours.toFixed(1)} hrs</div>
+            <div className="flex items-center text-sm opacity-90 mt-1">
+              <TrendingUp className="h-4 w-4 mr-1" />
+              <span>Track your progress</span>
+            </div>
           </div>
         </div>
       </CardContent>

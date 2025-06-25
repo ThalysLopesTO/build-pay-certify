@@ -6,6 +6,7 @@ import ForemanTimesheetForm from '../components/foreman/ForemanTimesheetForm';
 import MaterialRequestForm from '../components/foreman/MaterialRequestForm';
 import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
 import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
+import EmployeeTimesheets from '../components/admin/EmployeeTimesheets';
 import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
@@ -19,6 +20,8 @@ const ForemanDashboard = () => {
     switch (activeTab) {
       case 'timesheet':
         return <ForemanTimesheetForm />;
+      case 'timesheet-approval':
+        return <EmployeeTimesheets />;
       case 'material-request':
         return <MaterialRequestForm />;
       case 'my-requests':
