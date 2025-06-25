@@ -11,6 +11,7 @@ interface TimesheetTableProps {
   onEdit: (timesheet: any) => void;
   onApprove: (timesheetId: string) => void;
   onReject: (timesheetId: string) => void;
+  onViewLocation?: (timesheet: any) => void;
   isApproving: boolean;
   isRejecting: boolean;
   onClearFilters: () => void;
@@ -21,6 +22,7 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
   onEdit,
   onApprove,
   onReject,
+  onViewLocation,
   isApproving,
   isRejecting,
   onClearFilters
@@ -50,13 +52,14 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
                 <TableHead className="font-semibold text-gray-900 text-center">Sun</TableHead>
                 <TableHead className="font-semibold text-gray-900 text-center">Total</TableHead>
                 <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                <TableHead className="font-semibold text-gray-900">Location</TableHead>
                 <TableHead className="font-semibold text-gray-900">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {timesheets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={14} className="text-center py-8 text-gray-500">
                     <div className="space-y-2">
                       <p>No timesheets found for the selected filters</p>
                       <Button 
@@ -77,6 +80,7 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
                     onEdit={onEdit}
                     onApprove={onApprove}
                     onReject={onReject}
+                    onViewLocation={onViewLocation}
                     isApproving={isApproving}
                     isRejecting={isRejecting}
                   />
