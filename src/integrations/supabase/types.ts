@@ -900,6 +900,66 @@ export type Database = {
           },
         ]
       }
+      timesheets: {
+        Row: {
+          check_in_location: string | null
+          check_in_time: string | null
+          check_out_location: string | null
+          check_out_time: string | null
+          company_id: string
+          created_at: string
+          hours_worked: number | null
+          id: string
+          jobsite_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          check_in_location?: string | null
+          check_in_time?: string | null
+          check_out_location?: string | null
+          check_out_time?: string | null
+          company_id: string
+          created_at?: string
+          hours_worked?: number | null
+          id?: string
+          jobsite_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          check_in_location?: string | null
+          check_in_time?: string | null
+          check_out_location?: string | null
+          check_out_time?: string | null
+          company_id?: string
+          created_at?: string
+          hours_worked?: number | null
+          id?: string
+          jobsite_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheets_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           company_id: string

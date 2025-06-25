@@ -9,6 +9,7 @@ import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import EmployeeDashboardHome from '../components/employee/EmployeeDashboardHome';
+import TimeTracker from '../components/employee/TimeTracker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const EmployeeDashboard = () => {
@@ -27,8 +28,9 @@ const EmployeeDashboard = () => {
           <LicenseWarningBanner />
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="time-tracker">Time Tracker</TabsTrigger>
               <TabsTrigger value="timesheet">Timesheet</TabsTrigger>
               <TabsTrigger value="attention-report">Report Issue</TabsTrigger>
               <TabsTrigger value="my-reports">My Reports</TabsTrigger>
@@ -39,6 +41,10 @@ const EmployeeDashboard = () => {
 
             <TabsContent value="dashboard" className="space-y-6">
               <EmployeeDashboardHome onNavigateToTab={handleNavigateToTab} />
+            </TabsContent>
+
+            <TabsContent value="time-tracker" className="space-y-6">
+              <TimeTracker />
             </TabsContent>
 
             <TabsContent value="timesheet" className="space-y-6">

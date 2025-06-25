@@ -8,7 +8,8 @@ import {
   AlertTriangle, 
   Award, 
   BookOpen, 
-  Settings 
+  Settings,
+  Clock
 } from 'lucide-react';
 
 interface DashboardCard {
@@ -26,6 +27,12 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
   const { user } = useAuth();
 
   const dashboardCards: DashboardCard[] = [
+    {
+      title: 'Time Tracker',
+      icon: <Clock className="h-8 w-8" />,
+      onClick: () => onNavigateToTab('time-tracker'),
+      color: 'bg-emerald-500 hover:bg-emerald-600'
+    },
     {
       title: 'Submit Timesheet',
       icon: <FileText className="h-8 w-8" />,
@@ -74,7 +81,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       <WeeklyHoursCard />
 
       {/* Dashboard Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {dashboardCards.map((card, index) => (
           <Card 
             key={index} 
