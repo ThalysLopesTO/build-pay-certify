@@ -55,8 +55,8 @@ const LivePunchMonitor = () => {
           check_in_time,
           check_out_time,
           status,
-          user_profiles(first_name, last_name),
-          jobsites(name)
+          user_profiles!timesheets_user_id_fkey(first_name, last_name),
+          jobsites!timesheets_jobsite_id_fkey(name)
         `)
         .eq('company_id', user.companyId)
         .gte('check_in_time', today.toISOString())
