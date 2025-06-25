@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import Header from '../components/Header';
@@ -7,7 +8,7 @@ import EmployeeManagement from '@/components/admin/EmployeeManagement';
 import EmployeeRegistration from '@/components/admin/EmployeeRegistration';
 import JobsiteManagement from '@/components/admin/JobsiteManagement';
 import SafetyTemplatesManagement from '@/components/admin/SafetyTemplatesManagement';
-import InventoryManagement from '@/components/admin/InventoryManagement';
+import InventoryIndex from '@/pages/admin/inventory/Index';
 import SuppliersManagement from '@/components/admin/SuppliersManagement';
 import EmployeeTimesheets from '@/components/admin/EmployeeTimesheets';
 import PayrollSummary from '@/components/admin/PayrollSummary';
@@ -35,7 +36,7 @@ const AdminDashboard = () => {
       case 'safety-templates':
         return <SafetyTemplatesManagement />;
       case 'inventory':
-        return <InventoryManagement />;
+        return <InventoryIndex />;
       case 'suppliers':
         return <SuppliersManagement />;
       case 'timesheets':
