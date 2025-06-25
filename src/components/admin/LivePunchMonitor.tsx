@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -56,8 +55,8 @@ const LivePunchMonitor = () => {
           check_in_time,
           check_out_time,
           status,
-          user_profiles!user_id(first_name, last_name),
-          jobsites!jobsite_id(name)
+          user_profiles(first_name, last_name),
+          jobsites(name)
         `)
         .eq('company_id', user.companyId)
         .gte('check_in_time', today.toISOString())
@@ -69,7 +68,7 @@ const LivePunchMonitor = () => {
         throw error;
       }
 
-      return data;
+      return data as PunchEntry[];
     },
     enabled: !!user?.companyId,
     refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
