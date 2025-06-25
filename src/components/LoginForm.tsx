@@ -48,26 +48,26 @@ const LoginForm = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Side - Login Form */}
+      {/* Left Side - Centered Login Form */}
       <div className="flex-1 flex items-center justify-center bg-slate-50 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
-          {/* StackBuild Logo */}
+          {/* StackBuild Logo - Larger Size */}
           <div className="text-center">
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-8">
               <div className="relative">
                 <img 
-                  src="/lovable-uploads/0e2364b7-19e0-4484-b20c-55fdc85ed782.png" 
+                  src="/lovable-uploads/bef9bd69-be4a-4d88-bbc9-2f3c22bf3643.png" 
                   alt="StackBuild Logo" 
-                  className="h-16 w-auto"
+                  className="h-24 w-auto"
                 />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-slate-800 mb-2">Welcome Back</h1>
-            <p className="text-slate-600">Sign in to access your construction management dashboard</p>
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">Log In</h1>
+            <p className="text-slate-600">Welcome back to StackBuild</p>
           </div>
 
           {/* Login Form Card */}
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
             <CardContent className="p-8">
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
@@ -141,23 +141,17 @@ const LoginForm = () => {
               </div>
             </CardContent>
           </Card>
-          
-          {/* Access Information */}
-          <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg p-6 text-center">
-            <h3 className="text-white font-semibold mb-3 flex items-center justify-center">
-              <Lock className="h-4 w-4 mr-2" />
-              Secure Access
-            </h3>
-            <div className="space-y-2 text-sm text-slate-300">
-              <p>• Employee accounts are created by administrators</p>
-              <p>• Contact your site manager for access credentials</p>
-              <p>• All data is encrypted and secure</p>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Right Side - Construction Image */}
+      {/* Right Side - Background Image */}
+      {/* 
+        BACKGROUND IMAGE REPLACEMENT AREA:
+        Replace the URL below with your custom construction jobsite photo.
+        The current image is a placeholder construction scene.
+        Recommended image specs: High resolution, landscape orientation, 
+        shows construction workers or jobsite activity.
+      */}
       <div className="hidden lg:flex flex-1 relative">
         <div 
           className="w-full bg-cover bg-center bg-no-repeat"
@@ -165,35 +159,8 @@ const LoginForm = () => {
             backgroundImage: `url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
           }}
         >
-          {/* Dark Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-l from-slate-900/70 via-slate-900/50 to-slate-900/30"></div>
-          
-          {/* Content Overlay */}
-          <div className="absolute inset-0 flex items-end p-12">
-            <div className="text-white max-w-lg">
-              <h2 className="text-4xl font-bold mb-4 leading-tight">
-                Build Smarter,<br />
-                <span className="text-orange-400">Manage Better</span>
-              </h2>
-              <p className="text-xl text-slate-200 leading-relaxed">
-                Professional construction payroll and project management designed for modern contractors.
-              </p>
-              <div className="mt-8 flex items-center space-x-6 text-sm text-slate-300">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                  <span>Payroll Management</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                  <span>Safety Compliance</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                  <span>Time Tracking</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Subtle Dark Overlay for Visual Separation */}
+          <div className="absolute inset-0 bg-gradient-to-l from-slate-900/30 via-slate-900/20 to-slate-900/10"></div>
         </div>
       </div>
     </div>
