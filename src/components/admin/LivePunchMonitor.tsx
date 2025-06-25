@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -5,12 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Clock, User, MapPin, Filter, RefreshCw } from 'lucide-react';
+import { Clock, User, MapPin, Filter, RefreshCw, Calendar } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface PunchEntry {
   id: string;
@@ -34,17 +38,18 @@ const LivePunchMonitor = () => {
   const [selectedJobsite, setSelectedJobsite] = useState<string>('all');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  // Fetch today's punch entries with proper joins
+  // Fetch punch entries for the selected date
   const { data: punchEntries, isLoading, refetch } = useQuery({
-    queryKey: ['live-punch-monitor', user?.companyId],
+    queryKey: ['live-punch-monitor', user?.companyId, selectedDate],
     queryFn: async () => {
       if (!user?.companyId) return [];
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
 
       // First get timesheets
       const { data: timesheets, error: timesheetsError } = await supabase
@@ -58,8 +63,8 @@ const LivePunchMonitor = () => {
           status
         `)
         .eq('company_id', user.companyId)
-        .gte('check_in_time', today.toISOString())
-        .lt('check_in_time', tomorrow.toISOString())
+        .gte('check_in_time', startOfDay.toISOString())
+        .lte('check_in_time', endOfDay.toISOString())
         .order('check_in_time', { ascending: false });
 
       if (timesheetsError) {
@@ -196,6 +201,11 @@ const LivePunchMonitor = () => {
     });
   };
 
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -209,13 +219,31 @@ const LivePunchMonitor = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Live Punch Monitor</h1>
-          <p className="text-muted-foreground">Real-time monitoring of employee check-ins and check-outs for today</p>
+          <p className="text-muted-foreground">
+            {isToday(selectedDate) 
+              ? `Real-time monitoring of employee check-ins and check-outs for ${format(selectedDate, 'EEEE, MMMM dd, yyyy')}`
+              : `Employee punch entries for ${format(selectedDate, 'EEEE, MMMM dd, yyyy')}`
+            }
+          </p>
         </div>
         <Button onClick={handleRefresh} variant="outline" size="sm">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </div>
+
+      {/* Current Date Display */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 text-lg font-semibold">
+            <Calendar className="h-5 w-5 text-orange-500" />
+            <span>Viewing: {format(selectedDate, 'EEEE, MMMM dd, yyyy')}</span>
+            {isToday(selectedDate) && (
+              <Badge variant="outline" className="ml-2">Today</Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filters */}
       <Card>
@@ -226,7 +254,34 @@ const LivePunchMonitor = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "MMM dd, yyyy") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
             <div>
               <label className="text-sm font-medium mb-2 block">Jobsite</label>
               <Select value={selectedJobsite} onValueChange={setSelectedJobsite}>
@@ -285,7 +340,9 @@ const LivePunchMonitor = () => {
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-green-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Currently Clocked In</p>
+                <p className="text-sm text-muted-foreground">
+                  {isToday(selectedDate) ? 'Currently Clocked In' : 'Were Clocked In'}
+                </p>
                 <p className="text-2xl font-bold">
                   {filteredEntries.filter(e => !e.check_out_time).length}
                 </p>
@@ -299,7 +356,9 @@ const LivePunchMonitor = () => {
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-blue-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Total Employees Today</p>
+                <p className="text-sm text-muted-foreground">
+                  Total Employees {isToday(selectedDate) ? 'Today' : 'That Day'}
+                </p>
                 <p className="text-2xl font-bold">{filteredEntries.length}</p>
               </div>
             </div>
@@ -324,7 +383,9 @@ const LivePunchMonitor = () => {
       {/* Punch Entries Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Today's Punch Entries</CardTitle>
+          <CardTitle>
+            {isToday(selectedDate) ? "Today's Punch Entries" : `Punch Entries for ${format(selectedDate, 'MMM dd, yyyy')}`}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -342,7 +403,7 @@ const LivePunchMonitor = () => {
               {filteredEntries.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No punch entries found for today
+                    No punch entries found for {format(selectedDate, 'MMMM dd, yyyy')}
                   </TableCell>
                 </TableRow>
               ) : (
