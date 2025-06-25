@@ -12,6 +12,7 @@ import TimesheetFilters from './timesheets/TimesheetFilters';
 import TimesheetEditModal from './timesheets/TimesheetEditModal';
 import TimesheetErrorAlert from './timesheets/TimesheetErrorAlert';
 import TimesheetPagination from './timesheets/TimesheetPagination';
+import LocationMapModal from './LocationMapModal';
 import { Clock } from 'lucide-react';
 
 const EmployeeTimesheets = () => {
@@ -22,6 +23,11 @@ const EmployeeTimesheets = () => {
   });
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    location: string | null;
+    employeeName: string;
+    timestamp: string;
+  } | null>(null);
   const itemsPerPage = 10;
 
   const { data: employees = [] } = useEmployeeDirectory();
@@ -40,6 +46,14 @@ const EmployeeTimesheets = () => {
 
   const handleEdit = (timesheet: any) => {
     setEditingTimesheet(timesheet);
+  };
+
+  const handleViewLocation = (timesheet: any) => {
+    setSelectedLocation({
+      location: null, // Weekly timesheets don't have location data
+      employeeName: timesheet.employee_name || 'Unknown Employee',
+      timestamp: timesheet.week_start_date || 'Unknown date'
+    });
   };
 
   const handleSaveEdit = (updatedData: any) => {
@@ -104,6 +118,7 @@ const EmployeeTimesheets = () => {
         onEdit={handleEdit}
         onApprove={handleApprove}
         onReject={handleReject}
+        onViewLocation={handleViewLocation}
         isApproving={approveMutation.isPending}
         isRejecting={rejectMutation.isPending}
         onClearFilters={handleClearFilters}
@@ -125,6 +140,16 @@ const EmployeeTimesheets = () => {
           onClose={() => setEditingTimesheet(null)}
           onSave={handleSaveEdit}
           isSaving={updateMutation.isPending}
+        />
+      )}
+
+      {selectedLocation && (
+        <LocationMapModal
+          isOpen={!!selectedLocation}
+          onClose={() => setSelectedLocation(null)}
+          location={selectedLocation.location}
+          employeeName={selectedLocation.employeeName}
+          timestamp={selectedLocation.timestamp}
         />
       )}
     </div>

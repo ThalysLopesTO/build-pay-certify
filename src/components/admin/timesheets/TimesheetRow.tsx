@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { MapPin } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import TimesheetStatusBadge from './TimesheetStatusBadge';
 import TimesheetActions from './TimesheetActions';
@@ -11,6 +13,7 @@ interface TimesheetRowProps {
   onEdit: (timesheet: any) => void;
   onApprove: (timesheetId: string) => void;
   onReject: (timesheetId: string) => void;
+  onViewLocation?: (timesheet: any) => void;
   isApproving: boolean;
   isRejecting: boolean;
 }
@@ -20,6 +23,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
   onEdit,
   onApprove,
   onReject,
+  onViewLocation,
   isApproving,
   isRejecting
 }) => {
@@ -56,6 +60,20 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
       </TableCell>
       <TableCell>
         <TimesheetStatusBadge status={timesheet.status || 'pending'} />
+      </TableCell>
+      <TableCell>
+        {onViewLocation ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onViewLocation(timesheet)}
+            className="p-2 h-8 w-8"
+          >
+            <MapPin className="h-4 w-4 text-blue-500" />
+          </Button>
+        ) : (
+          <span className="text-gray-400 text-sm">N/A</span>
+        )}
       </TableCell>
       <TableCell>
         <TimesheetActions

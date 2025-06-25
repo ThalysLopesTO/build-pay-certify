@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import LocationMapModal from './LocationMapModal';
 
 interface PunchEntry {
   id: string;
@@ -21,6 +22,8 @@ interface PunchEntry {
   jobsite_id: string;
   check_in_time: string | null;
   check_out_time: string | null;
+  check_in_location: string | null;
+  check_out_location: string | null;
   status: string;
   user_profiles: {
     first_name: string;
@@ -39,6 +42,11 @@ const LivePunchMonitor = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [flaggedEntries, setFlaggedEntries] = useState<Set<string>>(new Set());
+  const [selectedLocation, setSelectedLocation] = useState<{
+    location: string | null;
+    employeeName: string;
+    timestamp: string;
+  } | null>(null);
 
   // Fetch jobsites for filter
   const { data: jobsites } = useQuery({
@@ -97,6 +105,8 @@ const LivePunchMonitor = () => {
           jobsite_id,
           check_in_time,
           check_out_time,
+          check_in_location,
+          check_out_location,
           status
         `)
         .eq('company_id', user.companyId)
@@ -205,6 +215,22 @@ const LivePunchMonitor = () => {
     }
     
     return employeeName;
+  };
+
+  const handleViewLocation = (entry: PunchEntry) => {
+    const employeeName = entry.user_profiles ? 
+      `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : 
+      'Unknown Employee';
+    
+    const timestamp = entry.check_in_time ? 
+      format(new Date(entry.check_in_time), 'MMM dd, yyyy h:mm a') : 
+      'Unknown time';
+
+    setSelectedLocation({
+      location: entry.check_in_location,
+      employeeName,
+      timestamp
+    });
   };
 
   // Filter entries
@@ -423,13 +449,14 @@ const LivePunchMonitor = () => {
                 <TableHead>Check-out Time</TableHead>
                 <TableHead>Total Time</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Location</TableHead>
                 <TableHead>Flag</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredEntries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No punch entries found for {format(selectedDate, 'MMMM dd, yyyy')}
                   </TableCell>
                 </TableRow>
@@ -462,6 +489,20 @@ const LivePunchMonitor = () => {
                       {getStatusBadge(entry)}
                     </TableCell>
                     <TableCell>
+                      {entry.check_in_location ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewLocation(entry)}
+                          className="p-2 h-8 w-8"
+                        >
+                          <MapPin className="h-4 w-4 text-blue-500" />
+                        </Button>
+                      ) : (
+                        <span className="text-gray-400 text-sm">No data</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -483,6 +524,17 @@ const LivePunchMonitor = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Location Map Modal */}
+      {selectedLocation && (
+        <LocationMapModal
+          isOpen={!!selectedLocation}
+          onClose={() => setSelectedLocation(null)}
+          location={selectedLocation.location}
+          employeeName={selectedLocation.employeeName}
+          timestamp={selectedLocation.timestamp}
+        />
+      )}
     </div>
   );
 };
