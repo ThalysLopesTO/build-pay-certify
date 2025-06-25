@@ -47,35 +47,31 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Centered Login Form */}
-      <div className="flex-1 flex items-center justify-center bg-slate-50 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-8">
-          {/* StackBuild Logo - Larger Size */}
-          <div className="text-center">
-            <div className="flex justify-center mb-8">
-              <div className="relative">
-                <img 
-                  src="/lovable-uploads/bef9bd69-be4a-4d88-bbc9-2f3c22bf3643.png" 
-                  alt="StackBuild Logo" 
-                  className="h-24 w-auto"
-                />
-              </div>
-            </div>
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-orange-50 via-slate-50 to-orange-100">
+      {/* Left Side - Login Form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-8">
+        <div className="w-full max-w-md">
+          {/* StackBuild Logo */}
+          <div className="text-center mb-8">
+            <img 
+              src="/lovable-uploads/bef9bd69-be4a-4d88-bbc9-2f3c22bf3643.png" 
+              alt="StackBuild Logo" 
+              className="h-20 w-auto mx-auto mb-8"
+            />
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Log In</h1>
             <p className="text-slate-600">Welcome back to StackBuild</p>
           </div>
 
           {/* Login Form Card */}
-          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
+          <Card className="border-0 shadow-2xl bg-white">
             <CardContent className="p-8">
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-700 font-medium">
-                    Email Address
+                  <Label htmlFor="email" className="text-slate-700 font-medium text-sm">
+                    Email
                   </Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
                     <Input
                       id="email"
                       type="email"
@@ -83,17 +79,17 @@ const LoginForm = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 rounded-lg"
+                      className="pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 text-slate-700"
                     />
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-slate-700 font-medium">
+                  <Label htmlFor="password" className="text-slate-700 font-medium text-sm">
                     Password
                   </Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
                     <Input
                       id="password"
                       type="password"
@@ -101,14 +97,15 @@ const LoginForm = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 rounded-lg"
+                      className="pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 text-slate-700"
                     />
                   </div>
                 </div>
                 
                 <Button 
                   type="submit" 
-                  className="w-full h-12 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-semibold rounded-lg shadow-lg transform transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
+                  className="w-full h-12 text-white font-semibold shadow-lg transition-all duration-200 hover:shadow-xl"
+                  style={{ backgroundColor: '#F26522' }}
                   disabled={loading}
                 >
                   {loading ? (
@@ -125,19 +122,17 @@ const LoginForm = () => {
                 </Button>
               </form>
               
-              <div className="mt-8 pt-6 border-t border-slate-200">
-                <div className="text-center space-y-4">
-                  <p className="text-sm text-slate-600">New to StackBuild?</p>
-                  <Link to="/register-company">
-                    <Button 
-                      variant="outline" 
-                      className="w-full h-12 border-2 border-slate-300 hover:border-orange-500 hover:bg-orange-50 text-slate-700 hover:text-orange-600 font-medium rounded-lg transition-all duration-200"
-                    >
-                      <Building className="h-4 w-4 mr-2" />
-                      Register Your Company
-                    </Button>
-                  </Link>
-                </div>
+              <div className="mt-8 pt-6 border-t border-slate-200 text-center">
+                <p className="text-sm text-slate-600 mb-4">Don't have access?</p>
+                <Link to="/register-company">
+                  <Button 
+                    variant="outline" 
+                    className="w-full h-12 border-2 border-slate-300 hover:border-orange-500 hover:bg-orange-50 text-slate-700 hover:text-orange-600 font-medium transition-all duration-200"
+                  >
+                    <Building className="h-4 w-4 mr-2" />
+                    Register Your Company
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
@@ -146,21 +141,32 @@ const LoginForm = () => {
 
       {/* Right Side - Background Image */}
       {/* 
-        BACKGROUND IMAGE REPLACEMENT AREA:
-        Replace the URL below with your custom construction jobsite photo.
-        The current image is a placeholder construction scene.
-        Recommended image specs: High resolution, landscape orientation, 
-        shows construction workers or jobsite activity.
+        BACKGROUND IMAGE CUSTOMIZATION:
+        Replace the CSS background-image URL below with your construction jobsite photo.
+        Example: bg-[url('/images/construction-jobsite.jpg')]
+        Current placeholder: Unsplash construction image
       */}
-      <div className="hidden lg:flex flex-1 relative">
+      <div className="flex-1 lg:block hidden relative">
         <div 
-          className="w-full bg-cover bg-center bg-no-repeat"
+          className="w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
           }}
         >
-          {/* Subtle Dark Overlay for Visual Separation */}
-          <div className="absolute inset-0 bg-gradient-to-l from-slate-900/30 via-slate-900/20 to-slate-900/10"></div>
+          {/* Subtle overlay for depth */}
+          <div className="absolute inset-0 bg-gradient-to-l from-slate-900/20 to-transparent"></div>
+        </div>
+      </div>
+
+      {/* Mobile: Image on top for small screens */}
+      <div className="lg:hidden h-64 relative">
+        <div 
+          className="w-full h-full bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 to-transparent"></div>
         </div>
       </div>
     </div>
