@@ -1,7 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export const fetchUserProfile = async (userId: string) => {
+interface ProfileResult {
+  profile: any;
+  company: any;
+  error: string | null;
+}
+
+export const fetchUserProfile = async (userId: string): Promise<ProfileResult> => {
   try {
     console.log('📝 Fetching user profile for:', userId);
     

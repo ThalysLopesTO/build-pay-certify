@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
           }
           
-          if (data.needsSubscription && !user.role?.includes('super_admin')) {
+          if (data.needsSubscription && user.role !== 'super_admin') {
             console.log('🚨 User needs subscription, redirecting to pricing');
             if (currentPath !== '/pricing') {
               toast({
