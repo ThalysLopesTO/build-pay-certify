@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const currentPath = window.location.pathname;
           
           // Admin users get redirected to admin dashboard or regular dashboard
-          if (user.role === 'admin') {
+          if (user.role === 'admin' || user.role === 'super_admin') {
             console.log('👑 Admin user detected');
             if (currentPath === '/login' || currentPath === '/pricing') {
               window.location.href = '/dashboard';
@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('✅ Active subscription confirmed');
             if (currentPath === '/login' || currentPath === '/pricing') {
               // Route based on user role
-              if (user.role === 'admin') {
+              if (user.role === 'admin' || user.role === 'super_admin') {
                 window.location.href = '/dashboard';
               } else {
                 window.location.href = '/dashboard';

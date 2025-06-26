@@ -48,46 +48,46 @@ const LivePunchMonitor = () => {
 
   // Fetch jobsites for filter
   const { data: jobsites } = useQuery({
-    queryKey: ['jobsites', user?.companyId],
+    queryKey: ['jobsites', user?.company_id],
     queryFn: async () => {
-      if (!user?.companyId) return [];
+      if (!user?.company_id) return [];
 
       const { data, error } = await supabase
         .from('jobsites')
         .select('id, name')
-        .eq('company_id', user.companyId)
+        .eq('company_id', user.company_id)
         .order('name');
 
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.companyId,
+    enabled: !!user?.company_id,
   });
 
   // Fetch employees for filter
   const { data: employees } = useQuery({
-    queryKey: ['employees', user?.companyId],
+    queryKey: ['employees', user?.company_id],
     queryFn: async () => {
-      if (!user?.companyId) return [];
+      if (!user?.company_id) return [];
 
       const { data, error } = await supabase
         .from('user_profiles')
         .select('user_id, first_name, last_name')
-        .eq('company_id', user.companyId)
+        .eq('company_id', user.company_id)
         .in('role', ['employee', 'foreman'])
         .order('first_name');
 
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.companyId,
+    enabled: !!user?.company_id,
   });
 
   // Fetch punch entries for the selected date
   const { data: punchEntries, isLoading, refetch } = useQuery({
-    queryKey: ['live-punch-monitor', user?.companyId, selectedDate],
+    queryKey: ['live-punch-monitor', user?.company_id, selectedDate],
     queryFn: async () => {
-      if (!user?.companyId) return [];
+      if (!user?.company_id) return [];
 
       const startOfDay = new Date(selectedDate);
       startOfDay.setHours(0, 0, 0, 0);
@@ -107,7 +107,7 @@ const LivePunchMonitor = () => {
           check_out_location,
           status
         `)
-        .eq('company_id', user.companyId)
+        .eq('company_id', user.company_id)
         .gte('check_in_time', startOfDay.toISOString())
         .lte('check_in_time', endOfDay.toISOString())
         .order('check_in_time', { ascending: false });
@@ -164,7 +164,7 @@ const LivePunchMonitor = () => {
 
       return combinedData;
     },
-    enabled: !!user?.companyId,
+    enabled: !!user?.company_id,
     refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
   });
 

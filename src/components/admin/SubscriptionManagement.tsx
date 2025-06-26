@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,7 +34,7 @@ const SubscriptionManagement = () => {
   } = useStripeSubscription();
 
   const handleRenewSubscription = () => {
-    createCheckout({ planName: STACKBUILD_PLAN.name });
+    createCheckout({ planType: 'basic' });
   };
 
   if (isLoadingStatus) {
@@ -62,7 +63,7 @@ const SubscriptionManagement = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={checkSubscription}
+              onClick={() => checkSubscription()}
               disabled={isCheckingSubscription}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isCheckingSubscription ? 'animate-spin' : ''}`} />

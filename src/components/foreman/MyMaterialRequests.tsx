@@ -152,8 +152,8 @@ const MyMaterialRequests = () => {
                       <div className="flex items-center space-x-2">
                         <User className="h-4 w-4 text-gray-500" />
                         <span className="font-medium">
-                          {user?.firstName && user?.lastName 
-                            ? `${user.firstName} ${user.lastName}`
+                          {user?.first_name && user?.last_name 
+                            ? `${user.first_name} ${user.last_name}`
                             : user?.email || 'Unknown'
                           }
                         </span>

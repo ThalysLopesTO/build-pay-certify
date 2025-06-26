@@ -56,7 +56,7 @@ const ForemanTimesheetForm = () => {
     watchedValues.sundayHours
   );
 
-  const hourlyRate = parseFloat(user?.user_metadata?.hourly_rate || '0');
+  const hourlyRate = parseFloat(user?.hourly_rate?.toString() || '0');
   // Calculate gross pay for preview only - this won't be sent to the database
   const grossPay = totalHours * hourlyRate;
 

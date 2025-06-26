@@ -41,7 +41,8 @@ export const useAuthState = () => {
             setCompanyError(error);
           } else if (profile && company) {
             const authUser: AuthUser = {
-              ...session.user,
+              id: session.user.id,
+              email: session.user.email || '',
               role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
               company_id: profile.company_id,
               company_name: company.name,
