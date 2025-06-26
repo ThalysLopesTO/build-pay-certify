@@ -3,11 +3,13 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { AuthContextType } from './auth/types';
 import { useAuthState } from './auth/useAuthState';
 import { login, signUp, logout, checkSubscriptionStatus } from './auth/authService';
+import { useToast } from '@/hooks/use-toast';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, session, loading, companyError, setCompanyError } = useAuthState();
+  const { toast } = useToast();
 
   // Check subscription status when user logs in
   useEffect(() => {
@@ -18,11 +20,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Only check subscription for non-super-admin users
+      // Check subscription for all other users
       console.log('🔄 User logged in, checking subscription status...');
-      checkSubscriptionStatus();
+      checkSubscriptionStatus().then((data) => {
+        if (data) {
+          // Handle routing based on subscription status
+          const currentPath = window.location.pathname;
+          
+          if (data.needsSubscription && !user.role?.includes('super_admin')) {
+            console.log('🚨 User needs subscription, redirecting to pricing');
+            if (currentPath !== '/pricing') {
+              toast({
+                title: "Subscription Required",
+                description: "You need a valid subscription to access the platform.",
+                variant: "destructive",
+              });
+              window.location.href = '/pricing';
+            }
+          } else if (data.subscription?.status === 'active') {
+            console.log('✅ Active subscription confirmed');
+            if (currentPath === '/login' || currentPath === '/pricing') {
+              window.location.href = '/dashboard';
+            }
+          }
+        }
+      }).catch((error) => {
+        console.error('Failed to check subscription status:', error);
+        toast({
+          title: "Subscription Check Failed",
+          description: "Unable to verify subscription status. Please try again.",
+          variant: "destructive",
+        });
+      });
     }
-  }, [user, session, loading]);
+  }, [user, session, loading, toast]);
 
   const handleLogout = async () => {
     console.log('🔄 Logout requested...');

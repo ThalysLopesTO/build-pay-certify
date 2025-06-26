@@ -16,7 +16,7 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
   const { subscriptionStatus, isLoading } = useSubscriptionSync();
   const { toast } = useToast();
 
-  // Check for company subscription override
+  // Check for company subscription override or legacy plan
   const { data: companyOverride, isLoading: isLoadingOverride } = useQuery({
     queryKey: ['company-override', user?.companyId],
     queryFn: async () => {
@@ -24,7 +24,7 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
       
       const { data } = await supabase
         .from('companies')
-        .select('subscription_override')
+        .select('subscription_override, status, plan, plan_type')
         .eq('id', user.companyId)
         .single();
         
@@ -56,11 +56,17 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
     return <>{children}</>;
   }
 
+  // Check for legacy/test users with active status and plan
+  if (companyOverride?.status === 'active' && companyOverride?.plan && companyOverride.plan !== 'free') {
+    console.log('✅ Legacy/test user with active plan, granting access');
+    return <>{children}</>;
+  }
+
   // Check if user has active subscription
   const hasActiveSubscription = subscriptionStatus?.status === 'active';
   
   if (!hasActiveSubscription) {
-    console.log('🚨 No active subscription, redirecting to pricing');
+    console.log('🚨 No active subscription or valid plan, redirecting to pricing');
     toast({
       title: "Subscription Required",
       description: "You need a valid subscription to access the platform.",

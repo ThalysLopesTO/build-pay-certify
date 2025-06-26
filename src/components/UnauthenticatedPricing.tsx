@@ -62,7 +62,7 @@ const UnauthenticatedPricing = () => {
   const handleSelectPlan = (planType: 'basic' | 'premium' | 'enterprise') => {
     checkoutMutation.mutate({
       planType,
-      customerEmail: 'guest@example.com', // Placeholder for unauthenticated users
+      customerEmail: '', // No email required for unauthenticated checkout
       isUnauthenticated: true,
     });
   };
@@ -75,7 +75,7 @@ const UnauthenticatedPricing = () => {
             Choose Your Plan
           </h1>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            Select the perfect plan for your business. Start your subscription now and create your account after payment.
+            Start your subscription now and create your account after payment. No email required to get started.
           </p>
         </div>
 
@@ -135,7 +135,7 @@ const UnauthenticatedPricing = () => {
 
         <div className="text-center mt-12">
           <p className="text-slate-600">
-            All plans include a 14-day free trial. Create your account after payment.
+            Subscribe now, then complete registration. No upfront email required.
           </p>
         </div>
       </div>

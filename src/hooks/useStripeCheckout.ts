@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface CheckoutParams {
   planType: 'basic' | 'premium' | 'enterprise';
-  customerEmail: string;
+  customerEmail?: string;
   isUnauthenticated?: boolean;
 }
 
@@ -18,9 +18,15 @@ export const useStripeCheckout = () => {
   const { toast } = useToast();
 
   return useMutation<CheckoutResponse, Error, CheckoutParams>({
-    mutationFn: async ({ planType, customerEmail, isUnauthenticated = false }: CheckoutParams): Promise<CheckoutResponse> => {
+    mutationFn: async ({ planType, customerEmail = '', isUnauthenticated = false }: CheckoutParams): Promise<CheckoutResponse> => {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { planType, customerEmail, isUnauthenticated },
+        body: { 
+          planType, 
+          customerEmail, 
+          isUnauthenticated,
+          successUrl: `${window.location.origin}/register`,
+          cancelUrl: `${window.location.origin}/pricing`
+        },
       });
 
       if (error) throw new Error(error.message);

@@ -35,7 +35,7 @@ serve(async (req) => {
       throw new Error('Invalid user token')
     }
 
-    console.log('🔄 Syncing subscription for user:', user.id)
+    console.log('🔄 Checking subscription for user:', user.id)
 
     // Get user's company and existing subscription data
     const { data: profile, error: profileError } = await supabaseClient
@@ -70,7 +70,7 @@ serve(async (req) => {
     // Get company data including subscription_override flag
     const { data: company } = await supabaseClient
       .from('companies')
-      .select('stripe_customer_id, stripe_subscription_id, subscription_override, plan_type, employee_limit')
+      .select('stripe_customer_id, stripe_subscription_id, subscription_override, plan_type, employee_limit, status, plan')
       .eq('id', profile.company_id)
       .single()
 
@@ -97,6 +97,35 @@ serve(async (req) => {
           employee_limit: company.employee_limit 
         },
         message: 'Company subscription override active'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
+    // Check for legacy/test users with active status and plan
+    if (company?.status === 'active' && company?.plan && company.plan !== 'free') {
+      console.log('✅ Legacy/test user with active plan detected')
+      
+      // Create/update subscription record
+      await supabaseClient
+        .from('subscriptions')
+        .upsert({
+          user_id: user.id,
+          company_id: profile.company_id,
+          status: 'active',
+          plan_type: company.plan,
+          employee_limit: company.employee_limit,
+        })
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        subscription: { 
+          status: 'active', 
+          plan_type: company.plan, 
+          employee_limit: company.employee_limit 
+        },
+        message: 'Legacy plan access granted'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

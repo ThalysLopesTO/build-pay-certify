@@ -64,13 +64,7 @@ export const checkSubscriptionStatus = async () => {
 
     console.log('✅ Subscription status synced:', data);
     
-    // If no active subscription and not super admin, redirect to pricing
-    if (data?.needsSubscription) {
-      console.log('🚨 No active subscription found, redirecting to pricing');
-      window.location.href = '/pricing';
-      return null;
-    }
-
+    // Return subscription data for routing decisions
     return data;
   } catch (error) {
     console.error('Error checking subscription status:', error);
