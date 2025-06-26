@@ -1,25 +1,31 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
+// Simplified profile and company types to avoid circular references
+interface UserProfile {
+  user_id: string;
+  role: string;
+  company_id: string;
+  first_name?: string;
+  last_name?: string;
+  hourly_rate?: number;
+  trade?: string;
+  position?: string;
+  stripe_verified?: boolean;
+  pending_approval?: boolean;
+}
+
+interface Company {
+  id: string;
+  name: string;
+  status: string;
+  subscription_override?: boolean;
+  stripe_verified?: boolean;
+}
+
 interface ProfileServiceResult {
-  profile: {
-    user_id: string;
-    role: string;
-    company_id: string;
-    first_name?: string;
-    last_name?: string;
-    hourly_rate?: number;
-    trade?: string;
-    position?: string;
-    stripe_verified?: boolean;
-    pending_approval?: boolean;
-  } | null;
-  company: {
-    id: string;
-    name: string;
-    status: string;
-    subscription_override?: boolean;
-    stripe_verified?: boolean;
-  } | null;
+  profile: UserProfile | null;
+  company: Company | null;
   error: string | null;
 }
 
@@ -58,7 +64,7 @@ export const fetchUserProfile = async (userId: string): Promise<ProfileServiceRe
         .eq('user_id', userId)
         .single();
 
-      let profile;
+      let profile: UserProfile;
       if (existingProfile) {
         // Update existing profile to admin role
         const { data: updatedProfile, error: updateError } = await supabase
@@ -77,7 +83,7 @@ export const fetchUserProfile = async (userId: string): Promise<ProfileServiceRe
           console.error('❌ Error updating profile:', updateError);
           return { profile: null, company: null, error: 'Failed to update user profile' };
         }
-        profile = updatedProfile;
+        profile = updatedProfile as UserProfile;
       } else {
         // Create new admin profile
         const { data: newProfile, error: createError } = await supabase
@@ -96,11 +102,11 @@ export const fetchUserProfile = async (userId: string): Promise<ProfileServiceRe
           console.error('❌ Error creating profile:', createError);
           return { profile: null, company: null, error: 'Failed to create user profile' };
         }
-        profile = newProfile;
+        profile = newProfile as UserProfile;
       }
 
       console.log('✅ Company owner profile resolved:', profile);
-      return { profile, company: ownedCompany, error: null };
+      return { profile, company: ownedCompany as Company, error: null };
     }
 
     // If not a company owner, check for existing user profile
@@ -172,7 +178,7 @@ export const fetchUserProfile = async (userId: string): Promise<ProfileServiceRe
     console.log('✅ Resolved Profile:', profile);
     console.log('✅ Resolved Company:', company);
     
-    return { profile, company, error: null };
+    return { profile: profile as UserProfile, company: company as Company, error: null };
   } catch (error) {
     console.error('💥 Error in fetchUserProfile:', error);
     return { profile: null, company: null, error: 'An unexpected error occurred. Please try again.' };
