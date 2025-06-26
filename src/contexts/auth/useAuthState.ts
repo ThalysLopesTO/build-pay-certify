@@ -12,7 +12,7 @@ export const useAuthState = () => {
   const [companyError, setCompanyError] = useState<string | null>(null);
 
   console.log('🔍 Auth State Debug:', { 
-    user: user ? { id: user.id, email: user.email, companyId: user.companyId } : null, 
+    user: user ? { id: user.id, email: user.email, company_id: user.company_id } : null, 
     hasSession: !!session, 
     loading, 
     companyError 
@@ -43,14 +43,14 @@ export const useAuthState = () => {
             const authUser: AuthUser = {
               ...session.user,
               role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
-              companyId: profile.company_id,
-              companyName: company.name,
-              hourlyRate: profile.hourly_rate || 25,
+              company_id: profile.company_id,
+              company_name: company.name,
+              hourly_rate: profile.hourly_rate || 25,
               trade: profile.trade || 'General',
               position: profile.position || 'Worker',
-              firstName: profile.first_name || '',
-              lastName: profile.last_name || '',
-              pendingApproval: profile.pending_approval || false
+              first_name: profile.first_name || '',
+              last_name: profile.last_name || '',
+              pending_approval: profile.pending_approval || false
             };
             
             console.log('✅ Setting auth user:', authUser);

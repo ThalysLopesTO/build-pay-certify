@@ -6,9 +6,11 @@ export interface AuthUser {
   first_name?: string;
   last_name?: string;
   company_id?: string;
+  company_name?: string;
   hourly_rate?: number;
   trade?: string;
   position?: string;
+  pending_approval?: boolean;
 }
 
 export interface Company {
@@ -22,9 +24,14 @@ export interface Company {
 export interface AuthContextType {
   user: AuthUser | null;
   company: Company | null;
+  session: any;
   isAuthenticated: boolean;
   loading: boolean;
   companyError: string | null;
-  signOut: () => Promise<void>;
+  login: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  logout: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
+  isCompanyAdmin: boolean;
+  isSuperAdmin: boolean;
 }

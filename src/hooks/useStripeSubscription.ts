@@ -1,5 +1,5 @@
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,8 +14,24 @@ interface CheckoutResponse {
   redirectTo?: string;
 }
 
+interface SubscriptionStatus {
+  subscribed: boolean;
+  subscription_end?: string;
+  status?: string;
+}
+
 export const useStripeSubscription = () => {
   const { toast } = useToast();
+
+  // Query for subscription status
+  const { data: subscriptionStatus, isLoading: isLoadingStatus, refetch: checkSubscription } = useQuery<SubscriptionStatus>({
+    queryKey: ['subscription-status'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
 
   const createCheckout = useMutation<CheckoutResponse, Error, CheckoutParams>({
     mutationFn: async ({ planType, customerEmail = '', isUnauthenticated = false }: CheckoutParams): Promise<CheckoutResponse> => {
@@ -48,8 +64,34 @@ export const useStripeSubscription = () => {
     },
   });
 
+  const openCustomerPortal = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Portal Error",
+        description: error.message || "Failed to open customer portal",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
+    subscriptionStatus,
+    isLoadingStatus,
+    isCheckingSubscription: checkSubscription.isFetching,
     createCheckout: createCheckout.mutate,
     isCreatingCheckout: createCheckout.isPending,
+    openCustomerPortal: openCustomerPortal.mutate,
+    isOpeningPortal: openCustomerPortal.isPending,
+    checkSubscription,
   };
 };
