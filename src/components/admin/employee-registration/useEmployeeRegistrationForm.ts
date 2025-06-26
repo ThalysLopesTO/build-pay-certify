@@ -53,7 +53,7 @@ export const useEmployeeRegistrationForm = () => {
       const { data: result, error } = await supabase.functions.invoke('create-employee', {
         body: {
           employeeData: {
-            companyId: user.companyId,
+            companyId: user.company_id,
             email: data.email,
             password: data.password,
             firstName: data.firstName,

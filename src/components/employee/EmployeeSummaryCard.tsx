@@ -1,41 +1,49 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Building, User, Badge } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Building, MapPin, CheckCircle } from 'lucide-react';
 
 const EmployeeSummaryCard = () => {
   const { user } = useAuth();
 
   return (
-    <Card className="bg-gradient-to-r from-slate-50 to-white border-slate-200 hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-blue-100 rounded-full">
-              <Building className="h-5 w-5 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-medium text-slate-600 mb-1">Company</h3>
-              <p className="text-slate-900 font-semibold text-lg">
-                {user?.companyName || 'Not Assigned'}
-              </p>
-            </div>
+    <Card className="bg-gradient-to-r from-blue-50 to-slate-50 border-blue-200">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold text-slate-800 flex items-center">
+          <User className="h-5 w-5 mr-2 text-blue-600" />
+          Employee Summary
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Building className="h-4 w-4 text-slate-500" />
+            <span className="text-sm text-slate-600">Company</span>
           </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-green-100 rounded-full">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-medium text-slate-600 mb-1">Status</h3>
-              <p className="text-green-700 font-semibold text-lg flex items-center">
-                <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                Ready to Work
-              </p>
-            </div>
-          </div>
+          <span className="text-sm font-medium text-slate-800">
+            {user?.company_name || 'Not Available'}
+          </span>
         </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Badge className="h-4 w-4 text-slate-500" />
+            <span className="text-sm text-slate-600">Role</span>
+          </div>
+          <span className="text-sm font-medium text-slate-800 capitalize">
+            {user?.role || 'Employee'}
+          </span>
+        </div>
+
+        {user?.trade && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-600">Trade</span>
+            <span className="text-sm font-medium text-slate-800">
+              {user.trade}
+            </span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

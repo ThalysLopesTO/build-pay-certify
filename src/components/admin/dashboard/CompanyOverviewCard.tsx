@@ -26,7 +26,7 @@ const CompanyOverviewCard = () => {
           </div>
           <div className="flex-1">
             <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
-              {user?.companyName || 'Company Name'}
+              {user?.company_name || 'Company Name'}
             </CardTitle>
             <CompanyStatusBadge status="active" />
           </div>

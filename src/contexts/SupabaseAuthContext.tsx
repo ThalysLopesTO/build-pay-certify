@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect } from 'react';
-import { AuthContextType } from './auth/types';
+import { AuthContextType, Company } from './auth/types';
 import { useAuthState } from './auth/useAuthState';
 import { login, signUp, logout, checkSubscriptionStatus } from './auth/authService';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +10,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, session, loading, companyError, setCompanyError } = useAuthState();
   const { toast } = useToast();
+
+  // Create company object from user data
+  const company: Company | null = user ? {
+    id: user.company_id || '',
+    name: user.company_name || '',
+    status: 'active',
+    subscription_override: false,
+    stripe_verified: false
+  } : null;
 
   // Check subscription status when user logs in
   useEffect(() => {
@@ -96,6 +105,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const refreshUserProfile = async () => {
+    // Implementation for refreshing user profile
+    console.log('Refreshing user profile...');
+  };
+
   const isCompanyAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isSuperAdmin = user?.role === 'super_admin';
   const isAuthenticated = !!session && !!user && !companyError;
@@ -113,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={{
       user,
+      company,
       session,
       login,
       signUp,
@@ -121,7 +136,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loading,
       isCompanyAdmin,
       isSuperAdmin,
-      companyError
+      companyError,
+      refreshUserProfile
     }}>
       {children}
     </AuthContext.Provider>

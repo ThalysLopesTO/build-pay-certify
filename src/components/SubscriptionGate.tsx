@@ -18,19 +18,19 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
 
   // Check for company subscription override or legacy plan
   const { data: companyOverride, isLoading: isLoadingOverride } = useQuery({
-    queryKey: ['company-override', user?.companyId],
+    queryKey: ['company-override', user?.company_id],
     queryFn: async () => {
-      if (!user?.companyId) return null;
+      if (!user?.company_id) return null;
       
       const { data } = await supabase
         .from('companies')
         .select('subscription_override, status, plan, plan_type')
-        .eq('id', user.companyId)
+        .eq('id', user.company_id)
         .single();
         
       return data;
     },
-    enabled: !!user?.companyId,
+    enabled: !!user?.company_id,
   });
 
   if (isLoading || isLoadingOverride) {

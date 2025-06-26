@@ -60,7 +60,7 @@ const PlanTab = () => {
   };
 
   const handleRenewSubscription = () => {
-    createCheckout({ planName: STACKBUILD_PLAN.name });
+    createCheckout({ planType: 'premium' });
   };
 
   // Only show subscription management for admins
@@ -115,7 +115,7 @@ const PlanTab = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={checkSubscription}
+              onClick={() => checkSubscription()}
               disabled={isCheckingSubscription}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isCheckingSubscription ? 'animate-spin' : ''}`} />
