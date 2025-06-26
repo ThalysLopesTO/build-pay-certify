@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { RegistrationFormData } from './types';
 import { processPaidRegistration } from './paidRegistrationService';
@@ -10,27 +10,31 @@ export const useRegistrationSubmission = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  const handleSubmit = async (formData: RegistrationFormData) => {
+  const handleSubmit = async (formData: RegistrationFormData, sessionData?: any) => {
     setIsLoading(true);
 
     try {
       console.log('🚀 Starting company registration process...');
       
-      const paymentSuccess = searchParams.get('payment') === 'success';
-      const sessionId = searchParams.get('session_id');
-      
-      console.log('💳 Payment status:', { paymentSuccess, sessionId });
-
-      if (paymentSuccess && sessionId) {
-        const result = await processPaidRegistration(formData, sessionId);
+      if (sessionData && sessionData.metadata.is_unauthenticated_signup === 'true') {
+        // Handle post-checkout registration
+        console.log('💳 Processing post-checkout registration:', sessionData);
+        
+        const result = await processPaidRegistration(formData, null, sessionData);
         
         toast({
           title: "Registration Complete!",
-          description: `Welcome to StackBuild! Your company "${result.companyName}" has been created and activated with a Starter plan (5 employees).`,
+          description: `Welcome to StackBuild! Your company "${result.companyName}" has been created and activated with your ${sessionData.metadata.plan_type} plan.`,
         });
+        
+        // Redirect to dashboard
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
       } else {
+        // Handle regular free registration
         await processFreeRegistration(formData);
         
         toast({

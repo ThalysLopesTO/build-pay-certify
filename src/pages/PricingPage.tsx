@@ -1,9 +1,9 @@
 
 import React from 'react';
-import SubscriptionLanding from '../components/SubscriptionLanding';
+import UnauthenticatedPricing from '../components/UnauthenticatedPricing';
 
 const Pricing = () => {
-  return <SubscriptionLanding />;
+  return <UnauthenticatedPricing />;
 };
 
 export default Pricing;

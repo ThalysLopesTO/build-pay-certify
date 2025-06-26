@@ -93,6 +93,7 @@ function App() {
             <Routes>
               <Route path="/" element={<RootRouteHandler />} />
               <Route path="/login" element={<LoginForm />} />
+              <Route path="/register" element={<CompanyRegistration />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/subscription" element={<SubscriptionLanding />} />
               <Route

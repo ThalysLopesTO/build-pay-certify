@@ -5,12 +5,12 @@ import { useRegistrationSubmission } from './company-registration/useRegistratio
 export { SECRET_KEY } from './company-registration/constants';
 
 export const useCompanyRegistration = () => {
-  const { formData, handleInputChange } = useRegistrationForm();
+  const { formData, handleInputChange, setFormData } = useRegistrationForm();
   const { isLoading, isSubmitted, handleSubmit: submitRegistration } = useRegistrationSubmission();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, sessionData?: any) => {
     e.preventDefault();
-    await submitRegistration(formData);
+    await submitRegistration(formData, sessionData);
   };
 
   return {
@@ -18,6 +18,7 @@ export const useCompanyRegistration = () => {
     isLoading,
     isSubmitted,
     handleInputChange,
-    handleSubmit
+    handleSubmit,
+    setFormData
   };
 };

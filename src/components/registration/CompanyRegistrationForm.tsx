@@ -21,25 +21,44 @@ interface CompanyRegistrationFormProps {
   };
   isLoading: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.FormEvent, sessionData?: any) => void;
+  sessionData?: {
+    customer_email: string;
+    metadata: {
+      plan_type: string;
+      price_monthly: string;
+      employee_limit: string;
+      is_unauthenticated_signup: string;
+    };
+  } | null;
 }
 
 const CompanyRegistrationForm: React.FC<CompanyRegistrationFormProps> = ({
   formData,
   isLoading,
   onInputChange,
-  onSubmit
+  onSubmit,
+  sessionData
 }) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
+    onSubmit(e, sessionData);
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Company Registration</CardTitle>
+        <CardTitle>
+          {sessionData ? 'Complete Your Registration' : 'Company Registration'}
+        </CardTitle>
         <CardDescription>
-          Fill out the form below to request access for your construction company
+          {sessionData 
+            ? 'Your subscription is confirmed. Complete your account setup below.'
+            : 'Fill out the form below to request access for your construction company'
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="space-y-6">
+        <form onSubmit={handleFormSubmit} className="space-y-6">
           {/* Company Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center">
@@ -66,8 +85,14 @@ const CompanyRegistrationForm: React.FC<CompanyRegistrationFormProps> = ({
                   type="email"
                   value={formData.companyEmail}
                   onChange={onInputChange}
+                  disabled={!!sessionData?.customer_email}
                   required
                 />
+                {sessionData?.customer_email && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Pre-filled from your subscription
+                  </p>
+                )}
               </div>
             </div>
 
@@ -134,8 +159,14 @@ const CompanyRegistrationForm: React.FC<CompanyRegistrationFormProps> = ({
                 type="email"
                 value={formData.adminEmail}
                 onChange={onInputChange}
+                disabled={!!sessionData?.customer_email}
                 required
               />
+              {sessionData?.customer_email && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Pre-filled from your subscription
+                </p>
+              )}
             </div>
 
             <div>
@@ -158,7 +189,7 @@ const CompanyRegistrationForm: React.FC<CompanyRegistrationFormProps> = ({
               disabled={isLoading}
               className="flex-1"
             >
-              {isLoading ? 'Submitting...' : 'Submit Registration'}
+              {isLoading ? 'Submitting...' : sessionData ? 'Complete Registration' : 'Submit Registration'}
             </Button>
             <Link to="/login">
               <Button variant="outline" type="button">

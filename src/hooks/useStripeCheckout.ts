@@ -1,3 +1,4 @@
+
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -5,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 interface CheckoutParams {
   planType: 'basic' | 'premium' | 'enterprise';
   customerEmail: string;
+  isUnauthenticated?: boolean;
 }
 
 interface CheckoutResponse {
@@ -16,9 +18,9 @@ export const useStripeCheckout = () => {
   const { toast } = useToast();
 
   return useMutation<CheckoutResponse, Error, CheckoutParams>({
-    mutationFn: async ({ planType, customerEmail }: CheckoutParams): Promise<CheckoutResponse> => {
+    mutationFn: async ({ planType, customerEmail, isUnauthenticated = false }: CheckoutParams): Promise<CheckoutResponse> => {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { planType, customerEmail },
+        body: { planType, customerEmail, isUnauthenticated },
       });
 
       if (error) throw new Error(error.message);
