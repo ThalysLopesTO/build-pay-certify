@@ -1,13 +1,27 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-interface ProfileResult {
-  profile: any;
-  company: any;
+interface ProfileServiceResult {
+  profile: {
+    user_id: string;
+    role: string;
+    company_id: string;
+    first_name?: string;
+    last_name?: string;
+    stripe_verified?: boolean;
+    pending_approval?: boolean;
+  } | null;
+  company: {
+    id: string;
+    name: string;
+    status: string;
+    subscription_override?: boolean;
+    stripe_verified?: boolean;
+  } | null;
   error: string | null;
 }
 
-export const fetchUserProfile = async (userId: string): Promise<ProfileResult> => {
+export const fetchUserProfile = async (userId: string): Promise<ProfileServiceResult> => {
   try {
     console.log('📝 Fetching user profile for:', userId);
     
