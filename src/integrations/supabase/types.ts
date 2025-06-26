@@ -160,12 +160,15 @@ export type Database = {
           logo_url: string | null
           name: string
           plan: string | null
+          plan_type: string | null
           registration_date: string | null
           rules_updated_at: string | null
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           stripe_verified: boolean | null
+          subscription_end_date: string | null
+          subscription_status: string | null
           updated_at: string
         }
         Insert: {
@@ -179,12 +182,15 @@ export type Database = {
           logo_url?: string | null
           name: string
           plan?: string | null
+          plan_type?: string | null
           registration_date?: string | null
           rules_updated_at?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           stripe_verified?: boolean | null
+          subscription_end_date?: string | null
+          subscription_status?: string | null
           updated_at?: string
         }
         Update: {
@@ -198,12 +204,15 @@ export type Database = {
           logo_url?: string | null
           name?: string
           plan?: string | null
+          plan_type?: string | null
           registration_date?: string | null
           rules_updated_at?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           stripe_verified?: boolean | null
+          subscription_end_date?: string | null
+          subscription_status?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -900,6 +909,42 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          employee_limit: number | null
+          features: Json | null
+          id: string
+          name: string
+          plan_type: string
+          price_monthly: number | null
+          stripe_price_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          employee_limit?: number | null
+          features?: Json | null
+          id?: string
+          name: string
+          plan_type: string
+          price_monthly?: number | null
+          stripe_price_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          employee_limit?: number | null
+          features?: Json | null
+          id?: string
+          name?: string
+          plan_type?: string
+          price_monthly?: number | null
+          stripe_price_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           address: string | null
@@ -1272,6 +1317,19 @@ export type Database = {
       get_company_employee_count: {
         Args: { company_id_param: string }
         Returns: number
+      }
+      get_company_plan_details: {
+        Args: { company_id_param: string }
+        Returns: {
+          plan_type: string
+          plan_name: string
+          price_monthly: number
+          employee_limit: number
+          current_employee_count: number
+          subscription_status: string
+          subscription_end_date: string
+          can_add_employees: boolean
+        }[]
       }
       get_user_company_id: {
         Args: Record<PropertyKey, never>

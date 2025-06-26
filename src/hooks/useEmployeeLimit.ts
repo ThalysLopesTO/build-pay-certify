@@ -15,42 +15,29 @@ export const useEmployeeLimit = () => {
 
       console.log('🔍 Checking employee limit for company:', user.companyId);
 
-      // Get company details with plan and employee_limit
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .select('plan, employee_limit')
-        .eq('id', user.companyId)
-        .single();
+      // Get company plan details using the new function
+      const { data: planDetails, error: planError } = await supabase
+        .rpc('get_company_plan_details', { company_id_param: user.companyId });
 
-      if (companyError) {
-        console.error('Error fetching company:', companyError);
-        throw companyError;
+      if (planError) {
+        console.error('Error fetching plan details:', planError);
+        throw planError;
       }
 
-      // Get current employee count using the database function
-      const { data: currentCount, error: countError } = await supabase
-        .rpc('get_company_employee_count', { company_id_param: user.companyId });
-
-      if (countError) {
-        console.error('Error getting employee count:', countError);
-        throw countError;
+      if (!planDetails || planDetails.length === 0) {
+        throw new Error('No plan details found');
       }
 
-      // Check if company can add more employees
-      const { data: canAdd, error: canAddError } = await supabase
-        .rpc('can_add_employee', { company_id_param: user.companyId });
-
-      if (canAddError) {
-        console.error('Error checking if can add employee:', canAddError);
-        throw canAddError;
-      }
+      const details = planDetails[0];
 
       const result = {
-        plan: company.plan,
-        employeeLimit: company.employee_limit,
-        currentCount: currentCount || 0,
-        canAddEmployee: canAdd || false,
-        remainingSlots: Math.max(0, (company.employee_limit || 0) - (currentCount || 0))
+        plan: details.plan_type,
+        planName: details.plan_name,
+        employeeLimit: details.employee_limit,
+        currentCount: details.current_employee_count || 0,
+        canAddEmployee: details.can_add_employees || false,
+        remainingSlots: details.employee_limit ? Math.max(0, details.employee_limit - (details.current_employee_count || 0)) : Infinity,
+        subscriptionStatus: details.subscription_status
       };
 
       console.log('✅ Employee limit data:', result);
