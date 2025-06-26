@@ -24,8 +24,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('🔄 User logged in, checking subscription status...');
       checkSubscriptionStatus().then((data) => {
         if (data) {
-          // Handle routing based on subscription status
+          // Handle routing based on subscription status and user role
           const currentPath = window.location.pathname;
+          
+          // Admin users get redirected to admin dashboard or regular dashboard
+          if (user.role === 'admin') {
+            console.log('👑 Admin user detected');
+            if (currentPath === '/login' || currentPath === '/pricing') {
+              window.location.href = '/dashboard';
+            }
+            return;
+          }
           
           if (data.needsSubscription && !user.role?.includes('super_admin')) {
             console.log('🚨 User needs subscription, redirecting to pricing');
@@ -40,7 +49,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else if (data.subscription?.status === 'active') {
             console.log('✅ Active subscription confirmed');
             if (currentPath === '/login' || currentPath === '/pricing') {
-              window.location.href = '/dashboard';
+              // Route based on user role
+              if (user.role === 'admin') {
+                window.location.href = '/dashboard';
+              } else {
+                window.location.href = '/dashboard';
+              }
             }
           }
         }
@@ -92,7 +106,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasCompanyError: !!companyError,
     isAuthenticated,
     loading,
-    userRole: user?.role
+    userRole: user?.role,
+    isCompanyAdmin
   });
 
   return (

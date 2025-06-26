@@ -5,7 +5,83 @@ export const fetchUserProfile = async (userId: string) => {
   try {
     console.log('📝 Fetching user profile for:', userId);
     
-    // Query user_profiles using user_id (matching auth.users.id)
+    // Get the user's email from auth
+    const { data: authUser } = await supabase.auth.getUser();
+    const userEmail = authUser.user?.email;
+    
+    if (!userEmail) {
+      console.error('❌ No user email found');
+      return { profile: null, company: null, error: 'User email not found' };
+    }
+
+    console.log('📧 User email:', userEmail);
+
+    // First, check if this user is a company owner (admin_email in companies table)
+    const { data: ownedCompany, error: companyError } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('admin_email', userEmail)
+      .single();
+
+    console.log('🏢 Company ownership check:', { ownedCompany, companyError });
+
+    if (ownedCompany && !companyError) {
+      // User is a company owner - create/update their profile as admin
+      console.log('👑 User is company owner, setting as admin');
+      
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      let profile;
+      if (existingProfile) {
+        // Update existing profile to admin role
+        const { data: updatedProfile, error: updateError } = await supabase
+          .from('user_profiles')
+          .update({
+            role: 'admin',
+            company_id: ownedCompany.id,
+            first_name: existingProfile.first_name || 'Admin',
+            last_name: existingProfile.last_name || 'User'
+          })
+          .eq('user_id', userId)
+          .select('*')
+          .single();
+
+        if (updateError) {
+          console.error('❌ Error updating profile:', updateError);
+          return { profile: null, company: null, error: 'Failed to update user profile' };
+        }
+        profile = updatedProfile;
+      } else {
+        // Create new admin profile
+        const { data: newProfile, error: createError } = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: userId,
+            role: 'admin',
+            company_id: ownedCompany.id,
+            first_name: 'Admin',
+            last_name: 'User'
+          })
+          .select('*')
+          .single();
+
+        if (createError) {
+          console.error('❌ Error creating profile:', createError);
+          return { profile: null, company: null, error: 'Failed to create user profile' };
+        }
+        profile = newProfile;
+      }
+
+      console.log('✅ Company owner profile resolved:', profile);
+      return { profile, company: ownedCompany, error: null };
+    }
+
+    // If not a company owner, check for existing user profile
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('*')
@@ -47,16 +123,16 @@ export const fetchUserProfile = async (userId: string) => {
     }
 
     // Query companies using company_id from profile
-    const { data: company, error: companyError } = await supabase
+    const { data: company, error: companyQueryError } = await supabase
       .from('companies')
       .select('*')
       .eq('id', profile.company_id)
       .single();
 
-    console.log('🏢 Company query result:', { company, companyError });
+    console.log('🏢 Company query result:', { company, companyQueryError });
 
-    if (companyError || !company) {
-      console.warn('⚠️ Company not found:', companyError);
+    if (companyQueryError || !company) {
+      console.warn('⚠️ Company not found:', companyQueryError);
       return { profile: null, company: null, error: 'Your company account was not found. Please contact your system administrator.' };
     }
 

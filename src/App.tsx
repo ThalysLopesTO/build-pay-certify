@@ -80,6 +80,10 @@ const RootRouteHandler: React.FC = () => {
     return <Navigate to="/super-admin" replace />;
   }
 
+  if (user?.role === 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <Navigate to="/dashboard" replace />;
 };
 
