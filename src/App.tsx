@@ -32,7 +32,18 @@ const ProtectedRoute: React.FC<{
   children: React.ReactNode;
   requiredRole?: 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee';
 }> = ({ children, requiredRole }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -45,22 +56,32 @@ const ProtectedRoute: React.FC<{
   return <>{children}</>;
 };
 
-// Super Admin User Checker Component
-const SuperAdminUserChecker: React.FC = () => {
-  const { user } = useAuth();
+// Root Route Handler Component
+const RootRouteHandler: React.FC = () => {
+  const { user, loading, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    if (user && user.role === 'super_admin') {
-      window.location.href = '/super-admin';
-    } else if (user) {
-      window.location.href = '/dashboard';
-    }
-  }, [user]);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="text-slate-600">Loading your account...</p>
+        </div>
+      </div>
+    );
+  }
 
-  return <div>Redirecting...</div>;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Redirect based on user role
+  if (user?.role === 'super_admin') {
+    return <Navigate to="/super-admin" replace />;
+  }
+
+  return <Navigate to="/dashboard" replace />;
 };
-
-import { useEffect } from 'react';
 
 function App() {
   return (
@@ -70,7 +91,7 @@ function App() {
           <Toaster />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<SuperAdminUserChecker />} />
+              <Route path="/" element={<RootRouteHandler />} />
               <Route path="/login" element={<LoginForm />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/subscription" element={<SubscriptionLanding />} />
