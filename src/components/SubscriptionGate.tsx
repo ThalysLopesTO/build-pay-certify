@@ -1,38 +1,20 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useStripeSubscription } from '@/hooks/useStripeSubscription';
-import { useLicenseStatus } from '@/hooks/useLicenseStatus';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useSubscriptionSync } from '@/hooks/useSubscriptionSync';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AlertCircle, CreditCard } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SubscriptionGateProps {
   children: React.ReactNode;
 }
 
 const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
-  const { subscriptionStatus, isLoadingStatus, createCheckout, isCreatingCheckout } = useStripeSubscription();
-  const { data: licenseStatus, isLoading: isLoadingLicense } = useLicenseStatus();
-  const { user, isCompanyAdmin } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
+  const { subscriptionStatus, isLoading } = useSubscriptionSync();
   const { toast } = useToast();
 
-  const handleSubscribe = () => {
-    toast({
-      title: "Subscription Required",
-      description: "You need a valid subscription to access the platform. Redirecting to pricing...",
-      variant: "destructive",
-    });
-    
-    setTimeout(() => {
-      window.location.href = '/pricing';
-    }, 2000);
-  };
-
-  if (isLoadingStatus || isLoadingLicense) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -43,21 +25,27 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
     );
   }
 
-  // Determine if user has access based on role and subscription status
-  const hasActiveSubscription = subscriptionStatus?.subscribed || licenseStatus?.isActive;
+  // Super admins bypass subscription requirements
+  if (isSuperAdmin) {
+    console.log('✅ Super admin access granted');
+    return <>{children}</>;
+  }
+
+  // Check if user has active subscription
+  const hasActiveSubscription = subscriptionStatus?.status === 'active';
   
-  // For employees, grant access if company has any active subscription
-  if (!isCompanyAdmin && hasActiveSubscription) {
-    return <>{children}</>;
+  if (!hasActiveSubscription) {
+    console.log('🚨 No active subscription, redirecting to pricing');
+    toast({
+      title: "Subscription Required",
+      description: "You need a valid subscription to access the platform.",
+      variant: "destructive",
+    });
+    return <Navigate to="/pricing" replace />;
   }
 
-  // For admins, check both Stripe and legacy subscription status
-  if (isCompanyAdmin && hasActiveSubscription) {
-    return <>{children}</>;
-  }
-
-  // No active subscription found - redirect to pricing
-  return <Navigate to="/pricing" replace />;
+  console.log('✅ Active subscription confirmed, granting access');
+  return <>{children}</>;
 };
 
 export default SubscriptionGate;

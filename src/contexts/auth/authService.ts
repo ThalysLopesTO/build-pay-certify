@@ -49,20 +49,24 @@ export const checkSubscriptionStatus = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return null;
 
-    const { data, error } = await supabase.functions.invoke('check-subscription', {
+    console.log('🔄 Checking subscription status post-login...');
+    
+    const { data, error } = await supabase.functions.invoke('sync-stripe-subscription', {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
     });
 
     if (error) {
-      console.warn('Failed to check subscription status:', error);
+      console.warn('Failed to sync subscription:', error);
       return null;
     }
 
-    // If no active subscription, redirect to pricing
-    if (!data?.subscribed) {
-      console.log('No active subscription found, redirecting to pricing');
+    console.log('✅ Subscription status synced:', data);
+    
+    // If no active subscription and not super admin, redirect to pricing
+    if (data?.needsSubscription) {
+      console.log('🚨 No active subscription found, redirecting to pricing');
       window.location.href = '/pricing';
       return null;
     }

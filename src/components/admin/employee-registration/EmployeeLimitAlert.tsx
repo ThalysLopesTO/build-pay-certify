@@ -13,6 +13,7 @@ interface EmployeeLimitAlertProps {
     employeeLimit: number | null;
     canAddEmployee: boolean;
     remainingSlots: number;
+    subscriptionStatus: string;
   };
 }
 
@@ -37,6 +38,31 @@ const EmployeeLimitAlert: React.FC<EmployeeLimitAlertProps> = ({ employeeLimit }
       });
     }
   };
+
+  // Show upgrade needed if subscription is inactive
+  if (employeeLimit.subscriptionStatus !== 'active') {
+    return (
+      <Alert className="border-red-200 bg-red-50">
+        <AlertTriangle className="h-4 w-4 text-red-600" />
+        <AlertDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <strong>Subscription Required</strong>
+              <br />
+              You need an active subscription to manage employees.
+            </div>
+            <Button
+              size="sm"
+              onClick={() => window.location.href = '/pricing'}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Subscribe Now
+            </Button>
+          </div>
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (employeeLimit.canAddEmployee) {
     return (

@@ -3,7 +3,6 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { AuthContextType } from './auth/types';
 import { useAuthState } from './auth/useAuthState';
 import { login, signUp, logout, checkSubscriptionStatus } from './auth/authService';
-import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -12,8 +11,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check subscription status when user logs in
   useEffect(() => {
-    if (user && session && !loading && user.role !== 'super_admin') {
+    if (user && session && !loading) {
+      // Skip subscription check for super admins
+      if (user.role === 'super_admin') {
+        console.log('✅ Super admin detected, bypassing subscription check');
+        return;
+      }
+      
       // Only check subscription for non-super-admin users
+      console.log('🔄 User logged in, checking subscription status...');
       checkSubscriptionStatus();
     }
   }, [user, session, loading]);
@@ -54,7 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasUser: !!user,
     hasCompanyError: !!companyError,
     isAuthenticated,
-    loading
+    loading,
+    userRole: user?.role
   });
 
   return (

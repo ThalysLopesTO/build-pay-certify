@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 export const useEmployeeLimit = () => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
 
   return useQuery({
     queryKey: ['employee-limit', user?.companyId],
@@ -15,29 +15,56 @@ export const useEmployeeLimit = () => {
 
       console.log('🔍 Checking employee limit for company:', user.companyId);
 
-      // Get company plan details using the new function
-      const { data: planDetails, error: planError } = await supabase
-        .rpc('get_company_plan_details', { company_id_param: user.companyId });
+      // Super admins have unlimited access
+      if (isSuperAdmin) {
+        const { data: employeeCount } = await supabase
+          .rpc('get_company_employee_count', { company_id_param: user.companyId });
 
-      if (planError) {
-        console.error('Error fetching plan details:', planError);
-        throw planError;
+        return {
+          plan: 'enterprise',
+          planName: 'Super Admin',
+          employeeLimit: null,
+          currentCount: employeeCount || 0,
+          canAddEmployee: true,
+          remainingSlots: Infinity,
+          subscriptionStatus: 'active'
+        };
       }
 
-      if (!planDetails || planDetails.length === 0) {
-        throw new Error('No plan details found');
+      // Get subscription data
+      const { data: subscription, error: subError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('company_id', user.companyId)
+        .single();
+
+      if (subError && subError.code !== 'PGRST116') {
+        throw subError;
       }
 
-      const details = planDetails[0];
+      // Get current employee count
+      const { data: employeeCount, error: countError } = await supabase
+        .rpc('get_company_employee_count', { company_id_param: user.companyId });
+
+      if (countError) {
+        throw countError;
+      }
+
+      const currentCount = employeeCount || 0;
+      const employeeLimit = subscription?.employee_limit;
+      const canAddEmployee = subscription?.status === 'active' && 
+        (employeeLimit === null || currentCount < employeeLimit);
 
       const result = {
-        plan: details.plan_type,
-        planName: details.plan_name,
-        employeeLimit: details.employee_limit,
-        currentCount: details.current_employee_count || 0,
-        canAddEmployee: details.can_add_employees || false,
-        remainingSlots: details.employee_limit ? Math.max(0, details.employee_limit - (details.current_employee_count || 0)) : Infinity,
-        subscriptionStatus: details.subscription_status
+        plan: subscription?.plan_type || 'free',
+        planName: subscription?.plan_type === 'basic' ? 'Basic Plan' :
+                  subscription?.plan_type === 'premium' ? 'Premium Plan' :
+                  subscription?.plan_type === 'enterprise' ? 'Enterprise Plan' : 'Free Plan',
+        employeeLimit,
+        currentCount,
+        canAddEmployee,
+        remainingSlots: employeeLimit ? Math.max(0, employeeLimit - currentCount) : Infinity,
+        subscriptionStatus: subscription?.status || 'inactive'
       };
 
       console.log('✅ Employee limit data:', result);
