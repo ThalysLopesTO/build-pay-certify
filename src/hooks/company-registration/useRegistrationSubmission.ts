@@ -22,7 +22,7 @@ export const useRegistrationSubmission = () => {
         // Handle post-checkout registration
         console.log('💳 Processing post-checkout registration:', sessionData);
         
-        const result = await processPaidRegistration(formData, null, sessionData);
+        const result = await processPaidRegistration(formData, sessionData);
         
         toast({
           title: "Registration Complete!",

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -13,6 +12,7 @@ import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import PayrollDashboard from './pages/PayrollDashboard';
 import SubscriptionLanding from './components/SubscriptionLanding';
 import PricingPage from './pages/PricingPage';
+import CompanyRegistration from './pages/CompanyRegistration';
 
 const queryClient = new QueryClient();
 
