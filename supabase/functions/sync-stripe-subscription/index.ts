@@ -67,12 +67,41 @@ serve(async (req) => {
       })
     }
 
-    // Get company's Stripe customer ID
+    // Get company data including subscription_override flag
     const { data: company } = await supabaseClient
       .from('companies')
-      .select('stripe_customer_id, stripe_subscription_id')
+      .select('stripe_customer_id, stripe_subscription_id, subscription_override, plan_type, employee_limit')
       .eq('id', profile.company_id)
       .single()
+
+    // Check for subscription override
+    if (company?.subscription_override) {
+      console.log('✅ Company has subscription override, granting access')
+      
+      // Create/update subscription record with override status
+      await supabaseClient
+        .from('subscriptions')
+        .upsert({
+          user_id: user.id,
+          company_id: profile.company_id,
+          status: 'active',
+          plan_type: company.plan_type || 'enterprise',
+          employee_limit: company.employee_limit,
+        })
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        subscription: { 
+          status: 'active', 
+          plan_type: company.plan_type || 'enterprise', 
+          employee_limit: company.employee_limit 
+        },
+        message: 'Company subscription override active'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
 
     if (!company?.stripe_customer_id || !company?.stripe_subscription_id) {
       console.log('⚠️ No Stripe subscription found for company')

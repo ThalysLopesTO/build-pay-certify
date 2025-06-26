@@ -60,11 +60,13 @@ export const fetchUserProfile = async (userId: string) => {
       return { profile: null, company: null, error: 'Your company account was not found. Please contact your system administrator.' };
     }
 
-    // For Stripe verified companies, only check subscription status (handled by SubscriptionGate)
-    if (company.stripe_verified) {
+    // Check for subscription override or Stripe verification
+    if (company.subscription_override) {
+      console.log('🎯 Company has subscription override - bypassing status checks');
+    } else if (company.stripe_verified) {
       console.log('💳 Company is Stripe verified - subscription status will be checked by SubscriptionGate');
     } else if (company.status !== 'active') {
-      // Only check company status for non-Stripe companies
+      // Only check company status for non-override, non-Stripe companies
       console.warn('⚠️ Company not active, status:', company.status);
       return { profile: null, company: null, error: 'Your company account is not active. Please contact your system administrator.' };
     }

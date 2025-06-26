@@ -31,6 +31,44 @@ export const useEmployeeLimit = () => {
         };
       }
 
+      // Check for company subscription override
+      const { data: company } = await supabase
+        .from('companies')
+        .select('subscription_override, plan_type, employee_limit')
+        .eq('id', user.companyId)
+        .single();
+
+      // Get current employee count
+      const { data: employeeCount, error: countError } = await supabase
+        .rpc('get_company_employee_count', { company_id_param: user.companyId });
+
+      if (countError) {
+        throw countError;
+      }
+
+      const currentCount = employeeCount || 0;
+
+      // If company has subscription override, use company settings
+      if (company?.subscription_override) {
+        const employeeLimit = company.employee_limit;
+        const canAddEmployee = employeeLimit === null || currentCount < employeeLimit;
+
+        const result = {
+          plan: company.plan_type || 'enterprise',
+          planName: company.plan_type === 'basic' ? 'Basic Plan (Override)' :
+                    company.plan_type === 'premium' ? 'Premium Plan (Override)' :
+                    company.plan_type === 'enterprise' ? 'Enterprise Plan (Override)' : 'Override Plan',
+          employeeLimit,
+          currentCount,
+          canAddEmployee,
+          remainingSlots: employeeLimit ? Math.max(0, employeeLimit - currentCount) : Infinity,
+          subscriptionStatus: 'active'
+        };
+
+        console.log('✅ Company override employee limit data:', result);
+        return result;
+      }
+
       // Get subscription data
       const { data: subscription, error: subError } = await supabase
         .from('subscriptions')
@@ -42,15 +80,6 @@ export const useEmployeeLimit = () => {
         throw subError;
       }
 
-      // Get current employee count
-      const { data: employeeCount, error: countError } = await supabase
-        .rpc('get_company_employee_count', { company_id_param: user.companyId });
-
-      if (countError) {
-        throw countError;
-      }
-
-      const currentCount = employeeCount || 0;
       const employeeLimit = subscription?.employee_limit;
       const canAddEmployee = subscription?.status === 'active' && 
         (employeeLimit === null || currentCount < employeeLimit);

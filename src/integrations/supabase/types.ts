@@ -168,6 +168,7 @@ export type Database = {
           stripe_subscription_id: string | null
           stripe_verified: boolean | null
           subscription_end_date: string | null
+          subscription_override: boolean | null
           subscription_status: string | null
           updated_at: string
         }
@@ -190,6 +191,7 @@ export type Database = {
           stripe_subscription_id?: string | null
           stripe_verified?: boolean | null
           subscription_end_date?: string | null
+          subscription_override?: boolean | null
           subscription_status?: string | null
           updated_at?: string
         }
@@ -212,6 +214,7 @@ export type Database = {
           stripe_subscription_id?: string | null
           stripe_verified?: boolean | null
           subscription_end_date?: string | null
+          subscription_override?: boolean | null
           subscription_status?: string | null
           updated_at?: string
         }

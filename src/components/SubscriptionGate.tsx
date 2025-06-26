@@ -4,6 +4,8 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSubscriptionSync } from '@/hooks/useSubscriptionSync';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SubscriptionGateProps {
   children: React.ReactNode;
@@ -14,7 +16,24 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
   const { subscriptionStatus, isLoading } = useSubscriptionSync();
   const { toast } = useToast();
 
-  if (isLoading) {
+  // Check for company subscription override
+  const { data: companyOverride, isLoading: isLoadingOverride } = useQuery({
+    queryKey: ['company-override', user?.companyId],
+    queryFn: async () => {
+      if (!user?.companyId) return null;
+      
+      const { data } = await supabase
+        .from('companies')
+        .select('subscription_override')
+        .eq('id', user.companyId)
+        .single();
+        
+      return data;
+    },
+    enabled: !!user?.companyId,
+  });
+
+  if (isLoading || isLoadingOverride) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -28,6 +47,12 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
   // Super admins bypass subscription requirements
   if (isSuperAdmin) {
     console.log('✅ Super admin access granted');
+    return <>{children}</>;
+  }
+
+  // Companies with subscription override bypass subscription requirements
+  if (companyOverride?.subscription_override) {
+    console.log('✅ Company subscription override active, granting access');
     return <>{children}</>;
   }
 
