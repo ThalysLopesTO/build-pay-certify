@@ -5,12 +5,13 @@ import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { usePlanDetails } from '@/hooks/usePlanDetails';
 import { useToast } from '@/hooks/use-toast';
 import { CreditCard, CheckCircle, Building, Users, Mail, Crown, Zap } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const SubscriptionLanding = () => {
   const { mutate: createCheckout, isPending: isCreatingCheckout } = useStripeCheckout();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isProcessingStripeRedirect, setIsProcessingStripeRedirect] = useState(false);
   const { refetch: refetchPlanDetails } = usePlanDetails();
   const { toast } = useToast();
@@ -26,47 +27,54 @@ const SubscriptionLanding = () => {
         setIsProcessingStripeRedirect(true);
         
         try {
-          // Clean the URL by removing the session_id parameter
+          // Clean the URL immediately to prevent re-processing
           const url = new URL(window.location.href);
           url.searchParams.delete('session_id');
           window.history.replaceState({}, document.title, url.pathname + url.search);
           
-          console.log('🔄 Refetching plan details after successful checkout...');
+          console.log('🔄 Verifying subscription status...');
           
-          // Add a small delay to ensure Stripe webhook has processed
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Add a delay to ensure Stripe webhook has processed
+          await new Promise(resolve => setTimeout(resolve, 3000));
           
-          // Refetch subscription/plan data with timeout
+          // Create a timeout promise for the refetch operation
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout')), 10000)
+            setTimeout(() => reject(new Error('Subscription verification timeout')), 12000)
           );
           
-          await Promise.race([refetchPlanDetails(), timeoutPromise]);
+          // Race between refetch and timeout
+          const result = await Promise.race([
+            refetchPlanDetails(),
+            timeoutPromise
+          ]);
           
-          console.log('✅ Plan details refetched successfully');
+          console.log('✅ Subscription verification completed:', result);
           
           // Show success message
           toast({
             title: "Payment Successful!",
-            description: "Your subscription has been activated. Welcome to your new plan!",
+            description: "Your subscription has been activated. Redirecting to dashboard...",
             variant: "default",
           });
+          
+          // Wait a moment for the toast to show, then redirect
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          navigate('/dashboard');
           
         } catch (error) {
           console.error('❌ Error processing Stripe redirect:', error);
           
-          // Show a more user-friendly error message
-          if (error instanceof Error && error.message === 'Timeout') {
+          if (error instanceof Error && error.message.includes('timeout')) {
             toast({
-              title: "Processing Payment",
-              description: "Your payment was successful but is still being processed. Please refresh the page in a moment to see your new plan.",
-              variant: "default",
+              title: "Subscription Confirmation Timeout",
+              description: "Your payment was processed but verification is taking longer than expected. Please refresh the page or check your dashboard.",
+              variant: "destructive",
             });
           } else {
             toast({
-              title: "Payment Processed",
-              description: "Your payment was successful. If you don't see plan updates, please refresh the page.",
-              variant: "default",
+              title: "Subscription Confirmation Failed",
+              description: "There was an issue confirming your subscription. Please refresh the page or contact support if the problem persists.",
+              variant: "destructive",
             });
           }
         } finally {
@@ -75,23 +83,28 @@ const SubscriptionLanding = () => {
       }
     };
 
-    // Add a timeout fallback for the entire redirect process
-    const redirectTimeout = setTimeout(() => {
-      if (isProcessingStripeRedirect) {
-        console.warn('⚠️ Redirect processing timeout, releasing UI');
+    // Only run if we have a session_id and user is authenticated
+    if (user) {
+      handleStripeRedirect();
+    }
+  }, [refetchPlanDetails, toast, navigate, user]);
+
+  // Add a safety timeout to prevent indefinite loading
+  useEffect(() => {
+    if (isProcessingStripeRedirect) {
+      const safetyTimeout = setTimeout(() => {
+        console.warn('⚠️ Safety timeout triggered - releasing processing state');
         setIsProcessingStripeRedirect(false);
         toast({
-          title: "Processing Complete",
-          description: "If you don't see your new plan, please refresh the page.",
-          variant: "default",
+          title: "Processing Timeout",
+          description: "Subscription processing is taking longer than expected. Please refresh the page to check your plan status.",
+          variant: "destructive",
         });
-      }
-    }, 15000); // 15 second fallback
+      }, 20000); // 20 second safety net
 
-    handleStripeRedirect();
-
-    return () => clearTimeout(redirectTimeout);
-  }, [refetchPlanDetails, toast, isProcessingStripeRedirect]);
+      return () => clearTimeout(safetyTimeout);
+    }
+  }, [isProcessingStripeRedirect, toast]);
 
   const handleSubscribe = (planType: 'basic' | 'premium' | 'enterprise') => {
     console.log('🔄 Subscribing to plan:', planType);
@@ -124,11 +137,23 @@ const SubscriptionLanding = () => {
   if (isProcessingStripeRedirect) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 max-w-md mx-auto px-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
-          <h2 className="text-xl font-semibold text-slate-800">Processing your subscription...</h2>
-          <p className="text-slate-600">Please wait while we activate your new plan.</p>
-          <p className="text-sm text-slate-500">This usually takes just a few seconds.</p>
+          <h2 className="text-xl font-semibold text-slate-800">Verifying Your Subscription</h2>
+          <p className="text-slate-600">Please wait while we confirm your payment and activate your plan.</p>
+          <p className="text-sm text-slate-500">This usually takes just a few seconds...</p>
+          <div className="mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsProcessingStripeRedirect(false);
+                navigate('/dashboard');
+              }}
+              className="text-sm"
+            >
+              Continue to Dashboard
+            </Button>
+          </div>
         </div>
       </div>
     );
