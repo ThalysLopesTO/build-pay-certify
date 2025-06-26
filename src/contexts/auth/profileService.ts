@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 interface ProfileServiceResult {
@@ -8,6 +7,9 @@ interface ProfileServiceResult {
     company_id: string;
     first_name?: string;
     last_name?: string;
+    hourly_rate?: number;
+    trade?: string;
+    position?: string;
     stripe_verified?: boolean;
     pending_approval?: boolean;
   } | null;
