@@ -12,7 +12,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check subscription status when user logs in
   useEffect(() => {
-    if (user && session && !loading) {
+    if (user && session && !loading && user.role !== 'super_admin') {
+      // Only check subscription for non-super-admin users
       checkSubscriptionStatus();
     }
   }, [user, session, loading]);

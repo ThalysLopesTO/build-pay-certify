@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useLicenseStatus } from '@/hooks/useLicenseStatus';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, CreditCard } from 'lucide-react';
@@ -17,9 +18,18 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
   const { subscriptionStatus, isLoadingStatus, createCheckout, isCreatingCheckout } = useStripeSubscription();
   const { data: licenseStatus, isLoading: isLoadingLicense } = useLicenseStatus();
   const { user, isCompanyAdmin } = useAuth();
+  const { toast } = useToast();
 
   const handleSubscribe = () => {
-    createCheckout({ planName: 'StackBuild' });
+    toast({
+      title: "Subscription Required",
+      description: "You need a valid subscription to access the platform. Redirecting to pricing...",
+      variant: "destructive",
+    });
+    
+    setTimeout(() => {
+      window.location.href = '/pricing';
+    }, 2000);
   };
 
   if (isLoadingStatus || isLoadingLicense) {
@@ -46,57 +56,8 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  // No active subscription found - show subscription gate
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="max-w-md w-full">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-orange-600 flex items-center justify-center">
-              <CreditCard className="h-6 w-6 mr-2" />
-              StackBuild
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {isCompanyAdmin 
-                  ? "Your company's subscription has expired. Please renew to continue using StackBuild."
-                  : "Your company's subscription has expired. Please contact your administrator to renew access."
-                }
-              </AlertDescription>
-            </Alert>
-            
-            <div className="text-center space-y-4">
-              <div>
-                <h3 className="font-semibold text-lg">StackBuild Plan</h3>
-                <p className="text-2xl font-bold text-orange-600">$197 CAD/month</p>
-              </div>
-              
-              <ul className="text-sm text-left space-y-1">
-                <li>• Unlimited employees</li>
-                <li>• Payroll & Invoice System</li>
-                <li>• Certificate & Safety Tracking</li>
-                <li>• Multi-role Access: Admin, Foreman, Worker</li>
-                <li>• Project & Jobsite Control</li>
-              </ul>
-              
-              {isCompanyAdmin && (
-                <Button
-                  onClick={handleSubscribe}
-                  disabled={isCreatingCheckout}
-                  className="w-full bg-orange-600 hover:bg-orange-700"
-                >
-                  {isCreatingCheckout ? 'Processing...' : 'Renew Now'}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+  // No active subscription found - redirect to pricing
+  return <Navigate to="/pricing" replace />;
 };
 
 export default SubscriptionGate;

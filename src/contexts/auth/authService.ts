@@ -43,7 +43,7 @@ export const logout = async () => {
   }
 };
 
-// New function to check subscription status after login
+// Enhanced function to check subscription status after login
 export const checkSubscriptionStatus = async () => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -57,6 +57,13 @@ export const checkSubscriptionStatus = async () => {
 
     if (error) {
       console.warn('Failed to check subscription status:', error);
+      return null;
+    }
+
+    // If no active subscription, redirect to pricing
+    if (!data?.subscribed) {
+      console.log('No active subscription found, redirecting to pricing');
+      window.location.href = '/pricing';
       return null;
     }
 

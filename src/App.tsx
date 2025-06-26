@@ -72,7 +72,7 @@ const RootRouteHandler: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/pricing" replace />;
   }
 
   // Redirect based on user role
