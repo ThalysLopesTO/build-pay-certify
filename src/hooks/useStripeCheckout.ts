@@ -1,4 +1,3 @@
-
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -8,28 +7,31 @@ interface CheckoutParams {
   customerEmail: string;
 }
 
+interface CheckoutResponse {
+  url?: string;
+  redirectTo?: string;
+}
+
 export const useStripeCheckout = () => {
   const { toast } = useToast();
 
-  return useMutation({
-    mutationFn: async ({ planType, customerEmail }: CheckoutParams) => {
+  return useMutation<CheckoutResponse, Error, CheckoutParams>({
+    mutationFn: async ({ planType, customerEmail }: CheckoutParams): Promise<CheckoutResponse> => {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { planType, customerEmail },
       });
 
-      if (error) throw error;
-      return data;
+      if (error) throw new Error(error.message);
+      return data as CheckoutResponse;
     },
     onSuccess: (data) => {
       if (data.redirectTo) {
-        // For enterprise plan
-        window.location.href = data.redirectTo;
+        window.location.href = data.redirectTo; // Enterprise plan
       } else if (data.url) {
-        // For other plans
-        window.location.href = data.url;
+        window.location.href = data.url; // Basic or Premium
       }
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
         title: "Checkout Error",
         description: error.message || "Failed to create checkout session",
