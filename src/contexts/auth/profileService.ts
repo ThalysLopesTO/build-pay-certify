@@ -83,7 +83,7 @@ export const fetchUserProfile = async (userId: string): Promise<ProfileServiceRe
           console.error('❌ Error updating profile:', updateError);
           return { profile: null, company: null, error: 'Failed to update user profile' };
         }
-        profile = updatedProfile as UserProfile;
+        profile = updatedProfile;
       } else {
         // Create new admin profile
         const { data: newProfile, error: createError } = await supabase
@@ -102,11 +102,11 @@ export const fetchUserProfile = async (userId: string): Promise<ProfileServiceRe
           console.error('❌ Error creating profile:', createError);
           return { profile: null, company: null, error: 'Failed to create user profile' };
         }
-        profile = newProfile as UserProfile;
+        profile = newProfile;
       }
 
       console.log('✅ Company owner profile resolved:', profile);
-      return { profile, company: ownedCompany as Company, error: null };
+      return { profile, company: ownedCompany, error: null };
     }
 
     // If not a company owner, check for existing user profile
@@ -178,7 +178,7 @@ export const fetchUserProfile = async (userId: string): Promise<ProfileServiceRe
     console.log('✅ Resolved Profile:', profile);
     console.log('✅ Resolved Company:', company);
     
-    return { profile: profile as UserProfile, company: company as Company, error: null };
+    return { profile, company, error: null };
   } catch (error) {
     console.error('💥 Error in fetchUserProfile:', error);
     return { profile: null, company: null, error: 'An unexpected error occurred. Please try again.' };
