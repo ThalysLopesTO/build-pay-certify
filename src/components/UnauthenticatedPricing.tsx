@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,8 +21,8 @@ const UnauthenticatedPricing = () => {
         'Basic payroll features',
         'Timesheet management',
         'Standard support',
-        'Basic reporting'
-      ]
+        'Basic reporting',
+      ],
     },
     {
       type: 'premium' as const,
@@ -38,8 +37,8 @@ const UnauthenticatedPricing = () => {
         'Advanced timesheet management',
         'Priority support',
         'Advanced reporting',
-        'Custom integrations'
-      ]
+        'Custom integrations',
+      ],
     },
     {
       type: 'enterprise' as const,
@@ -54,15 +53,15 @@ const UnauthenticatedPricing = () => {
         'Dedicated support',
         'API access',
         'Custom integrations',
-        'On-premise deployment'
-      ]
-    }
+        'On-premise deployment',
+      ],
+    },
   ];
 
   const handleSelectPlan = (planType: 'basic' | 'premium' | 'enterprise') => {
     checkoutMutation.mutate({
       planType,
-      customerEmail: '', // No email required for unauthenticated checkout
+      customerEmail: 'test@stackbuild.ca', // ✅ Replace with dynamic email later
       isUnauthenticated: true,
     });
   };
@@ -81,9 +80,11 @@ const UnauthenticatedPricing = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((plan) => (
-            <Card 
+            <Card
               key={plan.type}
-              className={`relative ${plan.popular ? 'border-blue-500 shadow-lg scale-105' : 'border-slate-200'}`}
+              className={`relative ${
+                plan.popular ? 'border-blue-500 shadow-lg scale-105' : 'border-slate-200'
+              }`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -93,10 +94,12 @@ const UnauthenticatedPricing = () => {
                   </Badge>
                 </div>
               )}
-              
+
               <CardHeader className="text-center pb-4">
                 <CardTitle className="text-2xl font-bold flex items-center justify-center">
-                  {plan.type === 'enterprise' && <Crown className="h-6 w-6 mr-2 text-yellow-500" />}
+                  {plan.type === 'enterprise' && (
+                    <Crown className="h-6 w-6 mr-2 text-yellow-500" />
+                  )}
                   {plan.name}
                 </CardTitle>
                 <div className="text-4xl font-bold text-slate-900">
@@ -118,15 +121,18 @@ const UnauthenticatedPricing = () => {
 
                 <Button
                   className={`w-full ${
-                    plan.popular 
-                      ? 'bg-blue-600 hover:bg-blue-700' 
+                    plan.popular
+                      ? 'bg-blue-600 hover:bg-blue-700'
                       : 'bg-slate-900 hover:bg-slate-800'
                   }`}
                   onClick={() => handleSelectPlan(plan.type)}
                   disabled={checkoutMutation.isPending}
                 >
-                  {checkoutMutation.isPending ? 'Processing...' : 
-                   plan.type === 'enterprise' ? 'Contact Sales' : 'Subscribe Now'}
+                  {checkoutMutation.isPending
+                    ? 'Processing...'
+                    : plan.type === 'enterprise'
+                    ? 'Contact Sales'
+                    : 'Subscribe Now'}
                 </Button>
               </CardContent>
             </Card>
