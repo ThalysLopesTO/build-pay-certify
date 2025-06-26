@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Simplified profile and company types to avoid circular references
+// Simple interfaces to avoid deep type instantiation
 interface UserProfile {
   user_id: string;
   role: string;
