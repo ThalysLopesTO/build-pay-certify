@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, User, Lock, X, CreditCard } from 'lucide-react';
@@ -5,7 +6,7 @@ import ProfileTab from './user-settings/ProfileTab';
 import PasswordTab from './user-settings/PasswordTab';
 import PlanTab from './user-settings/PlanTab';
 import BillingTab from './user-settings/BillingTab';
-import { useAuth } from '@/context/auth';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const UserSettings = () => {
   const [activeTab, setActiveTab] = useState('profile');

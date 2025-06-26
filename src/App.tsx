@@ -1,16 +1,17 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { useAuth, AuthProvider } from '@/contexts/SupabaseAuthContext';
-import LoginForm from './components/auth/LoginForm';
+import LoginForm from './components/LoginForm';
 import AdminDashboard from './pages/AdminDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import ForemanDashboard from './pages/ForemanDashboard';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import PayrollDashboard from './pages/PayrollDashboard';
-import SubscriptionLanding from './pages/SubscriptionLanding';
+import SubscriptionLanding from './components/SubscriptionLanding';
 import PricingPage from './pages/PricingPage';
 
 const queryClient = new QueryClient();
