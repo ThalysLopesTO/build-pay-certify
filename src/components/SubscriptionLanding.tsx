@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,11 +31,19 @@ const SubscriptionLanding = () => {
           url.searchParams.delete('session_id');
           window.history.replaceState({}, document.title, url.pathname + url.search);
           
-          // Wait a moment for any background processes
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log('🔄 Refetching plan details after successful checkout...');
           
-          // Refetch subscription/plan data
-          await refetchPlanDetails();
+          // Add a small delay to ensure Stripe webhook has processed
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Refetch subscription/plan data with timeout
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 10000)
+          );
+          
+          await Promise.race([refetchPlanDetails(), timeoutPromise]);
+          
+          console.log('✅ Plan details refetched successfully');
           
           // Show success message
           toast({
@@ -46,28 +53,58 @@ const SubscriptionLanding = () => {
           });
           
         } catch (error) {
-          console.error('Error processing Stripe redirect:', error);
-          toast({
-            title: "Payment Processed",
-            description: "Your payment was successful. If you don't see plan updates, please refresh the page.",
-            variant: "default",
-          });
+          console.error('❌ Error processing Stripe redirect:', error);
+          
+          // Show a more user-friendly error message
+          if (error instanceof Error && error.message === 'Timeout') {
+            toast({
+              title: "Processing Payment",
+              description: "Your payment was successful but is still being processed. Please refresh the page in a moment to see your new plan.",
+              variant: "default",
+            });
+          } else {
+            toast({
+              title: "Payment Processed",
+              description: "Your payment was successful. If you don't see plan updates, please refresh the page.",
+              variant: "default",
+            });
+          }
         } finally {
           setIsProcessingStripeRedirect(false);
         }
       }
     };
 
+    // Add a timeout fallback for the entire redirect process
+    const redirectTimeout = setTimeout(() => {
+      if (isProcessingStripeRedirect) {
+        console.warn('⚠️ Redirect processing timeout, releasing UI');
+        setIsProcessingStripeRedirect(false);
+        toast({
+          title: "Processing Complete",
+          description: "If you don't see your new plan, please refresh the page.",
+          variant: "default",
+        });
+      }
+    }, 15000); // 15 second fallback
+
     handleStripeRedirect();
-  }, [refetchPlanDetails, toast]);
+
+    return () => clearTimeout(redirectTimeout);
+  }, [refetchPlanDetails, toast, isProcessingStripeRedirect]);
 
   const handleSubscribe = (planType: 'basic' | 'premium' | 'enterprise') => {
+    console.log('🔄 Subscribing to plan:', planType);
+    
     if (planType === 'enterprise') {
-      window.location.href = 'mailto:sales@yourdomain.com?subject=Enterprise Plan Inquiry';
+      const mailtoUrl = 'mailto:sales@yourdomain.com?subject=Enterprise Plan Inquiry';
+      console.log('📧 Redirecting to email for enterprise plan:', mailtoUrl);
+      window.location.href = mailtoUrl;
       return;
     }
 
     if (!user?.email) {
+      console.error('❌ No user email found');
       toast({
         title: "Authentication Required",
         description: "Please log in to subscribe to a plan.",
@@ -76,6 +113,7 @@ const SubscriptionLanding = () => {
       return;
     }
 
+    console.log('💳 Creating checkout session for:', { planType, email: user.email });
     createCheckout({
       planType,
       customerEmail: user.email
@@ -90,6 +128,7 @@ const SubscriptionLanding = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
           <h2 className="text-xl font-semibold text-slate-800">Processing your subscription...</h2>
           <p className="text-slate-600">Please wait while we activate your new plan.</p>
+          <p className="text-sm text-slate-500">This usually takes just a few seconds.</p>
         </div>
       </div>
     );
