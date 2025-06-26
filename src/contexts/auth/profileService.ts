@@ -49,7 +49,7 @@ export const fetchUserProfile = async (userId: string): Promise<ProfileServiceRe
       .from('companies')
       .select('*')
       .eq('admin_email', userEmail)
-      .single();
+      .maybeSingle();
 
     console.log('🏢 Company ownership check:', { ownedCompany, companyError });
 
@@ -62,7 +62,7 @@ export const fetchUserProfile = async (userId: string): Promise<ProfileServiceRe
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       let profile: UserProfile;
       if (existingProfile) {
@@ -114,18 +114,12 @@ export const fetchUserProfile = async (userId: string): Promise<ProfileServiceRe
       .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     console.log('📋 Profile query result:', { profile, profileError });
 
     if (profileError) {
       console.error('❌ Error fetching user profile:', profileError);
-      
-      // Check if user profile doesn't exist
-      if (profileError.code === 'PGRST116') {
-        return { profile: null, company: null, error: 'You are not linked to any company. Please contact your administrator.' };
-      }
-      
       return { profile: null, company: null, error: 'Failed to load user profile. Please try logging in again.' };
     }
 
@@ -155,7 +149,7 @@ export const fetchUserProfile = async (userId: string): Promise<ProfileServiceRe
       .from('companies')
       .select('*')
       .eq('id', profile.company_id)
-      .single();
+      .maybeSingle();
 
     console.log('🏢 Company query result:', { company, companyQueryError });
 
