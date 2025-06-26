@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Simple type definitions to avoid deep type instantiation
 interface UserProfile {
   user_id: string;
   role: string;
