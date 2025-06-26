@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // Simple type definitions to avoid deep type instantiation
-type UserProfile = {
+interface UserProfile {
   user_id: string;
   role: string;
   company_id: string;
@@ -13,21 +13,21 @@ type UserProfile = {
   position?: string;
   stripe_verified?: boolean;
   pending_approval?: boolean;
-};
+}
 
-type Company = {
+interface Company {
   id: string;
   name: string;
   status: string;
   subscription_override?: boolean;
   stripe_verified?: boolean;
-};
+}
 
-type ProfileServiceResult = {
+interface ProfileServiceResult {
   profile: UserProfile | null;
   company: Company | null;
   error: string | null;
-};
+}
 
 export const fetchUserProfile = async (userId: string): Promise<ProfileServiceResult> => {
   try {
