@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -9,39 +10,65 @@ export const useAttentionReportSubmissionMutation = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ message, files }: { message: string; files: File[] }) => {
+    mutationFn: async ({ jobsiteId, reportDate, reportTime, message, attachments }: { 
+      jobsiteId: string; 
+      reportDate: string; 
+      reportTime: string; 
+      message: string; 
+      attachments?: File[]; 
+    }) => {
       if (!user?.company_id) {
         throw new Error('User not authenticated or company not found');
       }
 
-      // Upload files if any
-      const uploadedFiles = [];
-      for (const file of files) {
-        const fileName = `${Date.now()}-${file.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('attention-reports')
-          .upload(`${user.company_id}/${fileName}`, file);
-
-        if (uploadError) throw uploadError;
-        uploadedFiles.push(uploadData.path);
-      }
-
-      // Create attention report
-      const { error: reportError } = await supabase
+      // Create attention report first
+      const { data: reportData, error: reportError } = await supabase
         .from('attention_reports')
         .insert([
           {
             company_id: user.company_id,
-            reported_by: user.id,
+            submitted_by: user.id,
+            jobsite_id: jobsiteId,
+            report_date: reportDate,
+            report_time: reportTime,
             message,
-            files: uploadedFiles,
           },
-        ]);
+        ])
+        .select()
+        .single();
 
       if (reportError) throw reportError;
+
+      // Upload attachments if any
+      if (attachments && attachments.length > 0) {
+        for (const file of attachments) {
+          const fileName = `${Date.now()}-${file.name}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('attention-reports')
+            .upload(`${user.company_id}/${fileName}`, file);
+
+          if (uploadError) throw uploadError;
+
+          // Create attachment record
+          const { error: attachmentError } = await supabase
+            .from('attention_report_attachments')
+            .insert([
+              {
+                report_id: reportData.id,
+                file_name: file.name,
+                file_url: uploadData.path,
+                file_size: file.size,
+                mime_type: file.type,
+              },
+            ]);
+
+          if (attachmentError) throw attachmentError;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attention-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['foreman-attention-reports'] });
       toast({
         title: "Report Submitted",
         description: "Your attention report has been submitted successfully.",
