@@ -81,7 +81,7 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!employee || !user?.company_id) {
+    if (!employee || !user?.companyId) {
       toast({
         title: 'Error',
         description: 'Missing employee or company information.',
@@ -106,7 +106,7 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
 
       // Upload file if provided
       if (file) {
-        const fileName = `${user.company_id}/${employee.id}/${Date.now()}_${file.name}`;
+        const fileName = `${user.companyId}/${employee.id}/${Date.now()}_${file.name}`;
         
         const { error: uploadError } = await supabase.storage
           .from('certificates')
@@ -129,7 +129,7 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
         .from('employee_certificates')
         .insert({
           employee_id: employee.id,
-          company_id: user.company_id,
+          company_id: user.companyId,
           certificate_name: certificateName,
           certificate_type: certificateType,
           expiry_date: expiryDate,

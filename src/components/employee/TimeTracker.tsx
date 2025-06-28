@@ -66,7 +66,7 @@ const TimeTracker = () => {
         <CardContent className="p-6">
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-bold text-slate-900">
-              Welcome, {user?.first_name || 'Employee'} {user?.last_name || ''}
+              Welcome, {user?.firstName || 'Employee'} {user?.lastName || ''}
             </h1>
             <p className="text-slate-600 text-lg">{todayDate}</p>
           </div>

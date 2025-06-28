@@ -18,11 +18,11 @@ const ProfileTab = () => {
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      first_name: user?.first_name || '',
-      last_name: user?.last_name || '',
+      first_name: user?.firstName || '',
+      last_name: user?.lastName || '',
       trade: user?.trade || '',
       position: user?.position || '',
-      hourly_rate: user?.hourly_rate || 25,
+      hourly_rate: user?.hourlyRate || 25,
     },
   });
 

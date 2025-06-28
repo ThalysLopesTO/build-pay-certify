@@ -1,61 +1,69 @@
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface CheckoutParams {
-  planType: 'basic' | 'premium' | 'enterprise';
-  customerEmail?: string;
-  isUnauthenticated?: boolean;
-}
-
-interface CheckoutResponse {
-  url?: string;
-  redirectTo?: string;
-}
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface SubscriptionStatus {
   subscribed: boolean;
-  subscription_end?: string;
-  status?: string;
+  plan: string;
+  subscription_end: string | null;
 }
 
 export const useStripeSubscription = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { user, session } = useAuth();
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
 
-  // Query for subscription status
-  const { data: subscriptionStatus, isLoading: isLoadingStatus, refetch: checkSubscription } = useQuery<SubscriptionStatus>({
-    queryKey: ['subscription-status'],
+  // Check subscription status - only for authenticated users
+  const { data: subscriptionStatus, isLoading: isLoadingStatus } = useQuery({
+    queryKey: ['subscription-status', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      if (error) throw new Error(error.message);
-      return data;
-    },
-  });
-
-  const createCheckout = useMutation<CheckoutResponse, Error, CheckoutParams>({
-    mutationFn: async ({ planType, customerEmail = '', isUnauthenticated = false }: CheckoutParams): Promise<CheckoutResponse> => {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { 
-          planType, 
-          customerEmail, 
-          isUnauthenticated,
-          successUrl: `${window.location.origin}/register`,
-          cancelUrl: `${window.location.origin}/pricing`
+      if (!session) throw new Error('No session');
+      
+      const { data, error } = await supabase.functions.invoke('check-subscription', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
-      if (error) throw new Error(error.message);
-      return data as CheckoutResponse;
+      if (error) throw error;
+      return data as SubscriptionStatus;
+    },
+    enabled: !!session && !!user,
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+  });
+
+  // Create checkout session - now supports guest checkout
+  const createCheckoutMutation = useMutation({
+    mutationFn: async ({ planName, customerEmail }: { planName: string; customerEmail?: string }) => {
+      console.log('Creating checkout session with params:', { planName, customerEmail });
+      
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { planName, customerEmail },
+      });
+
+      if (error) {
+        console.error('Checkout creation error:', error);
+        throw error;
+      }
+      
+      console.log('Checkout session created:', data);
+      return data;
     },
     onSuccess: (data) => {
-      if (data.redirectTo) {
-        window.location.href = data.redirectTo; // Enterprise plan
-      } else if (data.url) {
-        window.location.href = data.url; // Basic or Premium
+      console.log('Checkout success, redirecting to:', data.url);
+      if (data.url) {
+        // Redirect to Stripe checkout in the same tab for better UX
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL received');
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Checkout mutation error:', error);
       toast({
         title: "Checkout Error",
         description: error.message || "Failed to create checkout session",
@@ -64,18 +72,26 @@ export const useStripeSubscription = () => {
     },
   });
 
-  const openCustomerPortal = useMutation({
+  // Open customer portal - requires authentication
+  const customerPortalMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('customer-portal');
-      if (error) throw new Error(error.message);
+      if (!session) throw new Error('Please log in to manage your subscription');
+      
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
       if (data.url) {
-        window.location.href = data.url;
+        window.open(data.url, '_blank');
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Portal Error",
         description: error.message || "Failed to open customer portal",
@@ -84,14 +100,34 @@ export const useStripeSubscription = () => {
     },
   });
 
+  // Manual subscription check
+  const checkSubscription = async () => {
+    setIsCheckingSubscription(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+      toast({
+        title: "Subscription Updated",
+        description: "Your subscription status has been refreshed",
+      });
+    } catch (error) {
+      toast({
+        title: "Check Failed",
+        description: "Failed to refresh subscription status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCheckingSubscription(false);
+    }
+  };
+
   return {
     subscriptionStatus,
     isLoadingStatus,
-    isCheckingSubscription: checkSubscription.isFetching,
-    createCheckout: createCheckout.mutate,
-    isCreatingCheckout: createCheckout.isPending,
-    openCustomerPortal: openCustomerPortal.mutate,
-    isOpeningPortal: openCustomerPortal.isPending,
+    isCheckingSubscription,
+    createCheckout: createCheckoutMutation.mutate,
+    isCreatingCheckout: createCheckoutMutation.isPending,
+    openCustomerPortal: customerPortalMutation.mutate,
+    isOpeningPortal: customerPortalMutation.isPending,
     checkSubscription,
   };
 };

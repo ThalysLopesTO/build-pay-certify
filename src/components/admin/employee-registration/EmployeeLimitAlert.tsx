@@ -1,125 +1,39 @@
 
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, Crown } from 'lucide-react';
-import { useStripeCheckout } from '@/hooks/useStripeCheckout';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { AlertTriangle } from 'lucide-react';
 
 interface EmployeeLimitAlertProps {
   employeeLimit: {
     plan: string;
     currentCount: number;
-    employeeLimit: number | null;
+    employeeLimit: number;
     canAddEmployee: boolean;
     remainingSlots: number;
-    subscriptionStatus: string;
   };
 }
 
 const EmployeeLimitAlert: React.FC<EmployeeLimitAlertProps> = ({ employeeLimit }) => {
-  const { user } = useAuth();
-  const checkoutMutation = useStripeCheckout();
-
   const getPlanName = (plan: string) => {
     switch (plan) {
-      case 'basic': return 'Basic Plan';
-      case 'premium': return 'Premium Plan';
-      case 'enterprise': return 'Enterprise Plan';
+      case 'starter': return 'Starter';
+      case 'pro': return 'Pro';
+      case 'enterprise': return 'Enterprise';
       default: return plan;
     }
   };
 
-  const handleUpgrade = (planType: 'premium' | 'enterprise') => {
-    if (user?.email) {
-      checkoutMutation.mutate({
-        planType,
-        customerEmail: user.email,
-      });
-    }
-  };
-
-  // Show upgrade needed if subscription is inactive
-  if (employeeLimit.subscriptionStatus !== 'active') {
-    return (
-      <Alert className="border-red-200 bg-red-50">
-        <AlertTriangle className="h-4 w-4 text-red-600" />
-        <AlertDescription>
-          <div className="flex items-center justify-between">
-            <div>
-              <strong>Subscription Required</strong>
-              <br />
-              You need an active subscription to manage employees.
-            </div>
-            <Button
-              size="sm"
-              onClick={() => window.location.href = '/pricing'}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Subscribe Now
-            </Button>
-          </div>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (employeeLimit.canAddEmployee) {
-    return (
-      <Alert className="border-green-200 bg-green-50">
-        <Crown className="h-4 w-4 text-green-600" />
-        <AlertDescription>
-          <strong>Current Plan: {getPlanName(employeeLimit.plan)}</strong> - 
-          Using {employeeLimit.currentCount} of {employeeLimit.employeeLimit || '∞'} employee slots.
-          <span className="text-green-600"> You can add {employeeLimit.remainingSlots} more employees.</span>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
   return (
-    <Alert className="border-orange-200 bg-orange-50">
-      <AlertTriangle className="h-4 w-4 text-orange-600" />
+    <Alert className={employeeLimit.canAddEmployee ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50"}>
+      <AlertTriangle className="h-4 w-4" />
       <AlertDescription>
-        <div className="flex items-center justify-between">
-          <div>
-            <strong>Employee Limit Reached</strong>
-            <br />
-            You're using {employeeLimit.currentCount} of {employeeLimit.employeeLimit} employees on the {getPlanName(employeeLimit.plan)}.
-          </div>
-          <div className="flex space-x-2 ml-4">
-            {employeeLimit.plan === 'basic' && (
-              <>
-                <Button
-                  size="sm"
-                  onClick={() => handleUpgrade('premium')}
-                  disabled={checkoutMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  Upgrade to Premium
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleUpgrade('enterprise')}
-                  disabled={checkoutMutation.isPending}
-                >
-                  Contact for Enterprise
-                </Button>
-              </>
-            )}
-            {employeeLimit.plan === 'premium' && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleUpgrade('enterprise')}
-                disabled={checkoutMutation.isPending}
-              >
-                Contact for Enterprise
-              </Button>
-            )}
-          </div>
-        </div>
+        <strong>Current Plan: {getPlanName(employeeLimit.plan)}</strong> - 
+        Using {employeeLimit.currentCount} of {employeeLimit.employeeLimit} employee slots.
+        {employeeLimit.canAddEmployee ? (
+          <span className="text-green-600"> You can add {employeeLimit.remainingSlots} more employees.</span>
+        ) : (
+          <span className="text-orange-600"> Employee limit reached. Please upgrade your plan to add more employees.</span>
+        )}
       </AlertDescription>
     </Alert>
   );

@@ -1,97 +1,80 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export interface ProfileData {
-  id: string;
-  role: 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee';
-  company_id: string;
-  hourly_rate: number | null;
-  trade: string | null;
-  position: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  pending_approval: boolean;
-}
-
-export interface CompanyData {
-  id: string;
-  name: string;
-}
-
 export const fetchUserProfile = async (userId: string) => {
   try {
-    console.log('🔍 Fetching profile for user:', userId);
+    console.log('📝 Fetching user profile for:', userId);
     
-    // Fetch user profile with company information
+    // Query user_profiles using user_id (matching auth.users.id)
     const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select(`
-        id,
-        role,
-        company_id,
-        hourly_rate,
-        trade,
-        position,
-        first_name,
-        last_name,
-        pending_approval,
-        companies!inner (
-          id,
-          name
-        )
-      `)
-      .eq('id', userId)
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', userId)
       .single();
 
+    console.log('📋 Profile query result:', { profile, profileError });
+
     if (profileError) {
-      console.error('❌ Profile fetch error:', profileError);
-      return { 
-        profile: null, 
-        company: null, 
-        error: `Profile not found: ${profileError.message}` 
-      };
+      console.error('❌ Error fetching user profile:', profileError);
+      
+      // Check if user profile doesn't exist
+      if (profileError.code === 'PGRST116') {
+        return { profile: null, company: null, error: 'You are not linked to any company. Please contact your administrator.' };
+      }
+      
+      return { profile: null, company: null, error: 'Failed to load user profile. Please try logging in again.' };
     }
 
-    if (!profile || !profile.companies) {
-      console.warn('⚠️ No profile or company data found');
-      return { 
-        profile: null, 
-        company: null, 
-        error: 'Profile or company not found' 
-      };
+    if (!profile) {
+      console.warn('⚠️ User profile not found');
+      return { profile: null, company: null, error: 'You are not linked to any company. Please contact your administrator.' };
     }
 
-    const company = Array.isArray(profile.companies) 
-      ? profile.companies[0] 
-      : profile.companies;
+    console.log('📊 Profile loaded:', profile);
 
-    console.log('✅ Profile and company fetched successfully');
+    // For paid users (Stripe verified), skip approval check
+    if (profile.stripe_verified) {
+      console.log('💳 User is Stripe verified - bypassing approval check');
+    } else if (profile.pending_approval) {
+      // Only check pending approval for non-Stripe users
+      console.warn('⚠️ User is pending approval');
+      return { profile: null, company: null, error: 'Your company account is pending approval. You will receive an email notification once approved.' };
+    }
+
+    if (!profile.company_id) {
+      console.warn('⚠️ User not assigned to company');
+      return { profile: null, company: null, error: 'You are not linked to any company. Please contact your administrator.' };
+    }
+
+    // Query companies using company_id from profile
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('id', profile.company_id)
+      .single();
+
+    console.log('🏢 Company query result:', { company, companyError });
+
+    if (companyError || !company) {
+      console.warn('⚠️ Company not found:', companyError);
+      return { profile: null, company: null, error: 'Your company account was not found. Please contact your system administrator.' };
+    }
+
+    // For Stripe verified companies, only check subscription status (handled by SubscriptionGate)
+    if (company.stripe_verified) {
+      console.log('💳 Company is Stripe verified - subscription status will be checked by SubscriptionGate');
+    } else if (company.status !== 'active') {
+      // Only check company status for non-Stripe companies
+      console.warn('⚠️ Company not active, status:', company.status);
+      return { profile: null, company: null, error: 'Your company account is not active. Please contact your system administrator.' };
+    }
+
+    console.log('✅ Resolved Profile:', profile);
+    console.log('✅ Resolved Company:', company);
     
-    return {
-      profile: {
-        id: profile.id,
-        role: profile.role,
-        company_id: profile.company_id,
-        hourly_rate: profile.hourly_rate,
-        trade: profile.trade,
-        position: profile.position,
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        pending_approval: profile.pending_approval
-      } as ProfileData,
-      company: {
-        id: company.id,
-        name: company.name
-      } as CompanyData,
-      error: null
-    };
-
+    return { profile, company, error: null };
   } catch (error) {
-    console.error('💥 Unexpected error in fetchUserProfile:', error);
-    return { 
-      profile: null, 
-      company: null, 
-      error: 'An unexpected error occurred while fetching profile' 
-    };
+    console.error('💥 Error in fetchUserProfile:', error);
+    return { profile: null, company: null, error: 'An unexpected error occurred. Please try again.' };
   }
 };

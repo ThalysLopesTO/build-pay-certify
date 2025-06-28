@@ -79,7 +79,7 @@ const Header = () => {
             <div className="flex items-center space-x-3">
               <div className="text-sm text-right">
                 <div className="font-medium text-black whitespace-nowrap">
-                  {user.first_name} {user.last_name}
+                  {user.firstName} {user.lastName}
                 </div>
                 <div className="text-gray-600 whitespace-nowrap">{user.email}</div>
               </div>

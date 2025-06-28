@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { CreditCard, CheckCircle, Building } from 'lucide-react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 const HomePage = () => {
@@ -13,6 +15,7 @@ const HomePage = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
+  // Handle post-payment redirect
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
     if (paymentStatus === 'success') {
@@ -34,10 +37,9 @@ const HomePage = () => {
   const handleStartSubscription = async () => {
     try {
       console.log('Starting subscription process...');
-      await createCheckout({
-        planType: 'premium', // or 'basic'
-        customerEmail: 'test@stackbuild.ca', // use dynamic user email in production
-        isUnauthenticated: true
+      // Create checkout for guest users (pre-registration flow)
+      await createCheckout({ 
+        planName: 'StackBuild'
       });
     } catch (error) {
       console.error('Subscription error:', error);
@@ -49,6 +51,7 @@ const HomePage = () => {
     }
   };
 
+  // If user is authenticated, redirect them to their dashboard
   if (isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900 flex items-center justify-center p-4">
@@ -59,7 +62,9 @@ const HomePage = () => {
                 <Building className="h-10 w-10 mr-3" />
                 StackBuild
               </CardTitle>
-              <h1 className="text-2xl font-semibold text-slate-800 mb-2">Welcome Back!</h1>
+              <h1 className="text-2xl font-semibold text-slate-800 mb-2">
+                Welcome Back!
+              </h1>
               <p className="text-slate-600 text-lg">
                 You're already logged in. Redirecting to your dashboard...
               </p>
@@ -86,13 +91,13 @@ const HomePage = () => {
               Streamline your construction business with our comprehensive management platform
             </p>
           </CardHeader>
-
+          
           <CardContent className="space-y-8">
             <div className="text-center">
               <div className="text-5xl font-bold text-orange-600 mb-2">$197 CAD</div>
               <div className="text-lg text-slate-600">per month</div>
             </div>
-
+            
             <div className="space-y-4">
               <h3 className="font-semibold text-xl text-center mb-6 text-slate-800">
                 Everything You Need to Manage Your Construction Business:
@@ -115,7 +120,7 @@ const HomePage = () => {
                 ))}
               </div>
             </div>
-
+            
             <div className="space-y-4">
               <Button
                 onClick={handleStartSubscription}
@@ -126,7 +131,7 @@ const HomePage = () => {
                 <CreditCard className="h-5 w-5 mr-2" />
                 {isCreatingCheckout ? 'Processing...' : 'Start My Subscription'}
               </Button>
-
+              
               <div className="text-center text-sm text-slate-500">
                 <p className="mb-2">30-day money-back guarantee • Cancel anytime</p>
                 <p>Secure payment powered by Stripe</p>

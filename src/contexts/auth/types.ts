@@ -1,37 +1,28 @@
 
-export interface AuthUser {
-  id: string;
-  email: string;
-  role: 'admin' | 'super_admin' | 'foreman' | 'payroll' | 'employee';
-  first_name?: string;
-  last_name?: string;
-  company_id?: string;
-  company_name?: string;
-  hourly_rate?: number;
+import { User, Session } from '@supabase/supabase-js';
+
+// Updated AuthUser interface to include company information
+export interface AuthUser extends User {
+  role?: 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee';
+  companyId?: string;
+  companyName?: string;
+  hourlyRate?: number;
   trade?: string;
   position?: string;
-  pending_approval?: boolean;
-}
-
-export interface Company {
-  id: string;
-  name: string;
-  status: string;
-  subscription_override?: boolean;
-  stripe_verified?: boolean;
+  firstName?: string;
+  lastName?: string;
+  pendingApproval?: boolean;
 }
 
 export interface AuthContextType {
   user: AuthUser | null;
-  company: Company | null;
-  session: any;
-  isAuthenticated: boolean;
-  loading: boolean;
-  companyError: string | null;
+  session: Session | null;
   login: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   logout: () => Promise<void>;
-  refreshUserProfile: () => Promise<void>;
+  isAuthenticated: boolean;
+  loading: boolean;
   isCompanyAdmin: boolean;
   isSuperAdmin: boolean;
+  companyError: string | null;
 }

@@ -29,7 +29,7 @@ const LicenseDetailsModal: React.FC<LicenseDetailsModalProps> = ({
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium text-gray-600">Company Name</label>
-            <p className="text-gray-900 mt-1">{user?.company_name || 'Not available'}</p>
+            <p className="text-gray-900 mt-1">{user?.companyName || 'Not available'}</p>
           </div>
           
           <div>
@@ -53,7 +53,7 @@ const LicenseDetailsModal: React.FC<LicenseDetailsModalProps> = ({
           
           <div>
             <label className="text-sm font-medium text-gray-600">Company ID</label>
-            <p className="text-gray-500 text-sm mt-1 font-mono">{user?.company_id || 'Not available'}</p>
+            <p className="text-gray-500 text-sm mt-1 font-mono">{user?.companyId || 'Not available'}</p>
           </div>
         </div>
       </DialogContent>
