@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Handle routing based on subscription status and user role
           const currentPath = window.location.pathname;
           
-          // Admin users get redirected to admin dashboard or regular dashboard
+          // Admin and super admin users get redirected to admin dashboard or regular dashboard
           if (user.role === 'admin' || user.role === 'super_admin') {
             console.log('👑 Admin user detected');
             if (currentPath === '/login' || currentPath === '/pricing') {

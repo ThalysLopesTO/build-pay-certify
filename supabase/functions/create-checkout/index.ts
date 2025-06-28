@@ -87,7 +87,7 @@ serve(async (req) => {
       logStep("Enterprise plan requested, redirecting to sales");
       return new Response(
         JSON.stringify({
-          redirectTo: 'mailto:sales@yourdomain.com?subject=Enterprise Plan Inquiry'
+          redirectTo: 'mailto:sales@stackbuild.ca?subject=Enterprise Plan Inquiry'
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -145,19 +145,22 @@ serve(async (req) => {
       employeeLimit: plan.employee_limit 
     });
 
-    // Determine success URL based on authentication status
+    // Determine success and cancel URLs based on authentication status
     const origin = req.headers.get('origin') || 'http://localhost:3000';
     const successUrl = isUnauthenticated 
       ? `${origin}/register?session_id={CHECKOUT_SESSION_ID}`
-      : `${origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`;
+      : `${origin}/subscription?session_id={CHECKOUT_SESSION_ID}`;
     
-    const cancelUrl = `${origin}/pricing`;
+    const cancelUrl = isUnauthenticated
+      ? `${origin}/subscription?cancelled=true`
+      : `${origin}/subscription?cancelled=true`;
 
     logStep("Creating Stripe checkout session", { 
       successUrl, 
       cancelUrl, 
       customerEmail,
-      stripePriceId: plan.stripe_price_id 
+      stripePriceId: plan.stripe_price_id,
+      isUnauthenticated 
     });
 
     // Create Stripe checkout session

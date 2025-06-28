@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,14 +17,28 @@ const SubscriptionLanding = () => {
   const { refetch: refetchPlanDetails } = usePlanDetails();
   const { toast } = useToast();
 
-  // Handle Stripe redirect on component mount
+  // Handle Stripe redirect on component mount - ONLY for authenticated users
   useEffect(() => {
     const handleStripeRedirect = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const sessionId = urlParams.get('session_id');
+      const cancelled = urlParams.get('cancelled');
       
-      if (sessionId) {
-        console.log('🎉 Stripe checkout session detected:', sessionId);
+      if (cancelled) {
+        toast({
+          title: "Payment Cancelled",
+          description: "Your payment was cancelled. You can try again anytime.",
+          variant: "destructive",
+        });
+        // Clean the URL
+        const url = new URL(window.location.href);
+        url.searchParams.delete('cancelled');
+        window.history.replaceState({}, document.title, url.pathname + url.search);
+        return;
+      }
+      
+      if (sessionId && user) {
+        console.log('🎉 Stripe checkout session detected for authenticated user:', sessionId);
         setIsProcessingStripeRedirect(true);
         
         try {
@@ -83,10 +98,7 @@ const SubscriptionLanding = () => {
       }
     };
 
-    // Only run if we have a session_id and user is authenticated
-    if (user) {
-      handleStripeRedirect();
-    }
+    handleStripeRedirect();
   }, [refetchPlanDetails, toast, navigate, user]);
 
   // Add a safety timeout to prevent indefinite loading
@@ -110,30 +122,30 @@ const SubscriptionLanding = () => {
     console.log('🔄 Subscribing to plan:', planType);
     
     if (planType === 'enterprise') {
-      const mailtoUrl = 'mailto:sales@yourdomain.com?subject=Enterprise Plan Inquiry';
+      const mailtoUrl = 'mailto:sales@stackbuild.ca?subject=Enterprise Plan Inquiry';
       console.log('📧 Redirecting to email for enterprise plan:', mailtoUrl);
       window.location.href = mailtoUrl;
       return;
     }
 
-    if (!user?.email) {
-      console.error('❌ No user email found');
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to subscribe to a plan.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // For unauthenticated users, use guest email and set isUnauthenticated flag
+    const customerEmail = user?.email || 'guest@stackbuild.ca';
+    const isUnauthenticated = !user;
 
-    console.log('💳 Creating checkout session for:', { planType, email: user.email });
+    console.log('💳 Creating checkout session for:', { 
+      planType, 
+      email: customerEmail, 
+      isUnauthenticated 
+    });
+    
     createCheckout({
       planType,
-      customerEmail: user.email
+      customerEmail,
+      isUnauthenticated
     });
   };
 
-  // Show loading spinner while processing Stripe redirect
+  // Show loading spinner while processing Stripe redirect for authenticated users
   if (isProcessingStripeRedirect) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -248,8 +260,16 @@ const SubscriptionLanding = () => {
             Choose Your Plan
           </h2>
           <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-            Select the perfect plan for your construction business. Scale up or down as your team grows.
+            {user 
+              ? "Select the perfect plan for your construction business. Scale up or down as your team grows."
+              : "Subscribe now and create your account after payment. Start your construction management journey today."
+            }
           </p>
+          {!user && (
+            <p className="text-sm text-slate-500 mt-2">
+              No account required to get started - complete registration after payment
+            </p>
+          )}
         </div>
 
         {/* Pricing Cards */}
@@ -351,6 +371,14 @@ const SubscriptionLanding = () => {
               24/7 customer support
             </div>
           </div>
+          {!user && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-blue-800 text-sm">
+                <strong>New to StackBuild?</strong> Subscribe now, then complete your account registration after payment. 
+                Your subscription will be waiting for you!
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
