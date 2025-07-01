@@ -158,7 +158,7 @@ const EmployeeTimesheets = () => {
                         {format(new Date(timesheet.week_ending_date), 'MMM dd, yyyy')}
                       </TableCell>
                       <TableCell className="text-center font-mono">
-                        {timesheet.total_hours?.toFixed(2) || '0.00'}h
+                        {timesheet.total_hours.toFixed(2)}h
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(timesheet.status)}
