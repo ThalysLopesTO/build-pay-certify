@@ -21,7 +21,6 @@ export const useEmployeeTimesheets = (filters: TimesheetFilters = {}) => {
         .from('timesheets')
         .select(`
           *,
-          user_profiles!timesheets_user_id_fkey(first_name, last_name),
           jobsites(name)
         `)
         .eq('company_id', user.companyId)
@@ -40,28 +39,48 @@ export const useEmployeeTimesheets = (filters: TimesheetFilters = {}) => {
         query = query.eq('status', filters.status);
       }
 
-      const { data, error } = await query;
+      const { data: timesheets, error } = await query;
 
       if (error) {
         console.error('Error fetching employee timesheets:', error);
         throw error;
       }
 
+      if (!timesheets) return [];
+
+      // Get user profiles separately to avoid relationship issues
+      const userIds = [...new Set(timesheets.map(t => t.user_id))];
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching user profiles:', profilesError);
+        throw profilesError;
+      }
+
+      // Create a map of user profiles for quick lookup
+      const profileMap = new Map(
+        profiles?.map(profile => [profile.user_id, profile]) || []
+      );
+
       // Transform the data to include employee name and calculate hours
-      return data?.map(timesheet => {
+      return timesheets.map(timesheet => {
+        const profile = profileMap.get(timesheet.user_id);
         const hoursWorked = timesheet.check_in_time && timesheet.check_out_time 
           ? (new Date(timesheet.check_out_time).getTime() - new Date(timesheet.check_in_time).getTime()) / (1000 * 60 * 60)
           : 0;
 
         return {
           ...timesheet,
-          employee_name: timesheet.user_profiles 
-            ? `${timesheet.user_profiles.first_name} ${timesheet.user_profiles.last_name}`
+          employee_name: profile 
+            ? `${profile.first_name} ${profile.last_name}`
             : 'Unknown Employee',
           jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
           hours_worked: hoursWorked
         };
-      }) || [];
+      });
     },
     enabled: !!user?.companyId,
   });
