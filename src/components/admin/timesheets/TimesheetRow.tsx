@@ -2,42 +2,24 @@
 import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MapPin } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { Edit, MapPin } from 'lucide-react';
+import { format } from 'date-fns';
 import TimesheetStatusBadge from './TimesheetStatusBadge';
-import TimesheetActions from './TimesheetActions';
-import { useCompanySettings } from '@/hooks/useCompanySettings';
 
 interface TimesheetRowProps {
   timesheet: any;
   onEdit: (timesheet: any) => void;
-  onApprove: (timesheetId: string) => void;
-  onReject: (timesheetId: string) => void;
   onViewLocation?: (timesheet: any) => void;
-  isApproving: boolean;
-  isRejecting: boolean;
+  showEditButton: boolean;
 }
 
 const TimesheetRow: React.FC<TimesheetRowProps> = ({
   timesheet,
   onEdit,
-  onApprove,
-  onReject,
   onViewLocation,
-  isApproving,
-  isRejecting
+  showEditButton
 }) => {
-  const { settings } = useCompanySettings();
-
-  const formatWeekRange = (weekStartDate: string) => {
-    const startDate = new Date(weekStartDate);
-    const endDate = addDays(startDate, 6); // Week is always 7 days, so add 6 to get the end
-    
-    const startFormatted = format(startDate, 'MMM dd');
-    const endFormatted = format(endDate, 'MMM dd');
-    
-    return `${startFormatted} – ${endFormatted}`;
-  };
+  const isOpenShift = timesheet.check_in_time && !timesheet.check_out_time;
 
   return (
     <TableRow className="hover:bg-gray-50">
@@ -46,17 +28,22 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
       </TableCell>
       <TableCell>{timesheet.jobsite_name || 'Unknown Jobsite'}</TableCell>
       <TableCell>
-        {timesheet.week_start_date ? formatWeekRange(timesheet.week_start_date) : '--'}
+        {timesheet.check_in_time 
+          ? format(new Date(timesheet.check_in_time), 'MMM dd, yyyy h:mm a')
+          : '--'
+        }
       </TableCell>
-      <TableCell className="text-center">{timesheet.monday_hours || 0}</TableCell>
-      <TableCell className="text-center">{timesheet.tuesday_hours || 0}</TableCell>
-      <TableCell className="text-center">{timesheet.wednesday_hours || 0}</TableCell>
-      <TableCell className="text-center">{timesheet.thursday_hours || 0}</TableCell>
-      <TableCell className="text-center">{timesheet.friday_hours || 0}</TableCell>
-      <TableCell className="text-center">{timesheet.saturday_hours || 0}</TableCell>
-      <TableCell className="text-center">{timesheet.sunday_hours || 0}</TableCell>
-      <TableCell className="text-center font-semibold">
-        {timesheet.total_hours || 0}
+      <TableCell>
+        {timesheet.check_out_time ? (
+          format(new Date(timesheet.check_out_time), 'MMM dd, yyyy h:mm a')
+        ) : (
+          <span className="text-red-600 font-medium flex items-center gap-1">
+            {isOpenShift ? 'Open Shift' : '--'}
+          </span>
+        )}
+      </TableCell>
+      <TableCell className="text-center font-mono">
+        {timesheet.hours_worked ? timesheet.hours_worked.toFixed(2) : '0.00'}h
       </TableCell>
       <TableCell>
         <TimesheetStatusBadge status={timesheet.status || 'pending'} />
@@ -68,6 +55,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
             size="sm"
             onClick={() => onViewLocation(timesheet)}
             className="p-2 h-8 w-8"
+            title="View Location"
           >
             <MapPin className="h-4 w-4 text-blue-500" />
           </Button>
@@ -76,14 +64,17 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
         )}
       </TableCell>
       <TableCell>
-        <TimesheetActions
-          timesheet={timesheet}
-          onEdit={onEdit}
-          onApprove={onApprove}
-          onReject={onReject}
-          isApproving={isApproving}
-          isRejecting={isRejecting}
-        />
+        {showEditButton && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(timesheet)}
+            className="p-2 h-8 w-8"
+            title="Edit Punch Record"
+          >
+            <Edit className="h-4 w-4 text-blue-500" />
+          </Button>
+        )}
       </TableCell>
     </TableRow>
   );

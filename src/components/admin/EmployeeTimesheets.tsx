@@ -2,95 +2,57 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useEmployeeTimesheets } from '@/hooks/useEmployeeTimesheets';
-import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
-import { useTimesheetApproval } from '@/hooks/useTimesheetApproval';
-import { useTimesheetRejection } from '@/hooks/useTimesheetRejection';
-import { useTimesheetUpdate } from '@/hooks/useTimesheetUpdate';
-import TimesheetTable from './timesheets/TimesheetTable';
-import TimesheetFilters from './timesheets/TimesheetFilters';
-import TimesheetEditModal from './timesheets/TimesheetEditModal';
-import TimesheetErrorAlert from './timesheets/TimesheetErrorAlert';
-import TimesheetPagination from './timesheets/TimesheetPagination';
-import LocationMapModal from './LocationMapModal';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import EditPunchModal from './timesheets/EditPunchModal';
+import TimesheetRow from './timesheets/TimesheetRow';
 import { Clock } from 'lucide-react';
 
 const EmployeeTimesheets = () => {
+  const { user } = useAuth();
   const [filters, setFilters] = useState({
     employeeName: '',
     weekEndingDate: '',
     status: 'all'
   });
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedLocation, setSelectedLocation] = useState<{
-    location: string | null;
-    employeeName: string;
-    timestamp: string;
-  } | null>(null);
-  const itemsPerPage = 10;
-
-  const { data: employees = [] } = useEmployeeDirectory();
+  
   const { data: timesheets = [], isLoading, error } = useEmployeeTimesheets(filters);
-  const approveMutation = useTimesheetApproval();
-  const rejectMutation = useTimesheetRejection();
-  const updateMutation = useTimesheetUpdate();
-
-  const handleApprove = (timesheetId: string) => {
-    approveMutation.mutate(timesheetId);
-  };
-
-  const handleReject = (timesheetId: string) => {
-    rejectMutation.mutate(timesheetId);
-  };
+  
+  const isAuthorized = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'foreman';
 
   const handleEdit = (timesheet: any) => {
     setEditingTimesheet(timesheet);
   };
 
   const handleViewLocation = (timesheet: any) => {
-    setSelectedLocation({
-      location: null, // Weekly timesheets don't have location data
-      employeeName: timesheet.employee_name || 'Unknown Employee',
-      timestamp: timesheet.week_start_date || 'Unknown date'
-    });
+    // Implementation for viewing location if needed
+    console.log('View location for timesheet:', timesheet.id);
   };
 
-  const handleSaveEdit = (updatedData: any) => {
-    if (editingTimesheet) {
-      updateMutation.mutate(
-        { id: editingTimesheet.id, data: updatedData },
-        {
-          onSuccess: () => {
-            setEditingTimesheet(null);
-          }
-        }
-      );
-    }
-  };
-
-  const handleClearFilters = () => {
-    setFilters({
-      employeeName: '',
-      weekEndingDate: '',
-      status: 'all'
-    });
-    setCurrentPage(1);
-  };
-
-  // Apply status filter
-  const filteredTimesheets = filters.status === 'all' 
-    ? timesheets 
-    : timesheets.filter(timesheet => timesheet.status === filters.status);
-
-  // Pagination
-  const totalItems = filteredTimesheets.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTimesheets = filteredTimesheets.slice(startIndex, startIndex + itemsPerPage);
+  if (!isAuthorized) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-center text-gray-500">
+            You don't have permission to view employee timesheets.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (error) {
-    return <TimesheetErrorAlert error={error} />;
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-center text-red-600">
+            Error loading timesheets. Please try again.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -102,54 +64,67 @@ const EmployeeTimesheets = () => {
             Employee Timesheets Management
           </CardTitle>
           <p className="text-gray-600 mt-2">
-            Review, approve, and manage employee timesheets
+            Review and edit employee punch records
           </p>
         </CardHeader>
       </Card>
 
-      <TimesheetFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        employees={employees}
-      />
-
-      <TimesheetTable
-        timesheets={paginatedTimesheets}
-        onEdit={handleEdit}
-        onApprove={handleApprove}
-        onReject={handleReject}
-        onViewLocation={handleViewLocation}
-        isApproving={approveMutation.isPending}
-        isRejecting={rejectMutation.isPending}
-        onClearFilters={handleClearFilters}
-      />
-
-      {totalPages > 1 && (
-        <TimesheetPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-        />
-      )}
+      <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <CardHeader className="p-6 pb-4">
+          <CardTitle className="text-xl font-bold text-gray-900">
+            Recent Punch Records ({timesheets.length} total)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="sticky top-0 bg-gray-50">
+                <TableRow>
+                  <TableHead className="font-semibold text-gray-900">Employee</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Jobsite</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Clock In</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Clock Out</TableHead>
+                  <TableHead className="font-semibold text-gray-900 text-center">Hours</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Status</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Location</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      Loading timesheets...
+                    </TableCell>
+                  </TableRow>
+                ) : timesheets.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      No timesheet records found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  timesheets.map((timesheet) => (
+                    <TimesheetRow
+                      key={timesheet.id}
+                      timesheet={timesheet}
+                      onEdit={handleEdit}
+                      onViewLocation={handleViewLocation}
+                      showEditButton={isAuthorized}
+                    />
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       {editingTimesheet && (
-        <TimesheetEditModal
-          timesheet={editingTimesheet}
+        <EditPunchModal
+          isOpen={!!editingTimesheet}
           onClose={() => setEditingTimesheet(null)}
-          onSave={handleSaveEdit}
-          isSaving={updateMutation.isPending}
-        />
-      )}
-
-      {selectedLocation && (
-        <LocationMapModal
-          isOpen={!!selectedLocation}
-          onClose={() => setSelectedLocation(null)}
-          location={selectedLocation.location}
-          employeeName={selectedLocation.employeeName}
-          timestamp={selectedLocation.timestamp}
+          timesheet={editingTimesheet}
         />
       )}
     </div>

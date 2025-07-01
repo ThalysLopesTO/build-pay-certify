@@ -107,6 +107,62 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          company_id: string
+          created_at: string
+          edited_by_user_id: string
+          employee_id: string
+          id: string
+          new_clock_in: string | null
+          new_clock_out: string | null
+          new_jobsite_id: string | null
+          note: string | null
+          original_clock_in: string | null
+          original_clock_out: string | null
+          original_jobsite_id: string | null
+          timesheet_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          edited_by_user_id: string
+          employee_id: string
+          id?: string
+          new_clock_in?: string | null
+          new_clock_out?: string | null
+          new_jobsite_id?: string | null
+          note?: string | null
+          original_clock_in?: string | null
+          original_clock_out?: string | null
+          original_jobsite_id?: string | null
+          timesheet_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          edited_by_user_id?: string
+          employee_id?: string
+          id?: string
+          new_clock_in?: string | null
+          new_clock_out?: string | null
+          new_jobsite_id?: string | null
+          note?: string | null
+          original_clock_in?: string | null
+          original_clock_out?: string | null
+          original_jobsite_id?: string | null
+          timesheet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_timesheet_id_fkey"
+            columns: ["timesheet_id"]
+            isOneToOne: false
+            referencedRelation: "timesheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cancellation_requests: {
         Row: {
           company_id: string
