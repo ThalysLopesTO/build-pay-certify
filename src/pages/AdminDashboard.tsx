@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import Header from '../components/Header';
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -15,6 +16,7 @@ import EmployeeTimesheets from '@/components/admin/EmployeeTimesheets';
 import PayrollSummary from '@/components/admin/PayrollSummary';
 import MaterialRequestInbox from '@/components/admin/MaterialRequestInbox';
 import AttentionReportsInbox from '@/components/admin/AttentionReportsInbox';
+import AttentionReportDetails from '@/components/admin/AttentionReportDetails';
 import InvoiceManagement from '@/components/admin/InvoiceManagement';
 import QuotesManagement from '@/components/admin/QuotesManagement';
 import CompanySettings from '@/components/admin/CompanySettings';
@@ -23,8 +25,15 @@ import SystemSettings from '@/components/admin/SystemSettings';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const params = useParams();
 
   const renderContent = () => {
+    // Handle dynamic routes first
+    if (window.location.pathname.includes('/admin/attention-reports/') && params.reportId) {
+      return <AttentionReportDetails />;
+    }
+
+    // Handle static routes
     switch (activeTab) {
       case 'dashboard':
         return <AdminDashboardContent setActiveTab={setActiveTab} />;

@@ -139,6 +139,21 @@ const AppRoutes = () => {
           } 
         />
         
+        {/* Admin routes - protected by authentication */}
+        <Route 
+          path="/admin/*" 
+          element={
+            isAuthenticated ? (
+              <Routes>
+                <Route path="attention-reports/:reportId" element={<DashboardRouter />} />
+                <Route path="*" element={<DashboardRouter />} />
+              </Routes>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
+        />
+        
         <Route 
           path="/login" 
           element={!isAuthenticated ? <LoginForm /> : <Navigate to="/" replace />} 
