@@ -12,45 +12,48 @@ const QuickActionsSection: React.FC<QuickActionsSectionProps> = ({ setActiveTab 
     {
       id: 'add-employee',
       title: 'Add New Employee',
-      icon: '➕👷‍♀️',
+      icon: '👷‍♀️',
       action: () => setActiveTab('employee-registration'),
       bgColor: 'bg-blue-50 hover:bg-blue-100',
-      borderColor: 'border-blue-200'
+      borderColor: 'border-blue-200',
+      textColor: 'text-blue-900'
     },
     {
       id: 'create-invoice',
       title: 'Create Invoice',
-      icon: '➕📄',
+      icon: '📄',
       action: () => setActiveTab('invoices'),
       bgColor: 'bg-green-50 hover:bg-green-100',
-      borderColor: 'border-green-200'
+      borderColor: 'border-green-200',
+      textColor: 'text-green-900'
     },
     {
       id: 'view-suppliers',
       title: 'View Suppliers',
-      icon: '🧾🔍',
+      icon: '🏪',
       action: () => setActiveTab('suppliers'),
       bgColor: 'bg-purple-50 hover:bg-purple-100',
-      borderColor: 'border-purple-200'
+      borderColor: 'border-purple-200',
+      textColor: 'text-purple-900'
     }
   ];
 
   return (
-    <Card className="shadow-md">
-      <CardHeader>
+    <Card className="shadow-sm border-gray-200 rounded-xl">
+      <CardHeader className="pb-4">
         <CardTitle className="text-xl font-semibold text-gray-900">Quick Actions</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {quickActions.map((action) => (
             <Button
               key={action.id}
               onClick={action.action}
               variant="outline"
-              className={`h-20 flex flex-col items-center justify-center space-y-2 ${action.bgColor} ${action.borderColor} border-2 transition-all duration-200 hover:shadow-md hover:scale-105`}
+              className={`h-24 flex flex-col items-center justify-center space-y-3 ${action.bgColor} ${action.borderColor} ${action.textColor} border-2 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105 w-full`}
             >
-              <span className="text-2xl">{action.icon}</span>
-              <span className="text-sm font-medium text-center">{action.title}</span>
+              <span className="text-3xl">{action.icon}</span>
+              <span className="text-sm font-medium text-center leading-tight">{action.title}</span>
             </Button>
           ))}
         </div>
