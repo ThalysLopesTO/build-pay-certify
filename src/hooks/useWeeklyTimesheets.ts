@@ -17,23 +17,32 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
     queryFn: async () => {
       if (!user?.companyId) return [];
 
-      // Get all timesheets for the company - these are individual punch records
+      // Get weekly timesheets - these are employee submissions
       let query = supabase
-        .from('timesheets')
+        .from('weekly_timesheets')
         .select(`
           id,
-          user_id,
-          jobsite_id,
-          check_in_time,
-          check_out_time,
-          hours_worked,
-          status,
-          created_at,
+          submitted_by,
           company_id,
+          jobsite_id,
+          week_start_date,
+          monday_hours,
+          tuesday_hours,
+          wednesday_hours,
+          thursday_hours,
+          friday_hours,
+          saturday_hours,
+          sunday_hours,
+          hourly_rate,
+          additional_expense,
+          notes,
+          status,
+          total_hours,
+          gross_pay,
+          created_at,
           jobsites(name)
         `)
         .eq('company_id', user.companyId)
-        .not('check_in_time', 'is', null)
         .order('created_at', { ascending: false });
 
       // Apply status filter if provided
@@ -44,14 +53,14 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
       const { data: timesheets, error } = await query;
 
       if (error) {
-        console.error('Error fetching timesheets:', error);
+        console.error('Error fetching weekly timesheets:', error);
         throw error;
       }
 
       if (!timesheets) return [];
 
-      // Get user profiles separately to avoid relationship issues
-      const userIds = [...new Set(timesheets.map(t => t.user_id))];
+      // Get user profiles for employee names
+      const userIds = [...new Set(timesheets.map(t => t.submitted_by))];
       const { data: profiles, error: profilesError } = await supabase
         .from('user_profiles')
         .select('user_id, first_name, last_name')
@@ -67,42 +76,17 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
         profiles?.map(profile => [profile.user_id, profile]) || []
       );
 
-      // Group timesheets by user and week, then calculate totals
-      const weeklyData = new Map<string, any>();
-
-      timesheets.forEach(timesheet => {
-        const profile = profileMap.get(timesheet.user_id);
-        const checkInDate = new Date(timesheet.check_in_time);
+      // Transform the data to include employee names and calculated fields
+      let result = timesheets.map(timesheet => {
+        const profile = profileMap.get(timesheet.submitted_by);
         
-        // Calculate week ending date (assuming Sunday is end of week)
-        const dayOfWeek = checkInDate.getDay();
-        const weekEndingDate = new Date(checkInDate);
-        weekEndingDate.setDate(checkInDate.getDate() + (6 - dayOfWeek));
-        weekEndingDate.setHours(23, 59, 59, 999);
-        
-        const weekKey = `${timesheet.user_id}-${weekEndingDate.toISOString().split('T')[0]}`;
-        
-        if (!weeklyData.has(weekKey)) {
-          weeklyData.set(weekKey, {
-            id: `weekly-${weekKey}`,
-            user_id: timesheet.user_id,
-            employee_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown Employee',
-            week_ending_date: weekEndingDate.toISOString().split('T')[0],
-            total_hours: 0,
-            status: 'pending', // Default status for aggregated weekly data
-            timesheets: [],
-            jobsite_name: timesheet.jobsites?.name || 'Various Jobsites',
-            created_at: timesheet.created_at
-          });
-        }
-
-        const weekData = weeklyData.get(weekKey);
-        weekData.total_hours += timesheet.hours_worked || 0;
-        weekData.timesheets.push(timesheet);
+        return {
+          ...timesheet,
+          employee_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown Employee',
+          jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
+          week_ending_date: timesheet.week_start_date, // This will be the week start date from submissions
+        };
       });
-
-      // Convert map to array and apply filters
-      let result = Array.from(weeklyData.values());
 
       // Apply employee name filter if provided
       if (filters.employeeName) {
@@ -113,10 +97,10 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
 
       // Apply week ending date filter if provided
       if (filters.weekEndingDate) {
-        result = result.filter(item => item.week_ending_date === filters.weekEndingDate);
+        result = result.filter(item => item.week_start_date === filters.weekEndingDate);
       }
 
-      return result.sort((a, b) => new Date(b.week_ending_date).getTime() - new Date(a.week_ending_date).getTime());
+      return result;
     },
     enabled: !!user?.companyId,
   });

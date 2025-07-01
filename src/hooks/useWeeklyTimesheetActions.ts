@@ -10,20 +10,27 @@ export const useWeeklyTimesheetActions = () => {
   const queryClient = useQueryClient();
 
   const approveTimesheet = useMutation({
-    mutationFn: async (weeklyTimesheetId: string) => {
+    mutationFn: async (timesheetId: string) => {
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
-      // Since we're working with aggregated data, we need to find all individual timesheets
-      // for this weekly grouping and update them all
-      // For now, we'll handle this as a placeholder - in a real implementation,
-      // you might want to store weekly timesheet records separately
+      console.log('Approving weekly timesheet:', timesheetId);
       
-      console.log('Approving weekly timesheet:', weeklyTimesheetId);
-      
-      // This is a placeholder response since we're working with aggregated data
-      return { id: weeklyTimesheetId, status: 'approved' };
+      const { data, error } = await supabase
+        .from('weekly_timesheets')
+        .update({ status: 'approved' })
+        .eq('id', timesheetId)
+        .eq('company_id', user.companyId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error approving timesheet:', error);
+        throw error;
+      }
+
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['weekly-timesheets'] });
@@ -43,20 +50,27 @@ export const useWeeklyTimesheetActions = () => {
   });
 
   const rejectTimesheet = useMutation({
-    mutationFn: async (weeklyTimesheetId: string) => {
+    mutationFn: async (timesheetId: string) => {
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
-      // Since we're working with aggregated data, we need to find all individual timesheets
-      // for this weekly grouping and update them all
-      // For now, we'll handle this as a placeholder - in a real implementation,
-      // you might want to store weekly timesheet records separately
+      console.log('Rejecting weekly timesheet:', timesheetId);
       
-      console.log('Rejecting weekly timesheet:', weeklyTimesheetId);
-      
-      // This is a placeholder response since we're working with aggregated data
-      return { id: weeklyTimesheetId, status: 'rejected' };
+      const { data, error } = await supabase
+        .from('weekly_timesheets')
+        .update({ status: 'rejected' })
+        .eq('id', timesheetId)
+        .eq('company_id', user.companyId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error rejecting timesheet:', error);
+        throw error;
+      }
+
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['weekly-timesheets'] });
@@ -75,10 +89,52 @@ export const useWeeklyTimesheetActions = () => {
     },
   });
 
+  const editTimesheet = useMutation({
+    mutationFn: async ({ timesheetId, updates }: { timesheetId: string; updates: any }) => {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Editing weekly timesheet:', timesheetId, updates);
+      
+      const { data, error } = await supabase
+        .from('weekly_timesheets')
+        .update(updates)
+        .eq('id', timesheetId)
+        .eq('company_id', user.companyId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error editing timesheet:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['weekly-timesheets'] });
+      toast({
+        title: "Success",
+        description: "Weekly timesheet updated successfully!",
+      });
+    },
+    onError: (error) => {
+      console.error('Edit timesheet error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update timesheet. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     approveTimesheet: approveTimesheet.mutate,
     rejectTimesheet: rejectTimesheet.mutate,
+    editTimesheet: editTimesheet.mutate,
     isApproving: approveTimesheet.isPending,
     isRejecting: rejectTimesheet.isPending,
+    isEditing: editTimesheet.isPending,
   };
 };

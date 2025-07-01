@@ -10,19 +10,22 @@ import { useWeeklyTimesheetActions } from '@/hooks/useWeeklyTimesheetActions';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Calendar, Check, X, Edit } from 'lucide-react';
 import { format } from 'date-fns';
+import TimesheetEditModal from '@/components/admin/timesheets/TimesheetEditModal';
 
 const EmployeeTimesheets = () => {
   const { user } = useAuth();
-  const { approveTimesheet, rejectTimesheet, isApproving, isRejecting } = useWeeklyTimesheetActions();
+  const { approveTimesheet, rejectTimesheet, editTimesheet, isApproving, isRejecting, isEditing } = useWeeklyTimesheetActions();
   const [filters, setFilters] = useState({
     employeeName: '',
     weekEndingDate: '',
     status: 'all'
   });
+  const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
   
   const { data: timesheets = [], isLoading, error } = useWeeklyTimesheets(filters);
   
-  const isAuthorized = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'foreman';
+  // Only admins and super_admins can access Employee Timesheets (not foremen for payroll)
+  const isAuthorized = user?.role === 'admin' || user?.role === 'super_admin';
 
   const handleApprove = (timesheetId: string) => {
     approveTimesheet(timesheetId);
@@ -33,8 +36,17 @@ const EmployeeTimesheets = () => {
   };
 
   const handleEdit = (timesheet: any) => {
-    // This would open a modal to edit the timesheet hours
-    console.log('Edit timesheet:', timesheet.id);
+    setEditingTimesheet(timesheet);
+  };
+
+  const handleSaveEdit = (updates: any) => {
+    if (editingTimesheet) {
+      editTimesheet({
+        timesheetId: editingTimesheet.id,
+        updates
+      });
+      setEditingTimesheet(null);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -80,10 +92,10 @@ const EmployeeTimesheets = () => {
         <CardHeader className="p-6 pb-4">
           <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Calendar className="h-6 w-6 text-orange-600" />
-            Weekly Timesheet Submissions
+            Employee Weekly Timesheet Submissions
           </CardTitle>
           <p className="text-gray-600 mt-2">
-            Review and approve employee weekly timesheet submissions
+            Review and approve manually submitted weekly timesheets from employees
           </p>
         </CardHeader>
       </Card>
@@ -117,7 +129,7 @@ const EmployeeTimesheets = () => {
       <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
         <CardHeader className="p-6 pb-4">
           <CardTitle className="text-xl font-bold text-gray-900">
-            Weekly Timesheets ({timesheets.length} total)
+            Weekly Timesheet Submissions ({timesheets.length} total)
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -127,8 +139,9 @@ const EmployeeTimesheets = () => {
                 <TableRow>
                   <TableHead className="font-semibold text-gray-900">Employee</TableHead>
                   <TableHead className="font-semibold text-gray-900">Jobsite</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Week Ending</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Week Starting</TableHead>
                   <TableHead className="font-semibold text-gray-900 text-center">Total Hours</TableHead>
+                  <TableHead className="font-semibold text-gray-900 text-center">Total Pay</TableHead>
                   <TableHead className="font-semibold text-gray-900">Status</TableHead>
                   <TableHead className="font-semibold text-gray-900">Submitted</TableHead>
                   <TableHead className="font-semibold text-gray-900">Actions</TableHead>
@@ -137,13 +150,13 @@ const EmployeeTimesheets = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                       Loading timesheets...
                     </TableCell>
                   </TableRow>
                 ) : timesheets.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                       No weekly timesheet submissions found
                     </TableCell>
                   </TableRow>
@@ -155,10 +168,13 @@ const EmployeeTimesheets = () => {
                       </TableCell>
                       <TableCell>{timesheet.jobsite_name}</TableCell>
                       <TableCell>
-                        {format(new Date(timesheet.week_ending_date), 'MMM dd, yyyy')}
+                        {format(new Date(timesheet.week_start_date), 'MMM dd, yyyy')}
                       </TableCell>
                       <TableCell className="text-center font-mono">
                         {timesheet.total_hours.toFixed(2)}h
+                      </TableCell>
+                      <TableCell className="text-center font-mono">
+                        ${timesheet.gross_pay.toFixed(2)}
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(timesheet.status)}
@@ -211,6 +227,16 @@ const EmployeeTimesheets = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Modal */}
+      {editingTimesheet && (
+        <TimesheetEditModal
+          timesheet={editingTimesheet}
+          onClose={() => setEditingTimesheet(null)}
+          onSave={handleSaveEdit}
+          isSaving={isEditing}
+        />
+      )}
     </div>
   );
 };
