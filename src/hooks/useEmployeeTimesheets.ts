@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -20,7 +21,7 @@ export const useEmployeeTimesheets = (filters: TimesheetFilters = {}) => {
         .from('timesheets')
         .select(`
           *,
-          user_profiles!inner(first_name, last_name),
+          user_profiles!timesheets_user_id_fkey(first_name, last_name),
           jobsites(name)
         `)
         .eq('company_id', user.companyId)
@@ -46,14 +47,21 @@ export const useEmployeeTimesheets = (filters: TimesheetFilters = {}) => {
         throw error;
       }
 
-      // Transform the data to include employee name
-      return data?.map(timesheet => ({
-        ...timesheet,
-        employee_name: timesheet.user_profiles 
-          ? `${timesheet.user_profiles.first_name} ${timesheet.user_profiles.last_name}`
-          : 'Unknown Employee',
-        jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite'
-      })) || [];
+      // Transform the data to include employee name and calculate hours
+      return data?.map(timesheet => {
+        const hoursWorked = timesheet.check_in_time && timesheet.check_out_time 
+          ? (new Date(timesheet.check_out_time).getTime() - new Date(timesheet.check_in_time).getTime()) / (1000 * 60 * 60)
+          : 0;
+
+        return {
+          ...timesheet,
+          employee_name: timesheet.user_profiles 
+            ? `${timesheet.user_profiles.first_name} ${timesheet.user_profiles.last_name}`
+            : 'Unknown Employee',
+          jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
+          hours_worked: hoursWorked
+        };
+      }) || [];
     },
     enabled: !!user?.companyId,
   });

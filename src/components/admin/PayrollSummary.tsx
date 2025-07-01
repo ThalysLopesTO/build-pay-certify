@@ -11,7 +11,7 @@ import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useWorkWeek } from '@/hooks/useWorkWeek';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import * as XLSX from 'xlsx';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
 
 // Helper function to safely parse numbers
 const safeParseNumber = (value: any): number => {
@@ -29,7 +29,7 @@ const PayrollSummary = () => {
   // Get work weeks based on company settings
   const workWeeks = useWorkWeek();
 
-  // Fetch actual timesheet data
+  // Fetch actual timesheet data (punch records)
   const { data: timesheets = [], isLoading, error, refetch } = useEmployeeTimesheets({});
   const { data: employees = [] } = useEmployeeDirectory();
 
@@ -38,29 +38,48 @@ const PayrollSummary = () => {
     timesheet.status === 'approved'
   );
 
-  // Transform timesheet data to match the expected format
-  const timesheetEntries = approvedTimesheets.map(timesheet => {
-    const employee = employees.find(emp => 
-      `${emp.first_name || ''} ${emp.last_name || ''}`.trim() === timesheet.employee_name
-    );
+  // Group timesheets by employee and week, then calculate totals
+  const payrollEntries = React.useMemo(() => {
+    const groupedByEmployeeWeek = approvedTimesheets.reduce((acc, timesheet) => {
+      if (!timesheet.check_in_time) return acc;
+      
+      const checkInDate = new Date(timesheet.check_in_time);
+      const weekStart = startOfWeek(checkInDate, { weekStartsOn: 1 });
+      const weekKey = `${timesheet.employee_name}-${weekStart.toISOString()}`;
+      
+      if (!acc[weekKey]) {
+        const employee = employees.find(emp => 
+          `${emp.first_name || ''} ${emp.last_name || ''}`.trim() === timesheet.employee_name
+        );
+        
+        acc[weekKey] = {
+          employeeName: timesheet.employee_name,
+          trade: employee?.trade || 'General',
+          position: employee?.position || 'Worker',
+          jobSite: timesheet.jobsite_name,
+          weekStartDate: weekStart.toISOString(),
+          weekEndDate: format(endOfWeek(weekStart, { weekStartsOn: 1 }), 'MMM dd, yyyy'),
+          totalHours: 0,
+          hourlyRate: safeParseNumber(employee?.hourly_rate) || 25, // Default rate
+          additionalExpense: 0,
+          timesheets: []
+        };
+      }
+      
+      acc[weekKey].totalHours += safeParseNumber(timesheet.hours_worked);
+      acc[weekKey].timesheets.push(timesheet);
+      
+      return acc;
+    }, {} as Record<string, any>);
 
-    return {
-      id: timesheet.id,
-      employeeName: timesheet.employee_name,
-      trade: employee?.trade || 'General',
-      position: employee?.position || 'Worker',
-      jobSite: timesheet.jobsite_name,
-      project: timesheet.jobsite_name, // Using jobsite as project for now
-      totalHours: safeParseNumber(timesheet.total_hours),
-      hourlyRate: safeParseNumber(timesheet.hourly_rate),
-      grossPay: safeParseNumber(timesheet.gross_pay),
-      weekStartDate: timesheet.week_start_date,
-      weekEndDate: format(new Date(new Date(timesheet.week_start_date).getTime() + 6 * 24 * 60 * 60 * 1000), 'MMM dd, yyyy'),
-      additionalExpense: safeParseNumber(timesheet.additional_expense)
-    };
-  });
+    return Object.values(groupedByEmployeeWeek).map((entry: any) => ({
+      ...entry,
+      grossPay: entry.totalHours * entry.hourlyRate + entry.additionalExpense,
+      project: entry.jobSite // Using jobsite as project for now
+    }));
+  }, [approvedTimesheets, employees]);
 
-  const filteredEntries = timesheetEntries.filter(entry => {
+  const filteredEntries = payrollEntries.filter(entry => {
     return (
       (searchTerm === '' || entry.employeeName.toLowerCase().includes(searchTerm.toLowerCase())) &&
       (selectedWeek === 'all' || entry.weekStartDate === selectedWeek) &&
@@ -74,8 +93,8 @@ const PayrollSummary = () => {
   const totalEmployees = new Set(filteredEntries.map(entry => entry.employeeName)).size;
 
   // Get unique values for filters
-  const jobSites = [...new Set(timesheetEntries.map(entry => entry.jobSite))].filter(Boolean);
-  const trades = [...new Set(timesheetEntries.map(entry => entry.trade))].filter(Boolean);
+  const jobSites = [...new Set(payrollEntries.map(entry => entry.jobSite))].filter(Boolean);
+  const trades = [...new Set(payrollEntries.map(entry => entry.trade))].filter(Boolean);
 
   // Download Excel function
   const downloadPayrollExcel = () => {
@@ -350,8 +369,8 @@ const PayrollSummary = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredEntries.map((entry) => (
-                    <tr key={entry.id} className="border-b hover:bg-slate-50">
+                  {filteredEntries.map((entry, index) => (
+                    <tr key={index} className="border-b hover:bg-slate-50">
                       <td className="p-3 font-medium">{entry.employeeName}</td>
                       <td className="p-3">
                         <div>
@@ -362,8 +381,8 @@ const PayrollSummary = () => {
                       <td className="p-3 text-sm">{entry.jobSite}</td>
                       <td className="p-3 text-sm">{entry.project}</td>
                       <td className="p-3 text-sm">{entry.weekEndDate}</td>
-                      <td className="p-3 text-right font-mono">{entry.totalHours}</td>
-                      <td className="p-3 text-right font-mono">${entry.hourlyRate}</td>
+                      <td className="p-3 text-right font-mono">{entry.totalHours.toFixed(2)}</td>
+                      <td className="p-3 text-right font-mono">${entry.hourlyRate.toFixed(2)}</td>
                       <td className="p-3 text-right font-mono">${entry.additionalExpense.toFixed(2)}</td>
                       <td className="p-3 text-right font-mono font-semibold text-green-600">
                         ${entry.grossPay.toLocaleString()}
