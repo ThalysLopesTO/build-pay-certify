@@ -42,15 +42,9 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
               <TableRow>
                 <TableHead className="font-semibold text-gray-900">Employee</TableHead>
                 <TableHead className="font-semibold text-gray-900">Job Site</TableHead>
-                <TableHead className="font-semibold text-gray-900">Week Range</TableHead>
-                <TableHead className="font-semibold text-gray-900 text-center">Mon</TableHead>
-                <TableHead className="font-semibold text-gray-900 text-center">Tue</TableHead>
-                <TableHead className="font-semibold text-gray-900 text-center">Wed</TableHead>
-                <TableHead className="font-semibold text-gray-900 text-center">Thu</TableHead>
-                <TableHead className="font-semibold text-gray-900 text-center">Fri</TableHead>
-                <TableHead className="font-semibold text-gray-900 text-center">Sat</TableHead>
-                <TableHead className="font-semibold text-gray-900 text-center">Sun</TableHead>
-                <TableHead className="font-semibold text-gray-900 text-center">Total</TableHead>
+                <TableHead className="font-semibold text-gray-900">Clock In</TableHead>
+                <TableHead className="font-semibold text-gray-900">Clock Out</TableHead>
+                <TableHead className="font-semibold text-gray-900 text-center">Hours</TableHead>
                 <TableHead className="font-semibold text-gray-900">Status</TableHead>
                 <TableHead className="font-semibold text-gray-900">Location</TableHead>
                 <TableHead className="font-semibold text-gray-900">Actions</TableHead>
@@ -59,7 +53,7 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
             <TableBody>
               {timesheets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={14} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                     <div className="space-y-2">
                       <p>No timesheets found for the selected filters</p>
                       <Button 
@@ -78,11 +72,8 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
                     key={timesheet.id}
                     timesheet={timesheet}
                     onEdit={onEdit}
-                    onApprove={onApprove}
-                    onReject={onReject}
                     onViewLocation={onViewLocation}
-                    isApproving={isApproving}
-                    isRejecting={isRejecting}
+                    showEditButton={true}
                   />
                 ))
               )}
