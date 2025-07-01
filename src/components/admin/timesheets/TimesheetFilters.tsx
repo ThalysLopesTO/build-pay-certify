@@ -75,6 +75,23 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
           </div>
           
           <div className="flex items-center gap-2">
+            <Label htmlFor="week-filter" className="text-sm text-gray-600">Week:</Label>
+            <Select value={filters.weekEndingDate || 'all'} onValueChange={handleWeekChange}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="All weeks" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All weeks</SelectItem>
+                {workWeeks?.availableWeeks.map((week) => (
+                  <SelectItem key={week.weekStartDateString} value={week.weekStartDateString}>
+                    {week.rangeFormatted}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
             <Label htmlFor="employee-filter" className="text-sm text-gray-600">Employee:</Label>
             <Select value={filters.employeeName || 'all'} onValueChange={handleEmployeeChange}>
               <SelectTrigger className="w-48">
@@ -88,23 +105,6 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
                     value={employee.displayName}
                   >
                     {employee.displayName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label htmlFor="week-filter" className="text-sm text-gray-600">Week Range:</Label>
-            <Select value={filters.weekEndingDate || 'all'} onValueChange={handleWeekChange}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="All weeks" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All weeks</SelectItem>
-                {workWeeks?.availableWeeks.map((week) => (
-                  <SelectItem key={week.weekStartDateString} value={week.weekStartDateString}>
-                    {week.rangeFormatted}
                   </SelectItem>
                 ))}
               </SelectContent>

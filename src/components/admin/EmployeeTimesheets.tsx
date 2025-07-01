@@ -2,15 +2,16 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useWeeklyTimesheets } from '@/hooks/useWeeklyTimesheets';
 import { useWeeklyTimesheetActions } from '@/hooks/useWeeklyTimesheetActions';
+import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Calendar, Check, X, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import TimesheetEditModal from '@/components/admin/timesheets/TimesheetEditModal';
+import TimesheetFilters from '@/components/admin/timesheets/TimesheetFilters';
 
 const EmployeeTimesheets = () => {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ const EmployeeTimesheets = () => {
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
   
   const { data: timesheets = [], isLoading, error } = useWeeklyTimesheets(filters);
+  const { data: employees = [] } = useEmployeeDirectory();
   
   // Only admins and super_admins can access Employee Timesheets (not foremen for payroll)
   const isAuthorized = user?.role === 'admin' || user?.role === 'super_admin';
@@ -101,29 +103,11 @@ const EmployeeTimesheets = () => {
       </Card>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Status</label>
-              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <TimesheetFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        employees={employees}
+      />
 
       {/* Timesheets Table */}
       <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
