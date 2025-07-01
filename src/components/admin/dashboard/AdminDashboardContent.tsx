@@ -1,11 +1,12 @@
 
 import React from 'react';
-import CompanyOverviewCard from './CompanyOverviewCard';
 import LicenseWarningBanner from '../../common/LicenseWarningBanner';
 import StatsCard from './StatsCard';
 import QuickActionsSection from './QuickActionsSection';
 import EmployeeLimitCard from './EmployeeLimitCard';
 import WelcomeGreeting from './WelcomeGreeting';
+import ProjectsProgressOverview from './ProjectsProgressOverview';
+import LiveActiveEmployees from './LiveActiveEmployees';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { BarChart3 } from 'lucide-react';
 
@@ -70,9 +71,10 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
       {/* Quick Actions Panel */}
       <QuickActionsSection setActiveTab={setActiveTab} />
 
-      {/* Company Overview Card */}
-      <div className="w-full">
-        <CompanyOverviewCard />
+      {/* New Dashboard Boxes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ProjectsProgressOverview />
+        <LiveActiveEmployees />
       </div>
     </div>
   );
