@@ -16,11 +16,10 @@ export const useWeeklyTimesheetActions = () => {
       }
 
       const { data, error } = await supabase
-        .from('weekly_timesheets')
+        .from('timesheets')
         .update({
           status: 'approved',
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .eq('id', timesheetId)
         .select()
@@ -57,11 +56,10 @@ export const useWeeklyTimesheetActions = () => {
       }
 
       const { data, error } = await supabase
-        .from('weekly_timesheets')
+        .from('timesheets')
         .update({
           status: 'rejected',
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .eq('id', timesheetId)
         .select()

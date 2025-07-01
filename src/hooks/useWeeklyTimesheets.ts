@@ -17,13 +17,15 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
     queryFn: async () => {
       if (!user?.companyId) return [];
 
+      // Get weekly timesheets (those with week_ending_date)
       let query = supabase
-        .from('weekly_timesheets')
+        .from('timesheets')
         .select(`
           *,
           jobsites(name)
         `)
         .eq('company_id', user.companyId)
+        .not('week_ending_date', 'is', null)
         .order('week_ending_date', { ascending: false });
 
       // Apply filters if provided
