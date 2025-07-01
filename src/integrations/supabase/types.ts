@@ -160,12 +160,16 @@ export type Database = {
           logo_url: string | null
           name: string
           plan: string | null
+          plan_type: string | null
           registration_date: string | null
           rules_updated_at: string | null
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           stripe_verified: boolean | null
+          subscription_end_date: string | null
+          subscription_override: boolean | null
+          subscription_status: string | null
           updated_at: string
         }
         Insert: {
@@ -179,12 +183,16 @@ export type Database = {
           logo_url?: string | null
           name: string
           plan?: string | null
+          plan_type?: string | null
           registration_date?: string | null
           rules_updated_at?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           stripe_verified?: boolean | null
+          subscription_end_date?: string | null
+          subscription_override?: boolean | null
+          subscription_status?: string | null
           updated_at?: string
         }
         Update: {
@@ -198,12 +206,16 @@ export type Database = {
           logo_url?: string | null
           name?: string
           plan?: string | null
+          plan_type?: string | null
           registration_date?: string | null
           rules_updated_at?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           stripe_verified?: boolean | null
+          subscription_end_date?: string | null
+          subscription_override?: boolean | null
+          subscription_status?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -617,6 +629,7 @@ export type Database = {
           address: string | null
           company_id: string | null
           created_at: string
+          due_date: string | null
           id: string
           name: string
           starting_date: string | null
@@ -625,6 +638,7 @@ export type Database = {
           address?: string | null
           company_id?: string | null
           created_at?: string
+          due_date?: string | null
           id?: string
           name: string
           starting_date?: string | null
@@ -633,6 +647,7 @@ export type Database = {
           address?: string | null
           company_id?: string | null
           created_at?: string
+          due_date?: string | null
           id?: string
           name?: string
           starting_date?: string | null
@@ -703,6 +718,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string
+          id: string
+          is_dismissed: boolean
+          is_read: boolean
+          related_id: string | null
+          target_user_id: string | null
+          title: string
+          type: string
+          updated_at: string
+          user_role: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description: string
+          id?: string
+          is_dismissed?: boolean
+          is_read?: boolean
+          related_id?: string | null
+          target_user_id?: string | null
+          title: string
+          type: string
+          updated_at?: string
+          user_role: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_dismissed?: boolean
+          is_read?: boolean
+          related_id?: string | null
+          target_user_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_role?: string
+        }
+        Relationships: []
       }
       quote_line_items: {
         Row: {
@@ -899,6 +959,98 @@ export type Database = {
           stripe_event_id?: string
         }
         Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          employee_limit: number | null
+          features: Json | null
+          id: string
+          name: string
+          plan_type: string
+          price_monthly: number | null
+          stripe_price_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          employee_limit?: number | null
+          features?: Json | null
+          id?: string
+          name: string
+          plan_type: string
+          price_monthly?: number | null
+          stripe_price_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          employee_limit?: number | null
+          features?: Json | null
+          id?: string
+          name?: string
+          plan_type?: string
+          price_monthly?: number | null
+          stripe_price_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          company_id: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          employee_limit: number | null
+          id: string
+          plan_type: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          company_id?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          employee_limit?: number | null
+          id?: string
+          plan_type?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          company_id?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          employee_limit?: number | null
+          id?: string
+          plan_type?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suppliers: {
         Row: {
@@ -1240,6 +1392,22 @@ export type Database = {
         Args: { company_id_param: string }
         Returns: boolean
       }
+      can_add_employee_with_subscription: {
+        Args: { company_id_param: string }
+        Returns: boolean
+      }
+      check_expiring_certificates: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_overdue_jobsites: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       convert_quote_to_invoice: {
         Args: { quote_id_param: string }
         Returns: string
@@ -1272,6 +1440,19 @@ export type Database = {
       get_company_employee_count: {
         Args: { company_id_param: string }
         Returns: number
+      }
+      get_company_plan_details: {
+        Args: { company_id_param: string }
+        Returns: {
+          plan_type: string
+          plan_name: string
+          price_monthly: number
+          employee_limit: number
+          current_employee_count: number
+          subscription_status: string
+          subscription_end_date: string
+          can_add_employees: boolean
+        }[]
       }
       get_user_company_id: {
         Args: Record<PropertyKey, never>

@@ -6,6 +6,7 @@ import { LogOut, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -73,8 +74,11 @@ const Header = () => {
           )}
         </div>
         
-        {/* Right: User Profile & Logout */}
+        {/* Right: Notifications & User Profile & Logout */}
         <div className="flex items-center space-x-4">
+          {/* Notification Bell - only for admins and foremen */}
+          <NotificationBell />
+          
           {user && (
             <div className="flex items-center space-x-3">
               <div className="text-sm text-right">
