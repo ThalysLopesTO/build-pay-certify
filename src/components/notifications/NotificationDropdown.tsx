@@ -9,7 +9,8 @@ import {
   MoreHorizontal,
   CheckCircle,
   Circle,
-  X
+  X,
+  Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
