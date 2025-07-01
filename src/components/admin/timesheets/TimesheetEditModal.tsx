@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 interface TimesheetEditModalProps {
   timesheet: any;
   onClose: () => void;
-  onSave: (data: any) => void;
+  onSave: (data: any, originalData: any) => void;
   isSaving: boolean;
 }
 
@@ -29,6 +29,20 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
     additional_expense: timesheet.additional_expense || 0,
   });
 
+  // Store original data for audit tracking
+  const originalData = {
+    monday_hours: timesheet.monday_hours || 0,
+    tuesday_hours: timesheet.tuesday_hours || 0,
+    wednesday_hours: timesheet.wednesday_hours || 0,
+    thursday_hours: timesheet.thursday_hours || 0,
+    friday_hours: timesheet.friday_hours || 0,
+    saturday_hours: timesheet.saturday_hours || 0,
+    sunday_hours: timesheet.sunday_hours || 0,
+    additional_expense: timesheet.additional_expense || 0,
+    total_hours: timesheet.total_hours || 0,
+    gross_pay: timesheet.gross_pay || 0,
+  };
+
   const totalHours = Object.entries(formData)
     .filter(([key]) => key.includes('_hours'))
     .reduce((sum, [, hours]) => sum + Number(hours), 0);
@@ -36,11 +50,12 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   const totalPay = (totalHours * (timesheet.hourly_rate || 0)) + Number(formData.additional_expense);
 
   const handleSave = () => {
-    onSave({
+    const updates = {
       ...formData,
       total_hours: totalHours,
       gross_pay: totalPay
-    });
+    };
+    onSave(updates, originalData);
   };
 
   const handleInputChange = (field: string, value: string) => {

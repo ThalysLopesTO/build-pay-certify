@@ -6,12 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Users, Search, Filter, RefreshCw, Download } from 'lucide-react';
-import { useEmployeeTimesheets } from '@/hooks/useEmployeeTimesheets';
+import { useWeeklyTimesheets } from '@/hooks/useWeeklyTimesheets';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useWorkWeek } from '@/hooks/useWorkWeek';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import * as XLSX from 'xlsx';
-import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { format } from 'date-fns';
 
 // Helper function to safely parse numbers
 const safeParseNumber = (value: any): number => {
@@ -29,55 +29,35 @@ const PayrollSummary = () => {
   // Get work weeks based on company settings
   const workWeeks = useWorkWeek();
 
-  // Fetch actual timesheet data (punch records)
-  const { data: timesheets = [], isLoading, error, refetch } = useEmployeeTimesheets({});
+  // Fetch approved weekly timesheets only
+  const { data: timesheets = [], isLoading, error, refetch } = useWeeklyTimesheets({
+    status: 'approved'
+  });
   const { data: employees = [] } = useEmployeeDirectory();
 
-  // Filter out rejected timesheets - only approved timesheets count toward payroll
-  const approvedTimesheets = timesheets.filter(timesheet => 
-    timesheet.status === 'approved'
-  );
-
-  // Group timesheets by employee and week, then calculate totals
+  // Process approved timesheets for payroll
   const payrollEntries = React.useMemo(() => {
-    const groupedByEmployeeWeek = approvedTimesheets.reduce((acc, timesheet) => {
-      if (!timesheet.check_in_time) return acc;
+    return timesheets.map(timesheet => {
+      const employee = employees.find(emp => 
+        `${emp.first_name || ''} ${emp.last_name || ''}`.trim() === timesheet.employee_name
+      );
       
-      const checkInDate = new Date(timesheet.check_in_time);
-      const weekStart = startOfWeek(checkInDate, { weekStartsOn: 1 });
-      const weekKey = `${timesheet.employee_name}-${weekStart.toISOString()}`;
-      
-      if (!acc[weekKey]) {
-        const employee = employees.find(emp => 
-          `${emp.first_name || ''} ${emp.last_name || ''}`.trim() === timesheet.employee_name
-        );
-        
-        acc[weekKey] = {
-          employeeName: timesheet.employee_name,
-          trade: employee?.trade || 'General',
-          position: employee?.position || 'Worker',
-          jobSite: timesheet.jobsite_name,
-          weekStartDate: weekStart.toISOString(),
-          weekEndDate: format(endOfWeek(weekStart, { weekStartsOn: 1 }), 'MMM dd, yyyy'),
-          totalHours: 0,
-          hourlyRate: safeParseNumber(employee?.hourly_rate) || 25, // Default rate
-          additionalExpense: 0,
-          timesheets: []
-        };
-      }
-      
-      acc[weekKey].totalHours += safeParseNumber(timesheet.hours_worked);
-      acc[weekKey].timesheets.push(timesheet);
-      
-      return acc;
-    }, {} as Record<string, any>);
-
-    return Object.values(groupedByEmployeeWeek).map((entry: any) => ({
-      ...entry,
-      grossPay: entry.totalHours * entry.hourlyRate + entry.additionalExpense,
-      project: entry.jobSite // Using jobsite as project for now
-    }));
-  }, [approvedTimesheets, employees]);
+      return {
+        employeeName: timesheet.employee_name,
+        trade: employee?.trade || 'General',
+        position: employee?.position || 'Worker',
+        jobSite: timesheet.jobsite_name,
+        project: timesheet.jobsite_name, // Using jobsite as project
+        weekStartDate: timesheet.week_start_date,
+        weekEndDate: format(new Date(timesheet.week_start_date), 'MMM dd, yyyy'),
+        totalHours: safeParseNumber(timesheet.total_hours),
+        hourlyRate: safeParseNumber(timesheet.hourly_rate),
+        additionalExpense: safeParseNumber(timesheet.additional_expense),
+        grossPay: safeParseNumber(timesheet.gross_pay),
+        submittedAt: timesheet.created_at
+      };
+    });
+  }, [timesheets, employees]);
 
   const filteredEntries = payrollEntries.filter(entry => {
     return (
@@ -127,7 +107,7 @@ const PayrollSummary = () => {
       'Project': '',
       'Week Ending': '',
       'Hours': totalHours,
-      'Hourly Rate': 0, // Use 0 instead of empty string for numeric field
+      'Hourly Rate': 0,
       'Expenses': totalExpenses,
       'Gross Pay': totalPayroll
     });
@@ -139,9 +119,9 @@ const PayrollSummary = () => {
     // Format currency columns
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
     for (let R = range.s.r; R <= range.e.r; ++R) {
-      const hourlyRateCell = XLSX.utils.encode_cell({ r: R, c: 6 }); // Hourly Rate column
-      const expensesCell = XLSX.utils.encode_cell({ r: R, c: 7 }); // Expenses column
-      const grossPayCell = XLSX.utils.encode_cell({ r: R, c: 8 }); // Gross Pay column
+      const hourlyRateCell = XLSX.utils.encode_cell({ r: R, c: 6 });
+      const expensesCell = XLSX.utils.encode_cell({ r: R, c: 7 });
+      const grossPayCell = XLSX.utils.encode_cell({ r: R, c: 8 });
       
       if (ws[hourlyRateCell] && ws[hourlyRateCell].v !== 'Hourly Rate' && ws[hourlyRateCell].v !== '') {
         ws[hourlyRateCell].z = '"$"#,##0.00';
@@ -206,7 +186,7 @@ const PayrollSummary = () => {
               <div>
                 <p className="text-sm text-slate-600">Total Approved Payroll</p>
                 <p className="text-2xl font-bold text-green-600">${totalPayroll.toLocaleString()}</p>
-                <p className="text-xs text-slate-500 mt-1">Excludes rejected timesheets</p>
+                <p className="text-xs text-slate-500 mt-1">From approved weekly timesheets</p>
               </div>
             </div>
           </CardContent>
@@ -344,7 +324,7 @@ const PayrollSummary = () => {
       {/* Payroll Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Weekly Payroll Summary (Approved Only)</CardTitle>
+          <CardTitle>Weekly Payroll Summary (Approved Timesheets Only)</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -397,7 +377,7 @@ const PayrollSummary = () => {
           {!isLoading && filteredEntries.length === 0 && (
             <div className="text-center py-8 text-slate-500">
               <p>No approved timesheet entries found for the selected filters</p>
-              <p className="text-sm mt-2">Only approved timesheets are included in payroll calculations</p>
+              <p className="text-sm mt-2">Only approved weekly timesheets are included in payroll calculations</p>
             </div>
           )}
         </CardContent>

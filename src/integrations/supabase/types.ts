@@ -1343,6 +1343,47 @@ export type Database = {
           },
         ]
       }
+      weekly_timesheet_audit_logs: {
+        Row: {
+          changes: Json
+          company_id: string
+          created_at: string
+          edited_at: string
+          edited_by_user_id: string
+          id: string
+          notes: string | null
+          timesheet_id: string
+        }
+        Insert: {
+          changes: Json
+          company_id: string
+          created_at?: string
+          edited_at?: string
+          edited_by_user_id: string
+          id?: string
+          notes?: string | null
+          timesheet_id: string
+        }
+        Update: {
+          changes?: Json
+          company_id?: string
+          created_at?: string
+          edited_at?: string
+          edited_by_user_id?: string
+          id?: string
+          notes?: string | null
+          timesheet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_timesheet_audit_logs_timesheet_id_fkey"
+            columns: ["timesheet_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_timesheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_timesheets: {
         Row: {
           additional_expense: number | null

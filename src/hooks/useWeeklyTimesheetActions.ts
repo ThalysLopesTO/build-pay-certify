@@ -90,13 +90,18 @@ export const useWeeklyTimesheetActions = () => {
   });
 
   const editTimesheet = useMutation({
-    mutationFn: async ({ timesheetId, updates }: { timesheetId: string; updates: any }) => {
+    mutationFn: async ({ timesheetId, updates, originalData }: { 
+      timesheetId: string; 
+      updates: any;
+      originalData: any;
+    }) => {
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
       console.log('Editing weekly timesheet:', timesheetId, updates);
       
+      // Update the timesheet
       const { data, error } = await supabase
         .from('weekly_timesheets')
         .update(updates)
@@ -108,6 +113,28 @@ export const useWeeklyTimesheetActions = () => {
       if (error) {
         console.error('Error editing timesheet:', error);
         throw error;
+      }
+
+      // Create audit log entry
+      const changes = {
+        original: originalData,
+        updated: updates,
+        fields_changed: Object.keys(updates)
+      };
+
+      const { error: auditError } = await supabase
+        .from('weekly_timesheet_audit_logs')
+        .insert({
+          timesheet_id: timesheetId,
+          edited_by_user_id: user.id,
+          company_id: user.companyId,
+          changes: changes,
+          notes: `Timesheet edited by admin/foreman`
+        });
+
+      if (auditError) {
+        console.error('Error creating audit log:', auditError);
+        // Don't throw error here, as the main update succeeded
       }
 
       return data;

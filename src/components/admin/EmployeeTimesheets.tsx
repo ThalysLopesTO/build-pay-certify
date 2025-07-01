@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,11 +40,12 @@ const EmployeeTimesheets = () => {
     setEditingTimesheet(timesheet);
   };
 
-  const handleSaveEdit = (updates: any) => {
+  const handleSaveEdit = (updates: any, originalData: any) => {
     if (editingTimesheet) {
       editTimesheet({
         timesheetId: editingTimesheet.id,
-        updates
+        updates,
+        originalData
       });
       setEditingTimesheet(null);
     }
