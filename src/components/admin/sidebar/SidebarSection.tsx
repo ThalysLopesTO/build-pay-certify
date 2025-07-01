@@ -36,26 +36,42 @@ const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectio
   if (filteredItems.length === 0) return null;
 
   return (
-    <SidebarGroup>
-      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+    <SidebarGroup className="mt-4 first:mt-2">
+      {label && (
+        <SidebarGroupLabel className="text-sm font-bold text-gray-800 mb-2 px-2">
+          {label}
+        </SidebarGroupLabel>
+      )}
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className="space-y-1">
           {filteredItems.map((item) => {
             const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            
             return (
               <SidebarMenuItem key={item.id}>
                 <SidebarMenuButton
                   onClick={() => setActiveTab(item.id)}
-                  isActive={activeTab === item.id}
+                  className={`
+                    relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                    transition-all duration-200 hover:bg-gray-50 hover:text-gray-900
+                    ${isActive 
+                      ? 'bg-blue-50 text-blue-900 font-medium border-l-4 border-blue-500 shadow-sm' 
+                      : 'text-gray-700 hover:bg-gray-50'
+                    }
+                  `}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.title}</span>
+                  <Icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span className="truncate">{item.title}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );
           })}
         </SidebarMenu>
       </SidebarGroupContent>
+      
+      {/* Subtle divider between sections */}
+      <div className="mt-3 mx-2 border-b border-gray-100"></div>
     </SidebarGroup>
   );
 };
