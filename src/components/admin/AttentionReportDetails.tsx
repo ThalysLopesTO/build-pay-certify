@@ -35,8 +35,7 @@ const AttentionReportDetails: React.FC<AttentionReportDetailsProps> = ({
         .from('attention_reports')
         .select(`
           *,
-          jobsites(name, address),
-          user_profiles!attention_reports_submitted_by_fkey(first_name, last_name)
+          jobsites(name, address)
         `)
         .eq('id', reportId)
         .single();
@@ -45,6 +44,24 @@ const AttentionReportDetails: React.FC<AttentionReportDetailsProps> = ({
       return data;
     },
     enabled: !!reportId
+  });
+
+  // Separate query for user profile information
+  const { data: submittedByProfile } = useQuery({
+    queryKey: ['user-profile', report?.submitted_by],
+    queryFn: async () => {
+      if (!report?.submitted_by) return null;
+      
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('first_name, last_name')
+        .eq('user_id', report.submitted_by)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!report?.submitted_by
   });
 
   const { data: attachments } = useQuery({
@@ -167,7 +184,7 @@ const AttentionReportDetails: React.FC<AttentionReportDetailsProps> = ({
               <div>
                 <p className="text-sm font-medium">Submitted by</p>
                 <p className="text-sm text-gray-600">
-                  {report.user_profiles?.first_name} {report.user_profiles?.last_name}
+                  {submittedByProfile?.first_name} {submittedByProfile?.last_name}
                 </p>
               </div>
             </div>
