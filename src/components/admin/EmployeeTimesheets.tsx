@@ -2,33 +2,52 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useEmployeeTimesheets } from '@/hooks/useEmployeeTimesheets';
+import { Badge } from '@/components/ui/badge';
+import { useWeeklyTimesheets } from '@/hooks/useWeeklyTimesheets';
+import { useWeeklyTimesheetActions } from '@/hooks/useWeeklyTimesheetActions';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import EditPunchModal from './timesheets/EditPunchModal';
-import TimesheetRow from './timesheets/TimesheetRow';
-import { Clock } from 'lucide-react';
+import { Calendar, Check, X, Edit } from 'lucide-react';
+import { format } from 'date-fns';
 
 const EmployeeTimesheets = () => {
   const { user } = useAuth();
+  const { approveTimesheet, rejectTimesheet, isApproving, isRejecting } = useWeeklyTimesheetActions();
   const [filters, setFilters] = useState({
     employeeName: '',
     weekEndingDate: '',
     status: 'all'
   });
-  const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
   
-  const { data: timesheets = [], isLoading, error } = useEmployeeTimesheets(filters);
+  const { data: timesheets = [], isLoading, error } = useWeeklyTimesheets(filters);
   
   const isAuthorized = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'foreman';
 
-  const handleEdit = (timesheet: any) => {
-    setEditingTimesheet(timesheet);
+  const handleApprove = (timesheetId: string) => {
+    approveTimesheet(timesheetId);
   };
 
-  const handleViewLocation = (timesheet: any) => {
-    // Implementation for viewing location if needed
-    console.log('View location for timesheet:', timesheet.id);
+  const handleReject = (timesheetId: string) => {
+    rejectTimesheet(timesheetId);
+  };
+
+  const handleEdit = (timesheet: any) => {
+    // This would open a modal to edit the timesheet hours
+    console.log('Edit timesheet:', timesheet.id);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return <Badge variant="default" className="bg-green-500">Approved</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Pending</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejected</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
   };
 
   if (!isAuthorized) {
@@ -60,19 +79,45 @@ const EmployeeTimesheets = () => {
       <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
         <CardHeader className="p-6 pb-4">
           <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Clock className="h-6 w-6 text-orange-600" />
-            Employee Timesheets Management
+            <Calendar className="h-6 w-6 text-orange-600" />
+            Weekly Timesheet Submissions
           </CardTitle>
           <p className="text-gray-600 mt-2">
-            Review and edit employee punch records
+            Review and approve employee weekly timesheet submissions
           </p>
         </CardHeader>
       </Card>
 
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Status</label>
+              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Timesheets Table */}
       <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
         <CardHeader className="p-6 pb-4">
           <CardTitle className="text-xl font-bold text-gray-900">
-            Recent Punch Records ({timesheets.length} total)
+            Weekly Timesheets ({timesheets.length} total)
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -82,36 +127,83 @@ const EmployeeTimesheets = () => {
                 <TableRow>
                   <TableHead className="font-semibold text-gray-900">Employee</TableHead>
                   <TableHead className="font-semibold text-gray-900">Jobsite</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Clock In</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Clock Out</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-center">Hours</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Week Ending</TableHead>
+                  <TableHead className="font-semibold text-gray-900 text-center">Total Hours</TableHead>
                   <TableHead className="font-semibold text-gray-900">Status</TableHead>
-                  <TableHead className="font-semibold text-gray-900">Location</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Submitted</TableHead>
                   <TableHead className="font-semibold text-gray-900">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                       Loading timesheets...
                     </TableCell>
                   </TableRow>
                 ) : timesheets.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                      No timesheet records found
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                      No weekly timesheet submissions found
                     </TableCell>
                   </TableRow>
                 ) : (
                   timesheets.map((timesheet) => (
-                    <TimesheetRow
-                      key={timesheet.id}
-                      timesheet={timesheet}
-                      onEdit={handleEdit}
-                      onViewLocation={handleViewLocation}
-                      showEditButton={isAuthorized}
-                    />
+                    <TableRow key={timesheet.id} className="hover:bg-gray-50">
+                      <TableCell className="font-medium">
+                        {timesheet.employee_name}
+                      </TableCell>
+                      <TableCell>{timesheet.jobsite_name}</TableCell>
+                      <TableCell>
+                        {format(new Date(timesheet.week_ending_date), 'MMM dd, yyyy')}
+                      </TableCell>
+                      <TableCell className="text-center font-mono">
+                        {timesheet.total_hours?.toFixed(2) || '0.00'}h
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(timesheet.status)}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(timesheet.created_at), 'MMM dd, yyyy')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(timesheet)}
+                            className="h-8 w-8 p-0"
+                            title="Edit timesheet"
+                          >
+                            <Edit className="h-4 w-4 text-blue-500" />
+                          </Button>
+                          {timesheet.status !== 'approved' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleApprove(timesheet.id)}
+                              disabled={isApproving}
+                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              title="Approve timesheet"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {timesheet.status !== 'rejected' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReject(timesheet.id)}
+                              disabled={isRejecting}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              title="Reject timesheet"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
               </TableBody>
@@ -119,14 +211,6 @@ const EmployeeTimesheets = () => {
           </div>
         </CardContent>
       </Card>
-
-      {editingTimesheet && (
-        <EditPunchModal
-          isOpen={!!editingTimesheet}
-          onClose={() => setEditingTimesheet(null)}
-          timesheet={editingTimesheet}
-        />
-      )}
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Flag } from 'lucide-react';
+import { MapPin, Flag, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -32,6 +32,7 @@ interface LivePunchTableProps {
   flaggedEntries: Set<string>;
   onToggleFlag: (entryId: string) => void;
   onViewLocation: (entry: PunchEntry) => void;
+  onEdit?: (entry: PunchEntry) => void;
 }
 
 const LivePunchTable: React.FC<LivePunchTableProps> = ({
@@ -39,7 +40,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
   selectedDate,
   flaggedEntries,
   onToggleFlag,
-  onViewLocation
+  onViewLocation,
+  onEdit
 }) => {
   const isToday = (date: Date) => {
     const today = new Date();
@@ -85,7 +87,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
     <Card>
       <CardHeader>
         <CardTitle>
-          {isToday(selectedDate) ? "Today's Punch Entries" : `Punch Entries for ${format(selectedDate, 'MMM dd, yyyy')}`}
+          {isToday(selectedDate) ? "Today's Punch Records" : `Punch Records for ${format(selectedDate, 'MMM dd, yyyy')}`}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -100,13 +102,14 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
               <TableHead>Status</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Flag</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredEntries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                  No punch entries found for {format(selectedDate, 'MMMM dd, yyyy')}
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  No punch records found for {format(selectedDate, 'MMMM dd, yyyy')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -165,6 +168,19 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     >
                       <Flag className="h-4 w-4" />
                     </Button>
+                  </TableCell>
+                  <TableCell>
+                    {onEdit && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(entry)}
+                        className="p-2 h-8 w-8"
+                        title="Edit Punch Record"
+                      >
+                        <Edit className="h-4 w-4 text-blue-500" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

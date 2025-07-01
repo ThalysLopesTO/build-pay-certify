@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import LocationMapModal from './LocationMapModal';
+import EditPunchModal from './timesheets/EditPunchModal';
 import LivePunchFilters from './live-punch-monitor/LivePunchFilters';
 import LivePunchSummaryCards from './live-punch-monitor/LivePunchSummaryCards';
 import LivePunchTable from './live-punch-monitor/LivePunchTable';
@@ -40,6 +41,7 @@ const LivePunchMonitor = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [flaggedEntries, setFlaggedEntries] = useState<Set<string>>(new Set());
+  const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
   const [selectedLocation, setSelectedLocation] = useState<{
     location: string | null;
     employeeName: string;
@@ -168,6 +170,10 @@ const LivePunchMonitor = () => {
     refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
   });
 
+  const handleEdit = (timesheet: any) => {
+    setEditingTimesheet(timesheet);
+  };
+
   const toggleFlag = (entryId: string) => {
     setFlaggedEntries(prev => {
       const newSet = new Set(prev);
@@ -236,8 +242,8 @@ const LivePunchMonitor = () => {
           <h1 className="text-2xl font-bold">Live Punch Monitor</h1>
           <p className="text-muted-foreground">
             {isToday(selectedDate) 
-              ? `Real-time monitoring of employee check-ins and check-outs for ${format(selectedDate, 'EEEE, MMMM dd, yyyy')}`
-              : `Employee punch entries for ${format(selectedDate, 'EEEE, MMMM dd, yyyy')}`
+              ? `Real-time monitoring and editing of employee punch records for ${format(selectedDate, 'EEEE, MMMM dd, yyyy')}`
+              : `Employee punch records for ${format(selectedDate, 'EEEE, MMMM dd, yyyy')}`
             }
           </p>
         </div>
@@ -280,14 +286,24 @@ const LivePunchMonitor = () => {
         selectedDate={selectedDate}
       />
 
-      {/* Punch Entries Table */}
+      {/* Punch Entries Table with Edit functionality */}
       <LivePunchTable
         filteredEntries={filteredEntries}
         selectedDate={selectedDate}
         flaggedEntries={flaggedEntries}
         onToggleFlag={toggleFlag}
         onViewLocation={handleViewLocation}
+        onEdit={handleEdit}
       />
+
+      {/* Edit Punch Modal */}
+      {editingTimesheet && (
+        <EditPunchModal
+          isOpen={!!editingTimesheet}
+          onClose={() => setEditingTimesheet(null)}
+          timesheet={editingTimesheet}
+        />
+      )}
 
       {/* Location Map Modal */}
       {selectedLocation && (
