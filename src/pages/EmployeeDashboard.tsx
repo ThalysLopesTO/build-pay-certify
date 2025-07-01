@@ -11,6 +11,7 @@ import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import EmployeeDashboardHome from '../components/employee/EmployeeDashboardHome';
 import TimeTracker from '../components/employee/TimeTracker';
 import EmployeeBottomNav from '../components/employee/EmployeeBottomNav';
+import EmployeeDesktopNav from '../components/employee/EmployeeDesktopNav';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const EmployeeDashboard = () => {
@@ -47,6 +48,7 @@ const EmployeeDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
       <Header />
+      <EmployeeDesktopNav activeTab={activeTab} onTabChange={setActiveTab} />
       <div className={`flex-1 ${isMobile ? 'pb-20' : 'pb-6'} transition-all duration-300`}>
         <div className="max-w-4xl mx-auto px-2 py-4">
           <LicenseWarningBanner />
