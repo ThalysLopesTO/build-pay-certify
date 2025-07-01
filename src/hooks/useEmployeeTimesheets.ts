@@ -21,7 +21,7 @@ export const useEmployeeTimesheets = (filters: TimesheetFilters = {}) => {
         .from('timesheets')
         .select(`
           *,
-          user_profiles!inner(first_name, last_name),
+          user_profiles!timesheets_user_id_fkey(first_name, last_name),
           jobsites(name)
         `)
         .eq('company_id', user.companyId)
