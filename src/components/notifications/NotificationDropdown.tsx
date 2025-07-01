@@ -68,27 +68,35 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     }
   };
 
+  const getRedirectUrl = (notification: Notification) => {
+    // Use the redirect_to field if available, otherwise fall back to default routing
+    if (notification.redirect_to) {
+      return notification.redirect_to;
+    }
+
+    // Fallback routing logic for existing notifications without redirect_to
+    switch (notification.type) {
+      case 'certificate':
+        return '/admin/employee-management';
+      case 'jobsite':
+        return '/admin/jobsite-management';
+      case 'material_request':
+        return '/admin/material-requests';
+      case 'attention_report':
+        return '/admin/attention-reports';
+      default:
+        return '/admin/dashboard';
+    }
+  };
+
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
 
-    // Navigate to related page based on notification type
-    switch (notification.type) {
-      case 'certificate':
-        navigate('/admin/dashboard');
-        break;
-      case 'jobsite':
-        navigate('/admin/dashboard');
-        break;
-      case 'material_request':
-        navigate('/admin/dashboard');
-        break;
-      case 'attention_report':
-        navigate('/admin/dashboard');
-        break;
-    }
-    
+    // Navigate using the dynamic redirect URL
+    const redirectUrl = getRedirectUrl(notification);
+    navigate(redirectUrl);
     onClose();
   };
 

@@ -727,6 +727,7 @@ export type Database = {
           id: string
           is_dismissed: boolean
           is_read: boolean
+          redirect_to: string | null
           related_id: string | null
           target_user_id: string | null
           title: string
@@ -741,6 +742,7 @@ export type Database = {
           id?: string
           is_dismissed?: boolean
           is_read?: boolean
+          redirect_to?: string | null
           related_id?: string | null
           target_user_id?: string | null
           title: string
@@ -755,6 +757,7 @@ export type Database = {
           id?: string
           is_dismissed?: boolean
           is_read?: boolean
+          redirect_to?: string | null
           related_id?: string | null
           target_user_id?: string | null
           title?: string

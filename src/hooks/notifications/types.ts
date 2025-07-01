@@ -12,6 +12,7 @@ export interface Notification {
   is_dismissed: boolean;
   created_at: string;
   updated_at: string;
+  redirect_to: string | null;
 }
 
 export interface NotificationCounts {
