@@ -4,13 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, FileText, Calendar } from 'lucide-react';
-import { useTimesheets } from '@/hooks/useTimesheets';
 import { useJobsites } from '@/hooks/useJobsites';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { Timesheet } from '@/hooks/useTimesheets';
 
-const WeeklyHistorySection = () => {
-  const { weeklyTimesheets } = useTimesheets();
+interface WeeklyHistorySectionProps {
+  weeklyTimesheets?: Timesheet[];
+  selectedWeek: Date;
+}
+
+const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistorySectionProps) => {
   const { data: jobsites } = useJobsites();
   const { toast } = useToast();
 
@@ -53,7 +57,7 @@ const WeeklyHistorySection = () => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `timesheet-week-${format(new Date(), 'MM-dd-yyyy')}.csv`);
+    link.setAttribute('download', `timesheet-week-${format(selectedWeek, 'MM-dd-yyyy')}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();

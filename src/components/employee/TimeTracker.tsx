@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,25 +7,29 @@ import { useTimesheets } from '@/hooks/useTimesheets';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Clock, MapPin, Play, Square, CheckCircle, XCircle, Download } from 'lucide-react';
+import { Clock, MapPin, Play, Square, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import TodayStatusBox from './time-tracker/TodayStatusBox';
 import WeeklyHistorySection from './time-tracker/WeeklyHistorySection';
+import WeekSelector from './time-tracker/WeekSelector';
 import DigitalClock from './time-tracker/DigitalClock';
 
 const TimeTracker = () => {
   const { user } = useAuth();
   const [selectedJobsiteId, setSelectedJobsiteId] = useState<string>('');
+  const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
   const { data: jobsites, isLoading: jobsitesLoading } = useJobsites();
   const { getCurrentLocation, isGettingLocation } = useGeolocation();
+  
   const {
     todayActiveTimesheet,
     totalWeeklyHours,
+    weeklyTimesheets,
     clockIn,
     clockOut,
     isClockingIn,
     isClockingOut,
-  } = useTimesheets();
+  } = useTimesheets(selectedWeek);
 
   const handleClockIn = async () => {
     if (!selectedJobsiteId) {
@@ -170,8 +174,17 @@ const TimeTracker = () => {
         </CardContent>
       </Card>
 
+      {/* Week Selector */}
+      <WeekSelector 
+        selectedWeek={selectedWeek}
+        onWeekChange={setSelectedWeek}
+      />
+
       {/* Weekly History Section */}
-      <WeeklyHistorySection />
+      <WeeklyHistorySection 
+        weeklyTimesheets={weeklyTimesheets}
+        selectedWeek={selectedWeek}
+      />
 
       {/* Location Permission Info */}
       {!navigator.geolocation && (

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { startOfWeek, endOfWeek } from 'date-fns';
 
 export interface Timesheet {
   id: string;
@@ -19,24 +20,23 @@ export interface Timesheet {
   company_id: string;
 }
 
-export const useTimesheets = () => {
+export const useTimesheets = (selectedWeek?: Date) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Get current week's timesheets
+  // Get timesheets for the selected week (or current week if not specified)
   const { data: weeklyTimesheets, isLoading } = useQuery({
-    queryKey: ['timesheets', user?.id, 'weekly'],
+    queryKey: ['timesheets', user?.id, 'weekly', selectedWeek?.toISOString()],
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const startOfWeek = new Date();
-      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
+      const targetWeek = selectedWeek || new Date();
+      const startOfTargetWeek = startOfWeek(targetWeek, { weekStartsOn: 1 });
+      const endOfTargetWeek = endOfWeek(targetWeek, { weekStartsOn: 1 });
 
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(endOfWeek.getDate() + 6);
-      endOfWeek.setHours(23, 59, 59, 999);
+      startOfTargetWeek.setHours(0, 0, 0, 0);
+      endOfTargetWeek.setHours(23, 59, 59, 999);
 
       const { data, error } = await supabase
         .from('timesheets')
@@ -45,8 +45,8 @@ export const useTimesheets = () => {
           jobsites:jobsite_id(name)
         `)
         .eq('user_id', user.id)
-        .gte('check_in_time', startOfWeek.toISOString())
-        .lte('check_in_time', endOfWeek.toISOString())
+        .gte('check_in_time', startOfTargetWeek.toISOString())
+        .lte('check_in_time', endOfTargetWeek.toISOString())
         .order('check_in_time', { ascending: false });
 
       if (error) {
@@ -59,7 +59,7 @@ export const useTimesheets = () => {
     enabled: !!user?.id,
   });
 
-  // Get today's active timesheet (checked in but not out)
+  // Get today's active timesheet (checked in but not out) - always current day
   const { data: todayActiveTimesheet } = useQuery({
     queryKey: ['timesheets', user?.id, 'today-active'],
     queryFn: async () => {
@@ -172,7 +172,7 @@ export const useTimesheets = () => {
     },
   });
 
-  // Calculate total hours for the week
+  // Calculate total hours for the selected week
   const totalWeeklyHours = weeklyTimesheets?.reduce((total, timesheet) => {
     return total + (timesheet.hours_worked || 0);
   }, 0) || 0;
