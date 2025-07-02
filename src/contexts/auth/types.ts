@@ -17,7 +17,7 @@ export interface AuthUser extends User {
 export interface AuthContextType {
   user: AuthUser | null;
   session: Session | null;
-  login: (email: string, password: string) => Promise<{ error: any }>;
+  login: (email: string, password: string, expectedRole?: 'employee' | 'admin') => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
