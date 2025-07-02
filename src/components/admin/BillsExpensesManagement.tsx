@@ -13,9 +13,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Plus, Search, FileDown, Calendar as CalendarIcon, Edit, Trash2, Receipt } from 'lucide-react';
+import { Plus, Search, FileDown, Calendar as CalendarIcon, Edit, Trash2, Receipt, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { CategoryManager } from './bills-expenses/CategoryManager';
+import { ExpenseSummary } from './bills-expenses/ExpenseSummary';
+import { RecurringBillForm } from './bills-expenses/RecurringBillForm';
 
 interface BillExpense {
   id: string;
@@ -28,6 +31,9 @@ interface BillExpense {
   payment_method?: string;
   notes?: string;
   attachment_url?: string;
+  is_recurring?: boolean;
+  recurrence_frequency?: string;
+  parent_recurring_bill_id?: string;
 }
 
 interface ExpenseCategory {
@@ -45,6 +51,10 @@ const BillsExpensesManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterVendor, setFilterVendor] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>('all'); // all, recurring, one-time
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
 
   // Form state
   const [formData, setFormData] = useState<{
@@ -66,6 +76,13 @@ const BillsExpensesManagement = () => {
     payment_method: '',
     notes: '',
   });
+
+  // Recurring bills state
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState('');
+  const [recurringStartDate, setRecurringStartDate] = useState<Date | undefined>();
+  const [recurringEndDate, setRecurringEndDate] = useState<Date | undefined>();
+  const [isIndefinite, setIsIndefinite] = useState(false);
 
   React.useEffect(() => {
     if (user?.companyId) {
@@ -98,6 +115,9 @@ const BillsExpensesManagement = () => {
         payment_method: expense.payment_method,
         notes: expense.notes,
         attachment_url: expense.attachment_url,
+        is_recurring: expense.is_recurring,
+        recurrence_frequency: expense.recurrence_frequency,
+        parent_recurring_bill_id: expense.parent_recurring_bill_id,
       })) || [];
 
       setExpenses(formattedExpenses);
@@ -132,7 +152,7 @@ const BillsExpensesManagement = () => {
     e.preventDefault();
     
     try {
-      const expenseData = {
+      const baseExpenseData = {
         company_id: user?.companyId,
         expense_title: formData.expense_title,
         category_id: formData.category_id || null,
@@ -144,6 +164,15 @@ const BillsExpensesManagement = () => {
         notes: formData.notes || null,
         created_by: user?.id,
       };
+
+      // Add recurring bill fields if applicable
+      const expenseData = isRecurring ? {
+        ...baseExpenseData,
+        is_recurring: true,
+        recurrence_frequency: recurrenceFrequency,
+        start_date: recurringStartDate ? format(recurringStartDate, 'yyyy-MM-dd') : null,
+        end_date: isIndefinite ? null : (recurringEndDate ? format(recurringEndDate, 'yyyy-MM-dd') : null),
+      } : baseExpenseData;
 
       if (editingExpense) {
         const { error } = await supabase
@@ -220,6 +249,11 @@ const BillsExpensesManagement = () => {
       payment_method: '',
       notes: '',
     });
+    setIsRecurring(false);
+    setRecurrenceFrequency('');
+    setRecurringStartDate(undefined);
+    setRecurringEndDate(undefined);
+    setIsIndefinite(false);
     setEditingExpense(null);
     setIsCreateDialogOpen(false);
   };
@@ -252,13 +286,27 @@ const BillsExpensesManagement = () => {
     }
   };
 
+  // Get unique vendors for filter
+  const uniqueVendors = Array.from(new Set(expenses.map(expense => expense.vendor_payee))).sort();
+
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = expense.expense_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          expense.vendor_payee.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || expense.payment_status === filterStatus;
     const matchesCategory = filterCategory === 'all' || expense.category_name === filterCategory;
+    const matchesVendor = filterVendor === 'all' || expense.vendor_payee === filterVendor;
+    const matchesType = filterType === 'all' || 
+                       (filterType === 'recurring' && expense.is_recurring) ||
+                       (filterType === 'one-time' && !expense.is_recurring);
     
-    return matchesSearch && matchesStatus && matchesCategory;
+    let matchesDateRange = true;
+    if (dateFrom || dateTo) {
+      const expenseDate = new Date(expense.expense_date);
+      if (dateFrom && expenseDate < dateFrom) matchesDateRange = false;
+      if (dateTo && expenseDate > dateTo) matchesDateRange = false;
+    }
+    
+    return matchesSearch && matchesStatus && matchesCategory && matchesVendor && matchesType && matchesDateRange;
   });
 
   if (isLoading) {
@@ -280,14 +328,16 @@ const BillsExpensesManagement = () => {
           </div>
         </div>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Expense
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+        <div className="flex items-center space-x-2">
+          <CategoryManager categories={categories} onCategoriesChange={fetchCategories} />
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => resetForm()}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Expense
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
                 {editingExpense ? 'Edit Expense' : 'Add New Expense'}
@@ -409,6 +459,19 @@ const BillsExpensesManagement = () => {
                 />
               </div>
 
+              <RecurringBillForm
+                isRecurring={isRecurring}
+                onRecurringChange={setIsRecurring}
+                frequency={recurrenceFrequency}
+                onFrequencyChange={setRecurrenceFrequency}
+                startDate={recurringStartDate}
+                onStartDateChange={setRecurringStartDate}
+                endDate={recurringEndDate}
+                onEndDateChange={setRecurringEndDate}
+                isIndefinite={isIndefinite}
+                onIndefiniteChange={setIsIndefinite}
+              />
+
               <div className="flex justify-end space-x-2 pt-4">
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancel
@@ -418,9 +481,12 @@ const BillsExpensesManagement = () => {
                 </Button>
               </div>
             </form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      <ExpenseSummary expenses={expenses} />
 
       <Card>
         <CardHeader>

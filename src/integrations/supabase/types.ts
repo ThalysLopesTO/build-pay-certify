@@ -171,12 +171,17 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string
+          end_date: string | null
           expense_date: string
           expense_title: string
           id: string
+          is_recurring: boolean | null
           notes: string | null
+          parent_recurring_bill_id: string | null
           payment_method: string | null
           payment_status: string
+          recurrence_frequency: string | null
+          start_date: string | null
           updated_at: string
           vendor_payee: string
         }
@@ -187,12 +192,17 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by: string
+          end_date?: string | null
           expense_date: string
           expense_title: string
           id?: string
+          is_recurring?: boolean | null
           notes?: string | null
+          parent_recurring_bill_id?: string | null
           payment_method?: string | null
           payment_status?: string
+          recurrence_frequency?: string | null
+          start_date?: string | null
           updated_at?: string
           vendor_payee: string
         }
@@ -203,12 +213,17 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string
+          end_date?: string | null
           expense_date?: string
           expense_title?: string
           id?: string
+          is_recurring?: boolean | null
           notes?: string | null
+          parent_recurring_bill_id?: string | null
           payment_method?: string | null
           payment_status?: string
+          recurrence_frequency?: string | null
+          start_date?: string | null
           updated_at?: string
           vendor_payee?: string
         }
@@ -225,6 +240,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_expenses_parent_recurring_bill_id_fkey"
+            columns: ["parent_recurring_bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills_expenses"
             referencedColumns: ["id"]
           },
         ]
@@ -1662,6 +1684,10 @@ export type Database = {
       generate_quote_number: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      generate_recurring_bills: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       get_companies_with_status: {
         Args: Record<PropertyKey, never>
