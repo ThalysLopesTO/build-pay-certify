@@ -69,10 +69,10 @@ export const useMaterialTakeoffsPaginated = (filters: MaterialTakeoffFilters = {
 
       const { data, error } = await supabase.rpc('get_material_takeoffs_paginated', {
         p_company_id: user.companyId,
-        p_jobsite_id: filters.jobsite_id || null,
+        p_jobsite_id: filters.jobsite_id === 'all' ? null : filters.jobsite_id || null,
         p_search: filters.search || null,
-        p_status: filters.status || null,
-        p_category: filters.category || null,
+        p_status: filters.status === 'all' ? null : filters.status || null,
+        p_category: filters.category === 'all' ? null : filters.category || null,
         p_page: filters.page || 1,
         p_limit: filters.limit || 25,
       });

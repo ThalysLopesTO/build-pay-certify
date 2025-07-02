@@ -16,9 +16,9 @@ const MaterialTakeoffManagementEnhanced = () => {
   const { user } = useAuth();
   const [filters, setFilters] = useState({
     search: '',
-    jobsite_id: 'all',
-    status: 'all',
-    category: 'all',
+    jobsite_id: '',
+    status: '',
+    category: '',
     page: 1,
     limit: 25,
   });
