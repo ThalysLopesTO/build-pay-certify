@@ -25,6 +25,16 @@ export interface MaterialTakeoff {
   };
 }
 
+export interface CreateMaterialTakeoff {
+  jobsite_id: string;
+  company_id: string;
+  material_name: string;
+  unit: string;
+  total_qty_estimated: number;
+  unit_price: number;
+  created_by: string;
+}
+
 export const useMaterialTakeoffs = (jobsiteId?: string) => {
   const { user } = useAuth();
 
@@ -33,26 +43,44 @@ export const useMaterialTakeoffs = (jobsiteId?: string) => {
     queryFn: async () => {
       if (!user?.companyId) return [];
 
-      let query = supabase
-        .from('material_takeoffs')
-        .select(`
-          *,
-          jobsites (
-            name,
-            address
-          )
-        `)
-        .eq('company_id', user.companyId)
-        .order('created_at', { ascending: false });
-
-      if (jobsiteId) {
-        query = query.eq('jobsite_id', jobsiteId);
-      }
-
-      const { data, error } = await query;
+      // Use raw SQL to query the new table until types are updated
+      const { data, error } = await supabase.rpc('exec_sql', {
+        sql: `
+          SELECT 
+            mt.*,
+            j.name as jobsite_name,
+            j.address as jobsite_address
+          FROM material_takeoffs mt
+          LEFT JOIN jobsites j ON j.id = mt.jobsite_id
+          WHERE mt.company_id = '${user.companyId}'
+          ${jobsiteId ? `AND mt.jobsite_id = '${jobsiteId}'` : ''}
+          ORDER BY mt.created_at DESC
+        `
+      });
 
       if (error) throw error;
-      return data as MaterialTakeoff[];
+
+      // Transform the raw data to match our interface
+      return (data as any[])?.map((row: any) => ({
+        id: row.id,
+        jobsite_id: row.jobsite_id,
+        company_id: row.company_id,
+        material_name: row.material_name,
+        unit: row.unit,
+        total_qty_estimated: Number(row.total_qty_estimated),
+        unit_price: Number(row.unit_price),
+        subtotal: Number(row.subtotal),
+        requested_qty: Number(row.requested_qty),
+        remaining_qty: Number(row.remaining_qty),
+        status: row.status,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        created_by: row.created_by,
+        jobsites: {
+          name: row.jobsite_name,
+          address: row.jobsite_address
+        }
+      })) as MaterialTakeoff[] || [];
     },
     enabled: !!user?.companyId,
   });
@@ -64,16 +92,20 @@ export const useMaterialTakeoffMutations = () => {
   const queryClient = useQueryClient();
 
   const createTakeoff = useMutation({
-    mutationFn: async (takeoff: Omit<MaterialTakeoff, 'id' | 'created_at' | 'updated_at' | 'subtotal' | 'requested_qty' | 'remaining_qty' | 'status'>) => {
-      const { data, error } = await supabase
-        .from('material_takeoffs')
-        .insert({
-          ...takeoff,
-          company_id: user?.companyId,
-          created_by: user?.id,
-        })
-        .select()
-        .single();
+    mutationFn: async (takeoff: CreateMaterialTakeoff) => {
+      const { data, error } = await supabase.rpc('exec_sql', {
+        sql: `
+          INSERT INTO material_takeoffs (
+            jobsite_id, company_id, material_name, unit, 
+            total_qty_estimated, unit_price, created_by
+          ) VALUES (
+            '${takeoff.jobsite_id}', '${takeoff.company_id}', 
+            '${takeoff.material_name}', '${takeoff.unit}', 
+            ${takeoff.total_qty_estimated}, ${takeoff.unit_price}, 
+            '${takeoff.created_by}'
+          ) RETURNING *
+        `
+      });
 
       if (error) throw error;
       return data;
@@ -86,6 +118,7 @@ export const useMaterialTakeoffMutations = () => {
       });
     },
     onError: (error) => {
+      console.error('Create takeoff error:', error);
       toast({
         title: 'Error',
         description: 'Failed to create material takeoff item',
@@ -96,13 +129,19 @@ export const useMaterialTakeoffMutations = () => {
 
   const updateTakeoff = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<MaterialTakeoff> }) => {
-      const { data, error } = await supabase
-        .from('material_takeoffs')
-        .update(updates)
-        .eq('id', id)
-        .eq('company_id', user?.companyId)
-        .select()
-        .single();
+      const setParts = Object.entries(updates)
+        .filter(([key, value]) => value !== undefined && key !== 'id')
+        .map(([key, value]) => `${key} = '${value}'`)
+        .join(', ');
+
+      const { data, error } = await supabase.rpc('exec_sql', {
+        sql: `
+          UPDATE material_takeoffs 
+          SET ${setParts}, updated_at = now()
+          WHERE id = '${id}' AND company_id = '${user?.companyId}'
+          RETURNING *
+        `
+      });
 
       if (error) throw error;
       return data;
@@ -115,6 +154,7 @@ export const useMaterialTakeoffMutations = () => {
       });
     },
     onError: (error) => {
+      console.error('Update takeoff error:', error);
       toast({
         title: 'Error',
         description: 'Failed to update material takeoff item',
@@ -125,11 +165,12 @@ export const useMaterialTakeoffMutations = () => {
 
   const deleteTakeoff = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('material_takeoffs')
-        .delete()
-        .eq('id', id)
-        .eq('company_id', user?.companyId);
+      const { error } = await supabase.rpc('exec_sql', {
+        sql: `
+          DELETE FROM material_takeoffs 
+          WHERE id = '${id}' AND company_id = '${user?.companyId}'
+        `
+      });
 
       if (error) throw error;
     },
@@ -141,6 +182,7 @@ export const useMaterialTakeoffMutations = () => {
       });
     },
     onError: (error) => {
+      console.error('Delete takeoff error:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete material takeoff item',

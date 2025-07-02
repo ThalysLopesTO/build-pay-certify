@@ -51,23 +51,15 @@ export const useMaterialRequestSubmission = () => {
         throw requestError;
       }
 
-      // If there are takeoff items, create the junction records
+      // If there are takeoff items, create the junction records using direct SQL
       if (data.takeoffItems && data.takeoffItems.length > 0) {
-        const takeoffRequests = data.takeoffItems.map(item => ({
-          material_request_id: materialRequest.id,
-          material_takeoff_id: item.takeoffId,
-          requested_qty: item.requestedQty,
-          is_unplanned: false,
-        }));
+        const insertValues = data.takeoffItems.map(item => 
+          `('${materialRequest.id}', '${item.takeoffId}', ${item.requestedQty}, false)`
+        ).join(', ');
 
-        // Use raw SQL query to avoid TypeScript type issues
-        const { error: takeoffError } = await supabase.rpc('exec_sql', {
-          sql: `
-            INSERT INTO material_takeoff_requests (material_request_id, material_takeoff_id, requested_qty, is_unplanned)
-            VALUES ${takeoffRequests.map(req => 
-              `('${req.material_request_id}', '${req.material_takeoff_id}', ${req.requested_qty}, ${req.is_unplanned})`
-            ).join(', ')}
-          `
+        const { error: takeoffError } = await supabase.rpc('handle_material_takeoff_requests', {
+          p_material_request_id: materialRequest.id,
+          p_takeoff_items: JSON.stringify(data.takeoffItems)
         });
 
         if (takeoffError) {
@@ -78,11 +70,9 @@ export const useMaterialRequestSubmission = () => {
 
       // If there are items not in takeoff (in materialList), mark as unplanned
       if (data.materialList.trim()) {
-        const { error: unplannedError } = await supabase.rpc('exec_sql', {
-          sql: `
-            INSERT INTO material_takeoff_requests (material_request_id, material_takeoff_id, requested_qty, is_unplanned, justification)
-            VALUES ('${materialRequest.id}', NULL, 0, true, 'Items listed in material list section')
-          `
+        const { error: unplannedError } = await supabase.rpc('handle_unplanned_request', {
+          p_material_request_id: materialRequest.id,
+          p_justification: 'Items listed in material list section'
         });
 
         if (unplannedError) {

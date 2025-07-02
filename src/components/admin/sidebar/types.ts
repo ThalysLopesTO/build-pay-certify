@@ -1,11 +1,10 @@
 
-import { LucideIcon } from 'lucide-react';
-
-export interface AdminMenuItem {
-  id: string;
+export interface MenuItem {
+  id?: string;
   title: string;
-  icon: LucideIcon;
-  section: 'main' | 'payroll' | 'management' | 'employees' | 'operations' | 'system';
+  href?: string;
+  icon: React.ComponentType<any>;
+  items?: MenuItem[];
 }
 
 export interface AdminSidebarProps {

@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useJobsites } from '@/hooks/useJobsites';
-import { useMaterialTakeoffMutations, MaterialTakeoff } from '@/hooks/useMaterialTakeoffs';
+import { useMaterialTakeoffMutations, MaterialTakeoff, CreateMaterialTakeoff } from '@/hooks/useMaterialTakeoffs';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const formSchema = z.object({
@@ -50,9 +50,13 @@ const MaterialTakeoffForm: React.FC<MaterialTakeoffFormProps> = ({
     if (takeoff) {
       updateTakeoff({ id: takeoff.id, updates: data });
     } else {
-      // Add required fields for creation
-      const createData = {
-        ...data,
+      // Create the complete takeoff object
+      const createData: CreateMaterialTakeoff = {
+        jobsite_id: data.jobsite_id,
+        material_name: data.material_name,
+        unit: data.unit,
+        total_qty_estimated: data.total_qty_estimated,
+        unit_price: data.unit_price,
         company_id: user?.companyId || '',
         created_by: user?.id || '',
       };
