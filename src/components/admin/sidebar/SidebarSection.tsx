@@ -9,13 +9,7 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-
-interface MenuItem {
-  id: string;
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  requiredRoles?: string[];
-}
+import { MenuItem } from './types';
 
 interface SidebarSectionProps {
   items: MenuItem[];
@@ -46,12 +40,12 @@ const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectio
         <SidebarMenu className="space-y-1">
           {filteredItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
+            const isActive = activeTab === (item.id || item.title.toLowerCase().replace(/\s+/g, '-'));
             
             return (
-              <SidebarMenuItem key={item.id}>
+              <SidebarMenuItem key={item.id || item.title}>
                 <SidebarMenuButton
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => setActiveTab(item.id || item.title.toLowerCase().replace(/\s+/g, '-'))}
                   className={`
                     relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
                     transition-all duration-200 hover:bg-gray-50 hover:text-gray-900
