@@ -1,13 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Plus, Download, FileText, Upload } from 'lucide-react';
-import { useMaterialTakeoffsPaginated, useMaterialTakeoffMutations } from '@/hooks/useMaterialTakeoffsEnhanced';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
-import MaterialTakeoffTable from '../material-takeoff/MaterialTakeoffTable';
-import MaterialTakeoffForm from '../MaterialTakeoffForm';
-import ImportDialog from '../material-takeoff/ImportDialog';
-import { exportToExcel, exportToPDF } from '@/utils/materialTakeoffExport';
+import { Package, Edit, Plus, FileText, Download, Eye } from 'lucide-react';
+import { useMaterialTakeoffNotes } from '@/hooks/useMaterialTakeoffNotes';
+import MaterialTakeoffNotesEditor from '../material-takeoff/MaterialTakeoffNotesEditor';
 
 interface JobsiteMaterialTakeoffProps {
   jobsiteId: string;
@@ -18,48 +15,39 @@ const JobsiteMaterialTakeoff: React.FC<JobsiteMaterialTakeoffProps> = ({
   jobsiteId,
   jobsiteName,
 }) => {
-  const { user } = useAuth();
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [showImport, setShowImport] = useState(false);
-  const [editingTakeoff, setEditingTakeoff] = useState<any>(null);
+  const { getNoteByJobsite, isLoading } = useMaterialTakeoffNotes();
+  const [showEditor, setShowEditor] = useState(false);
+  const [viewMode, setViewMode] = useState<'view' | 'edit'>('edit');
 
-  // Filter specifically for this jobsite
-  const filters = {
-    jobsite_id: jobsiteId,
-    search: '',
-    status: '',
-    category: '',
-    page: 1,
-    limit: 100, // Show more items for single jobsite view
+  const existingNote = getNoteByJobsite(jobsiteId);
+
+  const handleEdit = () => {
+    setViewMode('edit');
+    setShowEditor(true);
   };
 
-  const { data: paginatedData, isLoading } = useMaterialTakeoffsPaginated(filters);
-  const { updateTakeoff, deleteTakeoff, bulkInsert } = useMaterialTakeoffMutations();
-
-  const takeoffs = paginatedData?.data || [];
-
-  const handleEdit = (takeoff: any) => {
-    setEditingTakeoff(takeoff);
-    setShowForm(true);
+  const handleView = () => {
+    setViewMode('view');
+    setShowEditor(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this material?')) {
-      deleteTakeoff(id);
-    }
-  };
+  const handleExportTxt = () => {
+    if (!existingNote) return;
+    
+    const content = `Material Takeoff Notes - ${jobsiteName}
+Created: ${new Date(existingNote.created_at).toLocaleDateString()}
+Last Updated: ${new Date(existingNote.updated_at).toLocaleDateString()}
 
-  const handleExportExcel = () => {
-    exportToExcel(takeoffs, `${jobsiteName}-materials-${new Date().toISOString().split('T')[0]}`);
-  };
+${existingNote.takeoff_notes}`;
 
-  const handleExportPDF = () => {
-    exportToPDF(takeoffs, user?.companyName || 'Company', `${jobsiteName}-materials-${new Date().toISOString().split('T')[0]}`);
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${jobsiteName.replace(/[^a-z0-9]/gi, '_')}_material_takeoff.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
-
-  // Calculate totals for this jobsite
-  const totalEstimated = takeoffs.reduce((sum, item) => sum + (item.subtotal || 0), 0);
 
   return (
     <Card>
@@ -68,45 +56,48 @@ const JobsiteMaterialTakeoff: React.FC<JobsiteMaterialTakeoffProps> = ({
           <div className="flex items-center space-x-2">
             <Package className="h-5 w-5" />
             <div>
-              <CardTitle>Material Takeoff</CardTitle>
+              <CardTitle>Material Takeoff Notes</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {takeoffs.length} materials • Est: ${totalEstimated.toFixed(2)}
+                {existingNote ? 'Free-form material list and notes' : 'No material notes yet'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {existingNote && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleView}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportTxt}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </>
+            )}
             <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportExcel}
-              disabled={takeoffs.length === 0}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Excel
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportPDF}
-              disabled={takeoffs.length === 0}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              PDF
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowImport(true)}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Import
-            </Button>
-            <Button
-              onClick={() => setShowForm(true)}
+              onClick={handleEdit}
               size="sm"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Material
+              {existingNote ? (
+                <>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Notes
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Notes
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -114,54 +105,48 @@ const JobsiteMaterialTakeoff: React.FC<JobsiteMaterialTakeoffProps> = ({
       <CardContent>
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
-            <div className="text-muted-foreground">Loading materials...</div>
+            <div className="text-muted-foreground">Loading material notes...</div>
           </div>
-        ) : takeoffs.length === 0 ? (
-          <div className="text-center py-8">
-            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No materials added yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Start by adding materials to this jobsite's takeoff list.
-            </p>
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add First Material
-            </Button>
+        ) : existingNote ? (
+          <div className="space-y-4">
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium">Material Notes Preview</h4>
+                <div className="text-sm text-muted-foreground">
+                  Last updated: {new Date(existingNote.updated_at).toLocaleDateString()}
+                </div>
+              </div>
+              <div className="text-sm font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
+                {existingNote.takeoff_notes.substring(0, 500)}
+                {existingNote.takeoff_notes.length > 500 && (
+                  <div className="text-muted-foreground mt-2">
+                    ... ({existingNote.takeoff_notes.length - 500} more characters)
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         ) : (
-          <MaterialTakeoffTable
-            takeoffs={takeoffs}
-            selectedItems={selectedItems}
-            onSelectionChange={setSelectedItems}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onInlineUpdate={(id, updates) => updateTakeoff({ id, updates })}
-            isLoading={isLoading}
-          />
+          <div className="text-center py-8">
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No material notes yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Start by adding material takeoff notes for this jobsite.
+            </p>
+            <Button onClick={handleEdit}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Material Notes
+            </Button>
+          </div>
         )}
       </CardContent>
 
-      {showForm && (
-        <MaterialTakeoffForm
-          takeoff={editingTakeoff}
-          defaultJobsiteId={jobsiteId}
-          onClose={() => {
-            setShowForm(false);
-            setEditingTakeoff(null);
-          }}
-        />
-      )}
-
-      {showImport && (
-        <ImportDialog
-          open={showImport}
-          onClose={() => setShowImport(false)}
-          onImport={(data) => bulkInsert(data)}
-          jobsites={[{ id: jobsiteId, name: jobsiteName }]}
-          companyId={user?.companyId || ''}
-          userId={user?.id || ''}
-        />
-      )}
+      <MaterialTakeoffNotesEditor
+        jobsiteId={jobsiteId}
+        jobsiteName={jobsiteName}
+        open={showEditor}
+        onClose={() => setShowEditor(false)}
+      />
     </Card>
   );
 };

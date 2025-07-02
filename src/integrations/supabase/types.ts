@@ -775,64 +775,40 @@ export type Database = {
           },
         ]
       }
-      material_takeoffs: {
+      material_takeoff_notes: {
         Row: {
-          category: string | null
           company_id: string
           created_at: string
           created_by: string
           id: string
-          is_draft: boolean | null
           jobsite_id: string
-          material_name: string
-          notes: string | null
-          priority: number | null
-          subtotal: number | null
-          total_qty_estimated: number
-          unit: string
-          unit_price: number
+          takeoff_notes: string
           updated_at: string
-          vendor: string | null
+          updated_by: string | null
         }
         Insert: {
-          category?: string | null
           company_id: string
           created_at?: string
           created_by: string
           id?: string
-          is_draft?: boolean | null
           jobsite_id: string
-          material_name: string
-          notes?: string | null
-          priority?: number | null
-          subtotal?: number | null
-          total_qty_estimated?: number
-          unit: string
-          unit_price?: number
+          takeoff_notes?: string
           updated_at?: string
-          vendor?: string | null
+          updated_by?: string | null
         }
         Update: {
-          category?: string | null
           company_id?: string
           created_at?: string
           created_by?: string
           id?: string
-          is_draft?: boolean | null
           jobsite_id?: string
-          material_name?: string
-          notes?: string | null
-          priority?: number | null
-          subtotal?: number | null
-          total_qty_estimated?: number
-          unit?: string
-          unit_price?: number
+          takeoff_notes?: string
           updated_at?: string
-          vendor?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "material_takeoffs_jobsite_id_fkey"
+            foreignKeyName: "material_takeoff_notes_jobsite_id_fkey"
             columns: ["jobsite_id"]
             isOneToOne: false
             referencedRelation: "jobsites"
@@ -1545,18 +1521,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      bulk_delete_material_takeoffs: {
-        Args: { takeoff_ids: string[] }
-        Returns: number
-      }
-      bulk_insert_material_takeoffs: {
-        Args: { takeoffs_data: Json }
-        Returns: Json
-      }
-      bulk_update_material_takeoffs: {
-        Args: { takeoff_ids: string[]; updates: Json }
-        Returns: number
-      }
       calculate_invoice_totals: {
         Args: { invoice_id_param: string }
         Returns: undefined
@@ -1631,36 +1595,19 @@ export type Database = {
           can_add_employees: boolean
         }[]
       }
-      get_material_takeoffs_paginated: {
-        Args: {
-          p_company_id: string
-          p_jobsite_id?: string
-          p_search?: string
-          p_status?: string
-          p_category?: string
-          p_page?: number
-          p_limit?: number
-        }
+      get_material_takeoff_notes: {
+        Args: { p_company_id: string }
         Returns: {
           id: string
           jobsite_id: string
           company_id: string
-          material_name: string
-          unit: string
-          total_qty_estimated: number
-          unit_price: number
-          subtotal: number
-          vendor: string
-          notes: string
-          category: string
-          priority: number
-          is_draft: boolean
+          takeoff_notes: string
           created_at: string
           updated_at: string
           created_by: string
+          updated_by: string
           jobsite_name: string
           jobsite_address: string
-          total_count: number
         }[]
       }
       get_user_company_id: {
