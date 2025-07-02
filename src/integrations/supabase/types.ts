@@ -1650,9 +1650,6 @@ export type Database = {
           total_qty_estimated: number
           unit_price: number
           subtotal: number
-          requested_qty: number
-          remaining_qty: number
-          status: string
           vendor: string
           notes: string
           category: string
