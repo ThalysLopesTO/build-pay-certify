@@ -1,15 +1,17 @@
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Plus, Calendar, AlertTriangle, Timer } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Calendar, AlertTriangle, Timer, Package, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useJobsiteTasks } from '@/hooks/useJobsiteTasks';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { isPast, differenceInDays, isToday } from 'date-fns';
 import JobsiteTaskCard from './JobsiteTaskCard';
 import JobsiteTaskForm from './JobsiteTaskForm';
+import JobsiteMaterialTakeoff from './JobsiteMaterialTakeoff';
 
 interface Jobsite {
   id: string;
@@ -26,6 +28,7 @@ interface JobsiteProgressCardProps {
 const JobsiteProgressCard: React.FC<JobsiteProgressCardProps> = ({ jobsite }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showMaterials, setShowMaterials] = useState(false);
   const { user } = useAuth();
   const { data: tasks = [], isLoading } = useJobsiteTasks(jobsite.id);
 
@@ -209,6 +212,31 @@ const JobsiteProgressCard: React.FC<JobsiteProgressCardProps> = ({ jobsite }) =>
                 ))}
               </div>
             )}
+
+            {/* Material Takeoff Section */}
+            <div className="mt-4">
+              <Collapsible open={showMaterials} onOpenChange={setShowMaterials}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      <span className="font-medium">Material Takeoff</span>
+                    </div>
+                    {showMaterials ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  <JobsiteMaterialTakeoff 
+                    jobsiteId={jobsite.id} 
+                    jobsiteName={jobsite.name} 
+                  />
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
           </div>
         </CardContent>
       )}

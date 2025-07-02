@@ -24,11 +24,13 @@ type FormData = z.infer<typeof formSchema>;
 
 interface MaterialTakeoffFormProps {
   takeoff?: MaterialTakeoff | null;
+  defaultJobsiteId?: string;
   onClose: () => void;
 }
 
 const MaterialTakeoffForm: React.FC<MaterialTakeoffFormProps> = ({
   takeoff,
+  defaultJobsiteId,
   onClose,
 }) => {
   const { user } = useAuth();
@@ -38,7 +40,7 @@ const MaterialTakeoffForm: React.FC<MaterialTakeoffFormProps> = ({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      jobsite_id: takeoff?.jobsite_id || '',
+      jobsite_id: takeoff?.jobsite_id || defaultJobsiteId || '',
       material_name: takeoff?.material_name || '',
       unit: takeoff?.unit || '',
       total_qty_estimated: takeoff?.total_qty_estimated || 0,
@@ -82,7 +84,11 @@ const MaterialTakeoffForm: React.FC<MaterialTakeoffFormProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Jobsite</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                    disabled={!!defaultJobsiteId}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select jobsite" />
@@ -96,6 +102,11 @@ const MaterialTakeoffForm: React.FC<MaterialTakeoffFormProps> = ({
                       ))}
                     </SelectContent>
                   </Select>
+                  {defaultJobsiteId && (
+                    <p className="text-xs text-muted-foreground">
+                      Material will be added to this jobsite
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
