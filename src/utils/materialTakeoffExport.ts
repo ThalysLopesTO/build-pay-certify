@@ -10,9 +10,6 @@ export const exportToExcel = (takeoffs: MaterialTakeoff[], filename: string = 'm
     'Quantity Estimated': takeoff.total_qty_estimated,
     'Unit Price': takeoff.unit_price,
     'Subtotal': takeoff.subtotal,
-    'Requested Qty': takeoff.requested_qty,
-    'Remaining Qty': takeoff.remaining_qty,
-    'Status': takeoff.status.replace('_', ' '),
     'Vendor': takeoff.vendor || '',
     'Category': takeoff.category || '',
     'Priority': takeoff.priority,
@@ -31,9 +28,6 @@ export const exportToExcel = (takeoffs: MaterialTakeoff[], filename: string = 'm
     { wch: 15 }, // Quantity
     { wch: 12 }, // Unit Price
     { wch: 12 }, // Subtotal
-    { wch: 12 }, // Requested
-    { wch: 12 }, // Remaining
-    { wch: 15 }, // Status
     { wch: 20 }, // Vendor
     { wch: 15 }, // Category
     { wch: 8 },  // Priority
@@ -65,10 +59,8 @@ export const exportToPDF = (
   
   // Calculate totals
   const totalEstimated = takeoffs.reduce((sum, item) => sum + item.subtotal, 0);
-  const totalRequested = takeoffs.reduce((sum, item) => sum + (item.requested_qty * item.unit_price), 0);
   
   doc.text(`Total Estimated Value: $${totalEstimated.toFixed(2)}`, 150, 40);
-  doc.text(`Total Requested Value: $${totalRequested.toFixed(2)}`, 150, 45);
 
   // Prepare table data
   const tableData = takeoffs.map(takeoff => [
@@ -77,9 +69,6 @@ export const exportToPDF = (
     takeoff.total_qty_estimated.toString(),
     `$${takeoff.unit_price.toFixed(2)}`,
     `$${takeoff.subtotal.toFixed(2)}`,
-    takeoff.requested_qty.toString(),
-    takeoff.remaining_qty.toString(),
-    takeoff.status.replace('_', ' '),
     takeoff.vendor || '-',
     takeoff.category || '-',
     takeoff.jobsite_name || '-',
@@ -87,7 +76,7 @@ export const exportToPDF = (
 
   // Add table
   autoTable(doc, {
-    head: [['Material', 'Unit', 'Qty Est.', 'Unit Price', 'Subtotal', 'Requested', 'Remaining', 'Status', 'Vendor', 'Category', 'Jobsite']],
+    head: [['Material', 'Unit', 'Qty Est.', 'Unit Price', 'Subtotal', 'Vendor', 'Category', 'Jobsite']],
     body: tableData,
     startY: 55,
     styles: {
@@ -103,17 +92,14 @@ export const exportToPDF = (
       fillColor: [245, 245, 245],
     },
     columnStyles: {
-      0: { cellWidth: 35 }, // Material
+      0: { cellWidth: 45 }, // Material
       1: { cellWidth: 15 }, // Unit
       2: { cellWidth: 20 }, // Qty Est
-      3: { cellWidth: 20 }, // Unit Price
-      4: { cellWidth: 20 }, // Subtotal
-      5: { cellWidth: 18 }, // Requested
-      6: { cellWidth: 18 }, // Remaining
-      7: { cellWidth: 25 }, // Status
-      8: { cellWidth: 25 }, // Vendor
-      9: { cellWidth: 20 }, // Category
-      10: { cellWidth: 30 }, // Jobsite
+      3: { cellWidth: 25 }, // Unit Price
+      4: { cellWidth: 25 }, // Subtotal
+      5: { cellWidth: 30 }, // Vendor
+      6: { cellWidth: 25 }, // Category
+      7: { cellWidth: 35 }, // Jobsite
     },
     margin: { left: 20, right: 20 },
   });
@@ -124,16 +110,16 @@ export const exportToPDF = (
   doc.text('Summary', 20, finalY);
   doc.setFontSize(10);
   
-  const statusCounts = takeoffs.reduce((acc, item) => {
-    acc[item.status] = (acc[item.status] || 0) + 1;
+  const categoryCount = takeoffs.reduce((acc, item) => {
+    const category = item.category || 'Uncategorized';
+    acc[category] = (acc[category] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
   let summaryY = finalY + 10;
-  Object.entries(statusCounts).forEach(([status, count]) => {
-    doc.text(`${status.replace('_', ' ')}: ${count} items`, 20, summaryY);
-    summaryY += 5;
-  });
+  doc.text(`Total Items: ${takeoffs.length}`, 20, summaryY);
+  summaryY += 5;
+  doc.text(`Total Estimated Value: $${totalEstimated.toFixed(2)}`, 20, summaryY);
 
   // Add footer
   const pageCount = doc.getNumberOfPages();

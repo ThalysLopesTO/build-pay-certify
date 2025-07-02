@@ -60,7 +60,6 @@ const JobsiteMaterialTakeoff: React.FC<JobsiteMaterialTakeoffProps> = ({
 
   // Calculate totals for this jobsite
   const totalEstimated = takeoffs.reduce((sum, item) => sum + (item.subtotal || 0), 0);
-  const totalRequested = takeoffs.reduce((sum, item) => sum + (item.requested_qty * item.unit_price), 0);
 
   return (
     <Card>
@@ -71,7 +70,7 @@ const JobsiteMaterialTakeoff: React.FC<JobsiteMaterialTakeoffProps> = ({
             <div>
               <CardTitle>Material Takeoff</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {takeoffs.length} materials • Est: ${totalEstimated.toFixed(2)} • Req: ${totalRequested.toFixed(2)}
+                {takeoffs.length} materials • Est: ${totalEstimated.toFixed(2)}
               </p>
             </div>
           </div>

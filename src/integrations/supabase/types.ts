@@ -787,9 +787,6 @@ export type Database = {
           material_name: string
           notes: string | null
           priority: number | null
-          remaining_qty: number | null
-          requested_qty: number
-          status: string
           subtotal: number | null
           total_qty_estimated: number
           unit: string
@@ -808,9 +805,6 @@ export type Database = {
           material_name: string
           notes?: string | null
           priority?: number | null
-          remaining_qty?: number | null
-          requested_qty?: number
-          status?: string
           subtotal?: number | null
           total_qty_estimated?: number
           unit: string
@@ -829,9 +823,6 @@ export type Database = {
           material_name?: string
           notes?: string | null
           priority?: number | null
-          remaining_qty?: number | null
-          requested_qty?: number
-          status?: string
           subtotal?: number | null
           total_qty_estimated?: number
           unit?: string

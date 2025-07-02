@@ -18,8 +18,6 @@ interface MaterialTakeoffToolbarProps {
   onSearchChange: (value: string) => void;
   selectedJobsite: string;
   onJobsiteChange: (value: string) => void;
-  selectedStatus: string;
-  onStatusChange: (value: string) => void;
   selectedCategory: string;
   onCategoryChange: (value: string) => void;
   selectedItems: string[];
@@ -39,8 +37,6 @@ const MaterialTakeoffToolbar: React.FC<MaterialTakeoffToolbarProps> = ({
   onSearchChange,
   selectedJobsite,
   onJobsiteChange,
-  selectedStatus,
-  onStatusChange,
   selectedCategory,
   onCategoryChange,
   selectedItems,
@@ -99,7 +95,7 @@ const MaterialTakeoffToolbar: React.FC<MaterialTakeoffToolbarProps> = ({
       )}
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -124,18 +120,6 @@ const MaterialTakeoffToolbar: React.FC<MaterialTakeoffToolbarProps> = ({
           </SelectContent>
         </Select>
 
-        <Select value={selectedStatus} onValueChange={onStatusChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="All Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="not_requested">Not Requested</SelectItem>
-            <SelectItem value="partially_requested">Partially Requested</SelectItem>
-            <SelectItem value="fully_requested">Fully Requested</SelectItem>
-          </SelectContent>
-        </Select>
-
         <Select value={selectedCategory} onValueChange={onCategoryChange}>
           <SelectTrigger>
             <SelectValue placeholder="All Categories" />
@@ -155,7 +139,6 @@ const MaterialTakeoffToolbar: React.FC<MaterialTakeoffToolbarProps> = ({
           onClick={() => {
             onSearchChange('');
             onJobsiteChange('all');
-            onStatusChange('all');
             onCategoryChange('all');
           }}
           className="w-full"

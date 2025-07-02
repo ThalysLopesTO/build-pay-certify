@@ -17,7 +17,6 @@ const MaterialTakeoffManagementEnhanced = () => {
   const [filters, setFilters] = useState({
     search: '',
     jobsite_id: '',
-    status: '',
     category: '',
     page: 1,
     limit: 25,
@@ -91,8 +90,6 @@ const MaterialTakeoffManagementEnhanced = () => {
             onSearchChange={(value) => handleFilterChange('search', value)}
             selectedJobsite={filters.jobsite_id}
             onJobsiteChange={(value) => handleFilterChange('jobsite_id', value)}
-            selectedStatus={filters.status}
-            onStatusChange={(value) => handleFilterChange('status', value)}
             selectedCategory={filters.category}
             onCategoryChange={(value) => handleFilterChange('category', value)}
             selectedItems={selectedItems}

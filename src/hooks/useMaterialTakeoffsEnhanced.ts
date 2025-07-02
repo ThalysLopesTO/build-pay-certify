@@ -12,9 +12,6 @@ export interface MaterialTakeoff {
   total_qty_estimated: number;
   unit_price: number;
   subtotal: number;
-  requested_qty: number;
-  remaining_qty: number;
-  status: 'not_requested' | 'partially_requested' | 'fully_requested';
   vendor?: string;
   notes?: string;
   category?: string;
@@ -45,7 +42,6 @@ export interface CreateMaterialTakeoff {
 export interface MaterialTakeoffFilters {
   jobsite_id?: string;
   search?: string;
-  status?: string;
   category?: string;
   page?: number;
   limit?: number;
@@ -71,7 +67,7 @@ export const useMaterialTakeoffsPaginated = (filters: MaterialTakeoffFilters = {
         p_company_id: user.companyId,
         p_jobsite_id: filters.jobsite_id === 'all' ? null : filters.jobsite_id || null,
         p_search: filters.search || null,
-        p_status: filters.status === 'all' ? null : filters.status || null,
+        p_status: null, // Remove status filtering
         p_category: filters.category === 'all' ? null : filters.category || null,
         p_page: filters.page || 1,
         p_limit: filters.limit || 25,
@@ -87,10 +83,7 @@ export const useMaterialTakeoffsPaginated = (filters: MaterialTakeoffFilters = {
       const page = filters.page || 1;
       
       return {
-        data: (data || []).map(item => ({
-          ...item,
-          status: item.status as 'not_requested' | 'partially_requested' | 'fully_requested'
-        })) as MaterialTakeoff[],
+        data: (data || []) as MaterialTakeoff[],
         total_count,
         page,
         limit,

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { MaterialTakeoff } from '@/hooks/useMaterialTakeoffsEnhanced';
-import { Edit, Trash2, Save, X, AlertTriangle } from 'lucide-react';
+import { Edit, Trash2, Save, X } from 'lucide-react';
 
 interface MaterialTakeoffTableProps {
   takeoffs: MaterialTakeoff[];
@@ -77,19 +77,6 @@ const MaterialTakeoffTable: React.FC<MaterialTakeoffTableProps> = ({
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'not_requested':
-        return 'bg-secondary text-secondary-foreground';
-      case 'partially_requested':
-        return 'bg-warning text-warning-foreground';
-      case 'fully_requested':
-        return 'bg-success text-success-foreground';
-      default:
-        return 'bg-secondary text-secondary-foreground';
-    }
-  };
-
   const renderEditableCell = (takeoff: MaterialTakeoff, field: string, value: any, type: 'text' | 'number' = 'text') => {
     const isEditing = editingCell?.id === takeoff.id && editingCell?.field === field;
     
@@ -148,9 +135,6 @@ const MaterialTakeoffTable: React.FC<MaterialTakeoffTableProps> = ({
             <TableHead>Quantity</TableHead>
             <TableHead>Unit Price</TableHead>
             <TableHead>Subtotal</TableHead>
-            <TableHead>Requested</TableHead>
-            <TableHead>Remaining</TableHead>
-            <TableHead>Status</TableHead>
             <TableHead>Vendor</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Priority</TableHead>
@@ -184,24 +168,6 @@ const MaterialTakeoffTable: React.FC<MaterialTakeoffTableProps> = ({
               </TableCell>
               <TableCell className="font-medium">
                 ${takeoff.subtotal.toFixed(2)}
-              </TableCell>
-              <TableCell>
-                <span className={takeoff.requested_qty > 0 ? 'font-semibold text-primary' : ''}>
-                  {takeoff.requested_qty}
-                </span>
-              </TableCell>
-              <TableCell>
-                <span className={takeoff.remaining_qty < 0 ? 'font-semibold text-destructive' : ''}>
-                  {takeoff.remaining_qty}
-                  {takeoff.remaining_qty < 0 && (
-                    <AlertTriangle className="h-4 w-4 inline ml-1 text-destructive" />
-                  )}
-                </span>
-              </TableCell>
-              <TableCell>
-                <Badge className={getStatusColor(takeoff.status)}>
-                  {takeoff.status.replace('_', ' ')}
-                </Badge>
               </TableCell>
               <TableCell>
                 {renderEditableCell(takeoff, 'vendor', takeoff.vendor)}
