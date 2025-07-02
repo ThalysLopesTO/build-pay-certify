@@ -5,6 +5,8 @@ import { FileText } from 'lucide-react';
 import MaterialTakeoffNotesTable from './material-takeoff/MaterialTakeoffNotesTable';
 
 const MaterialTakeoffManagement = () => {
+  console.log('MaterialTakeoffManagement component rendering');
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

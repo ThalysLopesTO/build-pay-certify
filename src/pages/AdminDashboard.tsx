@@ -15,7 +15,7 @@ import LivePunchMonitor from '@/components/admin/LivePunchMonitor';
 import EmployeeTimesheets from '@/components/admin/EmployeeTimesheets';
 import PayrollSummary from '@/components/admin/PayrollSummary';
 import MaterialRequestInbox from '@/components/admin/MaterialRequestInbox';
-import MaterialTakeoffManagementEnhanced from '@/components/admin/MaterialTakeoffManagementEnhanced';
+import MaterialTakeoffManagement from '@/components/admin/MaterialTakeoffManagement';
 import AttentionReportsInbox from '@/components/admin/AttentionReportsInbox';
 import AttentionReportDetails from '@/components/admin/AttentionReportDetails';
 import InvoiceManagement from '@/components/admin/InvoiceManagement';
@@ -59,7 +59,7 @@ const AdminDashboard = () => {
       case 'material-requests':
         return <MaterialRequestInbox />;
       case 'material-takeoff':
-        return <MaterialTakeoffManagementEnhanced />;
+        return <MaterialTakeoffManagement />;
       case 'attention-reports':
         return <AttentionReportsInbox />;
       case 'invoices':

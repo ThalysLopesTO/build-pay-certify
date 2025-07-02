@@ -24,13 +24,23 @@ export const useMaterialTakeoffNotes = () => {
   const { data: notes = [], isLoading, error } = useQuery({
     queryKey: ['material-takeoff-notes', user?.companyId],
     queryFn: async () => {
-      if (!user?.companyId) return [];
+      console.log('Fetching material takeoff notes for company:', user?.companyId);
+      
+      if (!user?.companyId) {
+        console.log('No company ID found, returning empty array');
+        return [];
+      }
       
       const { data, error } = await supabase.rpc('get_material_takeoff_notes', {
         p_company_id: user.companyId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching material takeoff notes:', error);
+        throw error;
+      }
+      
+      console.log('Fetched material takeoff notes:', data);
       return data as MaterialTakeoffNote[];
     },
     enabled: !!user?.companyId,
@@ -39,6 +49,8 @@ export const useMaterialTakeoffNotes = () => {
   const createOrUpdateNote = useMutation({
     mutationFn: async ({ jobsiteId, notes }: { jobsiteId: string; notes: string }) => {
       if (!user?.companyId || !user?.id) throw new Error('User not authenticated');
+
+      console.log('Creating/updating note for jobsite:', jobsiteId, 'with company:', user.companyId);
 
       // First, check if a note already exists for this jobsite
       const { data: existing } = await supabase
@@ -49,6 +61,7 @@ export const useMaterialTakeoffNotes = () => {
         .single();
 
       if (existing) {
+        console.log('Updating existing note:', existing.id);
         // Update existing note
         const { error } = await supabase
           .from('material_takeoff_notes')
@@ -57,6 +70,7 @@ export const useMaterialTakeoffNotes = () => {
         
         if (error) throw error;
       } else {
+        console.log('Creating new note');
         // Create new note
         const { error } = await supabase
           .from('material_takeoff_notes')
@@ -82,6 +96,7 @@ export const useMaterialTakeoffNotes = () => {
 
   const deleteNote = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deleting note:', id);
       const { error } = await supabase
         .from('material_takeoff_notes')
         .delete()

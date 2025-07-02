@@ -1,19 +1,29 @@
+
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Edit, FileText, Download, Trash2, Plus, Eye } from 'lucide-react';
+import { Edit, FileText, Download, Trash2, Plus, Eye, AlertCircle } from 'lucide-react';
 import { useMaterialTakeoffNotes, MaterialTakeoffNote } from '@/hooks/useMaterialTakeoffNotes';
 import { useJobsites } from '@/hooks/useJobsites';
 import MaterialTakeoffNotesEditor from './MaterialTakeoffNotesEditor';
 
 const MaterialTakeoffNotesTable: React.FC = () => {
-  const { notes, isLoading, deleteNote } = useMaterialTakeoffNotes();
-  const { data: jobsites = [] } = useJobsites();
+  const { notes, isLoading, deleteNote, error } = useMaterialTakeoffNotes();
+  const { data: jobsites = [], isLoading: jobsitesLoading, error: jobsitesError } = useJobsites();
   const [selectedJobsite, setSelectedJobsite] = useState<{ id: string; name: string } | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [viewMode, setViewMode] = useState<'view' | 'edit'>('edit');
+
+  console.log('MaterialTakeoffNotesTable Debug:', {
+    notesCount: notes?.length,
+    jobsitesCount: jobsites?.length,
+    isLoading,
+    jobsitesLoading,
+    error,
+    jobsitesError
+  });
 
   // Get jobsites that don't have takeoff notes yet
   const availableJobsites = jobsites.filter(
@@ -61,15 +71,40 @@ ${note.takeoff_notes}`;
     URL.revokeObjectURL(url);
   };
 
-  const handleExportPdf = (note: MaterialTakeoffNote) => {
-    // For now, just export as text - PDF export can be enhanced later
-    handleExportTxt(note);
-  };
-
-  if (isLoading) {
+  // Error state
+  if (error || jobsitesError) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading material takeoff notes...</div>
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-4" />
+              <h3 className="text-lg font-medium mb-2">Error Loading Material Takeoffs</h3>
+              <p className="text-muted-foreground mb-4">
+                {error?.message || jobsitesError?.message || 'Failed to load material takeoff data'}
+              </p>
+              <Button onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (isLoading || jobsitesLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading material takeoff notes...</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -117,7 +152,10 @@ ${note.takeoff_notes}`;
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No material takeoff notes yet</h3>
               <p className="text-muted-foreground">
-                Start by adding material takeoff notes for your jobsites above.
+                {jobsites.length === 0 
+                  ? 'Create some jobsites first, then you can add material takeoff notes for them.'
+                  : 'Start by adding material takeoff notes for your jobsites above.'
+                }
               </p>
             </div>
           ) : (
