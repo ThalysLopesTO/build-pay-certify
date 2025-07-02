@@ -37,14 +37,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
           items={groupedMenuItems.management}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label="Management"
-        />
-
-        <SidebarSection
-          items={groupedMenuItems.payroll}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          label="Payroll Management"
+          label="Project Management"
         />
 
         <SidebarSection
@@ -55,17 +48,31 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
         />
 
         <SidebarSection
+          items={groupedMenuItems.payroll}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          label="Payroll Management"
+        />
+
+        <SidebarSection
           items={groupedMenuItems.invoices}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label="Invoices"
+          label="Financial"
+        />
+
+        <SidebarSection
+          items={groupedMenuItems.reports}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          label="Reports"
         />
 
         <SidebarSection
           items={groupedMenuItems.system}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label="System"
+          label="System Settings"
         />
       </SidebarContent>
       

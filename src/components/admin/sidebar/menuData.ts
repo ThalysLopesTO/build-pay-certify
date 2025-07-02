@@ -4,133 +4,165 @@ import {
   Building2,
   Calendar,
   CreditCard,
-  Gauge,
+  FileText,
   Inbox,
   LayoutDashboard,
   ListChecks,
   MapPin,
   Package,
   Settings,
+  Shield,
   User,
   User2,
   Users,
+  DollarSign,
+  Clock,
 } from 'lucide-react';
 import { MenuItem } from './types';
 
+// Main menu items with proper organization
 export const menuData: MenuItem[] = [
+  // Dashboard
   {
     id: 'dashboard',
     title: 'Dashboard',
     href: '/admin',
     icon: LayoutDashboard,
   },
+  
+  // Project Management
   {
-    id: 'company',
-    title: 'Company',
-    icon: Building2,
-    items: [
-      {
-        id: 'company-profile',
-        title: 'Company Profile',
-        href: '/admin/company-profile',
-        icon: Building2,
-      },
-      {
-        id: 'subscription',
-        title: 'Subscription',
-        href: '/admin/subscription',
-        icon: CreditCard,
-      },
-      {
-        id: 'invoices',
-        title: 'Invoices',
-        href: '/admin/invoices',
-        icon: CreditCard,
-      },
-    ],
+    id: 'jobsites',
+    title: 'Jobsite Management',
+    href: '/admin/jobsites',
+    icon: MapPin,
   },
   {
-    id: 'user-management',
-    title: 'User Management',
+    id: 'material-takeoff',
+    title: 'Material Takeoffs',
+    href: '/takeoffs',
+    icon: Package,
+  },
+  {
+    id: 'material-requests',
+    title: 'Material Requests',
+    href: '/admin/material-requests',
+    icon: Inbox,
+  },
+  {
+    id: 'safety-templates',
+    title: 'Safety Templates',
+    href: '/admin/safety-templates',
+    icon: Shield,
+  },
+  {
+    id: 'inventory',
+    title: 'Inventory',
+    href: '/admin/inventory',
+    icon: Package,
+  },
+  
+  // Employee Management
+  {
+    id: 'employees',
+    title: 'Employee Management',
+    href: '/admin/employees',
     icon: Users,
-    items: [
-      {
-        id: 'all-users',
-        title: 'All Users',
-        href: '/admin/users',
-        icon: Users,
-      },
-      {
-        id: 'add-user',
-        title: 'Add User',
-        href: '/admin/add-user',
-        icon: User2,
-      },
-      {
-        id: 'user-roles',
-        title: 'User Roles',
-        href: '/admin/user-roles',
-        icon: User,
-      },
-    ],
   },
   {
-    id: 'project-management',
-    title: 'Project Management',
+    id: 'employee-registration',
+    title: 'Employee Registration',
+    href: '/admin/employee-registration',
+    icon: User2,
+  },
+  {
+    id: 'live-punch-monitor',
+    title: 'Live Punch Monitor',
+    href: '/admin/live-punch-monitor',
+    icon: Clock,
+  },
+  
+  // Payroll Management
+  {
+    id: 'timesheets',
+    title: 'Timesheets',
+    href: '/admin/timesheets',
+    icon: Calendar,
+  },
+  {
+    id: 'payroll-summary',
+    title: 'Payroll Summary',
+    href: '/admin/payroll-summary',
+    icon: DollarSign,
+  },
+  
+  // Invoices & Financial
+  {
+    id: 'invoices',
+    title: 'Invoices',
+    href: '/admin/invoices',
+    icon: FileText,
+  },
+  {
+    id: 'quotes',
+    title: 'Quotes',
+    href: '/admin/quotes',
+    icon: CreditCard,
+  },
+  
+  // Reports & Communication
+  {
+    id: 'attention-reports',
+    title: 'Attention Reports',
+    href: '/admin/attention-reports',
+    icon: Inbox,
+  },
+  
+  // System
+  {
+    id: 'company-settings',
+    title: 'Company Settings',
+    href: '/admin/company-settings',
     icon: Building2,
-    items: [
-      {
-        id: 'jobsite-management',
-        title: 'Jobsite Management',
-        href: '/admin/jobsite-management',
-        icon: MapPin,
-      },
-      {
-        id: 'material-takeoff',
-        title: 'Material Takeoff',
-        href: '/admin/material-takeoff',
-        icon: Package,
-      },
-      {
-        id: 'material-requests',
-        title: 'Material Requests',
-        href: '/admin/material-requests',
-        icon: Inbox,
-      },
-      {
-        id: 'timesheets',
-        title: 'Timesheets',
-        href: '/admin/timesheets',
-        icon: Calendar,
-      },
-      {
-        id: 'progress-tracking',
-        title: 'Progress Tracking',
-        href: '/admin/progress-tracking',
-        icon: BarChart3,
-      },
-      {
-        id: 'task-management',
-        title: 'Task Management',
-        href: '/admin/task-management',
-        icon: ListChecks,
-      },
-    ],
   },
   {
     id: 'settings',
-    title: 'Settings',
+    title: 'User Settings',
     href: '/admin/settings',
     icon: Settings,
   },
 ];
 
-// Group menu items by category for the sidebar
+// Group menu items by category for organized sidebar display
 export const groupedMenuItems = {
-  main: [menuData[0]], // Dashboard
-  management: [menuData[3]], // Project Management
-  payroll: [],
-  employees: [menuData[2]], // User Management
-  invoices: [menuData[1]], // Company
-  system: [menuData[4]], // Settings
+  main: [
+    menuData.find(item => item.id === 'dashboard')!
+  ],
+  management: [
+    menuData.find(item => item.id === 'jobsites')!,
+    menuData.find(item => item.id === 'material-takeoff')!,
+    menuData.find(item => item.id === 'material-requests')!,
+    menuData.find(item => item.id === 'safety-templates')!,
+    menuData.find(item => item.id === 'inventory')!,
+  ],
+  employees: [
+    menuData.find(item => item.id === 'employees')!,
+    menuData.find(item => item.id === 'employee-registration')!,
+    menuData.find(item => item.id === 'live-punch-monitor')!,
+  ],
+  payroll: [
+    menuData.find(item => item.id === 'timesheets')!,
+    menuData.find(item => item.id === 'payroll-summary')!,
+  ],
+  invoices: [
+    menuData.find(item => item.id === 'invoices')!,
+    menuData.find(item => item.id === 'quotes')!,
+  ],
+  reports: [
+    menuData.find(item => item.id === 'attention-reports')!,
+  ],
+  system: [
+    menuData.find(item => item.id === 'company-settings')!,
+    menuData.find(item => item.id === 'settings')!,
+  ],
 };
