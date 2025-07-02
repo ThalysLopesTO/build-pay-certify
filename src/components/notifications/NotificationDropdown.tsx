@@ -10,7 +10,9 @@ import {
   CheckCircle,
   Circle,
   X,
-  Bell
+  Bell,
+  DollarSign,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +50,14 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return <Package className="h-4 w-4 text-blue-500" />;
       case 'attention_report':
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case 'bill_due_soon':
+        return <DollarSign className="h-4 w-4 text-orange-500" />;
+      case 'bill_overdue':
+        return <DollarSign className="h-4 w-4 text-red-500" />;
+      case 'invoice_due_soon':
+        return <FileText className="h-4 w-4 text-orange-500" />;
+      case 'invoice_overdue':
+        return <FileText className="h-4 w-4 text-red-500" />;
       default:
         return <Circle className="h-4 w-4 text-gray-500" />;
     }
@@ -63,6 +73,14 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return 'Material Request';
       case 'attention_report':
         return 'Attention Report';
+      case 'bill_due_soon':
+        return 'Bill Due Soon';
+      case 'bill_overdue':
+        return 'Bill Overdue';
+      case 'invoice_due_soon':
+        return 'Invoice Due Soon';
+      case 'invoice_overdue':
+        return 'Invoice Overdue';
       default:
         return 'Notification';
     }
@@ -84,6 +102,12 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return '/admin/material-requests';
       case 'attention_report':
         return '/admin/attention-reports';
+      case 'bill_due_soon':
+      case 'bill_overdue':
+        return '/admin/bills-expenses';
+      case 'invoice_due_soon':
+      case 'invoice_overdue':
+        return '/admin/invoice-management';
       default:
         return '/admin/dashboard';
     }
@@ -101,6 +125,21 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const getNotificationBackgroundClass = (notification: Notification) => {
+    if (notification.is_read) return '';
+    
+    switch (notification.type) {
+      case 'bill_overdue':
+      case 'invoice_overdue':
+        return 'bg-red-50 border-l-2 border-l-red-500';
+      case 'bill_due_soon':
+      case 'invoice_due_soon':
+        return 'bg-orange-50 border-l-2 border-l-orange-500';
+      default:
+        return 'bg-blue-50 border-l-2 border-l-blue-500';
+    }
+  };
 
   return (
     <div className="w-full">
@@ -139,7 +178,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               <div key={notification.id}>
                 <div 
                   className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-                    !notification.is_read ? 'bg-blue-50 border-l-2 border-l-blue-500' : ''
+                    getNotificationBackgroundClass(notification)
                   }`}
                   onClick={() => handleNotificationClick(notification)}
                 >

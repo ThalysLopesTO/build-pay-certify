@@ -1657,7 +1657,23 @@ export type Database = {
         Args: { company_id_param: string }
         Returns: boolean
       }
+      check_bills_due_soon: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_bills_overdue: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       check_expiring_certificates: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_invoices_due_soon: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_invoices_overdue: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
@@ -1764,6 +1780,10 @@ export type Database = {
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      run_daily_notification_checks: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
