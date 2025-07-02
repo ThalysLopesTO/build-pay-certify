@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 
 // Updated AuthUser interface to include company information
 export interface AuthUser extends User {
-  role?: 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee';
+  role?: 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'account' | 'employee';
   companyId?: string;
   companyName?: string;
   hourlyRate?: number;
