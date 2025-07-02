@@ -23,7 +23,7 @@ const LiveActiveEmployees = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchActiveEmployees = async (isManualRefresh = false) => {
-    console.log('🔍 LiveActiveEmployees: Fetching active employees', { 
+    console.log('🔍 LiveActiveEmployees: Fetching active punch-ins', { 
       userCompanyId: user?.companyId, 
       userRole: user?.role,
       isManualRefresh 
@@ -43,9 +43,10 @@ const LiveActiveEmployees = () => {
     setError(null);
 
     try {
-      console.log('📊 Querying timesheets for company:', user.companyId);
+      console.log('📊 Querying timesheets for active punch-ins, company:', user.companyId);
       
-      const { data, error } = await supabase
+      // First, get active punch-ins (check_in_time exists, check_out_time is null)
+      const { data: timesheets, error: timesheetsError } = await supabase
         .from('timesheets')
         .select(`
           id,
@@ -53,9 +54,7 @@ const LiveActiveEmployees = () => {
           check_in_time,
           check_out_time,
           company_id,
-          jobsite_id,
-          jobsites (name),
-          user_profiles (first_name, last_name, role)
+          jobsite_id
         `)
         .eq('company_id', user.companyId)
         .is('check_out_time', null)
@@ -63,26 +62,81 @@ const LiveActiveEmployees = () => {
         .order('check_in_time', { ascending: false });
 
       console.log('📈 Timesheets query result:', { 
-        data: data?.length || 0, 
-        error: error?.message || 'none',
-        fullError: error 
+        data: timesheets?.length || 0, 
+        error: timesheetsError?.message || 'none'
       });
 
-      if (error) {
-        console.error('❌ Database error fetching active employees:', error);
-        setError(`Database error: ${error.message}`);
+      if (timesheetsError) {
+        console.error('❌ Database error fetching punch-ins:', timesheetsError);
+        setError(`Database error: ${timesheetsError.message}`);
         return;
       }
 
-      const formattedEmployees = data?.map((timesheet: any) => ({
-        id: timesheet.id,
-        user_id: timesheet.user_id,
-        check_in_time: timesheet.check_in_time,
-        jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
-        employee_name: `${timesheet.user_profiles?.first_name || ''} ${timesheet.user_profiles?.last_name || ''}`.trim() || 'Unknown Employee',
-        role: timesheet.user_profiles?.role || 'employee'
-      })) || [];
+      if (!timesheets || timesheets.length === 0) {
+        console.log('✅ No active punch-ins found');
+        setActiveEmployees([]);
+        return;
+      }
 
+      // Get unique user IDs and jobsite IDs
+      const userIds = [...new Set(timesheets.map(t => t.user_id))];
+      const jobsiteIds = [...new Set(timesheets.map(t => t.jobsite_id).filter(Boolean))];
+
+      console.log('🔍 Fetching user profiles and jobsites', { userIds: userIds.length, jobsiteIds: jobsiteIds.length });
+
+      // Get user profiles separately
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('user_id, first_name, last_name, role')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.warn('⚠️ Error fetching user profiles:', profilesError);
+      }
+
+      // Get jobsites separately (only if there are jobsite IDs)
+      let jobsites: any[] = [];
+      if (jobsiteIds.length > 0) {
+        const { data: jobsiteData, error: jobsiteError } = await supabase
+          .from('jobsites')
+          .select('id, name')
+          .in('id', jobsiteIds);
+
+        if (jobsiteError) {
+          console.warn('⚠️ Error fetching jobsites:', jobsiteError);
+        } else {
+          jobsites = jobsiteData || [];
+        }
+      }
+
+      console.log('📋 Combining data', { profiles: profiles?.length || 0, jobsites: jobsites.length });
+
+      // Create lookup maps
+      const profileMap = new Map(
+        profiles?.map(profile => [profile.user_id, profile]) || []
+      );
+      const jobsiteMap = new Map(
+        jobsites.map(jobsite => [jobsite.id, jobsite])
+      );
+
+      // Format the data
+      const formattedEmployees = timesheets.map((timesheet) => {
+        const profile = profileMap.get(timesheet.user_id);
+        const jobsite = jobsiteMap.get(timesheet.jobsite_id);
+        
+        return {
+          id: timesheet.id,
+          user_id: timesheet.user_id,
+          check_in_time: timesheet.check_in_time,
+          jobsite_name: jobsite?.name || 'Unknown Jobsite',
+          employee_name: profile 
+            ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown Employee'
+            : 'Unknown Employee',
+          role: profile?.role || 'employee'
+        };
+      });
+
+      console.log('✅ Successfully formatted active employees:', formattedEmployees.length);
       setActiveEmployees(formattedEmployees);
     } catch (error) {
       console.error('Error fetching active employees:', error);
