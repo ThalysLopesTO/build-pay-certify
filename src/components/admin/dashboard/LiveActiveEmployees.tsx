@@ -23,8 +23,16 @@ const LiveActiveEmployees = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchActiveEmployees = async (isManualRefresh = false) => {
+    console.log('🔍 LiveActiveEmployees: Fetching active employees', { 
+      userCompanyId: user?.companyId, 
+      userRole: user?.role,
+      isManualRefresh 
+    });
+
     if (!user?.companyId) {
-      setError('No company ID available');
+      const errorMsg = `No company ID available. User: ${user?.email || 'none'}, CompanyId: ${user?.companyId || 'none'}`;
+      console.error('❌ LiveActiveEmployees:', errorMsg);
+      setError(errorMsg);
       setIsLoading(false);
       return;
     }
@@ -35,12 +43,16 @@ const LiveActiveEmployees = () => {
     setError(null);
 
     try {
+      console.log('📊 Querying timesheets for company:', user.companyId);
+      
       const { data, error } = await supabase
         .from('timesheets')
         .select(`
           id,
           user_id,
           check_in_time,
+          check_out_time,
+          company_id,
           jobsite_id,
           jobsites (name),
           user_profiles (first_name, last_name, role)
@@ -50,9 +62,15 @@ const LiveActiveEmployees = () => {
         .not('check_in_time', 'is', null)
         .order('check_in_time', { ascending: false });
 
+      console.log('📈 Timesheets query result:', { 
+        data: data?.length || 0, 
+        error: error?.message || 'none',
+        fullError: error 
+      });
+
       if (error) {
-        console.error('Error fetching active employees:', error);
-        setError('Failed to load active employees');
+        console.error('❌ Database error fetching active employees:', error);
+        setError(`Database error: ${error.message}`);
         return;
       }
 
