@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Plus, Download, FileText } from 'lucide-react';
+import { Package, Plus, Download, FileText, Upload } from 'lucide-react';
 import { useMaterialTakeoffsPaginated, useMaterialTakeoffMutations } from '@/hooks/useMaterialTakeoffsEnhanced';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import MaterialTakeoffTable from '../material-takeoff/MaterialTakeoffTable';
 import MaterialTakeoffForm from '../MaterialTakeoffForm';
+import ImportDialog from '../material-takeoff/ImportDialog';
 import { exportToExcel, exportToPDF } from '@/utils/materialTakeoffExport';
 
 interface JobsiteMaterialTakeoffProps {
@@ -20,6 +21,7 @@ const JobsiteMaterialTakeoff: React.FC<JobsiteMaterialTakeoffProps> = ({
   const { user } = useAuth();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editingTakeoff, setEditingTakeoff] = useState<any>(null);
 
   // Filter specifically for this jobsite
@@ -33,7 +35,7 @@ const JobsiteMaterialTakeoff: React.FC<JobsiteMaterialTakeoffProps> = ({
   };
 
   const { data: paginatedData, isLoading } = useMaterialTakeoffsPaginated(filters);
-  const { updateTakeoff, deleteTakeoff } = useMaterialTakeoffMutations();
+  const { updateTakeoff, deleteTakeoff, bulkInsert } = useMaterialTakeoffMutations();
 
   const takeoffs = paginatedData?.data || [];
 
@@ -93,6 +95,14 @@ const JobsiteMaterialTakeoff: React.FC<JobsiteMaterialTakeoffProps> = ({
               PDF
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowImport(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Button
               onClick={() => setShowForm(true)}
               size="sm"
             >
@@ -140,6 +150,17 @@ const JobsiteMaterialTakeoff: React.FC<JobsiteMaterialTakeoffProps> = ({
             setShowForm(false);
             setEditingTakeoff(null);
           }}
+        />
+      )}
+
+      {showImport && (
+        <ImportDialog
+          open={showImport}
+          onClose={() => setShowImport(false)}
+          onImport={(data) => bulkInsert(data)}
+          jobsites={[{ id: jobsiteId, name: jobsiteName }]}
+          companyId={user?.companyId || ''}
+          userId={user?.id || ''}
         />
       )}
     </Card>
