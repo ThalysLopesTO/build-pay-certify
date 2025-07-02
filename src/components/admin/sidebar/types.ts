@@ -5,6 +5,7 @@ export interface MenuItem {
   href?: string;
   icon: React.ComponentType<any>;
   items?: MenuItem[];
+  requiredRoles?: string[];
 }
 
 export interface AdminSidebarProps {
