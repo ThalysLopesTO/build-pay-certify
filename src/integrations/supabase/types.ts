@@ -1554,6 +1554,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bulk_delete_material_takeoffs: {
+        Args: { takeoff_ids: string[] }
+        Returns: number
+      }
+      bulk_insert_material_takeoffs: {
+        Args: { takeoffs_data: Json }
+        Returns: Json
+      }
+      bulk_update_material_takeoffs: {
+        Args: { takeoff_ids: string[]; updates: Json }
+        Returns: number
+      }
       calculate_invoice_totals: {
         Args: { invoice_id_param: string }
         Returns: undefined
@@ -1626,6 +1638,41 @@ export type Database = {
           subscription_status: string
           subscription_end_date: string
           can_add_employees: boolean
+        }[]
+      }
+      get_material_takeoffs_paginated: {
+        Args: {
+          p_company_id: string
+          p_jobsite_id?: string
+          p_search?: string
+          p_status?: string
+          p_category?: string
+          p_page?: number
+          p_limit?: number
+        }
+        Returns: {
+          id: string
+          jobsite_id: string
+          company_id: string
+          material_name: string
+          unit: string
+          total_qty_estimated: number
+          unit_price: number
+          subtotal: number
+          requested_qty: number
+          remaining_qty: number
+          status: string
+          vendor: string
+          notes: string
+          category: string
+          priority: number
+          is_draft: boolean
+          created_at: string
+          updated_at: string
+          created_by: string
+          jobsite_name: string
+          jobsite_address: string
+          total_count: number
         }[]
       }
       get_user_company_id: {
