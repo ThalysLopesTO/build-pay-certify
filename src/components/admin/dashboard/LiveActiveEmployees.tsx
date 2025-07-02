@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Users, Clock } from 'lucide-react';
+import { Users, Clock, RefreshCw } from 'lucide-react';
 
 interface ActiveEmployee {
   id: string;
@@ -11,15 +12,27 @@ interface ActiveEmployee {
   check_in_time: string;
   jobsite_name: string;
   employee_name: string;
+  role?: string;
 }
 
 const LiveActiveEmployees = () => {
   const { user } = useAuth();
   const [activeEmployees, setActiveEmployees] = useState<ActiveEmployee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchActiveEmployees = async () => {
-    if (!user?.companyId) return;
+  const fetchActiveEmployees = async (isManualRefresh = false) => {
+    if (!user?.companyId) {
+      setError('No company ID available');
+      setIsLoading(false);
+      return;
+    }
+
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    }
+    setError(null);
 
     try {
       const { data, error } = await supabase
@@ -30,7 +43,7 @@ const LiveActiveEmployees = () => {
           check_in_time,
           jobsite_id,
           jobsites (name),
-          user_profiles (first_name, last_name)
+          user_profiles (first_name, last_name, role)
         `)
         .eq('company_id', user.companyId)
         .is('check_out_time', null)
@@ -39,6 +52,7 @@ const LiveActiveEmployees = () => {
 
       if (error) {
         console.error('Error fetching active employees:', error);
+        setError('Failed to load active employees');
         return;
       }
 
@@ -47,15 +61,24 @@ const LiveActiveEmployees = () => {
         user_id: timesheet.user_id,
         check_in_time: timesheet.check_in_time,
         jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
-        employee_name: `${timesheet.user_profiles?.first_name || ''} ${timesheet.user_profiles?.last_name || ''}`.trim() || 'Unknown Employee'
+        employee_name: `${timesheet.user_profiles?.first_name || ''} ${timesheet.user_profiles?.last_name || ''}`.trim() || 'Unknown Employee',
+        role: timesheet.user_profiles?.role || 'employee'
       })) || [];
 
       setActiveEmployees(formattedEmployees);
     } catch (error) {
       console.error('Error fetching active employees:', error);
+      setError('Network error occurred');
     } finally {
       setIsLoading(false);
+      if (isManualRefresh) {
+        setIsRefreshing(false);
+      }
     }
+  };
+
+  const handleManualRefresh = () => {
+    fetchActiveEmployees(true);
   };
 
   useEffect(() => {
@@ -140,24 +163,46 @@ const LiveActiveEmployees = () => {
             </div>
             <CardTitle className="text-xl font-semibold text-gray-900">Live Punch-ins</CardTitle>
           </div>
-          <div className="flex items-center space-x-1 text-sm text-gray-500">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span>Live</span>
+          <div className="flex items-center space-x-3">
+            <Button
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              variant="ghost"
+              size="sm"
+              className="flex items-center space-x-1"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+            <div className="flex items-center space-x-1 text-sm text-gray-500">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>Live</span>
+            </div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        {activeEmployees.length === 0 ? (
+        {error ? (
+          <div className="text-center py-6">
+            <div className="text-red-500 mb-2">⚠️ {error}</div>
+            <Button onClick={handleManualRefresh} variant="outline" size="sm">
+              Try Again
+            </Button>
+          </div>
+        ) : activeEmployees.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
-            No active employees at the moment
+            No active punch-ins at the moment
           </div>
         ) : (
           <div className="space-y-3">
             {activeEmployees.map((employee) => (
-              <div key={employee.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={employee.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                 <div className="flex-1">
                   <div className="font-medium text-gray-900">{employee.employee_name}</div>
                   <div className="text-sm text-gray-600">{employee.jobsite_name}</div>
+                  {employee.role && (
+                    <div className="text-xs text-blue-600 font-medium capitalize">{employee.role}</div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="flex items-center text-sm text-gray-600 mb-1">
