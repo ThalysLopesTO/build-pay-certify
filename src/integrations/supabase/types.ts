@@ -775,6 +775,80 @@ export type Database = {
           },
         ]
       }
+      material_takeoffs: {
+        Row: {
+          category: string | null
+          company_id: string
+          created_at: string
+          created_by: string
+          id: string
+          is_draft: boolean | null
+          jobsite_id: string
+          material_name: string
+          notes: string | null
+          priority: number | null
+          remaining_qty: number | null
+          requested_qty: number
+          status: string
+          subtotal: number | null
+          total_qty_estimated: number
+          unit: string
+          unit_price: number
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          category?: string | null
+          company_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_draft?: boolean | null
+          jobsite_id: string
+          material_name: string
+          notes?: string | null
+          priority?: number | null
+          remaining_qty?: number | null
+          requested_qty?: number
+          status?: string
+          subtotal?: number | null
+          total_qty_estimated?: number
+          unit: string
+          unit_price?: number
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          category?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_draft?: boolean | null
+          jobsite_id?: string
+          material_name?: string
+          notes?: string | null
+          priority?: number | null
+          remaining_qty?: number | null
+          requested_qty?: number
+          status?: string
+          subtotal?: number | null
+          total_qty_estimated?: number
+          unit?: string
+          unit_price?: number
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_takeoffs_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           company_id: string
