@@ -163,6 +163,72 @@ export type Database = {
           },
         ]
       }
+      bills_expenses: {
+        Row: {
+          amount: number
+          attachment_url: string | null
+          category_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string
+          expense_date: string
+          expense_title: string
+          id: string
+          notes: string | null
+          payment_method: string | null
+          payment_status: string
+          updated_at: string
+          vendor_payee: string
+        }
+        Insert: {
+          amount: number
+          attachment_url?: string | null
+          category_id?: string | null
+          company_id: string
+          created_at?: string
+          created_by: string
+          expense_date: string
+          expense_title: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          updated_at?: string
+          vendor_payee: string
+        }
+        Update: {
+          amount?: number
+          attachment_url?: string | null
+          category_id?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          expense_date?: string
+          expense_title?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          updated_at?: string
+          vendor_payee?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bills_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_expenses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cancellation_requests: {
         Row: {
           company_id: string
@@ -462,6 +528,38 @@ export type Database = {
           uploaded_by?: string
         }
         Relationships: []
+      }
+      expense_categories: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory: {
         Row: {

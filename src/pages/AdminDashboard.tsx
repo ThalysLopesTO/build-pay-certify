@@ -23,6 +23,7 @@ import QuotesManagement from '@/components/admin/QuotesManagement';
 import CompanySettings from '@/components/admin/CompanySettings';
 import UserSettings from '@/components/common/UserSettings';
 import SystemSettings from '@/components/admin/SystemSettings';
+import BillsExpensesManagement from '@/components/admin/BillsExpensesManagement';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -66,6 +67,8 @@ const AdminDashboard = () => {
         return <InvoiceManagement />;
       case 'quotes':
         return <QuotesManagement />;
+      case 'bills-expenses':
+        return <BillsExpensesManagement />;
       case 'company-settings':
         return <SystemSettings />;
       case 'settings':

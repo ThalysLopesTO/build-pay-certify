@@ -100,7 +100,7 @@ export const UserRolesTab = () => {
     { key: 'materials', label: 'Materials' },
     { key: 'employees', label: 'Employees' },
     { key: 'certificates', label: 'Certificates' },
-    { key: 'bills', label: 'Bills/Expenses', placeholder: true }
+    { key: 'bills', label: 'Bills/Expenses' }
   ];
 
   const permissionTypes = [
@@ -346,11 +346,8 @@ export const UserRolesTab = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
                     {modules.map((module) => (
                       <div key={module.key} className="space-y-3">
-                        <h4 className="font-medium text-sm flex items-center gap-1">
+                        <h4 className="font-medium text-sm">
                           {module.label}
-                          {module.placeholder && (
-                            <Badge variant="outline" className="text-xs">Coming Soon</Badge>
-                          )}
                         </h4>
                         <div className="space-y-2">
                           {permissionTypes.map((permission) => (
@@ -362,7 +359,7 @@ export const UserRolesTab = () => {
                                 id={`${role.id}-${module.key}-${permission.key}`}
                                 checked={role.permissions[module.key as keyof typeof role.permissions]?.[permission.key as keyof typeof role.permissions.timesheets] || false}
                                 onCheckedChange={() => togglePermission(role.id, module.key, permission.key)}
-                                disabled={role.isSystemRole || module.placeholder || editingRole === role.id}
+                                disabled={role.isSystemRole || editingRole === role.id}
                               />
                             </div>
                           ))}
