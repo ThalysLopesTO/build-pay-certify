@@ -1,3 +1,4 @@
+
 import {
   BarChart3,
   Building2,
@@ -105,3 +106,13 @@ export const menuData = [
     icon: Settings,
   },
 ];
+
+// Group menu items by category for the sidebar
+export const groupedMenuItems = {
+  main: [menuData[0]], // Dashboard
+  management: [menuData[3]], // Project Management
+  payroll: [],
+  employees: [menuData[2]], // User Management
+  invoices: [menuData[1]], // Company
+  system: [menuData[4]], // Settings
+};

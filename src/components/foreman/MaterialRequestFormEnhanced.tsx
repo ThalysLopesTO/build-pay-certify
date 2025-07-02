@@ -192,7 +192,7 @@ const MaterialRequestFormEnhanced = () => {
                     <Checkbox
                       id="show-takeoff"
                       checked={showTakeoffItems}
-                      onCheckedChange={setShowTakeoffItems}
+                      onCheckedChange={(checked) => setShowTakeoffItems(checked === true)}
                     />
                     <label htmlFor="show-takeoff" className="text-sm font-medium">
                       Request from Material Takeoff ({availableTakeoffs.length} items available)
@@ -227,7 +227,7 @@ const MaterialRequestFormEnhanced = () => {
                                     <Checkbox
                                       checked={takeoff.id in selectedTakeoffItems}
                                       onCheckedChange={(checked) => 
-                                        handleTakeoffItemToggle(takeoff.id, checked as boolean)
+                                        handleTakeoffItemToggle(takeoff.id, checked === true)
                                       }
                                     />
                                   </TableCell>

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useMaterialTakeoffMutations, MaterialTakeoff } from '@/hooks/useMaterialTakeoffs';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const formSchema = z.object({
   jobsite_id: z.string().min(1, 'Please select a jobsite'),
@@ -30,6 +31,7 @@ const MaterialTakeoffForm: React.FC<MaterialTakeoffFormProps> = ({
   takeoff,
   onClose,
 }) => {
+  const { user } = useAuth();
   const { data: jobsites = [] } = useJobsites();
   const { createTakeoff, updateTakeoff, isCreating, isUpdating } = useMaterialTakeoffMutations();
 
@@ -48,7 +50,13 @@ const MaterialTakeoffForm: React.FC<MaterialTakeoffFormProps> = ({
     if (takeoff) {
       updateTakeoff({ id: takeoff.id, updates: data });
     } else {
-      createTakeoff(data);
+      // Add required fields for creation
+      const createData = {
+        ...data,
+        company_id: user?.companyId || '',
+        created_by: user?.id || '',
+      };
+      createTakeoff(createData);
     }
     onClose();
   };
