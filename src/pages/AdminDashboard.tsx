@@ -15,7 +15,7 @@ import LivePunchMonitor from '@/components/admin/LivePunchMonitor';
 import EmployeeTimesheets from '@/components/admin/EmployeeTimesheets';
 import PayrollSummary from '@/components/admin/PayrollSummary';
 import MaterialRequestInbox from '@/components/admin/MaterialRequestInbox';
-import MaterialTakeoffManagementEnhanced from '@/components/admin/MaterialTakeoffManagementEnhanced';
+import MaterialTakeoffManagement from '@/components/admin/MaterialTakeoffManagement';
 import AttentionReportsInbox from '@/components/admin/AttentionReportsInbox';
 import AttentionReportDetails from '@/components/admin/AttentionReportDetails';
 import InvoiceManagement from '@/components/admin/InvoiceManagement';
@@ -23,6 +23,7 @@ import QuotesManagement from '@/components/admin/QuotesManagement';
 import CompanySettings from '@/components/admin/CompanySettings';
 import UserSettings from '@/components/common/UserSettings';
 import SystemSettings from '@/components/admin/SystemSettings';
+import BillsExpensesManagement from '@/components/admin/BillsExpensesManagement';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -59,13 +60,15 @@ const AdminDashboard = () => {
       case 'material-requests':
         return <MaterialRequestInbox />;
       case 'material-takeoff':
-        return <MaterialTakeoffManagementEnhanced />;
+        return <MaterialTakeoffManagement />;
       case 'attention-reports':
         return <AttentionReportsInbox />;
       case 'invoices':
         return <InvoiceManagement />;
       case 'quotes':
         return <QuotesManagement />;
+      case 'bills-expenses':
+        return <BillsExpensesManagement />;
       case 'company-settings':
         return <SystemSettings />;
       case 'settings':

@@ -1,12 +1,64 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export const login = async (email: string, password: string) => {
-  const { error } = await supabase.auth.signInWithPassword({
+export const login = async (email: string, password: string, expectedRole?: 'employee' | 'admin') => {
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
   });
-  return { error };
+
+  if (error) {
+    return { error };
+  }
+
+  // If role verification is requested, check the user's role
+  if (expectedRole && data.user) {
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        // Sign out the user since they shouldn't be logged in
+        await supabase.auth.signOut();
+        return { 
+          error: { 
+            message: "Unable to verify user role. Please contact your administrator." 
+          } 
+        };
+      }
+
+      // Check role compatibility
+      if (expectedRole === 'employee' && profile.role !== 'employee') {
+        await supabase.auth.signOut();
+        return { 
+          error: { 
+            message: "This login page is for employees only. Please use the Company Login page." 
+          } 
+        };
+      }
+
+      if (expectedRole === 'admin' && profile.role === 'employee') {
+        await supabase.auth.signOut();
+        return { 
+          error: { 
+            message: "This login page is for company/admin users only. Please use the Employee Login page." 
+          } 
+        };
+      }
+    } catch (err) {
+      await supabase.auth.signOut();
+      return { 
+        error: { 
+          message: "Authentication verification failed. Please try again." 
+        } 
+      };
+    }
+  }
+
+  return { error: null };
 };
 
 export const signUp = async (email: string, password: string) => {

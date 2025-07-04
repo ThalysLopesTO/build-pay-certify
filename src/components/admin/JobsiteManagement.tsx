@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Building, BarChart3 } from 'lucide-react';
+import { Plus, Building, BarChart3, Package } from 'lucide-react';
 import { useJobsites } from '@/hooks/useJobsites';
 import JobsiteForm from './jobsite/JobsiteForm';
 import JobsiteList from './jobsite/JobsiteList';
 import JobsiteCard from './jobsite/JobsiteCard';
+import JobsiteDetailedCard from './jobsite/JobsiteDetailedCard';
 
 const JobsiteManagement = () => {
   const [showForm, setShowForm] = useState(false);
@@ -42,8 +43,12 @@ const JobsiteManagement = () => {
         <JobsiteForm onCancel={() => setShowForm(false)} />
       )}
 
-      <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+      <Tabs defaultValue="detailed" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="detailed" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Detailed View
+          </TabsTrigger>
           <TabsTrigger value="basic" className="flex items-center gap-2">
             <Building className="h-4 w-4" />
             Basic View
@@ -53,6 +58,25 @@ const JobsiteManagement = () => {
             Progress Tracking
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="detailed" className="space-y-4">
+          {isLoading ? (
+            <div className="text-center py-8 text-gray-500">
+              Loading jobsites...
+            </div>
+          ) : jobsites.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No jobsites found. Add your first jobsite to get started.
+            </div>
+          ) : (
+            jobsites.map((jobsite) => (
+              <JobsiteDetailedCard 
+                key={jobsite.id} 
+                jobsite={jobsite} 
+              />
+            ))
+          )}
+        </TabsContent>
 
         <TabsContent value="basic" className="space-y-4">
           <Card>

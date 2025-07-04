@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/SupabaseAuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
-import { Building, ArrowRight, Mail, Lock, Users } from 'lucide-react';
+import { Users, ArrowRight, Mail, Lock, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const LoginForm = () => {
+const EmployeeLoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +20,7 @@ const LoginForm = () => {
     setLoading(true);
 
     try {
-      const { error } = await login(email, password, 'admin');
+      const { error } = await login(email, password, 'employee');
       if (error) {
         console.error('Login error:', error);
         toast({
@@ -34,6 +33,8 @@ const LoginForm = () => {
           title: "Welcome Back",
           description: "Successfully logged into StackBuild",
         });
+        // Redirect to employee dashboard
+        window.location.href = '/employee/dashboard';
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -48,7 +49,7 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-orange-50 via-slate-50 to-orange-100">
+    <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100">
       {/* Left Side - Login Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-8">
         <div className="w-full max-w-md">
@@ -59,16 +60,16 @@ const LoginForm = () => {
               alt="StackBuild Logo" 
               className="h-16 w-auto mx-auto mb-8"
             />
-            <h1 className="text-3xl font-bold text-slate-800 mb-2">Company Login</h1>
-            <p className="text-slate-600">Welcome back to StackBuild</p>
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">Employee Login</h1>
+            <p className="text-slate-600">Access your work dashboard</p>
           </div>
 
-          {/* Info Alert for Company Login */}
-          <Alert className="mb-6 border-orange-200 bg-orange-50/80">
-            <Building className="h-4 w-4 text-orange-600" />
-            <AlertDescription className="text-orange-700">
-              This login page is for company administrators and management. If you're an employee, please use the 
-              <Link to="/employee-login" className="font-medium underline ml-1">Employee Login</Link> page.
+          {/* Info Alert for Employee Login */}
+          <Alert className="mb-6 border-blue-200 bg-blue-50/80">
+            <Users className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-700">
+              This login page is specifically for employees. If you're a company admin, please use the 
+              <Link to="/login" className="font-medium underline ml-1">Company Login</Link> page.
             </AlertDescription>
           </Alert>
 
@@ -85,11 +86,11 @@ const LoginForm = () => {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder="Enter your work email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 text-slate-700 bg-white/60"
+                      className="pl-10 h-12 border-slate-200 focus:border-blue-500 focus:ring-blue-500 text-slate-700 bg-white/60"
                     />
                   </div>
                 </div>
@@ -107,15 +108,14 @@ const LoginForm = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 text-slate-700 bg-white/60"
+                      className="pl-10 h-12 border-slate-200 focus:border-blue-500 focus:ring-blue-500 text-slate-700 bg-white/60"
                     />
                   </div>
                 </div>
                 
                 <Button 
                   type="submit" 
-                  className="w-full h-12 text-white font-semibold shadow-lg transition-all duration-200 hover:shadow-xl"
-                  style={{ backgroundColor: '#F26522' }}
+                  className="w-full h-12 text-white font-semibold shadow-lg transition-all duration-200 hover:shadow-xl bg-blue-600 hover:bg-blue-700"
                   disabled={loading}
                 >
                   {loading ? (
@@ -125,7 +125,7 @@ const LoginForm = () => {
                     </div>
                   ) : (
                     <div className="flex items-center space-x-2">
-                      <span>Log In</span>
+                      <span>Employee Login</span>
                       <ArrowRight className="h-4 w-4" />
                     </div>
                   )}
@@ -133,16 +133,10 @@ const LoginForm = () => {
               </form>
               
               <div className="mt-8 pt-6 border-t border-slate-200 text-center">
-                <p className="text-sm text-slate-600 mb-4">Don't have access?</p>
-                <Link to="/register">
-                  <Button 
-                    variant="outline" 
-                    className="w-full h-12 border-2 border-slate-300 hover:border-orange-500 hover:bg-orange-50 text-slate-700 hover:text-orange-600 font-medium transition-all duration-200 bg-white/60"
-                  >
-                    <Building className="h-4 w-4 mr-2" />
-                    Register Your Company
-                  </Button>
-                </Link>
+                <p className="text-sm text-slate-600 mb-4">Need help with your account?</p>
+                <p className="text-xs text-slate-500">
+                  Contact your company administrator for assistance with your login credentials.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -150,17 +144,11 @@ const LoginForm = () => {
       </div>
 
       {/* Right Side - Background Image */}
-      {/* 
-        BACKGROUND IMAGE CUSTOMIZATION:
-        Replace the CSS background-image URL below with your construction jobsite photo.
-        Example: bg-[url('/images/construction-jobsite.jpg')]
-        Current placeholder: Unsplash construction image
-      */}
       <div className="flex-1 lg:block hidden relative">
         <div 
           className="w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
+            backgroundImage: `url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
           }}
         >
           {/* Subtle overlay for depth */}
@@ -173,7 +161,7 @@ const LoginForm = () => {
         <div 
           className="w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
+            backgroundImage: `url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 to-transparent"></div>
@@ -183,4 +171,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default EmployeeLoginForm;

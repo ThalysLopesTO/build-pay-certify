@@ -163,6 +163,94 @@ export type Database = {
           },
         ]
       }
+      bills_expenses: {
+        Row: {
+          amount: number
+          attachment_url: string | null
+          category_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string
+          end_date: string | null
+          expense_date: string
+          expense_title: string
+          id: string
+          is_recurring: boolean | null
+          notes: string | null
+          parent_recurring_bill_id: string | null
+          payment_method: string | null
+          payment_status: string
+          recurrence_frequency: string | null
+          start_date: string | null
+          updated_at: string
+          vendor_payee: string
+        }
+        Insert: {
+          amount: number
+          attachment_url?: string | null
+          category_id?: string | null
+          company_id: string
+          created_at?: string
+          created_by: string
+          end_date?: string | null
+          expense_date: string
+          expense_title: string
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          parent_recurring_bill_id?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          recurrence_frequency?: string | null
+          start_date?: string | null
+          updated_at?: string
+          vendor_payee: string
+        }
+        Update: {
+          amount?: number
+          attachment_url?: string | null
+          category_id?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          end_date?: string | null
+          expense_date?: string
+          expense_title?: string
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          parent_recurring_bill_id?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          recurrence_frequency?: string | null
+          start_date?: string | null
+          updated_at?: string
+          vendor_payee?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bills_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_expenses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_expenses_parent_recurring_bill_id_fkey"
+            columns: ["parent_recurring_bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills_expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cancellation_requests: {
         Row: {
           company_id: string
@@ -462,6 +550,38 @@ export type Database = {
           uploaded_by?: string
         }
         Relationships: []
+      }
+      expense_categories: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory: {
         Row: {
@@ -775,73 +895,40 @@ export type Database = {
           },
         ]
       }
-      material_takeoffs: {
+      material_takeoff_notes: {
         Row: {
-          category: string | null
           company_id: string
           created_at: string
           created_by: string
           id: string
-          is_draft: boolean | null
           jobsite_id: string
-          material_name: string
-          notes: string | null
-          priority: number | null
-          remaining_qty: number | null
-          requested_qty: number
-          status: string
-          subtotal: number | null
-          total_qty_estimated: number
-          unit: string
-          unit_price: number
+          takeoff_notes: string
           updated_at: string
-          vendor: string | null
+          updated_by: string | null
         }
         Insert: {
-          category?: string | null
           company_id: string
           created_at?: string
           created_by: string
           id?: string
-          is_draft?: boolean | null
           jobsite_id: string
-          material_name: string
-          notes?: string | null
-          priority?: number | null
-          remaining_qty?: number | null
-          requested_qty?: number
-          status?: string
-          subtotal?: number | null
-          total_qty_estimated?: number
-          unit: string
-          unit_price?: number
+          takeoff_notes?: string
           updated_at?: string
-          vendor?: string | null
+          updated_by?: string | null
         }
         Update: {
-          category?: string | null
           company_id?: string
           created_at?: string
           created_by?: string
           id?: string
-          is_draft?: boolean | null
           jobsite_id?: string
-          material_name?: string
-          notes?: string | null
-          priority?: number | null
-          remaining_qty?: number | null
-          requested_qty?: number
-          status?: string
-          subtotal?: number | null
-          total_qty_estimated?: number
-          unit?: string
-          unit_price?: number
+          takeoff_notes?: string
           updated_at?: string
-          vendor?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "material_takeoffs_jobsite_id_fkey"
+            foreignKeyName: "material_takeoff_notes_jobsite_id_fkey"
             columns: ["jobsite_id"]
             isOneToOne: false
             referencedRelation: "jobsites"
@@ -1554,18 +1641,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      bulk_delete_material_takeoffs: {
-        Args: { takeoff_ids: string[] }
-        Returns: number
-      }
-      bulk_insert_material_takeoffs: {
-        Args: { takeoffs_data: Json }
-        Returns: Json
-      }
-      bulk_update_material_takeoffs: {
-        Args: { takeoff_ids: string[]; updates: Json }
-        Returns: number
-      }
       calculate_invoice_totals: {
         Args: { invoice_id_param: string }
         Returns: undefined
@@ -1582,7 +1657,23 @@ export type Database = {
         Args: { company_id_param: string }
         Returns: boolean
       }
+      check_bills_due_soon: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_bills_overdue: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       check_expiring_certificates: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_invoices_due_soon: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_invoices_overdue: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
@@ -1609,6 +1700,10 @@ export type Database = {
       generate_quote_number: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      generate_recurring_bills: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       get_companies_with_status: {
         Args: Record<PropertyKey, never>
@@ -1640,39 +1735,19 @@ export type Database = {
           can_add_employees: boolean
         }[]
       }
-      get_material_takeoffs_paginated: {
-        Args: {
-          p_company_id: string
-          p_jobsite_id?: string
-          p_search?: string
-          p_status?: string
-          p_category?: string
-          p_page?: number
-          p_limit?: number
-        }
+      get_material_takeoff_notes: {
+        Args: { p_company_id: string }
         Returns: {
           id: string
           jobsite_id: string
           company_id: string
-          material_name: string
-          unit: string
-          total_qty_estimated: number
-          unit_price: number
-          subtotal: number
-          requested_qty: number
-          remaining_qty: number
-          status: string
-          vendor: string
-          notes: string
-          category: string
-          priority: number
-          is_draft: boolean
+          takeoff_notes: string
           created_at: string
           updated_at: string
           created_by: string
+          updated_by: string
           jobsite_name: string
           jobsite_address: string
-          total_count: number
         }[]
       }
       get_user_company_id: {
@@ -1705,6 +1780,10 @@ export type Database = {
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      run_daily_notification_checks: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {

@@ -6,8 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/SupabaseAuthContext";
+import { toast } from '@/hooks/use-toast';
 import HomePage from "./pages/HomePage";
 import LoginForm from "./components/LoginForm";
+import EmployeeLoginForm from "./components/EmployeeLoginForm";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import CompanyRegistration from "./pages/CompanyRegistration";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
@@ -107,6 +109,40 @@ const DashboardRouter = () => {
   );
 };
 
+const EmployeeDashboardRouter = () => {
+  const { user, loading, companyError, logout } = useAuth();
+  
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (companyError) {
+    return <CompanyErrorFallback error={companyError} onLogout={logout} />;
+  }
+  
+  if (!user) {
+    return <Navigate to="/employee-login" replace />;
+  }
+  
+  // Only allow employees to access this route
+  if (user.role !== 'employee') {
+    toast({
+      title: "Access Denied",
+      description: "This dashboard is for employees only. Please use the appropriate login page.",
+      variant: "destructive",
+    });
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <SubscriptionGate>
+      <LicenseGuard>
+        <EmployeeDashboard />
+      </LicenseGuard>
+    </SubscriptionGate>
+  );
+};
+
 const AppRoutes = () => {
   const { isAuthenticated, loading, companyError, logout, user } = useAuth();
 
@@ -157,6 +193,20 @@ const AppRoutes = () => {
         <Route 
           path="/login" 
           element={!isAuthenticated ? <LoginForm /> : <Navigate to="/" replace />} 
+        />
+        <Route 
+          path="/employee-login" 
+          element={!isAuthenticated ? <EmployeeLoginForm /> : <Navigate to="/" replace />} 
+        />
+        <Route 
+          path="/employee/dashboard" 
+          element={
+            isAuthenticated ? (
+              <EmployeeDashboardRouter />
+            ) : (
+              <Navigate to="/employee-login" replace />
+            )
+          } 
         />
         <Route 
           path="/super-admin-login" 

@@ -17,6 +17,7 @@ import {
   Users,
   DollarSign,
   Clock,
+  Receipt,
 } from 'lucide-react';
 import { MenuItem } from './types';
 
@@ -109,6 +110,12 @@ export const menuData: MenuItem[] = [
     href: '/admin/quotes',
     icon: CreditCard,
   },
+  {
+    id: 'bills-expenses',
+    title: 'Bills / Expenses',
+    href: '/admin/bills-expenses',
+    icon: Receipt,
+  },
   
   // Reports & Communication
   {
@@ -157,6 +164,7 @@ export const groupedMenuItems = {
   invoices: [
     menuData.find(item => item.id === 'invoices')!,
     menuData.find(item => item.id === 'quotes')!,
+    menuData.find(item => item.id === 'bills-expenses')!,
   ],
   reports: [
     menuData.find(item => item.id === 'attention-reports')!,

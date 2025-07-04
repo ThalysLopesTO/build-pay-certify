@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Users, Clock } from 'lucide-react';
+import { Users, Clock, RefreshCw } from 'lucide-react';
 
 interface ActiveEmployee {
   id: string;
@@ -11,51 +12,145 @@ interface ActiveEmployee {
   check_in_time: string;
   jobsite_name: string;
   employee_name: string;
+  role?: string;
 }
 
 const LiveActiveEmployees = () => {
   const { user } = useAuth();
   const [activeEmployees, setActiveEmployees] = useState<ActiveEmployee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchActiveEmployees = async () => {
-    if (!user?.companyId) return;
+  const fetchActiveEmployees = async (isManualRefresh = false) => {
+    console.log('🔍 LiveActiveEmployees: Fetching active punch-ins', { 
+      userCompanyId: user?.companyId, 
+      userRole: user?.role,
+      isManualRefresh 
+    });
+
+    if (!user?.companyId) {
+      const errorMsg = `No company ID available. User: ${user?.email || 'none'}, CompanyId: ${user?.companyId || 'none'}`;
+      console.error('❌ LiveActiveEmployees:', errorMsg);
+      setError(errorMsg);
+      setIsLoading(false);
+      return;
+    }
+
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    }
+    setError(null);
 
     try {
-      const { data, error } = await supabase
+      console.log('📊 Querying timesheets for active punch-ins, company:', user.companyId);
+      
+      // First, get active punch-ins (check_in_time exists, check_out_time is null)
+      const { data: timesheets, error: timesheetsError } = await supabase
         .from('timesheets')
         .select(`
           id,
           user_id,
           check_in_time,
-          jobsite_id,
-          jobsites (name),
-          user_profiles (first_name, last_name)
+          check_out_time,
+          company_id,
+          jobsite_id
         `)
         .eq('company_id', user.companyId)
         .is('check_out_time', null)
         .not('check_in_time', 'is', null)
         .order('check_in_time', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching active employees:', error);
+      console.log('📈 Timesheets query result:', { 
+        data: timesheets?.length || 0, 
+        error: timesheetsError?.message || 'none'
+      });
+
+      if (timesheetsError) {
+        console.error('❌ Database error fetching punch-ins:', timesheetsError);
+        setError(`Database error: ${timesheetsError.message}`);
         return;
       }
 
-      const formattedEmployees = data?.map((timesheet: any) => ({
-        id: timesheet.id,
-        user_id: timesheet.user_id,
-        check_in_time: timesheet.check_in_time,
-        jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
-        employee_name: `${timesheet.user_profiles?.first_name || ''} ${timesheet.user_profiles?.last_name || ''}`.trim() || 'Unknown Employee'
-      })) || [];
+      if (!timesheets || timesheets.length === 0) {
+        console.log('✅ No active punch-ins found');
+        setActiveEmployees([]);
+        return;
+      }
 
+      // Get unique user IDs and jobsite IDs
+      const userIds = [...new Set(timesheets.map(t => t.user_id))];
+      const jobsiteIds = [...new Set(timesheets.map(t => t.jobsite_id).filter(Boolean))];
+
+      console.log('🔍 Fetching user profiles and jobsites', { userIds: userIds.length, jobsiteIds: jobsiteIds.length });
+
+      // Get user profiles separately
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('user_id, first_name, last_name, role')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.warn('⚠️ Error fetching user profiles:', profilesError);
+      }
+
+      // Get jobsites separately (only if there are jobsite IDs)
+      let jobsites: any[] = [];
+      if (jobsiteIds.length > 0) {
+        const { data: jobsiteData, error: jobsiteError } = await supabase
+          .from('jobsites')
+          .select('id, name')
+          .in('id', jobsiteIds);
+
+        if (jobsiteError) {
+          console.warn('⚠️ Error fetching jobsites:', jobsiteError);
+        } else {
+          jobsites = jobsiteData || [];
+        }
+      }
+
+      console.log('📋 Combining data', { profiles: profiles?.length || 0, jobsites: jobsites.length });
+
+      // Create lookup maps
+      const profileMap = new Map(
+        profiles?.map(profile => [profile.user_id, profile]) || []
+      );
+      const jobsiteMap = new Map(
+        jobsites.map(jobsite => [jobsite.id, jobsite])
+      );
+
+      // Format the data
+      const formattedEmployees = timesheets.map((timesheet) => {
+        const profile = profileMap.get(timesheet.user_id);
+        const jobsite = jobsiteMap.get(timesheet.jobsite_id);
+        
+        return {
+          id: timesheet.id,
+          user_id: timesheet.user_id,
+          check_in_time: timesheet.check_in_time,
+          jobsite_name: jobsite?.name || 'Unknown Jobsite',
+          employee_name: profile 
+            ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown Employee'
+            : 'Unknown Employee',
+          role: profile?.role || 'employee'
+        };
+      });
+
+      console.log('✅ Successfully formatted active employees:', formattedEmployees.length);
       setActiveEmployees(formattedEmployees);
     } catch (error) {
       console.error('Error fetching active employees:', error);
+      setError('Network error occurred');
     } finally {
       setIsLoading(false);
+      if (isManualRefresh) {
+        setIsRefreshing(false);
+      }
     }
+  };
+
+  const handleManualRefresh = () => {
+    fetchActiveEmployees(true);
   };
 
   useEffect(() => {
@@ -140,24 +235,46 @@ const LiveActiveEmployees = () => {
             </div>
             <CardTitle className="text-xl font-semibold text-gray-900">Live Punch-ins</CardTitle>
           </div>
-          <div className="flex items-center space-x-1 text-sm text-gray-500">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span>Live</span>
+          <div className="flex items-center space-x-3">
+            <Button
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              variant="ghost"
+              size="sm"
+              className="flex items-center space-x-1"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+            <div className="flex items-center space-x-1 text-sm text-gray-500">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>Live</span>
+            </div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        {activeEmployees.length === 0 ? (
+        {error ? (
+          <div className="text-center py-6">
+            <div className="text-red-500 mb-2">⚠️ {error}</div>
+            <Button onClick={handleManualRefresh} variant="outline" size="sm">
+              Try Again
+            </Button>
+          </div>
+        ) : activeEmployees.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
-            No active employees at the moment
+            No active punch-ins at the moment
           </div>
         ) : (
           <div className="space-y-3">
             {activeEmployees.map((employee) => (
-              <div key={employee.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={employee.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                 <div className="flex-1">
                   <div className="font-medium text-gray-900">{employee.employee_name}</div>
                   <div className="text-sm text-gray-600">{employee.jobsite_name}</div>
+                  {employee.role && (
+                    <div className="text-xs text-blue-600 font-medium capitalize">{employee.role}</div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="flex items-center text-sm text-gray-600 mb-1">
