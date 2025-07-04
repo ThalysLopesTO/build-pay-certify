@@ -124,7 +124,7 @@ const LoginForm = () => {
               
               <div className="mt-8 pt-6 border-t border-slate-200 text-center">
                 <p className="text-sm text-slate-600 mb-4">Don't have access?</p>
-                <Link to="/register-company">
+                <Link to="/register">
                   <Button 
                     variant="outline" 
                     className="w-full h-12 border-2 border-slate-300 hover:border-orange-500 hover:bg-orange-50 text-slate-700 hover:text-orange-600 font-medium transition-all duration-200 bg-white/60"

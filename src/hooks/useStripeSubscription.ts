@@ -22,7 +22,7 @@ export const useStripeSubscription = () => {
     queryKey: ['subscription-status', user?.id],
     queryFn: async () => {
       if (!session) throw new Error('No session');
-      
+
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -57,7 +57,8 @@ export const useStripeSubscription = () => {
       console.log('Checkout success, redirecting to:', data.url);
       if (data.url) {
         // Redirect to Stripe checkout in the same tab for better UX
-        window.location.href = data.url;
+          // window.location.assign(data.url);
+           window.open(data.url, '_blank')
       } else {
         throw new Error('No checkout URL received');
       }
@@ -76,7 +77,7 @@ export const useStripeSubscription = () => {
   const customerPortalMutation = useMutation({
     mutationFn: async () => {
       if (!session) throw new Error('Please log in to manage your subscription');
-      
+
       const { data, error } = await supabase.functions.invoke('customer-portal', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,

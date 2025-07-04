@@ -9,7 +9,24 @@ export const processPaidRegistration = async (
   sessionId: string
 ) => {
   console.log('✅ Processing paid registration - creating new isolated company');
-  
+
+  const { data: result, error } = await supabase.functions.invoke('get-session-stripe', { body: { sessionId }});
+
+  let plan = "starter";
+  let employeeLimit = 10;
+  const email = result?.customer_details?.email;
+
+  if (formData.adminEmail !== email) {
+    throw new Error("wrong email");
+  }
+ 
+  const planStripe = result.metadata.plan_name
+
+  if (planStripe === "Premium") {
+    employeeLimit = 20;
+    plan = "pro";
+  }
+
   // Create a NEW company for paid registrations
   const { data: company, error: companyError } = await supabase
     .from('companies')
@@ -18,8 +35,9 @@ export const processPaidRegistration = async (
       status: 'active',
       registration_date: new Date().toISOString().split('T')[0],
       stripe_verified: true,  // Mark as Stripe verified
-      plan: 'starter',  // Default to starter plan for paid registrations
-      employee_limit: 5  // Default starter limit
+      plan: plan,  // Default to starter plan for paid registrations
+      employee_limit: employeeLimit,  // Default starter limit
+      subscription_status: "active"
     })
     .select()
     .single();
