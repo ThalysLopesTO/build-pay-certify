@@ -12,6 +12,7 @@ import {
   Package,
   Settings,
   Shield,
+  Truck,
   User,
   User2,
   Users,
@@ -61,6 +62,12 @@ export const menuData: MenuItem[] = [
     title: 'Inventory',
     href: '/admin/inventory',
     icon: Package,
+  },
+  {
+    id: 'suppliers',
+    title: 'Suppliers',
+    href: '/admin/suppliers',
+    icon: Truck,
   },
   
   // Employee Management
@@ -151,6 +158,7 @@ export const groupedMenuItems = {
     menuData.find(item => item.id === 'material-requests')!,
     menuData.find(item => item.id === 'safety-templates')!,
     menuData.find(item => item.id === 'inventory')!,
+    menuData.find(item => item.id === 'suppliers')!,
   ],
   employees: [
     menuData.find(item => item.id === 'employees')!,
