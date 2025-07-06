@@ -6,6 +6,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EmployeeFormData } from './schemas';
+import PhotoUploadField from './PhotoUploadField';
 
 interface PersonalDetailsSectionProps {
   form: UseFormReturn<EmployeeFormData>;
@@ -49,6 +50,9 @@ const PersonalDetailsSection: React.FC<PersonalDetailsSectionProps> = ({ form, f
           )}
         />
       </div>
+
+      {/* Photo Upload */}
+      <PhotoUploadField form={form} />
 
       <FormField
         control={form.control}

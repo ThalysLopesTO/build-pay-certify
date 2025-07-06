@@ -1388,6 +1388,7 @@ export type Database = {
           id: string
           last_name: string | null
           pending_approval: boolean | null
+          photo_url: string | null
           position: string | null
           role: string
           stripe_verification_status: string | null
@@ -1404,6 +1405,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           pending_approval?: boolean | null
+          photo_url?: string | null
           position?: string | null
           role?: string
           stripe_verification_status?: string | null
@@ -1420,6 +1422,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           pending_approval?: boolean | null
+          photo_url?: string | null
           position?: string | null
           role?: string
           stripe_verification_status?: string | null
