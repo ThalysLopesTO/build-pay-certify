@@ -60,7 +60,7 @@ export const CompanySettingsTab = () => {
   }
 
   return (
-    <div className="space-y-8 pb-24 max-w-4xl mx-auto">
+    <div className="space-y-8 max-w-4xl mx-auto">
       {/* Company Branding Section */}
       <Card className="border-border dark:border-gray-700">
         <CardHeader className="pb-4">
@@ -106,24 +106,22 @@ export const CompanySettingsTab = () => {
           {/* Usage Information */}
           <UsageInformation />
 
-          {/* Fixed Save Button */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 dark:bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t border-border dark:border-gray-700">
-            <div className="max-w-4xl mx-auto p-4">
-              <Button 
-                type="submit" 
-                disabled={isUpdating} 
-                className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-              >
-                {isUpdating ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
-                    <span>Saving Changes...</span>
-                  </div>
-                ) : (
-                  'Save Company Settings'
-                )}
-              </Button>
-            </div>
+          {/* Save Button - Sticky positioned */}
+          <div className="sticky bottom-0 mt-8 p-6 bg-background/95 dark:bg-gray-900/95 backdrop-blur border border-border dark:border-gray-700 rounded-lg shadow-lg">
+            <Button 
+              type="submit" 
+              disabled={isUpdating} 
+              className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+            >
+              {isUpdating ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+                  <span>Saving Changes...</span>
+                </div>
+              ) : (
+                'Save Company Settings'
+              )}
+            </Button>
           </div>
         </form>
       </Form>
