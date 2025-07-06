@@ -38,7 +38,16 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
       <EmployeeLimitCard />
 
       {/* Company Overview Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatsCard
+          title="Active Employees"
+          value={stats?.employeesCount || 0}
+          icon="👷‍♀️"
+          bgColor="bg-slate-50"
+          borderColor="border-blue-200"
+          iconBg="bg-blue-100"
+          isLoading={isLoading}
+        />
         <StatsCard
           title="Active Jobsites"
           value={stats?.jobsitesCount || 0}
