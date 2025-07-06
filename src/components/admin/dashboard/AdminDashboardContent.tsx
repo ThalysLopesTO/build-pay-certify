@@ -3,12 +3,12 @@ import React from 'react';
 import LicenseWarningBanner from '../../common/LicenseWarningBanner';
 import SimpleDashboardCard from './SimpleDashboardCard';
 import JobProgressCard from './JobProgressCard';
+import LivePunchinsCard from './LivePunchinsCard';
 import WelcomeGreeting from './WelcomeGreeting';
 import { useComprehensiveDashboardStats } from '@/hooks/useComprehensiveDashboardStats';
 import { 
   CreditCard, 
   FileText, 
-  Clock, 
   BarChart3 
 } from 'lucide-react';
 
@@ -73,18 +73,10 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
           onClick={() => setActiveTab('invoices')}
         />
 
-        {/* Live Punch-ins */}
-        <SimpleDashboardCard
-          title="Live Punch-ins"
-          value={isLoading ? '...' : stats?.liveEmployeesCount || 0}
-          subtext="Live right now"
-          icon={Clock}
-          bgColor="bg-dashboard-live-bg"
-          iconColor="bg-dashboard-live-icon"
-          onClick={() => setActiveTab('live-punch-monitor')}
-        />
+        {/* Live Punch-ins Widget */}
+        <LivePunchinsCard onClick={() => setActiveTab('live-punch-monitor')} />
 
-        {/* Job Progress */}
+        {/* Job Progress Widget */}
         <JobProgressCard />
       </div>
     </div>
