@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -40,12 +41,12 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 w-full flex-shrink-0">
+    <header className="bg-background border-b border-border w-full flex-shrink-0 transition-colors duration-300">
       <div className="flex items-center justify-between w-full px-6 py-4">
         {/* Left: Company Logo */}
         <div className="flex items-center">
           {!isLoading && logoUrl && (
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+            <div className="bg-card border border-border rounded-lg shadow-sm p-4">
               <img
                 src={logoUrl}
                 alt="Company Logo"
@@ -60,38 +61,41 @@ const Header = () => {
             </div>
           )}
           {isLoading && (
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+            <div className="bg-card border border-border rounded-lg shadow-sm p-4">
               <div className="flex items-center justify-center w-[200px] h-[50px]">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-muted-foreground"></div>
               </div>
             </div>
           )}
           {user?.role === 'super_admin' && (
-            <Badge variant="secondary" className="bg-gray-100 text-black border-gray-300 ml-3">
+            <Badge variant="secondary" className="ml-3">
               <Crown className="h-3 w-3 mr-1" />
               Super Admin
             </Badge>
           )}
         </div>
         
-        {/* Right: Notifications & User Profile & Logout */}
+        {/* Right: Theme Toggle, Notifications & User Profile & Logout */}
         <div className="flex items-center space-x-4">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+          
           {/* Notification Bell - only for admins and foremen */}
           <NotificationBell />
           
           {user && (
             <div className="flex items-center space-x-3">
               <div className="text-sm text-right">
-                <div className="font-medium text-black whitespace-nowrap">
+                <div className="font-medium text-foreground whitespace-nowrap">
                   {user.firstName} {user.lastName}
                 </div>
-                <div className="text-gray-600 whitespace-nowrap">{user.email}</div>
+                <div className="text-muted-foreground whitespace-nowrap">{user.email}</div>
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="flex items-center space-x-2 bg-white border-black text-black hover:bg-gray-100 flex-shrink-0"
+                className="flex items-center space-x-2 flex-shrink-0"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>

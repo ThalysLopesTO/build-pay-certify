@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/SupabaseAuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { toast } from '@/hooks/use-toast';
 import HomePage from "./pages/HomePage";
 import LoginForm from "./components/LoginForm";
@@ -35,7 +36,7 @@ const queryClient = new QueryClient({
 });
 
 const CompanyErrorFallback = ({ error, onLogout }: { error: string; onLogout: () => void }) => (
-  <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+  <div className="min-h-screen flex items-center justify-center bg-background p-4">
     <div className="max-w-md w-full">
       <Alert variant="destructive" className="mb-4">
         <AlertCircle className="h-4 w-4" />
@@ -59,10 +60,10 @@ const CompanyErrorFallback = ({ error, onLogout }: { error: string; onLogout: ()
 );
 
 const LoadingScreen = () => (
-  <div className="min-h-screen flex items-center justify-center">
+  <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="text-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
-      <p>Loading...</p>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+      <p className="text-muted-foreground">Loading...</p>
     </div>
   </div>
 );
@@ -241,13 +242,15 @@ const App: React.FC = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <AppRoutes />
-          <Toaster />
-          <Sonner />
-        </TooltipProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <AppRoutes />
+            <Toaster />
+            <Sonner />
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };
