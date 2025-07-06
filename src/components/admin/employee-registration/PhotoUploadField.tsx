@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { Camera, Upload, X } from 'lucide-react';
+import { Camera, Upload, X, Smartphone } from 'lucide-react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { EmployeeFormData } from './schemas';
+import CameraModal from './CameraModal';
 
 interface PhotoUploadFieldProps {
   form: UseFormReturn<EmployeeFormData>;
@@ -12,8 +13,19 @@ interface PhotoUploadFieldProps {
 
 const PhotoUploadField: React.FC<PhotoUploadFieldProps> = ({ form }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mobileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [isCameraSupported, setIsCameraSupported] = useState(false);
   const { toast } = useToast();
+
+  // Check camera support on component mount
+  React.useEffect(() => {
+    const checkCameraSupport = () => {
+      return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    };
+    setIsCameraSupported(checkCameraSupport());
+  }, []);
 
   const handleFileSelect = (file: File | null) => {
     if (!file) {
@@ -58,6 +70,15 @@ const PhotoUploadField: React.FC<PhotoUploadFieldProps> = ({ form }) => {
     fileInputRef.current?.click();
   };
 
+  const handleMobileCameraClick = () => {
+    mobileInputRef.current?.click();
+  };
+
+  const handleCameraCapture = (file: File) => {
+    handleFileSelect(file);
+    setShowCameraModal(false);
+  };
+
   const handleRemovePhoto = () => {
     handleFileSelect(null);
     if (fileInputRef.current) {
@@ -82,6 +103,19 @@ const PhotoUploadField: React.FC<PhotoUploadFieldProps> = ({ form }) => {
                 ref={fileInputRef}
                 type="file"
                 accept=".jpg,.jpeg,.png"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  handleFileSelect(file);
+                }}
+              />
+
+              {/* Mobile camera input */}
+              <input
+                ref={mobileInputRef}
+                type="file"
+                accept="image/*"
+                capture="user"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0] || null;
@@ -114,24 +148,72 @@ const PhotoUploadField: React.FC<PhotoUploadFieldProps> = ({ form }) => {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleButtonClick}
-                  className="w-full h-20 border-dashed"
-                >
-                  <div className="flex flex-col items-center space-y-2">
-                    <Upload className="h-6 w-6 text-muted-foreground" />
-                    <div className="text-center">
-                      <p className="text-sm font-medium">Upload employee photo</p>
-                      <p className="text-xs text-muted-foreground">JPG, PNG up to 2MB</p>
-                    </div>
+                <div className="space-y-3">
+                  {/* Camera capture options */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Desktop/Webcam Capture */}
+                    {isCameraSupported && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowCameraModal(true)}
+                        className="h-16 border-dashed border-2 hover:border-blue-400 hover:bg-blue-50"
+                      >
+                        <div className="flex flex-col items-center space-y-1">
+                          <Camera className="h-5 w-5 text-blue-600" />
+                          <span className="text-sm font-medium">Take Photo</span>
+                          <span className="text-xs text-muted-foreground">Use camera</span>
+                        </div>
+                      </Button>
+                    )}
+                    
+                    {/* Mobile Camera Capture */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleMobileCameraClick}
+                      className="h-16 border-dashed border-2 hover:border-green-400 hover:bg-green-50 sm:hidden"
+                    >
+                      <div className="flex flex-col items-center space-y-1">
+                        <Smartphone className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium">Camera</span>
+                        <span className="text-xs text-muted-foreground">Mobile</span>
+                      </div>
+                    </Button>
+                    
+                    {/* File Upload */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleButtonClick}
+                      className="h-16 border-dashed border-2 hover:border-orange-400 hover:bg-orange-50"
+                    >
+                      <div className="flex flex-col items-center space-y-1">
+                        <Upload className="h-5 w-5 text-orange-600" />
+                        <span className="text-sm font-medium">Upload File</span>
+                        <span className="text-xs text-muted-foreground">JPG, PNG up to 2MB</span>
+                      </div>
+                    </Button>
                   </div>
-                </Button>
+                  
+                  {/* Fallback message */}
+                  {!isCameraSupported && (
+                    <p className="text-xs text-center text-muted-foreground">
+                      Camera not supported on this device. Please upload a photo file.
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </FormControl>
           <FormMessage />
+
+          {/* Camera Modal */}
+          <CameraModal
+            isOpen={showCameraModal}
+            onClose={() => setShowCameraModal(false)}
+            onCapture={handleCameraCapture}
+          />
         </FormItem>
       )}
     />
