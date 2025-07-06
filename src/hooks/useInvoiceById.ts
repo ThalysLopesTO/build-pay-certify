@@ -54,8 +54,8 @@ export const useInvoiceById = (invoiceId: string | undefined) => {
 
       const items = lineItems.map(item => ({
         description: item.description,
-        quantity: 1,
-        unitPrice: item.amount,
+        quantity: item.quantity || 1,
+        unitPrice: item.unit_price || 0,
         amount: item.amount
       }));
 
