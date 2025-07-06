@@ -49,14 +49,6 @@
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* Dashboard Card Colors */
-    --expense-bg: 0 100% 97%;
-    --expense-icon: 0 84% 60%;
-    --invoice-bg: 48 100% 96%;
-    --invoice-icon: 45 93% 47%;
-    --live-bg: 210 100% 97%;
-    --live-icon: 217 91% 60%;
   }
 
   .dark {
@@ -95,14 +87,6 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* Dashboard Card Colors - Dark Mode */
-    --expense-bg: 0 50% 15%;
-    --expense-icon: 0 70% 70%;
-    --invoice-bg: 48 50% 15%;
-    --invoice-icon: 45 70% 70%;
-    --live-bg: 210 50% 15%;
-    --live-icon: 217 70% 70%;
   }
 }
 

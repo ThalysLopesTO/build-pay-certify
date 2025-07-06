@@ -61,20 +61,6 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				},
-				dashboard: {
-					expense: {
-						bg: 'hsl(var(--expense-bg))',
-						icon: 'hsl(var(--expense-icon))'
-					},
-					invoice: {
-						bg: 'hsl(var(--invoice-bg))',
-						icon: 'hsl(var(--invoice-icon))'
-					},
-					live: {
-						bg: 'hsl(var(--live-bg))',
-						icon: 'hsl(var(--live-icon))'
-					}
 				}
 			},
 			borderRadius: {
