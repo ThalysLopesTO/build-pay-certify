@@ -7,7 +7,7 @@ import { formatCurrency, formatDate } from "../utils/formatters";
 const InvoicePreview = () => {
   const { invoiceId } = useParams();
   const { invoice, loading: invoiceLoading } = useInvoiceById(invoiceId);
-  const { company, loading: companyLoading } = useCompanySettings();
+  const { settings: company, isLoading: companyLoading } = useCompanySettings();
 
   if (invoiceLoading || companyLoading) {
     return <div className="p-6 text-center text-gray-600">Loading...</div>;
@@ -21,22 +21,24 @@ const InvoicePreview = () => {
     <div className="bg-white p-8 max-w-4xl mx-auto shadow-md print:p-0 print:shadow-none">
       <header className="flex justify-between items-center border-b pb-4 mb-6">
         <div>
-          <img src={company.logoUrl} alt="Company Logo" className="h-12 mb-2" />
-          <h1 className="text-xl font-bold">{company.name}</h1>
-          <p className="text-sm text-gray-600">{company.address}</p>
-          <p className="text-sm text-gray-600">{company.email}</p>
+          {company.company_logo_url && (
+            <img src={company.company_logo_url} alt="Company Logo" className="h-12 mb-2" />
+          )}
+          <h1 className="text-xl font-bold">{company.company_name}</h1>
+          <p className="text-sm text-gray-600">{company.company_address}</p>
+          <p className="text-sm text-gray-600">{company.company_email}</p>
         </div>
         <div className="text-right">
           <h2 className="text-2xl font-semibold">INVOICE</h2>
           <p className="text-sm text-gray-600">#{invoice.id}</p>
-          <p className="text-sm text-gray-600">Due: {formatDate(invoice.dueDate)}</p>
+          <p className="text-sm text-gray-600">Due: {formatDate(invoice.due_date)}</p>
         </div>
       </header>
 
       <section className="mb-6">
         <h3 className="text-lg font-semibold">Bill To:</h3>
-        <p className="text-sm text-gray-700">{invoice.clientCompany}</p>
-        <p className="text-sm text-gray-600">{invoice.clientEmail}</p>
+        <p className="text-sm text-gray-700">{invoice.client_company}</p>
+        <p className="text-sm text-gray-600">{invoice.client_email}</p>
       </section>
 
       <table className="w-full text-left border-t border-b text-sm mb-6">
@@ -72,7 +74,7 @@ const InvoicePreview = () => {
           </div>
           <div className="flex justify-between py-2 font-bold border-t mt-2">
             <span>Total:</span>
-            <span>{formatCurrency(invoice.total)}</span>
+            <span>{formatCurrency(invoice.total_amount)}</span>
           </div>
         </div>
       </div>
