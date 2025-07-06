@@ -26,19 +26,23 @@ export const WeekEndingDaySelector: React.FC<WeekEndingDaySelectorProps> = ({ co
       name="week_ending_day"
       render={({ field }) => (
         <FormItem>
-          <FormLabel className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4" />
+          <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
             <span>Week Ending Day</span>
           </FormLabel>
           <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
             <FormControl>
-              <SelectTrigger>
+              <SelectTrigger className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white">
                 <SelectValue placeholder="Select week ending day" />
               </SelectTrigger>
             </FormControl>
-            <SelectContent>
+            <SelectContent className="bg-background dark:bg-gray-800 border-border dark:border-gray-600">
               {WEEK_ENDING_DAYS.map((day) => (
-                <SelectItem key={day.value} value={day.value.toString()}>
+                <SelectItem 
+                  key={day.value} 
+                  value={day.value.toString()}
+                  className="text-foreground dark:text-white hover:bg-muted dark:hover:bg-gray-700"
+                >
                   {day.label}
                 </SelectItem>
               ))}

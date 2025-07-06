@@ -27,28 +27,34 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Building2 className="h-5 w-5" />
-          <span>Company Information</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+    <div className="space-y-8">
+      {/* Company Information Section */}
+      <Card className="border-border dark:border-gray-700">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-2 text-foreground dark:text-white">
+            <Building2 className="h-5 w-5 text-primary" />
+            <span>Company Information</span>
+          </CardTitle>
+          <div className="h-px bg-border dark:bg-gray-700 mt-4"></div>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
                 name="company_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Building2 className="h-4 w-4" />
-                      <span>Company Name *</span>
+                    <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <span>Company Name <span className="text-red-500">*</span></span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your company name" {...field} />
+                      <Input 
+                        placeholder="Enter your company name" 
+                        className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -60,12 +66,16 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
                 name="company_phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4" />
-                      <span>Phone Number *</span>
+                    <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span>Phone Number <span className="text-red-500">*</span></span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="(555) 123-4567" {...field} />
+                      <Input 
+                        placeholder="(555) 123-4567" 
+                        className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -78,12 +88,16 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
               name="company_address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>Address *</span>
+                  <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>Address <span className="text-red-500">*</span></span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your complete business address" {...field} />
+                    <Input 
+                      placeholder="Enter your complete business address" 
+                      className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -96,12 +110,17 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
                 name="company_email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4" />
-                      <span>Company Email *</span>
+                    <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span>Company Email <span className="text-red-500">*</span></span>
                     </FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="company@example.com" {...field} />
+                      <Input 
+                        type="email" 
+                        placeholder="company@example.com" 
+                        className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -113,12 +132,16 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
                 name="hst_number"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <FileText className="h-4 w-4" />
+                    <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
                       <span>HST Number</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your HST or tax registration number" {...field} />
+                      <Input 
+                        placeholder="Enter your HST or tax registration number" 
+                        className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -132,12 +155,16 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
                 name="website"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Globe className="h-4 w-4" />
-                      <span>Website (Optional)</span>
+                    <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <span>Website</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="https://yourcompany.com" {...field} />
+                      <Input 
+                        placeholder="https://yourcompany.com" 
+                        className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -149,39 +176,56 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
                 name="social_media"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Share2 className="h-4 w-4" />
-                      <span>Social Media Links (Optional)</span>
+                    <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                      <Share2 className="h-4 w-4 text-muted-foreground" />
+                      <span>Social Media Links</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="LinkedIn, Facebook, etc." {...field} />
+                      <Input 
+                        placeholder="LinkedIn, Facebook, etc." 
+                        className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            <FormField
-              control={form.control}
-              name="company_rules_text"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Company Rules & Policies</FormLabel>
-                  <FormControl>
-                    <Textarea rows={10} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button type="submit" disabled={isUpdating} className="w-full">
-              {isUpdating ? 'Saving...' : 'Save Company Settings'}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+      {/* Company Rules & Policies Section */}
+      <Card className="border-border dark:border-gray-700">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-2 text-foreground dark:text-white">
+            <FileText className="h-5 w-5 text-primary" />
+            <span>Company Rules & Policies</span>
+          </CardTitle>
+          <div className="h-px bg-border dark:bg-gray-700 mt-4"></div>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <FormField
+            control={form.control}
+            name="company_rules_text"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-foreground dark:text-white">Rules & Policies Content</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    rows={10} 
+                    placeholder="Enter your company rules and policies here..."
+                    className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 };
