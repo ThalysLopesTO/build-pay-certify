@@ -19,6 +19,7 @@ import ForemanDashboard from "./pages/ForemanDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import LicenseExpired from "./pages/LicenseExpired";
 import NotFound from "./pages/NotFound";
+import InvoicePreview from "./pages/InvoicePreview";
 import LicenseGuard from "./components/common/LicenseGuard";
 import SubscriptionGate from "./components/SubscriptionGate";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -185,6 +186,18 @@ const AppRoutes = () => {
                 <Route path="attention-reports/:reportId" element={<DashboardRouter />} />
                 <Route path="*" element={<DashboardRouter />} />
               </Routes>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
+        />
+        
+        {/* Invoice Preview Route - Admin Only */}
+        <Route 
+          path="/invoices/:invoiceId/preview" 
+          element={
+            isAuthenticated ? (
+              <InvoicePreview />
             ) : (
               <Navigate to="/login" replace />
             )
