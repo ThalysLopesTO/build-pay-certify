@@ -14,15 +14,13 @@ import { Building2, Calendar } from 'lucide-react';
 export const CompanySettingsTab = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useCompanySettings();
   
-  const form = useForm<Partial<CompanySettingsType & { website?: string; social_media?: string }>>({
+  const form = useForm<Partial<CompanySettingsType>>({
     defaultValues: {
       company_name: settings?.company_name || '',
       company_address: settings?.company_address || '',
       company_phone: settings?.company_phone || '',
       company_email: settings?.company_email || '',
       hst_number: settings?.hst_number || '',
-      website: '',
-      social_media: '',
       company_rules_text: settings?.company_rules_text || '',
       week_ending_day: settings?.week_ending_day ?? 0,
     }
@@ -36,8 +34,6 @@ export const CompanySettingsTab = () => {
         company_phone: settings.company_phone || '',
         company_email: settings.company_email || '',
         hst_number: settings.hst_number || '',
-        website: '',
-        social_media: '',
         company_rules_text: settings.company_rules_text || '',
         week_ending_day: settings.week_ending_day ?? 0,
       });
