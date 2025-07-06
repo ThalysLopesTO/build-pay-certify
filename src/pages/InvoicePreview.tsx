@@ -4,51 +4,49 @@ import { useInvoiceById } from "../hooks/useInvoiceById";
 import { useCompanySettings } from "../hooks/useCompanySettings";
 import { useAuth } from "../contexts/SupabaseAuthContext";
 import { formatCurrency, formatDate } from "../utils/formatters";
-
 const InvoicePreview = () => {
-  const { invoiceId } = useParams();
-  const { user } = useAuth();
-  const { invoice, loading: invoiceLoading } = useInvoiceById(invoiceId);
-  const { settings: company, isLoading: companyLoading } = useCompanySettings();
+  const {
+    invoiceId
+  } = useParams();
+  const {
+    user
+  } = useAuth();
+  const {
+    invoice,
+    loading: invoiceLoading
+  } = useInvoiceById(invoiceId);
+  const {
+    settings: company,
+    isLoading: companyLoading
+  } = useCompanySettings();
 
   // Restrict access to admin only
   if (!user || !['admin', 'super_admin'].includes(user.role)) {
     return <Navigate to="/login" replace />;
   }
-
   if (invoiceLoading || companyLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading invoice...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!invoice || !company) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center text-red-600">
           <h2 className="text-xl font-semibold mb-2">Invoice Not Found</h2>
           <p>The requested invoice could not be loaded.</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-gray-50 py-8 print:bg-white print:py-0">
+  return <div className="min-h-screen bg-gray-50 py-8 print:bg-white print:py-0">
       <div className="max-w-4xl mx-auto bg-white shadow-xl print:shadow-none print:max-w-none">
         {/* Print Button */}
         <div className="p-4 bg-gray-100 border-b print:hidden">
           <div className="flex justify-between items-center">
             <h1 className="text-lg font-semibold text-gray-800">Invoice Preview</h1>
-            <button
-              onClick={() => window.print()}
-              className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition duration-200 shadow-sm"
-            >
+            <button onClick={() => window.print()} className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition duration-200 shadow-sm">
               Print Invoice
             </button>
           </div>
@@ -60,22 +58,14 @@ const InvoicePreview = () => {
           <div className="flex flex-col lg:flex-row justify-between items-start mb-8">
             {/* Company Info */}
             <div className="flex items-start space-x-4 mb-6 lg:mb-0">
-              {company.company_logo_url ? (
-                <img 
-                  src={company.company_logo_url} 
-                  alt="Company Logo" 
-                  className="h-16 w-16 object-contain"
-                />
-              ) : (
-                <div className="h-16 w-16 bg-gray-200 rounded-lg flex items-center justify-center">
+              {company.company_logo_url ? <img src={company.company_logo_url} alt="Company Logo" className="h-16 w-16 object-contain" /> : <div className="h-16 w-16 bg-gray-200 rounded-lg flex items-center justify-center">
                   <span className="text-gray-400 text-xs">Logo</span>
-                </div>
-              )}
+                </div>}
               <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-1">
                   {company.company_name || 'Company Name'}
                 </h1>
-                <p className="text-sm text-gray-600 mb-3">Professional Construction Services</p>
+                
                 <div className="text-sm text-gray-600 space-y-1">
                   {company.company_address && <p>{company.company_address}</p>}
                   <div className="flex flex-col space-y-1">
@@ -118,12 +108,10 @@ const InvoicePreview = () => {
                   {invoice.client_company || 'Client Company'}
                 </p>
                 <p className="text-sm text-gray-600 mb-2">{invoice.client_email}</p>
-                {invoice.jobsites?.name && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
+                {invoice.jobsites?.name && <div className="mt-3 pt-3 border-t border-gray-200">
                     <p className="text-sm font-medium text-gray-600">Project:</p>
                     <p className="text-sm text-gray-800">{invoice.jobsites.name}</p>
-                  </div>
-                )}
+                  </div>}
               </div>
             </div>
             
@@ -151,8 +139,7 @@ const InvoicePreview = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {invoice.items.map((item, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                  {invoice.items.map((item, idx) => <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                       <td className="border border-gray-200 px-4 py-3 text-sm text-center">
                         {item.quantity}
                       </td>
@@ -165,8 +152,7 @@ const InvoicePreview = () => {
                       <td className="border border-gray-200 px-4 py-3 text-sm text-right font-semibold">
                         {formatCurrency(item.amount)}
                       </td>
-                    </tr>
-                  ))}
+                    </tr>)}
                 </tbody>
               </table>
             </div>
@@ -199,16 +185,14 @@ const InvoicePreview = () => {
           </div>
 
           {/* Notes Section */}
-          {invoice.notes && (
-            <div className="mb-8">
+          {invoice.notes && <div className="mb-8">
               <h3 className="text-lg font-semibold text-gray-800 mb-3 border-b border-gray-200 pb-2">
                 Notes:
               </h3>
               <div className="bg-gray-50 p-4 rounded-lg border">
                 <p className="text-sm text-gray-700">{invoice.notes}</p>
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Footer */}
           <div className="border-t border-gray-200 pt-6 text-center">
@@ -222,8 +206,6 @@ const InvoicePreview = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default InvoicePreview;
