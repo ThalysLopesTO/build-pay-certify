@@ -80,14 +80,14 @@ const AdminDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-gray-50 w-full">
+      <div className="flex h-screen bg-background w-full">
         <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         <SidebarInset className="flex flex-col flex-1 min-w-0">
           <Header />
-          <main className="flex-1 overflow-auto min-w-0">
+          <main className="flex-1 overflow-auto min-w-0 bg-background">
             <div className="p-6 w-full">
               <div className="flex items-center mb-6 w-full">
-                <SidebarTrigger className="mr-4 text-black hover:bg-gray-100" />
+                <SidebarTrigger className="mr-4 text-foreground hover:bg-muted transition-colors" />
               </div>
               {renderContent()}
             </div>

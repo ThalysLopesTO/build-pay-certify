@@ -23,7 +23,7 @@ interface ForemanSidebarProps {
 const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
   const renderSidebarGroup = (items: any[], label: string) => (
     <SidebarGroup className="mt-4 first:mt-2">
-      <SidebarGroupLabel className="text-sm font-bold text-gray-800 mb-2 px-2">
+      <SidebarGroupLabel className="text-sm font-bold text-gray-900 dark:text-white mb-2 px-2">
         {label}
       </SidebarGroupLabel>
       <SidebarGroupContent>
@@ -37,14 +37,14 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
                   onClick={() => setActiveTab(item.id)}
                   className={`
                     relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
-                    transition-all duration-200 hover:bg-gray-50 hover:text-gray-900
+                    transition-colors duration-200 hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black
                     ${isActive 
-                      ? 'bg-blue-50 text-blue-900 font-medium border-l-4 border-blue-500 shadow-sm' 
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-blue-50 text-blue-900 font-medium border-l-4 border-blue-500 shadow-sm dark:bg-blue-900 dark:text-blue-100' 
+                      : 'text-gray-700 dark:text-white'
                     }
                   `}
                 >
-                  <item.icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <item.icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-300' : 'text-gray-500 dark:text-gray-300'}`} />
                   <span className="truncate">{item.title}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -54,25 +54,25 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
       </SidebarGroupContent>
       
       {/* Subtle divider between sections */}
-      <div className="mt-3 mx-2 border-b border-gray-100"></div>
+      <div className="mt-3 mx-2 border-b border-sidebar-border"></div>
     </SidebarGroup>
   );
 
   return (
-    <Sidebar className="border-r border-gray-200">
-      <SidebarHeader className="p-4 border-b border-gray-100">
+    <Sidebar className="border-r border-border bg-sidebar transition-colors">
+      <SidebarHeader className="p-4 border-b border-sidebar-border bg-sidebar">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-orange-100 rounded-lg">
+          <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
             <HardHat className="h-5 w-5 text-orange-600" />
           </div>
           <div>
-            <h2 className="font-bold text-sm text-gray-900">Foreman Panel</h2>
-            <p className="text-xs text-gray-500">Team Management</p>
+            <h2 className="font-bold text-sm text-gray-900 dark:text-white">Foreman Panel</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-300">Team Management</p>
           </div>
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="overflow-y-auto px-2 py-2">
+      <SidebarContent className="overflow-y-auto px-2 py-2 bg-sidebar">
         {renderSidebarGroup(groupedForemanItems.timesheet, "Timesheet Management")}
         {renderSidebarGroup(groupedForemanItems.materials, "Material Management")}
         {renderSidebarGroup(groupedForemanItems.team, "Team Management")}
@@ -81,8 +81,8 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
         {renderSidebarGroup(groupedForemanItems.account, "Account")}
       </SidebarContent>
       
-      <SidebarFooter className="p-4 border-t border-gray-100">
-        <div className="text-xs text-gray-500 text-center">
+      <SidebarFooter className="p-4 border-t border-sidebar-border bg-sidebar">
+        <div className="text-xs text-gray-500 dark:text-gray-300 text-center">
           Construction Payroll Manager
         </div>
       </SidebarFooter>

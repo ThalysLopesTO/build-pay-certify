@@ -46,7 +46,7 @@ const EmployeeDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col transition-colors">
       <Header />
       <EmployeeDesktopNav activeTab={activeTab} onTabChange={setActiveTab} />
       <div className={`flex-1 ${isMobile ? 'pb-20' : 'pb-6'} transition-all duration-300`}>
