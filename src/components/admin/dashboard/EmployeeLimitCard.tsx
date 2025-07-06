@@ -88,16 +88,16 @@ const EmployeeLimitCard: React.FC = () => {
           </div>
 
           {/* Status message */}
-          <div className={`text-xs ${getTextColor()}`}>
+          <div className={`text-xs ${getTextColor()} dark:text-red-300`}>
             {!canAddEmployee ? (
               <div className="flex items-center">
                 <AlertTriangle className="h-3 w-3 mr-1" />
-                Employee limit reached. Upgrade your plan to add more employees.
+                <span className="dark:text-white">Employee limit reached. Upgrade your plan to add more employees.</span>
               </div>
             ) : usagePercentage >= 80 ? (
-              <span>Approaching employee limit ({Math.round(usagePercentage)}% used)</span>
+              <span className="dark:text-white">Approaching employee limit ({Math.round(usagePercentage)}% used)</span>
             ) : (
-              <span>{limit - currentCount} slots remaining</span>
+              <span className="dark:text-white">{limit - currentCount} slots remaining</span>
             )}
           </div>
         </div>

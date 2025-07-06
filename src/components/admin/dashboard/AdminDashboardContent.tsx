@@ -26,9 +26,9 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
       <div className="border-b border-border pb-4">
         <div className="flex items-center space-x-3">
           <BarChart3 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-black dark:text-white">Dashboard</h1>
         </div>
-        <p className="text-gray-500 dark:text-gray-300 mt-1">Welcome to your company admin panel</p>
+        <p className="text-muted dark:text-gray-300 mt-1">Welcome to your company admin panel</p>
       </div>
 
       {/* License Warning Banner */}
@@ -38,16 +38,7 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
       <EmployeeLimitCard />
 
       {/* Company Overview Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatsCard
-          title="Active Employees"
-          value={stats?.employeesCount || 0}
-          icon="👷‍♂️"
-          bgColor="bg-slate-50"
-          borderColor="border-blue-200"
-          iconBg="bg-blue-100"
-          isLoading={isLoading}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <StatsCard
           title="Active Jobsites"
           value={stats?.jobsitesCount || 0}
