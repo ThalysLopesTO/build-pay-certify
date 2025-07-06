@@ -11,6 +11,8 @@ import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import EmployeeAvatar from '@/components/ui/employee-avatar';
+import PhotoUploadField from './employee-registration/PhotoUploadField';
 
 const editEmployeeSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -19,6 +21,7 @@ const editEmployeeSchema = z.object({
   trade: z.string().min(1, 'Trade is required'),
   role: z.enum(['admin', 'foreman', 'payroll', 'employee']),
   hourlyRate: z.number().min(0, 'Hourly rate must be positive'),
+  photo: z.instanceof(File).optional(),
 });
 
 type EditEmployeeFormData = z.infer<typeof editEmployeeSchema>;
@@ -31,6 +34,7 @@ interface Employee {
   trade: string;
   role: string;
   hourly_rate: number;
+  photo_url?: string | null;
 }
 
 interface EmployeeEditModalProps {
@@ -57,6 +61,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
       trade: employee?.trade || '',
       role: (employee?.role as any) || 'employee',
       hourlyRate: employee?.hourly_rate || 0,
+      photo: undefined,
     },
   });
 
@@ -69,6 +74,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
         trade: employee.trade,
         role: employee.role as any,
         hourlyRate: employee.hourly_rate,
+        photo: undefined,
       });
     }
   }, [employee, form]);
@@ -77,6 +83,45 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
     if (!employee) return;
 
     try {
+      let photoUrl = employee.photo_url;
+
+      // Upload new photo if provided
+      if (data.photo) {
+        console.log('Uploading updated employee photo...');
+        const fileExtension = data.photo.name.split('.').pop();
+        const fileName = `${employee.id}.${fileExtension}`;
+        
+        // Delete old photo if exists
+        if (employee.photo_url) {
+          const oldFileName = employee.photo_url.split('/').pop();
+          if (oldFileName) {
+            await supabase.storage
+              .from('employee-photos')
+              .remove([oldFileName]);
+          }
+        }
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('employee-photos')
+          .upload(fileName, data.photo, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (uploadError) {
+          console.error('Photo upload error:', uploadError);
+          throw new Error('Failed to upload employee photo');
+        }
+
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('employee-photos')
+          .getPublicUrl(fileName);
+        
+        photoUrl = publicUrlData.publicUrl;
+        console.log('Photo uploaded successfully:', photoUrl);
+      }
+
       const { error } = await supabase
         .from('user_profiles')
         .update({
@@ -86,6 +131,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
           trade: data.trade,
           role: data.role,
           hourly_rate: data.hourlyRate,
+          photo_url: photoUrl,
           updated_at: new Date().toISOString(),
         })
         .eq('id', employee.id);
@@ -118,6 +164,19 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            {/* Current Photo Display */}
+            <div className="flex justify-center">
+              <EmployeeAvatar 
+                photoUrl={employee?.photo_url}
+                firstName={employee?.first_name}
+                lastName={employee?.last_name}
+                size="lg"
+              />
+            </div>
+
+            {/* Photo Upload */}
+            <PhotoUploadField form={form} />
+            
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

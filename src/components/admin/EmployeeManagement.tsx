@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import EmployeeEditModal from './EmployeeEditModal';
 import EmployeeCertificatesModal from './EmployeeCertificatesModal';
 import EmployeeDeleteDialog from './EmployeeDeleteDialog';
+import EmployeeAvatar from '@/components/ui/employee-avatar';
 
 const EmployeeManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -154,16 +155,26 @@ const EmployeeManagement = () => {
           return (
             <Card key={employee.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-semibold text-lg">
-                      {employee.first_name} {employee.last_name}
-                    </h3>
-                    <p className="text-slate-600">{employee.companies?.name}</p>
+                <div className="flex items-start space-x-4 mb-4">
+                  <EmployeeAvatar 
+                    photoUrl={employee.photo_url}
+                    firstName={employee.first_name}
+                    lastName={employee.last_name}
+                    size="md"
+                  />
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          {employee.first_name} {employee.last_name}
+                        </h3>
+                        <p className="text-slate-600">{employee.companies?.name}</p>
+                      </div>
+                      <Badge className={`${getRoleColor(employee.role)} text-white capitalize`}>
+                        {employee.role}
+                      </Badge>
+                    </div>
                   </div>
-                  <Badge className={`${getRoleColor(employee.role)} text-white capitalize`}>
-                    {employee.role}
-                  </Badge>
                 </div>
 
                 <div className="space-y-3">

@@ -25,6 +25,7 @@ export const useEmployeeRegistrationForm = () => {
       role: 'employee',
       trade: '',
       hourlyRate: 0,
+      photo: undefined,
       workAtHeightsExpiry: undefined,
       whmisExpiry: undefined,
       fourStepsExpiry: undefined,
@@ -49,6 +50,35 @@ export const useEmployeeRegistrationForm = () => {
     try {
       console.log('Submitting employee registration:', { email: data.email, role: data.role });
 
+      let photoUrl: string | null = null;
+
+      // Upload photo if provided
+      if (data.photo) {
+        console.log('Uploading employee photo...');
+        const fileExtension = data.photo.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExtension}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('employee-photos')
+          .upload(fileName, data.photo, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Photo upload error:', uploadError);
+          throw new Error('Failed to upload employee photo');
+        }
+
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('employee-photos')
+          .getPublicUrl(fileName);
+        
+        photoUrl = publicUrlData.publicUrl;
+        console.log('Photo uploaded successfully:', photoUrl);
+      }
+
       // Call the Edge Function to create the employee
       const { data: result, error } = await supabase.functions.invoke('create-employee', {
         body: {
@@ -63,6 +93,7 @@ export const useEmployeeRegistrationForm = () => {
             role: data.role,
             trade: data.trade,
             hourlyRate: data.hourlyRate,
+            photoUrl: photoUrl,
             // Certificate expiry dates as ISO strings
             workAtHeightsExpiry: data.workAtHeightsExpiry?.toISOString(),
             whmisExpiry: data.whmisExpiry?.toISOString(),

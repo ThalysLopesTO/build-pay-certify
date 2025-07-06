@@ -1,9 +1,6 @@
-
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MapPin } from 'lucide-react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface LocationMapModalProps {
   isOpen: boolean;
@@ -20,14 +17,9 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   employeeName,
   timestamp
 }) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-
   const parseLocation = (locationString: string | null) => {
     if (!locationString) return null;
     
-    // Try to parse coordinates from location string
-    // Format could be "lat,lng" or "latitude: X, longitude: Y"
     const coordRegex = /(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/;
     const match = locationString.match(coordRegex);
     
@@ -43,40 +35,13 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
 
   const coordinates = parseLocation(location);
 
-  useEffect(() => {
-    if (!isOpen || !coordinates || !mapContainer.current) return;
+  const generateStaticMapUrl = (lat: number, lng: number) => {
+    return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=600x300&markers=color:red%7C${lat},${lng}&key=AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU`;
+  };
 
-    // Set Mapbox access token - using a public token placeholder
-    // In a real application, this should be stored in environment variables
-    mapboxgl.accessToken = 'pk.eyJ1IjoibG92YWJsZS1kZXYiLCJhIjoiY2x6eWtneDVlMGhnYzJqcHE4OTFiN2lnciJ9.rHjq3PM_87zLWJYNE8bSpQ';
-
-    // Initialize map
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [coordinates.lng, coordinates.lat],
-      zoom: 15,
-    });
-
-    // Add marker
-    new mapboxgl.Marker({
-      color: '#f97316', // Orange color to match the theme
-      scale: 1.2
-    })
-      .setLngLat([coordinates.lng, coordinates.lat])
-      .addTo(map.current);
-
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-    // Cleanup function
-    return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-      }
-    };
-  }, [isOpen, coordinates]);
+  const generateGoogleMapsLink = (lat: number, lng: number) => {
+    return `https://www.google.com/maps?q=${lat},${lng}`;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -92,13 +57,29 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
         <div className="w-full">
           {coordinates ? (
             <div className="space-y-4">
-              {/* Map Container */}
-              <div 
-                ref={mapContainer} 
-                className="w-full h-[300px] bg-gray-100 rounded-lg border"
-                style={{ minHeight: '300px' }}
-              />
-              
+              {/* Google Static Maps Image (clickable) */}
+              <div className="w-full">
+                <a
+                  href={generateGoogleMapsLink(coordinates.lat, coordinates.lng)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open in Google Maps"
+                >
+                  <img
+                    src={generateStaticMapUrl(coordinates.lat, coordinates.lng)}
+                    alt="Punch location map"
+                    className="w-full rounded-lg shadow-md"
+                    style={{
+                      borderRadius: "8px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      maxHeight: "300px",
+                      objectFit: "cover",
+                      cursor: "pointer"
+                    }}
+                  />
+                </a>
+              </div>
+
               {/* Coordinates Display */}
               <div className="text-center bg-gray-50 p-4 rounded-lg">
                 <p className="text-lg font-semibold mb-2">Location Coordinates</p>

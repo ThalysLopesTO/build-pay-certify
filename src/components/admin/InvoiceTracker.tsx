@@ -10,9 +10,11 @@ import { useInvoices } from '@/hooks/useInvoices';
 import { useJobsites } from '@/hooks/useJobsites';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
-import { Search, Filter, Upload, Mail } from 'lucide-react';
+import { Search, Filter, Upload, Mail, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const InvoiceTracker = () => {
+  const navigate = useNavigate();
   const { invoices, isLoading, updateInvoiceStatus } = useInvoices();
   const { data: jobsites } = useJobsites();
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,6 +58,10 @@ const InvoiceTracker = () => {
       status: 'paid',
       receipt_file_url: 'receipt-placeholder-url'
     });
+  };
+
+  const handleViewInvoice = (invoiceId: string) => {
+    navigate(`/invoices/${invoiceId}/preview`);
   };
 
   if (isLoading) {
@@ -162,6 +168,15 @@ const InvoiceTracker = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewInvoice(invoice.id)}
+                          title="View Invoice"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        
                         <Select
                           value={invoice.status}
                           onValueChange={(value: 'pending' | 'paid' | 'expired') =>

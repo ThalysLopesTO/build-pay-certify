@@ -213,6 +213,7 @@ serve(async (req) => {
           role: employeeData.role,
           trade: employeeData.trade,
           hourly_rate: employeeData.hourlyRate,
+          photo_url: employeeData.photoUrl,
           pending_approval: false
         })
 

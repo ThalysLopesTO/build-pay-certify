@@ -647,6 +647,8 @@ export type Database = {
           description: string
           id: string
           invoice_id: string
+          quantity: number | null
+          unit_price: number | null
           updated_at: string
         }
         Insert: {
@@ -655,6 +657,8 @@ export type Database = {
           description: string
           id?: string
           invoice_id: string
+          quantity?: number | null
+          unit_price?: number | null
           updated_at?: string
         }
         Update: {
@@ -663,6 +667,8 @@ export type Database = {
           description?: string
           id?: string
           invoice_id?: string
+          quantity?: number | null
+          unit_price?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -677,8 +683,10 @@ export type Database = {
       }
       invoices: {
         Row: {
+          client_address: string | null
           client_company: string
           client_email: string
+          client_phone: string | null
           company_id: string | null
           created_at: string
           discount: number | null
@@ -697,8 +705,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          client_address?: string | null
           client_company: string
           client_email: string
+          client_phone?: string | null
           company_id?: string | null
           created_at?: string
           discount?: number | null
@@ -717,8 +727,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          client_address?: string | null
           client_company?: string
           client_email?: string
+          client_phone?: string | null
           company_id?: string | null
           created_at?: string
           discount?: number | null
@@ -1388,6 +1400,7 @@ export type Database = {
           id: string
           last_name: string | null
           pending_approval: boolean | null
+          photo_url: string | null
           position: string | null
           role: string
           stripe_verification_status: string | null
@@ -1404,6 +1417,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           pending_approval?: boolean | null
+          photo_url?: string | null
           position?: string | null
           role?: string
           stripe_verification_status?: string | null
@@ -1420,6 +1434,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           pending_approval?: boolean | null
+          photo_url?: string | null
           position?: string | null
           role?: string
           stripe_verification_status?: string | null

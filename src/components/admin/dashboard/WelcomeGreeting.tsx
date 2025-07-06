@@ -23,7 +23,7 @@ const WelcomeGreeting = () => {
 
   return (
     <div className="mb-2">
-      <p className="text-xl font-medium text-gray-700">
+      <p className="text-xl font-medium text-gray-900 dark:text-white">
         👋 {getGreeting()}, {getFirstName()}! Here's an overview of your company.
       </p>
     </div>

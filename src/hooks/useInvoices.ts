@@ -78,7 +78,8 @@ export const useInvoices = () => {
         title: invoiceData.title,
         client_company: invoiceData.client_company,
         client_email: invoiceData.client_email,
-        jobsite_id: invoiceData.jobsite_id,
+        client_address: invoiceData.client_address,
+        client_phone: invoiceData.client_phone,
         discount: invoiceData.discount || 0,
         tax: invoiceData.tax || 0,
         due_date: invoiceData.due_date,
@@ -105,6 +106,8 @@ export const useInvoices = () => {
             invoiceData.line_items.map(item => ({
               invoice_id: invoice.id,
               description: item.description,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
               amount: item.amount,
             }))
           );
