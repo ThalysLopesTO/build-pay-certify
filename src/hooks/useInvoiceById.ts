@@ -7,6 +7,8 @@ export interface Invoice {
   title: string;
   client_company: string;
   client_email: string;
+  client_address: string | null;
+  client_phone: string | null;
   due_date: string;
   subtotal: number;
   tax: number | null;

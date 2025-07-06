@@ -112,10 +112,13 @@ const InvoicePreview = () => {
                 <p className="font-semibold text-gray-800">
                   {invoice.client_company || 'Client Name'}
                 </p>
-                <p>{invoice.client_email}</p>
-                {invoice.jobsites?.name && (
-                  <p className="text-gray-600">Project: {invoice.jobsites.name}</p>
+                {invoice.client_address && (
+                  <p>{invoice.client_address}</p>
                 )}
+                {invoice.client_phone && (
+                  <p>Phone: {invoice.client_phone}</p>
+                )}
+                <p>{invoice.client_email}</p>
               </div>
             </div>
           </div>

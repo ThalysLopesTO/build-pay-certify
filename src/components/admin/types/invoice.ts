@@ -5,6 +5,8 @@ export interface Invoice {
   title: string;
   client_company: string;
   client_email: string;
+  client_address: string | null;
+  client_phone: string | null;
   jobsite_id: string | null;
   discount: number;
   tax: number;
@@ -19,7 +21,7 @@ export interface Invoice {
   updated_at: string;
   jobsites?: {
     name: string;
-    address: string | null;
+    address: string | null;  
   } | null;
   invoice_line_items?: InvoiceLineItem[];
 }
@@ -37,7 +39,8 @@ export interface CreateInvoiceData {
   title: string;
   client_company: string;
   client_email: string;
-  jobsite_id: string | null;
+  client_address: string;
+  client_phone: string;
   discount: number;
   tax: number;
   due_date: string;

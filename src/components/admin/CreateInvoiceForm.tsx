@@ -5,10 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useJobsites } from '@/hooks/useJobsites';
 import { useInvoices } from '@/hooks/useInvoices';
 import { CreateInvoiceData } from './types/invoice';
 import { Plus, X } from 'lucide-react';
@@ -17,7 +15,8 @@ interface InvoiceFormData {
   title: string;
   client_company: string;
   client_email: string;
-  jobsite_id: string;
+  client_address: string;
+  client_phone: string;
   discount: number;
   tax: number;
   due_date: string;
@@ -26,7 +25,6 @@ interface InvoiceFormData {
 }
 
 const CreateInvoiceForm = () => {
-  const { data: jobsites } = useJobsites();
   const { createInvoice, isCreating } = useInvoices();
   
   const form = useForm<InvoiceFormData>({
@@ -34,7 +32,8 @@ const CreateInvoiceForm = () => {
       title: '',
       client_company: '',
       client_email: '',
-      jobsite_id: '',
+      client_address: '',
+      client_phone: '',
       discount: 0,
       tax: 0,
       due_date: '',
@@ -51,7 +50,6 @@ const CreateInvoiceForm = () => {
   const onSubmit = (data: InvoiceFormData) => {
     const invoiceData: CreateInvoiceData = {
       ...data,
-      jobsite_id: data.jobsite_id || null,
       notes: data.notes || null,
       line_items: data.line_items.filter(item => item.description && item.amount > 0),
     };
@@ -130,24 +128,27 @@ const CreateInvoiceForm = () => {
 
                 <FormField
                   control={form.control}
-                  name="jobsite_id"
+                  name="client_address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Linked Jobsite</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a jobsite" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {jobsites?.map((jobsite) => (
-                            <SelectItem key={jobsite.id} value={jobsite.id}>
-                              {jobsite.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Client Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123 Main Street, City, Province, Postal Code" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="client_phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client Phone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(555) 123-4567" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
