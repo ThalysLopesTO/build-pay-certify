@@ -47,6 +47,8 @@ export interface CreateInvoiceData {
   notes: string | null;
   line_items: {
     description: string;
+    quantity: number;
+    unit_price: number;
     amount: number;
   }[];
 }

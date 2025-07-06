@@ -21,7 +21,11 @@ interface InvoiceFormData {
   tax: number;
   due_date: string;
   notes: string;
-  line_items: { description: string; amount: number }[];
+  line_items: { 
+    description: string; 
+    quantity: number;
+    unit_price: number;
+  }[];
 }
 
 const CreateInvoiceForm = () => {
@@ -38,7 +42,7 @@ const CreateInvoiceForm = () => {
       tax: 0,
       due_date: '',
       notes: '',
-      line_items: [{ description: '', amount: 0 }],
+      line_items: [{ description: '', quantity: 1, unit_price: 0 }],
     },
   });
 
@@ -51,7 +55,12 @@ const CreateInvoiceForm = () => {
     const invoiceData: CreateInvoiceData = {
       ...data,
       notes: data.notes || null,
-      line_items: data.line_items.filter(item => item.description && item.amount > 0),
+      line_items: data.line_items.filter(item => item.description && item.quantity > 0 && item.unit_price > 0).map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        amount: item.quantity * item.unit_price
+      })),
     };
     
     createInvoice(invoiceData);
@@ -60,7 +69,7 @@ const CreateInvoiceForm = () => {
 
   const calculateSubtotal = () => {
     const lineItems = form.watch('line_items');
-    return lineItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+    return lineItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unit_price || 0)), 0);
   };
 
   const calculateTotal = () => {
@@ -177,7 +186,7 @@ const CreateInvoiceForm = () => {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => append({ description: '', amount: 0 })}
+                    onClick={() => append({ description: '', quantity: 1, unit_price: 0 })}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Item
@@ -186,12 +195,32 @@ const CreateInvoiceForm = () => {
 
                 {fields.map((field, index) => (
                   <Card key={field.id} className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                      <FormField
+                        control={form.control}
+                        name={`line_items.${index}.quantity`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Quantity</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="1"
+                                placeholder="1"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
                       <FormField
                         control={form.control}
                         name={`line_items.${index}.description`}
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="md:col-span-2">
                             <FormLabel>Description</FormLabel>
                             <FormControl>
                               <Input placeholder="Item description" {...field} />
@@ -203,10 +232,10 @@ const CreateInvoiceForm = () => {
 
                       <FormField
                         control={form.control}
-                        name={`line_items.${index}.amount`}
+                        name={`line_items.${index}.unit_price`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Amount ($)</FormLabel>
+                            <FormLabel>Unit Price ($)</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -221,15 +250,23 @@ const CreateInvoiceForm = () => {
                         )}
                       />
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => remove(index)}
-                        disabled={fields.length === 1}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm">
+                          <span className="font-medium">Total: </span>
+                          <span className="font-semibold">
+                            ${((form.watch(`line_items.${index}.quantity`) || 0) * (form.watch(`line_items.${index}.unit_price`) || 0)).toFixed(2)}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => remove(index)}
+                          disabled={fields.length === 1}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 ))}
