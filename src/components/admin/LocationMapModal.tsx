@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MapPin } from 'lucide-react';
@@ -21,8 +20,6 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   const parseLocation = (locationString: string | null) => {
     if (!locationString) return null;
     
-    // Try to parse coordinates from location string
-    // Format could be "lat,lng" or "latitude: X, longitude: Y"
     const coordRegex = /(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/;
     const match = locationString.match(coordRegex);
     
@@ -42,6 +39,10 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
     return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=600x300&markers=color:red%7C${lat},${lng}&key=AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU`;
   };
 
+  const generateGoogleMapsLink = (lat: number, lng: number) => {
+    return `https://www.google.com/maps?q=${lat},${lng}`;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh]">
@@ -56,21 +57,29 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
         <div className="w-full">
           {coordinates ? (
             <div className="space-y-4">
-              {/* Google Static Maps Image */}
+              {/* Google Static Maps Image (clickable) */}
               <div className="w-full">
-                <img
-                  src={generateStaticMapUrl(coordinates.lat, coordinates.lng)}
-                  alt="Punch location map"
-                  className="w-full rounded-lg shadow-md"
-                  style={{ 
-                    borderRadius: "8px", 
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    maxHeight: "300px",
-                    objectFit: "cover"
-                  }}
-                />
+                <a
+                  href={generateGoogleMapsLink(coordinates.lat, coordinates.lng)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open in Google Maps"
+                >
+                  <img
+                    src={generateStaticMapUrl(coordinates.lat, coordinates.lng)}
+                    alt="Punch location map"
+                    className="w-full rounded-lg shadow-md"
+                    style={{
+                      borderRadius: "8px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      maxHeight: "300px",
+                      objectFit: "cover",
+                      cursor: "pointer"
+                    }}
+                  />
+                </a>
               </div>
-              
+
               {/* Coordinates Display */}
               <div className="text-center bg-gray-50 p-4 rounded-lg">
                 <p className="text-lg font-semibold mb-2">Location Coordinates</p>
