@@ -58,32 +58,37 @@ const InvoicePreview = () => {
           <div className="flex flex-col lg:flex-row justify-between items-start mb-8">
             {/* Company Info */}
             <div className="flex items-start space-x-4 mb-6 lg:mb-0">
-              {company.company_logo_url ? <img src={company.company_logo_url} alt="Company Logo" className="h-16 w-16 object-contain" /> : <div className="h-16 w-16 bg-gray-200 rounded-lg flex items-center justify-center">
+              {company.company_logo_url ? (
+                <img 
+                  src={company.company_logo_url} 
+                  alt="Company Logo" 
+                  className="h-20 w-20 object-contain" 
+                />
+              ) : (
+                <div className="h-20 w-20 bg-gray-200 rounded-lg flex items-center justify-center">
                   <span className="text-gray-400 text-xs">Logo</span>
-                </div>}
+                </div>
+              )}
               <div>
-                <h1 className="text-2xl font-bold text-gray-800 mb-1">
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">
                   {company.company_name || 'Company Name'}
                 </h1>
-                
                 <div className="text-sm text-gray-600 space-y-1">
                   {company.company_address && <p>{company.company_address}</p>}
-                  <div className="flex flex-col space-y-1">
-                    {company.company_phone && <p>Phone: {company.company_phone}</p>}
-                    {company.company_email && <p>Email: {company.company_email}</p>}
-                    {company.hst_number && <p>HST: {company.hst_number}</p>}
-                  </div>
+                  {company.company_phone && <p>Phone: {company.company_phone}</p>}
+                  {company.company_email && <p>Email: {company.company_email}</p>}
+                  {company.hst_number && <p>HST: {company.hst_number}</p>}
                 </div>
               </div>
             </div>
 
             {/* Invoice Info */}
-            <div className="text-right lg:text-right w-full lg:w-auto">
-              <h2 className="text-3xl font-bold text-gray-800 mb-4">INVOICE</h2>
-              <div className="bg-gray-50 p-4 rounded-lg border text-sm space-y-2">
-                <div className="flex justify-between">
+            <div className="text-right">
+              <h2 className="text-4xl font-bold text-gray-800 mb-4">INVOICE</h2>
+              <div className="text-sm space-y-2">
+                <div className="flex justify-between min-w-[200px]">
                   <span className="font-medium text-gray-600">Invoice #:</span>
-                  <span className="font-semibold text-gray-800">{invoice.invoice_number}</span>
+                  <span className="font-semibold text-gray-800">{invoice.id}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-600">Date:</span>
@@ -98,30 +103,19 @@ const InvoicePreview = () => {
           </div>
 
           {/* Bill To Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-3 border-b border-gray-200 pb-2">
+          <div className="mb-8">
+            <div className="w-full max-w-sm">
+              <h3 className="text-base font-semibold text-gray-800 mb-3">
                 Bill To:
               </h3>
-              <div className="bg-gray-50 p-4 rounded-lg border">
-                <p className="font-semibold text-gray-800 mb-1">
-                  {invoice.client_company || 'Client Company'}
+              <div className="bg-gray-50 p-4 text-sm text-gray-700 space-y-1">
+                <p className="font-semibold text-gray-800">
+                  {invoice.client_company || 'Client Name'}
                 </p>
-                <p className="text-sm text-gray-600 mb-2">{invoice.client_email}</p>
-                {invoice.jobsites?.name && <div className="mt-3 pt-3 border-t border-gray-200">
-                    <p className="text-sm font-medium text-gray-600">Project:</p>
-                    <p className="text-sm text-gray-800">{invoice.jobsites.name}</p>
-                  </div>}
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-3 border-b border-gray-200 pb-2">
-                Project Details:
-              </h3>
-              <div className="bg-gray-50 p-4 rounded-lg border">
-                <p className="font-semibold text-gray-800 mb-1">{invoice.title}</p>
-                <p className="text-sm text-gray-600">Status: {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}</p>
+                <p>{invoice.client_email}</p>
+                {invoice.jobsites?.name && (
+                  <p className="text-gray-600">Project: {invoice.jobsites.name}</p>
+                )}
               </div>
             </div>
           </div>
@@ -131,11 +125,11 @@ const InvoicePreview = () => {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse border border-gray-200">
                 <thead>
-                  <tr className="bg-gray-800 text-white">
-                    <th className="border border-gray-200 px-4 py-3 text-left text-sm font-semibold">Quantity</th>
-                    <th className="border border-gray-200 px-4 py-3 text-left text-sm font-semibold">Description</th>
-                    <th className="border border-gray-200 px-4 py-3 text-right text-sm font-semibold">Unit Price</th>
-                    <th className="border border-gray-200 px-4 py-3 text-right text-sm font-semibold">Total</th>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-200 px-4 py-3 text-left text-sm font-semibold text-gray-800">Quantity</th>
+                    <th className="border border-gray-200 px-4 py-3 text-left text-sm font-semibold text-gray-800">Description</th>
+                    <th className="border border-gray-200 px-4 py-3 text-right text-sm font-semibold text-gray-800">Unit Price</th>
+                    <th className="border border-gray-200 px-4 py-3 text-right text-sm font-semibold text-gray-800">Total</th>
                   </tr>
                 </thead>
                 <tbody>
