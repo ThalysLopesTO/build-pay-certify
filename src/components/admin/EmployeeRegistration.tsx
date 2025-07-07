@@ -77,20 +77,22 @@ const EmployeeRegistration = () => {
                 >
                   Reset Form
                 </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-orange-600 hover:bg-orange-700"
-                  disabled={loading || !employeeLimit?.canAddEmployee}
-                >
-                  {loading ? (
-                    'Registering...'
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Register Employee
-                    </>
-                  )}
-                </Button>
+                { employeeLimit.currentCount < employeeLimit.employeeLimit ? (
+                  <Button 
+                    type="submit" 
+                    className="bg-orange-600 hover:bg-orange-700"
+                    disabled={loading || !employeeLimit?.canAddEmployee}
+                  >
+                    {loading ? (
+                      'Registering...'
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Register Employee
+                      </>
+                    )}
+                  </Button>
+                ) : null }
               </div>
             </form>
           </Form>

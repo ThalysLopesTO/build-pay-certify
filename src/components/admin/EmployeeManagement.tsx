@@ -11,6 +11,7 @@ import EmployeeEditModal from './EmployeeEditModal';
 import EmployeeCertificatesModal from './EmployeeCertificatesModal';
 import EmployeeDeleteDialog from './EmployeeDeleteDialog';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
+import { useEmployeeLimit } from '@/hooks/useEmployeeLimit';
 
 const EmployeeManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,6 +21,7 @@ const EmployeeManagement = () => {
   
   const { user } = useAuth();
   const { data: employees = [], isLoading, error, refetch } = useEmployeeDirectory();
+  const { data: employee } = useEmployeeLimit();
   const deleteEmployeeMutation = useEmployeeDelete();
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
@@ -127,13 +129,15 @@ const EmployeeManagement = () => {
           <h2 className="text-2xl font-bold">Employee Management</h2>
           <p className="text-slate-600">Manage employee roles, rates, and certifications</p>
         </div>
-        <Button 
-          className="bg-orange-600 hover:bg-orange-700"
-          onClick={handleAddEmployee}
-        >
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add Employee
-        </Button>
+        { employee.currentCount < employee.employeeLimit ? (
+          <Button 
+            className="bg-orange-600 hover:bg-orange-700"
+            onClick={handleAddEmployee}
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add Employee
+          </Button>
+        ): null}
       </div>
 
       {/* Search */}
