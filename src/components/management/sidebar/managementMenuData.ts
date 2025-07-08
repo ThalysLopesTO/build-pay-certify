@@ -4,7 +4,11 @@ import {
   DollarSign,
   Receipt,
   BarChart3,
-  Settings
+  Settings,
+  Package,
+  Truck,
+  CreditCard,
+  FileText
 } from 'lucide-react';
 
 export const managementMenuItems = {
@@ -16,6 +20,11 @@ export const managementMenuItems = {
     },
   ],
   operations: [
+    {
+      title: 'Live Punch Monitor',
+      icon: Clock,
+      id: 'live-punch-monitor',
+    },
     {
       title: 'Timesheet Approval',
       icon: Clock,
@@ -30,6 +39,30 @@ export const managementMenuItems = {
       title: 'Bills & Expenses',
       icon: Receipt,
       id: 'bills-expenses',
+    },
+  ],
+  inventory: [
+    {
+      title: 'Inventory',
+      icon: Package,
+      id: 'inventory',
+    },
+    {
+      title: 'Suppliers',
+      icon: Truck,
+      id: 'suppliers',
+    },
+  ],
+  financial: [
+    {
+      title: 'Quotes',
+      icon: CreditCard,
+      id: 'quotes',
+    },
+    {
+      title: 'Invoices',
+      icon: FileText,
+      id: 'invoices',
     },
   ],
   reports: [

@@ -7,6 +7,11 @@ import BillsExpensesManagement from '../components/admin/BillsExpensesManagement
 import AttentionReportsInbox from '../components/admin/AttentionReportsInbox';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
+import LivePunchMonitor from '../components/admin/LivePunchMonitor';
+import InventoryManagement from '../components/admin/InventoryManagement';
+import SuppliersManagement from '../components/admin/SuppliersManagement';
+import QuotesManagement from '../components/admin/QuotesManagement';
+import InvoiceManagement from '../components/admin/InvoiceManagement';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import ManagementDashboardHome from '../components/management/ManagementDashboardHome';
 
@@ -17,12 +22,22 @@ const ManagementDashboard = () => {
     switch (activeTab) {
       case 'dashboard':
         return <ManagementDashboardHome />;
+      case 'live-punch-monitor':
+        return <LivePunchMonitor />;
       case 'timesheets':
         return <EmployeeTimesheets />;
       case 'payroll-summary':
         return <PayrollSummary />;
       case 'bills-expenses':
         return <BillsExpensesManagement />;
+      case 'inventory':
+        return <InventoryManagement />;
+      case 'suppliers':
+        return <SuppliersManagement />;
+      case 'quotes':
+        return <QuotesManagement />;
+      case 'invoices':
+        return <InvoiceManagement />;
       case 'reports':
         return <AttentionReportsInbox />;
       case 'settings':
