@@ -74,6 +74,7 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
       <SidebarContent className="overflow-y-auto px-2 py-2 bg-sidebar">
         {renderSidebarGroup(managementMenuItems.dashboard, "Dashboard")}
         {renderSidebarGroup(managementMenuItems.operations, "Operations")}
+        {renderSidebarGroup(managementMenuItems.employees, "Employee Management")}
         {renderSidebarGroup(managementMenuItems.inventory, "Inventory & Supplies")}
         {renderSidebarGroup(managementMenuItems.financial, "Financial")}
         {renderSidebarGroup(managementMenuItems.reports, "Reports")}

@@ -12,6 +12,8 @@ import InventoryManagement from '../components/admin/InventoryManagement';
 import SuppliersManagement from '../components/admin/SuppliersManagement';
 import QuotesManagement from '../components/admin/QuotesManagement';
 import InvoiceManagement from '../components/admin/InvoiceManagement';
+import EmployeeManagement from '../components/admin/EmployeeManagement';
+import EmployeeRegistration from '../components/admin/EmployeeRegistration';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import ManagementDashboardHome from '../components/management/ManagementDashboardHome';
 
@@ -30,6 +32,10 @@ const ManagementDashboard = () => {
         return <PayrollSummary />;
       case 'bills-expenses':
         return <BillsExpensesManagement />;
+      case 'employees':
+        return <EmployeeManagement />;
+      case 'employee-registration':
+        return <EmployeeRegistration />;
       case 'inventory':
         return <InventoryManagement />;
       case 'suppliers':

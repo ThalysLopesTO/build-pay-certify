@@ -8,7 +8,9 @@ import {
   Package,
   Truck,
   CreditCard,
-  FileText
+  FileText,
+  Users,
+  UserPlus
 } from 'lucide-react';
 
 export const managementMenuItems = {
@@ -39,6 +41,18 @@ export const managementMenuItems = {
       title: 'Bills & Expenses',
       icon: Receipt,
       id: 'bills-expenses',
+    },
+  ],
+  employees: [
+    {
+      title: 'Employee Management',
+      icon: Users,
+      id: 'employees',
+    },
+    {
+      title: 'Employee Registration',
+      icon: UserPlus,
+      id: 'employee-registration',
     },
   ],
   inventory: [
