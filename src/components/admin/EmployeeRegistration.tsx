@@ -77,7 +77,7 @@ const EmployeeRegistration = () => {
                 >
                   Reset Form
                 </Button>
-                { employeeLimit.currentCount < employeeLimit.employeeLimit ? (
+                {employeeLimit && employeeLimit.currentCount < employeeLimit.employeeLimit ? (
                   <Button 
                     type="submit" 
                     className="bg-orange-600 hover:bg-orange-700"

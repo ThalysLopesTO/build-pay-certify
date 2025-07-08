@@ -21,7 +21,7 @@ const EmployeeManagement = () => {
   
   const { user } = useAuth();
   const { data: employees = [], isLoading, error, refetch } = useEmployeeDirectory();
-  const { data: employee } = useEmployeeLimit();
+  const { data: employeeLimit, isLoading: isLoadingLimit } = useEmployeeLimit();
   const deleteEmployeeMutation = useEmployeeDelete();
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
@@ -129,7 +129,7 @@ const EmployeeManagement = () => {
           <h2 className="text-2xl font-bold">Employee Management</h2>
           <p className="text-slate-600">Manage employee roles, rates, and certifications</p>
         </div>
-        { employee.currentCount < employee.employeeLimit ? (
+        {employeeLimit && employeeLimit.currentCount < employeeLimit.employeeLimit ? (
           <Button 
             className="bg-orange-600 hover:bg-orange-700"
             onClick={handleAddEmployee}
