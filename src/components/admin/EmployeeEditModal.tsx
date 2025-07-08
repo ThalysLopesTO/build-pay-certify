@@ -19,7 +19,7 @@ const editEmployeeSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   position: z.string().min(1, 'Position is required'),
   trade: z.string().min(1, 'Trade is required'),
-  role: z.enum(['admin', 'foreman', 'payroll', 'employee']),
+  role: z.enum(['admin', 'foreman', 'management', 'employee']),
   hourlyRate: z.number().min(0, 'Hourly rate must be positive'),
   photo: z.instanceof(File).optional(),
 });
@@ -250,7 +250,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
                     <SelectContent>
                       <SelectItem value="employee">Employee</SelectItem>
                       <SelectItem value="foreman">Foreman</SelectItem>
-                      <SelectItem value="payroll">Payroll</SelectItem>
+                      <SelectItem value="management">Management</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>

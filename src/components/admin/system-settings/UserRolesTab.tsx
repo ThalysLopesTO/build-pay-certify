@@ -40,23 +40,23 @@ const defaultRoles = [
     }
   },
   {
-    id: 'payroll',
-    name: 'Payroll',
-    description: 'Payroll and timesheet management',
+    id: 'management',
+    name: 'Management',
+    description: 'Full management access to payroll, timesheets, bills and reports',
     isSystemRole: false,
     permissions: {
-      timesheets: { view: true, create: false, edit: true, delete: false },
-      invoices: { view: false, create: false, edit: false, delete: false },
+      timesheets: { view: true, create: true, edit: true, delete: true },
+      invoices: { view: true, create: true, edit: true, delete: true },
       materials: { view: false, create: false, edit: false, delete: false },
-      employees: { view: true, create: true, edit: true, delete: false },
+      employees: { view: true, create: true, edit: true, delete: true },
       certificates: { view: true, create: false, edit: false, delete: false },
-      bills: { view: false, create: false, edit: false, delete: false },
+      bills: { view: true, create: true, edit: true, delete: true },
     }
   },
   {
     id: 'account',
     name: 'Account',
-    description: 'Financial and payroll operations',
+    description: 'Financial operations',
     isSystemRole: false,
     permissions: {
       timesheets: { view: true, create: false, edit: true, delete: false },

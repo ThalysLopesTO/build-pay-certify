@@ -16,6 +16,7 @@ import CompanyRegistration from "./pages/CompanyRegistration";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ForemanDashboard from "./pages/ForemanDashboard";
+import ManagementDashboard from "./pages/ManagementDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import LicenseExpired from "./pages/LicenseExpired";
 import NotFound from "./pages/NotFound";
@@ -93,8 +94,10 @@ const DashboardRouter = () => {
   
   // Route based on user role with subscription and license protection
   const DashboardComponent = () => {
-    if (user.role === 'admin' || user.role === 'payroll') {
+    if (user.role === 'admin') {
       return <AdminDashboard />;
+    } else if (user.role === 'management') {
+      return <ManagementDashboard />;
     } else if (user.role === 'foreman') {
       return <ForemanDashboard />;
     } else {

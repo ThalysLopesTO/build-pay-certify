@@ -42,7 +42,7 @@ export const useAuthState = () => {
           } else if (profile && company) {
             const authUser: AuthUser = {
               ...session.user,
-              role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'payroll' | 'employee',
+              role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'management' | 'employee',
               companyId: profile.company_id,
               companyName: company.name,
               hourlyRate: profile.hourly_rate || 25,

@@ -8,7 +8,7 @@ export const employeeSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   address: z.string().optional(),
   phoneNumber: z.string().optional(),
-  role: z.enum(['admin', 'foreman', 'payroll', 'employee']),
+  role: z.enum(['admin', 'foreman', 'management', 'employee']),
   trade: z.string().min(1, 'Trade is required'),
   hourlyRate: z.number().min(0, 'Hourly rate must be positive'),
   // Employee photo

@@ -38,7 +38,7 @@ const EmployeeManagement = () => {
         return 'bg-red-500';
       case 'foreman':
         return 'bg-blue-500';
-      case 'payroll':
+      case 'management':
         return 'bg-green-500';
       default:
         return 'bg-slate-500';

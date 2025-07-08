@@ -51,10 +51,10 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
         />
 
         <SidebarSection
-          items={groupedMenuItems.payroll}
+          items={groupedMenuItems.managementOps}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label="Payroll Management"
+          label="Management Operations"
         />
 
         <SidebarSection

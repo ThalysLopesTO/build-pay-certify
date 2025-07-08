@@ -120,7 +120,7 @@ const PersonalDetailsSection: React.FC<PersonalDetailsSectionProps> = ({ form, f
                 <SelectContent>
                   <SelectItem value="employee">Employee</SelectItem>
                   <SelectItem value="foreman">Foreman</SelectItem>
-                  <SelectItem value="payroll">Payroll</SelectItem>
+                  <SelectItem value="management">Management</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>

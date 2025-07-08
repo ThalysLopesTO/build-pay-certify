@@ -26,7 +26,7 @@ export const useEmployeeDirectory = () => {
           )
         `)
         .eq('company_id', user.companyId)
-        .in('role', ['employee', 'foreman', 'admin'])
+        .in('role', ['employee', 'foreman', 'admin', 'management'])
         .order('first_name');
 
       if (error) {

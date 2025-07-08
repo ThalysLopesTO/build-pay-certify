@@ -90,7 +90,7 @@ export const menuData: MenuItem[] = [
     icon: Clock,
   },
   
-  // Payroll Management
+  // Management Operations
   {
     id: 'timesheets',
     title: 'Timesheets',
@@ -165,7 +165,7 @@ export const groupedMenuItems = {
     menuData.find(item => item.id === 'employee-registration')!,
     menuData.find(item => item.id === 'live-punch-monitor')!,
   ],
-  payroll: [
+  managementOps: [
     menuData.find(item => item.id === 'timesheets')!,
     menuData.find(item => item.id === 'payroll-summary')!,
   ],
