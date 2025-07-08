@@ -43,7 +43,7 @@ const SuppliersManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
 
   // Get unique supplier types for filter
   const supplierTypes = Array.from(new Set(suppliers.map(s => s.supplier_type).filter(Boolean)));

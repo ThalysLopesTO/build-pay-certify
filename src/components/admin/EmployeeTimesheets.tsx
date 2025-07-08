@@ -25,8 +25,8 @@ const EmployeeTimesheets = () => {
   const { data: timesheets = [], isLoading, error } = useWeeklyTimesheets(filters);
   const { data: employees = [] } = useEmployeeDirectory();
   
-  // Only admins and super_admins can access Employee Timesheets (not foremen for payroll)
-  const isAuthorized = user?.role === 'admin' || user?.role === 'super_admin';
+  // Only admins, management, and super_admins can access Employee Timesheets (not foremen for payroll)
+  const isAuthorized = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
 
   const handleApprove = (timesheetId: string) => {
     approveTimesheet(timesheetId);
