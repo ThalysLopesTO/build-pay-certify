@@ -7,7 +7,8 @@ import {
   BarChart3, 
   BookOpen, 
   Settings,
-  Building
+  Building,
+  Monitor
 } from 'lucide-react';
 
 export const foremanMenuItems = [
@@ -30,6 +31,11 @@ export const foremanMenuItems = [
     title: 'Employees',
     icon: Users,
     id: 'employees',
+  },
+  {
+    title: 'Live Punch Monitor',
+    icon: Monitor,
+    id: 'live-punch-monitor',
   },
   {
     title: 'Employee Reports',
@@ -79,6 +85,11 @@ export const groupedForemanItems = {
       title: 'Employees',
       icon: Users,
       id: 'employees',
+    },
+    {
+      title: 'Live Punch Monitor',
+      icon: Monitor,
+      id: 'live-punch-monitor',
     },
     {
       title: 'Jobsite Progress',
