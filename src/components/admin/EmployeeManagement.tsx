@@ -24,7 +24,7 @@ const EmployeeManagement = () => {
   const { data: employee } = useEmployeeLimit();
   const deleteEmployeeMutation = useEmployeeDelete();
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
 
   const filteredEmployees = employees.filter(employee =>
     `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
