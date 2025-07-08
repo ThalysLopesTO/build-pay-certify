@@ -2,8 +2,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calculator, Clock, DollarSign, Receipt, BarChart3, TrendingUp } from 'lucide-react';
+import { useManagementDashboardStats } from '@/hooks/useManagementDashboardStats';
 
 const ManagementDashboardHome = () => {
+  const { data: stats, isLoading } = useManagementDashboardStats();
+
   const quickActions = [
     {
       title: 'Timesheet Approval',
@@ -35,34 +38,41 @@ const ManagementDashboardHome = () => {
     }
   ];
 
-  const stats = [
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-CA', {
+      style: 'currency',
+      currency: 'CAD',
+    }).format(amount);
+  };
+
+  const dashboardStats = [
     {
       title: 'Pending Timesheets',
-      value: '12',
+      value: isLoading ? '...' : stats?.pendingTimesheetsCount?.toString() || '0',
       icon: Clock,
-      change: '+2 from last week',
-      changeType: 'increase'
+      change: 'Awaiting approval',
+      changeType: 'neutral'
     },
     {
       title: 'This Week Payroll',
-      value: '$15,420',
+      value: isLoading ? '...' : formatCurrency(stats?.currentWeekPayroll || 0),
       icon: DollarSign,
-      change: '+8% from last week',
-      changeType: 'increase'
+      change: 'Current week total',
+      changeType: 'neutral'
     },
     {
       title: 'Pending Bills',
-      value: '5',
+      value: isLoading ? '...' : stats?.pendingBillsCount?.toString() || '0',
       icon: Receipt,
-      change: '-2 from last week',
-      changeType: 'decrease'
+      change: 'Unpaid bills',
+      changeType: stats?.pendingBillsCount && stats.pendingBillsCount > 0 ? 'decrease' : 'neutral'
     },
     {
       title: 'Open Reports',
-      value: '3',
+      value: isLoading ? '...' : stats?.openReportsCount?.toString() || '0',
       icon: BarChart3,
-      change: 'Same as last week',
-      changeType: 'neutral'
+      change: 'Attention reports',
+      changeType: stats?.openReportsCount && stats.openReportsCount > 0 ? 'increase' : 'neutral'
     }
   ];
 
@@ -79,7 +89,7 @@ const ManagementDashboardHome = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {dashboardStats.map((stat, index) => (
           <Card key={index}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -137,20 +147,28 @@ const ManagementDashboardHome = () => {
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">Weekly Efficiency</span>
-              <Badge variant="default" className="bg-green-100 text-green-800">92%</Badge>
-            </div>
-            <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600 dark:text-gray-300">Timesheets Processed</span>
-              <Badge variant="secondary">45/50</Badge>
+              <Badge variant="secondary">
+                {isLoading ? '...' : `${stats?.approvedTimesheetsCount || 0}/${stats?.totalTimesheetsCount || 0}`}
+              </Badge>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">Budget Utilization</span>
-              <Badge variant="default" className="bg-blue-100 text-blue-800">78%</Badge>
+              <span className="text-sm text-gray-600 dark:text-gray-300">Pending Actions</span>
+              <Badge variant={stats?.pendingTimesheetsCount && stats.pendingTimesheetsCount > 0 ? 'destructive' : 'default'}>
+                {isLoading ? '...' : stats?.pendingTimesheetsCount || 0}
+              </Badge>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">Outstanding Issues</span>
-              <Badge variant="destructive">3</Badge>
+              <span className="text-sm text-gray-600 dark:text-gray-300">Outstanding Bills</span>
+              <Badge variant={stats?.pendingBillsCount && stats.pendingBillsCount > 0 ? 'destructive' : 'default'}>
+                {isLoading ? '...' : stats?.pendingBillsCount || 0}
+              </Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600 dark:text-gray-300">Attention Reports</span>
+              <Badge variant={stats?.openReportsCount && stats.openReportsCount > 0 ? 'destructive' : 'secondary'}>
+                {isLoading ? '...' : stats?.openReportsCount || 0}
+              </Badge>
             </div>
           </div>
         </CardContent>
