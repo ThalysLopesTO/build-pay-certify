@@ -28,6 +28,7 @@ type EditEmployeeFormData = z.infer<typeof editEmployeeSchema>;
 
 interface Employee {
   id: string;
+  user_id: string;
   first_name: string;
   last_name: string;
   position: string;
@@ -80,7 +81,12 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   }, [employee, form]);
 
   const handleSubmit = async (data: EditEmployeeFormData) => {
-    if (!employee) return;
+    console.log('handleSubmit called with data:', data);
+    console.log('employee object:', employee);
+    if (!employee) {
+      console.log('No employee found, returning early');
+      return;
+    }
 
     try {
       let photoUrl = employee.photo_url;
