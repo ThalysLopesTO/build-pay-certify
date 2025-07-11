@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Camera, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -53,29 +53,40 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      // Validate file type
-      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
-      if (!allowedTypes.includes(selectedFile.type)) {
-        toast({
-          title: 'Invalid File Type',
-          description: 'Please upload a PDF, JPG, or PNG file.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      // Validate file size (10MB max)
-      if (selectedFile.size > 10 * 1024 * 1024) {
-        toast({
-          title: 'File Too Large',
-          description: 'Please upload a file smaller than 10MB.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      setFile(selectedFile);
+      validateAndSetFile(selectedFile);
     }
+  };
+
+  const handleCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const capturedFile = event.target.files?.[0];
+    if (capturedFile) {
+      validateAndSetFile(capturedFile);
+    }
+  };
+
+  const validateAndSetFile = (selectedFile: File) => {
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(selectedFile.type)) {
+      toast({
+        title: 'Invalid File Type',
+        description: 'Please upload a PDF, JPG, or PNG file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Validate file size (10MB max)
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      toast({
+        title: 'File Too Large',
+        description: 'Please upload a file smaller than 10MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setFile(selectedFile);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -228,34 +239,75 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="file">Certificate File (Optional)</Label>
-            <div className="flex items-center space-x-2">
-              <Input
-                id="file"
-                type="file"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="flex-1"
-              />
-              {file && (
+            <Label>Certificate File (Optional)</Label>
+            
+            {!file ? (
+              <div className="grid grid-cols-2 gap-3">
+                {/* Take Photo Option */}
+                <div className="relative">
+                  <input
+                    id="camera"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleCameraCapture}
+                    className="sr-only"
+                  />
+                  <label
+                    htmlFor="camera"
+                    className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors"
+                  >
+                    <Camera className="h-8 w-8 text-gray-400 mb-2" />
+                    <span className="text-sm font-medium text-gray-600">Take Photo</span>
+                    <span className="text-xs text-gray-500 text-center">Use camera to capture certificate</span>
+                  </label>
+                </div>
+
+                {/* Upload File Option */}
+                <div className="relative">
+                  <input
+                    id="fileUpload"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileChange}
+                    className="sr-only"
+                  />
+                  <label
+                    htmlFor="fileUpload"
+                    className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors"
+                  >
+                    <FileText className="h-8 w-8 text-gray-400 mb-2" />
+                    <span className="text-sm font-medium text-gray-600">Upload File</span>
+                    <span className="text-xs text-gray-500 text-center">Choose from device storage</span>
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <FileText className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800">{file.name}</p>
+                    <p className="text-xs text-green-600">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                </div>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setFile(null)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
                   <X className="h-4 w-4" />
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
+            
             <p className="text-xs text-gray-500">
               Supported formats: PDF, JPG, PNG (Max 10MB)
             </p>
-            {file && (
-              <p className="text-sm text-green-600">
-                Selected: {file.name}
-              </p>
-            )}
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
