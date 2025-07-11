@@ -13,7 +13,7 @@ import EmployeeDeleteDialog from './EmployeeDeleteDialog';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { useEmployeeLimit } from '@/hooks/useEmployeeLimit';
 
-const EmployeeManagement = () => {
+const EmployeeManagement = ({ onNavigateToRegistration }: { onNavigateToRegistration?: () => void }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingEmployee, setEditingEmployee] = useState<any>(null);
   const [viewingCertificates, setViewingCertificates] = useState<any>(null);
@@ -78,9 +78,9 @@ const EmployeeManagement = () => {
   };
 
   const handleAddEmployee = () => {
-    // This will be handled by the parent component (AdminDashboard)
-    // by setting the activeTab to 'employee-registration'
-    window.dispatchEvent(new CustomEvent('navigateToEmployeeRegistration'));
+    if (onNavigateToRegistration) {
+      onNavigateToRegistration();
+    }
   };
 
   const handleDeleteEmployee = (employee: any) => {

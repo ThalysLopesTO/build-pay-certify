@@ -33,7 +33,7 @@ const ManagementDashboard = () => {
       case 'bills-expenses':
         return <BillsExpensesManagement />;
       case 'employees':
-        return <EmployeeManagement />;
+        return <EmployeeManagement onNavigateToRegistration={() => setActiveTab('employee-registration')} />;
       case 'employee-registration':
         return <EmployeeRegistration />;
       case 'inventory':

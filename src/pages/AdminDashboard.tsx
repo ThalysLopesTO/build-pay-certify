@@ -40,7 +40,7 @@ const AdminDashboard = () => {
       case 'dashboard':
         return <AdminDashboardContent setActiveTab={setActiveTab} />;
       case 'employees':
-        return <EmployeeManagement />;
+        return <EmployeeManagement onNavigateToRegistration={() => setActiveTab('employee-registration')} />;
       case 'employee-registration':
         return <EmployeeRegistration />;
       case 'jobsites':
