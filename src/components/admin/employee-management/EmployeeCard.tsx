@@ -2,10 +2,12 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2 } from 'lucide-react';
+import { Trash2, KeyRound } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Employee } from './useEmployeeManagement';
 import { getRoleColor, getCertStatusIcon, getCertStatusText, getCertStatus } from './employeeHelpers';
+import { canResetPassword } from '@/hooks/usePasswordManagement';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface EmployeeCardProps {
   employee: Employee;
@@ -13,6 +15,7 @@ interface EmployeeCardProps {
   onEdit: (employee: Employee) => void;
   onViewCertificates: (employee: Employee) => void;
   onDelete: (employee: Employee) => void;
+  onResetPassword: (employee: Employee) => void;
   isDeleting: boolean;
 }
 
@@ -22,9 +25,13 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
   onEdit,
   onViewCertificates,
   onDelete,
+  onResetPassword,
   isDeleting
 }) => {
+  const { user } = useAuth();
   const certStatus = getCertStatus(); // Mock status - will be replaced with real data
+  
+  const canReset = user?.role && canResetPassword(user.role, employee.role);
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -90,6 +97,18 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
           >
             View Certs
           </Button>
+          {canReset && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-amber-600 border-amber-200 hover:bg-amber-50"
+              onClick={() => onResetPassword(employee)}
+              disabled={isDeleting}
+              title="Reset Password"
+            >
+              <KeyRound className="h-4 w-4" />
+            </Button>
+          )}
           {isAdmin && (
             <Button 
               variant="outline" 

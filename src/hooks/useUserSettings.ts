@@ -57,6 +57,7 @@ export const useUpdateProfile = () => {
   });
 };
 
+// Legacy function - use useUpdateOwnPassword from usePasswordManagement instead
 export const useUpdatePassword = () => {
   const { toast } = useToast();
 

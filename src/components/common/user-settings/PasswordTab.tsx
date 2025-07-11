@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { useUpdatePassword } from '@/hooks/useUserSettings';
+import { useUpdateOwnPassword } from '@/hooks/usePasswordManagement';
 import { passwordSchema, PasswordFormData } from './schemas';
 
 const PasswordTab = () => {
-  const updatePassword = useUpdatePassword();
+  const updatePassword = useUpdateOwnPassword();
 
   const passwordForm = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),

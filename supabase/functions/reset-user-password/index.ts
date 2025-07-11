@@ -44,7 +44,7 @@ serve(async (req) => {
       )
     }
 
-    const { targetUserId, newPassword } = await req.json()
+    const { targetUserId, newPassword, targetUserEmail, targetUserName } = await req.json()
 
     if (!targetUserId || !newPassword) {
       return new Response(
@@ -109,6 +109,22 @@ serve(async (req) => {
         JSON.stringify({ error: 'Failed to update password' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
+    }
+
+    // Log the password reset for accountability
+    const { error: logError } = await supabaseClient
+      .from('password_reset_logs')
+      .insert({
+        admin_user_id: user.id,
+        target_user_id: targetUserId,
+        target_user_email: targetUserEmail || 'unknown',
+        target_user_name: targetUserName || 'unknown',
+        company_id: adminProfile.company_id
+      })
+
+    if (logError) {
+      console.warn('Failed to log password reset:', logError)
+      // Don't fail the request if logging fails
     }
 
     return new Response(

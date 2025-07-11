@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -12,15 +12,6 @@ interface ResetPasswordData {
 
 interface UpdateOwnPasswordData {
   password: string;
-}
-
-interface PasswordResetLog {
-  admin_user_id: string;
-  target_user_id: string;
-  target_user_email: string;
-  target_user_name: string;
-  reset_timestamp: string;
-  company_id: string;
 }
 
 // Permission logic based on user roles
@@ -47,30 +38,14 @@ export const useResetUserPassword = () => {
     mutationFn: async (data: ResetPasswordData) => {
       if (!user) throw new Error('User not authenticated');
 
-      // First, log the password reset for accountability
-      const logData: PasswordResetLog = {
-        admin_user_id: user.id,
-        target_user_id: data.targetUserId,
-        target_user_email: data.targetUserEmail,
-        target_user_name: data.targetUserName,
-        reset_timestamp: new Date().toISOString(),
-        company_id: user.companyId || ''
-      };
-
-      const { error: logError } = await supabase
-        .from('password_reset_logs')
-        .insert(logData);
-
-      if (logError) {
-        console.warn('Failed to log password reset:', logError);
-        // Don't block the reset if logging fails
-      }
-
       // Call the edge function to reset the password
+      // The edge function will handle logging internally
       const { data: result, error } = await supabase.functions.invoke('reset-user-password', {
         body: {
           targetUserId: data.targetUserId,
-          newPassword: data.newPassword
+          newPassword: data.newPassword,
+          targetUserEmail: data.targetUserEmail,
+          targetUserName: data.targetUserName
         }
       });
 

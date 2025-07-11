@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import EmployeeEditModal from './EmployeeEditModal';
 import EmployeeCertificatesModal from './EmployeeCertificatesModal';
 import EmployeeDeleteDialog from './EmployeeDeleteDialog';
+import PasswordResetModal from './PasswordResetModal';
 import EmployeeHeader from './employee-management/EmployeeHeader';
 import EmployeeSearch from './employee-management/EmployeeSearch';
 import EmployeeCard from './employee-management/EmployeeCard';
@@ -11,6 +12,8 @@ import EmployeeErrorState from './employee-management/EmployeeErrorState';
 import { useEmployeeManagement, type Employee } from './employee-management/useEmployeeManagement';
 
 const EmployeeManagement = ({ onNavigateToRegistration }: { onNavigateToRegistration?: () => void }) => {
+  const [resettingPasswordEmployee, setResettingPasswordEmployee] = useState<Employee | null>(null);
+  
   const {
     searchTerm,
     editingEmployee,
@@ -35,6 +38,10 @@ const EmployeeManagement = ({ onNavigateToRegistration }: { onNavigateToRegistra
     if (onNavigateToRegistration) {
       onNavigateToRegistration();
     }
+  };
+
+  const handleResetPassword = (employee: Employee) => {
+    setResettingPasswordEmployee(employee);
   };
 
   if (isLoading) {
@@ -66,6 +73,7 @@ const EmployeeManagement = ({ onNavigateToRegistration }: { onNavigateToRegistra
             onEdit={setEditingEmployee}
             onViewCertificates={setViewingCertificates}
             onDelete={handleDeleteEmployee}
+            onResetPassword={handleResetPassword}
             isDeleting={isDeleting}
           />
         ))}
@@ -87,6 +95,12 @@ const EmployeeManagement = ({ onNavigateToRegistration }: { onNavigateToRegistra
         isOpen={!!viewingCertificates}
         onClose={() => setViewingCertificates(null)}
         employee={viewingCertificates}
+      />
+
+      <PasswordResetModal
+        isOpen={!!resettingPasswordEmployee}
+        onClose={() => setResettingPasswordEmployee(null)}
+        employee={resettingPasswordEmployee}
       />
 
       <EmployeeDeleteDialog

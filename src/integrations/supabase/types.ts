@@ -1001,6 +1001,39 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_logs: {
+        Row: {
+          admin_user_id: string
+          company_id: string
+          created_at: string
+          id: string
+          reset_timestamp: string
+          target_user_email: string
+          target_user_id: string
+          target_user_name: string
+        }
+        Insert: {
+          admin_user_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+          reset_timestamp?: string
+          target_user_email: string
+          target_user_id: string
+          target_user_name: string
+        }
+        Update: {
+          admin_user_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          reset_timestamp?: string
+          target_user_email?: string
+          target_user_id?: string
+          target_user_name?: string
+        }
+        Relationships: []
+      }
       quote_line_items: {
         Row: {
           amount: number
