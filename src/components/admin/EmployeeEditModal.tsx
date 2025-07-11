@@ -157,7 +157,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-sm sm:max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Employee Details</DialogTitle>
         </DialogHeader>
