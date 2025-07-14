@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, X, Camera, FileText } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -45,6 +46,7 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
   const [certificateName, setCertificateName] = useState('');
   const [certificateType, setCertificateType] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
+  const [noExpiry, setNoExpiry] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
@@ -101,7 +103,7 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
       return;
     }
 
-    if (!certificateName || !certificateType || !expiryDate) {
+    if (!certificateName || !certificateType || (!expiryDate && !noExpiry)) {
       toast({
         title: 'Missing Information',
         description: 'Please fill in all required fields.',
@@ -143,7 +145,7 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
           company_id: user.companyId,
           certificate_name: certificateName,
           certificate_type: certificateType,
-          expiry_date: expiryDate,
+          expiry_date: noExpiry ? null : expiryDate,
           file_url: fileUrl,
           uploaded_by: user.id
         });
@@ -161,6 +163,7 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
       setCertificateName('');
       setCertificateType('');
       setExpiryDate('');
+      setNoExpiry(false);
       setFile(null);
       
       onSuccess();
@@ -182,6 +185,7 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
       setCertificateName('');
       setCertificateType('');
       setExpiryDate('');
+      setNoExpiry(false);
       setFile(null);
       onClose();
     }
@@ -228,14 +232,34 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="expiryDate">Expiry Date *</Label>
-            <Input
-              id="expiryDate"
-              type="date"
-              value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
-              required
-            />
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="noExpiry"
+                checked={noExpiry}
+                onCheckedChange={(checked) => {
+                  setNoExpiry(checked as boolean);
+                  if (checked) {
+                    setExpiryDate('');
+                  }
+                }}
+              />
+              <Label htmlFor="noExpiry" className="text-sm font-medium">
+                Never Expires
+              </Label>
+            </div>
+            
+            {!noExpiry && (
+              <>
+                <Label htmlFor="expiryDate">Expiry Date *</Label>
+                <Input
+                  id="expiryDate"
+                  type="date"
+                  value={expiryDate}
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                  required={!noExpiry}
+                />
+              </>
+            )}
           </div>
 
           <div className="space-y-2">
