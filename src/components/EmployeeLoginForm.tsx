@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/SupabaseAuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,40 +14,87 @@ const EmployeeLoginForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { loginWithUsername } = useAuth();
+  const { loginWithUsername, isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+
+  // Handle navigation after successful login
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('🎯 Employee login successful, navigating to dashboard for role:', user.role);
+      
+      // Stop loading state before navigation
+      setLoading(false);
+      
+      // Role-based redirect
+      switch (user.role) {
+        case 'admin':
+        case 'super_admin':
+          console.log('🔐 Admin user detected, redirecting to admin dashboard');
+          navigate('/admin/dashboard', { replace: true });
+          break;
+        case 'management':
+          console.log('📊 Management user detected, redirecting to management dashboard');
+          navigate('/management/dashboard', { replace: true });
+          break;
+        case 'foreman':
+          console.log('👷 Foreman user detected, redirecting to foreman dashboard');
+          navigate('/foreman/dashboard', { replace: true });
+          break;
+        case 'employee':
+          console.log('👤 Employee user detected, redirecting to employee dashboard');
+          navigate('/employee/dashboard', { replace: true });
+          break;
+        default:
+          console.warn('⚠️ Unknown role detected:', user.role, 'redirecting to home');
+          // Fallback to home page if role is undefined
+          navigate('/', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      console.log('🔑 Attempting username login for:', username);
       const { error } = await loginWithUsername(username, password, 'employee');
+      
       if (error) {
-        console.error('Login error:', error);
+        console.error('❌ Login error:', error);
         toast({
           title: "Login Failed",
           description: error.message || "Invalid username or password",
           variant: "destructive",
         });
+        setLoading(false);
       } else {
+        console.log('✅ Login successful, waiting for auth state update...');
         toast({
           title: "Welcome Back",
           description: "Successfully logged into StackBuild",
         });
-        // Redirect to employee dashboard
-        window.location.href = '/employee/dashboard';
+        
+        // Timeout fallback in case auth state doesn't update properly
+        setTimeout(() => {
+          if (loading) {
+            console.warn('⚠️ Auth state update timeout, forcing redirect...');
+            setLoading(false);
+            window.location.href = '/employee/dashboard';
+          }
+        }, 5000); // 5 second timeout
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('💥 Login error:', error);
       toast({
         title: "Error",
         description: "An error occurred during login",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100">
