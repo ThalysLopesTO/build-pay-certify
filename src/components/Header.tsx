@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import PWAInstallButton from '@/components/common/PWAInstallButton';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -75,8 +76,11 @@ const Header = () => {
           )}
         </div>
         
-        {/* Right: Theme Toggle, Notifications & User Profile & Logout */}
+        {/* Right: PWA Install, Theme Toggle, Notifications & User Profile & Logout */}
         <div className="flex items-center space-x-4">
+          {/* PWA Install Button */}
+          <PWAInstallButton />
+          
           {/* Theme Toggle */}
           <ThemeToggle />
           
