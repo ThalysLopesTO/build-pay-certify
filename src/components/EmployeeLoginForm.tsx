@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { Users, ArrowRight, User, Lock, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import PWAInstallButton from '@/components/common/PWAInstallButton';
 
 const EmployeeLoginForm = () => {
   const [username, setUsername] = useState('');
@@ -110,6 +111,11 @@ const EmployeeLoginForm = () => {
             />
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Employee Login</h1>
             <p className="text-slate-600">Access your work dashboard</p>
+            
+            {/* PWA Install Button */}
+            <div className="mt-4">
+              <PWAInstallButton />
+            </div>
           </div>
 
           {/* Info Alert for Employee Login */}

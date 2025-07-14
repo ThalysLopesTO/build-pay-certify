@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { Building, ArrowRight, Mail, Lock, Users } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import PWAInstallButton from '@/components/common/PWAInstallButton';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -110,6 +111,11 @@ const LoginForm = () => {
             />
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Company Login</h1>
             <p className="text-slate-600">Welcome back to StackBuild</p>
+            
+            {/* PWA Install Button */}
+            <div className="mt-4">
+              <PWAInstallButton />
+            </div>
           </div>
 
           {/* Info Alert for Company Login */}
