@@ -17,6 +17,7 @@ export const useEmployeeRegistrationForm = () => {
     resolver: zodResolver(employeeSchema),
     defaultValues: {
       email: '',
+      username: '',
       password: '',
       firstName: '',
       lastName: '',
@@ -26,11 +27,7 @@ export const useEmployeeRegistrationForm = () => {
       trade: '',
       hourlyRate: 0,
       photo: undefined,
-      workAtHeightsExpiry: undefined,
-      whmisExpiry: undefined,
-      fourStepsExpiry: undefined,
-      fiveStepsExpiry: undefined,
-      liftOperatorExpiry: undefined,
+      certificates: [],
     },
   });
 
@@ -48,9 +45,10 @@ export const useEmployeeRegistrationForm = () => {
     setLoading(true);
     
     try {
-      console.log('Submitting employee registration:', { email: data.email, role: data.role });
+      console.log('Submitting employee registration:', { email: data.email, username: data.username, role: data.role });
 
       let photoUrl: string | null = null;
+      const certificateUrls: Array<{ name: string; expiryDate?: string; noExpiry: boolean; fileUrl?: string }> = [];
 
       // Upload photo if provided
       if (data.photo) {
@@ -79,12 +77,50 @@ export const useEmployeeRegistrationForm = () => {
         console.log('Photo uploaded successfully:', photoUrl);
       }
 
+      // Upload certificate files if provided
+      for (const certificate of data.certificates) {
+        const certData: any = {
+          name: certificate.name,
+          expiryDate: certificate.noExpiry ? undefined : certificate.expiryDate?.toISOString(),
+          noExpiry: certificate.noExpiry,
+        };
+
+        if (certificate.file) {
+          console.log('Uploading certificate file:', certificate.name);
+          const fileExtension = certificate.file.name.split('.').pop();
+          const fileName = `${crypto.randomUUID()}.${fileExtension}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('certificates')
+            .upload(fileName, certificate.file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) {
+            console.error('Certificate upload error:', uploadError);
+            throw new Error(`Failed to upload certificate file for ${certificate.name}`);
+          }
+
+          // Get public URL
+          const { data: publicUrlData } = supabase.storage
+            .from('certificates')
+            .getPublicUrl(fileName);
+          
+          certData.fileUrl = publicUrlData.publicUrl;
+          console.log('Certificate file uploaded successfully:', certData.fileUrl);
+        }
+
+        certificateUrls.push(certData);
+      }
+
       // Call the Edge Function to create the employee
       const { data: result, error } = await supabase.functions.invoke('create-employee', {
         body: {
           employeeData: {
             companyId: user.companyId,
             email: data.email,
+            username: data.username,
             password: data.password,
             firstName: data.firstName,
             lastName: data.lastName,
@@ -94,12 +130,7 @@ export const useEmployeeRegistrationForm = () => {
             trade: data.trade,
             hourlyRate: data.hourlyRate,
             photoUrl: photoUrl,
-            // Certificate expiry dates as ISO strings
-            workAtHeightsExpiry: data.workAtHeightsExpiry?.toISOString(),
-            whmisExpiry: data.whmisExpiry?.toISOString(),
-            fourStepsExpiry: data.fourStepsExpiry?.toISOString(),
-            fiveStepsExpiry: data.fiveStepsExpiry?.toISOString(),
-            liftOperatorExpiry: data.liftOperatorExpiry?.toISOString(),
+            certificates: certificateUrls,
           }
         },
       });

@@ -20,6 +20,23 @@ const LoginCredentialsSection: React.FC<LoginCredentialsSectionProps> = ({ form 
       
       <FormField
         control={form.control}
+        name="username"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Login Username *</FormLabel>
+            <FormControl>
+              <Input placeholder="e.g. johnsmith123" {...field} />
+            </FormControl>
+            <FormMessage />
+            <p className="text-xs text-slate-500 mt-1">
+              Employee will use this username to log in to the system
+            </p>
+          </FormItem>
+        )}
+      />
+      
+      <FormField
+        control={form.control}
         name="password"
         render={({ field }) => (
           <FormItem>

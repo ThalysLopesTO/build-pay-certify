@@ -1,8 +1,18 @@
 
 import { z } from 'zod';
 
+// Certificate schema for dynamic certificates
+export const certificateSchema = z.object({
+  id: z.string(), // Temporary ID for form management
+  name: z.string().min(1, 'Certificate name is required'),
+  expiryDate: z.date().optional(),
+  noExpiry: z.boolean().default(false),
+  file: z.instanceof(File).optional(),
+});
+
 export const employeeSchema = z.object({
   email: z.string().email('Invalid email address'),
+  username: z.string().min(3, 'Username must be at least 3 characters').regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
@@ -13,12 +23,9 @@ export const employeeSchema = z.object({
   hourlyRate: z.number().min(0, 'Hourly rate must be positive'),
   // Employee photo
   photo: z.instanceof(File).optional(),
-  // Certificate expiry dates
-  workAtHeightsExpiry: z.date().optional(),
-  whmisExpiry: z.date().optional(),
-  fourStepsExpiry: z.date().optional(),
-  fiveStepsExpiry: z.date().optional(),
-  liftOperatorExpiry: z.date().optional(),
+  // Dynamic certificates
+  certificates: z.array(certificateSchema).default([]),
 });
 
+export type CertificateFormData = z.infer<typeof certificateSchema>;
 export type EmployeeFormData = z.infer<typeof employeeSchema>;

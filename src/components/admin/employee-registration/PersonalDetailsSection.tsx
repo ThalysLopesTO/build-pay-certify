@@ -64,6 +64,9 @@ const PersonalDetailsSection: React.FC<PersonalDetailsSectionProps> = ({ form, f
               <Input type="email" placeholder="john.smith@company.com" {...field} />
             </FormControl>
             <FormMessage />
+            <p className="text-xs text-slate-500 mt-1">
+              Used for admin communication only (not for login)
+            </p>
           </FormItem>
         )}
       />

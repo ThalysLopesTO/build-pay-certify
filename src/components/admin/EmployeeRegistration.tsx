@@ -8,7 +8,7 @@ import { useEmployeeLimit } from '@/hooks/useEmployeeLimit';
 import { useEmployeeRegistrationForm } from './employee-registration/useEmployeeRegistrationForm';
 import PersonalDetailsSection from './employee-registration/PersonalDetailsSection';
 import LoginCredentialsSection from './employee-registration/LoginCredentialsSection';
-import CertificatesSection from './employee-registration/CertificatesSection';
+import DynamicCertificatesSection from './employee-registration/DynamicCertificatesSection';
 import EmployeeLimitAlert from './employee-registration/EmployeeLimitAlert';
 
 const EmployeeRegistration = () => {
@@ -67,7 +67,7 @@ const EmployeeRegistration = () => {
               <LoginCredentialsSection form={form} />
 
               {/* Certificates Section */}
-              <CertificatesSection form={form} />
+              <DynamicCertificatesSection form={form} />
 
               <div className="flex justify-end space-x-4 pt-6 border-t">
                 <Button 

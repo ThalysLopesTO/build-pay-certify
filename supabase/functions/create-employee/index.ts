@@ -139,6 +139,7 @@ serve(async (req) => {
       password: employeeData.password,
       email_confirm: true, // Auto-confirm email
       user_metadata: {
+        username: employeeData.username,
         first_name: employeeData.firstName,
         last_name: employeeData.lastName,
         address: employeeData.address,
@@ -147,12 +148,6 @@ serve(async (req) => {
         trade: employeeData.trade,
         hourly_rate: employeeData.hourlyRate,
         company_id: employeeData.companyId, // Ensure company_id is in metadata
-        // Certificate expiry dates
-        work_at_heights_expiry: employeeData.workAtHeightsExpiry,
-        whmis_expiry: employeeData.whmisExpiry,
-        four_steps_expiry: employeeData.fourStepsExpiry,
-        five_steps_expiry: employeeData.fiveStepsExpiry,
-        lift_operator_expiry: employeeData.liftOperatorExpiry,
         must_change_password: true, // Force password change on first login
       },
     })
@@ -241,6 +236,57 @@ serve(async (req) => {
       console.log('User profile created successfully for company:', employeeData.companyId)
     } else {
       console.log('User profile already exists for user:', authData.user.id)
+    }
+
+    // Create certificates if provided
+    if (employeeData.certificates && employeeData.certificates.length > 0) {
+      console.log('Creating certificates for employee:', authData.user.id)
+      
+      for (const certificate of employeeData.certificates) {
+        // Only insert if certificate has expiry date when noExpiry is false
+        if (!certificate.noExpiry && certificate.expiryDate) {
+          const { error: certError } = await supabaseAdmin
+            .from('employee_certificates')
+            .insert({
+              employee_id: authData.user.id,
+              company_id: employeeData.companyId,
+              certificate_name: certificate.name,
+              certificate_type: 'custom',
+              expiry_date: certificate.expiryDate,
+              file_url: certificate.fileUrl,
+              uploaded_by: authData.user.id,
+              status: 'valid'
+            })
+
+          if (certError) {
+            console.error('Error creating certificate:', certError)
+            // Don't fail the entire process for certificate errors, just log
+          }
+        } else if (certificate.noExpiry) {
+          // For certificates with no expiry, set expiry_date far in the future and mark as no-expiry
+          const farFutureDate = new Date('2099-12-31').toISOString().split('T')[0]
+          
+          const { error: certError } = await supabaseAdmin
+            .from('employee_certificates')
+            .insert({
+              employee_id: authData.user.id,
+              company_id: employeeData.companyId,
+              certificate_name: certificate.name,
+              certificate_type: 'no-expiry',
+              expiry_date: farFutureDate,
+              file_url: certificate.fileUrl,
+              uploaded_by: authData.user.id,
+              status: 'valid'
+            })
+
+          if (certError) {
+            console.error('Error creating no-expiry certificate:', certError)
+            // Don't fail the entire process for certificate errors, just log
+          }
+        }
+      }
+      
+      console.log('Certificates processed successfully')
     }
 
     return new Response(
