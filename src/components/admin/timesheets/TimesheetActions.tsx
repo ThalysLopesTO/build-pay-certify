@@ -1,8 +1,5 @@
-
-import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, Check, X } from 'lucide-react';
-import TimesheetPDFGenerator from './TimesheetPDFGenerator';
+import { Check, X, Edit } from 'lucide-react';
 
 interface TimesheetActionsProps {
   timesheet: any;
@@ -21,10 +18,6 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
   isApproving,
   isRejecting
 }) => {
-  const handleDownload = (timesheet: any) => {
-    console.log('Downloading PDF for timesheet:', timesheet.id);
-  };
-
   return (
     <div className="flex items-center gap-1">
       <Button
@@ -34,12 +27,8 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
         className="h-8 w-8 p-0"
         title="Edit timesheet"
       >
-        <Edit className="h-4 w-4" />
+        <Edit className="h-4 w-4 text-blue-500" />
       </Button>
-      <TimesheetPDFGenerator
-        timesheet={timesheet}
-        onDownloadSingle={handleDownload}
-      />
       {timesheet.status !== 'approved' && (
         <Button
           variant="ghost"
