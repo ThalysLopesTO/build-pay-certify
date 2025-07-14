@@ -15,7 +15,7 @@ const initializeTheme = () => {
   const stored = localStorage.getItem('theme') as Theme | null;
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   
-  let theme: Theme = stored || 'system';
+  let theme: Theme = stored || 'light';
   let actualTheme: 'light' | 'dark';
   
   if (theme === 'system') {
