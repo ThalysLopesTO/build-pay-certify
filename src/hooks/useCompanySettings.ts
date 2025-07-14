@@ -15,6 +15,7 @@ export interface CompanySettings {
   company_id: string | null;
   company_rules_text: string | null;
   week_ending_day: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
+  tax_percentage: number; // Tax percentage for timesheet calculations
   created_at: string;
   updated_at: string;
 }

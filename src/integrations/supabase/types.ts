@@ -449,6 +449,7 @@ export type Database = {
           created_at: string
           hst_number: string | null
           id: string
+          tax_percentage: number | null
           updated_at: string
           week_ending_day: number | null
         }
@@ -463,6 +464,7 @@ export type Database = {
           created_at?: string
           hst_number?: string | null
           id?: string
+          tax_percentage?: number | null
           updated_at?: string
           week_ending_day?: number | null
         }
@@ -477,6 +479,7 @@ export type Database = {
           created_at?: string
           hst_number?: string | null
           id?: string
+          tax_percentage?: number | null
           updated_at?: string
           week_ending_day?: number | null
         }

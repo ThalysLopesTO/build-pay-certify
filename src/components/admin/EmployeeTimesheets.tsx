@@ -126,6 +126,7 @@ const EmployeeTimesheets = () => {
                   <TableHead className="font-semibold text-gray-900">Week Starting</TableHead>
                   <TableHead className="font-semibold text-gray-900 text-center">Total Hours</TableHead>
                   <TableHead className="font-semibold text-gray-900 text-center">Total Pay</TableHead>
+                  <TableHead className="font-semibold text-gray-900 text-center">Tax</TableHead>
                   <TableHead className="font-semibold text-gray-900">Status</TableHead>
                   <TableHead className="font-semibold text-gray-900">Submitted</TableHead>
                   <TableHead className="font-semibold text-gray-900">Actions</TableHead>
@@ -134,13 +135,13 @@ const EmployeeTimesheets = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                       Loading timesheets...
                     </TableCell>
                   </TableRow>
                 ) : timesheets.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                       No weekly timesheet submissions found
                     </TableCell>
                   </TableRow>
@@ -159,6 +160,11 @@ const EmployeeTimesheets = () => {
                       </TableCell>
                       <TableCell className="text-center font-mono">
                         ${timesheet.gross_pay.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-center font-mono">
+                        <span className="text-red-600" title={`${timesheet.tax_percentage || 13}% tax`}>
+                          ${(timesheet.estimated_tax || 0).toFixed(2)}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(timesheet.status)}

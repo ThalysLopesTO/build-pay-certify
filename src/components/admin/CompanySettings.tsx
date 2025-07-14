@@ -20,6 +20,7 @@ const CompanySettings = () => {
       company_phone: settings?.company_phone || '',
       company_email: settings?.company_email || '',
       hst_number: settings?.hst_number || '',
+      tax_percentage: settings?.tax_percentage || 13,
     },
   });
 
@@ -31,6 +32,7 @@ const CompanySettings = () => {
         company_phone: settings.company_phone || '',
         company_email: settings.company_email || '',
         hst_number: settings.hst_number || '',
+        tax_percentage: settings.tax_percentage || 13,
       });
     }
   }, [settings, form]);
@@ -165,26 +167,54 @@ const CompanySettings = () => {
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="hst_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span>HST/Tax Number</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter your HST or tax registration number" 
-                        className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="hst_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span>HST/Tax Number</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your HST or tax registration number" 
+                          className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="tax_percentage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span>Tax Percentage (%) <span className="text-red-500">*</span></span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          placeholder="13.00" 
+                          className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-sm text-muted-foreground">
+                        Tax percentage applied to timesheet submissions (default: 13% HST)
+                      </p>
+                    </FormItem>
+                  )}
+                />
 
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                 <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Invoice Requirements</h4>

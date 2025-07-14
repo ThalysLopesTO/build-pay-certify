@@ -76,15 +76,28 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
         profiles?.map(profile => [profile.user_id, profile]) || []
       );
 
+      // Get company settings for tax calculation
+      const { data: companySettings } = await supabase
+        .from('company_settings')
+        .select('tax_percentage')
+        .eq('company_id', user.companyId)
+        .single();
+
+      const taxPercentage = companySettings?.tax_percentage || 13;
+
       // Transform the data to include employee names and calculated fields
       let result = timesheets.map(timesheet => {
         const profile = profileMap.get(timesheet.submitted_by);
+        const payBeforeTax = (timesheet.total_hours || 0) * (timesheet.hourly_rate || 0);
+        const estimatedTax = payBeforeTax * (taxPercentage / 100);
         
         return {
           ...timesheet,
           employee_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown Employee',
           jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
           week_ending_date: timesheet.week_start_date, // This will be the week start date from submissions
+          estimated_tax: estimatedTax,
+          tax_percentage: taxPercentage,
         };
       });
 

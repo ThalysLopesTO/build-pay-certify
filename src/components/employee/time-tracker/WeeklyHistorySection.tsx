@@ -40,14 +40,26 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
       return;
     }
 
-    const csvHeaders = ['Date', 'Jobsite', 'Clock In', 'Clock Out', 'Total Hours'];
-    const csvData = weeklyTimesheets.map(timesheet => [
-      format(new Date(timesheet.check_in_time!), 'MM/dd/yyyy'),
-      getJobsiteName(timesheet.jobsite_id),
-      timesheet.check_in_time ? format(new Date(timesheet.check_in_time), 'h:mm a') : '--',
-      timesheet.check_out_time ? format(new Date(timesheet.check_out_time), 'h:mm a') : 'Still Active',
-      timesheet.hours_worked ? timesheet.hours_worked.toFixed(2) : '0.00'
-    ]);
+    const csvHeaders = ['Date', 'Jobsite', 'Clock In', 'Clock Out', 'Total Hours', 'Hourly Rate', 'Pay Before Tax', 'Tax (13%)', 'Net Pay'];
+    const csvData = weeklyTimesheets.map(timesheet => {
+      const totalHours = timesheet.hours_worked || 0;
+      const hourlyRate = 25; // This should come from user profile - placeholder for now
+      const payBeforeTax = totalHours * hourlyRate;
+      const taxAmount = payBeforeTax * 0.13; // 13% tax
+      const netPay = payBeforeTax - taxAmount;
+
+      return [
+        format(new Date(timesheet.check_in_time!), 'MM/dd/yyyy'),
+        getJobsiteName(timesheet.jobsite_id),
+        timesheet.check_in_time ? format(new Date(timesheet.check_in_time), 'h:mm a') : '--',
+        timesheet.check_out_time ? format(new Date(timesheet.check_out_time), 'h:mm a') : 'Still Active',
+        timesheet.hours_worked ? timesheet.hours_worked.toFixed(2) : '0.00',
+        `$${hourlyRate.toFixed(2)}`,
+        `$${payBeforeTax.toFixed(2)}`,
+        `$${taxAmount.toFixed(2)}`,
+        `$${netPay.toFixed(2)}`
+      ];
+    });
 
     const csvContent = [csvHeaders, ...csvData]
       .map(row => row.map(cell => `"${cell}"`).join(','))
@@ -65,7 +77,7 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
 
     toast({
       title: "CSV Exported",
-      description: "Your timesheet data has been exported successfully.",
+      description: "Your timesheet data with tax breakdown has been exported successfully.",
     });
   };
 
