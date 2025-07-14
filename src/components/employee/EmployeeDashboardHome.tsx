@@ -1,10 +1,14 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import WeeklyHoursCard from './WeeklyHoursCard';
-import EmployeeQuickActions from './EmployeeQuickActions';
-import EmployeeSummaryCard from './EmployeeSummaryCard';
+import { Building, User, Clock, Timer, FileText, AlertTriangle, Award, Settings, ArrowRight, Eye } from 'lucide-react';
+import EmployeeAvatar from '@/components/ui/employee-avatar';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useTimesheets } from '@/hooks/useTimesheets';
 
 interface EmployeeDashboardHomeProps {
   onNavigateToTab: (tab: string) => void;
@@ -12,28 +16,204 @@ interface EmployeeDashboardHomeProps {
 
 const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigateToTab }) => {
   const { user } = useAuth();
+  const { totalWeeklyHours, isLoading: hoursLoading } = useTimesheets();
+
+  // Fetch full user profile with photo
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const targetHours = 40;
+  const progressPercentage = Math.min((totalWeeklyHours / targetHours) * 100, 100);
+
+  const quickActions = [
+    {
+      title: 'Clock In/Out',
+      icon: Timer,
+      onClick: () => onNavigateToTab('time-tracker'),
+      color: 'bg-emerald-600 hover:bg-emerald-700',
+      description: 'Track time'
+    },
+    {
+      title: 'Report Issue',
+      icon: AlertTriangle,
+      onClick: () => onNavigateToTab('attention-report'),
+      color: 'bg-orange-600 hover:bg-orange-700',
+      description: 'Submit report'
+    },
+    {
+      title: 'Timesheet',
+      icon: FileText,
+      onClick: () => onNavigateToTab('timesheet'),
+      color: 'bg-blue-600 hover:bg-blue-700',
+      description: 'Submit hours'
+    },
+    {
+      title: 'Certificates',
+      icon: Award,
+      onClick: () => onNavigateToTab('certificates'),
+      color: 'bg-purple-600 hover:bg-purple-700',
+      description: 'View certs'
+    }
+  ];
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      {/* Welcome Section */}
-      <div className="text-center space-y-2 px-4 py-6 bg-gradient-to-r from-blue-50 to-slate-50 rounded-lg mx-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
-          Welcome back, {user?.firstName || 'Employee'} 👋
-        </h1>
-        <p className="text-slate-600 text-sm md:text-base">
-          Manage your work efficiently and stay productive
-        </p>
-      </div>
+    <div className="space-y-6 animate-fade-in p-4 max-w-6xl mx-auto">
+      {/* Hero Section - Welcome + Hours */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Welcome Card with Photo */}
+        <Card className="lg:col-span-2 shadow-lg border-0 bg-gradient-to-br from-white to-slate-50">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+              {/* Employee Photo */}
+              <div className="flex-shrink-0">
+                <EmployeeAvatar 
+                  photoUrl={userProfile?.photo_url}
+                  firstName={user?.firstName}
+                  lastName={user?.lastName}
+                  size="lg"
+                  className="shadow-lg"
+                />
+              </div>
 
-      {/* Summary Cards */}
-      <div className="px-4 space-y-4">
-        <WeeklyHoursCard />
-        <EmployeeSummaryCard />
+              {/* Welcome Text and Info */}
+              <div className="flex-1 space-y-3">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+                    Welcome back, {user?.firstName || 'Employee'} 👋
+                  </h1>
+                  <p className="text-slate-600 text-base">
+                    Manage your work efficiently and stay productive
+                  </p>
+                </div>
+
+                {/* Status Badge */}
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                    Ready to Work
+                  </Badge>
+                </div>
+
+                {/* Company Info */}
+                <div className="flex items-center space-x-2 text-sm text-slate-600">
+                  <Building className="h-4 w-4" />
+                  <span>{user?.companyName || 'Not Assigned'}</span>
+                  <span className="text-slate-400">•</span>
+                  <span>{user?.trade || 'General'}</span>
+                </div>
+
+                {/* Profile Link */}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onNavigateToTab('settings')}
+                  className="w-fit"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View My Profile
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Weekly Hours Card */}
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-600 to-blue-700 text-white">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white/20 rounded-full">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium opacity-90">This Week's Hours</h3>
+                  <div className="text-2xl font-bold">
+                    {hoursLoading ? 'Loading...' : `${totalWeeklyHours.toFixed(1)} hrs`}
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs opacity-90">
+                  <span>Progress to 40 hrs</span>
+                  <span>{progressPercentage.toFixed(0)}%</span>
+                </div>
+                <div className="w-full bg-white/20 rounded-full h-2">
+                  <div 
+                    className="bg-white h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${progressPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Quick Actions */}
-      <div className="px-4">
-        <EmployeeQuickActions onNavigateToTab={onNavigateToTab} />
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-slate-900">Quick Actions</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {quickActions.map((action, index) => {
+            const Icon = action.icon;
+            return (
+              <Card 
+                key={index} 
+                className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer border-0 shadow-md"
+                onClick={action.onClick}
+              >
+                <CardContent className="p-6 text-center space-y-3">
+                  <div className={`mx-auto w-12 h-12 rounded-full ${action.color} flex items-center justify-center transition-colors`}>
+                    <Icon className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 text-sm">{action.title}</h3>
+                    <p className="text-xs text-slate-600 mt-1">{action.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Additional Actions Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { title: 'My Reports', icon: FileText, tab: 'my-reports' },
+          { title: 'Company Rules', icon: Building, tab: 'company-rules' },
+          { title: 'Settings', icon: Settings, tab: 'settings' },
+          { title: 'Time Tracker', icon: Timer, tab: 'time-tracker' }
+        ].map((item, index) => {
+          const Icon = item.icon;
+          return (
+            <Button
+              key={index}
+              variant="ghost"
+              className="h-auto p-4 hover:bg-slate-50 transition-colors"
+              onClick={() => onNavigateToTab(item.tab)}
+            >
+              <div className="flex flex-col items-center space-y-2">
+                <Icon className="h-5 w-5 text-slate-600" />
+                <span className="text-sm font-medium text-slate-700">{item.title}</span>
+              </div>
+            </Button>
+          );
+        })}
       </div>
     </div>
   );
