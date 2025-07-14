@@ -6,10 +6,11 @@ import CompanyBrandingSection from '../CompanyBrandingSection';
 import { CompanyInformationForm } from './CompanyInformationForm';
 import { WeekEndingDaySelector } from './WeekEndingDaySelector';
 import { UsageInformation } from './UsageInformation';
-import { Form } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Calendar } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Building2, Calendar, Eye } from 'lucide-react';
 
 export const CompanySettingsTab = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useCompanySettings();
@@ -23,6 +24,7 @@ export const CompanySettingsTab = () => {
       hst_number: settings?.hst_number || '',
       company_rules_text: settings?.company_rules_text || '',
       week_ending_day: settings?.week_ending_day ?? 0,
+      show_tax_breakdown_to_employees: settings?.show_tax_breakdown_to_employees ?? true,
     }
   });
 
@@ -36,6 +38,7 @@ export const CompanySettingsTab = () => {
         hst_number: settings.hst_number || '',
         company_rules_text: settings.company_rules_text || '',
         week_ending_day: settings.week_ending_day ?? 0,
+        show_tax_breakdown_to_employees: settings.show_tax_breakdown_to_employees ?? true,
       });
     }
   }, [settings, form]);
@@ -96,6 +99,41 @@ export const CompanySettingsTab = () => {
               <p className="text-sm text-muted-foreground dark:text-gray-400 mt-2">
                 Select the day of the week when your work week ends for timesheet calculations.
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Employee Settings */}
+          <Card className="border-border dark:border-gray-700">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-foreground dark:text-white">
+                <Eye className="h-5 w-5 text-primary" />
+                <span>Employee Settings</span>
+              </CardTitle>
+              <div className="h-px bg-border dark:bg-gray-700 mt-4"></div>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <FormField
+                control={form.control}
+                name="show_tax_breakdown_to_employees"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Show Tax Breakdown to Employees
+                      </FormLabel>
+                      <FormDescription>
+                        When enabled, employees will see tax calculations (gross pay, estimated tax, and net pay) in their timesheet submissions. When disabled, employees will only see gross pay and net pay.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 

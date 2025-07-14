@@ -11,6 +11,7 @@ interface TimesheetSummaryProps {
 const TimesheetSummary = ({ totalHours, hourlyRate, grossPay }: TimesheetSummaryProps) => {
   const { settings } = useCompanySettings();
   const taxPercentage = settings?.tax_percentage || 13;
+  const showTaxBreakdown = settings?.show_tax_breakdown_to_employees ?? true;
   
   // Calculate tax breakdown
   const payBeforeTax = totalHours * hourlyRate; // Base pay without expenses
@@ -38,30 +39,47 @@ const TimesheetSummary = ({ totalHours, hourlyRate, grossPay }: TimesheetSummary
       </div>
 
       {/* Tax Breakdown */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
-        <h4 className="font-medium text-slate-700">Tax Breakdown ({taxPercentage}%)</h4>
-        
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-slate-600">Total Pay Before Tax:</span>
-            <span className="font-medium text-slate-800">${grossPay.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">Estimated Tax ({taxPercentage}%):</span>
-            <span className="font-medium text-red-600">-${estimatedTax.toFixed(2)}</span>
-          </div>
-          <div className="border-t border-slate-200 pt-2">
+      {showTaxBreakdown ? (
+        <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
+          <h4 className="font-medium text-slate-700">Tax Breakdown ({taxPercentage}%)</h4>
+          
+          <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="font-medium text-slate-700">Net Pay (Estimated):</span>
-              <span className="font-bold text-green-600 text-lg">${netPay.toFixed(2)}</span>
+              <span className="text-slate-600">Total Pay Before Tax:</span>
+              <span className="font-medium text-slate-800">${grossPay.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600">Estimated Tax ({taxPercentage}%):</span>
+              <span className="font-medium text-red-600">-${estimatedTax.toFixed(2)}</span>
+            </div>
+            <div className="border-t border-slate-200 pt-2">
+              <div className="flex justify-between">
+                <span className="font-medium text-slate-700">Net Pay (Estimated):</span>
+                <span className="font-bold text-green-600 text-lg">${netPay.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-xs text-slate-500 mt-2">
+            * Tax calculation is for estimation purposes only. Actual deductions may vary.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-slate-600">Gross Pay:</span>
+              <span className="font-medium text-slate-800">${grossPay.toFixed(2)}</span>
+            </div>
+            <div className="border-t border-slate-200 pt-2">
+              <div className="flex justify-between">
+                <span className="font-medium text-slate-700">Net Pay (Estimated):</span>
+                <span className="font-bold text-green-600 text-lg">${netPay.toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </div>
-        
-        <p className="text-xs text-slate-500 mt-2">
-          * Tax calculation is for estimation purposes only. Actual deductions may vary.
-        </p>
-      </div>
+      )}
     </div>
   );
 };

@@ -5,10 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { DollarSign, Users, Search, Filter, RefreshCw, Download } from 'lucide-react';
 import { useWeeklyTimesheets } from '@/hooks/useWeeklyTimesheets';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useWorkWeek } from '@/hooks/useWorkWeek';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
@@ -25,9 +28,11 @@ const PayrollSummary = () => {
   const [selectedWeek, setSelectedWeek] = useState('all');
   const [selectedJobSite, setSelectedJobSite] = useState('all');
   const [selectedTrade, setSelectedTrade] = useState('all');
+  const [taxIncluded, setTaxIncluded] = useState(false);
 
   // Get work weeks based on company settings
   const workWeeks = useWorkWeek();
+  const { settings } = useCompanySettings();
 
   // Fetch approved weekly timesheets only
   const { data: timesheets = [], isLoading, error, refetch } = useWeeklyTimesheets({
@@ -37,10 +42,21 @@ const PayrollSummary = () => {
 
   // Process approved timesheets for payroll
   const payrollEntries = React.useMemo(() => {
+    const taxPercentage = settings?.tax_percentage || 13;
+    
     return timesheets.map(timesheet => {
       const employee = employees.find(emp => 
         `${emp.first_name || ''} ${emp.last_name || ''}`.trim() === timesheet.employee_name
       );
+      
+      const totalHours = safeParseNumber(timesheet.total_hours);
+      const hourlyRate = safeParseNumber(timesheet.hourly_rate);
+      const additionalExpense = safeParseNumber(timesheet.additional_expense);
+      const grossPay = safeParseNumber(timesheet.gross_pay);
+      
+      // Calculate tax based on hourly pay (excluding expenses)
+      const hourlyPay = totalHours * hourlyRate;
+      const estimatedTax = hourlyPay * (taxPercentage / 100);
       
       return {
         employeeName: timesheet.employee_name,
@@ -50,14 +66,16 @@ const PayrollSummary = () => {
         project: timesheet.jobsite_name, // Using jobsite as project
         weekStartDate: timesheet.week_start_date,
         weekEndDate: format(new Date(timesheet.week_start_date), 'MMM dd, yyyy'),
-        totalHours: safeParseNumber(timesheet.total_hours),
-        hourlyRate: safeParseNumber(timesheet.hourly_rate),
-        additionalExpense: safeParseNumber(timesheet.additional_expense),
-        grossPay: safeParseNumber(timesheet.gross_pay),
+        totalHours,
+        hourlyRate,
+        additionalExpense,
+        grossPay,
+        estimatedTax,
+        totalPayWithTax: grossPay + estimatedTax,
         submittedAt: timesheet.created_at
       };
     });
-  }, [timesheets, employees]);
+  }, [timesheets, employees, settings?.tax_percentage]);
 
   const filteredEntries = payrollEntries.filter(entry => {
     return (
@@ -68,7 +86,10 @@ const PayrollSummary = () => {
     );
   });
 
-  const totalPayroll = filteredEntries.reduce((sum, entry) => sum + entry.grossPay, 0);
+  const totalPayroll = filteredEntries.reduce((sum, entry) => 
+    sum + (taxIncluded ? entry.totalPayWithTax : entry.grossPay), 0
+  );
+  const totalTax = filteredEntries.reduce((sum, entry) => sum + entry.estimatedTax, 0);
   const totalHours = filteredEntries.reduce((sum, entry) => sum + entry.totalHours, 0);
   const totalEmployees = new Set(filteredEntries.map(entry => entry.employeeName)).size;
 
@@ -96,7 +117,9 @@ const PayrollSummary = () => {
       'Hours': entry.totalHours,
       'Hourly Rate': entry.hourlyRate,
       'Expenses': entry.additionalExpense,
-      'Gross Pay': entry.grossPay
+      'Gross Pay': entry.grossPay,
+      'Tax': entry.estimatedTax,
+      'Total Pay': taxIncluded ? entry.totalPayWithTax : entry.grossPay
     }));
 
     // Add summary row with proper types
@@ -109,7 +132,9 @@ const PayrollSummary = () => {
       'Hours': totalHours,
       'Hourly Rate': 0,
       'Expenses': totalExpenses,
-      'Gross Pay': totalPayroll
+      'Gross Pay': filteredEntries.reduce((sum, entry) => sum + entry.grossPay, 0),
+      'Tax': totalTax,
+      'Total Pay': totalPayroll
     });
 
     // Create workbook and worksheet
@@ -122,6 +147,8 @@ const PayrollSummary = () => {
       const hourlyRateCell = XLSX.utils.encode_cell({ r: R, c: 6 });
       const expensesCell = XLSX.utils.encode_cell({ r: R, c: 7 });
       const grossPayCell = XLSX.utils.encode_cell({ r: R, c: 8 });
+      const taxCell = XLSX.utils.encode_cell({ r: R, c: 9 });
+      const totalPayCell = XLSX.utils.encode_cell({ r: R, c: 10 });
       
       if (ws[hourlyRateCell] && ws[hourlyRateCell].v !== 'Hourly Rate' && ws[hourlyRateCell].v !== '') {
         ws[hourlyRateCell].z = '"$"#,##0.00';
@@ -131,6 +158,12 @@ const PayrollSummary = () => {
       }
       if (ws[grossPayCell] && ws[grossPayCell].v !== 'Gross Pay') {
         ws[grossPayCell].z = '"$"#,##0.00';
+      }
+      if (ws[taxCell] && ws[taxCell].v !== 'Tax') {
+        ws[taxCell].z = '"$"#,##0.00';
+      }
+      if (ws[totalPayCell] && ws[totalPayCell].v !== 'Total Pay') {
+        ws[totalPayCell].z = '"$"#,##0.00';
       }
     }
 
@@ -228,10 +261,29 @@ const PayrollSummary = () => {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Filter className="h-5 w-5" />
-            <span>Filters</span>
+            <span>Filters & Options</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Tax Included Toggle */}
+          <div className="mb-6 p-4 bg-slate-50 rounded-lg border">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="tax-included" className="text-sm font-medium">
+                  Tax Included in Total Pay
+                </Label>
+                <p className="text-xs text-slate-600">
+                  When enabled, the "Total Pay" column shows Gross Pay + Tax. When disabled, only Gross Pay is shown with a separate Tax column.
+                </p>
+              </div>
+              <Switch
+                id="tax-included"
+                checked={taxIncluded}
+                onCheckedChange={setTaxIncluded}
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Search Employee</label>
@@ -346,6 +398,10 @@ const PayrollSummary = () => {
                     <th className="text-right p-3 font-semibold">Rate</th>
                     <th className="text-right p-3 font-semibold">Expenses</th>
                     <th className="text-right p-3 font-semibold">Gross Pay</th>
+                    {!taxIncluded && <th className="text-right p-3 font-semibold">Tax</th>}
+                    <th className="text-right p-3 font-semibold">
+                      {taxIncluded ? 'Total Pay (incl. Tax)' : 'Total Pay'}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -364,8 +420,14 @@ const PayrollSummary = () => {
                       <td className="p-3 text-right font-mono">{entry.totalHours.toFixed(2)}</td>
                       <td className="p-3 text-right font-mono">${entry.hourlyRate.toFixed(2)}</td>
                       <td className="p-3 text-right font-mono">${entry.additionalExpense.toFixed(2)}</td>
+                      <td className="p-3 text-right font-mono">${entry.grossPay.toFixed(2)}</td>
+                      {!taxIncluded && (
+                        <td className="p-3 text-right font-mono text-red-600">
+                          ${entry.estimatedTax.toFixed(2)}
+                        </td>
+                      )}
                       <td className="p-3 text-right font-mono font-semibold text-green-600">
-                        ${entry.grossPay.toLocaleString()}
+                        ${(taxIncluded ? entry.totalPayWithTax : entry.grossPay).toLocaleString()}
                       </td>
                     </tr>
                   ))}

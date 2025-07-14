@@ -449,6 +449,7 @@ export type Database = {
           created_at: string
           hst_number: string | null
           id: string
+          show_tax_breakdown_to_employees: boolean | null
           tax_percentage: number | null
           updated_at: string
           week_ending_day: number | null
@@ -464,6 +465,7 @@ export type Database = {
           created_at?: string
           hst_number?: string | null
           id?: string
+          show_tax_breakdown_to_employees?: boolean | null
           tax_percentage?: number | null
           updated_at?: string
           week_ending_day?: number | null
@@ -479,6 +481,7 @@ export type Database = {
           created_at?: string
           hst_number?: string | null
           id?: string
+          show_tax_breakdown_to_employees?: boolean | null
           tax_percentage?: number | null
           updated_at?: string
           week_ending_day?: number | null

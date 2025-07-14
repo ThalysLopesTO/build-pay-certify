@@ -16,6 +16,7 @@ export interface CompanySettings {
   company_rules_text: string | null;
   week_ending_day: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
   tax_percentage: number; // Tax percentage for timesheet calculations
+  show_tax_breakdown_to_employees: boolean; // Whether to show tax breakdown to employees
   created_at: string;
   updated_at: string;
 }
