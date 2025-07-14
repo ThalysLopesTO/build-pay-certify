@@ -518,7 +518,7 @@ export type Database = {
           company_id: string
           created_at: string
           employee_id: string
-          expiry_date: string
+          expiry_date: string | null
           file_url: string | null
           id: string
           status: string
@@ -532,7 +532,7 @@ export type Database = {
           company_id: string
           created_at?: string
           employee_id: string
-          expiry_date: string
+          expiry_date?: string | null
           file_url?: string | null
           id?: string
           status?: string
@@ -546,7 +546,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           employee_id?: string
-          expiry_date?: string
+          expiry_date?: string | null
           file_url?: string | null
           id?: string
           status?: string
