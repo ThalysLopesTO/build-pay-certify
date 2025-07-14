@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, FileText, Calendar } from 'lucide-react';
+import { Download, FileText, Calendar, History } from 'lucide-react';
 import { useJobsites } from '@/hooks/useJobsites';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -70,75 +70,91 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5" />
+    <Card className="shadow-xl border-2 border-primary/10 overflow-hidden">
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 border-b border-primary/10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <CardTitle className="flex items-center space-x-3 text-xl font-bold">
+            <History className="h-6 w-6 text-indigo-600" />
             <span>Weekly History</span>
           </CardTitle>
-          <div className="flex space-x-2">
+          <div className="flex space-x-3">
             <Button
               onClick={handleExportPDF}
               variant="outline"
               size="sm"
-              className="flex items-center space-x-1"
+              className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 transition-colors"
             >
-              <FileText className="h-4 w-4" />
-              <span>PDF</span>
+              <FileText className="h-4 w-4 text-red-600" />
+              <span className="font-medium">PDF</span>
             </Button>
             <Button
               onClick={handleExportCSV}
               variant="outline"
               size="sm"
-              className="flex items-center space-x-1"
+              className="flex items-center space-x-2 hover:bg-green-50 hover:border-green-200 transition-colors"
             >
-              <Download className="h-4 w-4" />
-              <span>CSV</span>
+              <Download className="h-4 w-4 text-green-600" />
+              <span className="font-medium">CSV</span>
             </Button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <CardContent className="p-0">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Jobsite</TableHead>
-                <TableHead>Clock In</TableHead>
-                <TableHead>Clock Out</TableHead>
-                <TableHead className="text-right">Total Hours</TableHead>
+              <TableRow className="bg-slate-50/50 border-b-2 border-slate-200">
+                <TableHead className="font-bold text-slate-700 py-4">Date</TableHead>
+                <TableHead className="font-bold text-slate-700 py-4">Jobsite</TableHead>
+                <TableHead className="font-bold text-slate-700 py-4">Clock In</TableHead>
+                <TableHead className="font-bold text-slate-700 py-4">Clock Out</TableHead>
+                <TableHead className="text-right font-bold text-slate-700 py-4">Total Hours</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {weeklyTimesheets?.length === 0 || !weeklyTimesheets ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    No timesheet entries for this week
+                  <TableCell colSpan={5} className="text-center py-12">
+                    <div className="flex flex-col items-center space-y-3 text-muted-foreground">
+                      <Calendar className="h-12 w-12 text-slate-300" />
+                      <span className="text-lg font-medium">No timesheet entries for this week</span>
+                      <span className="text-sm">Get started by clocking in above!</span>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                weeklyTimesheets.map((timesheet) => (
-                  <TableRow key={timesheet.id}>
-                    <TableCell className="font-medium">
+                weeklyTimesheets.map((timesheet, index) => (
+                  <TableRow 
+                    key={timesheet.id} 
+                    className={`
+                      ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} 
+                      hover:bg-blue-50/50 transition-colors duration-200 border-b border-slate-100
+                    `}
+                  >
+                    <TableCell className="font-semibold py-4 text-slate-700">
                       {format(new Date(timesheet.check_in_time!), 'EEE, MMM d')}
                     </TableCell>
-                    <TableCell>{getJobsiteName(timesheet.jobsite_id)}</TableCell>
-                    <TableCell>
+                    <TableCell className="py-4">
+                      <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                        {getJobsiteName(timesheet.jobsite_id)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-4 font-mono text-green-700 font-medium">
                       {timesheet.check_in_time 
                         ? format(new Date(timesheet.check_in_time), 'h:mm a')
                         : '--'
                       }
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-4">
                       {timesheet.check_out_time 
-                        ? format(new Date(timesheet.check_out_time), 'h:mm a')
-                        : <span className="text-green-600 font-medium">Still Active</span>
+                        ? <span className="font-mono text-red-700 font-medium">{format(new Date(timesheet.check_out_time), 'h:mm a')}</span>
+                        : <span className="px-2 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full animate-pulse">Still Active</span>
                       }
                     </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {timesheet.hours_worked ? timesheet.hours_worked.toFixed(2) : '0.00'}h
+                    <TableCell className="text-right py-4">
+                      <span className="font-mono text-lg font-bold text-slate-800">
+                        {timesheet.hours_worked ? timesheet.hours_worked.toFixed(2) : '0.00'}h
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))
