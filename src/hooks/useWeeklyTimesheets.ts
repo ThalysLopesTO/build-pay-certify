@@ -7,6 +7,7 @@ interface TimesheetFilters {
   employeeName?: string;
   weekEndingDate?: string;
   status?: string;
+  jobsiteId?: string;
 }
 
 export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
@@ -50,6 +51,11 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
       // Apply status filter if provided
       if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status);
+      }
+
+      // Apply jobsite filter if provided
+      if (filters.jobsiteId) {
+        query = query.eq('jobsite_id', filters.jobsiteId);
       }
 
       const { data: timesheets, error } = await query;

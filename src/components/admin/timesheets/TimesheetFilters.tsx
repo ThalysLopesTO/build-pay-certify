@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Filter, X } from 'lucide-react';
 import { useWorkWeek } from '@/hooks/useWorkWeek';
+import { useJobsites } from '@/hooks/useJobsites';
 
 interface TimesheetFiltersProps {
   filters: {
     employeeName: string;
     weekEndingDate: string;
     status: string;
+    jobsiteId: string;
   };
   onFiltersChange: (filters: any) => void;
   employees: any[];
@@ -24,6 +26,9 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
 }) => {
   // Get work weeks based on company settings
   const workWeeks = useWorkWeek();
+  
+  // Get jobsites for the filter
+  const { data: jobsites = [] } = useJobsites();
 
   const handleEmployeeChange = (value: string) => {
     onFiltersChange({
@@ -39,6 +44,13 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
     });
   };
 
+  const handleJobsiteChange = (value: string) => {
+    onFiltersChange({
+      ...filters,
+      jobsiteId: value === 'all' ? '' : value
+    });
+  };
+
   const handleStatusChange = (value: string) => {
     onFiltersChange({
       ...filters,
@@ -50,11 +62,12 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
     onFiltersChange({
       employeeName: '',
       weekEndingDate: '',
-      status: 'all'
+      status: 'all',
+      jobsiteId: ''
     });
   };
 
-  const hasActiveFilters = filters.employeeName || filters.weekEndingDate || filters.status !== 'all';
+  const hasActiveFilters = filters.employeeName || filters.weekEndingDate || filters.status !== 'all' || filters.jobsiteId;
 
   // Filter employees with valid names and create display names
   const validEmployees = employees?.filter(employee => {
@@ -105,6 +118,23 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
                     value={employee.displayName}
                   >
                     {employee.displayName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label htmlFor="jobsite-filter" className="text-sm text-gray-600">Jobsite:</Label>
+            <Select value={filters.jobsiteId || 'all'} onValueChange={handleJobsiteChange}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="All jobsites" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All jobsites</SelectItem>
+                {jobsites.map((jobsite) => (
+                  <SelectItem key={jobsite.id} value={jobsite.id}>
+                    {jobsite.name}
                   </SelectItem>
                 ))}
               </SelectContent>

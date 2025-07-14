@@ -15,7 +15,8 @@ const EmployeeTimesheets = () => {
   const [filters, setFilters] = useState({
     employeeName: '',
     weekEndingDate: '',
-    status: 'all'
+    status: 'all',
+    jobsiteId: ''
   });
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
   
