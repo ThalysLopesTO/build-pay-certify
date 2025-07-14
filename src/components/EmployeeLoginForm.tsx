@@ -6,26 +6,26 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
-import { Users, ArrowRight, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Users, ArrowRight, User, Lock, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const EmployeeLoginForm = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { loginWithUsername } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await login(email, password, 'employee');
+      const { error } = await loginWithUsername(username, password, 'employee');
       if (error) {
         console.error('Login error:', error);
         toast({
           title: "Login Failed",
-          description: error.message || "Invalid email or password",
+          description: error.message || "Invalid username or password",
           variant: "destructive",
         });
       } else {
@@ -78,17 +78,17 @@ const EmployeeLoginForm = () => {
             <CardContent className="p-8">
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-700 font-medium text-sm">
-                    Email
+                  <Label htmlFor="username" className="text-slate-700 font-medium text-sm">
+                    Username
                   </Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your work email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="username"
+                      type="text"
+                      placeholder="Enter your username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       required
                       className="pl-10 h-12 border-slate-200 focus:border-blue-500 focus:ring-blue-500 text-slate-700 bg-white/60"
                     />
@@ -135,7 +135,7 @@ const EmployeeLoginForm = () => {
               <div className="mt-8 pt-6 border-t border-slate-200 text-center">
                 <p className="text-sm text-slate-600 mb-4">Need help with your account?</p>
                 <p className="text-xs text-slate-500">
-                  Contact your company administrator for assistance with your login credentials.
+                  Contact your company administrator for assistance with your username or password.
                 </p>
               </div>
             </CardContent>

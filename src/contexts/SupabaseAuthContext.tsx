@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { AuthContextType } from './auth/types';
 import { useAuthState } from './auth/useAuthState';
-import { login, signUp, logout, checkSubscriptionStatus } from './auth/authService';
+import { login, loginWithUsername, signUp, logout, checkSubscriptionStatus } from './auth/authService';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -61,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user,
       session,
       login,
+      loginWithUsername,
       signUp,
       logout: handleLogout,
       isAuthenticated,

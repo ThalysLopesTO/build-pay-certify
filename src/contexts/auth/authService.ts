@@ -61,6 +61,45 @@ export const login = async (email: string, password: string, expectedRole?: 'emp
   return { error: null };
 };
 
+export const loginWithUsername = async (username: string, password: string, expectedRole?: 'employee' | 'admin') => {
+  try {
+    const { data, error } = await supabase.functions.invoke('authenticate-username', {
+      body: {
+        username,
+        password,
+        expectedRole
+      }
+    });
+
+    if (error) {
+      console.error('Username authentication error:', error);
+      return { error: { message: 'Authentication failed. Please try again.' } };
+    }
+
+    if (!data.success) {
+      return { error: { message: data.error || 'Authentication failed' } };
+    }
+
+    // Set the session from the response
+    if (data.session) {
+      const { error: sessionError } = await supabase.auth.setSession(data.session);
+      if (sessionError) {
+        console.error('Error setting session:', sessionError);
+        return { error: { message: 'Session setup failed. Please try again.' } };
+      }
+    }
+
+    return { error: null };
+  } catch (err) {
+    console.error('Username login error:', err);
+    return { 
+      error: { 
+        message: "Authentication failed. Please check your credentials and try again." 
+      } 
+    };
+  }
+};
+
 export const signUp = async (email: string, password: string) => {
   const redirectUrl = `${window.location.origin}/`;
   
