@@ -39,6 +39,8 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
           status,
           total_hours,
           gross_pay,
+          tax_included,
+          calculated_tax,
           created_at,
           jobsites(name)
         `)
@@ -88,16 +90,16 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
       // Transform the data to include employee names and calculated fields
       let result = timesheets.map(timesheet => {
         const profile = profileMap.get(timesheet.submitted_by);
-        const payBeforeTax = (timesheet.total_hours || 0) * (timesheet.hourly_rate || 0);
-        const estimatedTax = payBeforeTax * (taxPercentage / 100);
+        const finalTotalPay = timesheet.tax_included 
+          ? (timesheet.gross_pay || 0) + (timesheet.calculated_tax || 0)
+          : (timesheet.gross_pay || 0);
         
         return {
           ...timesheet,
           employee_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown Employee',
           jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
           week_ending_date: timesheet.week_start_date, // This will be the week start date from submissions
-          estimated_tax: estimatedTax,
-          tax_percentage: taxPercentage,
+          final_total_pay: finalTotalPay,
         };
       });
 

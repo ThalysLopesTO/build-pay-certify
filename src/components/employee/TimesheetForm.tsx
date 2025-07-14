@@ -103,6 +103,8 @@ const TimesheetForm = () => {
               totalHours={totalHours}
               hourlyRate={hourlyRate}
               grossPay={grossPay}
+              form={form}
+              disabled={isFormDisabled}
             />
 
             <Button 

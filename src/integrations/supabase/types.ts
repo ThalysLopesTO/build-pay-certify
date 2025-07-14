@@ -1607,6 +1607,7 @@ export type Database = {
       weekly_timesheets: {
         Row: {
           additional_expense: number | null
+          calculated_tax: number | null
           company_id: string | null
           created_at: string
           friday_hours: number | null
@@ -1620,6 +1621,7 @@ export type Database = {
           status: string
           submitted_by: string
           sunday_hours: number | null
+          tax_included: boolean | null
           thursday_hours: number | null
           total_hours: number | null
           tuesday_hours: number | null
@@ -1629,6 +1631,7 @@ export type Database = {
         }
         Insert: {
           additional_expense?: number | null
+          calculated_tax?: number | null
           company_id?: string | null
           created_at?: string
           friday_hours?: number | null
@@ -1642,6 +1645,7 @@ export type Database = {
           status?: string
           submitted_by: string
           sunday_hours?: number | null
+          tax_included?: boolean | null
           thursday_hours?: number | null
           total_hours?: number | null
           tuesday_hours?: number | null
@@ -1651,6 +1655,7 @@ export type Database = {
         }
         Update: {
           additional_expense?: number | null
+          calculated_tax?: number | null
           company_id?: string | null
           created_at?: string
           friday_hours?: number | null
@@ -1664,6 +1669,7 @@ export type Database = {
           status?: string
           submitted_by?: string
           sunday_hours?: number | null
+          tax_included?: boolean | null
           thursday_hours?: number | null
           total_hours?: number | null
           tuesday_hours?: number | null

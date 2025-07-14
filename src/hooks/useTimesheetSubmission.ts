@@ -17,6 +17,7 @@ interface TimesheetData {
   hourlyRate: number;
   additionalExpense?: number;
   notes?: string;
+  taxIncluded?: boolean;
 }
 
 export const useTimesheetSubmission = () => {
@@ -57,6 +58,10 @@ export const useTimesheetSubmission = () => {
         throw new Error('Please enter at least one hour for the week');
       }
 
+      // Calculate tax if included
+      const payBeforeTax = totalHours * data.hourlyRate;
+      const calculatedTax = data.taxIncluded ? (payBeforeTax * 0.13) : 0; // Default to 13% if not specified
+
       // Create the payload - do NOT include total_hours or gross_pay as they are calculated by the trigger
       const timesheetPayload = {
         submitted_by: user.id,
@@ -74,6 +79,8 @@ export const useTimesheetSubmission = () => {
         additional_expense: data.additionalExpense || 0,
         notes: data.notes || '',
         status: 'pending',
+        tax_included: data.taxIncluded || false,
+        calculated_tax: calculatedTax,
       };
 
       console.log('📝 Submitting timesheet to database with payload:', timesheetPayload);

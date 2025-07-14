@@ -19,6 +19,7 @@ const formSchema = z.object({
   sundayHours: z.number().min(0).max(24),
   additionalExpense: z.number().min(0).optional(),
   notes: z.string().optional(),
+  tax_included: z.boolean().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -47,6 +48,7 @@ export const useTimesheetForm = () => {
       sundayHours: 0,
       additionalExpense: 0,
       notes: '',
+      tax_included: false,
     },
   });
 
@@ -153,6 +155,7 @@ export const useTimesheetForm = () => {
       hourlyRate: hourlyRate,
       additionalExpense: data.additionalExpense || 0,
       notes: data.notes || '',
+      taxIncluded: data.tax_included || false,
     };
     
     console.log('🚀 Submitting timesheet with processed data:', timesheetData);

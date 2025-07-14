@@ -162,9 +162,13 @@ const EmployeeTimesheets = () => {
                         ${timesheet.gross_pay.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-center font-mono">
-                        <span className="text-red-600" title={`${timesheet.tax_percentage || 13}% tax`}>
-                          ${(timesheet.estimated_tax || 0).toFixed(2)}
-                        </span>
+                        {timesheet.tax_included ? (
+                          <span className="text-blue-600">
+                            ${(timesheet.calculated_tax || 0).toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(timesheet.status)}
