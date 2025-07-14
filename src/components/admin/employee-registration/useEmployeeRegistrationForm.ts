@@ -45,7 +45,13 @@ export const useEmployeeRegistrationForm = () => {
     setLoading(true);
     
     try {
-      console.log('Submitting employee registration:', { email: data.email, username: data.username, role: data.role });
+      console.log('Submitting employee registration:', { 
+        email: data.email, 
+        username: data.username, 
+        role: data.role, 
+        hourlyRate: data.hourlyRate, 
+        hasPhoto: !!data.photo 
+      });
 
       let photoUrl: string | null = null;
       const certificateUrls: Array<{ name: string; expiryDate?: string; noExpiry: boolean; fileUrl?: string }> = [];
