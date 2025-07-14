@@ -24,7 +24,11 @@ export const useAuthState = () => {
     const handleAuthStateChange = async (event: string, session: Session | null) => {
       if (!isMounted) return;
       
-      console.log('🔄 Auth state changed:', event, session?.user?.email);
+      console.log('🔄 Auth state changed:', event, { 
+        sessionExists: !!session, 
+        userEmail: session?.user?.email,
+        userId: session?.user?.id 
+      });
       setSession(session);
       
       if (session?.user) {
@@ -53,11 +57,16 @@ export const useAuthState = () => {
               pendingApproval: profile.pending_approval || false
             };
             
-            console.log('✅ Setting auth user:', authUser);
+            console.log('✅ Setting auth user:', { 
+              id: authUser.id, 
+              email: authUser.email, 
+              role: authUser.role, 
+              companyId: authUser.companyId 
+            });
             setUser(authUser);
             setCompanyError(null);
           } else {
-            console.warn('⚠️ No profile or company found');
+            console.warn('⚠️ No profile or company found for user:', session.user.id);
             setUser(null);
             setCompanyError('Profile or company not found. Please contact your administrator.');
           }

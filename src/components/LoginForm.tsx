@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 import { Building, ArrowRight, Mail, Lock, Users } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import PWAInstallButton from '@/components/common/PWAInstallButton';
+import LoginLoading from '@/components/common/LoginLoading';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -23,11 +24,12 @@ const LoginForm = () => {
   useEffect(() => {
     if (isAuthenticated && user) {
       console.log('🎯 Company login successful, navigating to dashboard for role:', user.role);
+      console.log('📊 Full user object:', user);
       
       // Stop loading state before navigation
       setLoading(false);
       
-      // Role-based redirect
+      // Role-based redirect with enhanced logging
       switch (user.role) {
         case 'admin':
         case 'super_admin':
@@ -51,6 +53,8 @@ const LoginForm = () => {
           // Fallback to home page if role is undefined
           navigate('/', { replace: true });
       }
+    } else if (isAuthenticated && !user) {
+      console.log('🔄 User authenticated but profile not loaded yet...');
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -60,6 +64,8 @@ const LoginForm = () => {
 
     try {
       console.log('🔑 Attempting email login for:', email);
+      console.log('🔍 Pre-login auth state:', { isAuthenticated, user: user?.email });
+      
       const { error } = await login(email, password, 'admin');
       
       if (error) {
@@ -72,19 +78,46 @@ const LoginForm = () => {
         setLoading(false);
       } else {
         console.log('✅ Login successful, waiting for auth state update...');
+        console.log('🔍 Post-login auth state:', { isAuthenticated, user: user?.email });
+        
         toast({
           title: "Welcome Back",
           description: "Successfully logged into StackBuild",
         });
         
-        // Timeout fallback in case auth state doesn't update properly
-        setTimeout(() => {
-          if (loading) {
-            console.warn('⚠️ Auth state update timeout, forcing redirect...');
+        // Wait for auth state to update before timing out
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds with 100ms intervals
+        
+        const checkAuthUpdate = () => {
+          attempts++;
+          console.log(`🔄 Auth check attempt ${attempts}/50:`, { 
+            isAuthenticated, 
+            userRole: user?.role,
+            userEmail: user?.email 
+          });
+          
+          if (isAuthenticated && user?.role) {
+            console.log('✅ Auth state updated successfully, user role:', user.role);
             setLoading(false);
-            window.location.href = '/admin/dashboard';
+            // Don't manually navigate - let useEffect handle it
+            return;
           }
-        }, 5000); // 5 second timeout
+          
+          if (attempts >= maxAttempts) {
+            console.warn('⚠️ Auth state update timeout after 5 seconds, forcing redirect...');
+            setLoading(false);
+            // Force redirect as fallback
+            window.location.href = '/admin/dashboard';
+            return;
+          }
+          
+          // Continue checking
+          setTimeout(checkAuthUpdate, 100);
+        };
+        
+        // Start checking for auth state update
+        setTimeout(checkAuthUpdate, 100);
       }
     } catch (error) {
       console.error('💥 Login error:', error);
@@ -98,7 +131,11 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-orange-50 via-slate-50 to-orange-100">
+    <>
+      {loading && isAuthenticated && user && (
+        <LoginLoading message="Setting up your admin dashboard..." />
+      )}
+      <div className="min-h-screen flex bg-gradient-to-br from-orange-50 via-slate-50 to-orange-100">
       {/* Left Side - Login Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-8">
         <div className="w-full max-w-md">
@@ -234,7 +271,8 @@ const LoginForm = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 to-transparent"></div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
