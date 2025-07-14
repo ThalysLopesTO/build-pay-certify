@@ -158,7 +158,7 @@ const EmployeeCertificatesModal: React.FC<EmployeeCertificatesModalProps> = ({
                           </div>
                           <div>
                             <span className="font-medium">Expiry Date:</span>
-                            <p>{new Date(cert.expiry_date).toLocaleDateString()}</p>
+                            <p>{cert.expiry_date ? new Date(cert.expiry_date).toLocaleDateString() : 'No Expiry'}</p>
                           </div>
                           <div>
                             <span className="font-medium">Upload Date:</span>
