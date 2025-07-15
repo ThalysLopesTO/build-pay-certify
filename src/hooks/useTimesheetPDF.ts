@@ -1,203 +1,188 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-interface TimesheetPDFData {
-  timesheet: any;
-  companySettings: any;
-  jobsiteName: string;
-  employeeName: string;
-  logoUrl?: string | null;
-}
-
 export const useTimesheetPDF = () => {
-  const generateTimesheetPDF = async (data: TimesheetPDFData) => {
+  const generateTimesheetPDF = async (data) => {
     try {
       const { timesheet, companySettings, jobsiteName, employeeName, logoUrl } = data;
-      
-      console.log('Generating PDF with data:', { timesheet, companySettings, jobsiteName, employeeName });
-      
-      // Validate required data
-      if (!timesheet) {
-        throw new Error('Timesheet data is required');
-      }
-      
+      if (!timesheet) throw new Error('Timesheet data is required');
+
       const pdf = new jsPDF();
       const pageWidth = pdf.internal.pageSize.width;
-      
-      // Header with company logo and info
+
       let yPosition = 20;
-      
-      // Company logo (if available)
+      const leftCol = 15;
+      const rightCol = pageWidth / 2 + 10;
+
+      // Company Logo
       if (logoUrl) {
         try {
-          console.log('Loading company logo from:', logoUrl);
-          const logoResponse = await fetch(logoUrl);
-          if (!logoResponse.ok) {
-            throw new Error(`Failed to fetch logo: ${logoResponse.status}`);
-          }
-          const logoBlob = await logoResponse.blob();
-          const logoDataUrl = await new Promise<string>((resolve, reject) => {
+          const logoRes = await fetch(logoUrl);
+          const logoBlob = await logoRes.blob();
+          const logoDataUrl = await new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = () => reject(new Error('Failed to read logo file'));
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
             reader.readAsDataURL(logoBlob);
           });
-          pdf.addImage(logoDataUrl, 'PNG', 15, 10, 40, 20);
+          pdf.addImage(logoDataUrl, 'PNG', leftCol, 10, 40, 20);
           yPosition = 35;
-        } catch (error) {
-          console.error('Error loading company logo:', error);
-          // Continue without logo
+        } catch (err) {
+          console.warn('Logo failed to load:', err);
         }
       }
-      
-      // Company name
+
+      // Header
       pdf.setFontSize(18);
       pdf.setFont('helvetica', 'bold');
       pdf.text(companySettings?.company_name || 'Company Name', pageWidth / 2, yPosition, { align: 'center' });
-      
+
       yPosition += 10;
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('Weekly Timesheet', pageWidth / 2, yPosition, { align: 'center' });
-      
+      pdf.text('Weekly Timesheet Report', pageWidth / 2, yPosition, { align: 'center' });
+
       yPosition += 20;
-      
-      // Employee and job details
+
+      // Employee & Job Info
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
-      
-      const leftCol = 15;
-      const rightCol = pageWidth / 2 + 10;
-      
       pdf.text('Employee:', leftCol, yPosition);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(employeeName || 'Unknown Employee', leftCol + 25, yPosition);
-      
+      pdf.text(employeeName || 'Unknown', leftCol + 30, yPosition);
+
       pdf.setFont('helvetica', 'bold');
       pdf.text('Jobsite:', rightCol, yPosition);
       pdf.setFont('helvetica', 'normal');
-      pdf.text(jobsiteName || 'Unknown Jobsite', rightCol + 20, yPosition);
-      
+      pdf.text(jobsiteName || 'Unknown', rightCol + 25, yPosition);
+
       yPosition += 8;
-      
       pdf.setFont('helvetica', 'bold');
       pdf.text('Week Starting:', leftCol, yPosition);
       pdf.setFont('helvetica', 'normal');
-      const weekStartDate = timesheet.week_start_date ? new Date(timesheet.week_start_date).toLocaleDateString() : 'N/A';
-      pdf.text(weekStartDate, leftCol + 35, yPosition);
-      
+      pdf.text(
+        timesheet.week_start_date ? new Date(timesheet.week_start_date).toLocaleDateString() : 'N/A',
+        leftCol + 35,
+        yPosition
+      );
+
       pdf.setFont('helvetica', 'bold');
       pdf.text('Hourly Rate:', rightCol, yPosition);
       pdf.setFont('helvetica', 'normal');
       const hourlyRate = timesheet.hourly_rate ? `$${Number(timesheet.hourly_rate).toFixed(2)}` : '$0.00';
       pdf.text(hourlyRate, rightCol + 30, yPosition);
-      
+
       yPosition += 15;
-      
-      // Hours table
+
+      // Hours Table
       const tableData = [
-        ['Monday', (timesheet.monday_hours ? Number(timesheet.monday_hours).toFixed(2) : '0.00')],
-        ['Tuesday', (timesheet.tuesday_hours ? Number(timesheet.tuesday_hours).toFixed(2) : '0.00')],
-        ['Wednesday', (timesheet.wednesday_hours ? Number(timesheet.wednesday_hours).toFixed(2) : '0.00')],
-        ['Thursday', (timesheet.thursday_hours ? Number(timesheet.thursday_hours).toFixed(2) : '0.00')],
-        ['Friday', (timesheet.friday_hours ? Number(timesheet.friday_hours).toFixed(2) : '0.00')],
-        ['Saturday', (timesheet.saturday_hours ? Number(timesheet.saturday_hours).toFixed(2) : '0.00')],
-        ['Sunday', (timesheet.sunday_hours ? Number(timesheet.sunday_hours).toFixed(2) : '0.00')],
-        ['Total Hours', (timesheet.total_hours ? Number(timesheet.total_hours).toFixed(2) : '0.00')]
+        ['Monday', (timesheet.monday_hours ?? 0).toFixed(2)],
+        ['Tuesday', (timesheet.tuesday_hours ?? 0).toFixed(2)],
+        ['Wednesday', (timesheet.wednesday_hours ?? 0).toFixed(2)],
+        ['Thursday', (timesheet.thursday_hours ?? 0).toFixed(2)],
+        ['Friday', (timesheet.friday_hours ?? 0).toFixed(2)],
+        ['Saturday', (timesheet.saturday_hours ?? 0).toFixed(2)],
+        ['Sunday', (timesheet.sunday_hours ?? 0).toFixed(2)],
+        ['Total Hours', (timesheet.total_hours ?? 0).toFixed(2)]
       ];
-      
-      // Use the autoTable plugin
+
       autoTable(pdf, {
         startY: yPosition,
         head: [['Day', 'Hours']],
         body: tableData,
-        theme: 'grid',
-        headStyles: { fillColor: [59, 130, 246] },
-        columnStyles: {
-          0: { cellWidth: 40 },
-          1: { cellWidth: 30, halign: 'right' }
+        theme: 'striped',
+        headStyles: {
+          fillColor: [44, 62, 80],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          textColor: [50, 50, 50]
+        },
+        styles: {
+          fontSize: 11,
+          cellPadding: 4
         },
         margin: { left: leftCol },
-        tableWidth: 70
+        tableWidth: 'auto'
       });
-      
-      yPosition = (pdf as any).lastAutoTable.finalY + 15;
-      
-      // Payment breakdown
+
+      yPosition = (pdf as any).lastAutoTable.finalY + 10;
+
+      // Payment Breakdown
+      const totalHours = Number(timesheet.total_hours ?? 0);
+      const rate = Number(timesheet.hourly_rate ?? 0);
+      const expenses = Number(timesheet.additional_expense ?? 0);
+      const gross = Number(timesheet.gross_pay ?? 0);
+      const tax = Number(timesheet.calculated_tax ?? 0);
+      const withTax = timesheet.tax_included;
+
+      const breakdown = [
+        ['Regular Hours:', `${totalHours.toFixed(2)} × $${rate.toFixed(2)}`, `$${(totalHours * rate).toFixed(2)}`],
+        ['Additional Expenses:', '', `$${expenses.toFixed(2)}`],
+        ['Gross Pay:', '', `$${gross.toFixed(2)}`]
+      ];
+
+      if (withTax && tax > 0) {
+        breakdown.push(['Tax:', '', `$${tax.toFixed(2)}`]);
+        breakdown.push(['Total Pay:', '', `$${(gross + tax).toFixed(2)}`]);
+      } else {
+        breakdown.push(['Total Pay:', '', `$${gross.toFixed(2)}`]);
+      }
+
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Payment Breakdown:', leftCol, yPosition);
-      
-      yPosition += 10;
-      
-      const totalHours = timesheet.total_hours ? Number(timesheet.total_hours) : 0;
-      const hourlyRateNum = timesheet.hourly_rate ? Number(timesheet.hourly_rate) : 0;
-      const additionalExpense = timesheet.additional_expense ? Number(timesheet.additional_expense) : 0;
-      const grossPay = timesheet.gross_pay ? Number(timesheet.gross_pay) : 0;
-      const calculatedTax = timesheet.calculated_tax ? Number(timesheet.calculated_tax) : 0;
-      
-      const breakdown = [
-        ['Regular Hours:', `${totalHours.toFixed(2)} × $${hourlyRateNum.toFixed(2)}`, `$${(totalHours * hourlyRateNum).toFixed(2)}`],
-        ['Additional Expenses:', '', `$${additionalExpense.toFixed(2)}`],
-        ['Gross Pay:', '', `$${grossPay.toFixed(2)}`]
-      ];
-      
-      if (timesheet.tax_included && calculatedTax > 0) {
-        breakdown.push(['Tax:', '', `$${calculatedTax.toFixed(2)}`]);
-        breakdown.push(['Total Pay:', '', `$${(grossPay + calculatedTax).toFixed(2)}`]);
-      } else {
-        breakdown.push(['Total Pay:', '', `$${grossPay.toFixed(2)}`]);
-      }
-      
+      pdf.text('Payment Summary', leftCol, yPosition);
+
+      yPosition += 5;
+
       autoTable(pdf, {
         startY: yPosition,
         body: breakdown,
-        theme: 'plain',
+        theme: 'grid',
+        styles: {
+          fontSize: 11,
+          halign: 'left',
+          cellPadding: 5
+        },
         columnStyles: {
-          0: { cellWidth: 50, fontStyle: 'normal' },
-          1: { cellWidth: 60, halign: 'center' },
-          2: { cellWidth: 40, halign: 'right', fontStyle: 'bold' }
+          0: { fontStyle: 'bold', cellWidth: 60 },
+          1: { halign: 'center' },
+          2: { halign: 'right', fontStyle: 'bold' }
         },
         margin: { left: leftCol },
-        tableWidth: 150
+        tableWidth: 'wrap'
       });
-      
-      yPosition = (pdf as any).lastAutoTable.finalY + 15;
-      
-      // Footer info
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
+
+      yPosition = (pdf as any).lastAutoTable.finalY + 20;
+
+      // Footer
       const submittedDate = timesheet.created_at ? new Date(timesheet.created_at).toLocaleDateString() : 'N/A';
       const status = timesheet.status ? timesheet.status.charAt(0).toUpperCase() + timesheet.status.slice(1) : 'Unknown';
-      
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(80);
+      pdf.setFont('helvetica', 'normal');
       pdf.text(`Submitted: ${submittedDate}`, leftCol, yPosition);
       pdf.text(`Status: ${status}`, rightCol, yPosition);
-      
+
       if (timesheet.status === 'approved') {
         yPosition += 20;
         pdf.text('Approved by: ________________________', leftCol, yPosition);
         pdf.text('Date: ________________________', rightCol, yPosition);
       }
-      
-      // Generate filename
-      const employeeNameForFile = employeeName ? employeeName.replace(/\s+/g, '_') : 'Unknown_Employee';
-      const weekStartForFile = timesheet.week_start_date ? new Date(timesheet.week_start_date).toISOString().split('T')[0] : 'unknown_date';
-      const filename = `timesheet_${employeeNameForFile}_${weekStartForFile}.pdf`;
-      
-      console.log('Saving PDF with filename:', filename);
-      
-      // Download the PDF
+
+      // Save File
+      const fileEmployee = employeeName ? employeeName.replace(/\s+/g, '_') : 'Unknown';
+      const weekDate = timesheet.week_start_date ? new Date(timesheet.week_start_date).toISOString().split('T')[0] : 'unknown';
+      const filename = `timesheet_${fileEmployee}_${weekDate}.pdf`;
+
       pdf.save(filename);
-      
-      console.log('PDF generated successfully');
-      
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      throw error;
+    } catch (err) {
+      console.error('PDF Generation Failed:', err);
+      throw err;
     }
   };
-  
+
   return { generateTimesheetPDF };
 };
