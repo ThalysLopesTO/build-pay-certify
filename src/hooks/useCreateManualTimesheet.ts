@@ -16,13 +16,14 @@ export const useCreateManualTimesheet = () => {
 
       console.log('Creating manual timesheet with data:', timesheetData);
       
-      // First check if a timesheet already exists for this combination
+      // First check if a timesheet already exists for this manual entry
       const { data: existingTimesheet, error: checkError } = await supabase
         .from('weekly_timesheets')
         .select('id')
-        .eq('submitted_by', user.id)
+        .eq('manual_entry_name', timesheetData.manual_entry_name)
         .eq('jobsite_id', timesheetData.jobsite_id)
         .eq('week_start_date', timesheetData.week_start_date)
+        .eq('is_manual_entry', true)
         .maybeSingle();
 
       if (checkError) {
