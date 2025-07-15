@@ -262,15 +262,29 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Weekly Hours</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-              {[
-                { day: 'mondayHours', label: 'Mon' },
-                { day: 'tuesdayHours', label: 'Tue' },
-                { day: 'wednesdayHours', label: 'Wed' },
-                { day: 'thursdayHours', label: 'Thu' },
-                { day: 'fridayHours', label: 'Fri' },
-                { day: 'saturdayHours', label: 'Sat' },
-                { day: 'sundayHours', label: 'Sun' }
-              ].map(({ day, label }) => (
+              {(() => {
+                // Get the week ending day from company settings (0=Sunday, 1=Monday, etc.)
+                const weekEndingDay = settings?.week_ending_day ?? 0;
+                
+                // Calculate the week start day (day after the ending day)
+                const weekStartDay = (weekEndingDay + 1) % 7;
+                
+                // Base day names and field names
+                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const fieldNames = ['sundayHours', 'mondayHours', 'tuesdayHours', 'wednesdayHours', 'thursdayHours', 'fridayHours', 'saturdayHours'];
+                
+                // Create ordered days based on company's week start
+                const orderedDays = [];
+                for (let i = 0; i < 7; i++) {
+                  const dayIndex = (weekStartDay + i) % 7;
+                  orderedDays.push({
+                    day: fieldNames[dayIndex],
+                    label: dayNames[dayIndex].substring(0, 3)
+                  });
+                }
+                
+                return orderedDays;
+              })().map(({ day, label }) => (
                 <div key={day} className="space-y-1">
                   <Label className="text-sm font-medium text-gray-700">{label}</Label>
                   <Input
