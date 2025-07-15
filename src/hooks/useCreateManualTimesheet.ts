@@ -17,14 +17,13 @@ export const useCreateManualTimesheet = () => {
 
       console.log('Creating manual timesheet with data:', timesheetData);
       
-      // For manual entries, create a unique submitted_by ID to avoid constraint conflicts
-      // This allows multiple manual timesheets for the same jobsite/week
-      const uniqueSubmittedBy = uuidv4();
+      // For manual entries, use the current user's ID as submitted_by
+      // This satisfies RLS policies while indicating it's a manual entry through is_manual_entry flag
       
       // Add required fields for manual entries
       const dataToInsert = {
         ...timesheetData,
-        submitted_by: uniqueSubmittedBy, // Use unique ID for manual entries
+        submitted_by: user.id, // Use authenticated user's ID for RLS compliance
         company_id: user.companyId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
