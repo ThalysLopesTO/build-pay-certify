@@ -16,29 +16,6 @@ export const useCreateManualTimesheet = () => {
 
       console.log('Creating manual timesheet with data:', timesheetData);
       
-      // Check if ANY timesheet (manual or regular) already exists for this admin, jobsite, and week
-      // This prevents the unique constraint violation
-      const { data: existingTimesheet, error: checkError } = await supabase
-        .from('weekly_timesheets')
-        .select('id, manual_entry_name, is_manual_entry')
-        .eq('submitted_by', user.id)
-        .eq('jobsite_id', timesheetData.jobsite_id)
-        .eq('week_start_date', timesheetData.week_start_date)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking existing timesheet:', checkError);
-        throw new Error('Failed to check existing timesheets');
-      }
-
-      if (existingTimesheet) {
-        if (existingTimesheet.is_manual_entry) {
-          throw new Error(`A manual timesheet already exists for ${existingTimesheet.manual_entry_name} at this jobsite for the week of ${timesheetData.week_start_date}. Please edit the existing timesheet instead.`);
-        } else {
-          throw new Error(`You already have a regular timesheet for this jobsite and week. Please edit the existing timesheet instead.`);
-        }
-      }
-      
       // Add required fields for manual entries
       const dataToInsert = {
         ...timesheetData,

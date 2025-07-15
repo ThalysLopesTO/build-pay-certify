@@ -24,7 +24,7 @@ interface CreateManualTimesheetModalProps {
 interface TimesheetFormData {
   employeeName: string;
   jobsiteId: string;
-  selectedWeekId: string;
+  selectedDate: Date | undefined;
   mondayHours: number;
   tuesdayHours: number;
   wednesdayHours: number;
@@ -51,7 +51,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
   const [formData, setFormData] = useState<TimesheetFormData>({
     employeeName: '',
     jobsiteId: '',
-    selectedWeekId: '',
+    selectedDate: undefined,
     mondayHours: 0,
     tuesdayHours: 0,
     wednesdayHours: 0,
@@ -86,25 +86,24 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
     handleInputChange(day as keyof TimesheetFormData, numValue);
   };
 
-  const handleWeekSelect = (weekId: string) => {
-    handleInputChange('selectedWeekId', weekId);
+  const handleDateSelect = (date: Date | undefined) => {
+    handleInputChange('selectedDate', date);
   };
 
   const handleSave = () => {
-    if (!formData.employeeName.trim() || !formData.jobsiteId || !formData.selectedWeekId) {
+    if (!formData.employeeName.trim() || !formData.jobsiteId || !formData.selectedDate) {
       return;
     }
 
-    const selectedWeek = workWeeks?.availableWeeks.find(week => week.weekStartDateString === formData.selectedWeekId);
-    if (!selectedWeek) {
-      return;
-    }
+    // Get the Monday of the selected week
+    const weekStart = startOfWeek(formData.selectedDate, { weekStartsOn: 1 });
+    const weekStartDateString = format(weekStart, 'yyyy-MM-dd');
 
     const timesheetData = {
       manual_entry_name: formData.employeeName.trim(),
       is_manual_entry: true,
       jobsite_id: formData.jobsiteId,
-      week_start_date: selectedWeek.weekStartDateString,
+      week_start_date: weekStartDateString,
       monday_hours: formData.mondayHours,
       tuesday_hours: formData.tuesdayHours,
       wednesday_hours: formData.wednesdayHours,
@@ -127,7 +126,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
     setFormData({
       employeeName: '',
       jobsiteId: '',
-      selectedWeekId: '',
+      selectedDate: undefined,
       mondayHours: 0,
       tuesdayHours: 0,
       wednesdayHours: 0,
@@ -211,19 +210,34 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="weekSelect">Week Starting (Monday) *</Label>
-              <Select value={formData.selectedWeekId} onValueChange={handleWeekSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a week" />
-                </SelectTrigger>
-                <SelectContent>
-                  {workWeeks?.availableWeeks.map((week) => (
-                    <SelectItem key={week.weekStartDateString} value={week.weekStartDateString}>
-                      {week.rangeFormattedWithLabel}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="dateSelect">Week Starting Date *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.selectedDate ? (
+                      format(startOfWeek(formData.selectedDate, { weekStartsOn: 1 }), "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.selectedDate}
+                    onSelect={handleDateSelect}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
@@ -330,7 +344,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
           </Button>
           <Button 
             onClick={handleSave} 
-            disabled={!formData.employeeName.trim() || !formData.jobsiteId || !formData.selectedWeekId || isSaving}
+            disabled={!formData.employeeName.trim() || !formData.jobsiteId || !formData.selectedDate || isSaving}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             {isSaving ? 'Creating...' : 'Create Timesheet'}
