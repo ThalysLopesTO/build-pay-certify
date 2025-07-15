@@ -19,7 +19,7 @@ export const useCreateManualTimesheet = () => {
       
       // For manual entries, create a unique submitted_by ID to avoid constraint conflicts
       // This allows multiple manual timesheets for the same jobsite/week
-      const uniqueSubmittedBy = `manual_${uuidv4()}`;
+      const uniqueSubmittedBy = uuidv4();
       
       // Add required fields for manual entries
       const dataToInsert = {
