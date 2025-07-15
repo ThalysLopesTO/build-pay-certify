@@ -52,6 +52,7 @@ const PayrollSummary = () => {
   // Process approved timesheets for payroll
   const payrollEntries = useMemo(() => {
     const taxPercentage = settings?.tax_percentage || 13;
+    const weekEndingDay = settings?.week_ending_day ?? 0; // Default to Sunday
     
     return timesheets.map((timesheet, index) => {
       const employee = employees.find(emp => 
@@ -67,6 +68,17 @@ const PayrollSummary = () => {
       const hourlyPay = totalHours * hourlyRate;
       const estimatedTax = hourlyPay * (taxPercentage / 100);
       
+      // Calculate week ending date from week start date using company's week ending day
+      const weekStartDate = new Date(timesheet.week_start_date);
+      const weekEndDate = new Date(weekStartDate);
+      // Calculate how many days to add to get to the week ending day
+      const weekStartDayOfWeek = weekStartDate.getDay();
+      let daysToAdd = weekEndingDay - weekStartDayOfWeek;
+      if (daysToAdd < 0) {
+        daysToAdd += 7;
+      }
+      weekEndDate.setDate(weekStartDate.getDate() + daysToAdd);
+      
       return {
         id: index,
         originalTimesheet: timesheet,
@@ -76,17 +88,18 @@ const PayrollSummary = () => {
         jobSite: timesheet.jobsite_name,
         project: timesheet.jobsite_name,
         weekStartDate: timesheet.week_start_date,
-        weekEndDate: format(new Date(timesheet.week_start_date), 'MMM dd, yyyy'),
+        weekEndDate: format(weekEndDate, 'MMM dd, yyyy'),
         totalHours,
         hourlyRate,
         additionalExpense,
         grossPay,
         estimatedTax,
         totalPayWithTax: grossPay + estimatedTax,
-        submittedAt: timesheet.created_at
+        submittedAt: timesheet.created_at,
+        isManualEntry: timesheet.is_manual_entry || false
       };
     });
-  }, [timesheets, employees, settings?.tax_percentage]);
+  }, [timesheets, employees, settings?.tax_percentage, settings?.week_ending_day]);
 
   const filteredEntries = useMemo(() => {
     return payrollEntries.filter(entry => {
@@ -434,6 +447,18 @@ const PayrollSummary = () => {
               </div>
             </div>
 
+            {/* Tax Toggle */}
+            <div className="flex items-center space-x-3 p-4 bg-slate-50 rounded-lg">
+              <Switch
+                id="tax-included"
+                checked={taxIncluded}
+                onCheckedChange={setTaxIncluded}
+              />
+              <Label htmlFor="tax-included" className="text-sm font-medium">
+                Tax Included in Total Pay
+              </Label>
+            </div>
+
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-4 pt-4 border-t">
               <Button 
@@ -542,23 +567,32 @@ const PayrollSummary = () => {
                           onCheckedChange={(checked) => handleSelectTimesheet(entry.id, checked === true)}
                         />
                       </td>
-                      <td className="p-4 font-medium">{entry.employeeName}</td>
-                      <td className="p-4">
-                        <Badge variant="outline" className="text-xs">{entry.trade}</Badge>
-                      </td>
-                      <td className="p-4 text-sm">{entry.jobSite}</td>
-                      <td className="p-4 text-sm">{entry.weekEndDate}</td>
-                      <td className="p-4 text-center font-mono text-sm">{entry.totalHours.toFixed(2)}</td>
-                      <td className="p-4 text-center font-mono text-sm">${entry.hourlyRate.toFixed(2)}</td>
-                      <td className="p-4 text-center font-mono font-semibold text-green-600">
-                        ${entry.grossPay.toFixed(2)}
-                      </td>
-                      <td className="p-4 text-center font-mono text-sm text-red-600">
-                        ${entry.estimatedTax.toFixed(2)}
-                      </td>
-                      <td className="p-4 text-center font-mono font-semibold text-blue-600">
-                        ${(entry.estimatedTax > 0 ? entry.totalPayWithTax : entry.grossPay).toFixed(2)}
-                      </td>
+                       <td className="p-4 font-medium">
+                         <div className="flex items-center space-x-2">
+                           <span>{entry.employeeName}</span>
+                           {entry.isManualEntry && (
+                             <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                               Manual Entry
+                             </Badge>
+                           )}
+                         </div>
+                       </td>
+                       <td className="p-4">
+                         <Badge variant="outline" className="text-xs">{entry.trade}</Badge>
+                       </td>
+                       <td className="p-4 text-sm">{entry.jobSite}</td>
+                       <td className="p-4 text-sm">{entry.weekEndDate}</td>
+                       <td className="p-4 text-center font-mono text-sm">{entry.totalHours.toFixed(2)}</td>
+                       <td className="p-4 text-center font-mono text-sm">${entry.hourlyRate.toFixed(2)}</td>
+                       <td className="p-4 text-center font-mono font-semibold text-green-600">
+                         ${entry.grossPay.toFixed(2)}
+                       </td>
+                       <td className="p-4 text-center font-mono text-sm text-red-600">
+                         ${entry.originalTimesheet.tax_included ? entry.estimatedTax.toFixed(2) : '0.00'}
+                       </td>
+                       <td className="p-4 text-center font-mono font-semibold text-blue-600">
+                         ${entry.originalTimesheet.tax_included ? entry.totalPayWithTax.toFixed(2) : entry.grossPay.toFixed(2)}
+                       </td>
                     </tr>
                   ))}
                 </tbody>
