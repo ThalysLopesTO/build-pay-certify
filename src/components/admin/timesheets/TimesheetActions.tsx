@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Check, X, Edit } from 'lucide-react';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import TimesheetPDFGenerator from './TimesheetPDFGenerator';
 
 interface TimesheetActionsProps {
   timesheet: any;
@@ -18,6 +20,15 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
   isApproving,
   isRejecting
 }) => {
+  const { user } = useAuth();
+  
+  // Check if user can export PDFs (Admin and Management only)
+  const canExportPDF = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
+
+  const handleDownloadPDF = async (timesheet: any) => {
+    // This will be handled by the TimesheetPDFGenerator component
+  };
+
   return (
     <div className="flex items-center gap-1">
       <Button
@@ -29,6 +40,12 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
       >
         <Edit className="h-4 w-4 text-blue-500" />
       </Button>
+      {canExportPDF && (
+        <TimesheetPDFGenerator
+          timesheet={timesheet}
+          onDownloadSingle={handleDownloadPDF}
+        />
+      )}
       {timesheet.status !== 'approved' && (
         <Button
           variant="ghost"
