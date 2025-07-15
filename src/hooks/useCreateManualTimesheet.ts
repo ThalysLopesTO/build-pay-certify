@@ -14,7 +14,7 @@ export const useCreateManualTimesheet = () => {
         throw new Error('User not authenticated');
       }
 
-      console.log('Creating manual timesheet:', timesheetData);
+      console.log('Creating manual timesheet with data:', timesheetData);
       
       // Add required fields for manual entries
       const dataToInsert = {
@@ -25,6 +25,8 @@ export const useCreateManualTimesheet = () => {
         updated_at: new Date().toISOString(),
       };
 
+      console.log('Data being inserted into database:', dataToInsert);
+
       const { data, error } = await supabase
         .from('weekly_timesheets')
         .insert(dataToInsert)
@@ -32,8 +34,13 @@ export const useCreateManualTimesheet = () => {
         .single();
 
       if (error) {
-        console.error('Error creating manual timesheet:', error);
-        throw error;
+        console.error('Database error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw new Error(`Database error: ${error.message} - ${error.details || error.hint || 'No additional details'}`);
       }
 
       return data;
