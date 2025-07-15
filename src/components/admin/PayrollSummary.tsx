@@ -300,17 +300,6 @@ const PayrollSummary = () => {
 
   return (
     <div className="space-y-8">
-      {/* Company Logo */}
-      {logoUrl && (
-        <div className="flex justify-center py-4">
-          <img 
-            src={logoUrl} 
-            alt="Company Logo" 
-            className="h-16 w-auto object-contain"
-          />
-        </div>
-      )}
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-l-4 border-l-green-500">
@@ -359,7 +348,7 @@ const PayrollSummary = () => {
         </Card>
       </div>
 
-      {/* Filters Section */}
+      {/* Filters & Options Section */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -380,97 +369,80 @@ const PayrollSummary = () => {
         
         {showFilters && (
           <CardContent className="space-y-6">
-            {/* Tax Included Toggle */}
-            <div className="p-4 bg-slate-50 rounded-lg border">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="tax-included" className="text-sm font-medium">
-                    Tax Included in Total Pay
-                  </Label>
-                  <p className="text-xs text-slate-600">
-                    When enabled, the "Total Pay" column shows Gross Pay + Tax. When disabled, only Gross Pay is shown with a separate Tax column.
-                  </p>
+            {/* Search and Filter Controls */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Search Employee</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Input
+                      placeholder="Type employee name..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
-                <Switch
-                  id="tax-included"
-                  checked={taxIncluded}
-                  onCheckedChange={setTaxIncluded}
-                />
-              </div>
-            </div>
 
-            {/* Filter Controls */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Search Employee</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                  <Input
-                    placeholder="Employee name..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Week Period</label>
+                  <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All weeks" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All weeks</SelectItem>
+                      {workWeeks?.availableWeeks.map((week) => (
+                        <SelectItem key={week.weekStartDateString} value={week.weekStartDateString}>
+                          {week.rangeFormatted}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Week Range</label>
-                <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All weeks" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All weeks</SelectItem>
-                    {workWeeks?.availableWeeks.map((week) => (
-                      <SelectItem key={week.weekStartDateString} value={week.weekStartDateString}>
-                        {week.rangeFormatted}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Job Site</label>
+                  <Select value={selectedJobSite} onValueChange={setSelectedJobSite}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All sites" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All sites</SelectItem>
+                      {jobSites.map((site) => (
+                        <SelectItem key={site} value={site}>{site}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Job Site</label>
-                <Select value={selectedJobSite} onValueChange={setSelectedJobSite}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All sites" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All sites</SelectItem>
-                    {jobSites.map((site) => (
-                      <SelectItem key={site} value={site}>{site}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Trade</label>
-                <Select value={selectedTrade} onValueChange={setSelectedTrade}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All trades" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All trades</SelectItem>
-                    {trades.map((trade) => (
-                      <SelectItem key={trade} value={trade}>{trade}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Trade</label>
+                  <Select value={selectedTrade} onValueChange={setSelectedTrade}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All trades" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All trades</SelectItem>
+                      {trades.map((trade) => (
+                        <SelectItem key={trade} value={trade}>{trade}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap items-center gap-4 pt-4 border-t">
               <Button 
                 variant="outline" 
                 onClick={() => refetch()}
                 disabled={isLoading}
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
+                Refresh Data
               </Button>
               
               <Button 
@@ -479,61 +451,54 @@ const PayrollSummary = () => {
                 className="bg-green-600 hover:bg-green-700"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Download All (.xlsx)
+                Export to Excel
               </Button>
+
+              {/* Bulk Actions */}
+              <div className="flex items-center space-x-2 ml-auto">
+                <Select value={bulkAction} onValueChange={(value) => setBulkAction(value as 'pdf' | 'xlsx' | '')}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Bulk actions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pdf">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="h-4 w-4" />
+                        <span>Download Selected as PDF</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="xlsx">
+                      <div className="flex items-center space-x-2">
+                        <Package className="h-4 w-4" />
+                        <span>Download Selected as XLSX</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Button 
+                  onClick={handleBulkAction}
+                  disabled={!bulkAction || selectedTimesheets.size === 0 || isProcessing}
+                  variant="outline"
+                >
+                  {isProcessing ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Apply ({selectedTimesheets.size})
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         )}
       </Card>
 
-      {/* Bulk Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Bulk Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <Select value={bulkAction} onValueChange={(value) => setBulkAction(value as 'pdf' | 'xlsx' | '')}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select bulk action" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pdf">
-                    <div className="flex items-center space-x-2">
-                      <FileText className="h-4 w-4" />
-                      <span>Download Selected as PDF</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="xlsx">
-                    <div className="flex items-center space-x-2">
-                      <Package className="h-4 w-4" />
-                      <span>Download Selected as XLSX</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Button 
-                onClick={handleBulkAction}
-                disabled={!bulkAction || selectedTimesheets.size === 0 || isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4 mr-2" />
-                    Apply ({selectedTimesheets.size} selected)
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Payroll Table */}
       <Card>
@@ -558,14 +523,14 @@ const PayrollSummary = () => {
                       />
                     </th>
                     <th className="text-left p-4 font-semibold bg-slate-50">Employee</th>
-                    <th className="text-left p-4 font-semibold bg-slate-50">Trade/Position</th>
-                    <th className="text-left p-4 font-semibold bg-slate-50">Job Site</th>
+                    <th className="text-left p-4 font-semibold bg-slate-50">Trade</th>
+                    <th className="text-left p-4 font-semibold bg-slate-50">Jobsite</th>
                     <th className="text-left p-4 font-semibold bg-slate-50">Week Ending</th>
                     <th className="text-center p-4 font-semibold bg-slate-50">Hours</th>
                     <th className="text-center p-4 font-semibold bg-slate-50">Rate</th>
-                    <th className="text-center p-4 font-semibold bg-slate-50 text-slate-600">Expenses</th>
-                    <th className="text-center p-4 font-semibold bg-slate-50 text-green-600">Total Pay</th>
-                    {!taxIncluded && <th className="text-center p-4 font-semibold bg-slate-50 text-red-600">Tax</th>}
+                    <th className="text-center p-4 font-semibold bg-slate-50 text-green-600">Total</th>
+                    <th className="text-center p-4 font-semibold bg-slate-50 text-red-600">Tax</th>
+                    <th className="text-center p-4 font-semibold bg-slate-50 text-blue-600">Total + Tax</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -579,24 +544,21 @@ const PayrollSummary = () => {
                       </td>
                       <td className="p-4 font-medium">{entry.employeeName}</td>
                       <td className="p-4">
-                        <div className="space-y-1">
-                          <Badge variant="outline" className="text-xs">{entry.trade}</Badge>
-                          <p className="text-sm text-slate-600">{entry.position}</p>
-                        </div>
+                        <Badge variant="outline" className="text-xs">{entry.trade}</Badge>
                       </td>
                       <td className="p-4 text-sm">{entry.jobSite}</td>
                       <td className="p-4 text-sm">{entry.weekEndDate}</td>
                       <td className="p-4 text-center font-mono text-sm">{entry.totalHours.toFixed(2)}</td>
                       <td className="p-4 text-center font-mono text-sm">${entry.hourlyRate.toFixed(2)}</td>
-                      <td className="p-4 text-center font-mono text-sm text-slate-600">${entry.additionalExpense.toFixed(2)}</td>
                       <td className="p-4 text-center font-mono font-semibold text-green-600">
-                        ${(taxIncluded ? entry.totalPayWithTax : entry.grossPay).toFixed(2)}
+                        ${entry.grossPay.toFixed(2)}
                       </td>
-                      {!taxIncluded && (
-                        <td className="p-4 text-center font-mono text-sm text-red-600">
-                          ${entry.estimatedTax.toFixed(2)}
-                        </td>
-                      )}
+                      <td className="p-4 text-center font-mono text-sm text-red-600">
+                        ${entry.estimatedTax.toFixed(2)}
+                      </td>
+                      <td className="p-4 text-center font-mono font-semibold text-blue-600">
+                        ${(entry.estimatedTax > 0 ? entry.totalPayWithTax : entry.grossPay).toFixed(2)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
