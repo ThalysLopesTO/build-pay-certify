@@ -18,9 +18,9 @@ export const useTimesheetPDF = () => {
         try {
           const res = await fetch(logoUrl);
           const blob = await res.blob();
-          const base64 = await new Promise((resolve, reject) => {
+          const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
+            reader.onload = () => resolve(reader.result as string);
             reader.onerror = reject;
             reader.readAsDataURL(blob);
           });
