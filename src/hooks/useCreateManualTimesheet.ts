@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 export const useCreateManualTimesheet = () => {
   const { user } = useAuth();
@@ -16,10 +17,14 @@ export const useCreateManualTimesheet = () => {
 
       console.log('Creating manual timesheet with data:', timesheetData);
       
+      // For manual entries, create a unique submitted_by ID to avoid constraint conflicts
+      // This allows multiple manual timesheets for the same jobsite/week
+      const uniqueSubmittedBy = `manual_${uuidv4()}`;
+      
       // Add required fields for manual entries
       const dataToInsert = {
         ...timesheetData,
-        submitted_by: user.id, // Use current admin as submitter
+        submitted_by: uniqueSubmittedBy, // Use unique ID for manual entries
         company_id: user.companyId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

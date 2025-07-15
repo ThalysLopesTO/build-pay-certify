@@ -36,6 +36,10 @@ interface TimesheetFormData {
   hourlyRate: number;
   additionalExpense: number;
   taxIncluded: boolean;
+  // Employee-specific deduction fields
+  incomeTaxRate: number;
+  cppRate: number;
+  eiRate: number;
   notes: string;
 }
 
@@ -64,6 +68,9 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
     hourlyRate: 25,
     additionalExpense: 0,
     taxIncluded: false,
+    incomeTaxRate: 12, // Default 12%
+    cppRate: 5.95, // Default 5.95%
+    eiRate: 1.63, // Default 1.63%
     notes: ''
   });
 
@@ -83,10 +90,10 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
     calculatedTax = formData.taxIncluded ? (grossPay * taxRate / 100) : 0;
     totalPay = grossPay + calculatedTax;
   } else {
-    // Employee: calculate deductions
-    const incomeTax = grossPay * 0.12; // 12%
-    const cpp = grossPay * 0.0595; // 5.95%
-    const ei = grossPay * 0.0163; // 1.63%
+    // Employee: calculate deductions using editable rates
+    const incomeTax = grossPay * (formData.incomeTaxRate / 100);
+    const cpp = grossPay * (formData.cppRate / 100);
+    const ei = grossPay * (formData.eiRate / 100);
     deductions = incomeTax + cpp + ei;
     totalPay = grossPay - deductions;
   }
@@ -133,6 +140,10 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
       additional_expense: formData.additionalExpense,
       tax_included: formData.taxIncluded,
       calculated_tax: calculatedTax,
+      // Store custom deduction rates for employees
+      income_tax_rate: formData.workerType === 'employee' ? formData.incomeTaxRate : null,
+      cpp_rate: formData.workerType === 'employee' ? formData.cppRate : null,
+      ei_rate: formData.workerType === 'employee' ? formData.eiRate : null,
       notes: formData.notes || null,
       status: 'pending'
     };
@@ -156,6 +167,9 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
       hourlyRate: 25,
       additionalExpense: 0,
       taxIncluded: false,
+      incomeTaxRate: 12,
+      cppRate: 5.95,
+      eiRate: 1.63,
       notes: ''
     });
   };
@@ -392,21 +406,61 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
               </div>
             ) : (
               <div className="space-y-3">
-                <Label>Payroll Deductions</Label>
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-900 mb-2">Automatic Deductions Applied:</p>
-                  <div className="space-y-1 text-xs text-gray-600">
+                <Label>Payroll Deductions (Editable)</Label>
+                <div className="p-3 bg-gray-50 rounded-lg space-y-3">
+                  <p className="text-sm font-medium text-gray-900 mb-2">Deduction Rates:</p>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Income Tax (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={formData.incomeTaxRate}
+                        onChange={(e) => handleInputChange('incomeTaxRate', parseFloat(e.target.value) || 0)}
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">CPP (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={formData.cppRate}
+                        onChange={(e) => handleInputChange('cppRate', parseFloat(e.target.value) || 0)}
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">EI (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={formData.eiRate}
+                        onChange={(e) => handleInputChange('eiRate', parseFloat(e.target.value) || 0)}
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1 text-xs text-gray-600 border-t pt-2">
                     <div className="flex justify-between">
-                      <span>Income Tax (12%):</span>
-                      <span>${(grossPay * 0.12).toFixed(2)}</span>
+                      <span>Income Tax ({formData.incomeTaxRate}%):</span>
+                      <span>${(grossPay * (formData.incomeTaxRate / 100)).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>CPP (5.95%):</span>
-                      <span>${(grossPay * 0.0595).toFixed(2)}</span>
+                      <span>CPP ({formData.cppRate}%):</span>
+                      <span>${(grossPay * (formData.cppRate / 100)).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>EI (1.63%):</span>
-                      <span>${(grossPay * 0.0163).toFixed(2)}</span>
+                      <span>EI ({formData.eiRate}%):</span>
+                      <span>${(grossPay * (formData.eiRate / 100)).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between font-medium text-gray-900 pt-1 border-t">
                       <span>Total Deductions:</span>
