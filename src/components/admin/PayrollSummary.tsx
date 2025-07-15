@@ -79,6 +79,12 @@ const PayrollSummary = () => {
       }
       weekEndDate.setDate(weekStartDate.getDate() + daysToAdd);
       
+      // Calculate the proper week start date that aligns with company's week ending day
+      // This ensures filtering works correctly with the week periods from useWorkWeek
+      const properWeekStartDate = new Date(weekEndDate);
+      properWeekStartDate.setDate(weekEndDate.getDate() - 6); // Week starts 6 days before ending
+      const properWeekStartDateString = format(properWeekStartDate, 'yyyy-MM-dd');
+      
       return {
         id: index,
         originalTimesheet: timesheet,
@@ -87,7 +93,7 @@ const PayrollSummary = () => {
         position: employee?.position || 'Worker',
         jobSite: timesheet.jobsite_name,
         project: timesheet.jobsite_name,
-        weekStartDate: timesheet.week_start_date,
+        weekStartDate: properWeekStartDateString, // Use the calculated week start date for filtering
         weekEndDate: format(weekEndDate, 'MMM dd, yyyy'),
         totalHours,
         hourlyRate,
