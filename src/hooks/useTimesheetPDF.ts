@@ -20,7 +20,14 @@ export const useTimesheetPDF = () => {
           const blob = await res.blob();
           const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
+            reader.onload = () => {
+              const result = reader.result;
+              if (typeof result === 'string') {
+                resolve(result);
+              } else {
+                reject(new Error('Failed to read file as data URL'));
+              }
+            };
             reader.onerror = reject;
             reader.readAsDataURL(blob);
           });
