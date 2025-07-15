@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useWeeklyTimesheets } from '@/hooks/useWeeklyTimesheets';
 import { useWeeklyTimesheetActions } from '@/hooks/useWeeklyTimesheetActions';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
+import { useCreateManualTimesheet } from '@/hooks/useCreateManualTimesheet';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Calendar } from 'lucide-react';
+import { Calendar, Plus } from 'lucide-react';
 import TimesheetEditModal from '@/components/admin/timesheets/TimesheetEditModal';
+import CreateManualTimesheetModal from '@/components/admin/timesheets/CreateManualTimesheetModal';
 import TimesheetFilters from '@/components/admin/timesheets/TimesheetFilters';
 import TimesheetTable from '@/components/admin/timesheets/TimesheetTable';
 
 const EmployeeTimesheets = () => {
   const { user } = useAuth();
   const { approveTimesheet, rejectTimesheet, editTimesheet, isApproving, isRejecting, isEditing } = useWeeklyTimesheetActions();
+  const { createManualTimesheet, isCreating } = useCreateManualTimesheet();
   const [filters, setFilters] = useState({
     employeeName: '',
     weekEndingDate: '',
@@ -19,6 +23,7 @@ const EmployeeTimesheets = () => {
     jobsiteId: ''
   });
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   const { data: timesheets = [], isLoading, error } = useWeeklyTimesheets(filters);
   const { data: employees = [] } = useEmployeeDirectory();
@@ -49,6 +54,13 @@ const EmployeeTimesheets = () => {
     }
   };
 
+  const handleCreateManualTimesheet = (data: any) => {
+    createManualTimesheet(data);
+    setIsCreateModalOpen(false);
+  };
+
+  // Check if user can create manual timesheets (Admin and Management only)
+  const canCreateManualTimesheet = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
 
   if (!isAuthorized) {
     return (
@@ -98,9 +110,20 @@ const EmployeeTimesheets = () => {
       {/* Timesheets Table */}
       <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
         <CardHeader className="p-6 pb-4">
-          <CardTitle className="text-xl font-bold text-gray-900">
-            Weekly Timesheet Submissions ({timesheets.length} total)
-          </CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl font-bold text-gray-900">
+              Weekly Timesheet Submissions ({timesheets.length} total)
+            </CardTitle>
+            {canCreateManualTimesheet && (
+              <Button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Create Timesheet
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <TimesheetTable
@@ -124,6 +147,14 @@ const EmployeeTimesheets = () => {
           isSaving={isEditing}
         />
       )}
+
+      {/* Create Manual Timesheet Modal */}
+      <CreateManualTimesheetModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleCreateManualTimesheet}
+        isSaving={isCreating}
+      />
     </div>
   );
 };

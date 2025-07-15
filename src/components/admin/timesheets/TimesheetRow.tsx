@@ -1,4 +1,5 @@
 import { TableCell, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import TimesheetStatusBadge from './TimesheetStatusBadge';
 import TimesheetActions from './TimesheetActions';
@@ -23,7 +24,14 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
   return (
     <TableRow className="hover:bg-gray-50">
       <TableCell className="font-medium">
-        {timesheet.employee_name}
+        <div className="flex flex-col">
+          <span>{timesheet.is_manual_entry ? timesheet.manual_entry_name : timesheet.employee_name}</span>
+          {timesheet.is_manual_entry && (
+            <Badge variant="secondary" className="text-xs w-fit mt-1">
+              Manual Entry
+            </Badge>
+          )}
+        </div>
       </TableCell>
       <TableCell>{timesheet.jobsite_name}</TableCell>
       <TableCell>

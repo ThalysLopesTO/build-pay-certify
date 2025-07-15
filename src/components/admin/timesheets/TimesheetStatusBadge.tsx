@@ -12,6 +12,8 @@ const TimesheetStatusBadge: React.FC<TimesheetStatusBadgeProps> = ({ status }) =
       return <Badge variant="secondary">Pending</Badge>;
     case 'rejected':
       return <Badge variant="destructive">Rejected</Badge>;
+    case 'manual_entry':
+      return <Badge variant="default" className="bg-blue-500">Manual Entry</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }

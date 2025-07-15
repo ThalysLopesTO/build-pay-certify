@@ -1614,7 +1614,9 @@ export type Database = {
           gross_pay: number | null
           hourly_rate: number
           id: string
+          is_manual_entry: boolean | null
           jobsite_id: string
+          manual_entry_name: string | null
           monday_hours: number | null
           notes: string | null
           saturday_hours: number | null
@@ -1638,7 +1640,9 @@ export type Database = {
           gross_pay?: number | null
           hourly_rate: number
           id?: string
+          is_manual_entry?: boolean | null
           jobsite_id: string
+          manual_entry_name?: string | null
           monday_hours?: number | null
           notes?: string | null
           saturday_hours?: number | null
@@ -1662,7 +1666,9 @@ export type Database = {
           gross_pay?: number | null
           hourly_rate?: number
           id?: string
+          is_manual_entry?: boolean | null
           jobsite_id?: string
+          manual_entry_name?: string | null
           monday_hours?: number | null
           notes?: string | null
           saturday_hours?: number | null
