@@ -25,6 +25,10 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   const { settings: companySettings } = useCompanySettings();
   const taxRate = companySettings?.tax_percentage || 13;
   
+  // Check if this is an employee with payroll deductions
+  const hasPayrollDeductions = timesheet.worker_type === 'employee' && 
+    (timesheet.income_tax_rate || timesheet.cpp_rate || timesheet.ei_rate);
+  
   const [formData, setFormData] = useState({
     monday_hours: timesheet.monday_hours || 0,
     tuesday_hours: timesheet.tuesday_hours || 0,
@@ -65,21 +69,52 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
 
   const grossPay = totalHours * (timesheet.hourly_rate || 0);
   
-  // Calculate tax amount
+  // Payroll deductions calculation for employees with deductions
+  let payrollCalculations = null;
+  if (hasPayrollDeductions) {
+    const incomeTaxRate = Number(timesheet.income_tax_rate || 0) / 100;
+    const cppRate = Number(timesheet.cpp_rate || 0) / 100;
+    const eiRate = Number(timesheet.ei_rate || 0) / 100;
+    
+    const grossWithExpenses = grossPay + Number(formData.additional_expense);
+    const incomeTax = grossWithExpenses * incomeTaxRate;
+    const cpp = grossWithExpenses * cppRate;
+    const ei = grossWithExpenses * eiRate;
+    const totalDeductions = incomeTax + cpp + ei;
+    const netPay = grossWithExpenses - totalDeductions;
+    
+    payrollCalculations = {
+      grossWithExpenses,
+      incomeTax,
+      cpp,
+      ei,
+      totalDeductions,
+      netPay,
+      incomeTaxRate: incomeTaxRate * 100,
+      cppRate: cppRate * 100,
+      eiRate: eiRate * 100
+    };
+  }
+  
+  // Calculate tax amount for non-payroll employees
   const calculatedTax = taxIncluded ? (grossPay * (taxRate / 100)) : 0;
   const finalTaxAmount = isManualTax && manualTaxAmount !== '' 
     ? Number(manualTaxAmount) 
     : calculatedTax;
   
-  const totalPay = grossPay + Number(formData.additional_expense) + finalTaxAmount;
+  const totalPay = hasPayrollDeductions 
+    ? payrollCalculations?.netPay || 0 
+    : grossPay + Number(formData.additional_expense) + finalTaxAmount;
 
   const handleSave = () => {
     const updates = {
       ...formData,
       total_hours: totalHours,
-      gross_pay: grossPay + Number(formData.additional_expense) + finalTaxAmount,
-      tax_included: taxIncluded,
-      calculated_tax: finalTaxAmount
+      gross_pay: hasPayrollDeductions && payrollCalculations 
+        ? payrollCalculations.netPay 
+        : grossPay + Number(formData.additional_expense) + finalTaxAmount,
+      tax_included: hasPayrollDeductions ? false : taxIncluded,
+      calculated_tax: hasPayrollDeductions ? 0 : finalTaxAmount
     };
     onSave(updates, originalData);
   };
@@ -103,24 +138,47 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
 
         {/* Summary Section - Always Visible */}
         <div className="flex-shrink-0 bg-muted/50 rounded-lg p-4 mb-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div className="text-center">
-              <div className="font-semibold text-lg">{totalHours.toFixed(1)}h</div>
-              <div className="text-muted-foreground">Total Hours</div>
+          {hasPayrollDeductions && payrollCalculations ? (
+            // Payroll employee summary with deductions
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div className="text-center">
+                <div className="font-semibold text-lg">{totalHours.toFixed(1)}h</div>
+                <div className="text-muted-foreground">Total Hours</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-lg">${payrollCalculations.grossWithExpenses.toFixed(2)}</div>
+                <div className="text-muted-foreground">Gross Pay</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-lg">${payrollCalculations.totalDeductions.toFixed(2)}</div>
+                <div className="text-muted-foreground">Total Deductions</div>
+              </div>
+              <div className="text-center md:col-span-3">
+                <div className="font-semibold text-xl text-primary">${payrollCalculations.netPay.toFixed(2)}</div>
+                <div className="text-muted-foreground font-medium">Net Pay</div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="font-semibold text-lg">${grossPay.toFixed(2)}</div>
-              <div className="text-muted-foreground">Gross Pay</div>
+          ) : (
+            // Standard summary for subcontractors and employees without deductions
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="text-center">
+                <div className="font-semibold text-lg">{totalHours.toFixed(1)}h</div>
+                <div className="text-muted-foreground">Total Hours</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-lg">${grossPay.toFixed(2)}</div>
+                <div className="text-muted-foreground">Gross Pay</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-lg">${finalTaxAmount.toFixed(2)}</div>
+                <div className="text-muted-foreground">Tax</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-lg text-primary">${totalPay.toFixed(2)}</div>
+                <div className="text-muted-foreground">Total Pay</div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="font-semibold text-lg">${finalTaxAmount.toFixed(2)}</div>
-              <div className="text-muted-foreground">Tax</div>
-            </div>
-            <div className="text-center">
-              <div className="font-semibold text-lg text-primary">${totalPay.toFixed(2)}</div>
-              <div className="text-muted-foreground">Total Pay</div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Scrollable Content */}
@@ -198,80 +256,119 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
             </CollapsibleContent>
           </Collapsible>
 
-          {/* Tax Control Section */}
-          <Collapsible open={taxOpen} onOpenChange={setTaxOpen}>
-            <CollapsibleTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-between p-3 h-auto border rounded-lg hover:bg-muted/50 bg-orange-50/50 dark:bg-orange-950/20"
-              >
-                <div className="flex items-center gap-2">
-                  <Calculator className="h-4 w-4" />
-                  <span className="font-medium">Tax Control</span>
-                  <span className="text-sm text-muted-foreground">
-                    ({taxIncluded ? `$${finalTaxAmount.toFixed(2)}` : 'No tax'})
-                  </span>
+          {/* Tax Control Section or Payroll Deductions Section */}
+          {hasPayrollDeductions && payrollCalculations ? (
+            // Payroll Deductions Section for employees with deductions
+            <div className="border rounded-lg p-4 bg-blue-50/50 dark:bg-blue-950/20">
+              <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                <Calculator className="h-4 w-4" />
+                Payroll Deductions Breakdown
+              </h4>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between py-1">
+                  <span>Gross Pay (Hours + Expenses):</span>
+                  <span className="font-mono">${payrollCalculations.grossWithExpenses.toFixed(2)}</span>
                 </div>
-                <ChevronDown className={`h-4 w-4 transition-transform ${taxOpen ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-3 pt-3">
-              <div className="bg-orange-50/50 dark:bg-orange-950/20 rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="tax-toggle" className="text-sm font-medium">
-                    Include Tax on this Timesheet
-                  </Label>
-                  <Switch
-                    id="tax-toggle"
-                    checked={taxIncluded}
-                    onCheckedChange={setTaxIncluded}
-                  />
-                </div>
-
-                <div className="text-sm text-muted-foreground bg-background/60 rounded px-3 py-2">
-                  Company Tax Rate: <span className="font-medium">{taxRate}%</span>
-                </div>
-
-                {taxIncluded && (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Label className="w-32 text-sm font-medium">
-                        Tax Amount ($):
-                      </Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={isManualTax ? manualTaxAmount : calculatedTax.toFixed(2)}
-                        onChange={(e) => {
-                          setManualTaxAmount(e.target.value);
-                          setIsManualTax(true);
-                        }}
-                        onFocus={() => setIsManualTax(true)}
-                        placeholder={calculatedTax.toFixed(2)}
-                        className="h-9"
-                      />
-                      <span className="text-xs text-muted-foreground">CAD</span>
-                    </div>
-                    {isManualTax && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setIsManualTax(false);
-                          setManualTaxAmount('');
-                        }}
-                        className="text-xs text-muted-foreground h-8"
-                      >
-                        Reset to calculated amount (${calculatedTax.toFixed(2)})
-                      </Button>
-                    )}
+                <div className="border-l-2 border-blue-200 pl-3 space-y-2">
+                  <div className="flex justify-between">
+                    <span>CPP ({payrollCalculations.cppRate.toFixed(2)}%):</span>
+                    <span className="font-mono">-${payrollCalculations.cpp.toFixed(2)}</span>
                   </div>
-                )}
+                  <div className="flex justify-between">
+                    <span>EI ({payrollCalculations.eiRate.toFixed(2)}%):</span>
+                    <span className="font-mono">-${payrollCalculations.ei.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Income Tax ({payrollCalculations.incomeTaxRate.toFixed(2)}%):</span>
+                    <span className="font-mono">-${payrollCalculations.incomeTax.toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="border-t pt-2 flex justify-between font-semibold">
+                  <span>Total Deductions:</span>
+                  <span className="font-mono text-red-600">-${payrollCalculations.totalDeductions.toFixed(2)}</span>
+                </div>
+                <div className="border-t pt-2 flex justify-between font-bold text-lg">
+                  <span>Net Pay:</span>
+                  <span className="font-mono text-primary">${payrollCalculations.netPay.toFixed(2)}</span>
+                </div>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
+            </div>
+          ) : (
+            // Tax Control Section for subcontractors and employees without deductions
+            <Collapsible open={taxOpen} onOpenChange={setTaxOpen}>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-between p-3 h-auto border rounded-lg hover:bg-muted/50 bg-orange-50/50 dark:bg-orange-950/20"
+                >
+                  <div className="flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    <span className="font-medium">Tax Control</span>
+                    <span className="text-sm text-muted-foreground">
+                      ({taxIncluded ? `$${finalTaxAmount.toFixed(2)}` : 'No tax'})
+                    </span>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${taxOpen ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-3">
+                <div className="bg-orange-50/50 dark:bg-orange-950/20 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="tax-toggle" className="text-sm font-medium">
+                      Include Tax on this Timesheet
+                    </Label>
+                    <Switch
+                      id="tax-toggle"
+                      checked={taxIncluded}
+                      onCheckedChange={setTaxIncluded}
+                    />
+                  </div>
+
+                  <div className="text-sm text-muted-foreground bg-background/60 rounded px-3 py-2">
+                    Company Tax Rate: <span className="font-medium">{taxRate}%</span>
+                  </div>
+
+                  {taxIncluded && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Label className="w-32 text-sm font-medium">
+                          Tax Amount ($):
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={isManualTax ? manualTaxAmount : calculatedTax.toFixed(2)}
+                          onChange={(e) => {
+                            setManualTaxAmount(e.target.value);
+                            setIsManualTax(true);
+                          }}
+                          onFocus={() => setIsManualTax(true)}
+                          placeholder={calculatedTax.toFixed(2)}
+                          className="h-9"
+                        />
+                        <span className="text-xs text-muted-foreground">CAD</span>
+                      </div>
+                      {isManualTax && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setIsManualTax(false);
+                            setManualTaxAmount('');
+                          }}
+                          className="text-xs text-muted-foreground h-8"
+                        >
+                          Reset to calculated amount (${calculatedTax.toFixed(2)})
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
 
           {/* Employee Notes Section */}
           {timesheet.notes && (
@@ -303,14 +400,33 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
                 <span>Additional Expenses:</span>
                 <span className="font-mono">${formData.additional_expense.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Tax ({taxIncluded ? taxRate : 0}%):</span>
-                <span className="font-mono">${finalTaxAmount.toFixed(2)}</span>
-              </div>
-              <div className="border-t pt-2 flex justify-between font-semibold">
-                <span>Total Pay:</span>
-                <span className="font-mono text-primary">${totalPay.toFixed(2)}</span>
-              </div>
+              {hasPayrollDeductions && payrollCalculations ? (
+                <>
+                  <div className="flex justify-between border-t pt-2">
+                    <span>Gross Pay (with expenses):</span>
+                    <span className="font-mono">${payrollCalculations.grossWithExpenses.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-red-600">
+                    <span>Total Deductions:</span>
+                    <span className="font-mono">-${payrollCalculations.totalDeductions.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between font-semibold">
+                    <span>Net Pay:</span>
+                    <span className="font-mono text-primary">${payrollCalculations.netPay.toFixed(2)}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between">
+                    <span>Tax ({taxIncluded ? taxRate : 0}%):</span>
+                    <span className="font-mono">${finalTaxAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between font-semibold">
+                    <span>Total Pay:</span>
+                    <span className="font-mono text-primary">${totalPay.toFixed(2)}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
