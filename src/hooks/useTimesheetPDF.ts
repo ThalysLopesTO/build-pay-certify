@@ -126,18 +126,35 @@ export const useTimesheetPDF = () => {
       ];
 
       if (workerType === 'employee') {
-        // Employee deductions
-        const incomeTax = gross * 0.12;
-        const cpp = gross * 0.0595;
-        const ei = gross * 0.0163;
+        // Employee deductions - use custom rates if available, otherwise use defaults
+        const incomeTaxRate = timesheet.income_tax_rate ? Number(timesheet.income_tax_rate) / 100 : 0.12;
+        const cppRate = timesheet.cpp_rate ? Number(timesheet.cpp_rate) / 100 : 0.0595;
+        const eiRate = timesheet.ei_rate ? Number(timesheet.ei_rate) / 100 : 0.0163;
+        
+        const incomeTax = gross * incomeTaxRate;
+        const cpp = gross * cppRate;
+        const ei = gross * eiRate;
         const totalDeductions = incomeTax + cpp + ei;
         const netPay = gross - totalDeductions;
 
         breakdown.push(['', '', '']);
         breakdown.push(['Deductions:', '', '']);
-        breakdown.push(['- Income Tax (12%):', '', `$${incomeTax.toFixed(2)}`]);
-        breakdown.push(['- CPP (5.95%):', '', `$${cpp.toFixed(2)}`]);
-        breakdown.push(['- EI (1.63%):', '', `$${ei.toFixed(2)}`]);
+        
+        // Show custom rates if they exist, otherwise show defaults
+        const incomeTaxLabel = timesheet.income_tax_rate 
+          ? `- Income Tax (${(incomeTaxRate * 100).toFixed(2)}%):`
+          : '- Income Tax (12%):';
+        const cppLabel = timesheet.cpp_rate 
+          ? `- CPP (${(cppRate * 100).toFixed(2)}%):`
+          : '- CPP (5.95%):';
+        const eiLabel = timesheet.ei_rate 
+          ? `- EI (${(eiRate * 100).toFixed(2)}%):`
+          : '- EI (1.63%):';
+          
+        breakdown.push([incomeTaxLabel, '', `$${incomeTax.toFixed(2)}`]);
+        breakdown.push([cppLabel, '', `$${cpp.toFixed(2)}`]);
+        breakdown.push([eiLabel, '', `$${ei.toFixed(2)}`]);
+        breakdown.push(['Total Deductions:', '', `$${totalDeductions.toFixed(2)}`]);
         breakdown.push(['Net Pay:', '', `$${netPay.toFixed(2)}`]);
       } else {
         // Subcontractor logic
