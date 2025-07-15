@@ -29,10 +29,11 @@ export const useTimesheetPDF = () => {
       let yPosition = 20;
       
       // Company logo (if available)
-      if (companySettings?.company_logo_url) {
+      const logoUrl = companySettings?.company_logo_url || companySettings?.logo_url;
+      if (logoUrl) {
         try {
-          console.log('Loading company logo from:', companySettings.company_logo_url);
-          const logoResponse = await fetch(companySettings.company_logo_url);
+          console.log('Loading company logo from:', logoUrl);
+          const logoResponse = await fetch(logoUrl);
           if (!logoResponse.ok) {
             throw new Error(`Failed to fetch logo: ${logoResponse.status}`);
           }
