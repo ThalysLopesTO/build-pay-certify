@@ -26,8 +26,7 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   const taxRate = companySettings?.tax_percentage || 13;
   
   // Check if this is an employee with payroll deductions
-  const hasPayrollDeductions = timesheet.worker_type === 'employee' && 
-    (timesheet.income_tax_rate || timesheet.cpp_rate || timesheet.ei_rate);
+  const hasPayrollDeductions = timesheet.worker_type === 'employee' && timesheet.is_manual_entry;
   
   const [formData, setFormData] = useState({
     monday_hours: timesheet.monday_hours || 0,
@@ -72,9 +71,10 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   // Payroll deductions calculation for employees with deductions
   let payrollCalculations = null;
   if (hasPayrollDeductions) {
-    const incomeTaxRate = Number(timesheet.income_tax_rate || 0) / 100;
-    const cppRate = Number(timesheet.cpp_rate || 0) / 100;
-    const eiRate = Number(timesheet.ei_rate || 0) / 100;
+    // Use default Canadian payroll deduction rates if not specified
+    const incomeTaxRate = Number(timesheet.income_tax_rate || 20) / 100; // Default 20%
+    const cppRate = Number(timesheet.cpp_rate || 5.95) / 100; // Default 5.95%
+    const eiRate = Number(timesheet.ei_rate || 2.35) / 100; // Default 2.35%
     
     const grossWithExpenses = grossPay + Number(formData.additional_expense);
     const incomeTax = grossWithExpenses * incomeTaxRate;

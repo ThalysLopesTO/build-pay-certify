@@ -125,14 +125,14 @@ export const useTimesheetPDF = () => {
         ['Gross Pay:', '', `$${gross.toFixed(2)}`]
       ];
 
-      if (workerType === 'employee') {
+      if (workerType === 'employee' && timesheet.is_manual_entry) {
         // Employee deductions - use custom rates if available, otherwise use defaults
-        const incomeTaxRate = timesheet.income_tax_rate ? Number(timesheet.income_tax_rate) / 100 : 0.12;
-        const cppRate = timesheet.cpp_rate ? Number(timesheet.cpp_rate) / 100 : 0.0595;
-        const eiRate = timesheet.ei_rate ? Number(timesheet.ei_rate) / 100 : 0.0163;
+        const incomeTaxRate = timesheet.income_tax_rate ? Number(timesheet.income_tax_rate) / 100 : 0.20; // Default 20%
+        const cppRate = timesheet.cpp_rate ? Number(timesheet.cpp_rate) / 100 : 0.0595; // Default 5.95%
+        const eiRate = timesheet.ei_rate ? Number(timesheet.ei_rate) / 100 : 0.0235; // Default 2.35%
         
-        // Check if this employee has custom deduction rates (different template)
-        const hasCustomDeductions = timesheet.income_tax_rate || timesheet.cpp_rate || timesheet.ei_rate;
+        // Always show detailed breakdown for payroll employees
+        const hasCustomDeductions = true;
         
         const incomeTax = gross * incomeTaxRate;
         const cpp = gross * cppRate;
