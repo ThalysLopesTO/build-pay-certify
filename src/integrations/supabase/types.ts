@@ -1633,6 +1633,7 @@ export type Database = {
           updated_at: string
           wednesday_hours: number | null
           week_start_date: string
+          worker_type: string | null
         }
         Insert: {
           additional_expense?: number | null
@@ -1659,6 +1660,7 @@ export type Database = {
           updated_at?: string
           wednesday_hours?: number | null
           week_start_date: string
+          worker_type?: string | null
         }
         Update: {
           additional_expense?: number | null
@@ -1685,6 +1687,7 @@ export type Database = {
           updated_at?: string
           wednesday_hours?: number | null
           week_start_date?: string
+          worker_type?: string | null
         }
         Relationships: [
           {
