@@ -16,6 +16,24 @@ export const useCreateManualTimesheet = () => {
 
       console.log('Creating manual timesheet with data:', timesheetData);
       
+      // First check if a timesheet already exists for this combination
+      const { data: existingTimesheet, error: checkError } = await supabase
+        .from('weekly_timesheets')
+        .select('id')
+        .eq('submitted_by', user.id)
+        .eq('jobsite_id', timesheetData.jobsite_id)
+        .eq('week_start_date', timesheetData.week_start_date)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing timesheet:', checkError);
+        throw new Error('Failed to check existing timesheets');
+      }
+
+      if (existingTimesheet) {
+        throw new Error('A timesheet already exists for this employee, jobsite, and week. Please edit the existing timesheet instead.');
+      }
+      
       // Add required fields for manual entries
       const dataToInsert = {
         ...timesheetData,
