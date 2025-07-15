@@ -68,18 +68,20 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
 
   const grossPay = totalHours * (timesheet.hourly_rate || 0);
   
+  // State for deduction rates (editable for payroll employees)
+  const [deductionRates, setDeductionRates] = useState({
+    incomeTaxRate: Number(timesheet.income_tax_rate || 12), // Default 12%
+    cppRate: Number(timesheet.cpp_rate || 5.95), // Default 5.95%
+    eiRate: Number(timesheet.ei_rate || 1.63) // Default 1.63%
+  });
+
   // Payroll deductions calculation for employees with deductions
   let payrollCalculations = null;
   if (hasPayrollDeductions) {
-    // Use default Canadian payroll deduction rates if not specified
-    const incomeTaxRate = Number(timesheet.income_tax_rate || 20) / 100; // Default 20%
-    const cppRate = Number(timesheet.cpp_rate || 5.95) / 100; // Default 5.95%
-    const eiRate = Number(timesheet.ei_rate || 2.35) / 100; // Default 2.35%
-    
     const grossWithExpenses = grossPay + Number(formData.additional_expense);
-    const incomeTax = grossWithExpenses * incomeTaxRate;
-    const cpp = grossWithExpenses * cppRate;
-    const ei = grossWithExpenses * eiRate;
+    const incomeTax = grossWithExpenses * (deductionRates.incomeTaxRate / 100);
+    const cpp = grossWithExpenses * (deductionRates.cppRate / 100);
+    const ei = grossWithExpenses * (deductionRates.eiRate / 100);
     const totalDeductions = incomeTax + cpp + ei;
     const netPay = grossWithExpenses - totalDeductions;
     
@@ -90,9 +92,9 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
       ei,
       totalDeductions,
       netPay,
-      incomeTaxRate: incomeTaxRate * 100,
-      cppRate: cppRate * 100,
-      eiRate: eiRate * 100
+      incomeTaxRate: deductionRates.incomeTaxRate,
+      cppRate: deductionRates.cppRate,
+      eiRate: deductionRates.eiRate
     };
   }
   
@@ -114,7 +116,11 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
         ? payrollCalculations.netPay 
         : grossPay + Number(formData.additional_expense) + finalTaxAmount,
       tax_included: hasPayrollDeductions ? false : taxIncluded,
-      calculated_tax: hasPayrollDeductions ? 0 : finalTaxAmount
+      calculated_tax: hasPayrollDeductions ? 0 : finalTaxAmount,
+      // Save updated deduction rates for payroll employees
+      income_tax_rate: hasPayrollDeductions ? deductionRates.incomeTaxRate : timesheet.income_tax_rate,
+      cpp_rate: hasPayrollDeductions ? deductionRates.cppRate : timesheet.cpp_rate,
+      ei_rate: hasPayrollDeductions ? deductionRates.eiRate : timesheet.ei_rate
     };
     onSave(updates, originalData);
   };
@@ -134,6 +140,11 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
             <Clock className="h-5 w-5" />
             Edit Timesheet
           </DialogTitle>
+          {hasPayrollDeductions && (
+            <div className="text-sm text-muted-foreground mt-2 p-2 bg-blue-50/50 dark:bg-blue-950/20 rounded">
+              <span className="font-medium">Employee Type:</span> Payroll — With Deductions
+            </div>
+          )}
         </DialogHeader>
 
         {/* Summary Section - Always Visible */}
@@ -262,8 +273,62 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
             <div className="border rounded-lg p-4 bg-blue-50/50 dark:bg-blue-950/20">
               <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
                 <Calculator className="h-4 w-4" />
-                Payroll Deductions Breakdown
+                Payroll Deductions (Editable)
               </h4>
+              
+              {/* Editable Deduction Rates */}
+              <div className="mb-4 p-3 bg-background/60 rounded-lg">
+                <Label className="text-xs font-medium mb-2 block">Deduction Rates:</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Income Tax (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={deductionRates.incomeTaxRate}
+                      onChange={(e) => setDeductionRates(prev => ({
+                        ...prev,
+                        incomeTaxRate: parseFloat(e.target.value) || 0
+                      }))}
+                      className="text-xs h-8"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">CPP (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={deductionRates.cppRate}
+                      onChange={(e) => setDeductionRates(prev => ({
+                        ...prev,
+                        cppRate: parseFloat(e.target.value) || 0
+                      }))}
+                      className="text-xs h-8"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">EI (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={deductionRates.eiRate}
+                      onChange={(e) => setDeductionRates(prev => ({
+                        ...prev,
+                        eiRate: parseFloat(e.target.value) || 0
+                      }))}
+                      className="text-xs h-8"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Calculated Breakdown */}
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between py-1">
                   <span>Gross Pay (Hours + Expenses):</span>
