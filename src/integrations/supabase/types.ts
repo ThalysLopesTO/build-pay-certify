@@ -1612,11 +1612,14 @@ export type Database = {
           additional_expense: number | null
           calculated_tax: number | null
           company_id: string | null
+          cpp_rate: number | null
           created_at: string
+          ei_rate: number | null
           friday_hours: number | null
           gross_pay: number | null
           hourly_rate: number
           id: string
+          income_tax_rate: number | null
           is_manual_entry: boolean | null
           jobsite_id: string
           manual_entry_name: string | null
@@ -1639,11 +1642,14 @@ export type Database = {
           additional_expense?: number | null
           calculated_tax?: number | null
           company_id?: string | null
+          cpp_rate?: number | null
           created_at?: string
+          ei_rate?: number | null
           friday_hours?: number | null
           gross_pay?: number | null
           hourly_rate: number
           id?: string
+          income_tax_rate?: number | null
           is_manual_entry?: boolean | null
           jobsite_id: string
           manual_entry_name?: string | null
@@ -1666,11 +1672,14 @@ export type Database = {
           additional_expense?: number | null
           calculated_tax?: number | null
           company_id?: string | null
+          cpp_rate?: number | null
           created_at?: string
+          ei_rate?: number | null
           friday_hours?: number | null
           gross_pay?: number | null
           hourly_rate?: number
           id?: string
+          income_tax_rate?: number | null
           is_manual_entry?: boolean | null
           jobsite_id?: string
           manual_entry_name?: string | null
