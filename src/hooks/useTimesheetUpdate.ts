@@ -14,6 +14,10 @@ interface TimesheetUpdateData {
   saturday_hours?: number;
   sunday_hours?: number;
   total_hours?: number;
+  gross_pay?: number;
+  calculated_tax?: number;
+  additional_expense?: number;
+  tax_included?: boolean;
   status?: string;
 }
 
@@ -25,10 +29,13 @@ export const useTimesheetUpdate = () => {
     mutationFn: async ({ id, data }: { id: string; data: TimesheetUpdateData }) => {
       console.log('Updating timesheet:', {company_id: user?.companyId, id}, data);
 
+      // Filter out generated columns that can't be updated
+      const { gross_pay, total_hours, ...updateData } = data;
+      
       const { data: result, error } = await supabase
         .from('weekly_timesheets')
         .update({
-          ...data,
+          ...updateData,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
