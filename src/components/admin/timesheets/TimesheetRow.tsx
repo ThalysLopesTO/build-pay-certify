@@ -27,51 +27,51 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
   onSelectTimesheet
 }) => {
   return (
-    <TableRow className="hover:bg-gray-50">
+    <tr className="border-b hover:bg-slate-50 transition-colors">
       {selectedTimesheets && onSelectTimesheet && (
-        <TableCell>
+        <td className="p-4">
           <Checkbox
             checked={selectedTimesheets.has(timesheet.id)}
             onCheckedChange={(checked) => onSelectTimesheet(timesheet.id, checked === true)}
           />
-        </TableCell>
+        </td>
       )}
-      <TableCell className="font-medium">
-        <div className="flex flex-col">
+      <td className="p-4 font-medium">
+        <div className="flex items-center space-x-2">
           <span>{timesheet.is_manual_entry ? timesheet.manual_entry_name : timesheet.employee_name}</span>
           {timesheet.is_manual_entry && (
-            <Badge variant="secondary" className="text-xs w-fit mt-1">
+            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
               Manual Entry
             </Badge>
           )}
         </div>
-      </TableCell>
-      <TableCell>{timesheet.jobsite_name}</TableCell>
-      <TableCell>
+      </td>
+      <td className="p-4 text-sm">{timesheet.jobsite_name}</td>
+      <td className="p-4 text-sm">
         {format(new Date(timesheet.week_start_date), 'MMM dd, yyyy')}
-      </TableCell>
-      <TableCell className="text-center font-mono">
+      </td>
+      <td className="p-4 text-center font-mono text-sm">
         {timesheet.total_hours.toFixed(2)}h
-      </TableCell>
-      <TableCell className="text-center font-mono">
+      </td>
+      <td className="p-4 text-center font-mono text-sm">
         ${timesheet.gross_pay.toFixed(2)}
-      </TableCell>
-      <TableCell className="text-center font-mono">
+      </td>
+      <td className="p-4 text-center font-mono text-sm">
         {timesheet.tax_included ? (
           <span className="text-blue-600">
             ${(timesheet.calculated_tax || 0).toFixed(2)}
           </span>
         ) : (
-          <span className="text-gray-400">-</span>
+          <span className="text-slate-400">-</span>
         )}
-      </TableCell>
-      <TableCell>
+      </td>
+      <td className="p-4">
         <TimesheetStatusBadge status={timesheet.status} />
-      </TableCell>
-      <TableCell>
+      </td>
+      <td className="p-4 text-sm">
         {format(new Date(timesheet.created_at), 'MMM dd, yyyy')}
-      </TableCell>
-      <TableCell>
+      </td>
+      <td className="p-4">
         <TimesheetActions
           timesheet={timesheet}
           onEdit={onEdit}
@@ -80,8 +80,8 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
           isApproving={isApproving}
           isRejecting={isRejecting}
         />
-      </TableCell>
-    </TableRow>
+      </td>
+    </tr>
   );
 };
 

@@ -29,41 +29,41 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
 }) => {
   return (
     <div className="overflow-x-auto">
-      <Table>
-        <TableHeader className="sticky top-0 bg-gray-50">
-          <TableRow>
+      <table className="w-full border-collapse">
+        <thead className="sticky top-0 bg-white shadow-sm z-10">
+          <tr className="border-b-2 border-slate-200">
             {selectedTimesheets && onSelectAll && onSelectTimesheet && (
-              <TableHead className="font-semibold text-gray-900 w-12">
+              <th className="text-left p-4 font-semibold bg-slate-50">
                 <Checkbox
                   checked={selectedTimesheets.size === timesheets.length && timesheets.length > 0}
                   onCheckedChange={onSelectAll}
                 />
-              </TableHead>
+              </th>
             )}
-            <TableHead className="font-semibold text-gray-900">Employee</TableHead>
-            <TableHead className="font-semibold text-gray-900">Jobsite</TableHead>
-            <TableHead className="font-semibold text-gray-900">Week Starting</TableHead>
-            <TableHead className="font-semibold text-gray-900 text-center">Total Hours</TableHead>
-            <TableHead className="font-semibold text-gray-900 text-center">Total Pay</TableHead>
-            <TableHead className="font-semibold text-gray-900 text-center">Tax</TableHead>
-            <TableHead className="font-semibold text-gray-900">Status</TableHead>
-            <TableHead className="font-semibold text-gray-900">Submitted</TableHead>
-            <TableHead className="font-semibold text-gray-900">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+            <th className="text-left p-4 font-semibold bg-slate-50">Employee</th>
+            <th className="text-left p-4 font-semibold bg-slate-50">Jobsite</th>
+            <th className="text-left p-4 font-semibold bg-slate-50">Week Starting</th>
+            <th className="text-center p-4 font-semibold bg-slate-50">Total Hours</th>
+            <th className="text-center p-4 font-semibold bg-slate-50">Total Pay</th>
+            <th className="text-center p-4 font-semibold bg-slate-50">Tax</th>
+            <th className="text-left p-4 font-semibold bg-slate-50">Status</th>
+            <th className="text-left p-4 font-semibold bg-slate-50">Submitted</th>
+            <th className="text-left p-4 font-semibold bg-slate-50">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
           {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={selectedTimesheets ? 10 : 9} className="text-center py-8 text-gray-500">
+            <tr>
+              <td colSpan={selectedTimesheets ? 10 : 9} className="text-center py-8 text-slate-500">
                 Loading timesheets...
-              </TableCell>
-            </TableRow>
+              </td>
+            </tr>
           ) : timesheets.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={selectedTimesheets ? 10 : 9} className="text-center py-8 text-gray-500">
+            <tr>
+              <td colSpan={selectedTimesheets ? 10 : 9} className="text-center py-8 text-slate-500">
                 No weekly timesheet submissions found
-              </TableCell>
-            </TableRow>
+              </td>
+            </tr>
           ) : (
             timesheets.map((timesheet) => (
               <TimesheetRow
@@ -79,8 +79,8 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
               />
             ))
           )}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 };
