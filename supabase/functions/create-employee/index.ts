@@ -209,7 +209,8 @@ serve(async (req) => {
           trade: employeeData.trade,
           hourly_rate: employeeData.hourlyRate,
           photo_url: employeeData.photoUrl,
-          pending_approval: false
+          pending_approval: false,
+          worker_type: employeeData.workerType || 'subcontractor'
         })
 
       if (profileError) {

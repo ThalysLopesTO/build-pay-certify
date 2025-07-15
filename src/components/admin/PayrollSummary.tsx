@@ -63,10 +63,25 @@ const PayrollSummary = () => {
       const hourlyRate = safeParseNumber(timesheet.hourly_rate);
       const additionalExpense = safeParseNumber(timesheet.additional_expense);
       const grossPay = safeParseNumber(timesheet.gross_pay);
+      const workerType = employee?.worker_type || 'subcontractor';
       
-      // Calculate tax based on hourly pay (excluding expenses)
+      // Calculate tax for subcontractors or deductions for employees
       const hourlyPay = totalHours * hourlyRate;
-      const estimatedTax = hourlyPay * (taxPercentage / 100);
+      let estimatedTax = 0;
+      let deductions = 0;
+      let netPay = grossPay;
+      
+      if (workerType === 'employee') {
+        // Employee deductions
+        const incomeTax = grossPay * 0.12;
+        const cpp = grossPay * 0.0595;
+        const ei = grossPay * 0.0163;
+        deductions = incomeTax + cpp + ei;
+        netPay = grossPay - deductions;
+      } else {
+        // Subcontractor tax based on hourly pay (excluding expenses)
+        estimatedTax = hourlyPay * (taxPercentage / 100);
+      }
       
       // Calculate week ending date from week start date using company's week ending day
       const weekStartDate = new Date(timesheet.week_start_date);
@@ -100,9 +115,12 @@ const PayrollSummary = () => {
         additionalExpense,
         grossPay,
         estimatedTax,
+        deductions,
+        netPay,
         totalPayWithTax: grossPay + estimatedTax,
         submittedAt: timesheet.created_at,
-        isManualEntry: timesheet.is_manual_entry || false
+        isManualEntry: timesheet.is_manual_entry || false,
+        workerType
       };
     });
   }, [timesheets, employees, settings?.tax_percentage, settings?.week_ending_day]);
@@ -168,6 +186,7 @@ const PayrollSummary = () => {
 
     const excelData = selectedEntries.map(entry => ({
       'Employee': entry.employeeName,
+      'Worker Type': entry.workerType === 'employee' ? 'Employee' : 'Subcontractor',
       'Trade/Position': `${entry.trade} - ${entry.position}`,
       'Job Site': entry.jobSite,
       'Project': entry.project,
@@ -176,13 +195,19 @@ const PayrollSummary = () => {
       'Hourly Rate': entry.hourlyRate,
       'Expenses': entry.additionalExpense,
       'Gross Pay': entry.grossPay,
-      'Tax': entry.estimatedTax,
-      'Total Pay': taxIncluded ? entry.totalPayWithTax : entry.grossPay
+      ...(entry.workerType === 'employee' ? {
+        'Deductions': entry.deductions,
+        'Net Pay': entry.netPay
+      } : {
+        'Tax': entry.estimatedTax,
+        'Total Pay': taxIncluded ? entry.totalPayWithTax : entry.grossPay
+      })
     }));
 
     // Add summary row
     excelData.push({
       'Employee': 'SELECTED TOTALS',
+      'Worker Type': '',
       'Trade/Position': '',
       'Job Site': '',
       'Project': '',
@@ -191,6 +216,8 @@ const PayrollSummary = () => {
       'Hourly Rate': 0,
       'Expenses': totalExpenses,
       'Gross Pay': selectedEntries.reduce((sum, entry) => sum + entry.grossPay, 0),
+      'Deductions': selectedEntries.reduce((sum, entry) => sum + (entry.deductions || 0), 0),
+      'Net Pay': selectedEntries.reduce((sum, entry) => sum + (entry.netPay || 0), 0),
       'Tax': selectedTotalTax,
       'Total Pay': selectedTotalPayroll
     });
@@ -219,7 +246,8 @@ const PayrollSummary = () => {
           companySettings: settings,
           jobsiteName: entry.jobSite,
           employeeName: entry.employeeName,
-          logoUrl
+          logoUrl,
+          workerType: entry.workerType
         });
         // Add a small delay between downloads
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -253,6 +281,7 @@ const PayrollSummary = () => {
 
     const excelData = filteredEntries.map(entry => ({
       'Employee': entry.employeeName,
+      'Worker Type': entry.workerType === 'employee' ? 'Employee' : 'Subcontractor',
       'Trade/Position': `${entry.trade} - ${entry.position}`,
       'Job Site': entry.jobSite,
       'Project': entry.project,
@@ -261,12 +290,18 @@ const PayrollSummary = () => {
       'Hourly Rate': entry.hourlyRate,
       'Expenses': entry.additionalExpense,
       'Gross Pay': entry.grossPay,
-      'Tax': entry.estimatedTax,
-      'Total Pay': taxIncluded ? entry.totalPayWithTax : entry.grossPay
+      ...(entry.workerType === 'employee' ? {
+        'Deductions': entry.deductions,
+        'Net Pay': entry.netPay
+      } : {
+        'Tax': entry.estimatedTax,
+        'Total Pay': taxIncluded ? entry.totalPayWithTax : entry.grossPay
+      })
     }));
 
     excelData.push({
       'Employee': 'TOTALS',
+      'Worker Type': '',
       'Trade/Position': '',
       'Job Site': '',
       'Project': '',
@@ -275,6 +310,8 @@ const PayrollSummary = () => {
       'Hourly Rate': 0,
       'Expenses': totalExpenses,
       'Gross Pay': filteredEntries.reduce((sum, entry) => sum + entry.grossPay, 0),
+      'Deductions': filteredEntries.reduce((sum, entry) => sum + (entry.deductions || 0), 0),
+      'Net Pay': filteredEntries.reduce((sum, entry) => sum + (entry.netPay || 0), 0),
       'Tax': totalTax,
       'Total Pay': totalPayroll
     });
@@ -553,15 +590,17 @@ const PayrollSummary = () => {
                         onCheckedChange={handleSelectAll}
                       />
                     </th>
-                    <th className="text-left p-4 font-semibold bg-slate-50">Employee</th>
-                    <th className="text-left p-4 font-semibold bg-slate-50">Trade</th>
-                    <th className="text-left p-4 font-semibold bg-slate-50">Jobsite</th>
-                    <th className="text-left p-4 font-semibold bg-slate-50">Week Ending</th>
-                    <th className="text-center p-4 font-semibold bg-slate-50">Hours</th>
-                    <th className="text-center p-4 font-semibold bg-slate-50">Rate</th>
-                    <th className="text-center p-4 font-semibold bg-slate-50 text-green-600">Total</th>
-                    <th className="text-center p-4 font-semibold bg-slate-50 text-red-600">Tax</th>
-                    <th className="text-center p-4 font-semibold bg-slate-50 text-blue-600">Total + Tax</th>
+                     <th className="text-left p-4 font-semibold bg-slate-50">Employee</th>
+                     <th className="text-left p-4 font-semibold bg-slate-50">Type</th>
+                     <th className="text-left p-4 font-semibold bg-slate-50">Trade</th>
+                     <th className="text-left p-4 font-semibold bg-slate-50">Jobsite</th>
+                     <th className="text-left p-4 font-semibold bg-slate-50">Week Ending</th>
+                     <th className="text-center p-4 font-semibold bg-slate-50">Hours</th>
+                     <th className="text-center p-4 font-semibold bg-slate-50">Rate</th>
+                     <th className="text-center p-4 font-semibold bg-slate-50 text-green-600">Gross Pay</th>
+                     <th className="text-center p-4 font-semibold bg-slate-50 text-red-600">Deductions</th>
+                     <th className="text-center p-4 font-semibold bg-slate-50 text-orange-600">Tax</th>
+                     <th className="text-center p-4 font-semibold bg-slate-50 text-blue-600">Net Pay</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -573,32 +612,44 @@ const PayrollSummary = () => {
                           onCheckedChange={(checked) => handleSelectTimesheet(entry.id, checked === true)}
                         />
                       </td>
-                       <td className="p-4 font-medium">
-                         <div className="flex items-center space-x-2">
-                           <span>{entry.employeeName}</span>
-                           {entry.isManualEntry && (
-                             <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                               Manual Entry
-                             </Badge>
-                           )}
-                         </div>
-                       </td>
-                       <td className="p-4">
-                         <Badge variant="outline" className="text-xs">{entry.trade}</Badge>
-                       </td>
-                       <td className="p-4 text-sm">{entry.jobSite}</td>
-                       <td className="p-4 text-sm">{entry.weekEndDate}</td>
-                       <td className="p-4 text-center font-mono text-sm">{entry.totalHours.toFixed(2)}</td>
-                       <td className="p-4 text-center font-mono text-sm">${entry.hourlyRate.toFixed(2)}</td>
-                       <td className="p-4 text-center font-mono font-semibold text-green-600">
-                         ${entry.grossPay.toFixed(2)}
-                       </td>
-                       <td className="p-4 text-center font-mono text-sm text-red-600">
-                         ${entry.originalTimesheet.tax_included ? entry.estimatedTax.toFixed(2) : '0.00'}
-                       </td>
-                       <td className="p-4 text-center font-mono font-semibold text-blue-600">
-                         ${entry.originalTimesheet.tax_included ? entry.totalPayWithTax.toFixed(2) : entry.grossPay.toFixed(2)}
-                       </td>
+                        <td className="p-4 font-medium">
+                          <div className="flex items-center space-x-2">
+                            <span>{entry.employeeName}</span>
+                            {entry.isManualEntry && (
+                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                                Manual Entry
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <Badge 
+                            variant={entry.workerType === 'employee' ? 'default' : 'outline'} 
+                            className="text-xs"
+                          >
+                            {entry.workerType === 'employee' ? 'Employee' : 'Subcontractor'}
+                          </Badge>
+                        </td>
+                        <td className="p-4">
+                          <Badge variant="outline" className="text-xs">{entry.trade}</Badge>
+                        </td>
+                        <td className="p-4 text-sm">{entry.jobSite}</td>
+                        <td className="p-4 text-sm">{entry.weekEndDate}</td>
+                        <td className="p-4 text-center font-mono text-sm">{entry.totalHours.toFixed(2)}</td>
+                        <td className="p-4 text-center font-mono text-sm">${entry.hourlyRate.toFixed(2)}</td>
+                        <td className="p-4 text-center font-mono font-semibold text-green-600">
+                          ${entry.grossPay.toFixed(2)}
+                        </td>
+                        <td className="p-4 text-center font-mono text-sm text-red-600">
+                          ${entry.workerType === 'employee' ? entry.deductions.toFixed(2) : '-'}
+                        </td>
+                        <td className="p-4 text-center font-mono text-sm text-orange-600">
+                          ${entry.workerType === 'subcontractor' && entry.originalTimesheet.tax_included ? entry.estimatedTax.toFixed(2) : '-'}
+                        </td>
+                        <td className="p-4 text-center font-mono font-semibold text-blue-600">
+                          ${entry.workerType === 'employee' ? entry.netPay.toFixed(2) : 
+                            (entry.originalTimesheet.tax_included ? entry.totalPayWithTax.toFixed(2) : entry.grossPay.toFixed(2))}
+                        </td>
                     </tr>
                   ))}
                 </tbody>

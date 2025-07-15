@@ -107,7 +107,29 @@ const PersonalDetailsSection: React.FC<PersonalDetailsSectionProps> = ({ form, f
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <FormField
+          control={form.control}
+          name="workerType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Worker Type *</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select worker type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="subcontractor">Subcontractor (self-employed)</SelectItem>
+                  <SelectItem value="employee">Employee (on company payroll)</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="role"

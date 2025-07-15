@@ -4,7 +4,7 @@ import autoTable from 'jspdf-autotable';
 export const useTimesheetPDF = () => {
   const generateTimesheetPDF = async (data) => {
     try {
-      const { timesheet, companySettings, jobsiteName, employeeName, logoUrl } = data;
+      const { timesheet, companySettings, jobsiteName, employeeName, logoUrl, workerType } = data;
       if (!timesheet) throw new Error('Timesheet data is required');
 
       const pdf = new jsPDF();
@@ -125,11 +125,28 @@ export const useTimesheetPDF = () => {
         ['Gross Pay:', '', `$${gross.toFixed(2)}`]
       ];
 
-      if (taxIncluded && tax > 0) {
-        breakdown.push(['Tax:', '', `$${tax.toFixed(2)}`]);
-        breakdown.push(['Total Pay:', '', `$${(gross + tax).toFixed(2)}`]);
+      if (workerType === 'employee') {
+        // Employee deductions
+        const incomeTax = gross * 0.12;
+        const cpp = gross * 0.0595;
+        const ei = gross * 0.0163;
+        const totalDeductions = incomeTax + cpp + ei;
+        const netPay = gross - totalDeductions;
+
+        breakdown.push(['', '', '']);
+        breakdown.push(['Deductions:', '', '']);
+        breakdown.push(['- Income Tax (12%):', '', `$${incomeTax.toFixed(2)}`]);
+        breakdown.push(['- CPP (5.95%):', '', `$${cpp.toFixed(2)}`]);
+        breakdown.push(['- EI (1.63%):', '', `$${ei.toFixed(2)}`]);
+        breakdown.push(['Net Pay:', '', `$${netPay.toFixed(2)}`]);
       } else {
-        breakdown.push(['Total Pay:', '', `$${gross.toFixed(2)}`]);
+        // Subcontractor logic
+        if (taxIncluded && tax > 0) {
+          breakdown.push(['Tax:', '', `$${tax.toFixed(2)}`]);
+          breakdown.push(['Total Pay:', '', `$${(gross + tax).toFixed(2)}`]);
+        } else {
+          breakdown.push(['Total Pay:', '', `$${gross.toFixed(2)}`]);
+        }
       }
 
       pdf.setFontSize(11);

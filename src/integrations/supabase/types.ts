@@ -1452,6 +1452,7 @@ export type Database = {
           trade: string | null
           updated_at: string
           user_id: string
+          worker_type: string | null
         }
         Insert: {
           company_id: string
@@ -1469,6 +1470,7 @@ export type Database = {
           trade?: string | null
           updated_at?: string
           user_id: string
+          worker_type?: string | null
         }
         Update: {
           company_id?: string
@@ -1486,6 +1488,7 @@ export type Database = {
           trade?: string | null
           updated_at?: string
           user_id?: string
+          worker_type?: string | null
         }
         Relationships: [
           {

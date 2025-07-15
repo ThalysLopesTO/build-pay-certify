@@ -47,12 +47,24 @@ const TimesheetPDFGenerator: React.FC<TimesheetPDFGeneratorProps> = ({
       
       const jobsiteName = jobsite?.name || 'Unknown Jobsite';
       
+      // Find the employee to get their worker type
+      const employee = timesheet.is_manual_entry 
+        ? null 
+        : await supabase
+          .from('user_profiles')
+          .select('worker_type')
+          .eq('user_id', timesheet.submitted_by)
+          .single();
+      
+      const workerType = employee?.data?.worker_type || 'subcontractor';
+      
       await generateTimesheetPDF({
         timesheet,
         companySettings,
         jobsiteName,
         employeeName,
-        logoUrl
+        logoUrl,
+        workerType
       });
       
       toast({

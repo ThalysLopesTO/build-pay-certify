@@ -26,6 +26,7 @@ export const useEmployeeRegistrationForm = () => {
       role: 'employee',
       trade: '',
       hourlyRate: 0,
+      workerType: 'subcontractor',
       photo: undefined,
       certificates: [],
     },
@@ -135,6 +136,7 @@ export const useEmployeeRegistrationForm = () => {
             role: data.role,
             trade: data.trade,
             hourlyRate: data.hourlyRate,
+            workerType: data.workerType,
             photoUrl: photoUrl,
             certificates: certificateUrls,
           }
