@@ -8,12 +8,13 @@ interface TimesheetPDFData {
   companySettings: any;
   jobsiteName: string;
   employeeName: string;
+  logoUrl?: string | null;
 }
 
 export const useTimesheetPDF = () => {
   const generateTimesheetPDF = async (data: TimesheetPDFData) => {
     try {
-      const { timesheet, companySettings, jobsiteName, employeeName } = data;
+      const { timesheet, companySettings, jobsiteName, employeeName, logoUrl } = data;
       
       console.log('Generating PDF with data:', { timesheet, companySettings, jobsiteName, employeeName });
       
@@ -29,7 +30,6 @@ export const useTimesheetPDF = () => {
       let yPosition = 20;
       
       // Company logo (if available)
-      const logoUrl = companySettings?.company_logo_url || companySettings?.logo_url;
       if (logoUrl) {
         try {
           console.log('Loading company logo from:', logoUrl);

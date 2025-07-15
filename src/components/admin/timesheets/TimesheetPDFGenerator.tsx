@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { useTimesheetPDF } from '@/hooks/useTimesheetPDF';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +20,7 @@ const TimesheetPDFGenerator: React.FC<TimesheetPDFGeneratorProps> = ({
 }) => {
   const { generateTimesheetPDF } = useTimesheetPDF();
   const { settings: companySettings } = useCompanySettings();
+  const { logoUrl } = useCompanyLogo();
   const { toast } = useToast();
 
   // Get jobsite name
@@ -49,7 +51,8 @@ const TimesheetPDFGenerator: React.FC<TimesheetPDFGeneratorProps> = ({
         timesheet,
         companySettings,
         jobsiteName,
-        employeeName
+        employeeName,
+        logoUrl
       });
       
       toast({
