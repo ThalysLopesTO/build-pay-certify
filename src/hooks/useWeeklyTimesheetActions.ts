@@ -15,35 +15,52 @@ export const useWeeklyTimesheetActions = () => {
         throw new Error('User not authenticated');
       }
 
-      console.log('Approving weekly timesheet:', timesheetId);
+      console.log('Updating weekly timesheet approval:', timesheetId);
+      
+      // Get current timesheet to determine the new status
+      const { data: currentTimesheet, error: fetchError } = await supabase
+        .from('weekly_timesheets')
+        .select('status')
+        .eq('id', timesheetId)
+        .eq('company_id', user.companyId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching timesheet:', fetchError);
+        throw fetchError;
+      }
+
+      // If already approved, revert to pending; otherwise approve
+      const newStatus = currentTimesheet.status === 'approved' ? 'pending' : 'approved';
       
       const { data, error } = await supabase
         .from('weekly_timesheets')
-        .update({ status: 'approved' })
+        .update({ status: newStatus })
         .eq('id', timesheetId)
         .eq('company_id', user.companyId)
         .select()
         .single();
 
       if (error) {
-        console.error('Error approving timesheet:', error);
+        console.error('Error updating timesheet approval:', error);
         throw error;
       }
 
-      return data;
+      return { data, newStatus };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['weekly-timesheets'] });
+      const action = result.newStatus === 'approved' ? 'approved' : 'reverted to pending';
       toast({
         title: "Success",
-        description: "Weekly timesheet approved successfully!",
+        description: `Weekly timesheet ${action} successfully!`,
       });
     },
     onError: (error) => {
       console.error('Approve timesheet error:', error);
       toast({
         title: "Error",
-        description: "Failed to approve timesheet. Please try again.",
+        description: "Failed to update timesheet approval. Please try again.",
         variant: "destructive",
       });
     },
@@ -57,33 +74,50 @@ export const useWeeklyTimesheetActions = () => {
 
       console.log('Rejecting weekly timesheet:', timesheetId);
       
+      // Get current timesheet to determine the new status
+      const { data: currentTimesheet, error: fetchError } = await supabase
+        .from('weekly_timesheets')
+        .select('status')
+        .eq('id', timesheetId)
+        .eq('company_id', user.companyId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching timesheet:', fetchError);
+        throw fetchError;
+      }
+
+      // If already rejected, revert to pending; otherwise reject
+      const newStatus = currentTimesheet.status === 'rejected' ? 'pending' : 'rejected';
+      
       const { data, error } = await supabase
         .from('weekly_timesheets')
-        .update({ status: 'rejected' })
+        .update({ status: newStatus })
         .eq('id', timesheetId)
         .eq('company_id', user.companyId)
         .select()
         .single();
 
       if (error) {
-        console.error('Error rejecting timesheet:', error);
+        console.error('Error updating timesheet status:', error);
         throw error;
       }
 
-      return data;
+      return { data, newStatus };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['weekly-timesheets'] });
+      const action = result.newStatus === 'rejected' ? 'rejected' : 'reverted to pending';
       toast({
         title: "Success",
-        description: "Weekly timesheet rejected successfully!",
+        description: `Weekly timesheet ${action} successfully!`,
       });
     },
     onError: (error) => {
       console.error('Reject timesheet error:', error);
       toast({
         title: "Error",
-        description: "Failed to reject timesheet. Please try again.",
+        description: "Failed to update timesheet status. Please try again.",
         variant: "destructive",
       });
     },

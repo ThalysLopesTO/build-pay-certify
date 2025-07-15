@@ -46,7 +46,7 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
           onDownloadSingle={handleDownloadPDF}
         />
       )}
-      {timesheet.status !== 'approved' && (
+      {timesheet.status !== 'approved' ? (
         <Button
           variant="ghost"
           size="sm"
@@ -57,8 +57,19 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
         >
           <Check className="h-4 w-4" />
         </Button>
+      ) : (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onReject(timesheet.id)}
+          disabled={isRejecting}
+          className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 opacity-50"
+          title="Timesheet already approved - click to revert"
+        >
+          <Check className="h-4 w-4" />
+        </Button>
       )}
-      {timesheet.status !== 'rejected' && (
+      {timesheet.status !== 'rejected' ? (
         <Button
           variant="ghost"
           size="sm"
@@ -66,6 +77,17 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
           disabled={isRejecting}
           className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
           title="Reject timesheet"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      ) : (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onApprove(timesheet.id)}
+          disabled={isApproving}
+          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 opacity-50"
+          title="Timesheet already rejected - click to revert"
         >
           <X className="h-4 w-4" />
         </Button>
