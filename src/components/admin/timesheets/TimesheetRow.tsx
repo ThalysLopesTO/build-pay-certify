@@ -1,5 +1,6 @@
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import TimesheetStatusBadge from './TimesheetStatusBadge';
 import TimesheetActions from './TimesheetActions';
@@ -11,6 +12,8 @@ interface TimesheetRowProps {
   onReject: (timesheetId: string) => void;
   isApproving: boolean;
   isRejecting: boolean;
+  selectedTimesheets?: Set<string>;
+  onSelectTimesheet?: (id: string, checked: boolean) => void;
 }
 
 const TimesheetRow: React.FC<TimesheetRowProps> = ({
@@ -19,10 +22,20 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
   onApprove,
   onReject,
   isApproving,
-  isRejecting
+  isRejecting,
+  selectedTimesheets,
+  onSelectTimesheet
 }) => {
   return (
     <TableRow className="hover:bg-gray-50">
+      {selectedTimesheets && onSelectTimesheet && (
+        <TableCell>
+          <Checkbox
+            checked={selectedTimesheets.has(timesheet.id)}
+            onCheckedChange={(checked) => onSelectTimesheet(timesheet.id, checked === true)}
+          />
+        </TableCell>
+      )}
       <TableCell className="font-medium">
         <div className="flex flex-col">
           <span>{timesheet.is_manual_entry ? timesheet.manual_entry_name : timesheet.employee_name}</span>
