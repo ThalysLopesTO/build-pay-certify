@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,14 +6,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { DollarSign, Users, Search, Filter, RefreshCw, Download } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DollarSign, Users, Search, Filter, RefreshCw, Download, ChevronDown, ChevronUp, Clock, FileText, Package } from 'lucide-react';
 import { useWeeklyTimesheets } from '@/hooks/useWeeklyTimesheets';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useWorkWeek } from '@/hooks/useWorkWeek';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import { useTimesheetPDF } from '@/hooks/useTimesheetPDF';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
+import JSZip from 'jszip';
 
 // Helper function to safely parse numbers
 const safeParseNumber = (value: any): number => {
@@ -29,10 +32,16 @@ const PayrollSummary = () => {
   const [selectedJobSite, setSelectedJobSite] = useState('all');
   const [selectedTrade, setSelectedTrade] = useState('all');
   const [taxIncluded, setTaxIncluded] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
+  const [selectedTimesheets, setSelectedTimesheets] = useState<Set<number>>(new Set());
+  const [bulkAction, setBulkAction] = useState<'pdf' | 'xlsx' | ''>('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Get work weeks based on company settings
+  // Get data from hooks
   const workWeeks = useWorkWeek();
   const { settings } = useCompanySettings();
+  const { logoUrl } = useCompanyLogo();
+  const { generateTimesheetPDF } = useTimesheetPDF();
 
   // Fetch approved weekly timesheets only
   const { data: timesheets = [], isLoading, error, refetch } = useWeeklyTimesheets({
@@ -41,10 +50,10 @@ const PayrollSummary = () => {
   const { data: employees = [] } = useEmployeeDirectory();
 
   // Process approved timesheets for payroll
-  const payrollEntries = React.useMemo(() => {
+  const payrollEntries = useMemo(() => {
     const taxPercentage = settings?.tax_percentage || 13;
     
-    return timesheets.map(timesheet => {
+    return timesheets.map((timesheet, index) => {
       const employee = employees.find(emp => 
         `${emp.first_name || ''} ${emp.last_name || ''}`.trim() === timesheet.employee_name
       );
@@ -59,11 +68,13 @@ const PayrollSummary = () => {
       const estimatedTax = hourlyPay * (taxPercentage / 100);
       
       return {
+        id: index,
+        originalTimesheet: timesheet,
         employeeName: timesheet.employee_name,
         trade: employee?.trade || 'General',
         position: employee?.position || 'Worker',
         jobSite: timesheet.jobsite_name,
-        project: timesheet.jobsite_name, // Using jobsite as project
+        project: timesheet.jobsite_name,
         weekStartDate: timesheet.week_start_date,
         weekEndDate: format(new Date(timesheet.week_start_date), 'MMM dd, yyyy'),
         totalHours,
@@ -77,14 +88,16 @@ const PayrollSummary = () => {
     });
   }, [timesheets, employees, settings?.tax_percentage]);
 
-  const filteredEntries = payrollEntries.filter(entry => {
-    return (
-      (searchTerm === '' || entry.employeeName.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (selectedWeek === 'all' || entry.weekStartDate === selectedWeek) &&
-      (selectedJobSite === 'all' || entry.jobSite === selectedJobSite) &&
-      (selectedTrade === 'all' || entry.trade === selectedTrade)
-    );
-  });
+  const filteredEntries = useMemo(() => {
+    return payrollEntries.filter(entry => {
+      return (
+        (searchTerm === '' || entry.employeeName.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (selectedWeek === 'all' || entry.weekStartDate === selectedWeek) &&
+        (selectedJobSite === 'all' || entry.jobSite === selectedJobSite) &&
+        (selectedTrade === 'all' || entry.trade === selectedTrade)
+      );
+    });
+  }, [payrollEntries, searchTerm, selectedWeek, selectedJobSite, selectedTrade]);
 
   const totalPayroll = filteredEntries.reduce((sum, entry) => 
     sum + (taxIncluded ? entry.totalPayWithTax : entry.grossPay), 0
@@ -97,17 +110,128 @@ const PayrollSummary = () => {
   const jobSites = [...new Set(payrollEntries.map(entry => entry.jobSite))].filter(Boolean);
   const trades = [...new Set(payrollEntries.map(entry => entry.trade))].filter(Boolean);
 
-  // Download Excel function
-  const downloadPayrollExcel = () => {
+  // Handle select all
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedTimesheets(new Set(filteredEntries.map(entry => entry.id)));
+    } else {
+      setSelectedTimesheets(new Set());
+    }
+  };
+
+  // Handle individual selection
+  const handleSelectTimesheet = (id: number, checked: boolean) => {
+    const newSelection = new Set(selectedTimesheets);
+    if (checked) {
+      newSelection.add(id);
+    } else {
+      newSelection.delete(id);
+    }
+    setSelectedTimesheets(newSelection);
+  };
+
+  // Get selected entries
+  const selectedEntries = filteredEntries.filter(entry => selectedTimesheets.has(entry.id));
+
+  // Download selected as Excel
+  const downloadSelectedAsExcel = () => {
+    if (selectedEntries.length === 0) {
+      alert('Please select at least one timesheet to export');
+      return;
+    }
+
+    const totalExpenses = selectedEntries.reduce((sum, entry) => sum + entry.additionalExpense, 0);
+    const selectedTotalHours = selectedEntries.reduce((sum, entry) => sum + entry.totalHours, 0);
+    const selectedTotalTax = selectedEntries.reduce((sum, entry) => sum + entry.estimatedTax, 0);
+    const selectedTotalPayroll = selectedEntries.reduce((sum, entry) => 
+      sum + (taxIncluded ? entry.totalPayWithTax : entry.grossPay), 0
+    );
+
+    const excelData = selectedEntries.map(entry => ({
+      'Employee': entry.employeeName,
+      'Trade/Position': `${entry.trade} - ${entry.position}`,
+      'Job Site': entry.jobSite,
+      'Project': entry.project,
+      'Week Ending': entry.weekEndDate,
+      'Hours': entry.totalHours,
+      'Hourly Rate': entry.hourlyRate,
+      'Expenses': entry.additionalExpense,
+      'Gross Pay': entry.grossPay,
+      'Tax': entry.estimatedTax,
+      'Total Pay': taxIncluded ? entry.totalPayWithTax : entry.grossPay
+    }));
+
+    // Add summary row
+    excelData.push({
+      'Employee': 'SELECTED TOTALS',
+      'Trade/Position': '',
+      'Job Site': '',
+      'Project': '',
+      'Week Ending': '',
+      'Hours': selectedTotalHours,
+      'Hourly Rate': 0,
+      'Expenses': totalExpenses,
+      'Gross Pay': selectedEntries.reduce((sum, entry) => sum + entry.grossPay, 0),
+      'Tax': selectedTotalTax,
+      'Total Pay': selectedTotalPayroll
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Selected Payroll');
+
+    const filename = `Selected-Payroll-${format(new Date(), 'MMM-dd-yyyy')}.xlsx`;
+    XLSX.writeFile(wb, filename);
+  };
+
+  // Download selected as PDF (simple individual downloads for now)
+  const downloadSelectedAsPDF = async () => {
+    if (selectedEntries.length === 0) {
+      alert('Please select at least one timesheet to export');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      // For now, download individual PDFs
+      for (const entry of selectedEntries) {
+        await generateTimesheetPDF({
+          timesheet: entry.originalTimesheet,
+          companySettings: settings,
+          jobsiteName: entry.jobSite,
+          employeeName: entry.employeeName,
+          logoUrl
+        });
+        // Add a small delay between downloads
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      alert(`Downloaded ${selectedEntries.length} PDF files`);
+    } catch (error) {
+      console.error('Error generating PDF files:', error);
+      alert('Error generating PDF files. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Handle bulk actions
+  const handleBulkAction = () => {
+    if (bulkAction === 'pdf') {
+      downloadSelectedAsPDF();
+    } else if (bulkAction === 'xlsx') {
+      downloadSelectedAsExcel();
+    }
+  };
+
+  // Download all as Excel (existing functionality)
+  const downloadAllAsExcel = () => {
     if (filteredEntries.length === 0) {
       alert('No data to export');
       return;
     }
 
-    // Calculate total expenses for summary
     const totalExpenses = filteredEntries.reduce((sum, entry) => sum + entry.additionalExpense, 0);
 
-    // Prepare data for Excel
     const excelData = filteredEntries.map(entry => ({
       'Employee': entry.employeeName,
       'Trade/Position': `${entry.trade} - ${entry.position}`,
@@ -122,7 +246,6 @@ const PayrollSummary = () => {
       'Total Pay': taxIncluded ? entry.totalPayWithTax : entry.grossPay
     }));
 
-    // Add summary row with proper types
     excelData.push({
       'Employee': 'TOTALS',
       'Trade/Position': '',
@@ -137,40 +260,10 @@ const PayrollSummary = () => {
       'Total Pay': totalPayroll
     });
 
-    // Create workbook and worksheet
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(excelData);
-
-    // Format currency columns
-    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    for (let R = range.s.r; R <= range.e.r; ++R) {
-      const hourlyRateCell = XLSX.utils.encode_cell({ r: R, c: 6 });
-      const expensesCell = XLSX.utils.encode_cell({ r: R, c: 7 });
-      const grossPayCell = XLSX.utils.encode_cell({ r: R, c: 8 });
-      const taxCell = XLSX.utils.encode_cell({ r: R, c: 9 });
-      const totalPayCell = XLSX.utils.encode_cell({ r: R, c: 10 });
-      
-      if (ws[hourlyRateCell] && ws[hourlyRateCell].v !== 'Hourly Rate' && ws[hourlyRateCell].v !== '') {
-        ws[hourlyRateCell].z = '"$"#,##0.00';
-      }
-      if (ws[expensesCell] && ws[expensesCell].v !== 'Expenses') {
-        ws[expensesCell].z = '"$"#,##0.00';
-      }
-      if (ws[grossPayCell] && ws[grossPayCell].v !== 'Gross Pay') {
-        ws[grossPayCell].z = '"$"#,##0.00';
-      }
-      if (ws[taxCell] && ws[taxCell].v !== 'Tax') {
-        ws[taxCell].z = '"$"#,##0.00';
-      }
-      if (ws[totalPayCell] && ws[totalPayCell].v !== 'Total Pay') {
-        ws[totalPayCell].z = '"$"#,##0.00';
-      }
-    }
-
-    // Add worksheet to workbook
     XLSX.utils.book_append_sheet(wb, ws, 'Payroll Summary');
 
-    // Generate filename based on selected week
     let filename = 'Payroll-Summary';
     if (selectedWeek !== 'all' && workWeeks) {
       const selectedWeekData = workWeeks.availableWeeks.find(week => week.weekStartDateString === selectedWeek);
@@ -181,7 +274,6 @@ const PayrollSummary = () => {
       filename += `-${format(new Date(), 'MMM-dd-yyyy')}`;
     }
 
-    // Download file
     XLSX.writeFile(wb, `${filename}.xlsx`);
   };
 
@@ -207,166 +299,236 @@ const PayrollSummary = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Company Logo */}
+      {logoUrl && (
+        <div className="flex justify-center py-4">
+          <img 
+            src={logoUrl} 
+            alt="Company Logo" 
+            className="h-16 w-auto object-contain"
+          />
+        </div>
+      )}
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-l-4 border-l-green-500">
           <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <DollarSign className="h-8 w-8 text-green-600" />
-              </div>
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Total Approved Payroll</p>
-                <p className="text-2xl font-bold text-green-600">${totalPayroll.toLocaleString()}</p>
+                <p className="text-sm font-medium text-slate-600">Total Approved Payroll</p>
+                <p className="text-3xl font-bold text-green-600">${totalPayroll.toLocaleString()}</p>
                 <p className="text-xs text-slate-500 mt-1">From approved weekly timesheets</p>
               </div>
+              <div className="p-3 bg-green-100 rounded-full">
+                <DollarSign className="h-8 w-8 text-green-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users className="h-8 w-8 text-blue-600" />
-              </div>
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Active Employees</p>
-                <p className="text-2xl font-bold text-blue-600">{totalEmployees}</p>
+                <p className="text-sm font-medium text-slate-600">Active Employees</p>
+                <p className="text-3xl font-bold text-blue-600">{totalEmployees}</p>
                 <p className="text-xs text-slate-500 mt-1">With approved timesheets</p>
               </div>
+              <div className="p-3 bg-blue-100 rounded-full">
+                <Users className="h-8 w-8 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-orange-500">
           <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <DollarSign className="h-8 w-8 text-orange-600" />
-              </div>
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Total Approved Hours</p>
-                <p className="text-2xl font-bold text-orange-600">{totalHours.toFixed(1)}</p>
+                <p className="text-sm font-medium text-slate-600">Total Approved Hours</p>
+                <p className="text-3xl font-bold text-orange-600">{totalHours.toFixed(1)}</p>
                 <p className="text-xs text-slate-500 mt-1">From approved timesheets only</p>
+              </div>
+              <div className="p-3 bg-orange-100 rounded-full">
+                <Clock className="h-8 w-8 text-orange-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Filters Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Filter className="h-5 w-5" />
-            <span>Filters & Options</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Tax Included Toggle */}
-          <div className="mb-6 p-4 bg-slate-50 rounded-lg border">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label htmlFor="tax-included" className="text-sm font-medium">
-                  Tax Included in Total Pay
-                </Label>
-                <p className="text-xs text-slate-600">
-                  When enabled, the "Total Pay" column shows Gross Pay + Tax. When disabled, only Gross Pay is shown with a separate Tax column.
-                </p>
-              </div>
-              <Switch
-                id="tax-included"
-                checked={taxIncluded}
-                onCheckedChange={setTaxIncluded}
-              />
-            </div>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center space-x-2">
+              <Filter className="h-5 w-5" />
+              <span>Filters & Options</span>
+            </CardTitle>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center space-x-2"
+            >
+              {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              <span>{showFilters ? 'Hide' : 'Show'} Filters</span>
+            </Button>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search Employee</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                <Input
-                  placeholder="Employee name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+        </CardHeader>
+        
+        {showFilters && (
+          <CardContent className="space-y-6">
+            {/* Tax Included Toggle */}
+            <div className="p-4 bg-slate-50 rounded-lg border">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="tax-included" className="text-sm font-medium">
+                    Tax Included in Total Pay
+                  </Label>
+                  <p className="text-xs text-slate-600">
+                    When enabled, the "Total Pay" column shows Gross Pay + Tax. When disabled, only Gross Pay is shown with a separate Tax column.
+                  </p>
+                </div>
+                <Switch
+                  id="tax-included"
+                  checked={taxIncluded}
+                  onCheckedChange={setTaxIncluded}
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Week Range</label>
-              <Select value={selectedWeek} onValueChange={setSelectedWeek}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All weeks" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All weeks</SelectItem>
-                  {workWeeks?.availableWeeks.map((week) => (
-                    <SelectItem key={week.weekStartDateString} value={week.weekStartDateString}>
-                      {week.rangeFormatted}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Filter Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Search Employee</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Employee name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Week Range</label>
+                <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All weeks" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All weeks</SelectItem>
+                    {workWeeks?.availableWeeks.map((week) => (
+                      <SelectItem key={week.weekStartDateString} value={week.weekStartDateString}>
+                        {week.rangeFormatted}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Job Site</label>
+                <Select value={selectedJobSite} onValueChange={setSelectedJobSite}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All sites" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All sites</SelectItem>
+                    {jobSites.map((site) => (
+                      <SelectItem key={site} value={site}>{site}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Trade</label>
+                <Select value={selectedTrade} onValueChange={setSelectedTrade}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All trades" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All trades</SelectItem>
+                    {trades.map((trade) => (
+                      <SelectItem key={trade} value={trade}>{trade}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Job Site</label>
-              <Select value={selectedJobSite} onValueChange={setSelectedJobSite}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All sites" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All sites</SelectItem>
-                  {jobSites.map((site) => (
-                    <SelectItem key={site} value={site}>{site}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Trade</label>
-              <Select value={selectedTrade} onValueChange={setSelectedTrade}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All trades" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All trades</SelectItem>
-                  {trades.map((trade) => (
-                    <SelectItem key={trade} value={trade}>{trade}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Actions</label>
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-4">
               <Button 
                 variant="outline" 
                 onClick={() => refetch()}
                 disabled={isLoading}
-                className="w-full"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Export</label>
+              
               <Button 
-                onClick={downloadPayrollExcel}
+                onClick={downloadAllAsExcel}
                 disabled={filteredEntries.length === 0}
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Download (.xlsx)
+                Download All (.xlsx)
+              </Button>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Bulk Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bulk Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Select value={bulkAction} onValueChange={(value) => setBulkAction(value as 'pdf' | 'xlsx' | '')}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select bulk action" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pdf">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="h-4 w-4" />
+                      <span>Download Selected as PDF</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="xlsx">
+                    <div className="flex items-center space-x-2">
+                      <Package className="h-4 w-4" />
+                      <span>Download Selected as XLSX</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button 
+                onClick={handleBulkAction}
+                disabled={!bulkAction || selectedTimesheets.size === 0 || isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Apply ({selectedTimesheets.size} selected)
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -387,48 +549,54 @@ const PayrollSummary = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b bg-slate-50">
-                    <th className="text-left p-3 font-semibold">Employee</th>
-                    <th className="text-left p-3 font-semibold">Trade/Position</th>
-                    <th className="text-left p-3 font-semibold">Job Site</th>
-                    <th className="text-left p-3 font-semibold">Project</th>
-                    <th className="text-left p-3 font-semibold">Week Ending</th>
-                    <th className="text-right p-3 font-semibold">Hours</th>
-                    <th className="text-right p-3 font-semibold">Rate</th>
-                    <th className="text-right p-3 font-semibold">Expenses</th>
-                    <th className="text-right p-3 font-semibold">Gross Pay</th>
-                    {!taxIncluded && <th className="text-right p-3 font-semibold">Tax</th>}
-                    <th className="text-right p-3 font-semibold">
-                      {taxIncluded ? 'Total Pay (incl. Tax)' : 'Total Pay'}
+                <thead className="sticky top-0 bg-white shadow-sm z-10">
+                  <tr className="border-b-2 border-slate-200">
+                    <th className="text-left p-4 font-semibold bg-slate-50">
+                      <Checkbox
+                        checked={selectedTimesheets.size === filteredEntries.length && filteredEntries.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
                     </th>
+                    <th className="text-left p-4 font-semibold bg-slate-50">Employee</th>
+                    <th className="text-left p-4 font-semibold bg-slate-50">Trade/Position</th>
+                    <th className="text-left p-4 font-semibold bg-slate-50">Job Site</th>
+                    <th className="text-left p-4 font-semibold bg-slate-50">Week Ending</th>
+                    <th className="text-center p-4 font-semibold bg-slate-50">Hours</th>
+                    <th className="text-center p-4 font-semibold bg-slate-50">Rate</th>
+                    <th className="text-center p-4 font-semibold bg-slate-50 text-slate-600">Expenses</th>
+                    <th className="text-center p-4 font-semibold bg-slate-50 text-green-600">Total Pay</th>
+                    {!taxIncluded && <th className="text-center p-4 font-semibold bg-slate-50 text-red-600">Tax</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredEntries.map((entry, index) => (
-                    <tr key={index} className="border-b hover:bg-slate-50">
-                      <td className="p-3 font-medium">{entry.employeeName}</td>
-                      <td className="p-3">
-                        <div>
-                          <Badge variant="outline" className="mb-1">{entry.trade}</Badge>
+                  {filteredEntries.map((entry) => (
+                    <tr key={entry.id} className="border-b hover:bg-slate-50 transition-colors">
+                      <td className="p-4">
+                        <Checkbox
+                          checked={selectedTimesheets.has(entry.id)}
+                          onCheckedChange={(checked) => handleSelectTimesheet(entry.id, checked === true)}
+                        />
+                      </td>
+                      <td className="p-4 font-medium">{entry.employeeName}</td>
+                      <td className="p-4">
+                        <div className="space-y-1">
+                          <Badge variant="outline" className="text-xs">{entry.trade}</Badge>
                           <p className="text-sm text-slate-600">{entry.position}</p>
                         </div>
                       </td>
-                      <td className="p-3 text-sm">{entry.jobSite}</td>
-                      <td className="p-3 text-sm">{entry.project}</td>
-                      <td className="p-3 text-sm">{entry.weekEndDate}</td>
-                      <td className="p-3 text-right font-mono">{entry.totalHours.toFixed(2)}</td>
-                      <td className="p-3 text-right font-mono">${entry.hourlyRate.toFixed(2)}</td>
-                      <td className="p-3 text-right font-mono">${entry.additionalExpense.toFixed(2)}</td>
-                      <td className="p-3 text-right font-mono">${entry.grossPay.toFixed(2)}</td>
+                      <td className="p-4 text-sm">{entry.jobSite}</td>
+                      <td className="p-4 text-sm">{entry.weekEndDate}</td>
+                      <td className="p-4 text-center font-mono text-sm">{entry.totalHours.toFixed(2)}</td>
+                      <td className="p-4 text-center font-mono text-sm">${entry.hourlyRate.toFixed(2)}</td>
+                      <td className="p-4 text-center font-mono text-sm text-slate-600">${entry.additionalExpense.toFixed(2)}</td>
+                      <td className="p-4 text-center font-mono font-semibold text-green-600">
+                        ${(taxIncluded ? entry.totalPayWithTax : entry.grossPay).toFixed(2)}
+                      </td>
                       {!taxIncluded && (
-                        <td className="p-3 text-right font-mono text-red-600">
+                        <td className="p-4 text-center font-mono text-sm text-red-600">
                           ${entry.estimatedTax.toFixed(2)}
                         </td>
                       )}
-                      <td className="p-3 text-right font-mono font-semibold text-green-600">
-                        ${(taxIncluded ? entry.totalPayWithTax : entry.grossPay).toLocaleString()}
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -437,8 +605,9 @@ const PayrollSummary = () => {
           )}
           
           {!isLoading && filteredEntries.length === 0 && (
-            <div className="text-center py-8 text-slate-500">
-              <p>No approved timesheet entries found for the selected filters</p>
+            <div className="text-center py-12 text-slate-500">
+              <Package className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+              <p className="text-lg font-medium">No approved timesheet entries found</p>
               <p className="text-sm mt-2">Only approved weekly timesheets are included in payroll calculations</p>
             </div>
           )}
