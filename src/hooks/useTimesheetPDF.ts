@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface TimesheetPDFData {
   timesheet: any;
@@ -108,7 +108,7 @@ export const useTimesheetPDF = () => {
       ];
       
       // Use the autoTable plugin
-      (pdf as any).autoTable({
+      autoTable(pdf, {
         startY: yPosition,
         head: [['Day', 'Hours']],
         body: tableData,
@@ -150,7 +150,7 @@ export const useTimesheetPDF = () => {
         breakdown.push(['Total Pay:', '', `$${grossPay.toFixed(2)}`]);
       }
       
-      (pdf as any).autoTable({
+      autoTable(pdf, {
         startY: yPosition,
         body: breakdown,
         theme: 'plain',
