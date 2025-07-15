@@ -105,6 +105,7 @@ const EmployeeTimesheets = () => {
         filters={filters}
         onFiltersChange={setFilters}
         employees={employees}
+        timesheets={timesheets}
       />
 
       {/* Timesheets Table */}

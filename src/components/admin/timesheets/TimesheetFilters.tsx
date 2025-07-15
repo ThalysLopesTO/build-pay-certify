@@ -17,12 +17,14 @@ interface TimesheetFiltersProps {
   };
   onFiltersChange: (filters: any) => void;
   employees: any[];
+  timesheets?: any[]; // Add timesheets to extract guest entries
 }
 
 const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
   filters,
   onFiltersChange,
-  employees
+  employees,
+  timesheets = []
 }) => {
   // Get work weeks based on company settings
   const workWeeks = useWorkWeek();
@@ -75,8 +77,27 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
     return fullName.length > 0;
   }).map(employee => ({
     ...employee,
-    displayName: `${employee.first_name || ''} ${employee.last_name || ''}`.trim()
+    displayName: `${employee.first_name || ''} ${employee.last_name || ''}`.trim(),
+    type: 'employee'
   })) || [];
+
+  // Extract unique guest entries from timesheets
+  const guestEntries = timesheets
+    .filter(timesheet => timesheet.is_manual_entry && timesheet.manual_entry_name)
+    .reduce((acc, timesheet) => {
+      const name = timesheet.manual_entry_name;
+      if (!acc.some(entry => entry.displayName === name)) {
+        acc.push({
+          id: `guest-${name}`,
+          displayName: name,
+          type: 'guest'
+        });
+      }
+      return acc;
+    }, [] as any[]);
+
+  // Combine employees and guest entries
+  const allEntries = [...validEmployees, ...guestEntries];
 
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -112,14 +133,33 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All employees</SelectItem>
-                {validEmployees.map((employee) => (
-                  <SelectItem 
-                    key={employee.id} 
-                    value={employee.displayName}
-                  >
-                    {employee.displayName}
-                  </SelectItem>
-                ))}
+                {validEmployees.length > 0 && (
+                  <>
+                    {validEmployees.map((employee) => (
+                      <SelectItem 
+                        key={employee.id} 
+                        value={employee.displayName}
+                      >
+                        {employee.displayName}
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+                {guestEntries.length > 0 && (
+                  <>
+                    <SelectItem disabled value="guest-divider">
+                      ─── Guest Entries ───
+                    </SelectItem>
+                    {guestEntries.map((entry) => (
+                      <SelectItem 
+                        key={entry.id} 
+                        value={entry.displayName}
+                      >
+                        {entry.displayName} (Guest)
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>

@@ -42,6 +42,8 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
           gross_pay,
           tax_included,
           calculated_tax,
+          is_manual_entry,
+          manual_entry_name,
           created_at,
           jobsites(name)
         `)
@@ -67,21 +69,27 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
 
       if (!timesheets) return [];
 
-      // Get user profiles for employee names
-      const userIds = [...new Set(timesheets.map(t => t.submitted_by))];
-      const { data: profiles, error: profilesError } = await supabase
-        .from('user_profiles')
-        .select('user_id, first_name, last_name')
-        .in('user_id', userIds);
+      // Get user profiles for employee names (only for non-manual entries)
+      const regularTimesheets = timesheets.filter(t => !t.is_manual_entry && t.submitted_by);
+      const userIds = [...new Set(regularTimesheets.map(t => t.submitted_by))];
+      
+      let profiles: any[] = [];
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('user_profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', userIds);
 
-      if (profilesError) {
-        console.error('Error fetching user profiles:', profilesError);
-        throw profilesError;
+        if (profilesError) {
+          console.error('Error fetching user profiles:', profilesError);
+          throw profilesError;
+        }
+        profiles = profilesData || [];
       }
 
       // Create a map of user profiles for quick lookup
       const profileMap = new Map(
-        profiles?.map(profile => [profile.user_id, profile]) || []
+        profiles.map(profile => [profile.user_id, profile])
       );
 
       // Get company settings for tax calculation
@@ -95,14 +103,24 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
 
       // Transform the data to include employee names and calculated fields
       let result = timesheets.map(timesheet => {
-        const profile = profileMap.get(timesheet.submitted_by);
+        let employeeName: string;
+        
+        if (timesheet.is_manual_entry) {
+          // For manual entries, use the manual_entry_name
+          employeeName = timesheet.manual_entry_name || 'Unknown Guest';
+        } else {
+          // For regular entries, use the profile data
+          const profile = profileMap.get(timesheet.submitted_by);
+          employeeName = profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown Employee';
+        }
+        
         const finalTotalPay = timesheet.tax_included 
           ? (timesheet.gross_pay || 0) + (timesheet.calculated_tax || 0)
           : (timesheet.gross_pay || 0);
         
         return {
           ...timesheet,
-          employee_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown Employee',
+          employee_name: employeeName,
           jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
           week_ending_date: timesheet.week_start_date, // This will be the week start date from submissions
           final_total_pay: finalTotalPay,
