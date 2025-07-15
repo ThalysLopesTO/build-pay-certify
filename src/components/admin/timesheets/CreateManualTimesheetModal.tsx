@@ -117,7 +117,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
       tax_included: formData.taxIncluded,
       calculated_tax: calculatedTax,
       notes: formData.notes || null,
-      status: 'manual_entry'
+      status: 'pending'
     };
 
     onSave(timesheetData);
