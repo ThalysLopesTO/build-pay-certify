@@ -1763,7 +1763,7 @@ export type Database = {
           notes: string | null
           saturday_hours: number | null
           status: string
-          submitted_by: string
+          submitted_by: string | null
           sunday_hours: number | null
           tax_included: boolean | null
           thursday_hours: number | null
@@ -1793,7 +1793,7 @@ export type Database = {
           notes?: string | null
           saturday_hours?: number | null
           status?: string
-          submitted_by: string
+          submitted_by?: string | null
           sunday_hours?: number | null
           tax_included?: boolean | null
           thursday_hours?: number | null
@@ -1823,7 +1823,7 @@ export type Database = {
           notes?: string | null
           saturday_hours?: number | null
           status?: string
-          submitted_by?: string
+          submitted_by?: string | null
           sunday_hours?: number | null
           tax_included?: boolean | null
           thursday_hours?: number | null
