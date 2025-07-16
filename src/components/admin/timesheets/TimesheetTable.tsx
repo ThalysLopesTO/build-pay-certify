@@ -41,11 +41,13 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
               </th>
             )}
             <th className="text-left p-4 font-semibold bg-slate-50">Employee</th>
+            <th className="text-left p-4 font-semibold bg-slate-50">Type</th>
             <th className="text-left p-4 font-semibold bg-slate-50">Jobsite</th>
             <th className="text-left p-4 font-semibold bg-slate-50">Week Starting</th>
             <th className="text-center p-4 font-semibold bg-slate-50">Total Hours</th>
-            <th className="text-center p-4 font-semibold bg-slate-50">Total Pay</th>
-            <th className="text-center p-4 font-semibold bg-slate-50">Tax</th>
+            <th className="text-center p-4 font-semibold bg-slate-50">Gross Pay</th>
+            <th className="text-center p-4 font-semibold bg-slate-50">Deductions/Tax</th>
+            <th className="text-center p-4 font-semibold bg-slate-50">Net Pay</th>
             <th className="text-left p-4 font-semibold bg-slate-50">Status</th>
             <th className="text-left p-4 font-semibold bg-slate-50">Submitted</th>
             <th className="text-left p-4 font-semibold bg-slate-50">Actions</th>
@@ -54,13 +56,13 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
         <tbody>
           {isLoading ? (
             <tr>
-              <td colSpan={selectedTimesheets ? 10 : 9} className="text-center py-8 text-slate-500">
+              <td colSpan={selectedTimesheets ? 12 : 11} className="text-center py-8 text-slate-500">
                 Loading timesheets...
               </td>
             </tr>
           ) : timesheets.length === 0 ? (
             <tr>
-              <td colSpan={selectedTimesheets ? 10 : 9} className="text-center py-8 text-slate-500">
+              <td colSpan={selectedTimesheets ? 12 : 11} className="text-center py-8 text-slate-500">
                 No weekly timesheet submissions found
               </td>
             </tr>
