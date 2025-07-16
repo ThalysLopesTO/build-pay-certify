@@ -61,6 +61,16 @@ const PayrollSummary = () => {
         `${emp.first_name || ''} ${emp.last_name || ''}`.trim() === timesheet.employee_name
       );
       
+      console.log('🔍 Employee lookup:', {
+        timesheet_employee_name: timesheet.employee_name,
+        employee_found: !!employee,
+        employee_worker_type: employee?.worker_type,
+        employees_available: employees.map(e => ({
+          name: `${e.first_name || ''} ${e.last_name || ''}`.trim(),
+          worker_type: e.worker_type
+        }))
+      });
+      
       const totalHours = safeParseNumber(timesheet.total_hours);
       const hourlyRate = safeParseNumber(timesheet.hourly_rate);
       const additionalExpense = safeParseNumber(timesheet.additional_expense);
