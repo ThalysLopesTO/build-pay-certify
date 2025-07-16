@@ -51,6 +51,8 @@ const PayrollSummary = () => {
 
   // Process approved timesheets for payroll
   const payrollEntries = useMemo(() => {
+    console.log('🔍 PayrollSummary - Timesheets data:', timesheets.length, timesheets);
+    console.log('🔍 PayrollSummary - Employees data:', employees.length, employees);
     const taxPercentage = settings?.tax_percentage || 13;
     const weekEndingDay = settings?.week_ending_day ?? 0; // Default to Sunday
     
@@ -71,6 +73,17 @@ const PayrollSummary = () => {
       let deductions = 0;
       let netPay = grossPay;
       
+      console.log('🔍 Processing timesheet:', {
+        employee_name: timesheet.employee_name,
+        worker_type: workerType,
+        gross_pay: grossPay,
+        income_tax_rate: timesheet.income_tax_rate,
+        cpp_rate: timesheet.cpp_rate,
+        ei_rate: timesheet.ei_rate,
+        calculated_tax: timesheet.calculated_tax,
+        tax_included: timesheet.tax_included
+      });
+
       if (workerType === 'employee') {
         // Employee deductions using rates from timesheet or defaults
         const incomeTaxRate = (safeParseNumber(timesheet.income_tax_rate) || 12) / 100;
@@ -83,6 +96,13 @@ const PayrollSummary = () => {
         
         deductions = incomeTax + cpp + ei;
         netPay = grossPay - deductions;
+        
+        console.log('🔍 Employee deductions calculated:', {
+          incomeTaxRate, cppRate, eiRate,
+          incomeTax, cpp, ei,
+          totalDeductions: deductions,
+          netPay
+        });
       } else {
         // For subcontractors, use calculated tax if tax_included is true
         if (timesheet.tax_included) {
@@ -91,6 +111,12 @@ const PayrollSummary = () => {
           // Otherwise calculate based on hourly pay (excluding expenses)
           estimatedTax = hourlyPay * (taxPercentage / 100);
         }
+        
+        console.log('🔍 Subcontractor tax calculated:', {
+          tax_included: timesheet.tax_included,
+          calculated_tax: timesheet.calculated_tax,
+          estimatedTax
+        });
       }
       
       // Calculate week ending date from week start date using company's week ending day
@@ -672,6 +698,9 @@ const PayrollSummary = () => {
               <Package className="h-12 w-12 mx-auto mb-4 text-slate-400" />
               <p className="text-lg font-medium">No approved timesheet entries found</p>
               <p className="text-sm mt-2">Only approved weekly timesheets are included in payroll calculations</p>
+              <p className="text-sm mt-2 text-blue-600">
+                💡 Tip: Go to Weekly Timesheets to approve pending timesheets first, then they'll appear here.
+              </p>
             </div>
           )}
         </CardContent>
