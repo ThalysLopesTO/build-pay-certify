@@ -25,8 +25,9 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   const { settings: companySettings } = useCompanySettings();
   const taxRate = companySettings?.tax_percentage || 13;
   
-  // Check if this is an employee with payroll deductions
-  const hasPayrollDeductions = timesheet.worker_type === 'employee' && timesheet.is_manual_entry;
+  // Check worker type to determine what to show
+  const isPayrollEmployee = timesheet.worker_type === 'employee';
+  const isSubcontractor = timesheet.worker_type === 'subcontractor';
   
   const [formData, setFormData] = useState({
     monday_hours: timesheet.monday_hours || 0,
@@ -75,9 +76,9 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
     eiRate: Number(timesheet.ei_rate || 1.63) // Default 1.63%
   });
 
-  // Payroll deductions calculation for employees with deductions
+  // Payroll deductions calculation for employees
   let payrollCalculations = null;
-  if (hasPayrollDeductions) {
+  if (isPayrollEmployee) {
     const grossWithExpenses = grossPay + Number(formData.additional_expense);
     const incomeTax = grossWithExpenses * (deductionRates.incomeTaxRate / 100);
     const cpp = grossWithExpenses * (deductionRates.cppRate / 100);
@@ -104,7 +105,7 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
     ? Number(manualTaxAmount) 
     : calculatedTax;
   
-  const totalPay = hasPayrollDeductions 
+  const totalPay = isPayrollEmployee 
     ? payrollCalculations?.netPay || 0 
     : grossPay + Number(formData.additional_expense) + finalTaxAmount;
 
@@ -112,15 +113,15 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
     const updates = {
       ...formData,
       total_hours: totalHours,
-      gross_pay: hasPayrollDeductions && payrollCalculations 
+      gross_pay: isPayrollEmployee && payrollCalculations 
         ? payrollCalculations.netPay 
         : grossPay + Number(formData.additional_expense) + finalTaxAmount,
-      tax_included: hasPayrollDeductions ? false : taxIncluded,
-      calculated_tax: hasPayrollDeductions ? 0 : finalTaxAmount,
+      tax_included: isPayrollEmployee ? false : taxIncluded,
+      calculated_tax: isPayrollEmployee ? 0 : finalTaxAmount,
       // Save updated deduction rates for payroll employees
-      income_tax_rate: hasPayrollDeductions ? deductionRates.incomeTaxRate : timesheet.income_tax_rate,
-      cpp_rate: hasPayrollDeductions ? deductionRates.cppRate : timesheet.cpp_rate,
-      ei_rate: hasPayrollDeductions ? deductionRates.eiRate : timesheet.ei_rate
+      income_tax_rate: isPayrollEmployee ? deductionRates.incomeTaxRate : timesheet.income_tax_rate,
+      cpp_rate: isPayrollEmployee ? deductionRates.cppRate : timesheet.cpp_rate,
+      ei_rate: isPayrollEmployee ? deductionRates.eiRate : timesheet.ei_rate
     };
     onSave(updates, originalData);
   };
@@ -140,16 +141,16 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
             <Clock className="h-5 w-5" />
             Edit Timesheet
           </DialogTitle>
-          {hasPayrollDeductions && (
-            <div className="text-sm text-muted-foreground mt-2 p-2 bg-blue-50/50 dark:bg-blue-950/20 rounded">
-              <span className="font-medium">Employee Type:</span> Payroll — With Deductions
-            </div>
-          )}
+          {/* Employee Type Label */}
+          <div className="text-sm text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
+            <span className="font-medium">Employee Type:</span> 
+            {isPayrollEmployee ? ' Payroll — With Deductions' : ' Subcontractor (HST Optional)'}
+          </div>
         </DialogHeader>
 
         {/* Summary Section - Always Visible */}
         <div className="flex-shrink-0 bg-muted/50 rounded-lg p-4 mb-4">
-          {hasPayrollDeductions && payrollCalculations ? (
+          {isPayrollEmployee && payrollCalculations ? (
             // Payroll employee summary with deductions
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
               <div className="text-center">
@@ -267,8 +268,8 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
             </CollapsibleContent>
           </Collapsible>
 
-          {/* Tax Control Section or Payroll Deductions Section */}
-          {hasPayrollDeductions && payrollCalculations ? (
+          {/* Payroll Deductions Section for Employees or Tax Control for Subcontractors */}
+          {isPayrollEmployee && payrollCalculations ? (
             // Payroll Deductions Section for employees with deductions
             <div className="border rounded-lg p-4 bg-blue-50/50 dark:bg-blue-950/20">
               <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
@@ -465,7 +466,7 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
                 <span>Additional Expenses:</span>
                 <span className="font-mono">${formData.additional_expense.toFixed(2)}</span>
               </div>
-              {hasPayrollDeductions && payrollCalculations ? (
+              {isPayrollEmployee && payrollCalculations ? (
                 <>
                   <div className="flex justify-between border-t pt-2">
                     <span>Gross Pay (with expenses):</span>
