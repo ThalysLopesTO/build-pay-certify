@@ -84,22 +84,11 @@ const EmployeeLoginForm = () => {
           description: "Successfully logged into StackBuild",
         });
         
-        // After successful login, directly check session and navigate
-        console.log('✅ Login successful, checking session...');
+        // Wait for auth state to update
+        console.log('✅ Login successful, waiting for auth state update...');
+        setLoading(false);
         
-        // Small delay to ensure auth state updates
-        setTimeout(() => {
-          console.log('🔄 Checking current auth state:', { isAuthenticated, userRole: user?.role });
-          
-          if (isAuthenticated && user?.role) {
-            console.log('✅ Auth state already updated, navigation will happen via useEffect');
-            setLoading(false);
-          } else {
-            console.log('⚡ Auth state not yet updated, navigating directly...');
-            setLoading(false);
-            navigate('/employee/dashboard');
-          }
-        }, 200);
+        // The useEffect will handle navigation once auth state is updated
       }
     } catch (error) {
       console.error('💥 Login error:', error);
