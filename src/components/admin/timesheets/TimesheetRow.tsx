@@ -80,7 +80,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
               : "bg-green-100 text-green-800 border-green-200"
           }`}
         >
-          {isEmployee ? "Employee" : "Subcontractor"}
+          {isEmployee ? "Employee (Payroll)" : "Subcontractor"}
         </Badge>
       </td>
       <td className="p-4 text-sm">{timesheet.jobsite_name}</td>

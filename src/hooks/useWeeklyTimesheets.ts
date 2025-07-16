@@ -44,6 +44,10 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
           calculated_tax,
           is_manual_entry,
           manual_entry_name,
+          worker_type,
+          income_tax_rate,
+          cpp_rate,
+          ei_rate,
           created_at,
           jobsites(name)
         `)
@@ -77,7 +81,7 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
       if (userIds.length > 0) {
         const { data: profilesData, error: profilesError } = await supabase
           .from('user_profiles')
-          .select('user_id, first_name, last_name')
+          .select('user_id, first_name, last_name, worker_type')
           .in('user_id', userIds);
 
         if (profilesError) {
@@ -104,14 +108,17 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
       // Transform the data to include employee names and calculated fields
       let result = timesheets.map(timesheet => {
         let employeeName: string;
+        let workerType: string;
         
         if (timesheet.is_manual_entry) {
-          // For manual entries, use the manual_entry_name
+          // For manual entries, use the manual_entry_name and stored worker_type
           employeeName = timesheet.manual_entry_name || 'Unknown Guest';
+          workerType = timesheet.worker_type || 'subcontractor';
         } else {
           // For regular entries, use the profile data
           const profile = profileMap.get(timesheet.submitted_by);
           employeeName = profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown Employee';
+          workerType = profile?.worker_type || 'subcontractor';
         }
         
         const finalTotalPay = timesheet.tax_included 
@@ -121,6 +128,7 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
         return {
           ...timesheet,
           employee_name: employeeName,
+          worker_type: workerType,
           jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
           week_ending_date: timesheet.week_start_date, // This will be the week start date from submissions
           final_total_pay: finalTotalPay,
