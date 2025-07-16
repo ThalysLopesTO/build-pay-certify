@@ -68,7 +68,6 @@ const EmployeeLoginForm = () => {
 
     try {
       console.log('🔑 Attempting username login for:', username);
-      console.log('🔍 Pre-login auth state:', { isAuthenticated, user: user?.email });
       
       const { error } = await loginWithUsername(username, password, 'employee');
       
@@ -81,19 +80,58 @@ const EmployeeLoginForm = () => {
         });
         setLoading(false);
       } else {
-        console.log('✅ Login successful, waiting for auth state update...');
-        console.log('🔍 Post-login auth state:', { isAuthenticated, user: user?.email });
+        console.log('✅ Login successful');
         
         toast({
           title: "Welcome Back",
           description: "Successfully logged into StackBuild",
         });
         
-        // Keep loading state active until navigation happens
-        console.log('✅ Login successful, keeping loading state until navigation...');
-        
-        // The useEffect will handle navigation once auth state is updated
-        // Don't set loading to false here - let the navigation effect handle it
+        // Wait for auth state to update, then navigate
+        setTimeout(() => {
+          console.log('🔄 Checking auth state after login:', { isAuthenticated, user: user?.email, role: user?.role });
+          
+          if (isAuthenticated && user) {
+            console.log('🎯 Auth state updated, navigating to dashboard for role:', user.role);
+            setLoading(false);
+            
+            // Navigate based on role
+            switch (user.role) {
+              case 'admin':
+              case 'super_admin':
+                console.log('🔐 Admin user detected, redirecting to admin dashboard');
+                navigate('/admin/dashboard', { replace: true });
+                break;
+              case 'management':
+                console.log('📊 Management user detected, redirecting to management dashboard');
+                navigate('/management/dashboard', { replace: true });
+                break;
+              case 'foreman':
+                console.log('👷 Foreman user detected, redirecting to foreman dashboard');
+                navigate('/foreman/dashboard', { replace: true });
+                break;
+              case 'employee':
+                console.log('👤 Employee user detected, redirecting to employee dashboard');
+                navigate('/employee/dashboard', { replace: true });
+                break;
+              default:
+                console.warn('⚠️ Unknown role detected:', user.role, 'redirecting to home');
+                navigate('/', { replace: true });
+            }
+          } else {
+            console.log('⚠️ Auth state not updated yet, trying again...');
+            // If auth state isn't ready, try again
+            setTimeout(() => {
+              if (isAuthenticated && user) {
+                setLoading(false);
+                window.location.href = user.role === 'employee' ? '/employee/dashboard' : '/admin/dashboard';
+              } else {
+                setLoading(false);
+                console.error('Auth state failed to update properly');
+              }
+            }, 1000);
+          }
+        }, 500);
       }
     } catch (error) {
       console.error('💥 Login error:', error);
