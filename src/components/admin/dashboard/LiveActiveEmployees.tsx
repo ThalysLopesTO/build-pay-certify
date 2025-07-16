@@ -130,8 +130,8 @@ const LiveActiveEmployees = () => {
           check_in_time: timesheet.check_in_time,
           jobsite_name: jobsite?.name || 'Unknown Jobsite',
           employee_name: profile 
-            ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown Employee'
-            : 'Unknown Employee',
+            ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Former Employee'
+            : 'Former Employee',
           role: profile?.role || 'employee'
         };
       });

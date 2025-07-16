@@ -62,6 +62,11 @@ export const useTimesheetSubmission = () => {
       const payBeforeTax = totalHours * data.hourlyRate;
       const calculatedTax = data.taxIncluded ? (payBeforeTax * 0.13) : 0; // Default to 13% if not specified
 
+      // Get employee name from user profile
+      const employeeName = user.firstName && user.lastName 
+        ? `${user.firstName} ${user.lastName}`.trim()
+        : 'Unknown Employee';
+
       // Create the payload - do NOT include total_hours or gross_pay as they are calculated by the trigger
       const timesheetPayload = {
         submitted_by: user.id,
@@ -81,6 +86,7 @@ export const useTimesheetSubmission = () => {
         status: 'pending',
         tax_included: data.taxIncluded || false,
         calculated_tax: calculatedTax,
+        employee_name: employeeName,
       };
 
       console.log('📝 Submitting timesheet to database with payload:', timesheetPayload);

@@ -105,7 +105,7 @@ const EmployeeTimesheets = () => {
     }
 
     const excelData = selectedTimesheetsData.map(timesheet => ({
-      'Employee': timesheet.is_manual_entry ? timesheet.manual_entry_name : timesheet.employee_name,
+      'Employee': timesheet.is_manual_entry ? timesheet.manual_entry_name : (timesheet.employee_name || 'Former Employee'),
       'Entry Type': timesheet.is_manual_entry ? 'Manual Entry' : 'Employee Submission',
       'Week Starting': timesheet.week_start_date,
       'Monday': timesheet.monday_hours || 0,
@@ -145,7 +145,7 @@ const EmployeeTimesheets = () => {
       for (const timesheet of selectedTimesheetsData) {
         const employeeName = timesheet.is_manual_entry 
           ? timesheet.manual_entry_name 
-          : timesheet.employee_name || 'Unknown Employee';
+          : timesheet.employee_name || 'Former Employee';
         
         // Get jobsite name
         const jobsite = await fetch(`/api/jobsites/${timesheet.jobsite_id}`).catch(() => null);

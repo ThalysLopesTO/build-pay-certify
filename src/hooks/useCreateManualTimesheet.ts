@@ -21,6 +21,11 @@ export const useCreateManualTimesheet = () => {
       // The database constraints now allow multiple manual entries for the same jobsite/week
       // while maintaining uniqueness based on manual_entry_name
       
+      // Get employee name from user profile for manual entries
+      const employeeName = user.firstName && user.lastName 
+        ? `${user.firstName} ${user.lastName}`.trim()
+        : 'Admin User';
+
       // Add required fields for manual entries
       const dataToInsert = {
         ...timesheetData,
@@ -28,6 +33,7 @@ export const useCreateManualTimesheet = () => {
         company_id: user.companyId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        employee_name: timesheetData.is_manual_entry ? undefined : employeeName, // Only set for non-manual entries
       };
 
       console.log('Data being inserted into database:', dataToInsert);

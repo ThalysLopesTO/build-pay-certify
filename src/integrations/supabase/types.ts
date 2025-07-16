@@ -1751,6 +1751,7 @@ export type Database = {
           cpp_rate: number | null
           created_at: string
           ei_rate: number | null
+          employee_name: string | null
           friday_hours: number | null
           gross_pay: number | null
           hourly_rate: number
@@ -1781,6 +1782,7 @@ export type Database = {
           cpp_rate?: number | null
           created_at?: string
           ei_rate?: number | null
+          employee_name?: string | null
           friday_hours?: number | null
           gross_pay?: number | null
           hourly_rate: number
@@ -1811,6 +1813,7 @@ export type Database = {
           cpp_rate?: number | null
           created_at?: string
           ei_rate?: number | null
+          employee_name?: string | null
           friday_hours?: number | null
           gross_pay?: number | null
           hourly_rate?: number

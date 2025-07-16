@@ -21,7 +21,7 @@ export const TimesheetPDFGenerator: React.FC<TimesheetPDFGeneratorProps> = ({
         timesheet,
         companySettings: { company_name: 'Company Name' }, // You may want to pass this as prop
         jobsiteName: timesheet.jobsite?.name || 'Unknown Jobsite',
-        employeeName: timesheet.employee_name || 'Unknown Employee',
+        employeeName: timesheet.employee_name || 'Former Employee',
         logoUrl: null, // You may want to pass company logo
         workerType: timesheet.worker_type || 'subcontractor'
       });

@@ -138,7 +138,7 @@ const PayrollSummary = () => {
       return {
         id: index,
         originalTimesheet: timesheet,
-        employeeName: timesheet.employee_name,
+        employeeName: timesheet.employee_name || 'Former Employee',
         trade: 'General', // Default since we're not looking up from user_profiles
         position: 'Worker', // Default since we're not looking up from user_profiles
         jobSite: timesheet.jobsite_name,
