@@ -1,13 +1,21 @@
+
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+// Extend jsPDF type to include lastAutoTable property
+interface ExtendedJsPDF extends jsPDF {
+  lastAutoTable: {
+    finalY: number;
+  };
+}
+
 export const useTimesheetPDF = () => {
-  const generateTimesheetPDF = async (data) => {
+  const generateTimesheetPDF = async (data: any) => {
     try {
       const { timesheet, companySettings, jobsiteName, employeeName, logoUrl, workerType } = data;
       if (!timesheet) throw new Error('Timesheet data is required');
 
-      const pdf = new jsPDF();
+      const pdf = new jsPDF() as ExtendedJsPDF;
       const pageWidth = pdf.internal.pageSize.width;
       const leftCol = 15;
       const rightCol = pageWidth / 2 + 10;
@@ -31,7 +39,7 @@ export const useTimesheetPDF = () => {
             reader.onerror = reject;
             reader.readAsDataURL(blob);
           });
-          pdf.addImage(base64, 'PNG', leftCol, y, 25, 12); // Smaller logo
+          pdf.addImage(base64 as string, 'PNG', leftCol, y, 25, 12); // Smaller logo
         } catch (err) {
           console.warn('Failed to load logo:', err);
         }
@@ -109,7 +117,7 @@ export const useTimesheetPDF = () => {
         tableWidth: 80
       });
 
-      y = (pdf as any).lastAutoTable.finalY + 6;
+      y = pdf.lastAutoTable.finalY + 6;
 
       // Payment Summary
       const total = Number(timesheet.total_hours ?? 0);
@@ -204,7 +212,7 @@ export const useTimesheetPDF = () => {
         tableWidth: 'wrap'
       });
 
-      y = (pdf as any).lastAutoTable.finalY + 10;
+      y = pdf.lastAutoTable.finalY + 10;
 
       // Footer
       pdf.setFontSize(9);

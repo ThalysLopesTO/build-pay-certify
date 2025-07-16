@@ -1,7 +1,8 @@
+
 import { Button } from '@/components/ui/button';
 import { Check, X, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import TimesheetPDFGenerator from './TimesheetPDFGenerator';
+import { TimesheetPDFGenerator } from './TimesheetPDFGenerator';
 
 interface TimesheetActionsProps {
   timesheet: any;
