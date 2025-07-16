@@ -89,12 +89,17 @@ export const loginWithUsername = async (username: string, password: string, expe
         return { error: { message: 'Session setup failed. Please try again.' } };
       }
       
-      // Force a session refresh to ensure auth state is properly updated
-      console.log('🔄 Refreshing session to trigger auth state change');
-      const { error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) {
-        console.warn('Session refresh warning:', refreshError);
+      // Wait a moment for the session to be properly set
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Verify the session is actually set
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('❌ Session not found after setting');
+        return { error: { message: 'Session setup failed. Please try again.' } };
       }
+      
+      console.log('✅ Session successfully set and verified');
     }
 
     return { error: null };

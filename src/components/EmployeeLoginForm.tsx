@@ -84,39 +84,22 @@ const EmployeeLoginForm = () => {
           description: "Successfully logged into StackBuild",
         });
         
-        // Wait for auth state to update with shorter timeout
-        let attempts = 0;
-        const maxAttempts = 20; // 2 seconds with 100ms intervals
+        // After successful login, directly check session and navigate
+        console.log('✅ Login successful, checking session...');
         
-        const checkAuthUpdate = () => {
-          attempts++;
-          console.log(`🔄 Auth check attempt ${attempts}/20:`, { 
-            isAuthenticated, 
-            userRole: user?.role,
-            userEmail: user?.email 
-          });
+        // Small delay to ensure auth state updates
+        setTimeout(() => {
+          console.log('🔄 Checking current auth state:', { isAuthenticated, userRole: user?.role });
           
           if (isAuthenticated && user?.role) {
-            console.log('✅ Auth state updated successfully, user role:', user.role);
+            console.log('✅ Auth state already updated, navigation will happen via useEffect');
             setLoading(false);
-            // Don't manually navigate - let useEffect handle it
-            return;
-          }
-          
-          if (attempts >= maxAttempts) {
-            console.log('⚡ Auth state taking longer than expected, completing login...');
+          } else {
+            console.log('⚡ Auth state not yet updated, navigating directly...');
             setLoading(false);
-            // Navigate immediately instead of forcing page reload
             navigate('/employee/dashboard');
-            return;
           }
-          
-          // Continue checking
-          setTimeout(checkAuthUpdate, 100);
-        };
-        
-        // Start checking for auth state update immediately
-        checkAuthUpdate();
+        }, 200);
       }
     } catch (error) {
       console.error('💥 Login error:', error);
