@@ -72,15 +72,25 @@ const PayrollSummary = () => {
       let netPay = grossPay;
       
       if (workerType === 'employee') {
-        // Employee deductions
-        const incomeTax = grossPay * 0.12;
-        const cpp = grossPay * 0.0595;
-        const ei = grossPay * 0.0163;
+        // Employee deductions using rates from timesheet or defaults
+        const incomeTaxRate = (safeParseNumber(timesheet.income_tax_rate) || 12) / 100;
+        const cppRate = (safeParseNumber(timesheet.cpp_rate) || 5.95) / 100;
+        const eiRate = (safeParseNumber(timesheet.ei_rate) || 1.63) / 100;
+        
+        const incomeTax = grossPay * incomeTaxRate;
+        const cpp = grossPay * cppRate;
+        const ei = grossPay * eiRate;
+        
         deductions = incomeTax + cpp + ei;
         netPay = grossPay - deductions;
       } else {
-        // Subcontractor tax based on hourly pay (excluding expenses)
-        estimatedTax = hourlyPay * (taxPercentage / 100);
+        // For subcontractors, use calculated tax if tax_included is true
+        if (timesheet.tax_included) {
+          estimatedTax = safeParseNumber(timesheet.calculated_tax) || 0;
+        } else {
+          // Otherwise calculate based on hourly pay (excluding expenses)
+          estimatedTax = hourlyPay * (taxPercentage / 100);
+        }
       }
       
       // Calculate week ending date from week start date using company's week ending day
