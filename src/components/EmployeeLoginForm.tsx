@@ -13,10 +13,10 @@ import PWAInstallButton from '@/components/common/PWAInstallButton';
 import LoginLoading from '@/components/common/LoginLoading';
 
 const EmployeeLoginForm = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { loginWithUsername, isAuthenticated, user } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   // Handle navigation after successful login
@@ -67,9 +67,9 @@ const EmployeeLoginForm = () => {
     setLoading(true);
 
     try {
-      console.log('🔑 Attempting username login for:', username);
+      console.log('🔑 Attempting email login for:', email);
       
-      const { error } = await loginWithUsername(username, password, 'employee');
+      const { error } = await login(email, password, 'employee');
       
       if (error) {
         console.error('❌ Login error:', error);
@@ -184,17 +184,17 @@ const EmployeeLoginForm = () => {
             <CardContent className="p-8">
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="text-slate-700 font-medium text-sm">
-                    Username
+                  <Label htmlFor="email" className="text-slate-700 font-medium text-sm">
+                    Email
                   </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
                     <Input
-                      id="username"
-                      type="text"
-                      placeholder="Enter your username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                       className="pl-10 h-12 border-slate-200 focus:border-blue-500 focus:ring-blue-500 text-slate-700 bg-white/60"
                     />
