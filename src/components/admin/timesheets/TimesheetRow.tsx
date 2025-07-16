@@ -65,7 +65,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
         <div className="flex items-center space-x-2">
           <span>{timesheet.is_manual_entry ? timesheet.manual_entry_name : timesheet.employee_name}</span>
           {timesheet.is_manual_entry && (
-            <Badge variant="secondary" className="text-xs bg-accent text-accent-foreground border-accent-foreground/20">
+            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
               Manual Entry
             </Badge>
           )}
