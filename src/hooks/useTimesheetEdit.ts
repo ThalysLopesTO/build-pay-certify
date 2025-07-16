@@ -47,7 +47,7 @@ export const useTimesheetEdit = () => {
         throw fetchError;
       }
 
-      // Update the timesheet
+      // Update the timesheet (gross_pay and total_hours are calculated by database trigger)
       const { data: updatedTimesheet, error: updateError } = await supabase
         .from('weekly_timesheets')
         .update({
@@ -59,8 +59,6 @@ export const useTimesheetEdit = () => {
           saturday_hours: data.saturday_hours,
           sunday_hours: data.sunday_hours,
           additional_expense: data.additional_expense,
-          total_hours: data.total_hours,
-          gross_pay: data.gross_pay,
           tax_included: data.tax_included,
           calculated_tax: data.calculated_tax,
           income_tax_rate: data.income_tax_rate,
