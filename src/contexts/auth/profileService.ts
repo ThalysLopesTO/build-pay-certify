@@ -5,14 +5,17 @@ export const fetchUserProfile = async (userId: string) => {
   try {
     console.log('📝 Fetching user profile for:', userId);
     
-    // Query user_profiles using user_id (matching auth.users.id)
-    const { data: profile, error: profileError } = await supabase
+    // Query user_profiles with company data in a single query using join
+    const { data: profileData, error: profileError } = await supabase
       .from('user_profiles')
-      .select('*')
+      .select(`
+        *,
+        companies (*)
+      `)
       .eq('user_id', userId)
       .single();
 
-    console.log('📋 Profile query result:', { profile, profileError });
+    console.log('📋 Profile query result:', { profileData, profileError });
 
     if (profileError) {
       console.error('❌ Error fetching user profile:', profileError);
@@ -25,12 +28,16 @@ export const fetchUserProfile = async (userId: string) => {
       return { profile: null, company: null, error: 'Failed to load user profile. Please try logging in again.' };
     }
 
-    if (!profile) {
+    if (!profileData) {
       console.warn('⚠️ User profile not found');
       return { profile: null, company: null, error: 'You are not linked to any company. Please contact your administrator.' };
     }
 
+    const profile = profileData;
+    const company = Array.isArray(profileData.companies) ? profileData.companies[0] : profileData.companies;
+
     console.log('📊 Profile loaded:', profile);
+    console.log('🏢 Company loaded:', company);
 
     // For paid users (Stripe verified), skip approval check
     if (profile.stripe_verified) {
@@ -46,17 +53,8 @@ export const fetchUserProfile = async (userId: string) => {
       return { profile: null, company: null, error: 'You are not linked to any company. Please contact your administrator.' };
     }
 
-    // Query companies using company_id from profile
-    const { data: company, error: companyError } = await supabase
-      .from('companies')
-      .select('*')
-      .eq('id', profile.company_id)
-      .single();
-
-    console.log('🏢 Company query result:', { company, companyError });
-
-    if (companyError || !company) {
-      console.warn('⚠️ Company not found:', companyError);
+    if (!company) {
+      console.warn('⚠️ Company not found for profile');
       return { profile: null, company: null, error: 'Your company account was not found. Please contact your system administrator.' };
     }
 

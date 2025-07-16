@@ -84,13 +84,13 @@ const EmployeeLoginForm = () => {
           description: "Successfully logged into StackBuild",
         });
         
-        // Wait for auth state to update before timing out
+        // Wait for auth state to update with shorter timeout
         let attempts = 0;
-        const maxAttempts = 50; // 5 seconds with 100ms intervals
+        const maxAttempts = 20; // 2 seconds with 100ms intervals
         
         const checkAuthUpdate = () => {
           attempts++;
-          console.log(`🔄 Auth check attempt ${attempts}/50:`, { 
+          console.log(`🔄 Auth check attempt ${attempts}/20:`, { 
             isAuthenticated, 
             userRole: user?.role,
             userEmail: user?.email 
@@ -104,10 +104,10 @@ const EmployeeLoginForm = () => {
           }
           
           if (attempts >= maxAttempts) {
-            console.warn('⚠️ Auth state update timeout after 5 seconds, forcing redirect...');
+            console.log('⚡ Auth state taking longer than expected, completing login...');
             setLoading(false);
-            // Force redirect as fallback
-            window.location.href = '/employee/dashboard';
+            // Navigate immediately instead of forcing page reload
+            navigate('/employee/dashboard');
             return;
           }
           
@@ -115,8 +115,8 @@ const EmployeeLoginForm = () => {
           setTimeout(checkAuthUpdate, 100);
         };
         
-        // Start checking for auth state update
-        setTimeout(checkAuthUpdate, 100);
+        // Start checking for auth state update immediately
+        checkAuthUpdate();
       }
     } catch (error) {
       console.error('💥 Login error:', error);
