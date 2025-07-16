@@ -21,6 +21,12 @@ const EmployeeLoginForm = () => {
 
   // Handle navigation after successful login
   useEffect(() => {
+    console.log('🔄 Navigation effect triggered:', { 
+      isAuthenticated, 
+      hasUser: !!user, 
+      userRole: user?.role 
+    });
+    
     if (isAuthenticated && user) {
       console.log('🎯 Employee login successful, navigating to dashboard for role:', user.role);
       console.log('📊 Full user object:', user);
@@ -49,7 +55,6 @@ const EmployeeLoginForm = () => {
           break;
         default:
           console.warn('⚠️ Unknown role detected:', user.role, 'redirecting to home');
-          // Fallback to home page if role is undefined
           navigate('/', { replace: true });
       }
     } else if (isAuthenticated && !user) {
@@ -84,11 +89,11 @@ const EmployeeLoginForm = () => {
           description: "Successfully logged into StackBuild",
         });
         
-        // Wait for auth state to update
-        console.log('✅ Login successful, waiting for auth state update...');
-        setLoading(false);
+        // Keep loading state active until navigation happens
+        console.log('✅ Login successful, keeping loading state until navigation...');
         
         // The useEffect will handle navigation once auth state is updated
+        // Don't set loading to false here - let the navigation effect handle it
       }
     } catch (error) {
       console.error('💥 Login error:', error);
@@ -104,7 +109,7 @@ const EmployeeLoginForm = () => {
 
   return (
     <>
-      {loading && isAuthenticated && user && (
+      {loading && (
         <LoginLoading message="Setting up your employee dashboard..." />
       )}
       <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100">
