@@ -31,7 +31,8 @@ const MaterialRequestItem = ({
   };
 
   // Helper function to format user ID for display
-  const formatUserDisplay = (userId: string) => {
+  const formatUserDisplay = (userId: string | null) => {
+    if (!userId) return 'Former Employee';
     // Extract the first 8 characters of the UUID for a cleaner display
     return `User ${userId.substring(0, 8)}...`;
   };

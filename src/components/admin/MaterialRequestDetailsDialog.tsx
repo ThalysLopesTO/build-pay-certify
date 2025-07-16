@@ -31,7 +31,8 @@ const MaterialRequestDetailsDialog = ({
     }
   };
 
-  const formatUserDisplay = (userId: string) => {
+  const formatUserDisplay = (userId: string | null) => {
+    if (!userId) return 'Former Employee';
     return `User ID: ${userId.substring(0, 8)}...`;
   };
 

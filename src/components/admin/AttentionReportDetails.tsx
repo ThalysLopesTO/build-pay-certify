@@ -184,7 +184,11 @@ const AttentionReportDetails: React.FC<AttentionReportDetailsProps> = ({
               <div>
                 <p className="text-sm font-medium">Submitted by</p>
                 <p className="text-sm text-gray-600">
-                  {submittedByProfile?.first_name} {submittedByProfile?.last_name}
+                  {report.submitted_by ? 
+                    (submittedByProfile?.first_name && submittedByProfile?.last_name ? 
+                      `${submittedByProfile.first_name} ${submittedByProfile.last_name}` : 
+                      'Loading...') : 
+                    'Former Employee'}
                 </p>
               </div>
             </div>

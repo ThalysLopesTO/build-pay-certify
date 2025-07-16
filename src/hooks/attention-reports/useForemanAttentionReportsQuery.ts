@@ -43,12 +43,12 @@ export const useForemanAttentionReportsQuery = () => {
       
       console.log('Fetched attention reports:', data);
       
-      // Fetch user profiles separately to avoid join issues
-      const userIds = [...new Set(data?.map(report => report.submitted_by) || [])];
-      const { data: userProfiles, error: userProfilesError } = await supabase
+      // Fetch user profiles separately to avoid join issues (filter out null values)
+      const userIds = [...new Set(data?.map(report => report.submitted_by).filter(id => id !== null) || [])];
+      const { data: userProfiles, error: userProfilesError } = userIds.length > 0 ? await supabase
         .from('user_profiles')
         .select('user_id, first_name, last_name')
-        .in('user_id', userIds);
+        .in('user_id', userIds) : { data: [], error: null };
 
       if (userProfilesError) {
         console.error('Error fetching user profiles:', userProfilesError);
@@ -57,7 +57,7 @@ export const useForemanAttentionReportsQuery = () => {
 
       // Create a map of user profiles for quick lookup
       const userProfilesMap = new Map(
-        userProfiles?.map(profile => [profile.user_id, profile]) || []
+        (userProfiles || []).map(profile => [profile.user_id, profile])
       );
       
       // Transform the data to match our interface
@@ -74,7 +74,7 @@ export const useForemanAttentionReportsQuery = () => {
         reviewed_at: report.reviewed_at,
         created_at: report.created_at,
         jobsites: report.jobsites,
-        user_profiles: userProfilesMap.get(report.submitted_by) || { first_name: 'Unknown', last_name: 'User' },
+        user_profiles: !report.submitted_by ? { first_name: 'Former', last_name: 'Employee' } : (userProfilesMap.get(report.submitted_by) || { first_name: 'Unknown', last_name: 'User' }),
         attachments: report.attention_report_attachments || []
       })) as AttentionReport[];
     },

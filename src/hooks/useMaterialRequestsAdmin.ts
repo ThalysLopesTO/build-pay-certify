@@ -68,12 +68,13 @@ export const useMaterialRequestsAdmin = () => {
         throw jobsitesError;
       }
 
-      // Fetch user profiles for submitted_by names
-      const { data: userProfiles, error: usersError } = await supabase
+      // Fetch user profiles for submitted_by names (filter out null values)
+      const validUserIds = userIds.filter(id => id !== null);
+      const { data: userProfiles, error: usersError } = validUserIds.length > 0 ? await supabase
         .from('user_profiles')
         .select('user_id, first_name, last_name')
-        .in('user_id', userIds)
-        .eq('company_id', user.companyId);
+        .in('user_id', validUserIds)
+        .eq('company_id', user.companyId) : { data: [], error: null };
 
       if (usersError) {
         console.error('Error fetching user profiles:', usersError);
@@ -81,8 +82,8 @@ export const useMaterialRequestsAdmin = () => {
       }
 
       // Create lookup maps
-      const jobsiteMap = new Map(jobsites?.map(j => [j.id, j]) || []);
-      const userMap = new Map(userProfiles?.map(u => [u.user_id, u]) || []);
+      const jobsiteMap = new Map((jobsites || []).map(j => [j.id, j]));
+      const userMap = new Map((userProfiles || []).map(u => [u.user_id, u]));
 
       // Enrich material requests with related data
       const enrichedRequests = materialRequests.map(request => {
@@ -93,9 +94,9 @@ export const useMaterialRequestsAdmin = () => {
           ...request,
           jobsites: jobsite || null,
           // Keep submitted_by as user_id for compatibility, but add user name for display
-          submitted_by_name: userProfile 
-            ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim()
-            : 'Unknown User'
+          submitted_by_name: !request.submitted_by ? 'Former Employee' : (userProfile 
+            ? `${(userProfile as any).first_name || ''} ${(userProfile as any).last_name || ''}`.trim()
+            : 'Unknown User')
         };
       });
 
@@ -142,7 +143,7 @@ export const useMaterialRequestsAdmin = () => {
   const filteredRequests = requests.filter(request => {
     const matchesSearch = searchTerm === '' || 
       request.jobsites?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.submitted_by.toLowerCase().includes(searchTerm.toLowerCase());
+      (request.submitted_by && request.submitted_by.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
     
