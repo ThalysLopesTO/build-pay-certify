@@ -31,6 +31,7 @@ const PayrollSummary = () => {
   const [selectedWeek, setSelectedWeek] = useState('all');
   const [selectedJobSite, setSelectedJobSite] = useState('all');
   const [selectedTrade, setSelectedTrade] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState('all');
   const [taxIncluded, setTaxIncluded] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [selectedTimesheets, setSelectedTimesheets] = useState<Set<number>>(new Set());
@@ -144,6 +145,8 @@ const PayrollSummary = () => {
         project: timesheet.jobsite_name,
         weekStartDate: properWeekStartDateString, // Use the calculated week start date for filtering
         weekEndDate: format(weekEndDate, 'MMM dd, yyyy'),
+        monthYear: format(weekEndDate, 'yyyy-MM'), // Add month-year for filtering
+        monthYearDisplay: format(weekEndDate, 'MMM yyyy'), // Add month-year for display
         totalHours,
         hourlyRate,
         additionalExpense,
@@ -165,10 +168,11 @@ const PayrollSummary = () => {
         (searchTerm === '' || entry.employeeName.toLowerCase().includes(searchTerm.toLowerCase())) &&
         (selectedWeek === 'all' || entry.weekStartDate === selectedWeek) &&
         (selectedJobSite === 'all' || entry.jobSite === selectedJobSite) &&
-        (selectedTrade === 'all' || entry.trade === selectedTrade)
+        (selectedTrade === 'all' || entry.trade === selectedTrade) &&
+        (selectedMonth === 'all' || entry.monthYear === selectedMonth)
       );
     });
-  }, [payrollEntries, searchTerm, selectedWeek, selectedJobSite, selectedTrade]);
+  }, [payrollEntries, searchTerm, selectedWeek, selectedJobSite, selectedTrade, selectedMonth]);
 
   const totalPayroll = filteredEntries.reduce((sum, entry) => 
     sum + (taxIncluded ? entry.totalPayWithTax : entry.grossPay), 0
@@ -180,6 +184,13 @@ const PayrollSummary = () => {
   // Get unique values for filters
   const jobSites = [...new Set(payrollEntries.map(entry => entry.jobSite))].filter(Boolean);
   const trades = [...new Set(payrollEntries.map(entry => entry.trade))].filter(Boolean);
+  const months = [...new Set(payrollEntries.map(entry => entry.monthYear))]
+    .filter(Boolean)
+    .sort((a, b) => b.localeCompare(a)) // Sort in descending order (newest first)
+    .map(monthYear => ({
+      value: monthYear,
+      display: format(new Date(monthYear + '-01'), 'MMM yyyy')
+    }));
 
   // Handle select all
   const handleSelectAll = (checked: boolean) => {
@@ -461,7 +472,7 @@ const PayrollSummary = () => {
           <CardContent className="space-y-6">
             {/* Search and Filter Controls */}
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Search Employee</label>
                   <div className="relative">
@@ -473,6 +484,23 @@ const PayrollSummary = () => {
                       className="pl-10"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Month</label>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All months" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All months</SelectItem>
+                      {months.map((month) => (
+                        <SelectItem key={month.value} value={month.value}>
+                          {month.display}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
