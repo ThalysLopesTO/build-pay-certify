@@ -57,25 +57,13 @@ const PayrollSummary = () => {
     const weekEndingDay = settings?.week_ending_day ?? 0; // Default to Sunday
     
     return timesheets.map((timesheet, index) => {
-      const employee = employees.find(emp => 
-        `${emp.first_name || ''} ${emp.last_name || ''}`.trim() === timesheet.employee_name
-      );
-      
-      console.log('🔍 Employee lookup:', {
-        timesheet_employee_name: timesheet.employee_name,
-        employee_found: !!employee,
-        employee_worker_type: employee?.worker_type,
-        employees_available: employees.map(e => ({
-          name: `${e.first_name || ''} ${e.last_name || ''}`.trim(),
-          worker_type: e.worker_type
-        }))
-      });
-      
       const totalHours = safeParseNumber(timesheet.total_hours);
       const hourlyRate = safeParseNumber(timesheet.hourly_rate);
       const additionalExpense = safeParseNumber(timesheet.additional_expense);
       const grossPay = safeParseNumber(timesheet.gross_pay);
-      const workerType = employee?.worker_type || 'subcontractor';
+      
+      // Use the worker type directly from the timesheet, not from user_profiles lookup
+      const workerType = timesheet.worker_type || 'subcontractor';
       
       // Calculate tax for subcontractors or deductions for employees
       const hourlyPay = totalHours * hourlyRate;
@@ -150,8 +138,8 @@ const PayrollSummary = () => {
         id: index,
         originalTimesheet: timesheet,
         employeeName: timesheet.employee_name,
-        trade: employee?.trade || 'General',
-        position: employee?.position || 'Worker',
+        trade: 'General', // Default since we're not looking up from user_profiles
+        position: 'Worker', // Default since we're not looking up from user_profiles
         jobSite: timesheet.jobsite_name,
         project: timesheet.jobsite_name,
         weekStartDate: properWeekStartDateString, // Use the calculated week start date for filtering
