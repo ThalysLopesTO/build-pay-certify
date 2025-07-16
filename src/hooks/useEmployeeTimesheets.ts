@@ -76,7 +76,7 @@ export const useEmployeeTimesheets = (filters: TimesheetFilters = {}) => {
           ...timesheet,
           employee_name: profile 
             ? `${profile.first_name} ${profile.last_name}`
-            : 'Unknown Employee',
+            : 'Former Employee',
           jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
           hours_worked: hoursWorked
         };

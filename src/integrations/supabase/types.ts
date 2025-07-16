@@ -110,6 +110,20 @@ export type Database = {
             referencedRelation: "jobsites"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "attention_reports_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "attention_reports_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       audit_logs: {
@@ -159,6 +173,20 @@ export type Database = {
           timesheet_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "audit_logs_edited_by_user_id_fkey"
+            columns: ["edited_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "audit_logs_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "audit_logs_timesheet_id_fkey"
             columns: ["timesheet_id"]
@@ -248,6 +276,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bills_expenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "bills_expenses_parent_recurring_bill_id_fkey"
             columns: ["parent_recurring_bill_id"]
             isOneToOne: false
@@ -294,6 +329,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cancellation_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -560,7 +602,22 @@ export type Database = {
           upload_date?: string
           uploaded_by?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "employee_certificates_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employee_certificates_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       expense_categories: {
         Row: {
@@ -641,6 +698,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "inventory_jobsite_id_fkey"
@@ -815,6 +879,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "jobsite_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "jobsite_tasks_jobsite_id_fkey"
             columns: ["jobsite_id"]
             isOneToOne: false
@@ -916,6 +987,13 @@ export type Database = {
             referencedRelation: "jobsites"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "material_requests_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       material_takeoff_notes: {
@@ -951,11 +1029,25 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "material_takeoff_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "material_takeoff_notes_jobsite_id_fkey"
             columns: ["jobsite_id"]
             isOneToOne: false
             referencedRelation: "jobsites"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_takeoff_notes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1038,7 +1130,22 @@ export type Database = {
           target_user_id?: string
           target_user_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "password_reset_logs_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "password_reset_logs_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       quote_line_items: {
         Row: {
@@ -1168,6 +1275,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "quotes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "quotes_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
@@ -1210,7 +1324,15 @@ export type Database = {
           upload_date?: string
           uploaded_by?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "safety_templates_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       stripe_webhook_events: {
         Row: {
@@ -1433,6 +1555,13 @@ export type Database = {
             referencedRelation: "jobsites"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "timesheets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       user_profiles: {
@@ -1598,6 +1727,13 @@ export type Database = {
           timesheet_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "weekly_timesheet_audit_logs_edited_by_user_id_fkey"
+            columns: ["edited_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "weekly_timesheet_audit_logs_timesheet_id_fkey"
             columns: ["timesheet_id"]

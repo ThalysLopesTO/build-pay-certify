@@ -117,7 +117,7 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
         } else {
           // For regular entries, use the profile data
           const profile = profileMap.get(timesheet.submitted_by);
-          employeeName = profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown Employee';
+          employeeName = profile ? `${profile.first_name} ${profile.last_name}` : 'Former Employee';
           workerType = profile?.worker_type || 'subcontractor';
         }
         
