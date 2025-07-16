@@ -1,103 +1,141 @@
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
-import { useTimesheetPDF } from '@/hooks/useTimesheetPDF';
-import { useCompanySettings } from '@/hooks/useCompanySettings';
-import { useCompanyLogo } from '@/hooks/useCompanyLogo';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-
-interface TimesheetPDFGeneratorProps {
-  timesheet: any;
-  onDownloadSingle: (timesheet: any) => void;
-}
-
-const TimesheetPDFGenerator: React.FC<TimesheetPDFGeneratorProps> = ({
-  timesheet,
-  onDownloadSingle
-}) => {
-  const { generateTimesheetPDF } = useTimesheetPDF();
-  const { settings: companySettings } = useCompanySettings();
-  const { logoUrl } = useCompanyLogo();
-  const { toast } = useToast();
-
-  // Get jobsite name
-  const { data: jobsite } = useQuery({
-    queryKey: ['jobsite', timesheet.jobsite_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('jobsites')
-        .select('name')
-        .eq('id', timesheet.jobsite_id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!timesheet.jobsite_id,
-  });
-
-  const handleDownload = async () => {
+export const useTimesheetPDF = () => {
+  const generateTimesheetPDF = async (data) => {
     try {
-      const employeeName = timesheet.is_manual_entry 
-        ? timesheet.manual_entry_name 
-        : timesheet.employee_name || 'Unknown Employee';
-      
-      const jobsiteName = jobsite?.name || 'Unknown Jobsite';
-      
-      // Determine worker type
-      let workerType = 'subcontractor';
-      
-      if (timesheet.is_manual_entry) {
-        // For manual entries, use the worker_type field directly
-        workerType = timesheet.worker_type || 'subcontractor';
-      } else {
-        // For regular employee timesheets, find the employee to get their worker type
-        const employee = await supabase
-          .from('user_profiles')
-          .select('worker_type')
-          .eq('user_id', timesheet.submitted_by)
-          .single();
-        
-        workerType = employee?.data?.worker_type || 'subcontractor';
+      const { timesheet, companySettings, jobsiteName, employeeName, logoUrl, workerType } = data;
+      if (!timesheet) throw new Error('Timesheet data is required');
+
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.width;
+      const margin = 15;
+      let y = margin;
+
+      // Header with logo
+      if (logoUrl) {
+        try {
+          const res = await fetch(logoUrl);
+          const blob = await res.blob();
+          const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject();
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          pdf.addImage(base64, 'PNG', margin, y, 30, 15);
+        } catch (err) {
+          console.warn('Failed to load logo:', err);
+        }
       }
-      
-      await generateTimesheetPDF({
-        timesheet,
-        companySettings,
-        jobsiteName,
-        employeeName,
-        logoUrl,
-        workerType
+
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(companySettings?.company_name || 'Company Name', pageWidth / 2, y + 10, { align: 'center' });
+
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Weekly Timesheet with Payroll Breakdown', pageWidth / 2, y + 18, { align: 'center' });
+
+      y += 30;
+
+      const formatRow = (label, value) => [[{ content: label, styles: { fontStyle: 'bold' } }, value]];
+
+      // Info Table
+      autoTable(pdf, {
+        startY: y,
+        theme: 'grid',
+        margin: { left: margin },
+        tableWidth: pageWidth - margin * 2,
+        body: [
+          ...formatRow('Employee:', employeeName || 'Unknown'),
+          ...formatRow('Jobsite:', jobsiteName || 'Unknown'),
+          ...formatRow('Week Starting:', timesheet.week_start_date ? new Date(timesheet.week_start_date).toLocaleDateString() : 'N/A'),
+          ...formatRow('Hourly Rate:', `$${Number(timesheet.hourly_rate ?? 0).toFixed(2)}`)
+        ],
+        styles: { fontSize: 10, cellPadding: 4 },
       });
-      
-      toast({
-        title: 'PDF Generated',
-        description: 'Timesheet PDF has been downloaded successfully.',
+
+      y = (pdf).lastAutoTable.finalY + 10;
+
+      // Hours Table
+      const tableData = [
+        ['Monday', timesheet.monday_hours ?? 0],
+        ['Tuesday', timesheet.tuesday_hours ?? 0],
+        ['Wednesday', timesheet.wednesday_hours ?? 0],
+        ['Thursday', timesheet.thursday_hours ?? 0],
+        ['Friday', timesheet.friday_hours ?? 0],
+        ['Saturday', timesheet.saturday_hours ?? 0],
+        ['Sunday', timesheet.sunday_hours ?? 0],
+        ['Total Hours', timesheet.total_hours ?? 0]
+      ];
+
+      autoTable(pdf, {
+        startY: y,
+        head: [['Day', 'Hours']],
+        body: tableData.map(([day, hrs]) => [day, Number(hrs).toFixed(2)]),
+        theme: 'striped',
+        headStyles: { fillColor: [50, 50, 50], textColor: [255, 255, 255] },
+        margin: { left: margin },
+        styles: { fontSize: 10 },
+        tableWidth: 90
       });
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to generate PDF. Please try again.',
-        variant: 'destructive',
-      });
+
+      y = (pdf).lastAutoTable.finalY + 10;
+
+      // Payroll Breakdown
+      if (workerType === 'employee') {
+        const total = Number(timesheet.total_hours ?? 0);
+        const rate = Number(timesheet.hourly_rate ?? 0);
+        const gross = Number(timesheet.gross_pay ?? 0);
+        const incomeTaxRate = timesheet.income_tax_rate ? Number(timesheet.income_tax_rate) / 100 : 0.20;
+        const cppRate = timesheet.cpp_rate ? Number(timesheet.cpp_rate) / 100 : 0.0595;
+        const eiRate = timesheet.ei_rate ? Number(timesheet.ei_rate) / 100 : 0.0235;
+
+        const incomeTax = gross * incomeTaxRate;
+        const cpp = gross * cppRate;
+        const ei = gross * eiRate;
+        const deductions = incomeTax + cpp + ei;
+        const net = gross - deductions;
+
+        const breakdownTable = [
+          ['Gross Pay', '', `$${gross.toFixed(2)}`],
+          ['Federal Income Tax', `${(incomeTaxRate * 100).toFixed(2)}%`, `-$${incomeTax.toFixed(2)}`],
+          ['CPP', `${(cppRate * 100).toFixed(2)}%`, `-$${cpp.toFixed(2)}`],
+          ['EI', `${(eiRate * 100).toFixed(2)}%`, `-$${ei.toFixed(2)}`],
+          ['Total Deductions', '', `-$${deductions.toFixed(2)}`],
+          ['Net Pay', '', `$${net.toFixed(2)}`]
+        ];
+
+        autoTable(pdf, {
+          startY: y,
+          head: [['Summary', 'Rate', 'Amount']],
+          body: breakdownTable,
+          margin: { left: margin },
+          styles: { fontSize: 10 },
+          columnStyles: {
+            0: { fontStyle: 'bold' },
+            2: { halign: 'right', fontStyle: 'bold' }
+          }
+        });
+
+        y = (pdf).lastAutoTable.finalY + 10;
+      }
+
+      // Footer
+      pdf.setFontSize(9);
+      const submittedDate = timesheet.created_at ? new Date(timesheet.created_at).toLocaleDateString() : 'N/A';
+      const status = timesheet.status ? timesheet.status.charAt(0).toUpperCase() + timesheet.status.slice(1) : 'Unknown';
+      pdf.text(`Submitted: ${submittedDate}`, margin, y);
+      pdf.text(`Status: ${status}`, pageWidth - margin * 5, y);
+
+      const fileName = `timesheet_${(employeeName || 'employee').replace(/\s+/g, '_')}_${new Date(timesheet.week_start_date).toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      throw err;
     }
   };
 
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={handleDownload}
-      className="h-8 w-8 p-0"
-      title="Download Timesheet PDF"
-    >
-      <Download className="h-4 w-4" />
-    </Button>
-  );
+  return { generateTimesheetPDF };
 };
-
-export default TimesheetPDFGenerator;
