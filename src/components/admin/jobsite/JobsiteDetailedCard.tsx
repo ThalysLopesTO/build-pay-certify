@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Calendar, MapPin, BarChart3, Package, ClipboardList } from 'lucide-react';
+import { Trash2, Calendar, MapPin, BarChart3, Package, ClipboardList, CheckCircle, RotateCcw } from 'lucide-react';
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
 import { useJobsiteTasks } from '@/hooks/useJobsiteTasks';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import JobsiteTaskCard from './JobsiteTaskCard';
 import JobsiteMaterialTakeoff from './JobsiteMaterialTakeoff';
 
@@ -16,6 +17,8 @@ interface Jobsite {
   starting_date?: string;
   due_date?: string;
   created_at: string;
+  status?: string;
+  completion_date?: string;
 }
 
 interface JobsiteDetailedCardProps {
@@ -23,8 +26,10 @@ interface JobsiteDetailedCardProps {
 }
 
 const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) => {
-  const { deleteJobsite } = useJobsiteActions();
+  const { deleteJobsite, markJobsiteCompleted, reactivateJobsite } = useJobsiteActions();
   const { data: tasks = [], isLoading: tasksLoading } = useJobsiteTasks(jobsite.id);
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
 
   const handleDelete = async () => {
     if (window.confirm(`Are you sure you want to delete "${jobsite.name}"? This action cannot be undone.`)) {
@@ -47,6 +52,10 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
   };
 
   const getJobsiteStatus = () => {
+    if (jobsite.status === 'completed') {
+      return { label: 'Completed', variant: 'outline' as const };
+    }
+    
     if (!jobsite.due_date) return { label: 'Active', variant: 'secondary' as const };
     
     const dueDate = new Date(jobsite.due_date);
@@ -58,6 +67,24 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
       return { label: 'Due Soon', variant: 'secondary' as const };
     } else {
       return { label: 'Active', variant: 'secondary' as const };
+    }
+  };
+
+  const handleCompleteJobsite = async () => {
+    try {
+      await markJobsiteCompleted.mutateAsync(jobsite.id);
+      setShowCompleteDialog(false);
+    } catch (error) {
+      console.error('Error completing jobsite:', error);
+    }
+  };
+
+  const handleReactivateJobsite = async () => {
+    try {
+      await reactivateJobsite.mutateAsync(jobsite.id);
+      setShowReactivateDialog(false);
+    } catch (error) {
+      console.error('Error reactivating jobsite:', error);
     }
   };
 
@@ -100,21 +127,50 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
                   Due: {formatDate(jobsite.due_date)}
                 </p>
               )}
+              {jobsite.completion_date && (
+                <p className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-primary" />
+                  Completed: {formatDate(jobsite.completion_date)}
+                </p>
+              )}
               <p className="flex items-center">
                 <BarChart3 className="h-4 w-4 mr-2 text-primary" />
                 Progress: {progressPercentage.toFixed(0)}% ({completedTasks}/{totalTasks} tasks)
               </p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDelete}
-            disabled={deleteJobsite.isPending}
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive p-2 rounded-full"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            {jobsite.status === 'completed' ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowReactivateDialog(true)}
+                disabled={reactivateJobsite.isPending}
+                className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 p-2 rounded-full"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCompleteDialog(true)}
+                disabled={markJobsiteCompleted.isPending}
+                className="text-green-600 hover:bg-green-50 hover:text-green-700 p-2 rounded-full"
+              >
+                <CheckCircle className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDelete}
+              disabled={deleteJobsite.isPending}
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive p-2 rounded-full"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
@@ -169,6 +225,24 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
           </Tabs>
         </div>
       </CardContent>
+
+      <ConfirmDialog
+        open={showCompleteDialog}
+        onOpenChange={setShowCompleteDialog}
+        title="Mark Jobsite as Completed"
+        description={`Are you sure you want to mark "${jobsite.name}" as completed? This will remove it from active jobsite lists.`}
+        confirmText="Mark as Completed"
+        onConfirm={handleCompleteJobsite}
+      />
+
+      <ConfirmDialog
+        open={showReactivateDialog}
+        onOpenChange={setShowReactivateDialog}
+        title="Reactivate Jobsite"
+        description={`Are you sure you want to reactivate "${jobsite.name}"? This will make it available in active jobsite lists again.`}
+        confirmText="Reactivate"
+        onConfirm={handleReactivateJobsite}
+      />
     </Card>
   );
 };

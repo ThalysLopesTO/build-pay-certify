@@ -898,29 +898,35 @@ export type Database = {
         Row: {
           address: string | null
           company_id: string | null
+          completion_date: string | null
           created_at: string
           due_date: string | null
           id: string
           name: string
           starting_date: string | null
+          status: string
         }
         Insert: {
           address?: string | null
           company_id?: string | null
+          completion_date?: string | null
           created_at?: string
           due_date?: string | null
           id?: string
           name: string
           starting_date?: string | null
+          status?: string
         }
         Update: {
           address?: string | null
           company_id?: string | null
+          completion_date?: string | null
           created_at?: string
           due_date?: string | null
           id?: string
           name?: string
           starting_date?: string | null
+          status?: string
         }
         Relationships: [
           {

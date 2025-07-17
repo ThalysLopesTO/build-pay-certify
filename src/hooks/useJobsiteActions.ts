@@ -122,8 +122,86 @@ export const useJobsiteActions = () => {
     },
   });
 
+  const markJobsiteCompleted = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Marking jobsite as completed:', id);
+      
+      if (!id) {
+        throw new Error('Jobsite ID is required');
+      }
+
+      const { error } = await supabase
+        .from('jobsites')
+        .update({ 
+          status: 'completed',
+          completion_date: new Date().toISOString().split('T')[0]
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error marking jobsite as completed:', error);
+        throw new Error(error.message || 'Failed to mark jobsite as completed');
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Jobsite Completed',
+        description: 'The jobsite has been marked as completed.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['jobsites', user?.companyId] });
+    },
+    onError: (error) => {
+      console.error('Error marking jobsite as completed:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to mark jobsite as completed. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const reactivateJobsite = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Reactivating jobsite:', id);
+      
+      if (!id) {
+        throw new Error('Jobsite ID is required');
+      }
+
+      const { error } = await supabase
+        .from('jobsites')
+        .update({ 
+          status: 'active',
+          completion_date: null
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error reactivating jobsite:', error);
+        throw new Error(error.message || 'Failed to reactivate jobsite');
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Jobsite Reactivated',
+        description: 'The jobsite has been reactivated.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['jobsites', user?.companyId] });
+    },
+    onError: (error) => {
+      console.error('Error reactivating jobsite:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to reactivate jobsite. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     addJobsite,
     deleteJobsite,
+    markJobsiteCompleted,
+    reactivateJobsite,
   };
 };

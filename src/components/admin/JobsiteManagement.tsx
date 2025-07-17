@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Building, BarChart3, Package } from 'lucide-react';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 import JobsiteForm from './jobsite/JobsiteForm';
 import JobsiteList from './jobsite/JobsiteList';
 import JobsiteCard from './jobsite/JobsiteCard';
@@ -12,7 +12,7 @@ import JobsiteDetailedCard from './jobsite/JobsiteDetailedCard';
 
 const JobsiteManagement = () => {
   const [showForm, setShowForm] = useState(false);
-  const { data: jobsites = [], isLoading, error } = useJobsites();
+  const { data: jobsites = [], isLoading, error } = useActiveJobsites();
 
   if (error) {
     return (

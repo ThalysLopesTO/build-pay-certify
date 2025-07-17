@@ -8,6 +8,7 @@ import AdminDashboardContent from '@/components/admin/dashboard/AdminDashboardCo
 import EmployeeManagement from '@/components/admin/EmployeeManagement';
 import EmployeeRegistration from '@/components/admin/EmployeeRegistration';
 import JobsiteManagement from '@/components/admin/JobsiteManagement';
+import CompletedJobsites from '@/components/admin/CompletedJobsites';
 import SafetyTemplatesManagement from '@/components/admin/SafetyTemplatesManagement';
 import InventoryIndex from '@/pages/admin/inventory/Index';
 import SuppliersManagement from '@/components/admin/SuppliersManagement';
@@ -45,6 +46,8 @@ const AdminDashboard = () => {
         return <EmployeeRegistration />;
       case 'jobsites':
         return <JobsiteManagement />;
+      case 'completed-jobsites':
+        return <CompletedJobsites />;
       case 'safety-templates':
         return <SafetyTemplatesManagement />;
       case 'inventory':

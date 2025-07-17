@@ -19,6 +19,7 @@ import {
   DollarSign,
   Clock,
   Receipt,
+  Archive,
 } from 'lucide-react';
 import { MenuItem } from './types';
 
@@ -38,6 +39,12 @@ export const menuData: MenuItem[] = [
     title: 'Jobsite Management',
     href: '/admin/jobsites',
     icon: MapPin,
+  },
+  {
+    id: 'completed-jobsites',
+    title: 'Completed Jobs',
+    href: '/admin/completed-jobsites',
+    icon: Archive,
   },
   {
     id: 'material-takeoff',
@@ -154,6 +161,7 @@ export const groupedMenuItems = {
   ],
   management: [
     menuData.find(item => item.id === 'jobsites')!,
+    menuData.find(item => item.id === 'completed-jobsites')!,
     menuData.find(item => item.id === 'material-takeoff')!,
     menuData.find(item => item.id === 'material-requests')!,
     menuData.find(item => item.id === 'safety-templates')!,
