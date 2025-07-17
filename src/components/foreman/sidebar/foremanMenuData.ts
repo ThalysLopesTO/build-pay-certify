@@ -8,7 +8,12 @@ import {
   BookOpen, 
   Settings,
   Building,
-  Monitor
+  Monitor,
+  FolderClock,
+  Package,
+  UserCheck,
+  FileBarChart,
+  Shield
 } from 'lucide-react';
 
 export const foremanMenuItems = [
@@ -59,7 +64,6 @@ export const foremanMenuItems = [
   },
 ];
 
-// Group the menu items for the sidebar
 export const groupedForemanItems = {
   timesheet: [
     {
@@ -118,4 +122,43 @@ export const groupedForemanItems = {
       id: 'settings',
     },
   ],
+};
+
+export const sectionConfigs = {
+  timesheet: {
+    label: "Time Management",
+    icon: FolderClock,
+    defaultExpanded: true,
+    storageKey: "foreman-timesheet-expanded"
+  },
+  materials: {
+    label: "Material Management", 
+    icon: Package,
+    defaultExpanded: false,
+    storageKey: "foreman-materials-expanded"
+  },
+  team: {
+    label: "Team Management",
+    icon: UserCheck,
+    defaultExpanded: false,
+    storageKey: "foreman-team-expanded"
+  },
+  reports: {
+    label: "Reports",
+    icon: FileBarChart,
+    defaultExpanded: false,
+    storageKey: "foreman-reports-expanded"
+  },
+  company: {
+    label: "Company Information",
+    icon: Shield,
+    defaultExpanded: false,
+    storageKey: "foreman-company-expanded"
+  },
+  account: {
+    label: "Account",
+    icon: Settings,
+    defaultExpanded: false,
+    storageKey: "foreman-account-expanded"
+  }
 };

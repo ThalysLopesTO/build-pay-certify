@@ -10,11 +10,16 @@ import {
   CreditCard,
   FileText,
   Users,
-  UserPlus
+  UserPlus,
+  Building2,
+  UserCheck,
+  TrendingUp,
+  Wallet,
+  FileSpreadsheet
 } from 'lucide-react';
 
 export const managementMenuItems = {
-  dashboard: [
+  main: [
     {
       title: 'Dashboard',
       icon: LayoutDashboard,
@@ -93,4 +98,43 @@ export const managementMenuItems = {
       id: 'settings',
     },
   ],
+};
+
+export const sectionConfigs = {
+  operations: {
+    label: "Management Operations",
+    icon: TrendingUp,
+    defaultExpanded: true,
+    storageKey: "management-operations-expanded"
+  },
+  employees: {
+    label: "Employee Management",
+    icon: UserCheck,
+    defaultExpanded: false,
+    storageKey: "management-employees-expanded"
+  },
+  inventory: {
+    label: "Inventory Management",
+    icon: Package,
+    defaultExpanded: false,
+    storageKey: "management-inventory-expanded"
+  },
+  financial: {
+    label: "Financial",
+    icon: Wallet,
+    defaultExpanded: false,
+    storageKey: "management-financial-expanded"
+  },
+  reports: {
+    label: "Reports",
+    icon: FileSpreadsheet,
+    defaultExpanded: false,
+    storageKey: "management-reports-expanded"
+  },
+  account: {
+    label: "Account",
+    icon: Settings,
+    defaultExpanded: false,
+    storageKey: "management-account-expanded"
+  }
 };

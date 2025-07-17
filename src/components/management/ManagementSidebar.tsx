@@ -2,17 +2,14 @@ import React from 'react';
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Calculator } from 'lucide-react';
-import { managementMenuItems } from './sidebar/managementMenuData';
+import ManagementSidebarSection from './sidebar/ManagementSidebarSection';
+import ManagementCollapsibleSidebarSection from './sidebar/ManagementCollapsibleSidebarSection';
+import { managementMenuItems, sectionConfigs } from './sidebar/managementMenuData';
+import { useScrollToActiveSection } from '@/hooks/useScrollToActiveSection';
 
 interface ManagementSidebarProps {
   activeTab: string;
@@ -20,42 +17,8 @@ interface ManagementSidebarProps {
 }
 
 const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) => {
-  const renderSidebarGroup = (items: any[], label: string) => (
-    <SidebarGroup className="mt-4 first:mt-2">
-      <SidebarGroupLabel className="text-sm font-bold text-gray-900 dark:text-white mb-2 px-2">
-        {label}
-      </SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu className="space-y-1">
-          {items.map((item) => {
-            const isActive = activeTab === item.id;
-            
-            return (
-              <SidebarMenuItem key={item.id}>
-                <SidebarMenuButton
-                  onClick={() => setActiveTab(item.id)}
-                  className={`
-                    relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
-                    transition-colors duration-200 hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black
-                    ${isActive 
-                      ? 'bg-green-50 text-green-900 font-medium border-l-4 border-green-500 shadow-sm dark:bg-green-900 dark:text-green-100' 
-                      : 'text-gray-700 dark:text-white'
-                    }
-                  `}
-                >
-                  <item.icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-green-600 dark:text-green-300' : 'text-gray-500 dark:text-gray-300'}`} />
-                  <span className="truncate">{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
-      </SidebarGroupContent>
-      
-      {/* Subtle divider between sections */}
-      <div className="mt-3 mx-2 border-b border-sidebar-border"></div>
-    </SidebarGroup>
-  );
+  // Auto-scroll to active section
+  useScrollToActiveSection(activeTab);
 
   return (
     <Sidebar className="border-r border-border bg-sidebar transition-colors">
@@ -71,14 +34,75 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="overflow-y-auto px-2 py-2 bg-sidebar">
-        {renderSidebarGroup(managementMenuItems.dashboard, "Dashboard")}
-        {renderSidebarGroup(managementMenuItems.operations, "Operations")}
-        {renderSidebarGroup(managementMenuItems.employees, "Employee Management")}
-        {renderSidebarGroup(managementMenuItems.inventory, "Inventory & Supplies")}
-        {renderSidebarGroup(managementMenuItems.financial, "Financial")}
-        {renderSidebarGroup(managementMenuItems.reports, "Reports")}
-        {renderSidebarGroup(managementMenuItems.account, "Account")}
+      <SidebarContent className="overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent dark:scrollbar-thumb-gray-600 bg-sidebar">
+        
+        {/* Dashboard - Always visible */}
+        <ManagementSidebarSection
+          items={managementMenuItems.main}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
+
+        {/* Collapsible Sections */}
+        <ManagementCollapsibleSidebarSection
+          items={managementMenuItems.operations}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          label={sectionConfigs.operations.label}
+          icon={sectionConfigs.operations.icon}
+          defaultExpanded={sectionConfigs.operations.defaultExpanded}
+          storageKey={sectionConfigs.operations.storageKey}
+        />
+
+        <ManagementCollapsibleSidebarSection
+          items={managementMenuItems.employees}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          label={sectionConfigs.employees.label}
+          icon={sectionConfigs.employees.icon}
+          defaultExpanded={sectionConfigs.employees.defaultExpanded}
+          storageKey={sectionConfigs.employees.storageKey}
+        />
+
+        <ManagementCollapsibleSidebarSection
+          items={managementMenuItems.inventory}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          label={sectionConfigs.inventory.label}
+          icon={sectionConfigs.inventory.icon}
+          defaultExpanded={sectionConfigs.inventory.defaultExpanded}
+          storageKey={sectionConfigs.inventory.storageKey}
+        />
+
+        <ManagementCollapsibleSidebarSection
+          items={managementMenuItems.financial}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          label={sectionConfigs.financial.label}
+          icon={sectionConfigs.financial.icon}
+          defaultExpanded={sectionConfigs.financial.defaultExpanded}
+          storageKey={sectionConfigs.financial.storageKey}
+        />
+
+        <ManagementCollapsibleSidebarSection
+          items={managementMenuItems.reports}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          label={sectionConfigs.reports.label}
+          icon={sectionConfigs.reports.icon}
+          defaultExpanded={sectionConfigs.reports.defaultExpanded}
+          storageKey={sectionConfigs.reports.storageKey}
+        />
+
+        <ManagementCollapsibleSidebarSection
+          items={managementMenuItems.account}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          label={sectionConfigs.account.label}
+          icon={sectionConfigs.account.icon}
+          defaultExpanded={sectionConfigs.account.defaultExpanded}
+          storageKey={sectionConfigs.account.storageKey}
+        />
       </SidebarContent>
       
       <SidebarFooter className="p-4 border-t border-sidebar-border bg-sidebar">
