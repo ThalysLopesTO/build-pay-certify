@@ -18,8 +18,11 @@ export const useJobsiteActions = () => {
   const addJobsite = useMutation({
     mutationFn: async (data: JobsiteData) => {
       console.log('Adding jobsite:', data);
+      console.log('User object:', user);
+      console.log('User companyId:', user?.companyId);
       
       if (!user?.companyId) {
+        console.error('Missing company ID in user object:', user);
         throw new Error('Company ID is required to add jobsites');
       }
       
