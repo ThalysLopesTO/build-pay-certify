@@ -1,8 +1,6 @@
-
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-// Extend jsPDF type to include lastAutoTable property
 interface ExtendedJsPDF extends jsPDF {
   lastAutoTable: {
     finalY: number;
@@ -15,13 +13,12 @@ export const useTimesheetPDF = () => {
       const { timesheet, companySettings, jobsiteName, employeeName, logoUrl, workerType } = data;
       if (!timesheet) throw new Error('Timesheet data is required');
 
-      const pdf = new jsPDF() as ExtendedJsPDF;
+      const pdf = new jsPDF('p', 'mm', 'a4') as ExtendedJsPDF;
       const pageWidth = pdf.internal.pageSize.width;
-      const leftCol = 15;
-      const rightCol = pageWidth / 2 + 10;
-      let y = 15;
+      const margin = 15;
+      let y = margin;
 
-      // Load and draw logo
+      // Header
       if (logoUrl) {
         try {
           const res = await fetch(logoUrl);
@@ -29,205 +26,131 @@ export const useTimesheetPDF = () => {
           const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
-              const result = reader.result;
-              if (typeof result === 'string') {
-                resolve(result);
-              } else {
-                reject(new Error('Failed to read file as data URL'));
-              }
+              if (typeof reader.result === 'string') resolve(reader.result);
+              else reject();
             };
             reader.onerror = reject;
             reader.readAsDataURL(blob);
           });
-          pdf.addImage(base64 as string, 'PNG', leftCol, y, 25, 12); // Smaller logo
+          pdf.addImage(base64, 'PNG', margin, y, 30, 15);
         } catch (err) {
           console.warn('Failed to load logo:', err);
         }
       }
 
-      // Company Name & Report Title
-      pdf.setFontSize(14);
+      pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
-      pdf.text(companySettings?.company_name || 'Company Name', pageWidth / 2, y + 5, { align: 'center' });
+      pdf.text(companySettings?.company_name || 'Company Name', pageWidth / 2, y + 10, { align: 'center' });
 
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('Weekly Timesheet Report', pageWidth / 2, y + 12, { align: 'center' });
+      pdf.text('Weekly Timesheet Summary', pageWidth / 2, y + 18, { align: 'center' });
+      y += 30;
 
-      y += 22;
+      // Employee & Jobsite
+      autoTable(pdf, {
+        startY: y,
+        theme: 'grid',
+        head: [['Employee Name', 'Jobsite', 'Week Starting', 'Hourly Rate']],
+        body: [[
+          employeeName || 'Unknown',
+          jobsiteName || 'Unknown',
+          timesheet.week_start_date ? new Date(timesheet.week_start_date).toLocaleDateString() : 'N/A',
+          timesheet.hourly_rate ? `$${Number(timesheet.hourly_rate).toFixed(2)}` : '$0.00'
+        ]],
+        margin: { left: margin },
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [33, 150, 243], textColor: [255, 255, 255] }
+      });
 
-      // Employee & Job Info
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Employee:', leftCol, y);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(employeeName || 'Unknown', leftCol + 25, y);
+      y = pdf.lastAutoTable.finalY + 4;
 
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Jobsite:', rightCol, y);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(jobsiteName || 'Unknown', rightCol + 25, y);
-
-      y += 6;
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Week Starting:', leftCol, y);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(
-        timesheet.week_start_date ? new Date(timesheet.week_start_date).toLocaleDateString() : 'N/A',
-        leftCol + 35, y
-      );
-
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Hourly Rate:', rightCol, y);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(
-        timesheet.hourly_rate ? `$${Number(timesheet.hourly_rate).toFixed(2)}` : '$0.00',
-        rightCol + 30, y
-      );
-
-      y += 8;
-
-      // Hours Table
-      const tableData = [
-        ['Monday', (timesheet.monday_hours ?? 0).toFixed(2)],
-        ['Tuesday', (timesheet.tuesday_hours ?? 0).toFixed(2)],
-        ['Wednesday', (timesheet.wednesday_hours ?? 0).toFixed(2)],
-        ['Thursday', (timesheet.thursday_hours ?? 0).toFixed(2)],
-        ['Friday', (timesheet.friday_hours ?? 0).toFixed(2)],
-        ['Saturday', (timesheet.saturday_hours ?? 0).toFixed(2)],
-        ['Sunday', (timesheet.sunday_hours ?? 0).toFixed(2)],
-        ['Total Hours', (timesheet.total_hours ?? 0).toFixed(2)]
+      // Weekly Hours
+      const weekData = [
+        ['Monday', timesheet.monday_hours ?? 0],
+        ['Tuesday', timesheet.tuesday_hours ?? 0],
+        ['Wednesday', timesheet.wednesday_hours ?? 0],
+        ['Thursday', timesheet.thursday_hours ?? 0],
+        ['Friday', timesheet.friday_hours ?? 0],
+        ['Saturday', timesheet.saturday_hours ?? 0],
+        ['Sunday', timesheet.sunday_hours ?? 0],
+        ['Total Hours', timesheet.total_hours ?? 0]
       ];
 
       autoTable(pdf, {
         startY: y,
-        head: [['Day', 'Hours']],
-        body: tableData,
         theme: 'striped',
-        headStyles: {
-          fillColor: [44, 62, 80],
-          textColor: [255, 255, 255],
-          fontSize: 10
-        },
-        bodyStyles: {
-          fontSize: 10,
-          textColor: [50, 50, 50]
-        },
-        margin: { left: leftCol },
-        tableWidth: 80
+        head: [['Day', 'Hours Worked']],
+        body: weekData.map(([day, hours]) => [day, Number(hours).toFixed(2)]),
+        margin: { left: margin },
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [76, 175, 80], textColor: [255, 255, 255] }
       });
 
       y = pdf.lastAutoTable.finalY + 6;
 
-      // Payment Summary
-      const total = Number(timesheet.total_hours ?? 0);
-      const rate = Number(timesheet.hourly_rate ?? 0);
+      // Payroll Breakdown
       const gross = Number(timesheet.gross_pay ?? 0);
-      const tax = Number(timesheet.calculated_tax ?? 0);
-      const expenses = Number(timesheet.additional_expense ?? 0);
-      const taxIncluded = timesheet.tax_included;
-
-      const breakdown = [
-        ['Regular Hours:', `${total.toFixed(2)} × $${rate.toFixed(2)}`, `$${(total * rate).toFixed(2)}`],
-        ['Additional Expenses:', '', `$${expenses.toFixed(2)}`],
-        ['Gross Pay:', '', `$${gross.toFixed(2)}`]
-      ];
+      const incomeTaxRate = timesheet.income_tax_rate ? Number(timesheet.income_tax_rate) / 100 : 0.20;
+      const cppRate = timesheet.cpp_rate ? Number(timesheet.cpp_rate) / 100 : 0.0595;
+      const eiRate = timesheet.ei_rate ? Number(timesheet.ei_rate) / 100 : 0.0235;
+      const incomeTax = gross * incomeTaxRate;
+      const cpp = gross * cppRate;
+      const ei = gross * eiRate;
+      const totalDeductions = incomeTax + cpp + ei;
+      const netPay = gross - totalDeductions;
 
       if (workerType === 'employee') {
-        // Employee deductions - use custom rates if available, otherwise use defaults
-        const incomeTaxRate = timesheet.income_tax_rate ? Number(timesheet.income_tax_rate) / 100 : 0.20; // Default 20%
-        const cppRate = timesheet.cpp_rate ? Number(timesheet.cpp_rate) / 100 : 0.0595; // Default 5.95%
-        const eiRate = timesheet.ei_rate ? Number(timesheet.ei_rate) / 100 : 0.0235; // Default 2.35%
-        
-        // Always show detailed breakdown for payroll employees
-        const hasCustomDeductions = true;
-        
-        const incomeTax = gross * incomeTaxRate;
-        const cpp = gross * cppRate;
-        const ei = gross * eiRate;
-        const totalDeductions = incomeTax + cpp + ei;
-        const netPay = gross - totalDeductions;
-
-        if (hasCustomDeductions) {
-          // Enhanced template for employees with custom deductions
-          breakdown.push(['', '', '']);
-          breakdown.push(['PAYROLL DEDUCTIONS BREAKDOWN', '', '']);
-          breakdown.push(['', '', '']);
-          
-          // Detailed deduction information
-          breakdown.push(['Federal Income Tax:', '', '']);
-          breakdown.push([`  Rate: ${(incomeTaxRate * 100).toFixed(2)}%`, `$${gross.toFixed(2)} × ${(incomeTaxRate * 100).toFixed(2)}%`, `$${incomeTax.toFixed(2)}`]);
-          
-          breakdown.push(['Canada Pension Plan (CPP):', '', '']);
-          breakdown.push([`  Rate: ${(cppRate * 100).toFixed(2)}%`, `$${gross.toFixed(2)} × ${(cppRate * 100).toFixed(2)}%`, `$${cpp.toFixed(2)}`]);
-          
-          breakdown.push(['Employment Insurance (EI):', '', '']);
-          breakdown.push([`  Rate: ${(eiRate * 100).toFixed(2)}%`, `$${gross.toFixed(2)} × ${(eiRate * 100).toFixed(2)}%`, `$${ei.toFixed(2)}`]);
-          
-          breakdown.push(['', '', '']);
-          breakdown.push(['SUMMARY:', '', '']);
-          breakdown.push(['Gross Pay:', '', `$${gross.toFixed(2)}`]);
-          breakdown.push(['Total Deductions:', '', `$${totalDeductions.toFixed(2)}`]);
-          breakdown.push(['Net Pay:', '', `$${netPay.toFixed(2)}`]);
-        } else {
-          // Standard template for employees without custom deductions
-          breakdown.push(['', '', '']);
-          breakdown.push(['Deductions:', '', '']);
-          breakdown.push(['- Income Tax (12%):', '', `$${incomeTax.toFixed(2)}`]);
-          breakdown.push(['- CPP (5.95%):', '', `$${cpp.toFixed(2)}`]);
-          breakdown.push(['- EI (1.63%):', '', `$${ei.toFixed(2)}`]);
-          breakdown.push(['Total Deductions:', '', `$${totalDeductions.toFixed(2)}`]);
-          breakdown.push(['Net Pay:', '', `$${netPay.toFixed(2)}`]);
-        }
+        autoTable(pdf, {
+          startY: y,
+          head: [['Earnings & Deductions', 'Rate', 'Amount']],
+          body: [
+            ['Gross Pay', '', `$${gross.toFixed(2)}`],
+            ['Income Tax', `${(incomeTaxRate * 100).toFixed(2)}%`, `-$${incomeTax.toFixed(2)}`],
+            ['CPP', `${(cppRate * 100).toFixed(2)}%`, `-$${cpp.toFixed(2)}`],
+            ['EI', `${(eiRate * 100).toFixed(2)}%`, `-$${ei.toFixed(2)}`],
+            ['Total Deductions', '', `-$${totalDeductions.toFixed(2)}`],
+            ['Net Pay', '', `$${netPay.toFixed(2)}`]
+          ],
+          theme: 'grid',
+          margin: { left: margin },
+          styles: { fontSize: 9 },
+          columnStyles: {
+            0: { fontStyle: 'bold' },
+            2: { halign: 'right', fontStyle: 'bold' }
+          },
+          headStyles: { fillColor: [255, 111, 0], textColor: [255, 255, 255] }
+        });
       } else {
-        // Subcontractor logic
-        if (taxIncluded && tax > 0) {
-          breakdown.push(['Tax:', '', `$${tax.toFixed(2)}`]);
-          breakdown.push(['Total Pay:', '', `$${(gross + tax).toFixed(2)}`]);
-        } else {
-          breakdown.push(['Total Pay:', '', `$${gross.toFixed(2)}`]);
-        }
+        autoTable(pdf, {
+          startY: y,
+          body: [
+            ['Total Pay', '', `$${gross.toFixed(2)}`]
+          ],
+          theme: 'grid',
+          styles: { fontSize: 10 },
+          margin: { left: margin },
+          head: [['Payment Summary', '', '']],
+          headStyles: { fillColor: [96, 125, 139], textColor: [255, 255, 255] }
+        });
       }
 
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Payment Summary', leftCol, y);
-
-      y += 3;
-
-      autoTable(pdf, {
-        startY: y,
-        body: breakdown,
-        theme: 'grid',
-        styles: {
-          fontSize: 10,
-          cellPadding: 3
-        },
-        columnStyles: {
-          0: { cellWidth: 55, fontStyle: 'bold' },
-          1: { cellWidth: 45, halign: 'center' },
-          2: { cellWidth: 40, halign: 'right', fontStyle: 'bold' }
-        },
-        margin: { left: leftCol },
-        tableWidth: 'wrap'
-      });
-
-      y = pdf.lastAutoTable.finalY + 10;
+      y = pdf.lastAutoTable.finalY + 8;
 
       // Footer
       pdf.setFontSize(9);
       const submittedDate = timesheet.created_at ? new Date(timesheet.created_at).toLocaleDateString() : 'N/A';
       const status = timesheet.status ? timesheet.status.charAt(0).toUpperCase() + timesheet.status.slice(1) : 'Unknown';
-      pdf.text(`Submitted: ${submittedDate}`, leftCol, y);
-      pdf.text(`Status: ${status}`, rightCol, y);
+      pdf.text(`Submitted: ${submittedDate}`, margin, y);
+      pdf.text(`Status: ${status}`, pageWidth - margin * 5, y);
 
       if (timesheet.status === 'approved') {
-        y += 14;
-        pdf.text('Approved by: ________________________', leftCol, y);
-        pdf.text('Date: ________________________', rightCol, y);
+        y += 10;
+        pdf.text('Approved by: ________________________', margin, y);
+        pdf.text('Date: ________________________', pageWidth - 80, y);
       }
 
-      // Save
+      // Save PDF
       const fileName = `timesheet_${(employeeName || 'Unknown').replace(/\s+/g, '_')}_${new Date(timesheet.week_start_date).toISOString().split('T')[0]}.pdf`;
       pdf.save(fileName);
     } catch (err) {
