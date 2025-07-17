@@ -12,6 +12,7 @@ export interface AuthUser extends User {
   firstName?: string;
   lastName?: string;
   pendingApproval?: boolean;
+  workerType?: 'employee' | 'subcontractor';
 }
 
 export interface AuthContextType {

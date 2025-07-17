@@ -26,6 +26,7 @@ const TimesheetForm = () => {
     setSelectedWeek,
     existingTimesheets,
     isWeekSubmitted,
+    user,
   } = useTimesheetForm();
 
   const isSubmitting = submitMutation.isPending;
@@ -105,6 +106,7 @@ const TimesheetForm = () => {
               grossPay={grossPay}
               form={form}
               disabled={isFormDisabled}
+              workerType={user?.workerType}
             />
 
             <Button 

@@ -174,5 +174,6 @@ export const useTimesheetForm = () => {
     setSelectedWeek,
     existingTimesheets,
     isWeekSubmitted,
+    user,
   };
 };

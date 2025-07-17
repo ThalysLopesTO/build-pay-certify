@@ -54,7 +54,8 @@ export const useAuthState = () => {
               position: profile.position || 'Worker',
               firstName: profile.first_name || '',
               lastName: profile.last_name || '',
-              pendingApproval: profile.pending_approval || false
+              pendingApproval: profile.pending_approval || false,
+              workerType: profile.worker_type as 'employee' | 'subcontractor' || 'subcontractor'
             };
             
             console.log('✅ Setting auth user:', { 
