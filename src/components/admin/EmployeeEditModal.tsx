@@ -21,6 +21,7 @@ const editEmployeeSchema = z.object({
   trade: z.string().min(1, 'Trade is required'),
   role: z.enum(['admin', 'foreman', 'management', 'employee']),
   hourlyRate: z.number().min(0, 'Hourly rate must be positive'),
+  workerType: z.enum(['employee', 'subcontractor']).default('subcontractor'),
   photo: z.instanceof(File).optional(),
 });
 
@@ -35,6 +36,7 @@ interface Employee {
   trade: string;
   role: string;
   hourly_rate: number;
+  worker_type: string;
   photo_url?: string | null;
 }
 
@@ -62,6 +64,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
       trade: employee?.trade || '',
       role: (employee?.role as any) || 'employee',
       hourlyRate: employee?.hourly_rate || 0,
+      workerType: (employee?.worker_type as any) || 'subcontractor',
       photo: undefined,
     },
   });
@@ -75,6 +78,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
         trade: employee.trade,
         role: employee.role as any,
         hourlyRate: employee.hourly_rate,
+        workerType: (employee.worker_type as any) || 'subcontractor',
         photo: undefined,
       });
     }
@@ -137,6 +141,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
           trade: data.trade,
           role: data.role,
           hourly_rate: data.hourlyRate,
+          worker_type: data.workerType,
           photo_url: photoUrl,
           updated_at: new Date().toISOString(),
         })
@@ -258,6 +263,28 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
                       <SelectItem value="foreman">Foreman</SelectItem>
                       <SelectItem value="management">Management</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="workerType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Worker Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="subcontractor">Subcontractor</SelectItem>
+                      <SelectItem value="employee">Payroll Employee</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
