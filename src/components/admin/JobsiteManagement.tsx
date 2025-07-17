@@ -30,10 +30,10 @@ const JobsiteManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Jobsite Management</h1>
-          <p className="text-gray-600">Manage your company's jobsites and track progress</p>
+          <h1 className="text-3xl font-bold text-foreground">Jobsite Management</h1>
+          <p className="text-muted-foreground mt-1">Manage your company's jobsites and track progress</p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => setShowForm(true)} className="hover:scale-105 transition-transform">
           <Plus className="h-4 w-4 mr-2" />
           Add Jobsite
         </Button>
@@ -43,74 +43,95 @@ const JobsiteManagement = () => {
         <JobsiteForm onCancel={() => setShowForm(false)} />
       )}
 
-      <Tabs defaultValue="detailed" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="detailed" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Detailed View
-          </TabsTrigger>
-          <TabsTrigger value="basic" className="flex items-center gap-2">
-            <Building className="h-4 w-4" />
-            Basic View
-          </TabsTrigger>
-          <TabsTrigger value="progress" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Progress Tracking
-          </TabsTrigger>
-        </TabsList>
+      <div className="w-full">
+        <div className="inline-flex rounded-lg shadow-sm bg-background border p-1">
+          <Tabs defaultValue="detailed" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 bg-transparent h-auto p-0 gap-1">
+              <TabsTrigger 
+                value="detailed" 
+                className="flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium transition-all hover:bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+              >
+                <Package className="h-4 w-4" />
+                Detailed View
+              </TabsTrigger>
+              <TabsTrigger 
+                value="basic" 
+                className="flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium transition-all hover:bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+              >
+                <Building className="h-4 w-4" />
+                Basic View
+              </TabsTrigger>
+              <TabsTrigger 
+                value="progress" 
+                className="flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium transition-all hover:bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Progress Tracking
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="detailed" className="space-y-4">
-          {isLoading ? (
-            <div className="text-center py-8 text-gray-500">
-              Loading jobsites...
-            </div>
-          ) : jobsites.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No jobsites found. Add your first jobsite to get started.
-            </div>
-          ) : (
-            jobsites.map((jobsite) => (
-              <JobsiteDetailedCard 
-                key={jobsite.id} 
-                jobsite={jobsite} 
-              />
-            ))
-          )}
-        </TabsContent>
+            <TabsContent value="detailed" className="space-y-6 mt-6">
+              {isLoading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <div className="animate-pulse">Loading jobsites...</div>
+                </div>
+              ) : jobsites.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">No jobsites found</p>
+                  <p className="text-sm">Add your first jobsite to get started</p>
+                </div>
+              ) : (
+                <div className="grid gap-6">
+                  {jobsites.map((jobsite) => (
+                    <JobsiteDetailedCard 
+                      key={jobsite.id} 
+                      jobsite={jobsite} 
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
 
-        <TabsContent value="basic" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>All Jobsites</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <JobsiteList jobsites={jobsites} isLoading={isLoading} />
-            </CardContent>
-          </Card>
-        </TabsContent>
+            <TabsContent value="basic" className="space-y-6 mt-6">
+              <Card className="shadow-md rounded-2xl border">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-semibold">All Jobsites</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <JobsiteList jobsites={jobsites} isLoading={isLoading} />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        <TabsContent value="progress" className="space-y-4">
-          <div className="space-y-4">
-            {isLoading ? (
-              <div className="text-center py-8 text-gray-500">
-                Loading jobsites...
+            <TabsContent value="progress" className="space-y-6 mt-6">
+              <div className="space-y-6">
+                {isLoading ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <div className="animate-pulse">Loading jobsites...</div>
+                  </div>
+                ) : jobsites.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium mb-2">No jobsites found</p>
+                    <p className="text-sm">Add your first jobsite to get started</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-6">
+                    {jobsites.map((jobsite) => (
+                      <JobsiteCard 
+                        key={jobsite.id} 
+                        jobsite={jobsite} 
+                        showProgress={true}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : jobsites.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No jobsites found. Add your first jobsite to get started.
-              </div>
-            ) : (
-              jobsites.map((jobsite) => (
-                <JobsiteCard 
-                  key={jobsite.id} 
-                  jobsite={jobsite} 
-                  showProgress={true}
-                />
-              ))
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 };

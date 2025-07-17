@@ -67,85 +67,107 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
   const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
   return (
-    <Card className="border">
-      <CardHeader>
+    <Card className="shadow-md bg-background rounded-2xl border hover:shadow-lg transition-shadow">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <CardTitle className="text-xl">{jobsite.name}</CardTitle>
-              <Badge variant={status.variant}>{status.label}</Badge>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <CardTitle className="text-xl font-semibold">{jobsite.name}</CardTitle>
+              <Badge 
+                variant={status.variant}
+                className="text-xs px-2 py-1"
+              >
+                {status.label}
+              </Badge>
+              <Badge variant="outline" className="text-xs text-muted-foreground">
+                ID: {jobsite.id.slice(0, 8)}
+              </Badge>
             </div>
-            <div className="space-y-1 text-sm text-muted-foreground">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
               <p className="flex items-center">
-                <MapPin className="h-3 w-3 mr-1" />
+                <MapPin className="h-4 w-4 mr-2 text-primary" />
                 {jobsite.address}
               </p>
               {jobsite.starting_date && (
                 <p className="flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
+                  <Calendar className="h-4 w-4 mr-2 text-primary" />
                   Started: {formatDate(jobsite.starting_date)}
                 </p>
               )}
               {jobsite.due_date && (
                 <p className="flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
+                  <Calendar className="h-4 w-4 mr-2 text-primary" />
                   Due: {formatDate(jobsite.due_date)}
                 </p>
               )}
               <p className="flex items-center">
-                <BarChart3 className="h-3 w-3 mr-1" />
+                <BarChart3 className="h-4 w-4 mr-2 text-primary" />
                 Progress: {progressPercentage.toFixed(0)}% ({completedTasks}/{totalTasks} tasks)
               </p>
             </div>
           </div>
           <Button
-            variant="destructive"
+            variant="ghost"
             size="sm"
             onClick={handleDelete}
             disabled={deleteJobsite.isPending}
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive p-2 rounded-full"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="materials" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="materials" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Material Takeoff
-            </TabsTrigger>
-            <TabsTrigger value="tasks" className="flex items-center gap-2">
-              <ClipboardList className="h-4 w-4" />
-              Tasks ({totalTasks})
-            </TabsTrigger>
-          </TabsList>
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <Tabs defaultValue="materials" className="col-span-3">
+            <TabsList className="grid w-full grid-cols-2 bg-muted/30 rounded-xl h-auto p-1">
+              <TabsTrigger 
+                value="materials" 
+                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-all hover:bg-background data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                <Package className="h-4 w-4" />
+                Material Takeoff
+              </TabsTrigger>
+              <TabsTrigger 
+                value="tasks" 
+                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-all hover:bg-background data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                <ClipboardList className="h-4 w-4" />
+                Tasks ({totalTasks})
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="materials" className="mt-4">
-            <JobsiteMaterialTakeoff 
-              jobsiteId={jobsite.id} 
-              jobsiteName={jobsite.name} 
-            />
-          </TabsContent>
+            <TabsContent value="materials" className="mt-6">
+              <div className="rounded-xl bg-muted/20 border p-4">
+                <JobsiteMaterialTakeoff 
+                  jobsiteId={jobsite.id} 
+                  jobsiteName={jobsite.name} 
+                />
+              </div>
+            </TabsContent>
 
-          <TabsContent value="tasks" className="mt-4">
-            <div className="space-y-3">
-              {tasksLoading ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  Loading tasks...
-                </div>
-              ) : tasks.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No tasks created for this jobsite yet.
-                </div>
-              ) : (
-                tasks.map((task) => (
-                  <JobsiteTaskCard key={task.id} task={task} isAdmin={true} />
-                ))
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="tasks" className="mt-6">
+              <div className="space-y-3">
+                {tasksLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <div className="animate-pulse">Loading tasks...</div>
+                  </div>
+                ) : tasks.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <ClipboardList className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm italic">No tasks created for this jobsite yet.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {tasks.map((task) => (
+                      <JobsiteTaskCard key={task.id} task={task} isAdmin={true} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Plus, Calendar, AlertTriangle, Timer, Package, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Calendar, AlertTriangle, Timer, Package, ChevronRight, MapPin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -68,39 +68,61 @@ const JobsiteProgressCard: React.FC<JobsiteProgressCardProps> = ({ jobsite }) =>
     });
   };
 
+  const getJobsiteStatus = () => {
+    if (totalTasks === 0) return { label: 'Active', variant: 'secondary' as const };
+    if (progressPercentage === 100) return { label: 'Completed', variant: 'default' as const };
+    if (overdueTasks > 0) return { label: 'Overdue', variant: 'destructive' as const };
+    return { label: 'Active', variant: 'secondary' as const };
+  };
+
+  const status = getJobsiteStatus();
+
   return (
-    <Card className="border">
-      <CardHeader>
+    <Card className="shadow-md bg-background rounded-2xl border hover:shadow-lg transition-all">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg flex items-center gap-2">
-              {jobsite.name}
+            <div className="flex items-center gap-3 mb-2">
+              <CardTitle className="text-lg font-semibold">{jobsite.name}</CardTitle>
+              <Badge variant={status.variant} className="text-xs px-2 py-1">
+                {status.label}
+              </Badge>
               {overdueTasks > 0 && (
-                <AlertTriangle className="h-4 w-4 text-red-500" />
+                <AlertTriangle className="h-4 w-4 text-destructive" />
               )}
-            </CardTitle>
-            <p className="text-gray-600 text-sm">{jobsite.address}</p>
-            {jobsite.starting_date && (
-              <p className="text-sm text-gray-500 flex items-center mt-1">
-                <Calendar className="h-3 w-3 mr-1" />
-                Starting: {formatStartingDate(jobsite.starting_date)}
+            </div>
+            <div className="space-y-1">
+              <p className="text-muted-foreground text-sm flex items-center">
+                <MapPin className="h-4 w-4 mr-2 text-primary" />
+                {jobsite.address}
               </p>
-            )}
+              {jobsite.starting_date && (
+                <p className="text-sm text-muted-foreground flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-primary" />
+                  Started: {formatStartingDate(jobsite.starting_date)}
+                </p>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center gap-4">
             {totalTasks > 0 && (
               <div className="text-right">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-2">
                   <span className="text-sm font-medium">{progressPercentage}% Complete</span>
                   {overdueTasks > 0 && (
-                    <Badge className="text-xs bg-red-100 text-red-800">
+                    <Badge variant="destructive" className="text-xs px-2 py-1">
                       {overdueTasks} Overdue
                     </Badge>
                   )}
                 </div>
-                <Progress value={progressPercentage} className="w-32 h-2" />
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="w-32 bg-muted rounded-full h-2 mb-1">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
                   {completedTasks}/{totalTasks} tasks completed
                 </div>
               </div>
@@ -110,6 +132,7 @@ const JobsiteProgressCard: React.FC<JobsiteProgressCardProps> = ({ jobsite }) =>
               variant="outline"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
+              className="hover:bg-muted rounded-full h-9 w-9 p-0"
             >
               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>

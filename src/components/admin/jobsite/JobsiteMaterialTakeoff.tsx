@@ -50,96 +50,91 @@ ${existingNote.takeoff_notes}`;
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Package className="h-5 w-5" />
-            <div>
-              <CardTitle>Material Takeoff Notes</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {existingNote ? 'Free-form material list and notes' : 'No material notes yet'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {existingNote && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleView}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportTxt}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-              </>
-            )}
-            <Button
-              onClick={handleEdit}
-              size="sm"
-            >
-              {existingNote ? (
-                <>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Notes
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Notes
-                </>
-              )}
-            </Button>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <Package className="h-5 w-5 text-primary" />
+          <div>
+            <h4 className="font-medium">Material Takeoff Notes</h4>
+            <p className="text-sm text-muted-foreground">
+              {existingNote ? 'Free-form material list and notes' : 'No material notes yet'}
+            </p>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
+        <div className="flex items-center gap-2">
+          {existingNote && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleView}
+                className="text-xs px-3 py-1.5 hover:bg-background"
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                View
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExportTxt}
+                className="text-xs px-3 py-1.5 hover:bg-background"
+              >
+                <Download className="h-3 w-3 mr-1" />
+                Export
+              </Button>
+            </>
+          )}
+          <Button
+            onClick={handleEdit}
+            variant="secondary"
+            size="sm"
+            className="text-xs px-3 py-1.5"
+          >
+            {existingNote ? (
+              <>
+                <Edit className="h-3 w-3 mr-1" />
+                Edit Notes
+              </>
+            ) : (
+              <>
+                <Plus className="h-3 w-3 mr-1" />
+                Add Notes
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-slate-50 shadow-inner border p-4">
         {isLoading ? (
-          <div className="flex items-center justify-center h-32">
-            <div className="text-muted-foreground">Loading material notes...</div>
+          <div className="flex items-center justify-center h-24">
+            <div className="text-muted-foreground animate-pulse">Loading material notes...</div>
           </div>
         ) : existingNote ? (
-          <div className="space-y-4">
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Material Notes Preview</h4>
-                <div className="text-sm text-muted-foreground">
-                  Last updated: {new Date(existingNote.updated_at).toLocaleDateString()}
+          <div className="bg-background rounded-lg p-4 border shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h5 className="font-medium text-sm">Material Notes Preview</h5>
+              <div className="text-xs text-muted-foreground">
+                Last updated: {new Date(existingNote.updated_at).toLocaleDateString()}
+              </div>
+            </div>
+            <div className="text-sm font-mono whitespace-pre-wrap max-h-32 overflow-y-auto text-foreground">
+              {existingNote.takeoff_notes.substring(0, 500)}
+              {existingNote.takeoff_notes.length > 500 && (
+                <div className="text-muted-foreground mt-2">
+                  ... ({existingNote.takeoff_notes.length - 500} more characters)
                 </div>
-              </div>
-              <div className="text-sm font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
-                {existingNote.takeoff_notes.substring(0, 500)}
-                {existingNote.takeoff_notes.length > 500 && (
-                  <div className="text-muted-foreground mt-2">
-                    ... ({existingNote.takeoff_notes.length - 500} more characters)
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
         ) : (
           <div className="text-center py-8">
-            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No material notes yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Start by adding material takeoff notes for this jobsite.
-            </p>
-            <Button onClick={handleEdit}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Material Notes
-            </Button>
+            <Package className="h-8 w-8 mx-auto mb-3 opacity-50" />
+            <p className="text-sm italic text-gray-400">No material notes added yet.</p>
+            <p className="text-xs text-muted-foreground mt-1">Click "Add Notes" to get started.</p>
           </div>
         )}
-      </CardContent>
+      </div>
 
       <MaterialTakeoffNotesEditor
         jobsiteId={jobsiteId}
@@ -147,7 +142,7 @@ ${existingNote.takeoff_notes}`;
         open={showEditor}
         onClose={() => setShowEditor(false)}
       />
-    </Card>
+    </div>
   );
 };
 
