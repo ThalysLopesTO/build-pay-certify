@@ -26,6 +26,16 @@ export const useTimesheetSubmission = () => {
 
   return useMutation({
     mutationFn: async (data: TimesheetData) => {
+      // Fetch user profile data for worker type and tax rates
+      let userProfile: any = null;
+      if (user?.id) {
+        const { data: profileData } = await supabase
+          .from('user_profiles')
+          .select('worker_type, income_tax_rate, cpp_rate, ei_rate')
+          .eq('user_id', user.id)
+          .single();
+        userProfile = profileData;
+      }
       console.log('🔍 Starting timesheet submission with user:', { 
         userId: user?.id, 
         companyId: user?.companyId,
@@ -87,6 +97,10 @@ export const useTimesheetSubmission = () => {
         tax_included: data.taxIncluded || false,
         calculated_tax: calculatedTax,
         employee_name: employeeName,
+        worker_type: userProfile?.worker_type || 'subcontractor',
+        income_tax_rate: userProfile?.income_tax_rate || null,
+        cpp_rate: userProfile?.cpp_rate || null,
+        ei_rate: userProfile?.ei_rate || null,
       };
 
       console.log('📝 Submitting timesheet to database with payload:', timesheetPayload);

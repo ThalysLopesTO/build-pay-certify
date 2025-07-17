@@ -198,6 +198,13 @@ serve(async (req) => {
 
     // Only create profile if it doesn't exist
     if (!existingProfile) {
+      // Set default tax rates for payroll employees
+      const defaultRates = employeeData.workerType === 'employee' ? {
+        income_tax_rate: 12.00,
+        cpp_rate: 5.95,
+        ei_rate: 1.63
+      } : {};
+
       const { error: profileError } = await supabaseAdmin
         .from('user_profiles')
         .insert({
@@ -210,7 +217,8 @@ serve(async (req) => {
           hourly_rate: employeeData.hourlyRate,
           photo_url: employeeData.photoUrl,
           pending_approval: false,
-          worker_type: employeeData.workerType || 'subcontractor'
+          worker_type: employeeData.workerType || 'subcontractor',
+          ...defaultRates
         })
 
       if (profileError) {

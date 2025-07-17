@@ -33,7 +33,11 @@ export const useCreateManualTimesheet = () => {
         company_id: user.companyId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        employee_name: timesheetData.is_manual_entry ? undefined : employeeName, // Only set for non-manual entries
+        employee_name: timesheetData.is_manual_entry ? timesheetData.manual_entry_name : employeeName,
+        worker_type: timesheetData.worker_type || 'subcontractor',
+        income_tax_rate: timesheetData.worker_type === 'employee' ? (timesheetData.income_tax_rate || 12.00) : null,
+        cpp_rate: timesheetData.worker_type === 'employee' ? (timesheetData.cpp_rate || 5.95) : null,
+        ei_rate: timesheetData.worker_type === 'employee' ? (timesheetData.ei_rate || 1.63) : null,
       };
 
       console.log('Data being inserted into database:', dataToInsert);

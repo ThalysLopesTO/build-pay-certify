@@ -1567,10 +1567,13 @@ export type Database = {
       user_profiles: {
         Row: {
           company_id: string
+          cpp_rate: number | null
           created_at: string
+          ei_rate: number | null
           first_name: string | null
           hourly_rate: number | null
           id: string
+          income_tax_rate: number | null
           last_name: string | null
           pending_approval: boolean | null
           photo_url: string | null
@@ -1585,10 +1588,13 @@ export type Database = {
         }
         Insert: {
           company_id: string
+          cpp_rate?: number | null
           created_at?: string
+          ei_rate?: number | null
           first_name?: string | null
           hourly_rate?: number | null
           id?: string
+          income_tax_rate?: number | null
           last_name?: string | null
           pending_approval?: boolean | null
           photo_url?: string | null
@@ -1603,10 +1609,13 @@ export type Database = {
         }
         Update: {
           company_id?: string
+          cpp_rate?: number | null
           created_at?: string
+          ei_rate?: number | null
           first_name?: string | null
           hourly_rate?: number | null
           id?: string
+          income_tax_rate?: number | null
           last_name?: string | null
           pending_approval?: boolean | null
           photo_url?: string | null
