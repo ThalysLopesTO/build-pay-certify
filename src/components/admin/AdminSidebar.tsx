@@ -7,10 +7,15 @@ import {
 } from '@/components/ui/sidebar';
 import { Building } from 'lucide-react';
 import SidebarSection from './sidebar/SidebarSection';
-import { groupedMenuItems } from './sidebar/menuData';
+import CollapsibleSidebarSection from './sidebar/CollapsibleSidebarSection';
+import { groupedMenuItems, sectionConfigs } from './sidebar/menuData';
 import { AdminSidebarProps } from './sidebar/types';
+import { useScrollToActiveSection } from '@/hooks/useScrollToActiveSection';
 
 const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
+  // Auto-scroll to active section
+  useScrollToActiveSection(activeTab);
+
   return (
     <Sidebar className="border-r border-border bg-sidebar transition-colors">
       
@@ -30,52 +35,72 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
       {/* Scrollable Content */}
       <SidebarContent className="overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent dark:scrollbar-thumb-gray-600 bg-sidebar">
         
+        {/* Dashboard - Always visible */}
         <SidebarSection
           items={groupedMenuItems.main}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
         />
 
-        <SidebarSection
+        {/* Collapsible Sections */}
+        <CollapsibleSidebarSection
           items={groupedMenuItems.management}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label="Project Management"
+          label={sectionConfigs.management.label}
+          icon={sectionConfigs.management.icon}
+          defaultExpanded={sectionConfigs.management.defaultExpanded}
+          storageKey={sectionConfigs.management.storageKey}
         />
 
-        <SidebarSection
+        <CollapsibleSidebarSection
           items={groupedMenuItems.employees}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label="Employee Management"
+          label={sectionConfigs.employees.label}
+          icon={sectionConfigs.employees.icon}
+          defaultExpanded={sectionConfigs.employees.defaultExpanded}
+          storageKey={sectionConfigs.employees.storageKey}
         />
 
-        <SidebarSection
+        <CollapsibleSidebarSection
           items={groupedMenuItems.managementOps}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label="Management Operations"
+          label={sectionConfigs.managementOps.label}
+          icon={sectionConfigs.managementOps.icon}
+          defaultExpanded={sectionConfigs.managementOps.defaultExpanded}
+          storageKey={sectionConfigs.managementOps.storageKey}
         />
 
-        <SidebarSection
+        <CollapsibleSidebarSection
           items={groupedMenuItems.invoices}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label="Financial"
+          label={sectionConfigs.invoices.label}
+          icon={sectionConfigs.invoices.icon}
+          defaultExpanded={sectionConfigs.invoices.defaultExpanded}
+          storageKey={sectionConfigs.invoices.storageKey}
         />
 
-        <SidebarSection
+        <CollapsibleSidebarSection
           items={groupedMenuItems.reports}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label="Reports"
+          label={sectionConfigs.reports.label}
+          icon={sectionConfigs.reports.icon}
+          defaultExpanded={sectionConfigs.reports.defaultExpanded}
+          storageKey={sectionConfigs.reports.storageKey}
         />
 
-        <SidebarSection
+        <CollapsibleSidebarSection
           items={groupedMenuItems.system}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label="System Settings"
+          label={sectionConfigs.system.label}
+          icon={sectionConfigs.system.icon}
+          defaultExpanded={sectionConfigs.system.defaultExpanded}
+          storageKey={sectionConfigs.system.storageKey}
         />
       </SidebarContent>
 

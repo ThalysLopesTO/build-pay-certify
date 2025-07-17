@@ -20,6 +20,12 @@ import {
   Clock,
   Receipt,
   Archive,
+  Briefcase,
+  UserCog,
+  Target,
+  PieChart,
+  MessageSquare,
+  Cog,
 } from 'lucide-react';
 import { MenuItem } from './types';
 
@@ -189,4 +195,44 @@ export const groupedMenuItems = {
     menuData.find(item => item.id === 'company-settings')!,
     menuData.find(item => item.id === 'settings')!,
   ],
+};
+
+// Section configurations with icons and labels
+export const sectionConfigs = {
+  management: {
+    label: 'Project Management',
+    icon: Briefcase,
+    storageKey: 'sidebar-project-management-expanded',
+    defaultExpanded: true,
+  },
+  employees: {
+    label: 'Employee Management',
+    icon: UserCog,
+    storageKey: 'sidebar-employee-management-expanded',
+    defaultExpanded: false,
+  },
+  managementOps: {
+    label: 'Management Operations',
+    icon: Target,
+    storageKey: 'sidebar-management-ops-expanded',
+    defaultExpanded: false,
+  },
+  invoices: {
+    label: 'Financial',
+    icon: PieChart,
+    storageKey: 'sidebar-financial-expanded',
+    defaultExpanded: false,
+  },
+  reports: {
+    label: 'Reports',
+    icon: MessageSquare,
+    storageKey: 'sidebar-reports-expanded',
+    defaultExpanded: false,
+  },
+  system: {
+    label: 'System Settings',
+    icon: Cog,
+    storageKey: 'sidebar-system-expanded',
+    defaultExpanded: false,
+  },
 };
