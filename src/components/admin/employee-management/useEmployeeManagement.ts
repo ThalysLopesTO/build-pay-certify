@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 export interface Employee {
   id: string;
   user_id: string;
+  company_id?: string;
   first_name: string;
   last_name: string;
   role: string;
@@ -14,6 +15,7 @@ export interface Employee {
   position?: string;
   hourly_rate?: number;
   photo_url?: string;
+  worker_type?: string;
   companies?: {
     name: string;
   };

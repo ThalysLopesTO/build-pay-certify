@@ -65,7 +65,10 @@ serve(async (req) => {
     console.log('Creating employee with data:', { 
       email: employeeData.email, 
       role: employeeData.role, 
-      companyId: employeeData.companyId 
+      companyId: employeeData.companyId,
+      hasPhoto: !!employeeData.photoUrl,
+      photoUrl: employeeData.photoUrl,
+      hourlyRate: employeeData.hourlyRate
     })
 
     // First, check if the company can add more employees

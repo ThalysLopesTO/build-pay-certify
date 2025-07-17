@@ -51,9 +51,17 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
                 </h3>
                 <p className="text-slate-600">{employee.companies?.name}</p>
               </div>
-              <Badge className={`${getRoleColor(employee.role)} text-white capitalize`}>
-                {employee.role}
-              </Badge>
+              <div className="flex flex-col gap-2">
+                <Badge className={`${getRoleColor(employee.role)} text-white capitalize`}>
+                  {employee.role}
+                </Badge>
+                <Badge 
+                  variant={employee.worker_type === 'employee' ? 'default' : 'secondary'}
+                  className="text-xs"
+                >
+                  {employee.worker_type === 'employee' ? 'Payroll Employee' : 'Subcontractor'}
+                </Badge>
+              </div>
             </div>
           </div>
         </div>
