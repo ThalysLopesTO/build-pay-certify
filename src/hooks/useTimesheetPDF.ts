@@ -133,7 +133,7 @@ export const useTimesheetPDF = () => {
         ['Gross Pay:', '', `$${gross.toFixed(2)}`]
       ];
 
-      if (workerType === 'employee' && timesheet.is_manual_entry) {
+      if (workerType === 'employee') {
         // Employee deductions - use custom rates if available, otherwise use defaults
         const incomeTaxRate = timesheet.income_tax_rate ? Number(timesheet.income_tax_rate) / 100 : 0.20; // Default 20%
         const cppRate = timesheet.cpp_rate ? Number(timesheet.cpp_rate) / 100 : 0.0595; // Default 5.95%
