@@ -218,9 +218,9 @@ serve(async (req) => {
           role: employeeData.role,
           trade: employeeData.trade || 'General',
           position: 'Worker', // Default position since it's not collected in the form
-          hourly_rate: employeeData.hourlyRate,
-          photo_url: employeeData.photoUrl,
-          phone: employeeData.phoneNumber,
+          hourly_rate: parseFloat(employeeData.hourlyRate) || null,
+          photo_url: employeeData.photoUrl || null,
+          phone: employeeData.phoneNumber || null,
           pending_approval: false,
           worker_type: employeeData.workerType || 'subcontractor',
           ...defaultRates
