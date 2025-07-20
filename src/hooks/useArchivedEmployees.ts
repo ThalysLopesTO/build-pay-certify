@@ -1,15 +1,14 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
-export const useEmployeeDirectory = () => {
+export const useArchivedEmployees = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['employee-directory', user?.companyId],
+    queryKey: ['archived-employees', user?.companyId],
     queryFn: async () => {
-      console.log('Fetching employee directory for company:', user?.companyId);
+      console.log('Fetching archived employees for company:', user?.companyId);
       
       if (!user?.companyId) {
         console.log('No company ID available');
@@ -26,16 +25,16 @@ export const useEmployeeDirectory = () => {
           )
         `)
         .eq('company_id', user.companyId)
-        .eq('is_active', true)
+        .eq('is_active', false)
         .in('role', ['employee', 'foreman', 'admin', 'management'])
         .order('first_name');
 
       if (error) {
-        console.error('Error fetching employees:', error);
+        console.error('Error fetching archived employees:', error);
         throw error;
       }
 
-      console.log('Fetched employees:', data);
+      console.log('Fetched archived employees:', data);
       return data;
     },
     enabled: !!user?.companyId,

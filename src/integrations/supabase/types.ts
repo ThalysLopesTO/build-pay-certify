@@ -1580,6 +1580,7 @@ export type Database = {
           hourly_rate: number | null
           id: string
           income_tax_rate: number | null
+          is_active: boolean
           last_name: string | null
           pending_approval: boolean | null
           photo_url: string | null
@@ -1601,6 +1602,7 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           income_tax_rate?: number | null
+          is_active?: boolean
           last_name?: string | null
           pending_approval?: boolean | null
           photo_url?: string | null
@@ -1622,6 +1624,7 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           income_tax_rate?: number | null
+          is_active?: boolean
           last_name?: string | null
           pending_approval?: boolean | null
           photo_url?: string | null
@@ -2020,6 +2023,10 @@ export type Database = {
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      reactivate_employee: {
+        Args: { employee_user_id: string }
+        Returns: Json
       }
       run_daily_notification_checks: {
         Args: Record<PropertyKey, never>

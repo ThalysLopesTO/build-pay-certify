@@ -46,7 +46,7 @@ export const useEmployeeDelete = () => {
       
       toast({
         title: "Success",
-        description: "Employee successfully deleted",
+        description: "Employee successfully archived",
       });
     },
     onError: (error: any) => {

@@ -30,10 +30,10 @@ const EmployeeDeleteDialog = ({
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Employee</AlertDialogTitle>
+          <AlertDialogTitle>Archive Employee</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{employeeName}"? This action cannot be undone.
-            This will permanently remove the employee from the system and revoke their access.
+            Are you sure you want to archive "{employeeName}"? This will remove them from the active employee list 
+            and revoke their access, but preserve all their historical records. You can reactivate them later if needed.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -43,7 +43,7 @@ const EmployeeDeleteDialog = ({
             disabled={isDeleting}
             className="bg-destructive hover:bg-destructive/90"
           >
-            {isDeleting ? 'Deleting...' : 'Delete Employee'}
+            {isDeleting ? 'Archiving...' : 'Archive Employee'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

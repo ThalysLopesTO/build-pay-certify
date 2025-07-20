@@ -3,6 +3,7 @@ import EmployeeEditModal from './EmployeeEditModal';
 import EmployeeCertificatesModal from './EmployeeCertificatesModal';
 import EmployeeDeleteDialog from './EmployeeDeleteDialog';
 import PasswordResetModal from './PasswordResetModal';
+import ArchivedEmployeesModal from './employee-management/ArchivedEmployeesModal';
 import EmployeeHeader from './employee-management/EmployeeHeader';
 import EmployeeSearch from './employee-management/EmployeeSearch';
 import EmployeeCard from './employee-management/EmployeeCard';
@@ -13,6 +14,7 @@ import { useEmployeeManagement, type Employee } from './employee-management/useE
 
 const EmployeeManagement = ({ onNavigateToRegistration }: { onNavigateToRegistration?: () => void }) => {
   const [resettingPasswordEmployee, setResettingPasswordEmployee] = useState<Employee | null>(null);
+  const [showArchivedEmployees, setShowArchivedEmployees] = useState(false);
   
   const {
     searchTerm,
@@ -57,6 +59,7 @@ const EmployeeManagement = ({ onNavigateToRegistration }: { onNavigateToRegistra
       <EmployeeHeader 
         canAddEmployee={!!canAddEmployee}
         onAddEmployee={handleAddEmployee}
+        onViewArchived={() => setShowArchivedEmployees(true)}
       />
 
       <EmployeeSearch 
@@ -109,6 +112,11 @@ const EmployeeManagement = ({ onNavigateToRegistration }: { onNavigateToRegistra
         onConfirm={confirmDeleteEmployee}
         employeeName={deletingEmployee ? `${deletingEmployee.first_name} ${deletingEmployee.last_name}` : ''}
         isDeleting={isDeleting}
+      />
+
+      <ArchivedEmployeesModal
+        isOpen={showArchivedEmployees}
+        onClose={() => setShowArchivedEmployees(false)}
       />
     </div>
   );
