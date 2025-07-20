@@ -217,7 +217,7 @@ serve(async (req) => {
           last_name: employeeData.lastName,
           role: employeeData.role,
           trade: employeeData.trade || 'General',
-          position: employeeData.position || 'Worker',
+          position: 'Worker', // Default position since it's not collected in the form
           hourly_rate: employeeData.hourlyRate,
           photo_url: employeeData.photoUrl,
           phone: employeeData.phoneNumber,
