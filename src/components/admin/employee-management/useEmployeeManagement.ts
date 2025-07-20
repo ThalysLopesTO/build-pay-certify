@@ -16,6 +16,7 @@ export interface Employee {
   hourly_rate?: number;
   photo_url?: string;
   worker_type?: string;
+  phone?: string;
   companies?: {
     name: string;
   };

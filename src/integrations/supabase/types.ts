@@ -1583,6 +1583,7 @@ export type Database = {
           is_active: boolean
           last_name: string | null
           pending_approval: boolean | null
+          phone: string | null
           photo_url: string | null
           position: string | null
           role: string
@@ -1605,6 +1606,7 @@ export type Database = {
           is_active?: boolean
           last_name?: string | null
           pending_approval?: boolean | null
+          phone?: string | null
           photo_url?: string | null
           position?: string | null
           role?: string
@@ -1627,6 +1629,7 @@ export type Database = {
           is_active?: boolean
           last_name?: string | null
           pending_approval?: boolean | null
+          phone?: string | null
           photo_url?: string | null
           position?: string | null
           role?: string

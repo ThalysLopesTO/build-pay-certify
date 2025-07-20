@@ -148,12 +148,23 @@ const ImprovedEmployeeCard: React.FC<ImprovedEmployeeCardProps> = ({
             </div>
           </div>
 
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <DollarSign className="h-3 w-3" />
-              <span>Hourly Rate</span>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <DollarSign className="h-3 w-3" />
+                <span>Hourly Rate</span>
+              </div>
+              <p className="text-lg font-semibold text-primary">${employee.hourly_rate || 0}/hr</p>
             </div>
-            <p className="text-lg font-semibold text-primary">${employee.hourly_rate || 0}/hr</p>
+            {employee.phone && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Phone className="h-3 w-3" />
+                  <span>Phone</span>
+                </div>
+                <p className="text-sm font-medium truncate">{employee.phone}</p>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-border/50">
