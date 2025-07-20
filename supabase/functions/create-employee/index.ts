@@ -68,7 +68,11 @@ serve(async (req) => {
       companyId: employeeData.companyId,
       hasPhoto: !!employeeData.photoUrl,
       photoUrl: employeeData.photoUrl,
-      hourlyRate: employeeData.hourlyRate
+      hourlyRate: employeeData.hourlyRate,
+      trade: employeeData.trade,
+      phoneNumber: employeeData.phoneNumber,
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName
     })
 
     // First, check if the company can add more employees
@@ -208,23 +212,33 @@ serve(async (req) => {
         ei_rate: 1.63
       } : {};
 
+      // Prepare profile data with detailed logging
+      const profileData = {
+        user_id: authData.user.id,
+        company_id: employeeData.companyId,
+        first_name: employeeData.firstName,
+        last_name: employeeData.lastName,
+        role: employeeData.role,
+        trade: employeeData.trade || 'General',
+        position: 'Worker', // Default position since it's not collected in the form
+        hourly_rate: parseFloat(employeeData.hourlyRate) || null,
+        photo_url: employeeData.photoUrl || null,
+        phone: employeeData.phoneNumber || null,
+        pending_approval: false,
+        worker_type: employeeData.workerType || 'subcontractor',
+        ...defaultRates
+      }
+      
+      console.log('Inserting profile with data:', {
+        ...profileData,
+        hourly_rate_original: employeeData.hourlyRate,
+        hourly_rate_parsed: parseFloat(employeeData.hourlyRate),
+        photo_url_original: employeeData.photoUrl
+      })
+
       const { error: profileError } = await supabaseAdmin
         .from('user_profiles')
-        .insert({
-          user_id: authData.user.id,
-          company_id: employeeData.companyId,
-          first_name: employeeData.firstName,
-          last_name: employeeData.lastName,
-          role: employeeData.role,
-          trade: employeeData.trade || 'General',
-          position: 'Worker', // Default position since it's not collected in the form
-          hourly_rate: parseFloat(employeeData.hourlyRate) || null,
-          photo_url: employeeData.photoUrl || null,
-          phone: employeeData.phoneNumber || null,
-          pending_approval: false,
-          worker_type: employeeData.workerType || 'subcontractor',
-          ...defaultRates
-        })
+        .insert(profileData)
 
       if (profileError) {
         console.error('Error creating user profile:', profileError)
