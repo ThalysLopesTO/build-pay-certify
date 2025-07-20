@@ -17,7 +17,6 @@ export const useEmployeeRegistrationForm = () => {
     resolver: zodResolver(employeeSchema),
     defaultValues: {
       email: '',
-      username: '',
       password: '',
       firstName: '',
       lastName: '',
@@ -48,7 +47,6 @@ export const useEmployeeRegistrationForm = () => {
     try {
       console.log('Submitting employee registration:', { 
         email: data.email, 
-        username: data.username, 
         role: data.role, 
         hourlyRate: data.hourlyRate, 
         hasPhoto: !!data.photo 
@@ -127,7 +125,6 @@ export const useEmployeeRegistrationForm = () => {
           employeeData: {
             companyId: user.companyId,
             email: data.email,
-            username: data.username,
             password: data.password,
             firstName: data.firstName,
             lastName: data.lastName,
