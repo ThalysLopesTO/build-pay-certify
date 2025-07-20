@@ -236,12 +236,15 @@ serve(async (req) => {
         photo_url_original: employeeData.photoUrl
       })
 
-      const { error: profileError } = await supabaseAdmin
+      const { data: profileInsertData, error: profileError } = await supabaseAdmin
         .from('user_profiles')
         .insert(profileData)
+        .select()
 
       if (profileError) {
         console.error('Error creating user profile:', profileError)
+        console.error('Profile data that failed:', JSON.stringify(profileData, null, 2))
+        
         // Try to delete the auth user if profile creation fails
         try {
           await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
@@ -249,10 +252,12 @@ serve(async (req) => {
         } catch (cleanupError) {
           console.error('Failed to cleanup auth user:', cleanupError)
         }
+        
         return new Response(
           JSON.stringify({ 
             success: false,
-            error: 'Failed to create user profile: ' + profileError.message
+            error: `Failed to create user profile: ${profileError.message}`,
+            details: profileError
           }),
           {
             headers: corsHeaders,
@@ -260,6 +265,8 @@ serve(async (req) => {
           },
         )
       }
+
+      console.log('Profile created successfully:', profileInsertData)
 
       console.log('User profile created successfully for company:', employeeData.companyId)
     } else {
