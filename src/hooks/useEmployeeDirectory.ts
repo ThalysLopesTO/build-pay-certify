@@ -28,7 +28,7 @@ export const useEmployeeDirectory = () => {
         .eq('company_id', user.companyId)
         .eq('is_active', true)
         .in('role', ['employee', 'foreman', 'admin', 'management'])
-        .order('first_name');
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching employees:', error);
@@ -39,6 +39,7 @@ export const useEmployeeDirectory = () => {
       return data;
     },
     enabled: !!user?.companyId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 60 * 1000, // 1 minute (reduced for fresh data)
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 };
