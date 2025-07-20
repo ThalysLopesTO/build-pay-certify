@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTimesheets } from '@/hooks/useTimesheets';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Clock, MapPin, Play, Square, CheckCircle, Timer, Calendar, Target, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
@@ -21,7 +21,7 @@ const TimeTracker = () => {
   const { user } = useAuth();
   const [selectedJobsiteId, setSelectedJobsiteId] = useState<string>('');
   const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
-  const { data: jobsites, isLoading: jobsitesLoading } = useJobsites();
+  const { data: jobsites, isLoading: jobsitesLoading } = useActiveJobsites();
   const { getCurrentLocation, isGettingLocation } = useGeolocation();
 
   // Fetch user profile for photo

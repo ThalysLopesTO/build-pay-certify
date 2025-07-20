@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, DollarSign } from 'lucide-react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useWorkWeek } from '@/hooks/useWorkWeek';
 
@@ -49,7 +49,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
   onSave,
   isSaving
 }) => {
-  const { data: jobsites = [] } = useJobsites();
+  const { data: jobsites = [] } = useActiveJobsites();
   const { settings } = useCompanySettings();
   const workWeeks = useWorkWeek();
   

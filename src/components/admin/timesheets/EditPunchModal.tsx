@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useTimesheetEdit } from '@/hooks/useTimesheetEdit';
 import { format } from 'date-fns';
 import { AlertTriangle } from 'lucide-react';
@@ -22,7 +22,7 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
   onClose,
   timesheet
 }) => {
-  const { data: jobsites } = useJobsites();
+  const { data: jobsites } = useActiveJobsites();
   const { editTimesheet, isEditing } = useTimesheetEdit();
   
   const [formData, setFormData] = useState({

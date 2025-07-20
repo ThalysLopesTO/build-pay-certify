@@ -4,7 +4,7 @@ import { Control } from 'react-hook-form';
 import { MapPin, Calendar } from 'lucide-react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 
 interface JobsiteWeekSelectorProps {
   control: Control<any>;
@@ -12,7 +12,7 @@ interface JobsiteWeekSelectorProps {
 }
 
 const JobsiteWeekSelector = ({ control, weekEndingDates }: JobsiteWeekSelectorProps) => {
-  const { data: jobsites = [], isLoading: jobsitesLoading } = useJobsites();
+  const { data: jobsites = [], isLoading: jobsitesLoading } = useActiveJobsites();
   
   // Filter out jobsites with empty names
   const validJobsites = jobsites.filter(jobsite => jobsite.name && jobsite.name.trim().length > 0);
