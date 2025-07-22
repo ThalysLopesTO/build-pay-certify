@@ -27,15 +27,16 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
   return (
     <div className="space-y-8">
       {/* Company Information Section */}
-      <Card className="border-border dark:border-gray-700">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center space-x-2 text-foreground dark:text-white">
-            <Building2 className="h-5 w-5 text-primary" />
-            <span>Company Information</span>
+      <Card className="shadow-sm border-border">
+        <CardHeader className="border-b border-border">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Building2 className="h-5 w-5 text-primary" />
+            </div>
+            Company Information
           </CardTitle>
-          <div className="h-px bg-border dark:bg-gray-700 mt-4"></div>
         </CardHeader>
-        <CardContent className="pt-2">
+        <CardContent className="p-6">
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
@@ -43,14 +44,14 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
                 name="company_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                    <FormLabel className="flex items-center gap-2 text-sm font-medium">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span>Company Name <span className="text-red-500">*</span></span>
+                      Company Name <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="Enter your company name" 
-                        className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                        className="h-11"
                         {...field} 
                       />
                     </FormControl>
@@ -64,14 +65,14 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
                 name="company_phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                    <FormLabel className="flex items-center gap-2 text-sm font-medium">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>Phone Number <span className="text-red-500">*</span></span>
+                      Phone Number <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="(555) 123-4567" 
-                        className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                        className="h-11"
                         {...field} 
                       />
                     </FormControl>
@@ -86,14 +87,14 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
               name="company_address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                  <FormLabel className="flex items-center gap-2 text-sm font-medium">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>Address <span className="text-red-500">*</span></span>
+                    Business Address <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="Enter your complete business address" 
-                      className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                      className="h-11"
                       {...field} 
                     />
                   </FormControl>
@@ -108,15 +109,15 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
                 name="company_email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                    <FormLabel className="flex items-center gap-2 text-sm font-medium">
                       <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>Company Email <span className="text-red-500">*</span></span>
+                      Company Email <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input 
                         type="email" 
                         placeholder="company@example.com" 
-                        className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                        className="h-11"
                         {...field} 
                       />
                     </FormControl>
@@ -130,14 +131,14 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
                 name="hst_number"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2 text-foreground dark:text-white">
+                    <FormLabel className="flex items-center gap-2 text-sm font-medium">
                       <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span>HST Number</span>
+                      HST/Tax Number
                     </FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="Enter your HST or tax registration number" 
-                        className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                        className="h-11"
                         {...field} 
                       />
                     </FormControl>
@@ -151,29 +152,33 @@ export const CompanyInformationForm: React.FC<CompanyInformationFormProps> = ({
       </Card>
 
       {/* Company Rules & Policies Section */}
-      <Card className="border-border dark:border-gray-700">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center space-x-2 text-foreground dark:text-white">
-            <FileText className="h-5 w-5 text-primary" />
-            <span>Company Rules & Policies</span>
+      <Card className="shadow-sm border-border">
+        <CardHeader className="border-b border-border">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            Company Rules & Policies
           </CardTitle>
-          <div className="h-px bg-border dark:bg-gray-700 mt-4"></div>
         </CardHeader>
-        <CardContent className="pt-2">
+        <CardContent className="p-6">
           <FormField
             control={form.control}
             name="company_rules_text"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-foreground dark:text-white">Rules & Policies Content</FormLabel>
+                <FormLabel className="text-sm font-medium">Rules & Policies Content</FormLabel>
                 <FormControl>
                   <Textarea 
-                    rows={10} 
-                    placeholder="Enter your company rules and policies here..."
-                    className="bg-background dark:bg-gray-800 border-border dark:border-gray-600 text-foreground dark:text-white"
+                    rows={12} 
+                    placeholder="Enter your company rules, safety policies, and guidelines here. This content will be visible to all employees."
+                    className="resize-none"
                     {...field} 
                   />
                 </FormControl>
+                <p className="text-xs text-muted-foreground mt-2">
+                  These rules will be displayed to all employees and can include safety guidelines, work policies, and other important information.
+                </p>
                 <FormMessage />
               </FormItem>
             )}

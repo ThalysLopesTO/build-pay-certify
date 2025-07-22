@@ -49,116 +49,133 @@ export const CompanySettingsTab = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-foreground dark:text-white">Loading company settings...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-primary mx-auto"></div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-foreground">Loading Settings</h3>
+            <p className="text-muted-foreground">Please wait while we fetch your company settings...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      {/* Company Branding Section */}
-      <Card className="border-border dark:border-gray-700">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center space-x-2 text-foreground dark:text-white">
-            <Building2 className="h-5 w-5 text-primary" />
-            <span>Company Branding</span>
-          </CardTitle>
-          <div className="h-px bg-border dark:bg-gray-700 mt-4"></div>
-        </CardHeader>
-        <CardContent className="pt-2">
-          <CompanyBrandingSection />
-        </CardContent>
-      </Card>
-      
-      {/* Company Information Form with Week Ending Day */}
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <CompanyInformationForm 
-            form={form}
-            onSubmit={onSubmit}
-            isUpdating={isUpdating}
-          />
-          
-          {/* Week Ending Day Section */}
-          <Card className="border-border dark:border-gray-700">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-2 text-foreground dark:text-white">
-                <Calendar className="h-5 w-5 text-primary" />
-                <span>Week Ending Day</span>
-              </CardTitle>
-              <div className="h-px bg-border dark:bg-gray-700 mt-4"></div>
-            </CardHeader>
-            <CardContent className="pt-2">
-              <div className="max-w-xs">
-                <WeekEndingDaySelector control={form.control} />
-              </div>
-              <p className="text-sm text-muted-foreground dark:text-gray-400 mt-2">
-                Select the day of the week when your work week ends for timesheet calculations.
-              </p>
-            </CardContent>
-          </Card>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-5xl mx-auto p-6 space-y-8">
+        {/* Header */}
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-foreground">Company Settings</h1>
+          <p className="text-muted-foreground">Configure your company information, branding, and operational preferences.</p>
+        </div>
 
-          {/* Employee Settings */}
-          <Card className="border-border dark:border-gray-700">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center space-x-2 text-foreground dark:text-white">
-                <Eye className="h-5 w-5 text-primary" />
-                <span>Employee Settings</span>
-              </CardTitle>
-              <div className="h-px bg-border dark:bg-gray-700 mt-4"></div>
-            </CardHeader>
-            <CardContent className="pt-2">
-              <FormField
-                control={form.control}
-                name="show_tax_breakdown_to_employees"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Show Tax Breakdown to Employees
-                      </FormLabel>
-                      <FormDescription>
-                        When enabled, employees will see tax calculations (gross pay, estimated tax, and net pay) in their timesheet submissions. When disabled, employees will only see gross pay and net pay.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Usage Information */}
-          <UsageInformation />
-
-          {/* Save Button - Sticky positioned */}
-          <div className="sticky bottom-0 mt-8 p-6 bg-background/95 dark:bg-gray-900/95 backdrop-blur border border-border dark:border-gray-700 rounded-lg shadow-lg">
-            <Button 
-              type="submit" 
-              disabled={isUpdating} 
-              className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-            >
-              {isUpdating ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
-                  <span>Saving Changes...</span>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {/* Company Branding Section */}
+            <Card className="shadow-sm border-border">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Building2 className="h-5 w-5 text-primary" />
+                  </div>
+                  Company Branding
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <CompanyBrandingSection />
+              </CardContent>
+            </Card>
+            
+            {/* Company Information */}
+            <CompanyInformationForm 
+              form={form}
+              onSubmit={onSubmit}
+              isUpdating={isUpdating}
+            />
+            
+            {/* Week Ending Day Section */}
+            <Card className="shadow-sm border-border">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  Week Ending Day
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="max-w-sm">
+                  <WeekEndingDaySelector control={form.control} />
                 </div>
-              ) : (
-                'Save Company Settings'
-              )}
-            </Button>
-          </div>
-        </form>
-      </Form>
+                <p className="text-sm text-muted-foreground mt-3">
+                  Select the day of the week when your work week ends for timesheet calculations.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Employee Settings */}
+            <Card className="shadow-sm border-border">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Eye className="h-5 w-5 text-primary" />
+                  </div>
+                  Employee Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <FormField
+                  control={form.control}
+                  name="show_tax_breakdown_to_employees"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start justify-between rounded-lg border border-border p-6 bg-muted/30">
+                      <div className="space-y-1 flex-1">
+                        <FormLabel className="text-base font-medium">
+                          Show Tax Breakdown to Employees
+                        </FormLabel>
+                        <FormDescription className="text-sm text-muted-foreground">
+                          When enabled, employees will see detailed tax calculations (gross pay, estimated tax, and net pay) in their timesheet submissions. When disabled, employees will only see gross pay and net pay totals.
+                        </FormDescription>
+                      </div>
+                      <FormControl className="ml-6">
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Usage Information */}
+            <UsageInformation />
+
+            {/* Save Button - Fixed at bottom */}
+            <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border p-6 -mx-6">
+              <div className="max-w-5xl mx-auto">
+                <Button 
+                  type="submit" 
+                  disabled={isUpdating} 
+                  size="lg"
+                  className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all duration-200 hover:shadow-xl"
+                >
+                  {isUpdating ? (
+                    <div className="flex items-center gap-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-foreground border-t-transparent"></div>
+                      <span>Saving Changes...</span>
+                    </div>
+                  ) : (
+                    'Save Company Settings'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };
