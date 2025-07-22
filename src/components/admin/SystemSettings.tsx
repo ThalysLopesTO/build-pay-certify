@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,21 +8,10 @@ import { EmailPreferencesTab } from './system-settings/EmailPreferencesTab';
 import { FinancialDefaultsTab } from './system-settings/FinancialDefaultsTab';
 import { AdvancedControlsTab } from './system-settings/AdvancedControlsTab';
 import { AnalyticsControlTab } from './system-settings/AnalyticsControlTab';
-import { 
-  Building2, 
-  Users, 
-  Mail, 
-  DollarSign, 
-  Settings, 
-  BarChart3,
-  FileText
-} from 'lucide-react';
-
+import { Building2, Users, Mail, DollarSign, Settings, BarChart3, FileText } from 'lucide-react';
 const SystemSettings = () => {
   const [activeTab, setActiveTab] = useState('company');
-
-  return (
-    <div className="max-w-6xl mx-auto space-y-6">
+  return <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center space-x-3 mb-6">
         <Settings className="h-8 w-8 text-orange-600" />
         <div>
@@ -40,10 +28,7 @@ const SystemSettings = () => {
                 <Building2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Company</span>
               </TabsTrigger>
-              <TabsTrigger value="rules" className="flex items-center space-x-2">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Rules</span>
-              </TabsTrigger>
+              
               <TabsTrigger value="roles" className="flex items-center space-x-2">
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Roles</span>
@@ -56,10 +41,7 @@ const SystemSettings = () => {
                 <DollarSign className="h-4 w-4" />
                 <span className="hidden sm:inline">Financial</span>
               </TabsTrigger>
-              <TabsTrigger value="advanced" className="flex items-center space-x-2">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Advanced</span>
-              </TabsTrigger>
+              
               <TabsTrigger value="analytics" className="flex items-center space-x-2">
                 <BarChart3 className="h-4 w-4" />
                 <span className="hidden sm:inline">Analytics</span>
@@ -96,8 +78,6 @@ const SystemSettings = () => {
           </Tabs>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default SystemSettings;
