@@ -6,7 +6,7 @@ import EmployeeLimitCard from './EmployeeLimitCard';
 import WelcomeGreeting from './WelcomeGreeting';
 import ProjectsProgressOverview from './ProjectsProgressOverview';
 import LiveActiveEmployees from './LiveActiveEmployees';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useEnhancedDashboardStats } from '@/hooks/useEnhancedDashboardStats';
 import { BarChart3 } from 'lucide-react';
 interface AdminDashboardContentProps {
   setActiveTab: (tab: string) => void;
@@ -17,8 +17,15 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
   const {
     data: stats,
     isLoading
-  } = useDashboardStats();
-  return <div className="p-6 space-y-6 max-w-6xl mx-auto">
+  } = useEnhancedDashboardStats();
+
+  // Handler for card clicks
+  const navigateToSection = (section: string) => {
+    setActiveTab(section);
+  };
+
+  return (
+    <div className="p-6 space-y-6 max-w-6xl mx-auto">
       {/* Welcome Greeting */}
       <WelcomeGreeting />
 
@@ -37,21 +44,92 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
       {/* Employee Limit Card - Prominently displayed */}
       <EmployeeLimitCard />
 
-      {/* Company Overview Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatsCard title="Active Employees" value={stats?.employeesCount || 0} icon="👷‍♂️" bgColor="bg-slate-50" borderColor="border-blue-200" iconBg="bg-blue-100" isLoading={isLoading} />
-        <StatsCard title="Active Jobsites" value={stats?.jobsitesCount || 0} icon="🏗️" bgColor="bg-slate-50" borderColor="border-green-200" iconBg="bg-green-100" isLoading={isLoading} />
-        <StatsCard title="Pending Invoices" value={stats?.invoicesCount || 0} icon="📄" bgColor="bg-slate-50" borderColor="border-orange-200" iconBg="bg-orange-100" isLoading={isLoading} />
+      {/* Company Overview Stats Cards - Enhanced with more KPIs in 2 rows */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* First Row - Basic KPIs */}
+        <StatsCard 
+          title="Active Employees" 
+          value={stats?.employeesCount || 0} 
+          icon="👷‍♂️" 
+          bgColor="bg-slate-50" 
+          borderColor="border-blue-200" 
+          iconBg="bg-blue-100" 
+          isLoading={isLoading}
+          onClick={() => navigateToSection('employees')}
+        />
+        <StatsCard 
+          title="Active Jobsites" 
+          value={stats?.jobsitesCount || 0} 
+          icon="🏗️" 
+          bgColor="bg-slate-50" 
+          borderColor="border-green-200" 
+          iconBg="bg-green-100" 
+          isLoading={isLoading}
+          onClick={() => navigateToSection('jobsites')}
+        />
+        <StatsCard 
+          title="Pending Invoices" 
+          value={stats?.invoicesCount || 0} 
+          icon="📄" 
+          bgColor="bg-slate-50" 
+          borderColor="border-orange-200" 
+          iconBg="bg-orange-100" 
+          isLoading={isLoading}
+          onClick={() => navigateToSection('invoices')}
+        />
+        <StatsCard 
+          title="Total Hours This Week" 
+          value={stats?.totalHoursThisWeek || 0} 
+          icon="⏱️" 
+          bgColor="bg-slate-50" 
+          borderColor="border-blue-200" 
+          iconBg="bg-blue-100" 
+          isLoading={isLoading}
+          onClick={() => navigateToSection('timesheets')}
+        />
+        
+        {/* Second Row - Enhanced KPIs */}
+        <StatsCard 
+          title="Overdue Invoices" 
+          value={stats?.overdueInvoicesCount || 0} 
+          icon="⚠️" 
+          bgColor="bg-slate-50" 
+          borderColor="border-red-200" 
+          iconBg="bg-red-100" 
+          isLoading={isLoading}
+          onClick={() => navigateToSection('invoices')}
+        />
+        <StatsCard 
+          title="Jobsites Near Completion" 
+          value={stats?.jobsitesNearCompletion || 0} 
+          icon="🏁" 
+          bgColor="bg-slate-50" 
+          borderColor="border-green-200" 
+          iconBg="bg-green-100" 
+          isLoading={isLoading}
+          onClick={() => navigateToSection('jobsites')}
+        />
+        <StatsCard 
+          title="Timesheets (Last 7 Days)" 
+          value={stats?.timesheetsCount || 0} 
+          icon="📅" 
+          bgColor="bg-slate-50" 
+          borderColor="border-purple-200" 
+          iconBg="bg-purple-100" 
+          isLoading={isLoading}
+          onClick={() => navigateToSection('timesheets')}
+        />
       </div>
 
-      {/* Quick Actions Panel */}
+      {/* Quick Actions Panel - Enhanced */}
       <QuickActionsSection setActiveTab={setActiveTab} />
 
-      {/* New Dashboard Boxes */}
+      {/* Project Progress and Live Punch-ins - Preserved as requested */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ProjectsProgressOverview />
         <LiveActiveEmployees />
       </div>
-    </div>;
+    </div>
+  );
 };
 export default AdminDashboardContent;
