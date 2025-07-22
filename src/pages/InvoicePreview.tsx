@@ -27,7 +27,7 @@ const InvoicePreview = () => {
     }
 
     try {
-      await generateInvoicePDF(invoiceRef, invoice, company);
+      await generateInvoicePDF(invoice, company, logoUrl);
       toast({
         title: "Success",
         description: "PDF downloaded successfully",
