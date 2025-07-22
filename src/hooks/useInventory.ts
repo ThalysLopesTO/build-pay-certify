@@ -16,6 +16,7 @@ export interface InventoryItem {
   company_id: string;
   created_at: string;
   updated_at: string;
+  status?: 'assigned' | 'available' | 'returned' | 'maintenance';
   jobsites?: {
     name: string;
     address: string | null;
@@ -64,7 +65,19 @@ export const useInventory = () => {
       }
       
       console.log('Inventory fetched:', data);
-      return data as InventoryItem[];
+      
+      // Add status field based on return_date
+      const inventoryWithStatus = data.map(item => {
+        let status = 'assigned';
+        if (!item.jobsite_id) {
+          status = 'available';
+        } else if (item.return_date) {
+          status = 'returned';
+        }
+        return { ...item, status };
+      });
+      
+      return inventoryWithStatus as InventoryItem[];
     },
     enabled: !!user?.companyId,
   });
@@ -185,6 +198,49 @@ export const useInventory = () => {
     },
   });
 
+  const setAsReturnedMutation = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Setting inventory item as returned:', id);
+      
+      const currentDate = new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      
+      const { data, error } = await supabase
+        .from('inventory')
+        .update({ return_date: currentDate })
+        .eq('id', id)
+        .select(`
+          *,
+          jobsites (
+            name,
+            address
+          )
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error marking item as returned:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      toast({
+        title: "Success",
+        description: "Item marked as returned successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to mark item as returned:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark item as returned",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     inventory: inventoryQuery.data || [],
     isLoading: inventoryQuery.isLoading,
@@ -192,8 +248,10 @@ export const useInventory = () => {
     createItem: createInventoryMutation.mutateAsync,
     updateItem: updateInventoryMutation.mutateAsync,
     deleteItem: deleteInventoryMutation.mutateAsync,
+    setAsReturned: setAsReturnedMutation.mutateAsync,
     isCreating: createInventoryMutation.isPending,
     isUpdating: updateInventoryMutation.isPending,
     isDeleting: deleteInventoryMutation.isPending,
+    isReturning: setAsReturnedMutation.isPending,
   };
 };

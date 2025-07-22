@@ -54,7 +54,8 @@ import {
   Tag, 
   Info,
   Eye,
-  Package
+  Package,
+  ArrowLeftRight
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -68,12 +69,24 @@ import { cn } from '@/lib/utils';
 
 const EquipmentManagement = () => {
   const { user } = useAuth();
-  const { inventory, isLoading, createItem, updateItem, deleteItem, isCreating, isUpdating, isDeleting } = useInventory();
+  const { 
+    inventory, 
+    isLoading, 
+    createItem, 
+    updateItem, 
+    deleteItem, 
+    setAsReturned,
+    isCreating, 
+    isUpdating, 
+    isDeleting,
+    isReturning 
+  } = useInventory();
   const { data: jobsites = [] } = useJobsites();
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [deletingItem, setDeletingItem] = useState<InventoryItem | null>(null);
+  const [returningItem, setReturningItem] = useState<InventoryItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [jobsiteFilter, setJobsiteFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -165,7 +178,9 @@ const EquipmentManagement = () => {
     const statusConfig: Record<string, { color: string, label: string }> = {
       'available': { color: 'bg-green-100 text-green-800 border-green-200', label: 'Available' },
       'assigned': { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Assigned' },
-      'overdue': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Overdue' }
+      'overdue': { color: 'bg-red-100 text-red-800 border-red-200', label: 'Overdue' },
+      'returned': { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Returned' },
+      'maintenance': { color: 'bg-amber-100 text-amber-800 border-amber-200', label: 'Maintenance' }
     };
     
     const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Unknown' };
@@ -176,6 +191,22 @@ const EquipmentManagement = () => {
       </Badge>
     );
   };
+  
+  const handleSetAsReturned = async () => {
+    if (returningItem) {
+      await setAsReturned(returningItem.id);
+      setReturningItem(null);
+    }
+  };
+  
+  // Calculate summary stats
+  const totalEquipment = inventory.length;
+  const assignedEquipment = inventory.filter(item => item.status === 'assigned' || 
+    (!item.status && item.jobsite_id && !item.return_date)).length;
+  const returnedEquipment = inventory.filter(item => item.status === 'returned' || 
+    (!item.status && item.return_date)).length;
+  const availableEquipment = inventory.filter(item => item.status === 'available' || 
+    (!item.status && !item.jobsite_id)).length;
 
   const resetFilters = () => {
     setSearchTerm('');
@@ -194,6 +225,34 @@ const EquipmentManagement = () => {
 
   return (
     <div className="space-y-6">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-6 flex flex-col justify-between">
+            <div className="text-sm text-muted-foreground">Total Equipment</div>
+            <div className="text-3xl font-bold mt-2">{totalEquipment}</div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-6 flex flex-col justify-between">
+            <div className="text-sm text-muted-foreground">Assigned</div>
+            <div className="text-3xl font-bold mt-2 text-blue-600">{assignedEquipment}</div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-6 flex flex-col justify-between">
+            <div className="text-sm text-muted-foreground">Available</div>
+            <div className="text-3xl font-bold mt-2 text-green-600">{availableEquipment}</div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-6 flex flex-col justify-between">
+            <div className="text-sm text-muted-foreground">Returned</div>
+            <div className="text-3xl font-bold mt-2 text-gray-600">{returnedEquipment}</div>
+          </CardContent>
+        </Card>
+      </div>
+      
       <Card className="shadow-sm">
         <CardContent className="p-6 space-y-6">
           {/* Filters and Search */}
@@ -368,6 +427,28 @@ const EquipmentManagement = () => {
                                 </Tooltip>
                               </TooltipProvider>
                               
+                              {/* Set as Returned button - only show if not already returned */}
+                              {!item.return_date && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 transition-all hover:scale-110"
+                                        onClick={() => setReturningItem(item)}
+                                        disabled={isReturning}
+                                      >
+                                        <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Set as Returned</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                              
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -444,6 +525,27 @@ const EquipmentManagement = () => {
               disabled={isDeleting}
             >
               {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Return Confirmation Dialog */}
+      <AlertDialog open={!!returningItem} onOpenChange={() => setReturningItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as Returned</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark "{returningItem?.equipment_name}" as returned? The current date will be set as the return date.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSetAsReturned}
+              disabled={isReturning}
+            >
+              {isReturning ? 'Processing...' : 'Confirm Return'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
