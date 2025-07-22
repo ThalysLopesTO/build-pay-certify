@@ -1,24 +1,43 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { useInvoiceById } from "../hooks/useInvoiceById";
 import { useCompanySettings } from "../hooks/useCompanySettings";
 import { useAuth } from "../contexts/SupabaseAuthContext";
 import { formatCurrency, formatDate } from "../utils/formatters";
+import { generateInvoicePDF } from "../utils/invoicePDFGenerator";
+import { useToast } from "@/hooks/use-toast";
 const InvoicePreview = () => {
-  const {
-    invoiceId
-  } = useParams();
-  const {
-    user
-  } = useAuth();
-  const {
-    invoice,
-    loading: invoiceLoading
-  } = useInvoiceById(invoiceId);
-  const {
-    settings: company,
-    isLoading: companyLoading
-  } = useCompanySettings();
+  const { invoiceId } = useParams();
+  const { user } = useAuth();
+  const { invoice, loading: invoiceLoading } = useInvoiceById(invoiceId);
+  const { settings: company, isLoading: companyLoading } = useCompanySettings();
+  const { toast } = useToast();
+  const invoiceRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadPDF = async () => {
+    if (!invoice || !company) {
+      toast({
+        title: "Error",
+        description: "Invoice or company data not loaded",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await generateInvoicePDF(invoiceRef, invoice, company);
+      toast({
+        title: "Success",
+        description: "PDF downloaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Restrict access to admin only
   if (!user || !['admin', 'super_admin'].includes(user.role)) {
@@ -42,18 +61,39 @@ const InvoicePreview = () => {
   }
   return <div className="min-h-screen bg-gray-50 py-8 print:bg-white print:py-0">
       <div className="max-w-4xl mx-auto bg-white shadow-xl print:shadow-none print:max-w-none">
-        {/* Print Button */}
+        {/* Action Buttons */}
         <div className="p-4 bg-gray-100 border-b print:hidden">
           <div className="flex justify-between items-center">
             <h1 className="text-lg font-semibold text-gray-800">Invoice Preview</h1>
-            <button onClick={() => window.print()} className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition duration-200 shadow-sm">
-              Print Invoice
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => window.print()} 
+                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200 shadow-sm"
+              >
+                Print Invoice
+              </button>
+              <button 
+                onClick={handleDownloadPDF}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 shadow-sm"
+              >
+                Download Invoice
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Invoice Content */}
-        <div className="p-8 print:p-6">
+        <div ref={invoiceRef} className="relative p-8 print:p-6">{/* Add watermark overlay for preview */}
+          {(invoice.status === 'paid' || invoice.status === 'draft') && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <div 
+                className="text-gray-200 font-bold text-8xl transform rotate-45 select-none"
+                style={{ fontSize: '120px', opacity: 0.1 }}
+              >
+                {invoice.status.toUpperCase()}
+              </div>
+            </div>
+          )}
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row justify-between items-start mb-8">
             {/* Company Info */}
@@ -62,7 +102,8 @@ const InvoicePreview = () => {
                 <img 
                   src={company.company_logo_url} 
                   alt="Company Logo" 
-                  className="h-20 w-20 object-contain" 
+                  className="h-20 w-20 object-contain"
+                  crossOrigin="anonymous"
                 />
               ) : (
                 <div className="h-20 w-20 bg-gray-200 rounded-lg flex items-center justify-center">
