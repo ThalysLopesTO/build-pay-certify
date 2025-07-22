@@ -28,42 +28,57 @@ const InvoiceManagement = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Invoice Management</h1>
-          <p className="text-slate-600">Create, track, and manage client invoices for your construction projects</p>
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header Section */}
+        <div className="bg-card border rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Invoice Management</h1>
+                <p className="text-muted-foreground mt-1">
+                  Create professional invoices, track payments, and manage project budgets
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Tab Navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="bg-card border rounded-lg p-2 shadow-sm">
+            <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+              <TabsTrigger value="create" className="flex items-center space-x-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <Plus className="h-4 w-4" />
+                <span>Create Invoice</span>
+              </TabsTrigger>
+              <TabsTrigger value="tracker" className="flex items-center space-x-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <FileText className="h-4 w-4" />
+                <span>Invoice Tracker</span>
+              </TabsTrigger>
+              <TabsTrigger value="overview" className="flex items-center space-x-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <BarChart3 className="h-4 w-4" />
+                <span>Project Budgets</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="create" className="space-y-0">
+            <CreateInvoiceForm />
+          </TabsContent>
+
+          <TabsContent value="tracker" className="space-y-0">
+            <InvoiceTracker />
+          </TabsContent>
+
+          <TabsContent value="overview" className="space-y-0">
+            <ProjectBillingOverview />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="create" className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>Create Invoice</span>
-          </TabsTrigger>
-          <TabsTrigger value="tracker" className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span>Invoice Tracker</span>
-          </TabsTrigger>
-          <TabsTrigger value="overview" className="flex items-center space-x-2">
-            <BarChart3 className="h-4 w-4" />
-            <span>Project Budgets</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="create">
-          <CreateInvoiceForm />
-        </TabsContent>
-
-        <TabsContent value="tracker">
-          <InvoiceTracker />
-        </TabsContent>
-
-        <TabsContent value="overview">
-          <ProjectBillingOverview />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };
