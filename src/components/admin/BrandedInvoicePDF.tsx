@@ -3,7 +3,16 @@
 import { format } from 'date-fns';
 import { Invoice } from './types/invoice';
 import { CompanySettings } from '@/hooks/useCompanySettings';
-import html2pdf from 'html2pdf.js';
+
+// Type declaration for html2pdf.js
+declare const html2pdf: any;
+import('html2pdf.js').then(module => {
+  (window as any).html2pdf = module.default;
+});
+
+const getHtml2Pdf = () => {
+  return (window as any).html2pdf || require('html2pdf.js');
+};
 
 const getBase64FromUrl = async (url: string): Promise<string> => {
   const response = await fetch(url);
@@ -115,6 +124,7 @@ export const generateBrandedInvoicePDF = async (
     </div>
   `;
 
+  const html2pdf = getHtml2Pdf();
   html2pdf().set({
     margin: 10,
     filename: `Invoice_${invoice.invoice_number}.pdf`,
