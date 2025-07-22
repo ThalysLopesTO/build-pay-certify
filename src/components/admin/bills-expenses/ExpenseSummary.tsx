@@ -21,21 +21,12 @@ interface ExpenseSummaryProps {
 }
 
 export const ExpenseSummary = ({ expenses }: ExpenseSummaryProps) => {
-  // Current month calculations
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
-  
-  const currentMonthExpenses = expenses.filter(expense => {
-    const expenseDate = new Date(expense.expense_date);
-    return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
-  });
-
-  const totalCurrentMonth = currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const totalPaid = currentMonthExpenses
+  // Use filtered expenses directly instead of current month only
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalPaid = expenses
     .filter(expense => expense.payment_status === 'paid')
     .reduce((sum, expense) => sum + expense.amount, 0);
-  const totalUnpaid = currentMonthExpenses
+  const totalUnpaid = expenses
     .filter(expense => expense.payment_status === 'unpaid')
     .reduce((sum, expense) => sum + expense.amount, 0);
 
@@ -67,15 +58,15 @@ export const ExpenseSummary = ({ expenses }: ExpenseSummaryProps) => {
               <Calendar className="h-5 w-5 text-white" />
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalCurrentMonth)}</p>
+              <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalExpenses)}</p>
               <p className="text-sm text-slate-600 font-medium">
-                {currentMonthExpenses.length} bill{currentMonthExpenses.length !== 1 ? 's' : ''}
+                {expenses.length} bill{expenses.length !== 1 ? 's' : ''}
               </p>
             </div>
           </div>
           <div className="text-left">
-            <h3 className="font-semibold text-slate-700 mb-1">This Month Total</h3>
-            <p className="text-xs text-slate-500">Total expenses this month</p>
+            <h3 className="font-semibold text-slate-700 mb-1">Total Filtered</h3>
+            <p className="text-xs text-slate-500">Total expenses in view</p>
           </div>
         </div>
 
@@ -88,12 +79,12 @@ export const ExpenseSummary = ({ expenses }: ExpenseSummaryProps) => {
             <div className="text-right">
               <p className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid)}</p>
               <p className="text-sm text-green-600 font-medium">
-                ↗ {Math.round((totalPaid / totalCurrentMonth) * 100) || 0}% paid
+                ↗ {Math.round((totalPaid / totalExpenses) * 100) || 0}% paid
               </p>
             </div>
           </div>
           <div className="text-left">
-            <h3 className="font-semibold text-slate-700 mb-1">Paid This Month</h3>
+            <h3 className="font-semibold text-slate-700 mb-1">Paid Amount</h3>
             <p className="text-xs text-slate-500">Successfully processed payments</p>
           </div>
         </div>
@@ -108,12 +99,12 @@ export const ExpenseSummary = ({ expenses }: ExpenseSummaryProps) => {
               <p className="text-2xl font-bold text-red-600">{formatCurrency(totalUnpaid)}</p>
               <p className="text-sm text-red-600 font-medium flex items-center justify-end">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                ⚠ {Math.round((totalUnpaid / totalCurrentMonth) * 100) || 0}% unpaid
+                ⚠ {Math.round((totalUnpaid / totalExpenses) * 100) || 0}% unpaid
               </p>
             </div>
           </div>
           <div className="text-left">
-            <h3 className="font-semibold text-slate-700 mb-1">Unpaid This Month</h3>
+            <h3 className="font-semibold text-slate-700 mb-1">Unpaid Amount</h3>
             <p className="text-xs text-slate-500">Outstanding bills requiring attention</p>
           </div>
         </div>

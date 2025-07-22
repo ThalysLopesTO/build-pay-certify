@@ -13,12 +13,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Plus, Search, FileDown, Calendar as CalendarIcon, Edit, Trash2, Receipt, RotateCcw, Settings2, Filter, Eye, Paperclip, AlertTriangle } from 'lucide-react';
+import { Plus, Search, FileDown, Calendar as CalendarIcon, Edit, Trash2, Receipt, RotateCcw, Settings2, Filter, Eye, Paperclip, AlertTriangle, Bell } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { BillReminderDropdown } from '@/components/notifications/BillReminderDropdown';
 import { CategoryManager } from './bills-expenses/CategoryManager';
 import { ExpenseSummary } from './bills-expenses/ExpenseSummary';
 import { RecurringBillForm } from './bills-expenses/RecurringBillForm';
+import { DateFilter } from './bills-expenses/DateFilter';
 
 interface BillExpense {
   id: string;
@@ -353,6 +355,7 @@ const BillsExpensesManagement = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <BillReminderDropdown />
             <CategoryManager categories={categories} onCategoriesChange={fetchCategories} />
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
@@ -526,9 +529,21 @@ const BillsExpensesManagement = () => {
           </div>
         </div>
 
+        {/* Date Filter */}
+        <DateFilter
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          onClear={() => {
+            setDateFrom(undefined);
+            setDateTo(undefined);
+          }}
+        />
+
         {/* Enhanced Analytics Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <ExpenseSummary expenses={expenses} />
+          <ExpenseSummary expenses={filteredExpenses} />
         </div>
 
         {/* Advanced Filters & Search */}
