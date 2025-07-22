@@ -9,7 +9,7 @@ import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { format } from 'date-fns';
 import { Download, FileText, FileSpreadsheet, Filter, Mail, AlertTriangle } from 'lucide-react';
-import { generateBrandedInvoicePDF } from './BrandedInvoicePDF';
+import { downloadInvoicePDF } from './BrandedInvoicePDF';
 import { InvoiceEmailSender } from './InvoiceEmailSender';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -76,7 +76,7 @@ const ProjectBillingOverview = () => {
       console.error('Company settings not loaded');
       return;
     }
-    generateBrandedInvoicePDF(invoice, settings, logoUrl);
+    downloadInvoicePDF(invoice.status);
   };
 
   const handleSendEmail = (invoice: any) => {
