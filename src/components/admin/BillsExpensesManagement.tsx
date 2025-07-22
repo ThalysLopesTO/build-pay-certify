@@ -529,7 +529,12 @@ const BillsExpensesManagement = () => {
           </div>
         </div>
 
-        {/* Date Filter */}
+        {/* Enhanced Analytics Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <ExpenseSummary expenses={filteredExpenses} />
+        </div>
+        
+        {/* Date Filter - Moved below cards */}
         <DateFilter
           dateFrom={dateFrom}
           dateTo={dateTo}
@@ -540,11 +545,6 @@ const BillsExpensesManagement = () => {
             setDateTo(undefined);
           }}
         />
-
-        {/* Enhanced Analytics Summary */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <ExpenseSummary expenses={filteredExpenses} />
-        </div>
 
         {/* Advanced Filters & Search */}
         <Card className="bg-white shadow-sm border-slate-200">
