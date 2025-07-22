@@ -34,21 +34,21 @@ const QuotesFilters: React.FC<QuotesFiltersProps> = ({ filters, onFiltersChange 
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6">
+    <Card className="shadow-sm">
+      <CardContent className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="Search client name..."
               value={filters.client_name}
               onChange={(e) => handleFilterChange('client_name', e.target.value)}
-              className="pl-10"
+              className="pl-10 h-10"
             />
           </div>
           
           <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
-            <SelectTrigger>
+            <SelectTrigger className="h-10">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -65,6 +65,7 @@ const QuotesFilters: React.FC<QuotesFiltersProps> = ({ filters, onFiltersChange 
             placeholder="From date"
             value={filters.date_from}
             onChange={(e) => handleFilterChange('date_from', e.target.value)}
+            className="h-10"
           />
 
           <Input
@@ -72,12 +73,13 @@ const QuotesFilters: React.FC<QuotesFiltersProps> = ({ filters, onFiltersChange 
             placeholder="To date"
             value={filters.date_to}
             onChange={(e) => handleFilterChange('date_to', e.target.value)}
+            className="h-10"
           />
 
           <Button 
             variant="outline" 
             onClick={handleClearFilters}
-            className="flex items-center gap-2"
+            className="h-10 flex items-center gap-2"
           >
             <RotateCcw className="h-4 w-4" />
             Clear

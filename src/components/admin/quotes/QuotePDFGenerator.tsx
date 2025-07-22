@@ -5,9 +5,8 @@ import { Download } from 'lucide-react';
 import { Quote, useQuoteLineItems } from '@/hooks/quotes';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
-import { generateClassicTemplate } from './templates/ClassicTemplate';
-import { generateModernTemplate } from './templates/ModernTemplate';
-import { generateConstructionTemplate } from './templates/ConstructionTemplate';
+import { generateQuotePDF } from '@/utils/quotePDFGenerator';
+import { useToast } from '@/hooks/use-toast';
 
 interface QuotePDFGeneratorProps {
   quote: Quote;
@@ -17,43 +16,22 @@ const QuotePDFGenerator: React.FC<QuotePDFGeneratorProps> = ({ quote }) => {
   const { settings } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
   const { data: lineItems = [] } = useQuoteLineItems(quote.id);
+  const { toast } = useToast();
 
-  const generateQuoteHTML = () => {
-    const templateProps = {
-      quote,
-      lineItems,
-      settings,
-      logoUrl
-    };
-
-    // Default to 'classic' template if no template is specified
-    const selectedTemplate = quote.template || 'classic';
-
-    switch (selectedTemplate) {
-      case 'modern':
-        return generateModernTemplate(templateProps);
-      case 'construction':
-        return generateConstructionTemplate(templateProps);
-      case 'classic':
-      default:
-        return generateClassicTemplate(templateProps);
-    }
-  };
-
-  const downloadPDF = () => {
-    const htmlContent = generateQuoteHTML();
-    const filename = `Quote-${quote.quote_number}-${quote.client_name.replace(/\s+/g, '')}.pdf`;
-    
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      printWindow.focus();
-      
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 250);
+  const handleDownloadPDF = async () => {
+    try {
+      await generateQuotePDF(quote, lineItems, settings, logoUrl);
+      toast({
+        title: "PDF Generated",
+        description: "Quote PDF has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error('Error generating quote PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate quote PDF. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -61,7 +39,7 @@ const QuotePDFGenerator: React.FC<QuotePDFGeneratorProps> = ({ quote }) => {
     <Button
       variant="ghost"
       size="sm"
-      onClick={downloadPDF}
+      onClick={handleDownloadPDF}
       className="h-8 w-8 p-0"
       title="Download quote PDF"
     >

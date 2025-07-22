@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MoreHorizontal, Edit, Send, FileText, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { MoreHorizontal, Edit, Send, FileText, Trash2, CheckCircle, XCircle, Download } from 'lucide-react';
 import { Quote, useUpdateQuote, useDeleteQuote, useConvertQuoteToInvoice } from '@/hooks/quotes';
 import { useToast } from '@/hooks/use-toast';
 import QuotePDFGenerator from './QuotePDFGenerator';
@@ -76,88 +76,102 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <QuotePDFGenerator quote={quote} />
-      
-      {/* Status Control - Only show for non-invoiced quotes */}
-      {quote.status !== 'invoiced' && (
-        <Select
-          value={quote.status}
-          onValueChange={(value) => handleStatusChange(value as 'draft' | 'sent' | 'accepted' | 'declined')}
-          disabled={updateQuote.isPending}
-        >
-          <SelectTrigger className="w-28">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
-            <SelectItem value="accepted">Approved</SelectItem>
-            <SelectItem value="declined">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
-      )}
-      
-      {/* Convert to Invoice button for accepted quotes that haven't been converted */}
-      {(quote.status === 'accepted' || quote.status === 'sent') && !quote.invoice_id && (
+    <div className="flex items-center gap-1">
+      {/* Convert to Invoice - Prominent placement for accepted quotes */}
+      {quote.status === 'accepted' && !quote.invoice_id && (
         <Button 
-          variant="outline" 
+          variant="default" 
           size="sm"
           onClick={handleConvertToInvoice}
           disabled={convertToInvoice.isPending}
+          className="shadow-sm"
         >
-          <FileText className="mr-2 h-4 w-4" />
+          <FileText className="mr-1 h-3 w-3" />
           Convert to Invoice
         </Button>
       )}
       
+      {/* Quick actions */}
+      <QuotePDFGenerator quote={quote} />
+      
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-48">
           {quote.status !== 'invoiced' && (
             <DropdownMenuItem onClick={() => onEdit(quote)}>
               <Edit className="mr-2 h-4 w-4" />
-              Edit
+              Edit Quote
             </DropdownMenuItem>
           )}
+          
+          <DropdownMenuSeparator />
           
           {quote.status === 'draft' && (
             <DropdownMenuItem onClick={handleSendQuote}>
               <Send className="mr-2 h-4 w-4" />
-              Send Quote
+              Send to Client
             </DropdownMenuItem>
           )}
           
           {quote.status === 'sent' && (
             <>
               <DropdownMenuItem onClick={() => handleStatusChange('accepted')}>
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Mark Approved
+                <CheckCircle className="mr-2 h-4 w-4 text-emerald-600" />
+                Mark as Approved
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleStatusChange('declined')}>
-                <XCircle className="mr-2 h-4 w-4" />
-                Mark Rejected
+                <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                Mark as Rejected
               </DropdownMenuItem>
             </>
           )}
 
-          {/* Allow conversion from dropdown for sent quotes as well */}
-          {(quote.status === 'sent' || quote.status === 'accepted') && !quote.invoice_id && (
-            <DropdownMenuItem onClick={handleConvertToInvoice}>
-              <FileText className="mr-2 h-4 w-4" />
-              Convert to Invoice
-            </DropdownMenuItem>
+          {/* Status Change Section */}
+          {quote.status !== 'invoiced' && (
+            <>
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1 text-xs font-medium text-muted-foreground">Change Status</div>
+              <Select
+                value={quote.status}
+                onValueChange={(value) => handleStatusChange(value as 'draft' | 'sent' | 'accepted' | 'declined')}
+                disabled={updateQuote.isPending}
+              >
+                <SelectTrigger className="mx-2 my-1 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="accepted">Approved</SelectItem>
+                  <SelectItem value="declined">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
+
+          {/* Convert option for sent quotes */}
+          {quote.status === 'sent' && !quote.invoice_id && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleConvertToInvoice}>
+                <FileText className="mr-2 h-4 w-4" />
+                Convert to Invoice
+              </DropdownMenuItem>
+            </>
           )}
           
           {quote.status !== 'accepted' && quote.status !== 'invoiced' && (
-            <DropdownMenuItem onClick={handleDelete} className="text-red-600">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Quote
+              </DropdownMenuItem>
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

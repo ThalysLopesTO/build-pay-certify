@@ -41,10 +41,13 @@ const QuotesManagement = () => {
 
   if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+      <div className="min-h-screen bg-muted/30">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="animate-pulse space-y-6">
+            <div className="h-12 bg-muted rounded-lg w-1/3"></div>
+            <div className="h-20 bg-muted rounded-lg"></div>
+            <div className="h-96 bg-muted rounded-lg"></div>
+          </div>
         </div>
       </div>
     );
@@ -52,38 +55,48 @@ const QuotesManagement = () => {
 
   if (error) {
     return (
-      <div className="p-6">
-        <div className="text-center py-8">
-          <p className="text-red-600 mb-4">Failed to load quotes</p>
-          <Button onClick={() => refetch()}>Try Again</Button>
+      <div className="min-h-screen bg-muted/30">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="text-center py-12">
+            <p className="text-destructive mb-4 text-lg">Failed to load quotes</p>
+            <Button onClick={() => refetch()} variant="outline">Try Again</Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Quotes Management</h1>
-          <p className="text-slate-600">Create and manage project quotes</p>
+    <div className="min-h-screen bg-muted/30">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Quote Management</h1>
+              <p className="text-muted-foreground mt-1">Create and manage project quotes</p>
+            </div>
+            <Button onClick={handleCreateQuote} size="lg" className="shadow-sm">
+              <Plus className="h-4 w-4 mr-2" />
+              New Quote
+            </Button>
+          </div>
         </div>
-        <Button onClick={handleCreateQuote} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          New Quote
-        </Button>
       </div>
 
-      <QuotesFilters 
-        filters={filters}
-        onFiltersChange={handleFilterChange}
-      />
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+        <QuotesFilters 
+          filters={filters}
+          onFiltersChange={handleFilterChange}
+        />
 
-      <QuotesTable
-        quotes={quotes}
-        onEdit={handleEditQuote}
-        onRefresh={refetch}
-      />
+        <QuotesTable
+          quotes={quotes}
+          onEdit={handleEditQuote}
+          onRefresh={refetch}
+        />
+      </div>
 
       <QuoteFormModal
         quote={selectedQuote}

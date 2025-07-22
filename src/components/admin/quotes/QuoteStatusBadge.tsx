@@ -41,8 +41,29 @@ const QuoteStatusBadge: React.FC<QuoteStatusBadgeProps> = ({ status }) => {
     }
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return '✓';
+      case 'sent':
+        return '↗';
+      case 'declined':
+        return '✗';
+      case 'invoiced':
+        return '📄';
+      case 'draft':
+        return '📝';
+      default:
+        return '';
+    }
+  };
+
   return (
-    <Badge variant={getStatusVariant(status)}>
+    <Badge 
+      variant={getStatusVariant(status)} 
+      className={`font-medium ${status === 'accepted' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : ''}`}
+    >
+      <span className="mr-1">{getStatusIcon(status)}</span>
       {getStatusText(status)}
     </Badge>
   );
