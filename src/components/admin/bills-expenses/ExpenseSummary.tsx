@@ -58,73 +58,97 @@ export const ExpenseSummary = ({ expenses }: ExpenseSummaryProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {/* Total Current Month */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">This Month Total</CardTitle>
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(totalCurrentMonth)}</div>
-          <p className="text-xs text-muted-foreground">
-            {currentMonthExpenses.length} expense{currentMonthExpenses.length !== 1 ? 's' : ''}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Total Paid */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Paid This Month</CardTitle>
-          <TrendingDown className="h-4 w-4 text-green-600" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid)}</div>
-          <p className="text-xs text-muted-foreground">
-            {Math.round((totalPaid / totalCurrentMonth) * 100) || 0}% of total
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Total Unpaid */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Unpaid This Month</CardTitle>
-          <TrendingUp className="h-4 w-4 text-red-600" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-red-600">{formatCurrency(totalUnpaid)}</div>
-          <p className="text-xs text-muted-foreground">
-            {Math.round((totalUnpaid / totalCurrentMonth) * 100) || 0}% of total
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Top Categories */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Top Categories</CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {topCategories.slice(0, 3).map(([category, amount], index) => (
-              <div key={category} className="flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  {index + 1}. {category}
-                </span>
-                <Badge variant="secondary" className="text-xs">
-                  {formatCurrency(amount)}
-                </Badge>
-              </div>
-            ))}
-            {topCategories.length === 0 && (
-              <p className="text-xs text-muted-foreground">No expenses yet</p>
-            )}
+    <div className="p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* This Month Total */}
+        <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 border border-slate-200 text-center group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-lg shadow-lg">
+              <Calendar className="h-5 w-5 text-white" />
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalCurrentMonth)}</p>
+              <p className="text-sm text-slate-600 font-medium">
+                {currentMonthExpenses.length} bill{currentMonthExpenses.length !== 1 ? 's' : ''}
+              </p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="text-left">
+            <h3 className="font-semibold text-slate-700 mb-1">This Month Total</h3>
+            <p className="text-xs text-slate-500">Total expenses this month</p>
+          </div>
+        </div>
+
+        {/* Paid This Month */}
+        <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 border border-slate-200 text-center group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-gradient-to-br from-green-500 to-green-600 p-3 rounded-lg shadow-lg">
+              <TrendingDown className="h-5 w-5 text-white" />
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid)}</p>
+              <p className="text-sm text-green-600 font-medium">
+                ↗ {Math.round((totalPaid / totalCurrentMonth) * 100) || 0}% paid
+              </p>
+            </div>
+          </div>
+          <div className="text-left">
+            <h3 className="font-semibold text-slate-700 mb-1">Paid This Month</h3>
+            <p className="text-xs text-slate-500">Successfully processed payments</p>
+          </div>
+        </div>
+
+        {/* Unpaid This Month */}
+        <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 border border-slate-200 text-center group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-gradient-to-br from-red-500 to-red-600 p-3 rounded-lg shadow-lg">
+              <TrendingUp className="h-5 w-5 text-white" />
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-red-600">{formatCurrency(totalUnpaid)}</p>
+              <p className="text-sm text-red-600 font-medium flex items-center justify-end">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                ⚠ {Math.round((totalUnpaid / totalCurrentMonth) * 100) || 0}% unpaid
+              </p>
+            </div>
+          </div>
+          <div className="text-left">
+            <h3 className="font-semibold text-slate-700 mb-1">Unpaid This Month</h3>
+            <p className="text-xs text-slate-500">Outstanding bills requiring attention</p>
+          </div>
+        </div>
+
+        {/* Top Categories */}
+        <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 border border-slate-200 text-center group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-3 rounded-lg shadow-lg">
+              <DollarSign className="h-5 w-5 text-white" />
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-bold text-slate-900">Top 3</p>
+              <p className="text-sm text-slate-600 font-medium">Categories</p>
+            </div>
+          </div>
+          <div className="text-left">
+            <h3 className="font-semibold text-slate-700 mb-3">Top Categories</h3>
+            <div className="space-y-2">
+              {topCategories.slice(0, 3).map(([category, amount], index) => (
+                <div key={category} className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-slate-600 truncate max-w-[100px]">
+                    {index + 1}. {category}
+                  </span>
+                  <Badge className="bg-purple-50 text-purple-700 border-purple-200 text-xs px-2 py-0.5">
+                    {formatCurrency(amount)}
+                  </Badge>
+                </div>
+              ))}
+              {topCategories.length === 0 && (
+                <p className="text-xs text-slate-400 italic">No expenses yet</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

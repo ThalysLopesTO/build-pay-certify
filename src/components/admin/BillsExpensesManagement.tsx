@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Plus, Search, FileDown, Calendar as CalendarIcon, Edit, Trash2, Receipt, RotateCcw } from 'lucide-react';
+import { Plus, Search, FileDown, Calendar as CalendarIcon, Edit, Trash2, Receipt, RotateCcw, Settings2, Filter, Eye, Paperclip, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { CategoryManager } from './bills-expenses/CategoryManager';
@@ -276,14 +276,30 @@ const BillsExpensesManagement = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Paid</Badge>;
+        return <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">✓ Paid</Badge>;
       case 'unpaid':
-        return <Badge variant="destructive">Unpaid</Badge>;
+        return <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">⚠ Unpaid</Badge>;
       case 'scheduled':
-        return <Badge variant="secondary">Scheduled</Badge>;
+        return <Badge className="bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100">📅 Scheduled</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
+  };
+
+  const getCategoryBadge = (category: string) => {
+    const colors = [
+      'bg-blue-50 text-blue-700 border-blue-200',
+      'bg-purple-50 text-purple-700 border-purple-200', 
+      'bg-teal-50 text-teal-700 border-teal-200',
+      'bg-indigo-50 text-indigo-700 border-indigo-200',
+      'bg-pink-50 text-pink-700 border-pink-200'
+    ];
+    const colorIndex = category.charCodeAt(0) % colors.length;
+    return <Badge className={`${colors[colorIndex]} font-medium`}>{category}</Badge>;
+  };
+
+  const isOverdue = (expense: BillExpense) => {
+    return expense.payment_status === 'unpaid' && new Date(expense.expense_date) < new Date();
   };
 
   // Get unique vendors for filter
@@ -318,274 +334,375 @@ const BillsExpensesManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Receipt className="h-8 w-8 text-orange-600" />
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Bills / Expenses</h1>
-            <p className="text-slate-600">Track company expenses and bills</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="container mx-auto px-6 py-8 space-y-8">
+        {/* Professional Page Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-start space-x-4">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-xl shadow-lg">
+              <Receipt className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">
+                💼 Bills / Expenses
+              </h1>
+              <p className="text-lg text-slate-600 font-medium">
+                Track, categorize, and analyze company expenses with ease.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <CategoryManager categories={categories} onCategoriesChange={fetchCategories} />
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  onClick={() => resetForm()} 
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Expense
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader className="pb-6">
+                  <DialogTitle className="text-2xl font-bold text-slate-900">
+                    {editingExpense ? '✏️ Edit Expense' : '➕ Add New Expense'}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="expense_title" className="text-sm font-semibold text-slate-700">Expense Title *</Label>
+                      <Input
+                        id="expense_title"
+                        value={formData.expense_title}
+                        onChange={(e) => setFormData({ ...formData, expense_title: e.target.value })}
+                        placeholder="Enter expense description"
+                        className="h-11 bg-white border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category" className="text-sm font-semibold text-slate-700">Category</Label>
+                      <Select value={formData.category_id} onValueChange={(value) => setFormData({ ...formData, category_id: value })}>
+                        <SelectTrigger className="h-11 bg-white border-slate-300 focus:border-indigo-500">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="vendor_payee" className="text-sm font-semibold text-slate-700">Vendor / Payee *</Label>
+                      <Input
+                        id="vendor_payee"
+                        value={formData.vendor_payee}
+                        onChange={(e) => setFormData({ ...formData, vendor_payee: e.target.value })}
+                        placeholder="Enter vendor name"
+                        className="h-11 bg-white border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="expense_date" className="text-sm font-semibold text-slate-700">Date of Expense *</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn("w-full h-11 justify-start text-left font-normal bg-white border-slate-300 hover:bg-slate-50", !formData.expense_date && "text-muted-foreground")}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.expense_date ? format(formData.expense_date, 'PPP') : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={formData.expense_date}
+                            onSelect={(date) => date && setFormData({ ...formData, expense_date: date })}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="amount" className="text-sm font-semibold text-slate-700">Amount (CAD) *</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        step="0.01"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        placeholder="0.00"
+                        className="h-11 bg-white border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="payment_status" className="text-sm font-semibold text-slate-700">Payment Status *</Label>
+                      <Select value={formData.payment_status} onValueChange={(value: 'paid' | 'unpaid' | 'scheduled') => setFormData({ ...formData, payment_status: value })}>
+                        <SelectTrigger className="h-11 bg-white border-slate-300 focus:border-indigo-500">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unpaid">⚠ Unpaid</SelectItem>
+                          <SelectItem value="paid">✓ Paid</SelectItem>
+                          <SelectItem value="scheduled">📅 Scheduled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_method" className="text-sm font-semibold text-slate-700">Payment Method</Label>
+                    <Select value={formData.payment_method} onValueChange={(value) => setFormData({ ...formData, payment_method: value })}>
+                      <SelectTrigger className="h-11 bg-white border-slate-300 focus:border-indigo-500">
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bank_transfer">🏦 Bank Transfer</SelectItem>
+                        <SelectItem value="credit_card">💳 Credit Card</SelectItem>
+                        <SelectItem value="cash">💵 Cash</SelectItem>
+                        <SelectItem value="cheque">📄 Cheque</SelectItem>
+                        <SelectItem value="other">📋 Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes" className="text-sm font-semibold text-slate-700">Notes</Label>
+                    <Textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Add any additional notes..."
+                      rows={3}
+                      className="bg-white border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                    <RecurringBillForm
+                      isRecurring={isRecurring}
+                      onRecurringChange={setIsRecurring}
+                      frequency={recurrenceFrequency}
+                      onFrequencyChange={setRecurrenceFrequency}
+                      startDate={recurringStartDate}
+                      onStartDateChange={setRecurringStartDate}
+                      endDate={recurringEndDate}
+                      onEndDateChange={setRecurringEndDate}
+                      isIndefinite={isIndefinite}
+                      onIndefiniteChange={setIsIndefinite}
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-6 border-t border-slate-200">
+                    <Button type="button" variant="outline" onClick={resetForm} className="px-6 py-2.5">
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-2.5 font-semibold"
+                    >
+                      {editingExpense ? 'Update Expense' : 'Create Expense'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
-        
-        <div className="flex items-center space-x-2">
-          <CategoryManager categories={categories} onCategoriesChange={fetchCategories} />
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => resetForm()}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Expense
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingExpense ? 'Edit Expense' : 'Add New Expense'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="expense_title">Expense Title *</Label>
-                  <Input
-                    id="expense_title"
-                    value={formData.expense_title}
-                    onChange={(e) => setFormData({ ...formData, expense_title: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select value={formData.category_id} onValueChange={(value) => setFormData({ ...formData, category_id: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="vendor_payee">Vendor / Payee *</Label>
-                  <Input
-                    id="vendor_payee"
-                    value={formData.vendor_payee}
-                    onChange={(e) => setFormData({ ...formData, vendor_payee: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="expense_date">Date of Expense *</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn("w-full justify-start text-left font-normal", !formData.expense_date && "text-muted-foreground")}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.expense_date ? format(formData.expense_date, 'PPP') : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.expense_date}
-                        onSelect={(date) => date && setFormData({ ...formData, expense_date: date })}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
+        {/* Enhanced Analytics Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <ExpenseSummary expenses={expenses} />
+        </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="amount">Amount (CAD) *</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="payment_status">Payment Status *</Label>
-                  <Select value={formData.payment_status} onValueChange={(value: 'paid' | 'unpaid' | 'scheduled') => setFormData({ ...formData, payment_status: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unpaid">Unpaid</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="payment_method">Payment Method</Label>
-                <Select value={formData.payment_method} onValueChange={(value) => setFormData({ ...formData, payment_method: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="credit_card">Credit Card</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="cheque">Cheque</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
+        {/* Advanced Filters & Search */}
+        <Card className="bg-white shadow-sm border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Search Bar */}
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="🔍 Search expenses..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-11 bg-white border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
-
-              <RecurringBillForm
-                isRecurring={isRecurring}
-                onRecurringChange={setIsRecurring}
-                frequency={recurrenceFrequency}
-                onFrequencyChange={setRecurrenceFrequency}
-                startDate={recurringStartDate}
-                onStartDateChange={setRecurringStartDate}
-                endDate={recurringEndDate}
-                onEndDateChange={setRecurringEndDate}
-                isIndefinite={isIndefinite}
-                onIndefiniteChange={setIsIndefinite}
-              />
-
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingExpense ? 'Update' : 'Create'} Expense
+              
+              {/* Filters */}
+              <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-full sm:w-40 h-11 bg-white border-slate-300">
+                    <Filter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="paid">✓ Paid</SelectItem>
+                    <SelectItem value="unpaid">⚠ Unpaid</SelectItem>
+                    <SelectItem value="scheduled">📅 Scheduled</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="w-full sm:w-48 h-11 bg-white border-slate-300">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Button variant="outline" className="h-11 px-4 border-slate-300 hover:bg-slate-50">
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Export
                 </Button>
               </div>
-            </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      <ExpenseSummary expenses={expenses} />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Expense Management</CardTitle>
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search expenses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
             </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="unpaid">Unpaid</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filter by category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.name}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button variant="outline">
-              <FileDown className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Vendor</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredExpenses.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                    No expenses found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredExpenses.map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell>{format(new Date(expense.expense_date), 'MMM dd, yyyy')}</TableCell>
-                    <TableCell className="font-medium">{expense.expense_title}</TableCell>
-                    <TableCell>{expense.category_name}</TableCell>
-                    <TableCell>{expense.vendor_payee}</TableCell>
-                    <TableCell>${expense.amount.toFixed(2)}</TableCell>
-                    <TableCell>{getStatusBadge(expense.payment_status)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => startEdit(expense)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(expense.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          </CardContent>
+        </Card>
+
+        {/* Professional Expense Table */}
+        <Card className="bg-white shadow-sm border-slate-200 overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-50 border-b border-slate-200 pb-4">
+            <CardTitle className="text-xl font-bold text-slate-900 flex items-center">
+              <Receipt className="mr-3 h-5 w-5 text-indigo-600" />
+              Expense Management
+              <Badge className="ml-3 bg-indigo-50 text-indigo-700 border-indigo-200">
+                {filteredExpenses.length} expenses
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50 hover:bg-slate-50 border-b border-slate-200">
+                    <TableHead className="font-semibold text-slate-700 py-4">Date</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-4">Title</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-4">Category</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-4">Vendor</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-4">Amount</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-4">Status</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-4">Attachment</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-4 text-center">Actions</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {filteredExpenses.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-12">
+                        <div className="flex flex-col items-center space-y-3">
+                          <Receipt className="h-12 w-12 text-slate-300" />
+                          <p className="text-slate-500 font-medium">No expenses found</p>
+                          <p className="text-sm text-slate-400">Try adjusting your search or filters</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredExpenses.map((expense) => (
+                      <TableRow 
+                        key={expense.id} 
+                        className={cn(
+                          "border-b border-slate-100 hover:bg-slate-50 transition-colors",
+                          isOverdue(expense) && "bg-red-50/50 hover:bg-red-50"
+                        )}
+                      >
+                        <TableCell className="py-4 font-medium text-slate-700">
+                          <div className="flex items-center space-x-2">
+                            {isOverdue(expense) && (
+                              <AlertTriangle className="h-4 w-4 text-red-500" />
+                            )}
+                            <span>{format(new Date(expense.expense_date), 'MMM dd, yyyy')}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="font-semibold text-slate-900 max-w-xs truncate">
+                            {expense.expense_title}
+                          </div>
+                          {expense.is_recurring && (
+                            <Badge className="mt-1 bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                              🔄 Recurring
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-4">
+                          {getCategoryBadge(expense.category_name)}
+                        </TableCell>
+                        <TableCell className="py-4 font-medium text-slate-700 max-w-xs truncate">
+                          {expense.vendor_payee}
+                        </TableCell>
+                        <TableCell className="py-4 font-bold text-lg text-slate-900">
+                          ${expense.amount.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="py-4">
+                          {getStatusBadge(expense.payment_status)}
+                        </TableCell>
+                        <TableCell className="py-4">
+                          {expense.attachment_url ? (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 p-1"
+                              onClick={() => window.open(expense.attachment_url, '_blank')}
+                            >
+                              <Paperclip className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <span className="text-slate-400 text-sm">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="flex items-center justify-center space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => startEdit(expense)}
+                              className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 p-2"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(expense.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
