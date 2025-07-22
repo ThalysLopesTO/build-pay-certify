@@ -8,8 +8,9 @@ import { Calendar, TrendingUp } from 'lucide-react';
 const ProjectsProgressOverview = () => {
   const { data: jobsites, isLoading } = useJobsites();
 
-  // Get up to 5 recent jobsites
-  const recentJobsites = jobsites?.slice(0, 5) || [];
+  // Filter out completed jobsites and get up to 5 active ones
+  const activeJobsites = jobsites?.filter(jobsite => jobsite.status !== 'completed') || [];
+  const recentActiveJobsites = activeJobsites.slice(0, 5);
 
   // Mock progress calculation - in a real app, this would come from actual progress data
   const getProgressPercentage = (jobsite: any) => {
@@ -67,13 +68,13 @@ const ProjectsProgressOverview = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {recentJobsites.length === 0 ? (
+{recentActiveJobsites.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
             No projects in progress
           </div>
         ) : (
           <div className="space-y-4">
-            {recentJobsites.map((jobsite) => {
+            {recentActiveJobsites.map((jobsite) => {
               const progress = getProgressPercentage(jobsite);
               const estimatedCompletion = getEstimatedCompletion(jobsite);
               
