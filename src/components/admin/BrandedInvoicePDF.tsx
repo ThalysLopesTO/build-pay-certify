@@ -8,7 +8,7 @@ export const generateBrandedInvoicePDF = (
   logoUrl?: string | null
 ) => {
   const watermark =
-    invoice.status === 'PAID' || invoice.status === 'DRAFT'
+    invoice.status === 'paid' || invoice.status === 'pending'
       ? invoice.status.toUpperCase()
       : '';
 
