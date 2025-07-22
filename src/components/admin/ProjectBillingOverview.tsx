@@ -9,7 +9,7 @@ import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { format } from 'date-fns';
 import { Download, FileText, FileSpreadsheet, Filter, Mail, AlertTriangle } from 'lucide-react';
-import { downloadInvoicePDF } from './BrandedInvoicePDF.tsx';
+import { downloadInvoicePDF } from './BrandedInvoicePDF';
 import { InvoiceEmailSender } from './InvoiceEmailSender';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
