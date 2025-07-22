@@ -88,8 +88,8 @@ export const generateBrandedInvoicePDF = async (
       </div>
 
       ${
-        invoice.status === 'PAID' || invoice.status === 'DRAFT'
-          ? `<div style="position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; color: rgba(0,0,0,0.1); font-weight: bold; z-index: 999;">${invoice.status}</div>`
+        invoice.status === 'paid'
+          ? `<div style="position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; color: rgba(0,0,0,0.1); font-weight: bold; z-index: 999;">PAID</div>`
           : ''
       }
     </div>
