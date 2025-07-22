@@ -26,6 +26,10 @@ export const generateInvoicePDF = async (
         const images = clonedDoc.querySelectorAll('img');
         images.forEach((img) => {
           img.crossOrigin = 'anonymous';
+          // Force reload if not already loaded
+          if (!img.complete) {
+            img.src = img.src;
+          }
         });
       }
     });

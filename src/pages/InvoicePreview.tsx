@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { useInvoiceById } from "../hooks/useInvoiceById";
 import { useCompanySettings } from "../hooks/useCompanySettings";
+import { useCompanyLogo } from "../hooks/useCompanyLogo";
 import { useAuth } from "../contexts/SupabaseAuthContext";
 import { formatCurrency, formatDate } from "../utils/formatters";
 import { generateInvoicePDF } from "../utils/invoicePDFGenerator";
@@ -11,6 +12,7 @@ const InvoicePreview = () => {
   const { user } = useAuth();
   const { invoice, loading: invoiceLoading } = useInvoiceById(invoiceId);
   const { settings: company, isLoading: companyLoading } = useCompanySettings();
+  const { logoUrl, isLoading: logoLoading } = useCompanyLogo();
   const { toast } = useToast();
   const invoiceRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +45,7 @@ const InvoicePreview = () => {
   if (!user || !['admin', 'super_admin'].includes(user.role)) {
     return <Navigate to="/login" replace />;
   }
-  if (invoiceLoading || companyLoading) {
+  if (invoiceLoading || companyLoading || logoLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mx-auto mb-4"></div>
@@ -98,9 +100,9 @@ const InvoicePreview = () => {
           <div className="flex flex-col lg:flex-row justify-between items-start mb-8">
             {/* Company Info */}
             <div className="flex items-start space-x-4 mb-6 lg:mb-0">
-              {company.company_logo_url ? (
+              {logoUrl ? (
                 <img 
-                  src={company.company_logo_url} 
+                  src={logoUrl} 
                   alt="Company Logo" 
                   className="h-20 w-20 object-contain"
                   crossOrigin="anonymous"
