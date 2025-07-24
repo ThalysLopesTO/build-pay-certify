@@ -129,7 +129,6 @@ export const useEmployeeRegistrationForm = () => {
         pending_approval: false,
         worker_type: data.workerType,
         is_active: true,
-        must_change_password: true,
         ...defaultRates
       };
 
