@@ -221,8 +221,8 @@ serve(async (req) => {
         role: employeeData.role,
         trade: employeeData.trade && employeeData.trade.trim() !== '' ? employeeData.trade : 'General',
         position: 'Worker', // Default position since it's not collected in the form
-        hourly_rate: employeeData.hourlyRate && !isNaN(parseFloat(employeeData.hourlyRate)) ? parseFloat(employeeData.hourlyRate) : null,
-        photo_url: employeeData.photoUrl && employeeData.photoUrl.trim() !== '' ? employeeData.photoUrl : null,
+        hourly_rate: (typeof employeeData.hourlyRate === 'number' && employeeData.hourlyRate >= 0) ? employeeData.hourlyRate : null,
+        photo_url: employeeData.photoUrl && typeof employeeData.photoUrl === 'string' && employeeData.photoUrl.trim() !== '' ? employeeData.photoUrl : null,
         phone: employeeData.phoneNumber && employeeData.phoneNumber.trim() !== '' ? employeeData.phoneNumber : null,
         pending_approval: false,
         worker_type: employeeData.workerType || 'subcontractor',
@@ -232,8 +232,9 @@ serve(async (req) => {
       console.log('Inserting profile with data:', {
         ...profileData,
         hourly_rate_original: employeeData.hourlyRate,
-        hourly_rate_parsed: parseFloat(employeeData.hourlyRate),
-        photo_url_original: employeeData.photoUrl
+        hourly_rate_type: typeof employeeData.hourlyRate,
+        photo_url_original: employeeData.photoUrl,
+        photo_url_type: typeof employeeData.photoUrl
       })
 
       const { data: profileInsertData, error: profileError } = await supabaseAdmin
