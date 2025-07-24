@@ -28,7 +28,7 @@ export const useManagementDashboardStats = () => {
         .from('weekly_timesheets')
         .select('*', { count: 'exact', head: true })
         .eq('company_id', user.companyId)
-        .eq('status', 'submitted');
+        .eq('status', 'pending_approval');
 
       if (timesheetsError) {
         console.error('Error fetching pending timesheets:', timesheetsError);
@@ -68,7 +68,7 @@ export const useManagementDashboardStats = () => {
         .from('attention_reports')
         .select('*', { count: 'exact', head: true })
         .eq('company_id', user.companyId)
-        .eq('status', 'pending');
+        .in('status', ['open', 'attention']);
 
       if (reportsError) {
         console.error('Error fetching attention reports:', reportsError);
