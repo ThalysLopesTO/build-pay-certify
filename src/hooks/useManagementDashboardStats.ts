@@ -28,7 +28,7 @@ export const useManagementDashboardStats = () => {
         .from('weekly_timesheets')
         .select('*', { count: 'exact', head: true })
         .eq('company_id', user.companyId)
-        .eq('status', 'pending_approval');
+        .eq('status', 'pending');
 
       if (timesheetsError) {
         console.error('Error fetching pending timesheets:', timesheetsError);
@@ -41,8 +41,8 @@ export const useManagementDashboardStats = () => {
         .select('gross_pay')
         .eq('company_id', user.companyId)
         .eq('status', 'approved')
-        .gte('week_ending', startOfWeek.toISOString())
-        .lte('week_ending', endOfWeek.toISOString());
+        .gte('week_start_date', startOfWeek.toISOString())
+        .lte('week_start_date', endOfWeek.toISOString());
 
       if (payrollError) {
         console.error('Error fetching payroll data:', payrollError);
@@ -80,8 +80,8 @@ export const useManagementDashboardStats = () => {
         .from('weekly_timesheets')
         .select('*', { count: 'exact', head: true })
         .eq('company_id', user.companyId)
-        .gte('week_ending', startOfWeek.toISOString())
-        .lte('week_ending', endOfWeek.toISOString());
+        .gte('week_start_date', startOfWeek.toISOString())
+        .lte('week_start_date', endOfWeek.toISOString());
 
       if (totalTimesheetsError) {
         console.error('Error fetching total timesheets:', totalTimesheetsError);
@@ -93,8 +93,8 @@ export const useManagementDashboardStats = () => {
         .select('*', { count: 'exact', head: true })
         .eq('company_id', user.companyId)
         .eq('status', 'approved')
-        .gte('week_ending', startOfWeek.toISOString())
-        .lte('week_ending', endOfWeek.toISOString());
+        .gte('week_start_date', startOfWeek.toISOString())
+        .lte('week_start_date', endOfWeek.toISOString());
 
       if (approvedTimesheetsError) {
         console.error('Error fetching approved timesheets:', approvedTimesheetsError);
