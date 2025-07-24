@@ -219,11 +219,11 @@ serve(async (req) => {
         first_name: employeeData.firstName,
         last_name: employeeData.lastName,
         role: employeeData.role,
-        trade: employeeData.trade || 'General',
+        trade: employeeData.trade && employeeData.trade.trim() !== '' ? employeeData.trade : 'General',
         position: 'Worker', // Default position since it's not collected in the form
-        hourly_rate: parseFloat(employeeData.hourlyRate) || null,
-        photo_url: employeeData.photoUrl || null,
-        phone: employeeData.phoneNumber || null,
+        hourly_rate: employeeData.hourlyRate && !isNaN(parseFloat(employeeData.hourlyRate)) ? parseFloat(employeeData.hourlyRate) : null,
+        photo_url: employeeData.photoUrl && employeeData.photoUrl.trim() !== '' ? employeeData.photoUrl : null,
+        phone: employeeData.phoneNumber && employeeData.phoneNumber.trim() !== '' ? employeeData.phoneNumber : null,
         pending_approval: false,
         worker_type: employeeData.workerType || 'subcontractor',
         ...defaultRates
