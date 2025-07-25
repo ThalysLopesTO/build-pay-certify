@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -13,7 +12,6 @@ export const useEmployeeRegistrationForm = () => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { data: employeeLimit } = useEmployeeLimit();
-  const queryClient = useQueryClient();
 
   const form = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeSchema),
@@ -161,10 +159,6 @@ export const useEmployeeRegistrationForm = () => {
       }
 
       console.log('Employee registered successfully:', result);
-
-      // Invalidate and refetch employee-related queries to refresh the UI
-      await queryClient.invalidateQueries({ queryKey: ['employee-directory'] });
-      await queryClient.invalidateQueries({ queryKey: ['employee-limit'] });
 
       toast({
         title: "Employee Registered Successfully",
