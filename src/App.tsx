@@ -94,7 +94,9 @@ const DashboardRouter = () => {
   
   // Route based on user role with subscription and license protection
   const DashboardComponent = () => {
-    if (user.role === 'admin' || user.role === 'management') {
+    if (user.role === 'admin' || user.role === 'super_admin') {
+      return <AdminDashboard />;
+    } else if (user.role === 'management') {
       return <ManagementDashboard />;
     } else if (user.role === 'foreman') {
       return <ForemanDashboard />;
