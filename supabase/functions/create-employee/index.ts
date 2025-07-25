@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Auth user creation request received')
+    console.log('Employee creation request received')
 
     // Create a Supabase client with service role privileges
     const supabaseAdmin = createClient(
@@ -30,17 +30,17 @@ serve(async (req) => {
     )
 
     // Get the request data
-    let userData
+    let employeeData
     try {
       const requestBody = await req.json()
-      userData = requestBody
+      employeeData = requestBody.employeeData
       
-      if (!userData.email || !userData.password) {
-        console.error('Missing required fields in request body')
+      if (!employeeData) {
+        console.error('Missing employeeData in request body')
         return new Response(
           JSON.stringify({ 
             success: false,
-            error: 'Missing required fields: email and password' 
+            error: 'Missing employee data in request' 
           }),
           {
             headers: corsHeaders,
@@ -62,16 +62,22 @@ serve(async (req) => {
       )
     }
 
-    console.log('Creating auth user with data:', { 
-      email: userData.email, 
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      companyId: userData.companyId
+    console.log('Creating employee with data:', { 
+      email: employeeData.email, 
+      role: employeeData.role, 
+      companyId: employeeData.companyId,
+      hasPhoto: !!employeeData.photoUrl,
+      photoUrl: employeeData.photoUrl,
+      hourlyRate: employeeData.hourlyRate,
+      trade: employeeData.trade,
+      phoneNumber: employeeData.phoneNumber,
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName
     })
 
-    // Check if the company can add more employees
+    // First, check if the company can add more employees
     const { data: canAdd, error: checkError } = await supabaseAdmin
-      .rpc('can_add_employee', { company_id_param: userData.companyId })
+      .rpc('can_add_employee', { company_id_param: employeeData.companyId })
 
     if (checkError) {
       console.error('Error checking employee limit:', checkError)
@@ -88,7 +94,7 @@ serve(async (req) => {
     }
 
     if (!canAdd) {
-      console.log('Employee limit reached for company:', userData.companyId)
+      console.log('Employee limit reached for company:', employeeData.companyId)
       return new Response(
         JSON.stringify({ 
           success: false,
@@ -119,13 +125,13 @@ serve(async (req) => {
     }
 
     // Check if user with this email already exists
-    const emailExists = existingUser.users.some(user => user.email === userData.email)
+    const emailExists = existingUser.users.some(user => user.email === employeeData.email)
     if (emailExists) {
-      console.log('User with email already exists:', userData.email)
+      console.log('User with email already exists:', employeeData.email)
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: `An account with email ${userData.email} already exists. Please use a different email address.` 
+          error: `An account with email ${employeeData.email} already exists. Please use a different email address.` 
         }),
         {
           headers: corsHeaders,
@@ -136,13 +142,19 @@ serve(async (req) => {
 
     // Create the user account with admin privileges
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: userData.email,
-      password: userData.password,
+      email: employeeData.email,
+      password: employeeData.password,
       email_confirm: true, // Auto-confirm email
       user_metadata: {
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        company_id: userData.companyId,
+        username: employeeData.username,
+        first_name: employeeData.firstName,
+        last_name: employeeData.lastName,
+        address: employeeData.address,
+        phone_number: employeeData.phoneNumber,
+        role: employeeData.role,
+        trade: employeeData.trade,
+        hourly_rate: employeeData.hourlyRate,
+        company_id: employeeData.companyId, // Ensure company_id is in metadata
         must_change_password: true, // Force password change on first login
       },
     })
@@ -161,7 +173,156 @@ serve(async (req) => {
       )
     }
 
-    console.log('Auth user created successfully:', authData.user?.email)
+    console.log('User created successfully:', authData.user?.email)
+
+    // Check if user profile already exists before creating one
+    const { data: existingProfile, error: profileCheckError } = await supabaseAdmin
+      .from('user_profiles')
+      .select('id')
+      .eq('user_id', authData.user.id)
+      .single()
+
+    if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+      console.error('Error checking existing profile:', profileCheckError)
+      // Try to delete the auth user if profile check fails
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+        console.log('Cleaned up auth user after profile check failure')
+      } catch (cleanupError) {
+        console.error('Failed to cleanup auth user:', cleanupError)
+      }
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Failed to check existing user profile: ' + profileCheckError.message
+        }),
+        {
+          headers: corsHeaders,
+          status: 500,
+        },
+      )
+    }
+
+    // Only create profile if it doesn't exist
+    if (!existingProfile) {
+      // Set default tax rates for payroll employees
+      const defaultRates = employeeData.workerType === 'employee' ? {
+        income_tax_rate: 12.00,
+        cpp_rate: 5.95,
+        ei_rate: 1.63
+      } : {};
+
+      // Prepare profile data with detailed logging
+      const profileData = {
+        user_id: authData.user.id,
+        company_id: employeeData.companyId,
+        first_name: employeeData.firstName,
+        last_name: employeeData.lastName,
+        role: employeeData.role,
+        trade: employeeData.trade && employeeData.trade.trim() !== '' ? employeeData.trade : 'General',
+        position: 'Worker', // Default position since it's not collected in the form
+        hourly_rate: employeeData.hourlyRate && !isNaN(parseFloat(employeeData.hourlyRate)) ? parseFloat(employeeData.hourlyRate) : null,
+        photo_url: employeeData.photoUrl && employeeData.photoUrl.trim() !== '' ? employeeData.photoUrl : null,
+        phone: employeeData.phoneNumber && employeeData.phoneNumber.trim() !== '' ? employeeData.phoneNumber : null,
+        pending_approval: false,
+        worker_type: employeeData.workerType || 'subcontractor',
+        ...defaultRates
+      }
+      
+      console.log('Inserting profile with data:', {
+        ...profileData,
+        hourly_rate_original: employeeData.hourlyRate,
+        hourly_rate_parsed: parseFloat(employeeData.hourlyRate),
+        photo_url_original: employeeData.photoUrl
+      })
+
+      const { data: profileInsertData, error: profileError } = await supabaseAdmin
+        .from('user_profiles')
+        .insert(profileData)
+        .select()
+
+      if (profileError) {
+        console.error('Error creating user profile:', profileError)
+        console.error('Profile data that failed:', JSON.stringify(profileData, null, 2))
+        
+        // Try to delete the auth user if profile creation fails
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+          console.log('Cleaned up auth user after profile creation failure')
+        } catch (cleanupError) {
+          console.error('Failed to cleanup auth user:', cleanupError)
+        }
+        
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: `Failed to create user profile: ${profileError.message}`,
+            details: profileError
+          }),
+          {
+            headers: corsHeaders,
+            status: 500,
+          },
+        )
+      }
+
+      console.log('Profile created successfully:', profileInsertData)
+
+      console.log('User profile created successfully for company:', employeeData.companyId)
+    } else {
+      console.log('User profile already exists for user:', authData.user.id)
+    }
+
+    // Create certificates if provided
+    if (employeeData.certificates && employeeData.certificates.length > 0) {
+      console.log('Creating certificates for employee:', authData.user.id)
+      
+      for (const certificate of employeeData.certificates) {
+        // Only insert if certificate has expiry date when noExpiry is false
+        if (!certificate.noExpiry && certificate.expiryDate) {
+          const { error: certError } = await supabaseAdmin
+            .from('employee_certificates')
+            .insert({
+              employee_id: authData.user.id,
+              company_id: employeeData.companyId,
+              certificate_name: certificate.name,
+              certificate_type: 'custom',
+              expiry_date: certificate.expiryDate,
+              file_url: certificate.fileUrl,
+              uploaded_by: authData.user.id,
+              status: 'valid'
+            })
+
+          if (certError) {
+            console.error('Error creating certificate:', certError)
+            // Don't fail the entire process for certificate errors, just log
+          }
+        } else if (certificate.noExpiry) {
+          // For certificates with no expiry, set expiry_date far in the future and mark as no-expiry
+          const farFutureDate = new Date('2099-12-31').toISOString().split('T')[0]
+          
+          const { error: certError } = await supabaseAdmin
+            .from('employee_certificates')
+            .insert({
+              employee_id: authData.user.id,
+              company_id: employeeData.companyId,
+              certificate_name: certificate.name,
+              certificate_type: 'no-expiry',
+              expiry_date: farFutureDate,
+              file_url: certificate.fileUrl,
+              uploaded_by: authData.user.id,
+              status: 'valid'
+            })
+
+          if (certError) {
+            console.error('Error creating no-expiry certificate:', certError)
+            // Don't fail the entire process for certificate errors, just log
+          }
+        }
+      }
+      
+      console.log('Certificates processed successfully')
+    }
 
     return new Response(
       JSON.stringify({ 
