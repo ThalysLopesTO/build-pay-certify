@@ -82,8 +82,8 @@ const ManagementDashboardHome = () => {
       <div className="flex items-center space-x-3">
         <Calculator className="h-8 w-8 text-green-600" />
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Management Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-300">Operations and payroll management center</p>
+          <h1 className="text-3xl font-bold text-gray-900">Management Dashboard</h1>
+          <p className="text-gray-600">Operations and payroll management center</p>
         </div>
       </div>
 
@@ -94,10 +94,10 @@ const ManagementDashboardHome = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                 </div>
-                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+                <div className="p-3 bg-green-100 rounded-lg">
                   <stat.icon className="h-6 w-6 text-green-600" />
                 </div>
               </div>
@@ -116,7 +116,7 @@ const ManagementDashboardHome = () => {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {quickActions.map((action, index) => (
             <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">
@@ -129,7 +129,7 @@ const ManagementDashboardHome = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{action.description}</p>
+                <p className="text-sm text-gray-600">{action.description}</p>
               </CardContent>
             </Card>
           ))}
@@ -147,25 +147,25 @@ const ManagementDashboardHome = () => {
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">Timesheets Processed</span>
+              <span className="text-sm text-gray-600">Timesheets Processed</span>
               <Badge variant="secondary">
                 {isLoading ? '...' : `${stats?.approvedTimesheetsCount || 0}/${stats?.totalTimesheetsCount || 0}`}
               </Badge>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">Pending Actions</span>
+              <span className="text-sm text-gray-600">Pending Actions</span>
               <Badge variant={stats?.pendingTimesheetsCount && stats.pendingTimesheetsCount > 0 ? 'destructive' : 'default'}>
                 {isLoading ? '...' : stats?.pendingTimesheetsCount || 0}
               </Badge>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">Outstanding Bills</span>
+              <span className="text-sm text-gray-600">Outstanding Bills</span>
               <Badge variant={stats?.pendingBillsCount && stats.pendingBillsCount > 0 ? 'destructive' : 'default'}>
                 {isLoading ? '...' : stats?.pendingBillsCount || 0}
               </Badge>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">Attention Reports</span>
+              <span className="text-sm text-gray-600">Attention Reports</span>
               <Badge variant={stats?.openReportsCount && stats.openReportsCount > 0 ? 'destructive' : 'secondary'}>
                 {isLoading ? '...' : stats?.openReportsCount || 0}
               </Badge>

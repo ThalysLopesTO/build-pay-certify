@@ -65,14 +65,14 @@ const ForemanCollapsibleSidebarSection = ({
     <SidebarGroup className="mt-4 first:mt-2">
       <SidebarGroupLabel 
         onClick={toggleExpanded}
-        className="text-sm font-bold text-gray-900 dark:text-white mb-2 px-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md py-1 transition-colors duration-200 flex items-center justify-between group"
+        className="text-sm font-bold text-gray-900 mb-2 px-2 cursor-pointer hover:bg-gray-100 rounded-md py-1 transition-colors duration-200 flex items-center justify-between group"
       >
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+          <Icon className="h-4 w-4 text-gray-600" />
           <span>{label}</span>
         </div>
         <ChevronDown 
-          className={`h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
+          className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${
             isExpanded ? 'rotate-0' : '-rotate-90'
           }`} 
         />
@@ -90,14 +90,14 @@ const ForemanCollapsibleSidebarSection = ({
                     onClick={() => setActiveTab(item.id)}
                     className={`
                       relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
-                      transition-colors duration-200 hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black
+                      transition-colors duration-200 hover:bg-white hover:text-black
                       ${isActive 
-                        ? 'bg-blue-50 text-blue-900 font-medium border-l-4 border-blue-500 shadow-sm dark:bg-blue-900 dark:text-blue-100' 
-                        : 'text-gray-700 dark:text-white'
+                        ? 'bg-blue-50 text-blue-900 font-medium border-l-4 border-blue-500 shadow-sm' 
+                        : 'text-gray-700'
                       }
                     `}
                   >
-                    <item.icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-300' : 'text-gray-500 dark:text-gray-300'}`} />
+                    <item.icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
                     <span className="truncate">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

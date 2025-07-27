@@ -99,21 +99,21 @@ const CollapsibleSidebarSection = ({
     <SidebarGroup className="mt-2">
       <SidebarGroupLabel 
         className={`
-          flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-gray-900 dark:text-white 
-          hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-all duration-200
+          flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-gray-900 
+          hover:bg-gray-50 rounded-lg cursor-pointer transition-all duration-200
           hover:shadow-sm active:scale-98
-          ${hasActiveItem ? 'text-blue-900 dark:text-blue-100 bg-blue-50 dark:bg-blue-900/30' : ''}
+          ${hasActiveItem ? 'text-blue-900 bg-blue-50' : ''}
         `}
         onClick={toggleExpanded}
       >
         <div className="flex items-center gap-2.5">
           {SectionIcon && (
-            <SectionIcon className={`h-4 w-4 ${hasActiveItem ? 'text-blue-600 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400'}`} />
+            <SectionIcon className={`h-4 w-4 ${hasActiveItem ? 'text-blue-600' : 'text-gray-500'}`} />
           )}
           <span className="font-medium">{label}</span>
         </div>
         <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'}`}>
-          <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+          <ChevronDown className="h-4 w-4 text-gray-500" />
         </div>
       </SidebarGroupLabel>
 
@@ -134,15 +134,15 @@ const CollapsibleSidebarSection = ({
                   onClick={() => setActiveTab(item.id || item.title.toLowerCase().replace(/\s+/g, '-'))}
                   className={`
                     relative w-full flex items-center gap-3 px-4 py-2.5 ml-2 rounded-lg text-sm
-                    transition-all duration-200 hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black
+                    transition-all duration-200 hover:bg-white hover:text-black
                     hover:translate-x-1 hover:shadow-sm group
                     ${isActive 
-                      ? 'bg-blue-50 text-blue-900 font-medium border-l-4 border-blue-500 shadow-sm dark:bg-blue-900 dark:text-blue-100 translate-x-1' 
-                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                      ? 'bg-blue-50 text-blue-900 font-medium border-l-4 border-blue-500 shadow-sm translate-x-1' 
+                      : 'text-gray-600 hover:text-gray-900'
                     }
                   `}
                 >
-                  <Icon className={`h-4 w-4 flex-shrink-0 transition-colors ${isActive ? 'text-blue-600 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700'}`} />
+                  <Icon className={`h-4 w-4 flex-shrink-0 transition-colors ${isActive ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'}`} />
                   <span className="truncate font-medium">{item.title}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

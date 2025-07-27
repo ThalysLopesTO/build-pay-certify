@@ -24,17 +24,17 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
     <Sidebar className="border-r border-border bg-sidebar transition-colors">
       <SidebarHeader className="p-4 border-b border-sidebar-border bg-sidebar">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+          <div className="p-2 bg-green-100 rounded-lg">
             <Calculator className="h-5 w-5 text-green-600" />
           </div>
           <div>
-            <h2 className="font-bold text-sm text-gray-900 dark:text-white">Management Panel</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-300">Operations Management</p>
+            <h2 className="font-bold text-sm text-gray-900">Management Panel</h2>
+            <p className="text-xs text-gray-500">Operations Management</p>
           </div>
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent dark:scrollbar-thumb-gray-600 bg-sidebar">
+      <SidebarContent className="overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent bg-sidebar">
         
         {/* Dashboard - Always visible */}
         <ManagementSidebarSection
@@ -106,7 +106,7 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
       </SidebarContent>
       
       <SidebarFooter className="p-4 border-t border-sidebar-border bg-sidebar">
-        <div className="text-xs text-gray-500 dark:text-gray-300 text-center">
+        <div className="text-xs text-gray-500 text-center">
           Construction Management System
         </div>
       </SidebarFooter>

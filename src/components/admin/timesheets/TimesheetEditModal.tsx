@@ -271,7 +271,7 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
           {/* Payroll Deductions Section for Employees or Tax Control for Subcontractors */}
           {isPayrollEmployee && payrollCalculations ? (
             // Payroll Deductions Section for employees with deductions
-            <div className="border rounded-lg p-4 bg-blue-50/50 dark:bg-blue-950/20">
+            <div className="border rounded-lg p-4 bg-blue-50/50">
               <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
                 <Calculator className="h-4 w-4" />
                 Payroll Deductions (Editable)
@@ -365,7 +365,7 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
               <CollapsibleTrigger asChild>
                 <Button 
                   variant="ghost" 
-                  className="w-full justify-between p-3 h-auto border rounded-lg hover:bg-muted/50 bg-orange-50/50 dark:bg-orange-950/20"
+                  className="w-full justify-between p-3 h-auto border rounded-lg hover:bg-muted/50 bg-orange-50/50"
                 >
                   <div className="flex items-center gap-2">
                     <Calculator className="h-4 w-4" />
@@ -378,7 +378,7 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 pt-3">
-                <div className="bg-orange-50/50 dark:bg-orange-950/20 rounded-lg p-4 space-y-3">
+                <div className="bg-orange-50/50 rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="tax-toggle" className="text-sm font-medium">
                       Include Tax on this Timesheet

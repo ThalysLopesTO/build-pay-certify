@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import NotificationBell from '@/components/notifications/NotificationBell';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+
 import PWAInstallButton from '@/components/common/PWAInstallButton';
 
 const Header = () => {
@@ -81,8 +81,6 @@ const Header = () => {
           {/* PWA Install Button */}
           <PWAInstallButton />
           
-          {/* Theme Toggle */}
-          <ThemeToggle />
           
           {/* Notification Bell - only for admins and foremen */}
           <NotificationBell />
