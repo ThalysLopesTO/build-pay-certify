@@ -226,6 +226,7 @@ serve(async (req) => {
         phone: employeeData.phoneNumber || null,
         pending_approval: false,
         worker_type: employeeData.workerType || 'subcontractor',
+        is_active: true, // Ensure new employees are active by default
         ...defaultRates
       }
       
