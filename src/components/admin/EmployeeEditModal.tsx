@@ -3,16 +3,14 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import PhotoUploadField from './employee-registration/PhotoUploadField';
+import { useEmployeeEdit } from '@/hooks/useEmployeeEdit';
 
 const editEmployeeSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -53,7 +51,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   employee,
   onSuccess
 }) => {
-  const { toast } = useToast();
+  const updateEmployeeMutation = useEmployeeEdit();
   
   const form = useForm<EditEmployeeFormData>({
     resolver: zodResolver(editEmployeeSchema),
@@ -93,48 +91,9 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
     }
 
     try {
-      let photoUrl = employee.photo_url;
-
-      // Upload new photo if provided
-      if (data.photo) {
-        console.log('Uploading updated employee photo...');
-        const fileExtension = data.photo.name.split('.').pop();
-        const fileName = `${employee.id}.${fileExtension}`;
-        
-        // Delete old photo if exists
-        if (employee.photo_url) {
-          const oldFileName = employee.photo_url.split('/').pop();
-          if (oldFileName) {
-            await supabase.storage
-              .from('employee-photos')
-              .remove([oldFileName]);
-          }
-        }
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('employee-photos')
-          .upload(fileName, data.photo, {
-            cacheControl: '3600',
-            upsert: true
-          });
-
-        if (uploadError) {
-          console.error('Photo upload error:', uploadError);
-          throw new Error('Failed to upload employee photo');
-        }
-
-        // Get public URL
-        const { data: publicUrlData } = supabase.storage
-          .from('employee-photos')
-          .getPublicUrl(fileName);
-        
-        photoUrl = publicUrlData.publicUrl;
-        console.log('Photo uploaded successfully:', photoUrl);
-      }
-
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({
+      await updateEmployeeMutation.mutateAsync({
+        employeeId: employee.id,
+        updateData: {
           first_name: data.firstName,
           last_name: data.lastName,
           position: data.position,
@@ -142,27 +101,16 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
           role: data.role,
           hourly_rate: data.hourlyRate,
           worker_type: data.workerType,
-          photo_url: photoUrl,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', employee.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Employee Updated",
-        description: `${data.firstName} ${data.lastName} has been updated successfully.`,
+          photo_url: employee.photo_url,
+        },
+        newPhoto: data.photo,
       });
 
       onSuccess();
       onClose();
-    } catch (error: any) {
+    } catch (error) {
+      // Error handling is managed by the mutation hook
       console.error('Error updating employee:', error);
-      toast({
-        title: "Update Failed",
-        description: error.message || "Failed to update employee",
-        variant: "destructive",
-      });
     }
   };
 
@@ -319,8 +267,12 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
               <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1 bg-orange-600 hover:bg-orange-700">
-                Update Employee
+              <Button 
+                type="submit" 
+                className="flex-1 bg-orange-600 hover:bg-orange-700"
+                disabled={updateEmployeeMutation.isPending}
+              >
+                {updateEmployeeMutation.isPending ? 'Updating...' : 'Update Employee'}
               </Button>
             </div>
           </form>

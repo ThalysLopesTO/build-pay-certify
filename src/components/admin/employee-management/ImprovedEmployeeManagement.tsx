@@ -94,7 +94,6 @@ const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateTo
           onClose={() => setEditingEmployee(null)}
           employee={editingEmployee as any}
           onSuccess={() => {
-            refetch();
             setEditingEmployee(null);
           }}
         />
