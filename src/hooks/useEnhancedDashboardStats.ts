@@ -19,7 +19,7 @@ export const useEnhancedDashboardStats = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['enhanced-dashboard-stats', user?.companyId],
+    queryKey: ['enhanced-dashboard-stats-v2', user?.companyId],
     queryFn: async () => {
       if (!user?.companyId) {
         console.error('❌ No company ID available for dashboard stats');
@@ -29,22 +29,24 @@ export const useEnhancedDashboardStats = () => {
       console.log('📊 Fetching enhanced dashboard stats for company:', user.companyId);
 
       // Fetch basic stats
-      // Fetch jobsites count - STRICTLY scoped by company_id
+      // Fetch active jobsites count - STRICTLY scoped by company_id and only active jobsites
       const { count: jobsitesCount, error: jobsitesError } = await supabase
         .from('jobsites')
         .select('*', { count: 'exact', head: true })
-        .eq('company_id', user.companyId);
+        .eq('company_id', user.companyId)
+        .eq('status', 'active');
 
       if (jobsitesError) {
         console.error('Error fetching jobsites count:', jobsitesError);
         throw jobsitesError;
       }
 
-      // Fetch employees count - STRICTLY scoped by company_id
+      // Fetch employees count - STRICTLY scoped by company_id and only active employees
       const { count: employeesCount, error: employeesError } = await supabase
         .from('user_profiles')
         .select('*', { count: 'exact', head: true })
         .eq('company_id', user.companyId)
+        .eq('is_active', true)
         .in('role', ['employee', 'foreman', 'admin']);
 
       if (employeesError) {
@@ -67,7 +69,7 @@ export const useEnhancedDashboardStats = () => {
         throw timesheetsError;
       }
 
-      // Fetch invoices from current month - STRICTLY scoped by company_id
+      // Fetch pending invoices from current month - STRICTLY scoped by company_id
       const currentMonth = new Date();
       currentMonth.setDate(1);
       currentMonth.setHours(0, 0, 0, 0);
@@ -76,6 +78,7 @@ export const useEnhancedDashboardStats = () => {
         .from('invoices')
         .select('*', { count: 'exact', head: true })
         .eq('company_id', user.companyId)
+        .eq('status', 'pending')
         .gte('created_at', currentMonth.toISOString());
 
       if (invoicesError) {
