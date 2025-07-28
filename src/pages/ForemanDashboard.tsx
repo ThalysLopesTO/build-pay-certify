@@ -2,6 +2,7 @@
 import React from 'react';
 import Header from '../components/Header';
 import ForemanSidebar from '../components/foreman/ForemanSidebar';
+import ForemanDashboardHome from '../components/foreman/dashboard/ForemanDashboardHome';
 import ForemanTimesheetForm from '../components/foreman/ForemanTimesheetForm';
 import MaterialRequestForm from '../components/foreman/MaterialRequestForm';
 import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
@@ -16,10 +17,12 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { useState } from 'react';
 
 const ForemanDashboard = () => {
-  const [activeTab, setActiveTab] = useState('timesheet');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'dashboard':
+        return <ForemanDashboardHome setActiveTab={setActiveTab} />;
       case 'timesheet':
         return <ForemanTimesheetForm />;
       case 'material-request':
@@ -39,7 +42,7 @@ const ForemanDashboard = () => {
       case 'settings':
         return <UserSettings />;
       default:
-        return <ForemanTimesheetForm />;
+        return <ForemanDashboardHome setActiveTab={setActiveTab} />;
     }
   };
 

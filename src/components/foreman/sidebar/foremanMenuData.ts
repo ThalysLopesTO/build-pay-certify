@@ -13,10 +13,16 @@ import {
   Package,
   UserCheck,
   FileBarChart,
-  Shield
+  Shield,
+  Home
 } from 'lucide-react';
 
 export const foremanMenuItems = [
+  {
+    title: 'Dashboard',
+    icon: Home,
+    id: 'dashboard',
+  },
   {
     title: 'Timesheet',
     icon: Clock,
@@ -65,6 +71,13 @@ export const foremanMenuItems = [
 ];
 
 export const groupedForemanItems = {
+  overview: [
+    {
+      title: 'Dashboard',
+      icon: Home,
+      id: 'dashboard',
+    },
+  ],
   timesheet: [
     {
       title: 'Timesheet',
@@ -125,10 +138,16 @@ export const groupedForemanItems = {
 };
 
 export const sectionConfigs = {
+  overview: {
+    label: "Overview",
+    icon: Home,
+    defaultExpanded: true,
+    storageKey: "foreman-overview-expanded"
+  },
   timesheet: {
     label: "Time Management",
     icon: FolderClock,
-    defaultExpanded: true,
+    defaultExpanded: false,
     storageKey: "foreman-timesheet-expanded"
   },
   materials: {
