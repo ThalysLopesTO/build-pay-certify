@@ -238,17 +238,14 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
     dispatch({ type: 'ADD_EMPLOYEE', payload: tempEmployee });
 
     try {
-      // Note: This would integrate with your existing create-employee edge function
-      // For now, we'll simulate a successful creation
+      // This is called from the registration form which handles the actual edge function call
+      // We just need to update state here after the registration is successful
       console.log('✅ Employee created successfully in state');
       
       toast({
         title: "Employee Added",
         description: `${newEmployee.first_name} ${newEmployee.last_name} has been added successfully.`,
       });
-      
-      // In a real implementation, you'd call the edge function here
-      // and replace the temp employee with the real server response
       
     } catch (error: any) {
       console.error('❌ Error creating employee:', error);
