@@ -39,11 +39,7 @@ export const useEmployeeDelete = () => {
       console.log('Employee deleted successfully:', response);
       return response;
     },
-    onSuccess: () => {
-      // Invalidate and refetch employee directory and employee limit
-      queryClient.invalidateQueries({ queryKey: ['employee-directory'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-limit'] });
-      
+    onSuccess: () => {      
       toast({
         title: "Success",
         description: "Employee successfully archived",

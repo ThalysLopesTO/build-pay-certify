@@ -1,37 +1,25 @@
 import { useState } from 'react';
-import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
-import { useEmployeeDelete } from '@/hooks/useEmployeeDelete';
-import { useEmployeeLimit } from '@/hooks/useEmployeeLimit';
+import { useEmployees, Employee } from '@/contexts/EmployeeContext';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useEmployeeLimit } from '@/hooks/useEmployeeLimit';
 
-export interface Employee {
-  id: string;
-  user_id: string;
-  company_id?: string;
-  first_name: string;
-  last_name: string;
-  role: string;
-  trade?: string;
-  position?: string;
-  hourly_rate?: number;
-  photo_url?: string;
-  worker_type?: string;
-  phone?: string;
-  companies?: {
-    name: string;
-  };
-}
-
-export const useEmployeeManagement = () => {
+export const useEmployeeManagementContext = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewingCertificates, setViewingCertificates] = useState<Employee | null>(null);
   const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
 
   const { user } = useAuth();
-  const { data: employees = [], isLoading, error, refetch } = useEmployeeDirectory();
-  const { data: employeeLimit, isLoading: isLoadingLimit } = useEmployeeLimit();
-  const deleteEmployeeMutation = useEmployeeDelete();
+  const { data: employeeLimit } = useEmployeeLimit();
+  const {
+    employees,
+    archivedEmployees,
+    loading,
+    error,
+    activeEmployeeCount,
+    deleteEmployee,
+    reactivateEmployee,
+  } = useEmployees();
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
 
@@ -47,14 +35,15 @@ export const useEmployeeManagement = () => {
     setDeletingEmployee(employee);
   };
 
-  const confirmDeleteEmployee = () => {
-    if (deletingEmployee?.user_id) {
-      deleteEmployeeMutation.mutate(deletingEmployee.user_id, {
-        onSuccess: () => {
-          setDeletingEmployee(null);
-          refetch();
-        }
-      });
+  const confirmDeleteEmployee = async () => {
+    if (deletingEmployee?.id) {
+      try {
+        // Use the context delete function instead of the old hook
+        await deleteEmployee(deletingEmployee.id);
+        setDeletingEmployee(null);
+      } catch (error) {
+        console.error('Error deleting employee:', error);
+      }
     }
   };
 
@@ -67,10 +56,12 @@ export const useEmployeeManagement = () => {
     
     // Data
     employees: filteredEmployees,
-    isLoading,
+    archivedEmployees,
+    loading,
     error,
     isAdmin,
     canAddEmployee,
+    activeEmployeeCount,
     
     // Actions
     setSearchTerm,
@@ -79,9 +70,7 @@ export const useEmployeeManagement = () => {
     setDeletingEmployee,
     handleDeleteEmployee,
     confirmDeleteEmployee,
-    refetch,
-    
-    // Loading states
-    isDeleting: deleteEmployeeMutation.isPending
+    deleteEmployee,
+    reactivateEmployee,
   };
 };

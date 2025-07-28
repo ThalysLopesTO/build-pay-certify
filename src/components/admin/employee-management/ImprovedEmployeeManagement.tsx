@@ -10,7 +10,7 @@ import ImprovedEmployeeCard from './ImprovedEmployeeCard';
 import EmployeeEmptyState from './EmployeeEmptyState';
 import EmployeeLoadingState from './EmployeeLoadingState';
 import EmployeeErrorState from './EmployeeErrorState';
-import { useEmployeeManagementContext } from './useEmployeeManagementContext';
+import { useEmployeeManagementContext } from './useEmployeeManagementContextUpdated';
 import { Employee } from '@/contexts/EmployeeContext';
 
 const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateToRegistration?: () => void }) => {

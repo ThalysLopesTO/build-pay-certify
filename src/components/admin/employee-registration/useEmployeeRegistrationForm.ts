@@ -6,12 +6,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useEmployeeLimit } from '@/hooks/useEmployeeLimit';
+import { useEmployees } from '@/contexts/EmployeeContext';
 import { employeeSchema, EmployeeFormData } from './schemas';
 
 export const useEmployeeRegistrationForm = () => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { data: employeeLimit } = useEmployeeLimit();
+  const { createEmployee } = useEmployees();
 
   const form = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeSchema),
@@ -159,6 +161,24 @@ export const useEmployeeRegistrationForm = () => {
       }
 
       console.log('Employee registered successfully:', result);
+
+      // Update EmployeeContext with the new employee (optimistic update)
+      if (result.user) {
+        await createEmployee({
+          user_id: result.user.id,
+          company_id: user.companyId,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          role: data.role,
+          trade: data.trade || 'General',
+          position: 'Worker',
+          hourly_rate: data.hourlyRate,
+          photo_url: photoUrl,
+          worker_type: data.workerType,
+          phone: data.phoneNumber,
+          is_active: true,
+        });
+      }
 
       toast({
         title: "Employee Registered Successfully",

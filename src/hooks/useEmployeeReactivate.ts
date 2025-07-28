@@ -39,11 +39,6 @@ export const useEmployeeReactivate = () => {
       return response;
     },
     onSuccess: () => {
-      // Invalidate and refetch both employee directory and archived employees
-      queryClient.invalidateQueries({ queryKey: ['employee-directory'] });
-      queryClient.invalidateQueries({ queryKey: ['archived-employees'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-limit'] });
-      
       toast({
         title: "Success",
         description: "Employee successfully reactivated",

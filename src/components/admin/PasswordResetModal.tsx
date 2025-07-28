@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Shield } from 'lucide-react';
 import { useResetUserPassword } from '@/hooks/usePasswordManagement';
-import { Employee } from './employee-management/useEmployeeManagement';
+import { Employee } from '@/contexts/EmployeeContext';
 
 const passwordResetSchema = z.object({
   newPassword: z.string().min(8, 'Password must be at least 8 characters'),
