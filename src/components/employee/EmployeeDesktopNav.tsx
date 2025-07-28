@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, FileText, AlertTriangle, Settings, Home, Package } from 'lucide-react';
+import { Clock, FileText, AlertTriangle, Settings, Home, Package, ClockIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -33,6 +33,12 @@ const EmployeeDesktopNav: React.FC<EmployeeDesktopNavProps> = ({ activeTab, onTa
       label: 'Timesheets',
       icon: FileText,
       color: 'text-green-600'
+    },
+    {
+      id: 'missed-punch-requests',
+      label: 'Missed Punch',
+      icon: ClockIcon,
+      color: 'text-amber-600'
     },
     {
       id: 'attention-report',

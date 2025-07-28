@@ -102,6 +102,12 @@ export const menuData: MenuItem[] = [
     href: '/admin/live-punch-monitor',
     icon: Clock,
   },
+  {
+    id: 'time-requests',
+    title: 'Time Requests',
+    href: '/admin/time-requests',
+    icon: Clock,
+  },
   
   // Management Operations
   {
@@ -178,6 +184,7 @@ export const groupedMenuItems = {
     menuData.find(item => item.id === 'employees')!,
     menuData.find(item => item.id === 'employee-registration')!,
     menuData.find(item => item.id === 'live-punch-monitor')!,
+    menuData.find(item => item.id === 'time-requests')!,
   ],
   managementOps: [
     menuData.find(item => item.id === 'timesheets')!,

@@ -5,6 +5,7 @@ import TimesheetForm from '../components/employee/TimesheetForm';
 import AttentionReportForm from '../components/employee/AttentionReportForm';
 import MyAttentionReports from '../components/employee/MyAttentionReports';
 import CertificateStatus from '../components/employee/CertificateStatus';
+import MissedPunchRequests from '../components/employee/MissedPunchRequests';
 import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
@@ -30,6 +31,8 @@ const EmployeeDashboard = () => {
         return <TimeTracker />;
       case 'timesheet':
         return <TimesheetForm />;
+      case 'missed-punch-requests':
+        return <MissedPunchRequests />;
       case 'attention-report':
         return <AttentionReportForm />;
       case 'my-reports':

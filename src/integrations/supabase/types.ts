@@ -1057,6 +1057,69 @@ export type Database = {
           },
         ]
       }
+      missed_punch_requests: {
+        Row: {
+          attachment_url: string | null
+          company_id: string
+          corrected_time_in: string | null
+          corrected_time_out: string | null
+          created_at: string
+          decline_reason: string | null
+          employee_id: string
+          id: string
+          jobsite_id: string
+          punch_type: Database["public"]["Enums"]["punch_type"]
+          reason: string
+          request_date: string
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["request_status"]
+          supervisor_on_site: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          company_id: string
+          corrected_time_in?: string | null
+          corrected_time_out?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          employee_id: string
+          id?: string
+          jobsite_id: string
+          punch_type: Database["public"]["Enums"]["punch_type"]
+          reason: string
+          request_date: string
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          supervisor_on_site: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          company_id?: string
+          corrected_time_in?: string | null
+          corrected_time_out?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          employee_id?: string
+          id?: string
+          jobsite_id?: string
+          punch_type?: Database["public"]["Enums"]["punch_type"]
+          reason?: string
+          request_date?: string
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          supervisor_on_site?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           company_id: string
@@ -1887,6 +1950,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_missed_punch_request: {
+        Args: { request_id: string }
+        Returns: Json
+      }
       calculate_invoice_totals: {
         Args: { invoice_id_param: string }
         Returns: undefined
@@ -2037,6 +2104,7 @@ export type Database = {
       }
     }
     Enums: {
+      punch_type: "in" | "out" | "both"
       request_status: "pending" | "ordered" | "delivered" | "archived"
     }
     CompositeTypes: {
@@ -2165,6 +2233,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      punch_type: ["in", "out", "both"],
       request_status: ["pending", "ordered", "delivered", "archived"],
     },
   },
