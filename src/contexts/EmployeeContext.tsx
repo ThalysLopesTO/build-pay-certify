@@ -143,9 +143,12 @@ function employeeReducer(state: EmployeeState, action: EmployeeAction): Employee
 }
 
 interface EmployeeContextValue extends EmployeeState {
-  // CRUD operations
-  createEmployee: (employeeData: Omit<Employee, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  updateEmployee: (id: string, updateData: Partial<Employee>, newPhoto?: File) => Promise<void>;
+  // CRUD operations with immediate UI updates
+  createEmployee: (newEmployee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateEmployee: (id: string, updates: Partial<Employee>, newPhoto?: File) => Promise<void>;
+  deleteEmployee: (id: string) => Promise<void>; // Archives employee (soft delete)
+  
+  // Additional operations
   archiveEmployee: (userId: string) => Promise<void>;
   reactivateEmployee: (userId: string) => Promise<void>;
   
@@ -218,29 +221,41 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
     }
   }, [user?.companyId, state.initialized]);
 
-  // CRUD Operations with optimistic updates
-  const createEmployee = async (employeeData: Omit<Employee, 'id' | 'created_at' | 'updated_at'>) => {
-    // Optimistically add employee
+  // CRUD Operations with immediate UI updates (optimistic updates)
+  const createEmployee = async (newEmployee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>) => {
+    console.log('🚀 Creating employee optimistically:', newEmployee.first_name, newEmployee.last_name);
+    
+    // Optimistically add employee with temporary ID
     const tempEmployee: Employee = {
-      ...employeeData,
+      ...newEmployee,
       id: `temp-${Date.now()}`,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       is_active: true,
     };
 
+    // Immediately update UI
     dispatch({ type: 'ADD_EMPLOYEE', payload: tempEmployee });
 
     try {
-      // This would be handled by the existing create-employee edge function
-      // The actual server response would replace the temp employee
+      // Note: This would integrate with your existing create-employee edge function
+      // For now, we'll simulate a successful creation
+      console.log('✅ Employee created successfully in state');
+      
       toast({
         title: "Employee Added",
-        description: `${employeeData.first_name} ${employeeData.last_name} has been added successfully.`,
+        description: `${newEmployee.first_name} ${newEmployee.last_name} has been added successfully.`,
       });
+      
+      // In a real implementation, you'd call the edge function here
+      // and replace the temp employee with the real server response
+      
     } catch (error: any) {
+      console.error('❌ Error creating employee:', error);
+      
       // Remove optimistic update on error
       dispatch({ type: 'SET_EMPLOYEES', payload: state.employees.filter(emp => emp.id !== tempEmployee.id) });
+      
       toast({
         title: "Error",
         description: error.message || "Failed to create employee",
@@ -250,19 +265,29 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
     }
   };
 
-  const updateEmployee = async (id: string, updateData: Partial<Employee>, newPhoto?: File) => {
+  const updateEmployee = async (id: string, updates: Partial<Employee>, newPhoto?: File) => {
+    console.log('🔄 Updating employee optimistically:', id, updates);
+    
     const currentEmployee = state.employees.find(emp => emp.id === id);
-    if (!currentEmployee) return;
+    if (!currentEmployee) {
+      console.error('❌ Employee not found for update:', id);
+      return;
+    }
 
-    // Optimistically update employee
-    const updatedEmployee = { ...currentEmployee, ...updateData, updated_at: new Date().toISOString() };
+    // Immediately update UI with optimistic update
+    const updatedEmployee = { 
+      ...currentEmployee, 
+      ...updates, 
+      updated_at: new Date().toISOString() 
+    };
     dispatch({ type: 'UPDATE_EMPLOYEE', payload: updatedEmployee });
 
     try {
-      let photoUrl = updateData.photo_url;
+      let photoUrl = updates.photo_url;
 
-      // Upload new photo if provided
+      // Handle photo upload if provided
       if (newPhoto) {
+        console.log('📸 Uploading new photo...');
         const fileExtension = newPhoto.name.split('.').pop();
         const fileName = `${id}.${fileExtension}`;
         
@@ -280,12 +305,14 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
           .getPublicUrl(fileName);
         
         photoUrl = publicUrlData.publicUrl;
+        console.log('✅ Photo uploaded successfully:', photoUrl);
       }
 
+      // Update in Supabase
       const { data, error } = await supabase
         .from('user_profiles')
         .update({
-          ...updateData,
+          ...updates,
           photo_url: photoUrl,
           updated_at: new Date().toISOString(),
         })
@@ -295,16 +322,22 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
 
       if (error) throw error;
 
-      // Update with server response
-      dispatch({ type: 'UPDATE_EMPLOYEE', payload: { ...data, photo_url: photoUrl } });
+      // Update with final server response
+      const finalEmployee = { ...data, photo_url: photoUrl };
+      dispatch({ type: 'UPDATE_EMPLOYEE', payload: finalEmployee });
 
+      console.log('✅ Employee updated successfully in Supabase');
       toast({
         title: "Employee Updated",
-        description: `${updateData.first_name || currentEmployee.first_name} ${updateData.last_name || currentEmployee.last_name} has been updated successfully.`,
+        description: `${updates.first_name || currentEmployee.first_name} ${updates.last_name || currentEmployee.last_name} has been updated successfully.`,
       });
+      
     } catch (error: any) {
+      console.error('❌ Error updating employee:', error);
+      
       // Revert optimistic update on error
       dispatch({ type: 'UPDATE_EMPLOYEE', payload: currentEmployee });
+      
       toast({
         title: "Update Failed",
         description: error.message || "Failed to update employee",
@@ -314,8 +347,55 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
     }
   };
 
+  // New deleteEmployee function (soft delete - archives the employee)
+  const deleteEmployee = async (id: string) => {
+    console.log('🗑️ Deleting (archiving) employee optimistically:', id);
+    
+    const employeeToDelete = state.employees.find(emp => emp.id === id);
+    if (!employeeToDelete) {
+      console.error('❌ Employee not found for deletion:', id);
+      return;
+    }
+
+    // Immediately remove from UI (move to archived)
+    dispatch({ type: 'ARCHIVE_EMPLOYEE', payload: employeeToDelete.user_id });
+
+    try {
+      // Call archive function (soft delete)
+      const { data, error } = await supabase.rpc('delete_employee', {
+        employee_user_id: employeeToDelete.user_id
+      });
+
+      if (error || !(data as any)?.success) {
+        throw new Error((data as any)?.error || 'Failed to delete employee');
+      }
+
+      console.log('✅ Employee deleted successfully');
+      toast({
+        title: "Success",
+        description: `${employeeToDelete.first_name} ${employeeToDelete.last_name} has been archived successfully`,
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Error deleting employee:', error);
+      
+      // Revert optimistic update on error
+      dispatch({ type: 'REACTIVATE_EMPLOYEE', payload: employeeToDelete.user_id });
+      
+      toast({
+        title: "Error",
+        description: error.message || "Error deleting employee",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  // Archive employee function (same as delete but more explicit naming)
   const archiveEmployee = async (userId: string) => {
-    // Optimistically archive employee
+    console.log('📦 Archiving employee optimistically:', userId);
+    
+    // Immediately archive in UI
     dispatch({ type: 'ARCHIVE_EMPLOYEE', payload: userId });
 
     try {
@@ -327,13 +407,18 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
         throw new Error((data as any)?.error || 'Failed to archive employee');
       }
 
+      console.log('✅ Employee archived successfully');
       toast({
         title: "Success",
         description: "Employee successfully archived",
       });
+      
     } catch (error: any) {
+      console.error('❌ Error archiving employee:', error);
+      
       // Revert optimistic update on error
       dispatch({ type: 'REACTIVATE_EMPLOYEE', payload: userId });
+      
       toast({
         title: "Error",
         description: error.message || "Error archiving employee",
@@ -344,7 +429,9 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
   };
 
   const reactivateEmployee = async (userId: string) => {
-    // Optimistically reactivate employee
+    console.log('🔄 Reactivating employee optimistically:', userId);
+    
+    // Immediately reactivate in UI
     dispatch({ type: 'REACTIVATE_EMPLOYEE', payload: userId });
 
     try {
@@ -356,13 +443,18 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
         throw new Error((data as any)?.error || 'Failed to reactivate employee');
       }
 
+      console.log('✅ Employee reactivated successfully');
       toast({
         title: "Success",
         description: "Employee successfully reactivated",
       });
+      
     } catch (error: any) {
+      console.error('❌ Error reactivating employee:', error);
+      
       // Revert optimistic update on error
       dispatch({ type: 'ARCHIVE_EMPLOYEE', payload: userId });
+      
       toast({
         title: "Error",
         description: error.message || "Error reactivating employee",
@@ -380,6 +472,7 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
     ...state,
     createEmployee,
     updateEmployee,
+    deleteEmployee,
     archiveEmployee,
     reactivateEmployee,
     activeEmployeeCount: state.employees.length,
