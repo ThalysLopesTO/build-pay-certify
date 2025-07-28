@@ -37,6 +37,13 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
       
       <SidebarContent className="overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent bg-sidebar">
         
+        {/* Dashboard - Always visible at top */}
+        <ForemanSidebarSection
+          items={groupedForemanItems.dashboard}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
+
         {/* Timesheet - Always visible */}
         <ForemanSidebarSection
           items={groupedForemanItems.timesheet}

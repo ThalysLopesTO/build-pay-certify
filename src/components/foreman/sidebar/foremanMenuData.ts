@@ -71,7 +71,7 @@ export const foremanMenuItems = [
 ];
 
 export const groupedForemanItems = {
-  overview: [
+  dashboard: [
     {
       title: 'Dashboard',
       icon: Home,
@@ -138,11 +138,11 @@ export const groupedForemanItems = {
 };
 
 export const sectionConfigs = {
-  overview: {
-    label: "Overview",
+  dashboard: {
+    label: "Dashboard",
     icon: Home,
     defaultExpanded: true,
-    storageKey: "foreman-overview-expanded"
+    storageKey: "foreman-dashboard-expanded"
   },
   timesheet: {
     label: "Time Management",
