@@ -1118,7 +1118,15 @@ export type Database = {
           supervisor_on_site?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_missed_punch_requests_jobsite"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
