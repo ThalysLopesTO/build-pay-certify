@@ -162,22 +162,35 @@ export const useEmployeeRegistrationForm = () => {
 
       console.log('Employee registered successfully:', result);
 
-      // Update EmployeeContext with the new employee (optimistic update)
+      // Fetch the actual employee profile data from Supabase and update context
       if (result.user) {
-        await createEmployee({
-          user_id: result.user.id,
-          company_id: user.companyId,
-          first_name: data.firstName,
-          last_name: data.lastName,
-          role: data.role,
-          trade: data.trade || 'General',
-          position: 'Worker',
-          hourly_rate: data.hourlyRate,
-          photo_url: photoUrl,
-          worker_type: data.workerType,
-          phone: data.phoneNumber,
-          is_active: true,
-        });
+        const { data: employeeProfile, error: fetchError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', result.user.id)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching employee profile after creation:', fetchError);
+          // Fallback to manual object creation if fetch fails
+          await createEmployee({
+            user_id: result.user.id,
+            company_id: user.companyId,
+            first_name: data.firstName,
+            last_name: data.lastName,
+            role: data.role,
+            trade: data.trade || 'General',
+            position: 'Worker',
+            hourly_rate: data.hourlyRate,
+            photo_url: photoUrl,
+            worker_type: data.workerType,
+            phone: data.phoneNumber,
+            is_active: true,
+          });
+        } else {
+          // Use the actual employee data from Supabase
+          await createEmployee(employeeProfile);
+        }
       }
 
       toast({
