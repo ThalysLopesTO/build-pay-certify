@@ -36,6 +36,9 @@ const MissedPunchRequestsList = () => {
         <CardContent className="p-6">
           <div className="text-center text-red-500">
             Failed to load your requests. Please try again.
+            <div className="text-sm mt-2 text-muted-foreground">
+              Error: {error.message}
+            </div>
           </div>
         </CardContent>
       </Card>

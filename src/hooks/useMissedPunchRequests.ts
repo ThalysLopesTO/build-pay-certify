@@ -67,7 +67,12 @@ export const useMyMissedPunchRequests = () => {
   return useQuery({
     queryKey: ['my-missed-punch-requests', user?.id],
     queryFn: async () => {
-      if (!user?.id) throw new Error('No user ID');
+      if (!user?.id) {
+        console.log('No user ID available');
+        throw new Error('No user ID');
+      }
+
+      console.log('Fetching missed punch requests for user:', user.id);
 
       const { data, error } = await supabase
         .from('missed_punch_requests')
@@ -78,7 +83,12 @@ export const useMyMissedPunchRequests = () => {
         .eq('requested_by', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching missed punch requests:', error);
+        throw error;
+      }
+      
+      console.log('Fetched missed punch requests:', data);
       return data as any[];
     },
     enabled: !!user?.id,
