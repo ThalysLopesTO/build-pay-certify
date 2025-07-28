@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import PhotoUploadField from './employee-registration/PhotoUploadField';
-import { useEmployeeEdit } from '@/hooks/useEmployeeEdit';
+import { useEmployees } from '@/contexts/EmployeeContext';
 
 const editEmployeeSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -51,7 +51,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   employee,
   onSuccess
 }) => {
-  const updateEmployeeMutation = useEmployeeEdit();
+  const { updateEmployee } = useEmployees();
   
   const form = useForm<EditEmployeeFormData>({
     resolver: zodResolver(editEmployeeSchema),
@@ -91,25 +91,21 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
     }
 
     try {
-      await updateEmployeeMutation.mutateAsync({
-        employeeId: employee.id,
-        updateData: {
-          first_name: data.firstName,
-          last_name: data.lastName,
-          position: data.position,
-          trade: data.trade,
-          role: data.role,
-          hourly_rate: data.hourlyRate,
-          worker_type: data.workerType,
-          photo_url: employee.photo_url,
-        },
-        newPhoto: data.photo,
-      });
+      await updateEmployee(employee.id, {
+        first_name: data.firstName,
+        last_name: data.lastName,
+        position: data.position,
+        trade: data.trade,
+        role: data.role,
+        hourly_rate: data.hourlyRate,
+        worker_type: data.workerType,
+        photo_url: employee.photo_url,
+      }, data.photo);
 
       onSuccess();
       onClose();
     } catch (error) {
-      // Error handling is managed by the mutation hook
+      // Error handling is managed by the context
       console.error('Error updating employee:', error);
     }
   };
@@ -270,9 +266,8 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
               <Button 
                 type="submit" 
                 className="flex-1 bg-orange-600 hover:bg-orange-700"
-                disabled={updateEmployeeMutation.isPending}
               >
-                {updateEmployeeMutation.isPending ? 'Updating...' : 'Update Employee'}
+                Update Employee
               </Button>
             </div>
           </form>

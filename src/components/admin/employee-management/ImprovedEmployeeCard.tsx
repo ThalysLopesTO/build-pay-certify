@@ -22,7 +22,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
-import { Employee } from './useEmployeeManagement';
+import { Employee } from '@/contexts/EmployeeContext';
 import { getRoleColor, getCertStatusIcon, getCertStatusText, getCertStatus } from './employeeHelpers';
 import { canResetPassword } from '@/hooks/usePasswordManagement';
 import { useAuth } from '@/contexts/SupabaseAuthContext';

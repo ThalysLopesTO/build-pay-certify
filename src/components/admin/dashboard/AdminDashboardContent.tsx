@@ -7,6 +7,7 @@ import WelcomeGreeting from './WelcomeGreeting';
 import ProjectsProgressOverview from './ProjectsProgressOverview';
 import LiveActiveEmployees from './LiveActiveEmployees';
 import { useEnhancedDashboardStats } from '@/hooks/useEnhancedDashboardStats';
+import { useEmployees } from '@/contexts/EmployeeContext';
 import { BarChart3 } from 'lucide-react';
 interface AdminDashboardContentProps {
   setActiveTab: (tab: string) => void;
@@ -18,6 +19,9 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
     data: stats,
     isLoading
   } = useEnhancedDashboardStats();
+  
+  // Get real-time employee count from context
+  const { activeEmployeeCount } = useEmployees();
 
   // Handler for card clicks
   const navigateToSection = (section: string) => {
@@ -49,7 +53,7 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
         {/* First Row - Basic KPIs */}
         <StatsCard 
           title="Active Employees" 
-          value={stats?.employeesCount || 0} 
+          value={activeEmployeeCount || 0} 
           icon="👷‍♂️" 
           bgColor="bg-slate-50" 
           borderColor="border-blue-200" 

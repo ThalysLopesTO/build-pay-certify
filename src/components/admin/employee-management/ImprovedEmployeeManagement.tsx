@@ -3,14 +3,15 @@ import EmployeeEditModal from '../EmployeeEditModal';
 import EmployeeCertificatesModal from '../EmployeeCertificatesModal';
 import EmployeeDeleteDialog from '../EmployeeDeleteDialog';
 import PasswordResetModal from '../PasswordResetModal';
-import ArchivedEmployeesModal from './ArchivedEmployeesModal';
+import ArchivedEmployeesModalContext from './ArchivedEmployeesModalContext';
 import ImprovedEmployeeHeader from './ImprovedEmployeeHeader';
 import ImprovedEmployeeSearch from './ImprovedEmployeeSearch';
 import ImprovedEmployeeCard from './ImprovedEmployeeCard';
 import EmployeeEmptyState from './EmployeeEmptyState';
 import EmployeeLoadingState from './EmployeeLoadingState';
 import EmployeeErrorState from './EmployeeErrorState';
-import { useEmployeeManagement, type Employee } from './useEmployeeManagement';
+import { useEmployeeManagementContext } from './useEmployeeManagementContext';
+import { Employee } from '@/contexts/EmployeeContext';
 
 const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateToRegistration?: () => void }) => {
   const [resettingPasswordEmployee, setResettingPasswordEmployee] = useState<Employee | null>(null);
@@ -22,19 +23,18 @@ const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateTo
     viewingCertificates,
     deletingEmployee,
     employees,
-    isLoading,
+    loading,
     error,
     isAdmin,
     canAddEmployee,
+    activeEmployeeCount,
     setSearchTerm,
     setEditingEmployee,
     setViewingCertificates,
     setDeletingEmployee,
     handleDeleteEmployee,
     confirmDeleteEmployee,
-    refetch,
-    isDeleting
-  } = useEmployeeManagement();
+  } = useEmployeeManagementContext();
 
   const handleAddEmployee = () => {
     if (onNavigateToRegistration) {
@@ -46,7 +46,7 @@ const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateTo
     setResettingPasswordEmployee(employee);
   };
 
-  if (isLoading) {
+  if (loading) {
     return <EmployeeLoadingState />;
   }
 
@@ -61,7 +61,7 @@ const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateTo
           canAddEmployee={!!canAddEmployee}
           onAddEmployee={handleAddEmployee}
           onViewArchived={() => setShowArchivedEmployees(true)}
-          employeeCount={employees.length}
+          employeeCount={activeEmployeeCount}
         />
 
         <ImprovedEmployeeSearch 
@@ -82,7 +82,7 @@ const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateTo
                 onViewCertificates={setViewingCertificates}
                 onDelete={handleDeleteEmployee}
                 onResetPassword={handleResetPassword}
-                isDeleting={isDeleting}
+                isDeleting={false}
               />
             ))}
           </div>
@@ -115,10 +115,10 @@ const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateTo
           onClose={() => setDeletingEmployee(null)}
           onConfirm={confirmDeleteEmployee}
           employeeName={deletingEmployee ? `${deletingEmployee.first_name} ${deletingEmployee.last_name}` : ''}
-          isDeleting={isDeleting}
+          isDeleting={false}
         />
 
-        <ArchivedEmployeesModal
+        <ArchivedEmployeesModalContext
           isOpen={showArchivedEmployees}
           onClose={() => setShowArchivedEmployees(false)}
         />
