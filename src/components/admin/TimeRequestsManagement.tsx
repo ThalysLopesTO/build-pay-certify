@@ -55,6 +55,18 @@ const formatDateDisplay = (dateString: string) => {
   return format(date, 'PPP');
 };
 
+const formatDateTimeDisplay = (dateTimeString: string) => {
+  if (!dateTimeString) return 'N/A';
+  
+  try {
+    const date = new Date(dateTimeString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return format(date, 'PPP p');
+  } catch (error) {
+    return 'Invalid Date';
+  }
+};
+
 const TimeRequestsManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [jobsiteFilter, setJobsiteFilter] = useState<string>('all');
@@ -337,9 +349,9 @@ const TimeRequestsManagement = () => {
 
                   {/* Metadata */}
                   <div className="text-xs text-gray-500 pt-2 border-t">
-                    Submitted on {format(new Date(request.created_at), 'PPP p')}
+                    Submitted on {formatDateTimeDisplay(request.created_at)}
                     {request.reviewed_at && (
-                      <span> • Reviewed on {format(new Date(request.reviewed_at), 'PPP p')}</span>
+                      <span> • Reviewed on {formatDateTimeDisplay(request.reviewed_at)}</span>
                     )}
                   </div>
                 </CardContent>
