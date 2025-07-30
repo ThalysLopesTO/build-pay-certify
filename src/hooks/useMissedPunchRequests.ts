@@ -45,7 +45,24 @@ export const useMissedPunchRequests = () => {
       const { data, error } = await supabase
         .from('missed_punch_requests')
         .select(`
-          *,
+          id,
+          company_id,
+          employee_id,
+          requested_by,
+          request_date,
+          punch_type,
+          corrected_time_in,
+          corrected_time_out,
+          reason,
+          supervisor_on_site,
+          jobsite_id,
+          attachment_url,
+          status,
+          reviewed_by,
+          reviewed_at,
+          decline_reason,
+          created_at,
+          updated_at,
           employee_profiles:user_profiles!fk_missed_punch_requests_employee(
             first_name,
             last_name,
