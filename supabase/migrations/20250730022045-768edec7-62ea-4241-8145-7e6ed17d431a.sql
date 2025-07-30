@@ -1,0 +1,121 @@
+-- Fix approve_missed_punch_request to handle existing timesheet records properly
+CREATE OR REPLACE FUNCTION public.approve_missed_punch_request(request_id uuid)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $function$
+DECLARE
+  request_record RECORD;
+  existing_timesheet_id uuid;
+  result json;
+BEGIN
+  -- Get the request details
+  SELECT * INTO request_record
+  FROM public.missed_punch_requests
+  WHERE id = request_id
+  AND status = 'pending';
+  
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Request not found or already processed';
+  END IF;
+  
+  -- Verify user has permission to approve
+  IF NOT EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE user_id = auth.uid() 
+    AND company_id = request_record.company_id
+    AND role IN ('admin', 'super_admin', 'management', 'foreman')
+  ) THEN
+    RAISE EXCEPTION 'Access denied: insufficient permissions';
+  END IF;
+  
+  -- Handle different punch types
+  IF request_record.punch_type = 'in' THEN
+    -- Insert new timesheet with punch in
+    INSERT INTO public.timesheets (
+      user_id,
+      company_id,
+      jobsite_id,
+      check_in_time,
+      status
+    ) VALUES (
+      request_record.employee_id,
+      request_record.company_id,
+      request_record.jobsite_id,
+      (request_record.request_date::text || ' ' || request_record.corrected_time_in)::timestamp,
+      'active'
+    );
+    
+  ELSIF request_record.punch_type = 'out' THEN
+    -- Update existing open timesheet with punch out
+    UPDATE public.timesheets 
+    SET 
+      check_out_time = (request_record.request_date::text || ' ' || request_record.corrected_time_out)::timestamp,
+      status = 'completed'
+    WHERE user_id = request_record.employee_id
+    AND DATE(check_in_time) = request_record.request_date
+    AND check_out_time IS NULL
+    AND company_id = request_record.company_id;
+    
+  ELSIF request_record.punch_type = 'both' THEN
+    -- Check if there's an existing timesheet for this employee on this date
+    SELECT id INTO existing_timesheet_id
+    FROM public.timesheets
+    WHERE user_id = request_record.employee_id
+    AND DATE(check_in_time) = request_record.request_date
+    AND company_id = request_record.company_id
+    LIMIT 1;
+    
+    IF existing_timesheet_id IS NOT NULL THEN
+      -- Update existing timesheet
+      UPDATE public.timesheets 
+      SET 
+        check_in_time = (request_record.request_date::text || ' ' || request_record.corrected_time_in)::timestamp,
+        check_out_time = (request_record.request_date::text || ' ' || request_record.corrected_time_out)::timestamp,
+        jobsite_id = request_record.jobsite_id,
+        status = 'completed'
+      WHERE id = existing_timesheet_id;
+    ELSE
+      -- Insert new complete timesheet entry
+      INSERT INTO public.timesheets (
+        user_id,
+        company_id,
+        jobsite_id,
+        check_in_time,
+        check_out_time,
+        status
+      ) VALUES (
+        request_record.employee_id,
+        request_record.company_id,
+        request_record.jobsite_id,
+        (request_record.request_date::text || ' ' || request_record.corrected_time_in)::timestamp,
+        (request_record.request_date::text || ' ' || request_record.corrected_time_out)::timestamp,
+        'completed'
+      );
+    END IF;
+  END IF;
+  
+  -- Update request status
+  UPDATE public.missed_punch_requests
+  SET 
+    status = 'approved',
+    reviewed_by = auth.uid(),
+    reviewed_at = now()
+  WHERE id = request_id;
+  
+  result := json_build_object(
+    'success', true,
+    'message', 'Request approved and timesheet updated'
+  );
+  
+  RETURN result;
+  
+EXCEPTION
+  WHEN OTHERS THEN
+    result := json_build_object(
+      'success', false,
+      'error', SQLERRM
+    );
+    RETURN result;
+END;
+$function$;
