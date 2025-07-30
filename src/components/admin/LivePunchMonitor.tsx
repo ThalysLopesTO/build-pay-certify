@@ -98,7 +98,7 @@ const LivePunchMonitor = () => {
       const endOfDay = new Date(selectedDate);
       endOfDay.setHours(23, 59, 59, 999);
 
-      // First get timesheets - use a broader query to catch all entries for the date
+      // Get timesheets for the specific selected date only
       const { data: timesheets, error: timesheetsError } = await supabase
         .from('timesheets')
         .select(`
@@ -113,7 +113,7 @@ const LivePunchMonitor = () => {
           created_at
         `)
         .eq('company_id', user.companyId)
-        .or(`check_in_time.gte.${startOfDay.toISOString()},check_in_time.lte.${endOfDay.toISOString()},check_out_time.gte.${startOfDay.toISOString()},check_out_time.lte.${endOfDay.toISOString()},and(created_at.gte.${startOfDay.toISOString()},created_at.lte.${endOfDay.toISOString()})`)
+        .or(`and(check_in_time.gte.${startOfDay.toISOString()},check_in_time.lte.${endOfDay.toISOString()}),and(check_out_time.gte.${startOfDay.toISOString()},check_out_time.lte.${endOfDay.toISOString()}),and(check_in_time.is.null,check_out_time.is.null,created_at.gte.${startOfDay.toISOString()},created_at.lte.${endOfDay.toISOString()})`)
         .order('check_in_time', { ascending: false, nullsFirst: false });
 
       if (timesheetsError) {
