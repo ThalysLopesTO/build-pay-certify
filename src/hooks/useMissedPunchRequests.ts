@@ -40,6 +40,8 @@ export const useMissedPunchRequests = () => {
     queryFn: async () => {
       if (!user?.companyId) throw new Error('No company ID');
 
+      console.log('Fetching missed punch requests for company:', user.companyId);
+
       const { data, error } = await supabase
         .from('missed_punch_requests')
         .select(`
@@ -54,7 +56,12 @@ export const useMissedPunchRequests = () => {
         .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching missed punch requests:', error);
+        throw error;
+      }
+      
+      console.log('Fetched missed punch requests for admin:', data);
       return data as any[];
     },
     enabled: !!user?.companyId,
