@@ -28,8 +28,7 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
   const [formData, setFormData] = useState({
     check_in_time: '',
     check_out_time: '',
-    jobsite_id: '',
-    note: ''
+    jobsite_id: ''
   });
 
   useEffect(() => {
@@ -41,8 +40,7 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
         check_out_time: timesheet.check_out_time 
           ? format(new Date(timesheet.check_out_time), "yyyy-MM-dd'T'HH:mm")
           : '',
-        jobsite_id: timesheet.jobsite_id || '',
-        note: ''
+        jobsite_id: timesheet.jobsite_id || ''
       });
     }
   }, [timesheet, isOpen]);
@@ -50,9 +48,7 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const updateData: any = {
-      notes: formData.note
-    };
+    const updateData: any = {};
 
     if (formData.check_in_time) {
       updateData.check_in_time = new Date(formData.check_in_time).toISOString();
@@ -131,16 +127,6 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="note">Correction Note (Optional)</Label>
-            <Textarea
-              id="note"
-              placeholder="Reason for this correction..."
-              value={formData.note}
-              onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
-              className="min-h-[80px]"
-            />
-          </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>

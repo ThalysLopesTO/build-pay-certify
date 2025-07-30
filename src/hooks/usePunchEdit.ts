@@ -7,7 +7,6 @@ interface PunchEditData {
   check_in_time?: string;
   check_out_time?: string;
   jobsite_id?: string;
-  notes?: string;
 }
 
 export const usePunchEdit = () => {
