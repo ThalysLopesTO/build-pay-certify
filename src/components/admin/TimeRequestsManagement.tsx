@@ -24,6 +24,37 @@ const statusIcons = {
   declined: X,
 };
 
+const formatTimeDisplay = (timeString: string) => {
+  if (!timeString) return 'N/A';
+  
+  // Handle both simple time format (HH:MM) and ISO timestamp format
+  let timePart = timeString;
+  if (timeString.includes('T')) {
+    // Extract time part from ISO string
+    timePart = timeString.split('T')[1]?.substring(0, 5);
+  }
+  
+  if (!timePart) return 'N/A';
+  
+  // Convert to 12-hour format
+  const [hours, minutes] = timePart.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  
+  return `${displayHour}:${minutes} ${ampm}`;
+};
+
+const formatDateDisplay = (dateString: string) => {
+  if (!dateString) return 'N/A';
+  
+  // Parse date string manually to avoid timezone issues
+  const [year, month, day] = dateString.split('-');
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  
+  return format(date, 'PPP');
+};
+
 const TimeRequestsManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [jobsiteFilter, setJobsiteFilter] = useState<string>('all');
@@ -162,7 +193,7 @@ const TimeRequestsManagement = () => {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-500" />
                       <span className="text-sm">
-                        <strong>Date:</strong> {format(new Date(request.request_date), 'PPP')}
+                        <strong>Date:</strong> {formatDateDisplay(request.request_date)}
                       </span>
                     </div>
                     
@@ -177,7 +208,7 @@ const TimeRequestsManagement = () => {
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-gray-500" />
                         <span className="text-sm">
-                          <strong>In Time:</strong> {format(new Date(request.corrected_time_in), 'h:mm a')}
+                          <strong>In Time:</strong> {formatTimeDisplay(request.corrected_time_in)}
                         </span>
                       </div>
                     )}
@@ -186,7 +217,7 @@ const TimeRequestsManagement = () => {
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-gray-500" />
                         <span className="text-sm">
-                          <strong>Out Time:</strong> {format(new Date(request.corrected_time_out), 'h:mm a')}
+                          <strong>Out Time:</strong> {formatTimeDisplay(request.corrected_time_out)}
                         </span>
                       </div>
                     )}
