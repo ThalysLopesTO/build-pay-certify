@@ -7,15 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Clock, MapPin, User, FileText, AlertCircle, Check, X, Filter } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Clock, MapPin, User, FileText, AlertCircle, Check, X, Filter, Archive, Clock3, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMissedPunchRequests, useApproveMissedPunchRequest, useDeclineMissedPunchRequest } from '@/hooks/useMissedPunchRequests';
 import { useJobsites } from '@/hooks/useJobsites';
 
 const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  approved: 'bg-green-100 text-green-800 border-green-200',
-  declined: 'bg-red-100 text-red-800 border-red-200',
+  pending: 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm',
+  approved: 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm',
+  declined: 'bg-red-50 text-red-700 border-red-200 shadow-sm',
 };
 
 const statusIcons = {
@@ -67,29 +68,216 @@ const formatDateTimeDisplay = (dateTimeString: string) => {
   }
 };
 
+// Request Card Component
+const RequestCard = ({ request, onApprove, onDecline, isArchived = false }: any) => {
+  const StatusIcon = statusIcons[request.status];
+  const employeeName = request.employee_profiles 
+    ? `${request.employee_profiles.first_name} ${request.employee_profiles.last_name}`
+    : 'Unknown Employee';
+
+  return (
+    <Card className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${
+      isArchived 
+        ? 'border-l-gray-300 bg-gray-50/50' 
+        : request.status === 'pending' 
+          ? 'border-l-amber-400' 
+          : request.status === 'approved' 
+            ? 'border-l-emerald-400' 
+            : 'border-l-red-400'
+    }`}>
+      <CardContent className="p-6">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">{employeeName}</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              ID: {request.employee_profiles?.user_id || request.employee_id}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {isArchived && (
+              <Badge variant="outline" className="text-xs text-gray-500 border-gray-300">
+                <Archive className="h-3 w-3 mr-1" />
+                Archived
+              </Badge>
+            )}
+            <Badge className={`${statusColors[request.status]} font-medium px-3 py-1 rounded-full`}>
+              <StatusIcon className="h-3 w-3 mr-1" />
+              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Request Details Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <Calendar className="h-4 w-4 text-gray-600" />
+            <div>
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date</p>
+              <p className="text-sm font-medium text-gray-900">{formatDateDisplay(request.request_date)}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <Clock3 className="h-4 w-4 text-gray-600" />
+            <div>
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Type</p>
+              <p className="text-sm font-medium text-gray-900">
+                {request.punch_type === 'both' ? 'In & Out' : `Punch ${request.punch_type}`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <MapPin className="h-4 w-4 text-gray-600" />
+            <div>
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Jobsite</p>
+              <p className="text-sm font-medium text-gray-900">{request.jobsites?.name || 'Unknown'}</p>
+            </div>
+          </div>
+
+          {request.corrected_time_in && (
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">In Time</p>
+                <p className="text-sm font-medium text-blue-900">{formatTimeDisplay(request.corrected_time_in)}</p>
+              </div>
+            </div>
+          )}
+
+          {request.corrected_time_out && (
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Out Time</p>
+                <p className="text-sm font-medium text-blue-900">{formatTimeDisplay(request.corrected_time_out)}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <User className="h-4 w-4 text-gray-600" />
+            <div>
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Supervisor</p>
+              <p className="text-sm font-medium text-gray-900">{request.supervisor_on_site}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Reason Section */}
+        <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
+          <div className="flex items-center gap-2 mb-2">
+            <FileText className="h-4 w-4 text-gray-600" />
+            <span className="text-sm font-semibold text-gray-700">Reason</span>
+          </div>
+          <p className="text-sm text-gray-600 leading-relaxed">{request.reason}</p>
+        </div>
+
+        {/* Attachment */}
+        {request.attachment_url && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <a 
+              href={request.attachment_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              View attachment
+            </a>
+          </div>
+        )}
+
+        {/* Decline Reason */}
+        {request.status === 'declined' && request.decline_reason && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <span className="text-sm font-semibold text-red-700">Decline Reason</span>
+            </div>
+            <p className="text-sm text-red-600">{request.decline_reason}</p>
+          </div>
+        )}
+
+        {/* Actions */}
+        {request.status === 'pending' && !isArchived && (
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <Button
+              onClick={() => onApprove(request.id)}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Approve
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={() => onDecline(request.id)}
+              className="flex-1 border-red-300 text-red-600 hover:bg-red-50 font-medium"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Decline
+            </Button>
+          </div>
+        )}
+
+        {/* Metadata */}
+        <div className="text-xs text-gray-500 pt-3 border-t border-gray-200 mt-4">
+          <div className="flex items-center justify-between">
+            <span>Submitted {formatDateTimeDisplay(request.created_at)}</span>
+            {request.reviewed_at && (
+              <span>Reviewed {formatDateTimeDisplay(request.reviewed_at)}</span>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 const TimeRequestsManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [jobsiteFilter, setJobsiteFilter] = useState<string>('all');
   const [declineReason, setDeclineReason] = useState('');
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('active');
   
   const { data: requests = [], isLoading } = useMissedPunchRequests();
   const { data: jobsites = [] } = useJobsites('active');
   const approveMutation = useApproveMissedPunchRequest();
   const declineMutation = useDeclineMissedPunchRequest();
 
-  // Filter requests
-  const filteredRequests = requests.filter((request: any) => {
-    const statusMatch = statusFilter === 'all' || request.status === statusFilter;
-    const jobsiteMatch = jobsiteFilter === 'all' || request.jobsite_id === jobsiteFilter;
-    return statusMatch && jobsiteMatch;
-  });
+  // Separate active and archived requests
+  const activeRequests = requests.filter((request: any) => 
+    request.status === 'pending' || request.status === 'declined'
+  );
+  
+  const archivedRequests = requests.filter((request: any) => 
+    request.status === 'approved'
+  );
+
+  // Filter logic for each tab
+  const getFilteredRequests = (requestList: any[]) => {
+    return requestList.filter((request: any) => {
+      const statusMatch = statusFilter === 'all' || request.status === statusFilter;
+      const jobsiteMatch = jobsiteFilter === 'all' || request.jobsite_id === jobsiteFilter;
+      return statusMatch && jobsiteMatch;
+    });
+  };
+
+  const filteredActiveRequests = getFilteredRequests(activeRequests);
+  const filteredArchivedRequests = getFilteredRequests(archivedRequests);
 
   const handleApprove = (requestId: string) => {
     approveMutation.mutate(requestId);
   };
 
-  const handleDecline = () => {
+  const handleDecline = (requestId: string) => {
+    setSelectedRequestId(requestId);
+  };
+
+  const handleDeclineConfirm = () => {
     if (selectedRequestId) {
       declineMutation.mutate({
         requestId: selectedRequestId,
@@ -103,8 +291,11 @@ const TimeRequestsManagement = () => {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="text-center">Loading time requests...</div>
+        <CardContent className="p-8">
+          <div className="text-center">
+            <Clock className="h-8 w-8 mx-auto mb-4 text-gray-400 animate-spin" />
+            <p className="text-gray-600">Loading time requests...</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -112,27 +303,31 @@ const TimeRequestsManagement = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Clock className="h-6 w-6" />
-          Time Requests Management
-        </h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <Clock className="h-8 w-8 text-blue-600" />
+            Time Requests Management
+          </h1>
+          <p className="text-gray-600 mt-1">Manage and review employee time correction requests</p>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
+      <Card className="border-t-4 border-t-blue-500">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-gray-800">
+            <Filter className="h-5 w-5 text-blue-600" />
+            Filter Requests
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="status-filter">Status</Label>
+              <Label htmlFor="status-filter" className="text-sm font-semibold text-gray-700">Status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="border-gray-300">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -145,9 +340,9 @@ const TimeRequestsManagement = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="jobsite-filter">Jobsite</Label>
+              <Label htmlFor="jobsite-filter" className="text-sm font-semibold text-gray-700">Jobsite</Label>
               <Select value={jobsiteFilter} onValueChange={setJobsiteFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="border-gray-300">
                   <SelectValue placeholder="All jobsites" />
                 </SelectTrigger>
                 <SelectContent>
@@ -164,202 +359,131 @@ const TimeRequestsManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Requests List */}
-      <div className="space-y-4">
-        {filteredRequests.length === 0 ? (
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center text-gray-500">
-                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">No requests found</p>
-                <p className="text-sm">No time requests match your current filters.</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredRequests.map((request: any) => {
-            const StatusIcon = statusIcons[request.status];
-            const employeeName = request.employee_profiles 
-              ? `${request.employee_profiles.first_name} ${request.employee_profiles.last_name}`
-              : 'Unknown Employee';
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100 p-1">
+          <TabsTrigger 
+            value="active" 
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            <Clock3 className="h-4 w-4" />
+            Active Requests
+            <Badge variant="secondary" className="ml-1 bg-amber-100 text-amber-700">
+              {filteredActiveRequests.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="archived" 
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            <History className="h-4 w-4" />
+            Archived Requests
+            <Badge variant="secondary" className="ml-1 bg-emerald-100 text-emerald-700">
+              {filteredArchivedRequests.length}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
 
-            return (
-              <Card key={request.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">
-                      {employeeName}
-                    </CardTitle>
-                    <Badge className={statusColors[request.status]}>
-                      <StatusIcon className="h-3 w-3 mr-1" />
-                      {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Employee ID: {request.employee_profiles?.user_id || request.employee_id}
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Request Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">
-                        <strong>Date:</strong> {formatDateDisplay(request.request_date)}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">
-                        <strong>Type:</strong> {request.punch_type === 'both' ? 'In & Out' : `Punch ${request.punch_type}`}
-                      </span>
-                    </div>
+        {/* Active Requests Tab */}
+        <TabsContent value="active" className="space-y-4">
+          {filteredActiveRequests.length === 0 ? (
+            <Card className="border-dashed border-2 border-gray-300">
+              <CardContent className="p-12">
+                <div className="text-center text-gray-500">
+                  <Clock3 className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No active requests</h3>
+                  <p className="text-sm">No time requests match your current filters.</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6">
+              {filteredActiveRequests.map((request: any) => (
+                <RequestCard
+                  key={request.id}
+                  request={request}
+                  onApprove={handleApprove}
+                  onDecline={handleDecline}
+                  isArchived={false}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
-                    {request.corrected_time_in && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm">
-                          <strong>In Time:</strong> {formatTimeDisplay(request.corrected_time_in)}
-                        </span>
-                      </div>
-                    )}
+        {/* Archived Requests Tab */}
+        <TabsContent value="archived" className="space-y-4">
+          {filteredArchivedRequests.length === 0 ? (
+            <Card className="border-dashed border-2 border-gray-300">
+              <CardContent className="p-12">
+                <div className="text-center text-gray-500">
+                  <Archive className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No archived requests</h3>
+                  <p className="text-sm">Approved requests will appear here once archived.</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6">
+              {filteredArchivedRequests.map((request: any) => (
+                <RequestCard
+                  key={request.id}
+                  request={request}
+                  onApprove={() => {}}
+                  onDecline={() => {}}
+                  isArchived={true}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
-                    {request.corrected_time_out && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm">
-                          <strong>Out Time:</strong> {formatTimeDisplay(request.corrected_time_out)}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">
-                        <strong>Jobsite:</strong> {request.jobsites?.name || 'Unknown'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">
-                        <strong>Supervisor:</strong> {request.supervisor_on_site}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Reason */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <strong className="text-sm">Reason:</strong>
-                    </div>
-                    <p className="text-sm text-gray-600 pl-6">{request.reason}</p>
-                  </div>
-
-                  {/* Attachment */}
-                  {request.attachment_url && (
-                    <div className="space-y-2">
-                      <strong className="text-sm">Attachment:</strong>
-                      <a 
-                        href={request.attachment_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline block pl-6"
-                      >
-                        View attachment
-                      </a>
-                    </div>
-                  )}
-
-                  {/* Decline Reason */}
-                  {request.status === 'declined' && request.decline_reason && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <AlertCircle className="h-4 w-4 text-red-500" />
-                        <strong className="text-sm text-red-700">Decline Reason:</strong>
-                      </div>
-                      <p className="text-sm text-red-600">{request.decline_reason}</p>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  {request.status === 'pending' && (
-                    <div className="flex gap-2 pt-4 border-t">
-                      <Button
-                        onClick={() => handleApprove(request.id)}
-                        disabled={approveMutation.isPending}
-                        className="flex-1"
-                      >
-                        <Check className="h-4 w-4 mr-2" />
-                        {approveMutation.isPending ? 'Approving...' : 'Approve'}
-                      </Button>
-                      
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="destructive"
-                            onClick={() => setSelectedRequestId(request.id)}
-                            disabled={declineMutation.isPending}
-                            className="flex-1"
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Decline
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Decline Request</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <p className="text-sm text-gray-600">
-                              Are you sure you want to decline this missed punch request?
-                            </p>
-                            <div className="space-y-2">
-                              <Label htmlFor="decline-reason">Reason for Decline (Optional)</Label>
-                              <Textarea
-                                id="decline-reason"
-                                value={declineReason}
-                                onChange={(e) => setDeclineReason(e.target.value)}
-                                placeholder="Provide a reason for declining this request..."
-                                className="min-h-[100px]"
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={handleDecline}
-                                disabled={declineMutation.isPending}
-                                variant="destructive"
-                                className="flex-1"
-                              >
-                                {declineMutation.isPending ? 'Declining...' : 'Confirm Decline'}
-                              </Button>
-                              <DialogTrigger asChild>
-                                <Button variant="outline" className="flex-1">
-                                  Cancel
-                                </Button>
-                              </DialogTrigger>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  )}
-
-                  {/* Metadata */}
-                  <div className="text-xs text-gray-500 pt-2 border-t">
-                    Submitted on {formatDateTimeDisplay(request.created_at)}
-                    {request.reviewed_at && (
-                      <span> • Reviewed on {formatDateTimeDisplay(request.reviewed_at)}</span>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
-      </div>
+      {/* Decline Dialog */}
+      <Dialog open={!!selectedRequestId} onOpenChange={() => setSelectedRequestId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <X className="h-5 w-5 text-red-600" />
+              Decline Request
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Are you sure you want to decline this missed punch request?
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="decline-reason" className="text-sm font-semibold">
+                Reason for Decline (Optional)
+              </Label>
+              <Textarea
+                id="decline-reason"
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                placeholder="Provide a reason for declining this request..."
+                className="min-h-[100px] resize-none"
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleDeclineConfirm}
+                disabled={declineMutation.isPending}
+                variant="destructive"
+                className="flex-1"
+              >
+                {declineMutation.isPending ? 'Declining...' : 'Confirm Decline'}
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setSelectedRequestId(null)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
