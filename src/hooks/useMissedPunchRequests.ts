@@ -177,9 +177,13 @@ export const useApproveMissedPunchRequest = () => {
       return data;
     },
     onSuccess: (data: any) => {
+      // Invalidate all related queries to ensure immediate refresh
       queryClient.invalidateQueries({ queryKey: ['missed-punch-requests'] });
       queryClient.invalidateQueries({ queryKey: ['my-missed-punch-requests'] });
       queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['live-punch-monitor'] });
+      queryClient.invalidateQueries({ queryKey: ['live-punch-data'] });
       
       if (data && typeof data === 'object' && data.success) {
         toast.success('Request approved and timesheet updated');
