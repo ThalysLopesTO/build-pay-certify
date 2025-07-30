@@ -17,6 +17,22 @@ const statusIcons = {
   declined: AlertCircle,
 };
 
+const formatTimeDisplay = (timeString: string) => {
+  if (!timeString) return 'N/A';
+  
+  // Extract time part from the ISO string (HH:MM:SS)
+  const timePart = timeString.split('T')[1]?.substring(0, 5);
+  if (!timePart) return 'N/A';
+  
+  // Convert to 12-hour format
+  const [hours, minutes] = timePart.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  
+  return `${displayHour}:${minutes} ${ampm}`;
+};
+
 const MissedPunchRequestsList = () => {
   const { data: requests = [], isLoading, error } = useMyMissedPunchRequests();
 
@@ -98,11 +114,7 @@ const MissedPunchRequestsList = () => {
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">
-                      <strong>In Time:</strong> {new Date(request.corrected_time_in).toLocaleTimeString('en-US', { 
-                        hour: 'numeric', 
-                        minute: '2-digit', 
-                        hour12: true 
-                      })}
+                      <strong>In Time:</strong> {formatTimeDisplay(request.corrected_time_in)}
                     </span>
                   </div>
                 )}
@@ -111,11 +123,7 @@ const MissedPunchRequestsList = () => {
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">
-                      <strong>Out Time:</strong> {new Date(request.corrected_time_out).toLocaleTimeString('en-US', { 
-                        hour: 'numeric', 
-                        minute: '2-digit', 
-                        hour12: true 
-                      })}
+                      <strong>Out Time:</strong> {formatTimeDisplay(request.corrected_time_out)}
                     </span>
                   </div>
                 )}
