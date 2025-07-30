@@ -46,7 +46,7 @@ export const useMissedPunchRequests = () => {
         .from('missed_punch_requests')
         .select(`
           *,
-          employee_profiles:user_profiles!employee_id(
+          employee_profiles:user_profiles!fk_missed_punch_requests_employee(
             first_name,
             last_name,
             email

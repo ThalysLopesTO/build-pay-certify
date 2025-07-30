@@ -1120,6 +1120,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_missed_punch_requests_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "fk_missed_punch_requests_jobsite"
             columns: ["jobsite_id"]
             isOneToOne: false
