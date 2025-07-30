@@ -113,12 +113,8 @@ const MissedPunchRequestForm = ({ onSuccess }: MissedPunchRequestFormProps) => {
       const requestData = {
         request_date: format(data.request_date, 'yyyy-MM-dd'),
         punch_type: data.punch_type,
-        corrected_time_in: data.corrected_time_in 
-          ? `${format(data.request_date, 'yyyy-MM-dd')}T${data.corrected_time_in}:00`
-          : undefined,
-        corrected_time_out: data.corrected_time_out 
-          ? `${format(data.request_date, 'yyyy-MM-dd')}T${data.corrected_time_out}:00`
-          : undefined,
+        corrected_time_in: data.corrected_time_in || undefined,
+        corrected_time_out: data.corrected_time_out || undefined,
         reason: data.reason,
         supervisor_on_site: data.supervisor_on_site,
         jobsite_id: data.jobsite_id,

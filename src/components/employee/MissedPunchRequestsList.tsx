@@ -20,8 +20,13 @@ const statusIcons = {
 const formatTimeDisplay = (timeString: string) => {
   if (!timeString) return 'N/A';
   
-  // Extract time part from the ISO string (HH:MM:SS)
-  const timePart = timeString.split('T')[1]?.substring(0, 5);
+  // Handle both simple time format (HH:MM) and ISO timestamp format
+  let timePart = timeString;
+  if (timeString.includes('T')) {
+    // Extract time part from ISO string
+    timePart = timeString.split('T')[1]?.substring(0, 5);
+  }
+  
   if (!timePart) return 'N/A';
   
   // Convert to 12-hour format
@@ -31,6 +36,16 @@ const formatTimeDisplay = (timeString: string) => {
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
   
   return `${displayHour}:${minutes} ${ampm}`;
+};
+
+const formatDateDisplay = (dateString: string) => {
+  if (!dateString) return 'N/A';
+  
+  // Parse date string manually to avoid timezone issues
+  const [year, month, day] = dateString.split('-');
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  
+  return format(date, 'PPP');
 };
 
 const MissedPunchRequestsList = () => {
@@ -99,7 +114,7 @@ const MissedPunchRequestsList = () => {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-gray-500" />
                   <span className="text-sm">
-                    <strong>Date:</strong> {format(new Date(request.request_date), 'PPP')}
+                    <strong>Date:</strong> {formatDateDisplay(request.request_date)}
                   </span>
                 </div>
                 
