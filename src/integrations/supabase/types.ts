@@ -2120,7 +2120,12 @@ export type Database = {
     }
     Enums: {
       punch_type: "in" | "out" | "both"
-      request_status: "pending" | "ordered" | "delivered" | "archived"
+      request_status:
+        | "pending"
+        | "ordered"
+        | "delivered"
+        | "archived"
+        | "approved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2249,7 +2254,13 @@ export const Constants = {
   public: {
     Enums: {
       punch_type: ["in", "out", "both"],
-      request_status: ["pending", "ordered", "delivered", "archived"],
+      request_status: [
+        "pending",
+        "ordered",
+        "delivered",
+        "archived",
+        "approved",
+      ],
     },
   },
 } as const
