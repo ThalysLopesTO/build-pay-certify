@@ -15,12 +15,14 @@ interface EditPunchModalProps {
   isOpen: boolean;
   onClose: () => void;
   timesheet: any;
+  onSuccess?: () => void;
 }
 
 const EditPunchModal: React.FC<EditPunchModalProps> = ({
   isOpen,
   onClose,
-  timesheet
+  timesheet,
+  onSuccess
 }) => {
   const { data: jobsites } = useActiveJobsites();
   const { mutate: updatePunch, isPending: isEditing } = usePunchEdit();
@@ -60,8 +62,15 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
       updateData.jobsite_id = formData.jobsite_id;
     }
 
-    updatePunch({ id: timesheet.id, data: updateData });
-    onClose();
+    updatePunch({ 
+      id: timesheet.id, 
+      data: updateData 
+    }, {
+      onSuccess: () => {
+        onSuccess?.();
+        onClose();
+      }
+    });
   };
 
   const isOpenShift = timesheet?.check_in_time && !timesheet?.check_out_time;
