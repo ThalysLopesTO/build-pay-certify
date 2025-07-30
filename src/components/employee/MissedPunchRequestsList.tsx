@@ -98,7 +98,11 @@ const MissedPunchRequestsList = () => {
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">
-                      <strong>In Time:</strong> {format(new Date(request.corrected_time_in), 'h:mm a')}
+                      <strong>In Time:</strong> {new Date(request.corrected_time_in).toLocaleTimeString('en-US', { 
+                        hour: 'numeric', 
+                        minute: '2-digit', 
+                        hour12: true 
+                      })}
                     </span>
                   </div>
                 )}
@@ -107,7 +111,11 @@ const MissedPunchRequestsList = () => {
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">
-                      <strong>Out Time:</strong> {format(new Date(request.corrected_time_out), 'h:mm a')}
+                      <strong>Out Time:</strong> {new Date(request.corrected_time_out).toLocaleTimeString('en-US', { 
+                        hour: 'numeric', 
+                        minute: '2-digit', 
+                        hour12: true 
+                      })}
                     </span>
                   </div>
                 )}
