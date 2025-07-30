@@ -1966,7 +1966,9 @@ export type Database = {
     }
     Functions: {
       approve_missed_punch_request: {
-        Args: { request_id: string }
+        Args:
+          | { request_id: string }
+          | { request_id: string; approver_id: string }
         Returns: Json
       }
       calculate_invoice_totals: {
