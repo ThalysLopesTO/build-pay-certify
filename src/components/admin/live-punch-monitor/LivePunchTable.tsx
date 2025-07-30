@@ -4,7 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Flag, Edit } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { MapPin, Flag, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -33,6 +34,7 @@ interface LivePunchTableProps {
   onToggleFlag: (entryId: string) => void;
   onViewLocation: (entry: PunchEntry) => void;
   onEdit?: (entry: PunchEntry) => void;
+  onDelete?: (entry: PunchEntry) => void;
 }
 
 const LivePunchTable: React.FC<LivePunchTableProps> = ({
@@ -41,7 +43,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
   flaggedEntries,
   onToggleFlag,
   onViewLocation,
-  onEdit
+  onEdit,
+  onDelete
 }) => {
   const isToday = (date: Date) => {
     const today = new Date();
@@ -170,17 +173,57 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     </Button>
                   </TableCell>
                   <TableCell>
-                    {onEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(entry)}
-                        className="p-2 h-8 w-8"
-                        title="Edit Punch Record"
-                      >
-                        <Edit className="h-4 w-4 text-blue-500" />
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {onEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(entry)}
+                          className="p-2 h-8 w-8"
+                          title="Edit Punch Record"
+                        >
+                          <Edit className="h-4 w-4 text-blue-500" />
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-2 h-8 w-8"
+                              title="Delete Punch Record"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Punch Record</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this punch record for{' '}
+                                <strong>
+                                  {entry.user_profiles 
+                                    ? `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` 
+                                    : 'Unknown Employee'
+                                  }
+                                </strong>
+                                ? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => onDelete(entry)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

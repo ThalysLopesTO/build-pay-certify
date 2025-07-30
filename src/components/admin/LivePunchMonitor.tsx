@@ -14,6 +14,7 @@ import EditPunchModal from './timesheets/EditPunchModal';
 import LivePunchFilters from './live-punch-monitor/LivePunchFilters';
 import LivePunchSummaryCards from './live-punch-monitor/LivePunchSummaryCards';
 import LivePunchTable from './live-punch-monitor/LivePunchTable';
+import { useDeleteTimesheet } from '@/hooks/useDeleteTimesheet';
 
 interface PunchEntry {
   id: string;
@@ -36,6 +37,7 @@ interface PunchEntry {
 const LivePunchMonitor = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const deleteTimesheet = useDeleteTimesheet();
   const [selectedJobsite, setSelectedJobsite] = useState<string>('all');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -222,6 +224,10 @@ const LivePunchMonitor = () => {
     });
   };
 
+  const handleDelete = (entry: PunchEntry) => {
+    deleteTimesheet.mutate(entry.id);
+  };
+
   const isToday = (date: Date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
@@ -286,7 +292,7 @@ const LivePunchMonitor = () => {
         selectedDate={selectedDate}
       />
 
-      {/* Punch Entries Table with Edit functionality */}
+      {/* Punch Entries Table with Edit and Delete functionality */}
       <LivePunchTable
         filteredEntries={filteredEntries}
         selectedDate={selectedDate}
@@ -294,6 +300,7 @@ const LivePunchMonitor = () => {
         onToggleFlag={toggleFlag}
         onViewLocation={handleViewLocation}
         onEdit={handleEdit}
+        onDelete={handleDelete}
       />
 
       {/* Edit Punch Modal */}
