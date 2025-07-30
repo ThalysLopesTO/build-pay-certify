@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useActiveJobsites } from '@/hooks/useJobsites';
-import { useTimesheetEdit } from '@/hooks/useTimesheetEdit';
+import { useTimesheetUpdate } from '@/hooks/useTimesheetUpdate';
 import { format } from 'date-fns';
 import { AlertTriangle } from 'lucide-react';
 
@@ -23,7 +23,7 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
   timesheet
 }) => {
   const { data: jobsites } = useActiveJobsites();
-  const { editTimesheet, isEditing } = useTimesheetEdit();
+  const { mutate: updateTimesheet, isPending: isEditing } = useTimesheetUpdate();
   
   const [formData, setFormData] = useState({
     check_in_time: '',
@@ -51,8 +51,7 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
     e.preventDefault();
     
     const updateData: any = {
-      id: timesheet.id,
-      note: formData.note
+      notes: formData.note
     };
 
     if (formData.check_in_time) {
@@ -65,7 +64,7 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
       updateData.jobsite_id = formData.jobsite_id;
     }
 
-    editTimesheet(updateData);
+    updateTimesheet({ id: timesheet.id, data: updateData });
     onClose();
   };
 
