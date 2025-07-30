@@ -46,12 +46,12 @@ export const useMissedPunchRequests = () => {
         .from('missed_punch_requests')
         .select(`
           *,
-          employee_profiles:user_profiles!missed_punch_requests_employee_id_fkey(
+          employee_profiles:user_profiles!employee_id(
             first_name,
             last_name,
             email
           ),
-          jobsites(name)
+          jobsites!inner(name)
         `)
         .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });
