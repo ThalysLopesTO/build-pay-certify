@@ -25,7 +25,7 @@ export interface MissedPunchRequest {
   employee_profiles?: {
     first_name: string;
     last_name: string;
-    email: string;
+    user_id: string;
   };
   jobsites?: {
     name: string;
@@ -49,9 +49,9 @@ export const useMissedPunchRequests = () => {
           employee_profiles:user_profiles!fk_missed_punch_requests_employee(
             first_name,
             last_name,
-            email
+            user_id
           ),
-          jobsites!inner(name)
+          jobsites(name)
         `)
         .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });

@@ -153,7 +153,7 @@ const TimeRequestsManagement = () => {
                     </Badge>
                   </div>
                   <p className="text-sm text-gray-600">
-                    {request.employee_profiles?.email}
+                    Employee ID: {request.employee_profiles?.user_id || request.employee_id}
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
