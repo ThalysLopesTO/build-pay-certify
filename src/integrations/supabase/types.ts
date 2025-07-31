@@ -489,8 +489,13 @@ export type Database = {
           company_phone: string | null
           company_rules_text: string | null
           created_at: string
+          enable_invoice_reminders: boolean | null
+          enable_quote_reminders: boolean | null
           hst_number: string | null
           id: string
+          invoice_overdue_reminder_days: number | null
+          invoice_reminder_days_before: number | null
+          quote_reminder_days: number | null
           show_tax_breakdown_to_employees: boolean | null
           tax_percentage: number | null
           updated_at: string
@@ -505,8 +510,13 @@ export type Database = {
           company_phone?: string | null
           company_rules_text?: string | null
           created_at?: string
+          enable_invoice_reminders?: boolean | null
+          enable_quote_reminders?: boolean | null
           hst_number?: string | null
           id?: string
+          invoice_overdue_reminder_days?: number | null
+          invoice_reminder_days_before?: number | null
+          quote_reminder_days?: number | null
           show_tax_breakdown_to_employees?: boolean | null
           tax_percentage?: number | null
           updated_at?: string
@@ -521,8 +531,13 @@ export type Database = {
           company_phone?: string | null
           company_rules_text?: string | null
           created_at?: string
+          enable_invoice_reminders?: boolean | null
+          enable_quote_reminders?: boolean | null
           hst_number?: string | null
           id?: string
+          invoice_overdue_reminder_days?: number | null
+          invoice_reminder_days_before?: number | null
+          quote_reminder_days?: number | null
           show_tax_breakdown_to_employees?: boolean | null
           tax_percentage?: number | null
           updated_at?: string
@@ -1409,6 +1424,41 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reminder_logs: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          record_id: string
+          sent_at: string
+          type: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          record_id: string
+          sent_at?: string
+          type: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          record_id?: string
+          sent_at?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
