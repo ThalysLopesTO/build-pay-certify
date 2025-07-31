@@ -1065,6 +1065,9 @@ export type Database = {
           corrected_time_out: string | null
           created_at: string
           decline_reason: string | null
+          deleted: boolean | null
+          edited_at: string | null
+          edited_by: string | null
           employee_id: string
           id: string
           jobsite_id: string
@@ -1085,6 +1088,9 @@ export type Database = {
           corrected_time_out?: string | null
           created_at?: string
           decline_reason?: string | null
+          deleted?: boolean | null
+          edited_at?: string | null
+          edited_by?: string | null
           employee_id: string
           id?: string
           jobsite_id: string
@@ -1105,6 +1111,9 @@ export type Database = {
           corrected_time_out?: string | null
           created_at?: string
           decline_reason?: string | null
+          deleted?: boolean | null
+          edited_at?: string | null
+          edited_by?: string | null
           employee_id?: string
           id?: string
           jobsite_id?: string

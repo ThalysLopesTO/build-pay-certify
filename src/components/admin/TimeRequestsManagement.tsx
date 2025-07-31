@@ -8,10 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, MapPin, User, FileText, AlertCircle, Check, X, Filter, Archive, Clock3, History } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, FileText, AlertCircle, Check, X, Filter, Archive, Clock3, History, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useMissedPunchRequests, useApproveMissedPunchRequest, useDeclineMissedPunchRequest } from '@/hooks/useMissedPunchRequests';
+import { useMissedPunchRequests, useApproveMissedPunchRequest, useDeclineMissedPunchRequest, useEditMissedPunchRequest, useDeleteMissedPunchRequest } from '@/hooks/useMissedPunchRequests';
 import { useJobsites } from '@/hooks/useJobsites';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const statusColors = {
   pending: 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm',
@@ -68,12 +70,167 @@ const formatDateTimeDisplay = (dateTimeString: string) => {
   }
 };
 
+// Edit Request Dialog Component
+const EditRequestDialog = ({ request, jobsites, onSave, onClose, isLoading }: any) => {
+  const [formData, setFormData] = useState({
+    request_date: '',
+    punch_type: 'in' as 'in' | 'out' | 'both',
+    corrected_time_in: '',
+    corrected_time_out: '',
+    jobsite_id: '',
+    reason: '',
+  });
+
+  // Initialize form data when request changes
+  React.useEffect(() => {
+    if (request) {
+      setFormData({
+        request_date: request.request_date || '',
+        punch_type: request.punch_type || 'in',
+        corrected_time_in: request.corrected_time_in || '',
+        corrected_time_out: request.corrected_time_out || '',
+        jobsite_id: request.jobsite_id || '',
+        reason: request.reason || '',
+      });
+    }
+  }, [request]);
+
+  const handleSave = () => {
+    onSave(formData);
+  };
+
+  if (!request) return null;
+
+  return (
+    <Dialog open={!!request} onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Edit className="h-5 w-5 text-blue-600" />
+            Edit Time Request
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Employee Info (Read-only) */}
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-semibold text-gray-900 mb-2">Employee Information</h3>
+            <p className="text-sm text-gray-600">
+              {request.employee_profiles?.first_name} {request.employee_profiles?.last_name}
+            </p>
+          </div>
+
+          {/* Date */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-date">Request Date</Label>
+            <Input
+              id="edit-date"
+              type="date"
+              value={formData.request_date}
+              onChange={(e) => setFormData({ ...formData, request_date: e.target.value })}
+            />
+          </div>
+
+          {/* Punch Type */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-punch-type">Punch Type</Label>
+            <Select value={formData.punch_type} onValueChange={(value: 'in' | 'out' | 'both') => setFormData({ ...formData, punch_type: value })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="in">Punch In</SelectItem>
+                <SelectItem value="out">Punch Out</SelectItem>
+                <SelectItem value="both">Both In & Out</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Times */}
+          {(formData.punch_type === 'in' || formData.punch_type === 'both') && (
+            <div className="space-y-2">
+              <Label htmlFor="edit-time-in">Corrected In Time</Label>
+              <Input
+                id="edit-time-in"
+                type="time"
+                value={formData.corrected_time_in}
+                onChange={(e) => setFormData({ ...formData, corrected_time_in: e.target.value })}
+              />
+            </div>
+          )}
+
+          {(formData.punch_type === 'out' || formData.punch_type === 'both') && (
+            <div className="space-y-2">
+              <Label htmlFor="edit-time-out">Corrected Out Time</Label>
+              <Input
+                id="edit-time-out"
+                type="time"
+                value={formData.corrected_time_out}
+                onChange={(e) => setFormData({ ...formData, corrected_time_out: e.target.value })}
+              />
+            </div>
+          )}
+
+          {/* Jobsite */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-jobsite">Jobsite</Label>
+            <Select value={formData.jobsite_id} onValueChange={(value) => setFormData({ ...formData, jobsite_id: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select jobsite" />
+              </SelectTrigger>
+              <SelectContent>
+                {jobsites.map((jobsite: any) => (
+                  <SelectItem key={jobsite.id} value={jobsite.id}>
+                    {jobsite.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Reason */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-reason">Reason</Label>
+            <Textarea
+              id="edit-reason"
+              value={formData.reason}
+              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+              placeholder="Reason for the time correction..."
+              className="min-h-[100px]"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              onClick={handleSave}
+              disabled={isLoading}
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
+            >
+              {isLoading ? 'Saving...' : 'Save Changes'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Request Card Component
-const RequestCard = ({ request, onApprove, onDecline, isArchived = false }: any) => {
+const RequestCard = ({ request, onApprove, onDecline, onEdit, onDelete, isArchived = false, userRole }: any) => {
   const StatusIcon = statusIcons[request.status];
   const employeeName = request.employee_profiles 
     ? `${request.employee_profiles.first_name} ${request.employee_profiles.last_name}`
     : 'Unknown Employee';
+  
+  const canEditDelete = userRole && ['admin', 'super_admin', 'management'].includes(userRole);
 
   return (
     <Card className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${
@@ -201,24 +358,51 @@ const RequestCard = ({ request, onApprove, onDecline, isArchived = false }: any)
         )}
 
         {/* Actions */}
-        {request.status === 'pending' && !isArchived && (
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
-            <Button
-              onClick={() => onApprove(request.id)}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
-            >
-              <Check className="h-4 w-4 mr-2" />
-              Approve
-            </Button>
+        {!isArchived && (
+          <div className="pt-4 border-t border-gray-200 space-y-3">
+            {request.status === 'pending' && (
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => onApprove(request.id)}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                >
+                  <Check className="h-4 w-4 mr-2" />
+                  Approve
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => onDecline(request.id)}
+                  className="flex-1 border-red-300 text-red-600 hover:bg-red-50 font-medium"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Decline
+                </Button>
+              </div>
+            )}
             
-            <Button
-              variant="outline"
-              onClick={() => onDecline(request.id)}
-              className="flex-1 border-red-300 text-red-600 hover:bg-red-50 font-medium"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Decline
-            </Button>
+            {/* Edit/Delete Actions for Admins */}
+            {canEditDelete && (
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => onEdit(request)}
+                  className="flex-1 border-blue-300 text-blue-600 hover:bg-blue-50 font-medium"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => onDelete(request.id)}
+                  className="flex-1 border-red-300 text-red-600 hover:bg-red-50 font-medium"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -241,12 +425,17 @@ const TimeRequestsManagement = () => {
   const [jobsiteFilter, setJobsiteFilter] = useState<string>('all');
   const [declineReason, setDeclineReason] = useState('');
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
+  const [editingRequest, setEditingRequest] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('active');
   
+  const { user } = useAuth();
   const { data: requests = [], isLoading } = useMissedPunchRequests();
   const { data: jobsites = [] } = useJobsites('active');
   const approveMutation = useApproveMissedPunchRequest();
   const declineMutation = useDeclineMissedPunchRequest();
+  const editMutation = useEditMissedPunchRequest();
+  const deleteMutation = useDeleteMissedPunchRequest();
 
   // Separate active and archived requests
   const activeRequests = requests.filter((request: any) => 
@@ -285,6 +474,31 @@ const TimeRequestsManagement = () => {
       });
       setSelectedRequestId(null);
       setDeclineReason('');
+    }
+  };
+
+  const handleEdit = (request: any) => {
+    setEditingRequest(request);
+  };
+
+  const handleDelete = (requestId: string) => {
+    setDeleteRequestId(requestId);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteRequestId) {
+      deleteMutation.mutate(deleteRequestId);
+      setDeleteRequestId(null);
+    }
+  };
+
+  const handleEditSave = (formData: any) => {
+    if (editingRequest) {
+      editMutation.mutate({
+        requestId: editingRequest.id,
+        updateData: formData,
+      });
+      setEditingRequest(null);
     }
   };
 
@@ -404,7 +618,10 @@ const TimeRequestsManagement = () => {
                   request={request}
                   onApprove={handleApprove}
                   onDecline={handleDecline}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
                   isArchived={false}
+                  userRole={user?.role}
                 />
               ))}
             </div>
@@ -431,7 +648,10 @@ const TimeRequestsManagement = () => {
                   request={request}
                   onApprove={() => {}}
                   onDecline={() => {}}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
                   isArchived={true}
+                  userRole={user?.role}
                 />
               ))}
             </div>
@@ -484,6 +704,27 @@ const TimeRequestsManagement = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deleteRequestId}
+        onOpenChange={(open) => !open && setDeleteRequestId(null)}
+        title="Delete Time Request"
+        description="Are you sure you want to permanently delete this time request? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+      />
+
+      {/* Edit Request Dialog */}
+      <EditRequestDialog
+        request={editingRequest}
+        jobsites={jobsites}
+        onSave={handleEditSave}
+        onClose={() => setEditingRequest(null)}
+        isLoading={editMutation.isPending}
+      />
     </div>
   );
 };

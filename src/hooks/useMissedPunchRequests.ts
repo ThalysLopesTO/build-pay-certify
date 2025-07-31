@@ -231,3 +231,75 @@ export const useDeclineMissedPunchRequest = () => {
     },
   });
 };
+
+export const useEditMissedPunchRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ requestId, updateData }: { 
+      requestId: string; 
+      updateData: {
+        request_date?: string;
+        punch_type?: 'in' | 'out' | 'both';
+        corrected_time_in?: string;
+        corrected_time_out?: string;
+        jobsite_id?: string;
+        reason?: string;
+      };
+    }) => {
+      const { data, error } = await supabase
+        .from('missed_punch_requests')
+        .update({
+          ...updateData,
+          edited_by: (await supabase.auth.getUser()).data.user?.id,
+          edited_at: new Date().toISOString(),
+        })
+        .eq('id', requestId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missed-punch-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['my-missed-punch-requests'] });
+      toast.success('Request updated successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to update request:', error);
+      toast.error('Failed to update request');
+    },
+  });
+};
+
+export const useDeleteMissedPunchRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      const { data, error } = await supabase
+        .from('missed_punch_requests')
+        .update({
+          deleted: true,
+          edited_by: (await supabase.auth.getUser()).data.user?.id,
+          edited_at: new Date().toISOString(),
+        })
+        .eq('id', requestId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missed-punch-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['my-missed-punch-requests'] });
+      toast.success('Request deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to delete request:', error);
+      toast.error('Failed to delete request');
+    },
+  });
+};
