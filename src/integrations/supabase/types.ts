@@ -580,6 +580,7 @@ export type Database = {
           company_id: string
           created_at: string
           id: string
+          reminder_stage: string | null
           subject: string
           template_type: string
           updated_at: string
@@ -589,6 +590,7 @@ export type Database = {
           company_id: string
           created_at?: string
           id?: string
+          reminder_stage?: string | null
           subject: string
           template_type: string
           updated_at?: string
@@ -598,6 +600,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           id?: string
+          reminder_stage?: string | null
           subject?: string
           template_type?: string
           updated_at?: string

@@ -231,19 +231,32 @@ async function checkReminderSent(companyId: string, type: string, recordId: stri
 
 async function sendInvoiceReminder(company: Company, invoice: Invoice, reminderType: string, settings: any) {
   try {
-    // Get email template
-    const template = await getEmailTemplate(company.id, 'invoice');
+    // Determine reminder stage based on type
+    const reminderStage = reminderType === 'overdue' ? 'overdue' : 'before_due';
+    
+    // Get email template with stage-specific fallback
+    const template = await getEmailTemplate(company.id, 'invoice', reminderStage);
     
     const subject = template.subject
-      .replace('{{company_name}}', settings.company_name || company.name)
-      .replace('{{invoice_number}}', invoice.invoice_number)
-      .replace('{{client_company}}', invoice.client_company);
+      .replace(/{{company_name}}/g, settings.company_name || company.name)
+      .replace(/{{invoice_number}}/g, invoice.invoice_number)
+      .replace(/{{client_company}}/g, invoice.client_company || invoice.client_name)
+      .replace(/{{client_name}}/g, invoice.client_name || invoice.client_company)
+      .replace(/{{project_name}}/g, invoice.title || 'Project')
+      .replace(/{{total_amount}}/g, invoice.total_amount.toFixed(2))
+      .replace(/{{due_date}}/g, new Date(invoice.due_date).toLocaleDateString())
+      .replace(/{{reminder_type}}/g, reminderType === 'overdue' ? 'OVERDUE' : 'DUE SOON');
 
     const bodyHtml = template.body_html
       .replace(/{{company_name}}/g, settings.company_name || company.name)
+      .replace(/{{company_address}}/g, settings.company_address || '')
+      .replace(/{{company_phone}}/g, settings.company_phone || '')
+      .replace(/{{hst_number}}/g, settings.hst_number || '')
       .replace(/{{invoice_number}}/g, invoice.invoice_number)
-      .replace(/{{client_company}}/g, invoice.client_company)
-      .replace(/{{client_name}}/g, invoice.client_company)
+      .replace(/{{client_company}}/g, invoice.client_company || invoice.client_name)
+      .replace(/{{client_name}}/g, invoice.client_name || invoice.client_company)
+      .replace(/{{project_name}}/g, invoice.title || 'Project')
+      .replace(/{{total_amount}}/g, invoice.total_amount.toFixed(2))
       .replace(/{{invoice_amount}}/g, `$${invoice.total_amount.toFixed(2)}`)
       .replace(/{{due_date}}/g, new Date(invoice.due_date).toLocaleDateString())
       .replace(/{{invoice_link}}/g, `${Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovable.app')}/invoice/${invoice.id}`)
@@ -274,21 +287,28 @@ async function sendInvoiceReminder(company: Company, invoice: Invoice, reminderT
 
 async function sendQuoteReminder(company: Company, quote: Quote, settings: any) {
   try {
-    // Get email template
-    const template = await getEmailTemplate(company.id, 'quote');
+    // Get email template with follow_up stage
+    const template = await getEmailTemplate(company.id, 'quote', 'follow_up');
     
     const subject = template.subject
-      .replace('{{company_name}}', settings.company_name || company.name)
-      .replace('{{quote_number}}', quote.quote_number)
-      .replace('{{client_name}}', quote.client_name);
-
-    const bodyHtml = template.body_html
       .replace(/{{company_name}}/g, settings.company_name || company.name)
       .replace(/{{quote_number}}/g, quote.quote_number)
       .replace(/{{client_name}}/g, quote.client_name)
       .replace(/{{project_name}}/g, quote.project_name)
+      .replace(/{{total_amount}}/g, quote.total_amount.toFixed(2))
+      .replace(/{{expiry_date}}/g, quote.expiry_date ? new Date(quote.expiry_date).toLocaleDateString() : 'N/A');
+
+    const bodyHtml = template.body_html
+      .replace(/{{company_name}}/g, settings.company_name || company.name)
+      .replace(/{{company_address}}/g, settings.company_address || '')
+      .replace(/{{company_phone}}/g, settings.company_phone || '')
+      .replace(/{{quote_number}}/g, quote.quote_number)
+      .replace(/{{client_name}}/g, quote.client_name)
+      .replace(/{{project_name}}/g, quote.project_name)
+      .replace(/{{total_amount}}/g, quote.total_amount.toFixed(2))
       .replace(/{{quote_amount}}/g, `$${quote.total_amount.toFixed(2)}`)
       .replace(/{{quote_date}}/g, new Date(quote.quote_date).toLocaleDateString())
+      .replace(/{{expiry_date}}/g, quote.expiry_date ? new Date(quote.expiry_date).toLocaleDateString() : 'N/A')
       .replace(/{{quote_link}}/g, `${Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovable.app')}/quote/${quote.id}`);
 
     // Send email via send-email function
@@ -314,60 +334,149 @@ async function sendQuoteReminder(company: Company, quote: Quote, settings: any) 
   }
 }
 
-async function getEmailTemplate(companyId: string, templateType: string): Promise<EmailTemplate> {
-  const { data: template, error } = await supabase
+async function getEmailTemplate(companyId: string, templateType: string, reminderStage: string = 'general'): Promise<EmailTemplate> {
+  // First try to get stage-specific template
+  const { data: stageTemplate } = await supabase
     .from('email_templates')
     .select('subject, body_html')
     .eq('company_id', companyId)
     .eq('template_type', templateType)
+    .eq('reminder_stage', reminderStage)
     .single();
 
-  if (error || !template) {
-    // Return default template
-    console.log(`Using default template for ${templateType}`);
-    return getDefaultTemplate(templateType);
+  if (stageTemplate) {
+    return stageTemplate;
   }
 
-  return template;
+  // Fallback to general template for this type
+  const { data: generalTemplate } = await supabase
+    .from('email_templates')
+    .select('subject, body_html')
+    .eq('company_id', companyId)
+    .eq('template_type', templateType)
+    .eq('reminder_stage', 'general')
+    .single();
+
+  if (generalTemplate) {
+    return generalTemplate;
+  }
+
+  // Return default template
+  console.log(`Using default template for ${templateType} with stage ${reminderStage}`);
+  return getDefaultTemplate(templateType, reminderStage);
 }
 
-function getDefaultTemplate(templateType: string): EmailTemplate {
+function getDefaultTemplate(templateType: string, reminderStage: string = 'general'): EmailTemplate {
   if (templateType === 'invoice') {
-    return {
-      subject: 'Invoice Reminder - {{invoice_number}} from {{company_name}}',
-      body_html: `
-        <html>
-          <body>
-            <h2>Invoice Reminder - {{reminder_type}}</h2>
-            <p>Dear {{client_company}},</p>
-            <p>This is a reminder regarding invoice {{invoice_number}} for {{invoice_amount}}.</p>
-            <p><strong>Due Date:</strong> {{due_date}}</p>
-            <p>You can view and pay your invoice by clicking the link below:</p>
-            <p><a href="{{invoice_link}}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a></p>
-            <p>If you have any questions, please don't hesitate to contact us.</p>
-            <p>Best regards,<br>{{company_name}}</p>
-          </body>
-        </html>
-      `
-    };
+    if (reminderStage === 'before_due') {
+      return {
+        subject: 'Friendly Reminder: Invoice {{invoice_number}} Due Soon',
+        body_html: `
+          <html>
+            <body>
+              <h2>Payment Reminder</h2>
+              <p>Dear {{client_name}},</p>
+              <p>This is a friendly reminder that Invoice {{invoice_number}} is due soon.</p>
+              <p><strong>Invoice Number:</strong> {{invoice_number}}</p>
+              <p><strong>Project:</strong> {{project_name}}</p>
+              <p><strong>Amount Due:</strong> ${{total_amount}}</p>
+              <p><strong>Due Date:</strong> {{due_date}}</p>
+              <p>You can view and pay your invoice by clicking the link below:</p>
+              <p><a href="{{invoice_link}}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a></p>
+              <p>Please ensure payment is made by the due date to avoid any late fees.</p>
+              <p>Best regards,<br>{{company_name}}</p>
+            </body>
+          </html>
+        `
+      };
+    } else if (reminderStage === 'overdue') {
+      return {
+        subject: 'URGENT: Overdue Invoice {{invoice_number}} - Payment Required',
+        body_html: `
+          <html>
+            <body>
+              <h2 style="color: #dc3545;">Overdue Invoice Notice</h2>
+              <p>Dear {{client_name}},</p>
+              <p><strong>This invoice is now overdue and requires immediate attention.</strong></p>
+              <p><strong>Invoice Number:</strong> {{invoice_number}}</p>
+              <p><strong>Project:</strong> {{project_name}}</p>
+              <p><strong>Amount Due:</strong> ${{total_amount}}</p>
+              <p><strong>Original Due Date:</strong> {{due_date}}</p>
+              <p style="color: #dc3545;"><strong>Status: OVERDUE</strong></p>
+              <p>You can view and pay your invoice by clicking the link below:</p>
+              <p><a href="{{invoice_link}}" style="background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a></p>
+              <p>Please remit payment immediately to avoid additional fees and potential collection activities.</p>
+              <p>Best regards,<br>{{company_name}}</p>
+            </body>
+          </html>
+        `
+      };
+    } else {
+      return {
+        subject: 'Invoice {{invoice_number}} from {{company_name}}',
+        body_html: `
+          <html>
+            <body>
+              <h2>Invoice {{invoice_number}}</h2>
+              <p>Dear {{client_name}},</p>
+              <p>Please find your invoice details below:</p>
+              <p><strong>Invoice Number:</strong> {{invoice_number}}</p>
+              <p><strong>Project:</strong> {{project_name}}</p>
+              <p><strong>Amount Due:</strong> ${{total_amount}}</p>
+              <p><strong>Due Date:</strong> {{due_date}}</p>
+              <p>You can view and pay your invoice by clicking the link below:</p>
+              <p><a href="{{invoice_link}}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a></p>
+              <p>If you have any questions, please don't hesitate to contact us.</p>
+              <p>Best regards,<br>{{company_name}}</p>
+            </body>
+          </html>
+        `
+      };
+    }
   } else {
-    return {
-      subject: 'Quote Follow-up - {{quote_number}} from {{company_name}}',
-      body_html: `
-        <html>
-          <body>
-            <h2>Quote Follow-up</h2>
-            <p>Dear {{client_name}},</p>
-            <p>We wanted to follow up on quote {{quote_number}} for {{project_name}} in the amount of {{quote_amount}}.</p>
-            <p><strong>Quote Date:</strong> {{quote_date}}</p>
-            <p>You can review the quote details by clicking the link below:</p>
-            <p><a href="{{quote_link}}" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Quote</a></p>
-            <p>If you have any questions or would like to proceed, please let us know.</p>
-            <p>Best regards,<br>{{company_name}}</p>
-          </body>
-        </html>
-      `
-    };
+    if (reminderStage === 'follow_up') {
+      return {
+        subject: 'Following up on Quote {{quote_number}} - {{company_name}}',
+        body_html: `
+          <html>
+            <body>
+              <h2>Following up on Quote {{quote_number}}</h2>
+              <p>Dear {{client_name}},</p>
+              <p>I wanted to follow up on the quote we sent you recently. Have you had a chance to review it?</p>
+              <p><strong>Quote Number:</strong> {{quote_number}}</p>
+              <p><strong>Project:</strong> {{project_name}}</p>
+              <p><strong>Total Amount:</strong> ${{total_amount}}</p>
+              <p><strong>Valid Until:</strong> {{expiry_date}}</p>
+              <p>You can review the quote details by clicking the link below:</p>
+              <p><a href="{{quote_link}}" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Quote</a></p>
+              <p>If you have any questions or need clarification on any aspects of the quote, please don't hesitate to reach out.</p>
+              <p>Best regards,<br>{{company_name}}</p>
+            </body>
+          </html>
+        `
+      };
+    } else {
+      return {
+        subject: 'Quote {{quote_number}} from {{company_name}}',
+        body_html: `
+          <html>
+            <body>
+              <h2>Quote {{quote_number}}</h2>
+              <p>Dear {{client_name}},</p>
+              <p>Please find your quote details below:</p>
+              <p><strong>Quote Number:</strong> {{quote_number}}</p>
+              <p><strong>Project:</strong> {{project_name}}</p>
+              <p><strong>Total Amount:</strong> ${{total_amount}}</p>
+              <p><strong>Valid Until:</strong> {{expiry_date}}</p>
+              <p>You can review the quote details by clicking the link below:</p>
+              <p><a href="{{quote_link}}" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Quote</a></p>
+              <p>If you have any questions or would like to proceed, please let us know.</p>
+              <p>Best regards,<br>{{company_name}}</p>
+            </body>
+          </html>
+        `
+      };
+    }
   }
 }
 

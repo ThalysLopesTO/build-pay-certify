@@ -8,6 +8,7 @@ export interface EmailTemplate {
   template_type: 'invoice' | 'quote' | 'invite' | 'welcome' | 'reminder';
   subject: string;
   body_html: string;
+  reminder_stage?: 'general' | 'before_due' | 'overdue' | 'follow_up';
   created_at: string;
   updated_at: string;
 }
@@ -29,14 +30,15 @@ export const useEmailTemplates = () => {
   return { templates, isLoading, error };
 };
 
-export const useEmailTemplate = (templateType: string) => {
+export const useEmailTemplate = (templateType: string, reminderStage: string = 'general') => {
   const { data: template, isLoading } = useQuery({
-    queryKey: ['email-template', templateType],
+    queryKey: ['email-template', templateType, reminderStage],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('email_templates')
         .select('*')
         .eq('template_type', templateType)
+        .eq('reminder_stage', reminderStage)
         .single();
 
       if (error && error.code !== 'PGRST116') {
@@ -124,70 +126,156 @@ export const useUpdateEmailTemplate = () => {
   });
 };
 
-// Default templates
-export const getDefaultTemplate = (type: string): { subject: string; body_html: string } => {
+// Default templates with stage-specific content
+export const getDefaultTemplate = (type: string, stage: string = 'general'): { subject: string; body_html: string } => {
   const templates = {
     quote: {
-      subject: 'Quote {{quote_number}} from {{company_name}}',
-      body_html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2>Quote {{quote_number}}</h2>
-          <p>Hi {{client_name}},</p>
-          
-          <p>Please find your quote details below:</p>
-          
-          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>Quote Number:</strong> {{quote_number}}</p>
-            <p><strong>Project:</strong> {{project_name}}</p>
-            <p><strong>Total Amount:</strong> ${"{{total_amount}}"}}</p>
-            <p><strong>Valid Until:</strong> {{expiry_date}}</p>
+      general: {
+        subject: 'Quote {{quote_number}} from {{company_name}}',
+        body_html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2>Quote {{quote_number}}</h2>
+            <p>Hi {{client_name}},</p>
+            
+            <p>Please find your quote details below:</p>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p><strong>Quote Number:</strong> {{quote_number}}</p>
+              <p><strong>Project:</strong> {{project_name}}</p>
+              <p><strong>Total Amount:</strong> ${"{{total_amount}}"}}</p>
+              <p><strong>Valid Until:</strong> {{expiry_date}}</p>
+            </div>
+            
+            <p>If you have any questions, feel free to reply to this email.</p>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+              <p>Best regards,<br>
+              <strong>{{company_name}}</strong><br>
+              {{company_address}}<br>
+              {{company_phone}}</p>
+            </div>
           </div>
-          
-          <p>{{custom_message}}</p>
-          
-          <p>If you have any questions, feel free to reply to this email.</p>
-          
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            <p>Best regards,<br>
-            <strong>{{company_name}}</strong><br>
-            {{company_address}}<br>
-            {{company_phone}}</p>
+        `
+      },
+      follow_up: {
+        subject: 'Following up on Quote {{quote_number}} - {{company_name}}',
+        body_html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2>Following up on Quote {{quote_number}}</h2>
+            <p>Hi {{client_name}},</p>
+            
+            <p>I wanted to follow up on the quote we sent you recently. Have you had a chance to review it?</p>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p><strong>Quote Number:</strong> {{quote_number}}</p>
+              <p><strong>Project:</strong> {{project_name}}</p>
+              <p><strong>Total Amount:</strong> ${"{{total_amount}}"}}</p>
+              <p><strong>Valid Until:</strong> {{expiry_date}}</p>
+            </div>
+            
+            <p>If you have any questions or need clarification on any aspects of the quote, please don't hesitate to reach out.</p>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+              <p>Best regards,<br>
+              <strong>{{company_name}}</strong><br>
+              {{company_address}}<br>
+              {{company_phone}}</p>
+            </div>
           </div>
-        </div>
-      `
+        `
+      }
     },
     invoice: {
-      subject: 'Invoice {{invoice_number}} from {{company_name}}',
-      body_html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2>Invoice {{invoice_number}}</h2>
-          <p>Hi {{client_name}},</p>
-          
-          <p>Please find your invoice details below:</p>
-          
-          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>Invoice Number:</strong> {{invoice_number}}</p>
-            <p><strong>Project:</strong> {{project_name}}</p>
-            <p><strong>Amount Due:</strong> ${"{{total_amount}}"}}</p>
-            <p><strong>Due Date:</strong> {{due_date}}</p>
+      general: {
+        subject: 'Invoice {{invoice_number}} from {{company_name}}',
+        body_html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2>Invoice {{invoice_number}}</h2>
+            <p>Hi {{client_name}},</p>
+            
+            <p>Please find your invoice details below:</p>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p><strong>Invoice Number:</strong> {{invoice_number}}</p>
+              <p><strong>Project:</strong> {{project_name}}</p>
+              <p><strong>Amount Due:</strong> ${"{{total_amount}}"}}</p>
+              <p><strong>Due Date:</strong> {{due_date}}</p>
+            </div>
+            
+            <p>If you have any questions, feel free to reply to this email.</p>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+              <p>Best regards,<br>
+              <strong>{{company_name}}</strong><br>
+              {{company_address}}<br>
+              {{hst_number}}</p>
+            </div>
           </div>
-          
-          <p>{{custom_message}}</p>
-          
-          <p>If you have any questions, feel free to reply to this email.</p>
-          
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-            <p>Best regards,<br>
-            <strong>{{company_name}}</strong><br>
-            {{company_address}}<br>
-            {{hst_number}} (HST: {{hst_number}})</p>
+        `
+      },
+      before_due: {
+        subject: 'Friendly Reminder: Invoice {{invoice_number}} Due Soon',
+        body_html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2>Payment Reminder</h2>
+            <p>Hi {{client_name}},</p>
+            
+            <p>This is a friendly reminder that Invoice {{invoice_number}} is due soon.</p>
+            
+            <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
+              <p><strong>Invoice Number:</strong> {{invoice_number}}</p>
+              <p><strong>Project:</strong> {{project_name}}</p>
+              <p><strong>Amount Due:</strong> ${"{{total_amount}}"}}</p>
+              <p><strong>Due Date:</strong> {{due_date}}</p>
+            </div>
+            
+            <p>Please ensure payment is made by the due date to avoid any late fees. If you have already made payment, please disregard this notice.</p>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+              <p>Best regards,<br>
+              <strong>{{company_name}}</strong><br>
+              {{company_address}}<br>
+              {{hst_number}}</p>
+            </div>
           </div>
-        </div>
-      `
+        `
+      },
+      overdue: {
+        subject: 'URGENT: Overdue Invoice {{invoice_number}} - Payment Required',
+        body_html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #dc3545;">Overdue Invoice Notice</h2>
+            <p>Hi {{client_name}},</p>
+            
+            <p><strong>This invoice is now overdue and requires immediate attention.</strong></p>
+            
+            <div style="background-color: #f8d7da; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #dc3545;">
+              <p><strong>Invoice Number:</strong> {{invoice_number}}</p>
+              <p><strong>Project:</strong> {{project_name}}</p>
+              <p><strong>Amount Due:</strong> ${"{{total_amount}}"}}</p>
+              <p><strong>Original Due Date:</strong> {{due_date}}</p>
+              <p style="color: #dc3545;"><strong>Status: OVERDUE</strong></p>
+            </div>
+            
+            <p>Please remit payment immediately to avoid additional fees and potential collection activities. If there are any issues with this invoice, contact us right away.</p>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+              <p>Best regards,<br>
+              <strong>{{company_name}}</strong><br>
+              {{company_address}}<br>
+              {{hst_number}}</p>
+            </div>
+          </div>
+        `
+      }
     }
   };
 
-  return templates[type as keyof typeof templates] || templates.quote;
+  const typeTemplates = templates[type as keyof typeof templates];
+  if (!typeTemplates) return templates.quote.general;
+  
+  const stageTemplate = typeTemplates[stage as keyof typeof typeTemplates];
+  return stageTemplate || typeTemplates.general || templates.quote.general;
 };
 
 // Helper function to replace placeholders

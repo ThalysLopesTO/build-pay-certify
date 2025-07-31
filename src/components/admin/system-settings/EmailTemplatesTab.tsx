@@ -17,28 +17,30 @@ const EmailTemplatesTab = () => {
   const updateTemplate = useUpdateEmailTemplate();
   
   const [selectedType, setSelectedType] = useState<'invoice' | 'quote' | 'invite' | 'welcome' | 'reminder'>('quote');
+  const [selectedStage, setSelectedStage] = useState<'general' | 'before_due' | 'overdue' | 'follow_up'>('general');
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
   const [showPreview, setShowPreview] = useState(false);
 
-  const { template: currentTemplate } = useEmailTemplate(selectedType);
+  const { template: currentTemplate } = useEmailTemplate(selectedType, selectedStage);
 
   React.useEffect(() => {
     if (currentTemplate) {
       setSubject(currentTemplate.subject);
       setBodyHtml(currentTemplate.body_html);
     } else {
-      const defaultTemplate = getDefaultTemplate(selectedType);
+      const defaultTemplate = getDefaultTemplate(selectedType, selectedStage);
       setSubject(defaultTemplate.subject);
       setBodyHtml(defaultTemplate.body_html);
     }
-  }, [currentTemplate, selectedType]);
+  }, [currentTemplate, selectedType, selectedStage]);
 
   const handleSave = async () => {
     const templateData = {
       template_type: selectedType,
       subject,
       body_html: bodyHtml,
+      reminder_stage: selectedStage,
     };
 
     if (currentTemplate) {
@@ -52,7 +54,7 @@ const EmailTemplatesTab = () => {
   };
 
   const handleReset = () => {
-    const defaultTemplate = getDefaultTemplate(selectedType);
+    const defaultTemplate = getDefaultTemplate(selectedType, selectedStage);
     setSubject(defaultTemplate.subject);
     setBodyHtml(defaultTemplate.body_html);
   };
@@ -115,30 +117,82 @@ const EmailTemplatesTab = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Template Type</CardTitle>
+          <CardTitle className="text-base">Template Selection</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Select value={selectedType} onValueChange={(value: any) => setSelectedType(value)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {templateTypes.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  <div className="flex flex-col">
-                    <span>{type.label}</span>
-                    <span className="text-xs text-muted-foreground">{type.description}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-sm font-medium">Template Type</Label>
+            <Select value={selectedType} onValueChange={(value: any) => setSelectedType(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {templateTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    <div className="flex flex-col">
+                      <span>{type.label}</span>
+                      <span className="text-xs text-muted-foreground">{type.description}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {(selectedType === 'invoice' || selectedType === 'quote') && (
+            <div>
+              <Label className="text-sm font-medium">Reminder Stage</Label>
+              <Select 
+                value={selectedStage} 
+                onValueChange={(value: any) => setSelectedStage(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">
+                    <div className="flex flex-col">
+                      <span>General</span>
+                      <span className="text-xs text-muted-foreground">Standard email template</span>
+                    </div>
+                  </SelectItem>
+                  {selectedType === 'invoice' && (
+                    <>
+                      <SelectItem value="before_due">
+                        <div className="flex flex-col">
+                          <span>Before Due</span>
+                          <span className="text-xs text-muted-foreground">Friendly reminder before due date</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="overdue">
+                        <div className="flex flex-col">
+                          <span>Overdue</span>
+                          <span className="text-xs text-muted-foreground">Urgent notice for overdue invoices</span>
+                        </div>
+                      </SelectItem>
+                    </>
+                  )}
+                  {selectedType === 'quote' && (
+                    <SelectItem value="follow_up">
+                      <div className="flex flex-col">
+                        <span>Follow Up</span>
+                        <span className="text-xs text-muted-foreground">Follow-up reminder for quotes</span>
+                      </div>
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           
-          <div className="mt-2 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {currentTemplate ? (
               <Badge variant="secondary">Custom Template</Badge>
             ) : (
               <Badge variant="outline">Using Default Template</Badge>
+            )}
+            {(selectedType === 'invoice' || selectedType === 'quote') && selectedStage !== 'general' && (
+              <Badge variant="default">{selectedStage.replace('_', ' ').toUpperCase()}</Badge>
             )}
           </div>
         </CardContent>
