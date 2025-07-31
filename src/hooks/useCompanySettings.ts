@@ -17,6 +17,11 @@ export interface CompanySettings {
   week_ending_day: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
   tax_percentage: number; // Tax percentage for timesheet calculations
   show_tax_breakdown_to_employees: boolean; // Whether to show tax breakdown to employees
+  enable_invoice_reminders: boolean; // Whether to enable invoice reminders
+  invoice_reminder_days_before: number; // Days before due date to send reminder
+  invoice_overdue_reminder_days: number; // Days after due date to send overdue reminder
+  enable_quote_reminders: boolean; // Whether to enable quote reminders
+  quote_reminder_days: number; // Days after quote date to send reminder
   created_at: string;
   updated_at: string;
 }

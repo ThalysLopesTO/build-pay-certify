@@ -10,7 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } fr
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Calendar, Eye } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Building2, Calendar, Eye, Bell } from 'lucide-react';
 
 export const CompanySettingsTab = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useCompanySettings();
@@ -25,6 +26,11 @@ export const CompanySettingsTab = () => {
       company_rules_text: settings?.company_rules_text || '',
       week_ending_day: settings?.week_ending_day ?? 0,
       show_tax_breakdown_to_employees: settings?.show_tax_breakdown_to_employees ?? true,
+      enable_invoice_reminders: settings?.enable_invoice_reminders ?? true,
+      invoice_reminder_days_before: settings?.invoice_reminder_days_before ?? 3,
+      invoice_overdue_reminder_days: settings?.invoice_overdue_reminder_days ?? 7,
+      enable_quote_reminders: settings?.enable_quote_reminders ?? true,
+      quote_reminder_days: settings?.quote_reminder_days ?? 14,
     }
   });
 
@@ -39,6 +45,11 @@ export const CompanySettingsTab = () => {
         company_rules_text: settings.company_rules_text || '',
         week_ending_day: settings.week_ending_day ?? 0,
         show_tax_breakdown_to_employees: settings.show_tax_breakdown_to_employees ?? true,
+        enable_invoice_reminders: settings.enable_invoice_reminders ?? true,
+        invoice_reminder_days_before: settings.invoice_reminder_days_before ?? 3,
+        invoice_overdue_reminder_days: settings.invoice_overdue_reminder_days ?? 7,
+        enable_quote_reminders: settings.enable_quote_reminders ?? true,
+        quote_reminder_days: settings.quote_reminder_days ?? 14,
       });
     }
   }, [settings, form]);
@@ -147,6 +158,144 @@ export const CompanySettingsTab = () => {
                     </FormItem>
                   )}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Reminder Settings */}
+            <Card className="shadow-sm border-border">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Bell className="h-5 w-5 text-primary" />
+                  </div>
+                  Automated Reminders
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                {/* Invoice Reminders */}
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="enable_invoice_reminders"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start justify-between rounded-lg border border-border p-4 bg-muted/30">
+                        <div className="space-y-1 flex-1">
+                          <FormLabel className="text-base font-medium">
+                            Enable Invoice Reminders
+                          </FormLabel>
+                          <FormDescription className="text-sm text-muted-foreground">
+                            Automatically send email reminders to clients for upcoming and overdue invoices.
+                          </FormDescription>
+                        </div>
+                        <FormControl className="ml-6">
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="invoice_reminder_days_before"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Days Before Due Date</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="30"
+                              placeholder="3"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 3)}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Send reminder this many days before invoice due date
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="invoice_overdue_reminder_days"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Days After Due Date</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="30"
+                              placeholder="7"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 7)}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Send overdue reminder this many days after due date
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Quote Reminders */}
+                <div className="space-y-4 pt-4 border-t border-border">
+                  <FormField
+                    control={form.control}
+                    name="enable_quote_reminders"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start justify-between rounded-lg border border-border p-4 bg-muted/30">
+                        <div className="space-y-1 flex-1">
+                          <FormLabel className="text-base font-medium">
+                            Enable Quote Reminders
+                          </FormLabel>
+                          <FormDescription className="text-sm text-muted-foreground">
+                            Automatically send follow-up emails to clients for pending quotes.
+                          </FormDescription>
+                        </div>
+                        <FormControl className="ml-6">
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="max-w-md">
+                    <FormField
+                      control={form.control}
+                      name="quote_reminder_days"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Days After Quote Date</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="60"
+                              placeholder="14"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 14)}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Send follow-up reminder this many days after quote was sent
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

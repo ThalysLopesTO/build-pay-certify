@@ -9,7 +9,8 @@ import { FinancialDefaultsTab } from './system-settings/FinancialDefaultsTab';
 import { AdvancedControlsTab } from './system-settings/AdvancedControlsTab';
 import { AnalyticsControlTab } from './system-settings/AnalyticsControlTab';
 import EmailTemplatesTab from './system-settings/EmailTemplatesTab';
-import { Building2, Users, Mail, DollarSign, Settings, BarChart3, FileText } from 'lucide-react';
+import { ReminderLogsTab } from './system-settings/ReminderLogsTab';
+import { Building2, Users, Mail, DollarSign, Settings, BarChart3, FileText, Bell } from 'lucide-react';
 const SystemSettings = () => {
   const [activeTab, setActiveTab] = useState('company');
   return <div className="max-w-6xl mx-auto space-y-6">
@@ -24,7 +25,7 @@ const SystemSettings = () => {
       <Card>
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6 lg:grid-cols-7">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="company" className="flex items-center space-x-2">
                 <Building2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Company</span>
@@ -50,6 +51,11 @@ const SystemSettings = () => {
               <TabsTrigger value="analytics" className="flex items-center space-x-2">
                 <BarChart3 className="h-4 w-4" />
                 <span className="hidden sm:inline">Analytics</span>
+              </TabsTrigger>
+              
+              <TabsTrigger value="reminders" className="flex items-center space-x-2">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Reminders</span>
               </TabsTrigger>
             </TabsList>
 
@@ -83,6 +89,10 @@ const SystemSettings = () => {
 
             <TabsContent value="analytics" className="mt-6">
               <AnalyticsControlTab />
+            </TabsContent>
+
+            <TabsContent value="reminders" className="mt-6">
+              <ReminderLogsTab />
             </TabsContent>
           </Tabs>
         </CardContent>
