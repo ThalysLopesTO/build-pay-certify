@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,6 +7,7 @@ import { MoreHorizontal, Edit, Send, FileText, Trash2, CheckCircle, XCircle, Dow
 import { Quote, useUpdateQuote, useDeleteQuote, useConvertQuoteToInvoice } from '@/hooks/quotes';
 import { useToast } from '@/hooks/use-toast';
 import QuotePDFGenerator from './QuotePDFGenerator';
+import { QuoteEmailSender } from '../QuoteEmailSender';
 
 interface QuoteActionsProps {
   quote: Quote;
@@ -19,6 +20,7 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
   const deleteQuote = useDeleteQuote();
   const convertToInvoice = useConvertQuoteToInvoice();
   const { toast } = useToast();
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   const handleStatusChange = async (newStatus: 'draft' | 'sent' | 'accepted' | 'declined') => {
     try {
@@ -61,12 +63,13 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
   };
 
   const handleSendQuote = () => {
-    // This would integrate with an email service
-    toast({
-      title: "Quote Sent",
-      description: `Quote ${quote.quote_number} has been sent to ${quote.client_email}`,
-    });
+    setIsEmailModalOpen(true);
+  };
+
+  const handleEmailSent = () => {
+    setIsEmailModalOpen(false);
     handleStatusChange('sent');
+    onRefresh();
   };
 
   const handleConvertToInvoice = async () => {
@@ -175,6 +178,12 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <QuoteEmailSender
+        quote={quote}
+        isOpen={isEmailModalOpen}
+        onClose={handleEmailSent}
+      />
     </div>
   );
 };

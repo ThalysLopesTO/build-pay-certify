@@ -8,6 +8,7 @@ import { EmailPreferencesTab } from './system-settings/EmailPreferencesTab';
 import { FinancialDefaultsTab } from './system-settings/FinancialDefaultsTab';
 import { AdvancedControlsTab } from './system-settings/AdvancedControlsTab';
 import { AnalyticsControlTab } from './system-settings/AnalyticsControlTab';
+import EmailTemplatesTab from './system-settings/EmailTemplatesTab';
 import { Building2, Users, Mail, DollarSign, Settings, BarChart3, FileText } from 'lucide-react';
 const SystemSettings = () => {
   const [activeTab, setActiveTab] = useState('company');
@@ -23,7 +24,7 @@ const SystemSettings = () => {
       <Card>
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-6 lg:grid-cols-7">
               <TabsTrigger value="company" className="flex items-center space-x-2">
                 <Building2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Company</span>
@@ -36,6 +37,10 @@ const SystemSettings = () => {
               <TabsTrigger value="email" className="flex items-center space-x-2">
                 <Mail className="h-4 w-4" />
                 <span className="hidden sm:inline">Email</span>
+              </TabsTrigger>
+              <TabsTrigger value="templates" className="flex items-center space-x-2">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Templates</span>
               </TabsTrigger>
               <TabsTrigger value="financial" className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4" />
@@ -62,6 +67,10 @@ const SystemSettings = () => {
 
             <TabsContent value="email" className="mt-6">
               <EmailPreferencesTab />
+            </TabsContent>
+
+            <TabsContent value="templates" className="mt-6">
+              <EmailTemplatesTab />
             </TabsContent>
 
             <TabsContent value="financial" className="mt-6">
