@@ -22,9 +22,7 @@ export const sendEmail = async ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // ✅ if you keep JWT auth ON, replace this with a secure dynamic token
-          // ✅ OR turn OFF JWT verification in Supabase for this function
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({ to, subject, html })
       }
