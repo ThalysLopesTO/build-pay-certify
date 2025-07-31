@@ -16,31 +16,32 @@ export const sendEmail = async ({
   html
 }: SendEmailParams): Promise<SendEmailResponse> => {
   try {
-    const response = await fetch('https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/send-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzcWp3cGFqdmNtYWhvYW13d3d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5MDM4NDcsImV4cCI6MjA2NDQ3OTg0N30.bmtRnTF2Jf36ukaLkBnhxs2X6u5fZxqyOyqkeZYmlNA`
-      },
-      body: JSON.stringify({
-        to,
-        subject,
-        html
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
+    const response = await fetch(
+      'https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/send-email',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // ✅ if you keep JWT auth ON, replace this with a secure dynamic token
+          // ✅ OR turn OFF JWT verification in Supabase for this function
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ to, subject, html })
+      }
+    );
 
     const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    }
+
     return {
       success: true,
-      message: 'Email sent successfully'
+      message: data.message || '✅ Email sent successfully'
     };
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('❌ Error sending email:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred'
