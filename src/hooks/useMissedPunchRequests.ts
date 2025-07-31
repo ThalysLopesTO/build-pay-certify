@@ -63,6 +63,9 @@ export const useMissedPunchRequests = () => {
           decline_reason,
           created_at,
           updated_at,
+          deleted,
+          edited_by,
+          edited_at,
           employee_profiles:user_profiles!fk_missed_punch_requests_employee(
             first_name,
             last_name,
@@ -71,6 +74,7 @@ export const useMissedPunchRequests = () => {
           jobsites(name)
         `)
         .eq('company_id', user.companyId)
+        .eq('deleted', false) // Filter out deleted records
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -105,6 +109,7 @@ export const useMyMissedPunchRequests = () => {
           jobsites(name)
         `)
         .eq('requested_by', user.id)
+        .eq('deleted', false) // Filter out deleted records
         .order('created_at', { ascending: false });
 
       if (error) {
