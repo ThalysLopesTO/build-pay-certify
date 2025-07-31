@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { sendEmail } from '@/utils/sendEmail';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
 import { Mail, AlertTriangle } from 'lucide-react';
@@ -60,28 +61,51 @@ ${settings.hst_number ? `HST: ${settings.hst_number}` : ''}`;
 
     setIsLoading(true);
     try {
-      // This would typically call an edge function to send the email
-      // For now, we'll just simulate the process and show the email template
-      
-      console.log('Email would be sent with:');
-      console.log('Subject:', `Invoice #${invoice.invoice_number} from ${settings?.company_name}`);
-      console.log('To:', invoice.client_email);
-      console.log('Body:', generateEmailTemplate());
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: 'Email Sent Successfully',
-        description: `Invoice #${invoice.invoice_number} has been sent to ${invoice.client_email}`,
+      const emailResult = await sendEmail({
+        to: invoice.client_email,
+        subject: `Invoice #${invoice.invoice_number} from ${settings?.company_name}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2>Invoice #${invoice.invoice_number}</h2>
+            <p>Hi ${invoice.client_company},</p>
+            
+            <p>Please find your invoice details below:</p>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p><strong>Invoice Number:</strong> ${invoice.invoice_number}</p>
+              <p><strong>Project:</strong> ${invoice.jobsites?.name || 'N/A'}</p>
+              <p><strong>Amount Due:</strong> $${invoice.total_amount.toFixed(2)}</p>
+              <p><strong>Due Date:</strong> ${format(new Date(invoice.due_date), 'MMM dd, yyyy')}</p>
+            </div>
+            
+            ${customMessage ? `<p>${customMessage}</p>` : ''}
+            
+            <p>If you have any questions, feel free to reply to this email.</p>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+              <p>Best regards,<br>
+              <strong>${settings?.company_name}</strong><br>
+              ${settings?.company_address || ''}<br>
+              ${settings?.hst_number ? `HST: ${settings.hst_number}` : ''}</p>
+            </div>
+          </div>
+        `
       });
-      
-      onClose();
+
+      if (emailResult.success) {
+        toast({
+          title: 'Email Sent Successfully',
+          description: `Invoice #${invoice.invoice_number} has been sent to ${invoice.client_email}`,
+        });
+        onClose();
+      } else {
+        throw new Error(emailResult.error || 'Failed to send email');
+      }
     } catch (error) {
       console.error('Error sending email:', error);
       toast({
         title: 'Error Sending Email',
-        description: 'Failed to send invoice email. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to send invoice email. Please try again.',
         variant: 'destructive',
       });
     } finally {
