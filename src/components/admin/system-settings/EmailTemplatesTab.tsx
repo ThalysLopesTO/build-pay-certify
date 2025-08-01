@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useEmailTemplates, useEmailTemplate, useCreateEmailTemplate, useUpdateEmailTemplate, getDefaultTemplate, replacePlaceholders } from '@/hooks/useEmailTemplates';
+import { createEmailWrapper } from '@/utils/emailTemplate';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Eye, Save, RotateCcw, Info, Copy } from 'lucide-react';
 
@@ -22,18 +24,18 @@ const EmailTemplatesTab = () => {
   const [selectedType, setSelectedType] = useState<'invoice' | 'quote' | 'invite' | 'welcome' | 'reminder'>('quote');
   const [selectedStage, setSelectedStage] = useState<'general' | 'before_due' | 'overdue' | 'follow_up'>('general');
   const [subject, setSubject] = useState('');
-  const [bodyHtml, setBodyHtml] = useState('');
+  const [bodyText, setBodyText] = useState('');
 
   const { template: currentTemplate } = useEmailTemplate(selectedType, selectedStage);
 
   React.useEffect(() => {
     if (currentTemplate) {
       setSubject(currentTemplate.subject);
-      setBodyHtml(currentTemplate.body_html);
+      setBodyText(currentTemplate.body_html || '');
     } else {
       const defaultTemplate = getDefaultTemplate(selectedType, selectedStage);
       setSubject(defaultTemplate.subject);
-      setBodyHtml(defaultTemplate.body_html);
+      setBodyText(defaultTemplate.body_html || '');
     }
   }, [currentTemplate, selectedType, selectedStage]);
 
@@ -41,7 +43,7 @@ const EmailTemplatesTab = () => {
     const templateData = {
       template_type: selectedType,
       subject,
-      body_html: bodyHtml,
+      body_html: bodyText,
       reminder_stage: selectedStage,
     };
 
@@ -70,7 +72,7 @@ const EmailTemplatesTab = () => {
   const handleReset = () => {
     const defaultTemplate = getDefaultTemplate(selectedType, selectedStage);
     setSubject(defaultTemplate.subject);
-    setBodyHtml(defaultTemplate.body_html);
+    setBodyText(defaultTemplate.body_html || '');
   };
 
   const handleCopyPlaceholder = async (placeholder: string) => {
@@ -88,6 +90,7 @@ const EmailTemplatesTab = () => {
       company_name: 'Your Company Name',
       company_address: '123 Main St, City, State 12345',
       company_phone: '(555) 123-4567',
+      company_logo: 'https://via.placeholder.com/200x80/0066cc/ffffff?text=Your+Logo',
       quote_number: 'QUO-0001',
       invoice_number: 'INV-0001',
       project_name: 'Sample Construction Project',
@@ -98,9 +101,23 @@ const EmailTemplatesTab = () => {
       custom_message: 'Thank you for your business!',
     };
 
+    // Replace placeholders in the plain text
+    const processedSubject = replacePlaceholders(subject, sampleData);
+    const processedBodyText = replacePlaceholders(bodyText, sampleData);
+
+    // Create the branded HTML email
+    const brandedHtml = createEmailWrapper({
+      subject: processedSubject,
+      bodyText: processedBodyText,
+      companyName: sampleData.company_name,
+      companyAddress: sampleData.company_address,
+      companyPhone: sampleData.company_phone,
+      companyLogo: sampleData.company_logo,
+    });
+
     return {
-      subject: replacePlaceholders(subject, sampleData),
-      body: replacePlaceholders(bodyHtml, sampleData),
+      subject: processedSubject,
+      body: brandedHtml,
     };
   };
 
@@ -114,9 +131,10 @@ const EmailTemplatesTab = () => {
 
   const availablePlaceholders = [
     '{{client_name}}', '{{client_company}}', '{{company_name}}',
-    '{{company_address}}', '{{company_phone}}', '{{quote_number}}',
-    '{{invoice_number}}', '{{project_name}}', '{{total_amount}}',
-    '{{due_date}}', '{{expiry_date}}', '{{hst_number}}', '{{custom_message}}'
+    '{{company_address}}', '{{company_phone}}', '{{company_logo}}',
+    '{{quote_number}}', '{{invoice_number}}', '{{project_name}}', 
+    '{{total_amount}}', '{{due_date}}', '{{expiry_date}}', 
+    '{{hst_number}}', '{{custom_message}}'
   ];
 
   if (isLoading) {
@@ -269,11 +287,11 @@ const EmailTemplatesTab = () => {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  value={bodyHtml}
-                  onChange={(e) => setBodyHtml(e.target.value)}
+                  value={bodyText}
+                  onChange={(e) => setBodyText(e.target.value)}
                   rows={16}
-                  className="font-mono text-sm rounded-lg border-2 p-4 resize-none"
-                  placeholder="Enter your email HTML content here..."
+                  className="rounded-lg border-2 p-4 resize-none leading-relaxed"
+                  placeholder="Type your email message here. Use placeholders like {{client_name}} to personalize emails. Your text will be automatically formatted into a professional HTML email."
                 />
               </CardContent>
             </Card>
