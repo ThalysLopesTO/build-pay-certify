@@ -28,7 +28,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
 }) => {
   const { toast } = useToast();
   const { settings, isSettingsComplete } = useCompanySettings();
-  const { logoUrl } = useCompanyLogo();
+  const { logoUrl } = useCompanyLogo(); // ✅ using the shared hook for logo
   const { data: lineItems = [] } = useQuoteLineItems(quote.id);
   const { template } = useEmailTemplate('quote');
   const [isLoading, setIsLoading] = useState(false);
@@ -74,11 +74,11 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
     try {
       const emailContent = generateEmailContent();
 
-      // Generate PDF attachment
+      // ✅ Generate PDF attachment for quote
       const { blob, filename } = await generateQuotePDFBlob(quote, lineItems, settings, logoUrl);
       const base64Content = await blobToBase64(blob);
 
-      // ✅ Send email with the branded wrapper and PDF attachment
+      // ✅ Send email with branded wrapper & PDF
       const emailResult = await sendEmail({
         to: quote.client_email,
         subject: emailContent.subject,
@@ -87,7 +87,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
           name: settings.company_name,
           address: settings.company_address,
           phone: settings.company_phone,
-          logoUrl: settings.company_logo_url, // ✅ correct key for logo
+          logoUrl // ✅ consistent with InvoiceEmailSender
         },
         attachments: [
           {
