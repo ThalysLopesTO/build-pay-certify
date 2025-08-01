@@ -107,12 +107,11 @@ const EmailTemplatesTab = () => {
 
     // Create the branded HTML email
     const brandedHtml = createEmailWrapper({
-      subject: processedSubject,
       bodyText: processedBodyText,
       companyName: sampleData.company_name,
       companyAddress: sampleData.company_address,
       companyPhone: sampleData.company_phone,
-      companyLogo: sampleData.company_logo,
+      companyLogoUrl: sampleData.company_logo,
     });
 
     return {
@@ -364,12 +363,14 @@ const EmailTemplatesTab = () => {
                         className="mt-1 p-4 bg-background border rounded-lg max-h-96 overflow-y-auto"
                         dangerouslySetInnerHTML={{ 
                           __html: createEmailWrapper({
-                            subject: preview.subject,
-                            bodyText: preview.body,
+                            bodyText: replacePlaceholders(bodyText, {
+                              client_name: 'John Smith',
+                              company_name: 'Your Company Name'
+                            }),
                             companyName: 'Your Company Name',
                             companyAddress: '123 Business St, City, State 12345',
                             companyPhone: '(555) 123-4567',
-                            companyLogo: 'https://via.placeholder.com/200x80/0066cc/ffffff?text=LOGO'
+                            companyLogoUrl: 'https://via.placeholder.com/200x80/0066cc/ffffff?text=LOGO'
                           })
                         }}
                       />

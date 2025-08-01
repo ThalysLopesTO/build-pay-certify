@@ -31,7 +31,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
 
   // ✅ Generate subject & body text for the email
   const generateEmailContent = () => {
-    if (!settings) return { subject: '', body: '' };
+    if (!settings) return { subject: '', bodyText: '' };
 
     const emailTemplate = template || getDefaultTemplate('quote');
 
@@ -51,7 +51,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
 
     return {
       subject: replacePlaceholders(emailTemplate.subject, templateData),
-      body: replacePlaceholders(emailTemplate.body_text, templateData), // ✅ now using body_text
+      bodyText: replacePlaceholders(emailTemplate.body_html, templateData),
     };
   };
 
@@ -73,7 +73,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
       const emailResult = await sendEmail({
         to: quote.client_email,
         subject: emailContent.subject,
-        bodyText: emailContent.body,
+        bodyText: emailContent.bodyText,
         companyData: {
           name: settings.company_name,
           address: settings.company_address,
@@ -158,7 +158,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
               <div>
                 <Label className="text-sm font-medium">Body (Preview):</Label>
                 <div className="mt-1 p-2 bg-muted rounded text-sm max-h-32 overflow-y-auto">
-                  {emailContent.body}
+                  {emailContent.bodyText}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   This text will be automatically wrapped in your company’s branded email template when sent.

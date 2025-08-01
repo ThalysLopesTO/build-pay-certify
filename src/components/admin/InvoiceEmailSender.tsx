@@ -32,7 +32,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
 
   // ✅ Generate subject & body text from template or fallback
   const generateEmailContent = () => {
-    if (!settings) return { subject: '', body: '' };
+    if (!settings) return { subject: '', bodyText: '' };
 
     const emailTemplate = template || getDefaultTemplate('invoice');
 
@@ -52,7 +52,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
 
     return {
       subject: replacePlaceholders(emailTemplate.subject, templateData),
-      body: replacePlaceholders(emailTemplate.body_text, templateData), // ✅ now using body_text
+      bodyText: replacePlaceholders(emailTemplate.body_html, templateData),
     };
   };
 
@@ -74,7 +74,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
       const emailResult = await sendEmail({
         to: invoice.client_email,
         subject: emailContent.subject,
-        bodyText: emailContent.body,
+        bodyText: emailContent.bodyText,
         companyData: {
           name: settings.company_name,
           address: settings.company_address,
@@ -171,7 +171,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
               <div>
                 <Label className="text-sm font-medium">Body (Preview):</Label>
                 <div className="mt-1 p-2 bg-muted rounded text-sm max-h-32 overflow-y-auto">
-                  {generateEmailContent().body}
+                  {generateEmailContent().bodyText}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   This text will be automatically wrapped in your company’s branded email template when sent.
