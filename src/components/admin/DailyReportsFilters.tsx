@@ -88,16 +88,16 @@ const DailyReportsFilters: React.FC<DailyReportsFiltersProps> = ({
 
             {/* Jobsite Filter */}
             <Select
-              value={filters.jobsite_id || ''}
+              value={filters.jobsite_id || 'all'}
               onValueChange={(value) =>
-                onFiltersChange({ ...filters, jobsite_id: value || undefined })
+                onFiltersChange({ ...filters, jobsite_id: value === 'all' ? undefined : value })
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="All jobsites" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All jobsites</SelectItem>
+                <SelectItem value="all">All jobsites</SelectItem>
                 {jobsites.map((jobsite) => (
                   <SelectItem key={jobsite.id} value={jobsite.id}>
                     {jobsite.name}
