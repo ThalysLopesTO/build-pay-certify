@@ -20,7 +20,30 @@ const DailyReportsManagement = () => {
 
   const { data: reports = [], isLoading, error } = useDailyReports(filters);
 
-  console.log('DailyReportsManagement render:', { user: user?.email, reports: reports.length, isLoading, error });
+  // Early return if there's an error
+  if (error) {
+    console.error('Daily reports error:', error);
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-2">
+          <ClipboardList className="h-6 w-6" />
+          <h2 className="text-2xl font-bold">Daily Reports</h2>
+        </div>
+        <div className="text-red-500">
+          Error loading daily reports: {error?.message || 'Unknown error'}
+        </div>
+      </div>
+    );
+  }
+
+  console.log('DailyReportsManagement render:', { 
+    user: user?.email, 
+    reports: reports.length, 
+    isLoading, 
+    error: error?.message || error,
+    hasReports: reports.length > 0,
+    filters 
+  });
 
   // Filter reports by search term if provided
   const filteredReports = filters.search
