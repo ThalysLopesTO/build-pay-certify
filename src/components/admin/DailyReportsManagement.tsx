@@ -28,7 +28,7 @@ const DailyReportsManagement = () => {
         const summary = report.summary?.toLowerCase() || '';
         const jobsiteName = report.jobsites?.name?.toLowerCase() || '';
         const submitterName = report.user_profiles 
-          ? `${report.user_profiles.first_name} ${report.user_profiles.last_name}`.toLowerCase()
+          ? `${report.user_profiles.first_name || ''} ${report.user_profiles.last_name || ''}`.toLowerCase()
           : '';
         const searchTerm = filters.search!.toLowerCase();
         
