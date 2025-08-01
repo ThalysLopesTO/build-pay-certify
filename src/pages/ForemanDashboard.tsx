@@ -13,6 +13,7 @@ import LivePunchMonitor from '../components/admin/LivePunchMonitor';
 import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
+import DailyReportsManagement from '../components/admin/DailyReportsManagement';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { useState } from 'react';
 
@@ -33,6 +34,8 @@ const ForemanDashboard = () => {
         return <EmployeeDirectory />;
       case 'live-punch-monitor':
         return <LivePunchMonitor />;
+      case 'daily-reports':
+        return <DailyReportsManagement />;
       case 'employee-reports':
         return <EmployeeReports />;
       case 'jobsite-progress':

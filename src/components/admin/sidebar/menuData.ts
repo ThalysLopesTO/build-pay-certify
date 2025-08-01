@@ -26,6 +26,7 @@ import {
   PieChart,
   MessageSquare,
   Cog,
+  ClipboardList,
 } from 'lucide-react';
 import { MenuItem } from './types';
 
@@ -145,10 +146,10 @@ export const menuData: MenuItem[] = [
   
   // Reports & Communication
   {
-    id: 'attention-reports',
-    title: 'Attention Reports',
-    href: '/admin/attention-reports',
-    icon: Inbox,
+    id: 'daily-reports',
+    title: 'Daily Reports',
+    href: '/admin/daily-reports',
+    icon: ClipboardList,
   },
   
   // System
@@ -196,7 +197,7 @@ export const groupedMenuItems = {
     menuData.find(item => item.id === 'bills-expenses')!,
   ],
   reports: [
-    menuData.find(item => item.id === 'attention-reports')!,
+    menuData.find(item => item.id === 'daily-reports')!,
   ],
   system: [
     menuData.find(item => item.id === 'company-settings')!,

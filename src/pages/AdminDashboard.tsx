@@ -19,6 +19,7 @@ import MaterialRequestInbox from '@/components/admin/MaterialRequestInbox';
 import MaterialTakeoffManagement from '@/components/admin/MaterialTakeoffManagement';
 import AttentionReportsInbox from '@/components/admin/AttentionReportsInbox';
 import AttentionReportDetails from '@/components/admin/AttentionReportDetails';
+import DailyReportsManagement from '@/components/admin/DailyReportsManagement';
 import InvoiceManagement from '@/components/admin/InvoiceManagement';
 import QuotesManagement from '@/components/admin/QuotesManagement';
 import CompanySettings from '@/components/admin/CompanySettings';
@@ -65,6 +66,8 @@ const AdminDashboard = () => {
         return <MaterialRequestInbox />;
       case 'material-takeoff':
         return <MaterialTakeoffManagement />;
+      case 'daily-reports':
+        return <DailyReportsManagement />;
       case 'attention-reports':
         return <AttentionReportsInbox />;
       case 'invoices':

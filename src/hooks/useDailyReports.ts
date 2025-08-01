@@ -16,11 +16,11 @@ export interface DailyReport {
   jobsites?: {
     name: string;
     address: string;
-  };
+  } | null;
   user_profiles?: {
     first_name: string;
     last_name: string;
-  };
+  } | null;
 }
 
 export interface DailyReportFormData {

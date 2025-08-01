@@ -14,7 +14,8 @@ import {
   UserCheck,
   FileBarChart,
   Shield,
-  Home
+  Home,
+  ClipboardList
 } from 'lucide-react';
 
 export const foremanMenuItems = [
@@ -47,6 +48,11 @@ export const foremanMenuItems = [
     title: 'Live Punch Monitor',
     icon: Monitor,
     id: 'live-punch-monitor',
+  },
+  {
+    title: 'Daily Reports',
+    icon: ClipboardList,
+    id: 'daily-reports',
   },
   {
     title: 'Employee Reports',
@@ -115,6 +121,11 @@ export const groupedForemanItems = {
     },
   ],
   reports: [
+    {
+      title: 'Daily Reports',
+      icon: ClipboardList,
+      id: 'daily-reports',
+    },
     {
       title: 'Employee Reports',
       icon: BarChart3,

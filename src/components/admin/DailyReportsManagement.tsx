@@ -22,12 +22,18 @@ const DailyReportsManagement = () => {
 
   // Filter reports by search term if provided
   const filteredReports = filters.search
-    ? reports.filter(report =>
-        report.summary.toLowerCase().includes(filters.search!.toLowerCase()) ||
-        report.jobsites?.name?.toLowerCase().includes(filters.search!.toLowerCase()) ||
-        `${report.user_profiles?.first_name} ${report.user_profiles?.last_name}`
-          .toLowerCase().includes(filters.search!.toLowerCase())
-      )
+    ? reports.filter(report => {
+        const summary = report.summary?.toLowerCase() || '';
+        const jobsiteName = report.jobsites?.name?.toLowerCase() || '';
+        const submitterName = report.user_profiles 
+          ? `${report.user_profiles.first_name} ${report.user_profiles.last_name}`.toLowerCase()
+          : '';
+        const searchTerm = filters.search!.toLowerCase();
+        
+        return summary.includes(searchTerm) || 
+               jobsiteName.includes(searchTerm) || 
+               submitterName.includes(searchTerm);
+      })
     : reports;
 
   const handleClearFilters = () => {
