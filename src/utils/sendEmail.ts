@@ -1,5 +1,11 @@
 import { createEmailWrapper, EmailWrapperData } from './emailTemplate';
 
+interface Attachment {
+  filename: string;
+  content: string;   // ✅ Base64 string (no data: prefix)
+  type?: string;     // ✅ Optional, defaults to "application/pdf"
+}
+
 interface SendEmailParams {
   to: string;
   subject: string;
@@ -8,13 +14,9 @@ interface SendEmailParams {
     name: string;
     address?: string;
     phone?: string;
-    logoUrl?: string; // ✅ renamed for clarity
+    logoUrl?: string;
   };
-  attachments?: Array<{
-    filename: string;
-    content: string; // base64 encoded
-    type: string; // MIME type
-  }>;
+  attachments?: Attachment[]; // ✅ NEW: Optional attachments array
 }
 
 interface SendEmailResponse {
@@ -28,7 +30,7 @@ export const sendEmail = async ({
   subject,
   bodyText,
   companyData,
-  attachments
+  attachments = []  // ✅ Default to empty array
 }: SendEmailParams): Promise<SendEmailResponse> => {
   try {
     // ✅ Prepare branded email wrapper data
@@ -38,20 +40,25 @@ export const sendEmail = async ({
       companyName: companyData.name,
       companyAddress: companyData.address || '',
       companyPhone: companyData.phone || '',
-      companyLogoUrl: companyData.logoUrl || '' // ✅ consistent naming
+      companyLogoUrl: companyData.logoUrl || ''
     };
 
-    // ✅ Create branded HTML
+    // ✅ Generate branded HTML email
     const html = createEmailWrapper(emailWrapperData);
 
-    // ✅ Send email via Supabase Edge Function
-    const requestBody: any = { to, subject, html };
-    
-    // Add attachments if provided
-    if (attachments && attachments.length > 0) {
-      requestBody.attachments = attachments;
+    // ✅ Build payload for Supabase Edge Function
+    const payload: any = { to, subject, html };
+
+    // ✅ Only include attachments if present
+    if (attachments.length > 0) {
+      payload.attachments = attachments.map(file => ({
+        filename: file.filename,
+        content: file.content,
+        type: file.type || 'application/pdf' // ✅ default type
+      }));
     }
 
+    // ✅ Send email via Supabase Edge Function
     const response = await fetch(
       'https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/send-email',
       {
@@ -60,7 +67,7 @@ export const sendEmail = async ({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(payload)
       }
     );
 
