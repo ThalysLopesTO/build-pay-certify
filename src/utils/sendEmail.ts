@@ -14,9 +14,9 @@ interface SendEmailParams {
     name: string;
     address?: string;
     phone?: string;
-    logoUrl?: string;
+    logoUrl?: string;   // ✅ Will now pass this to the edge function too
   };
-  attachments?: Attachment[]; // ✅ NEW: Optional attachments array
+  attachments?: Attachment[];
 }
 
 interface SendEmailResponse {
@@ -30,7 +30,7 @@ export const sendEmail = async ({
   subject,
   bodyText,
   companyData,
-  attachments = []  // ✅ Default to empty array
+  attachments = []
 }: SendEmailParams): Promise<SendEmailResponse> => {
   try {
     // ✅ Prepare branded email wrapper data
@@ -40,21 +40,27 @@ export const sendEmail = async ({
       companyName: companyData.name,
       companyAddress: companyData.address || '',
       companyPhone: companyData.phone || '',
-      companyLogoUrl: companyData.logoUrl || ''
+      companyLogoUrl: companyData.logoUrl || ''   // ✅ now handled in wrapper
     };
 
-    // ✅ Generate branded HTML email
+    // ✅ Generate branded HTML email (with logo)
     const html = createEmailWrapper(emailWrapperData);
 
     // ✅ Build payload for Supabase Edge Function
-    const payload: any = { to, subject, html };
+    const payload: any = { 
+      to, 
+      subject, 
+      html,
+      companyName: companyData.name,        // ✅ Send company name
+      companyLogoUrl: companyData.logoUrl   // ✅ Send company logo URL
+    };
 
-    // ✅ Only include attachments if present
+    // ✅ Include attachments if any
     if (attachments.length > 0) {
       payload.attachments = attachments.map(file => ({
         filename: file.filename,
         content: file.content,
-        type: file.type || 'application/pdf' // ✅ default type
+        type: file.type || 'application/pdf'
       }));
     }
 
@@ -71,7 +77,6 @@ export const sendEmail = async ({
       }
     );
 
-    // ✅ Handle API errors cleanly
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
