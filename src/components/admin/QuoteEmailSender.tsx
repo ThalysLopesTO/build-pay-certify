@@ -7,6 +7,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useEmailTemplate, getDefaultTemplate, replacePlaceholders } from '@/hooks/useEmailTemplates';
 import { sendEmail } from '@/utils/sendEmail';
+import { generateQuotePDFBlob, blobToBase64 } from '@/utils/pdfGeneratorForEmail';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import { useQuoteLineItems } from '@/hooks/quotes';
 import { Quote } from '@/hooks/quotes/types';
 import { format } from 'date-fns';
 import { Mail, AlertTriangle } from 'lucide-react';
@@ -25,6 +28,8 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
 }) => {
   const { toast } = useToast();
   const { settings, isSettingsComplete } = useCompanySettings();
+  const { logoUrl } = useCompanyLogo();
+  const { data: lineItems = [] } = useQuoteLineItems(quote.id);
   const { template } = useEmailTemplate('quote');
   const [isLoading, setIsLoading] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
@@ -69,7 +74,11 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
     try {
       const emailContent = generateEmailContent();
 
-      // ✅ Send email with the branded wrapper
+      // Generate PDF attachment
+      const { blob, filename } = await generateQuotePDFBlob(quote, lineItems, settings, logoUrl);
+      const base64Content = await blobToBase64(blob);
+
+      // ✅ Send email with the branded wrapper and PDF attachment
       const emailResult = await sendEmail({
         to: quote.client_email,
         subject: emailContent.subject,
@@ -79,13 +88,20 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
           address: settings.company_address,
           phone: settings.company_phone,
           logoUrl: settings.company_logo_url, // ✅ correct key for logo
-        }
+        },
+        attachments: [
+          {
+            filename,
+            content: base64Content,
+            type: 'application/pdf'
+          }
+        ]
       });
 
       if (emailResult.success) {
         toast({
           title: 'Quote Sent Successfully',
-          description: `Quote ${quote.quote_number} has been sent to ${quote.client_email}`,
+          description: `Quote ${quote.quote_number} has been sent to ${quote.client_email} with PDF attachment`,
         });
         onClose();
       } else {
@@ -176,7 +192,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
             onClick={handleSendEmail} 
             disabled={isLoading || !isSettingsComplete()}
           >
-            {isLoading ? 'Sending...' : 'Send Quote'}
+            {isLoading ? 'Sending Quote...' : 'Send Quote with PDF'}
           </Button>
         </DialogFooter>
       </DialogContent>

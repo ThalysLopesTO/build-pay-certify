@@ -10,6 +10,11 @@ interface SendEmailParams {
     phone?: string;
     logoUrl?: string; // ✅ renamed for clarity
   };
+  attachments?: Array<{
+    filename: string;
+    content: string; // base64 encoded
+    type: string; // MIME type
+  }>;
 }
 
 interface SendEmailResponse {
@@ -22,7 +27,8 @@ export const sendEmail = async ({
   to,
   subject,
   bodyText,
-  companyData
+  companyData,
+  attachments
 }: SendEmailParams): Promise<SendEmailResponse> => {
   try {
     // ✅ Prepare branded email wrapper data
@@ -39,6 +45,13 @@ export const sendEmail = async ({
     const html = createEmailWrapper(emailWrapperData);
 
     // ✅ Send email via Supabase Edge Function
+    const requestBody: any = { to, subject, html };
+    
+    // Add attachments if provided
+    if (attachments && attachments.length > 0) {
+      requestBody.attachments = attachments;
+    }
+
     const response = await fetch(
       'https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/send-email',
       {
@@ -47,7 +60,7 @@ export const sendEmail = async ({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify({ to, subject, html })
+        body: JSON.stringify(requestBody)
       }
     );
 

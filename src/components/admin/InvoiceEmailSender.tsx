@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useEmailTemplate, getDefaultTemplate, replacePlaceholders } from '@/hooks/useEmailTemplates';
 import { sendEmail } from '@/utils/sendEmail';
+import { generateInvoicePDFBlob, blobToBase64 } from '@/utils/pdfGeneratorForEmail';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
 import { Mail, AlertTriangle } from 'lucide-react';
@@ -26,6 +28,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
 }) => {
   const { toast } = useToast();
   const { settings, isSettingsComplete } = useCompanySettings();
+  const { logoUrl } = useCompanyLogo();
   const { template } = useEmailTemplate('invoice');
   const [isLoading, setIsLoading] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
@@ -70,7 +73,11 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
     try {
       const emailContent = generateEmailContent();
 
-      // ✅ Send email with branding wrapper
+      // Generate PDF attachment
+      const { blob, filename } = await generateInvoicePDFBlob(invoice, settings, logoUrl);
+      const base64Content = await blobToBase64(blob);
+
+      // ✅ Send email with branding wrapper and PDF attachment
       const emailResult = await sendEmail({
         to: invoice.client_email,
         subject: emailContent.subject,
@@ -80,13 +87,20 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
           address: settings.company_address,
           phone: settings.company_phone,
           logoUrl: settings.company_logo_url, // ✅ correct key for logo
-        }
+        },
+        attachments: [
+          {
+            filename,
+            content: base64Content,
+            type: 'application/pdf'
+          }
+        ]
       });
 
       if (emailResult.success) {
         toast({
           title: 'Email Sent Successfully',
-          description: `Invoice #${invoice.invoice_number} has been sent to ${invoice.client_email}`,
+          description: `Invoice #${invoice.invoice_number} has been sent to ${invoice.client_email} with PDF attachment`,
         });
         onClose();
       } else {
@@ -189,7 +203,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
             onClick={handleSendEmail} 
             disabled={isLoading || !isSettingsComplete()}
           >
-            {isLoading ? 'Sending...' : 'Send Email'}
+            {isLoading ? 'Sending Invoice...' : 'Send Invoice with PDF'}
           </Button>
         </DialogFooter>
       </DialogContent>

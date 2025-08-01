@@ -13,6 +13,11 @@ interface SendEmailRequest {
   to: string;
   subject: string;
   html: string;
+  attachments?: Array<{
+    filename: string;
+    content: string; // base64 encoded
+    type: string; // MIME type
+  }>;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -25,16 +30,30 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, subject, html }: SendEmailRequest = await req.json();
+    const { to, subject, html, attachments }: SendEmailRequest = await req.json();
 
     console.log('Sending email to:', to, 'with subject:', subject);
+    if (attachments) {
+      console.log('Attachments:', attachments.map(a => a.filename));
+    }
 
-    const emailResponse = await resend.emails.send({
+    const emailData: any = {
       from: "StackBuild <onboarding@resend.dev>", // You can customize this
       to: [to],
       subject: subject,
       html: html,
-    });
+    };
+
+    // Add attachments if provided
+    if (attachments && attachments.length > 0) {
+      emailData.attachments = attachments.map(attachment => ({
+        filename: attachment.filename,
+        content: attachment.content,
+        type: attachment.type
+      }));
+    }
+
+    const emailResponse = await resend.emails.send(emailData);
 
     console.log("Email sent successfully:", emailResponse);
 
