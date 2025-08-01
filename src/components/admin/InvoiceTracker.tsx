@@ -13,6 +13,7 @@ import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
 import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { InvoiceEmailSender } from './InvoiceEmailSender';
 
 const InvoiceTracker = () => {
   const navigate = useNavigate();
@@ -24,6 +25,8 @@ const InvoiceTracker = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [emailInvoice, setEmailInvoice] = useState<Invoice | null>(null);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -86,6 +89,16 @@ const InvoiceTracker = () => {
 
   const handleViewDetails = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
+  };
+
+  const handleSendEmail = (invoice: Invoice) => {
+    setEmailInvoice(invoice);
+    setIsEmailDialogOpen(true);
+  };
+
+  const handleCloseEmailDialog = () => {
+    setIsEmailDialogOpen(false);
+    setEmailInvoice(null);
   };
 
   const exportToCSV = () => {
@@ -415,6 +428,7 @@ const InvoiceTracker = () => {
                         <Button 
                           size="sm" 
                           variant="outline" 
+                          onClick={() => handleSendEmail(invoice)}
                           title="Send Email"
                         >
                           <Mail className="h-4 w-4" />
@@ -450,6 +464,15 @@ const InvoiceTracker = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Invoice Email Dialog */}
+      {emailInvoice && (
+        <InvoiceEmailSender
+          invoice={emailInvoice}
+          isOpen={isEmailDialogOpen}
+          onClose={handleCloseEmailDialog}
+        />
+      )}
     </div>
   );
 };
