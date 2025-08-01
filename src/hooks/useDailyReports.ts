@@ -50,7 +50,7 @@ export const useDailyReports = (filters?: {
             name,
             address
           ),
-          user_profiles (
+          user_profiles!daily_reports_submitted_by_fkey (
             first_name,
             last_name
           )
