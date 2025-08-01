@@ -155,10 +155,19 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
     
     try {
       if (quote) {
-        // Update existing quote
+        // Update existing quote with recalculated totals
+        const subtotal = calculateSubtotal();
+        const discountAmount = subtotal * (Number(formData.discount) / 100);
+        const taxAmount = (subtotal - discountAmount) * (Number(formData.tax) / 100);
+        const total = subtotal - discountAmount + taxAmount;
+
         await updateQuote.mutateAsync({
           id: quote.id,
-          updates: { ...formData }
+          updates: { 
+            ...formData,
+            subtotal,
+            total_amount: total
+          }
         });
         
         // Update line items
