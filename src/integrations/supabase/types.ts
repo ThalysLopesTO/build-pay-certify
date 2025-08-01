@@ -602,13 +602,6 @@ export type Database = {
             referencedRelation: "jobsites"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "daily_reports_submitted_by_fkey"
-            columns: ["submitted_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       default_rules: {
