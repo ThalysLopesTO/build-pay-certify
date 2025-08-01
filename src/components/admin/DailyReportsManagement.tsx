@@ -18,7 +18,9 @@ const DailyReportsManagement = () => {
     search?: string;
   }>({});
 
-  const { data: reports = [], isLoading } = useDailyReports(filters);
+  const { data: reports = [], isLoading, error } = useDailyReports(filters);
+
+  console.log('DailyReportsManagement render:', { user: user?.email, reports: reports.length, isLoading, error });
 
   // Filter reports by search term if provided
   const filteredReports = filters.search
