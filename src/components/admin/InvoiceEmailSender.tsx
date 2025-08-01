@@ -1,3 +1,4 @@
+// ✅ FINAL CLEAN VERSION
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -28,7 +29,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
 }) => {
   const { toast } = useToast();
   const { settings, isSettingsComplete } = useCompanySettings();
-  const { logoUrl } = useCompanyLogo();
+  const { logoUrl } = useCompanyLogo(); // ✅ use this if this is your correct logo source
   const { template } = useEmailTemplate('invoice');
   const [isLoading, setIsLoading] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
@@ -73,11 +74,11 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
     try {
       const emailContent = generateEmailContent();
 
-      // Generate PDF attachment
+      // ✅ Generate PDF attachment
       const { blob, filename } = await generateInvoicePDFBlob(invoice, settings, logoUrl);
       const base64Content = await blobToBase64(blob);
 
-      // ✅ Send email with branding wrapper and PDF attachment
+      // ✅ Send email with branding + PDF
       const emailResult = await sendEmail({
         to: invoice.client_email,
         subject: emailContent.subject,
@@ -86,7 +87,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
           name: settings.company_name,
           address: settings.company_address,
           phone: settings.company_phone,
-          logoUrl: settings.company_logo_url, // ✅ correct key for logo
+          logoUrl // ✅ now uses useCompanyLogo()
         },
         attachments: [
           {
