@@ -5,22 +5,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useEmailTemplates, useEmailTemplate, useCreateEmailTemplate, useUpdateEmailTemplate, getDefaultTemplate, replacePlaceholders } from '@/hooks/useEmailTemplates';
-import { Mail, Eye, Save, Plus, RotateCcw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Mail, Eye, Save, RotateCcw, Info, Copy } from 'lucide-react';
 
 const EmailTemplatesTab = () => {
   const { templates, isLoading } = useEmailTemplates();
   const createTemplate = useCreateEmailTemplate();
   const updateTemplate = useUpdateEmailTemplate();
+  const { toast } = useToast();
   
   const [selectedType, setSelectedType] = useState<'invoice' | 'quote' | 'invite' | 'welcome' | 'reminder'>('quote');
   const [selectedStage, setSelectedStage] = useState<'general' | 'before_due' | 'overdue' | 'follow_up'>('general');
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
 
   const { template: currentTemplate } = useEmailTemplate(selectedType, selectedStage);
 
@@ -43,13 +45,25 @@ const EmailTemplatesTab = () => {
       reminder_stage: selectedStage,
     };
 
-    if (currentTemplate) {
-      await updateTemplate.mutateAsync({
-        id: currentTemplate.id,
-        updates: templateData,
+    try {
+      if (currentTemplate) {
+        await updateTemplate.mutateAsync({
+          id: currentTemplate.id,
+          updates: templateData,
+        });
+      } else {
+        await createTemplate.mutateAsync(templateData);
+      }
+      toast({
+        title: "Template saved",
+        description: "Your email template has been saved successfully.",
       });
-    } else {
-      await createTemplate.mutateAsync(templateData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save template. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -57,6 +71,14 @@ const EmailTemplatesTab = () => {
     const defaultTemplate = getDefaultTemplate(selectedType, selectedStage);
     setSubject(defaultTemplate.subject);
     setBodyHtml(defaultTemplate.body_html);
+  };
+
+  const handleCopyPlaceholder = async (placeholder: string) => {
+    await navigator.clipboard.writeText(placeholder);
+    toast({
+      title: "Copied",
+      description: `${placeholder} copied to clipboard`,
+    });
   };
 
   const generatePreview = () => {
@@ -104,216 +126,258 @@ const EmailTemplatesTab = () => {
   const preview = generatePreview();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Mail className="h-5 w-5" />
-          Email Templates
-        </h3>
-        <p className="text-muted-foreground">
-          Create and manage custom email templates for quotes, invoices, and system communications.
-        </p>
-      </div>
+    <TooltipProvider>
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Email Templates
+          </h3>
+          <p className="text-muted-foreground">
+            Create and manage custom email templates for quotes, invoices, and system communications.
+          </p>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Template Selection</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium">Template Type</Label>
-            <Select value={selectedType} onValueChange={(value: any) => setSelectedType(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {templateTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    <div className="flex flex-col">
-                      <span>{type.label}</span>
-                      <span className="text-xs text-muted-foreground">{type.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {(selectedType === 'invoice' || selectedType === 'quote') && (
-            <div>
-              <Label className="text-sm font-medium">Reminder Stage</Label>
-              <Select 
-                value={selectedStage} 
-                onValueChange={(value: any) => setSelectedStage(value)}
-              >
-                <SelectTrigger>
+        {/* Card 1: Template Selection */}
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-base">Template Configuration</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Template Type */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">Template Type</Label>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Choose the type of email template you want to create or edit</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Select value={selectedType} onValueChange={(value: any) => setSelectedType(value)}>
+                <SelectTrigger className="w-full rounded-lg">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="general">
-                    <div className="flex flex-col">
-                      <span>General</span>
-                      <span className="text-xs text-muted-foreground">Standard email template</span>
-                    </div>
-                  </SelectItem>
-                  {selectedType === 'invoice' && (
-                    <>
-                      <SelectItem value="before_due">
-                        <div className="flex flex-col">
-                          <span>Before Due</span>
-                          <span className="text-xs text-muted-foreground">Friendly reminder before due date</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="overdue">
-                        <div className="flex flex-col">
-                          <span>Overdue</span>
-                          <span className="text-xs text-muted-foreground">Urgent notice for overdue invoices</span>
-                        </div>
-                      </SelectItem>
-                    </>
-                  )}
-                  {selectedType === 'quote' && (
-                    <SelectItem value="follow_up">
+                  {templateTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
                       <div className="flex flex-col">
-                        <span>Follow Up</span>
-                        <span className="text-xs text-muted-foreground">Follow-up reminder for quotes</span>
+                        <span>{type.label}</span>
+                        <span className="text-xs text-muted-foreground">{type.description}</span>
                       </div>
                     </SelectItem>
-                  )}
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-          )}
-          
-          <div className="flex items-center gap-2">
-            {currentTemplate ? (
-              <Badge variant="secondary">Custom Template</Badge>
-            ) : (
-              <Badge variant="outline">Using Default Template</Badge>
-            )}
-            {(selectedType === 'invoice' || selectedType === 'quote') && selectedStage !== 'general' && (
-              <Badge variant="default">{selectedStage.replace('_', ' ').toUpperCase()}</Badge>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
-      <Tabs value={showPreview ? "preview" : "edit"} onValueChange={(value) => setShowPreview(value === "preview")}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="edit">Edit Template</TabsTrigger>
-          <TabsTrigger value="preview" className="flex items-center gap-2">
-            <Eye className="h-4 w-4" />
-            Preview
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="edit" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Subject Line</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Input
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Enter email subject..."
-                  />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Email Body (HTML)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={bodyHtml}
-                    onChange={(e) => setBodyHtml(e.target.value)}
-                    rows={15}
-                    className="font-mono text-sm"
-                    placeholder="Enter email HTML content..."
-                  />
-                </CardContent>
-              </Card>
-
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleSave} 
-                  disabled={createTemplate.isPending || updateTemplate.isPending}
-                  className="flex items-center gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  Save Template
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleReset}
-                  className="flex items-center gap-2"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  Reset to Default
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Available Placeholders</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Click to copy to clipboard:
-                  </p>
-                  <div className="space-y-1">
-                    {availablePlaceholders.map((placeholder) => (
-                      <button
-                        key={placeholder}
-                        onClick={() => navigator.clipboard.writeText(placeholder)}
-                        className="block w-full text-left px-2 py-1 text-xs bg-muted hover:bg-muted/80 rounded font-mono"
-                      >
-                        {placeholder}
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="preview" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Email Preview</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                This is how your email will look with sample data
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label className="text-sm font-medium">Subject:</Label>
-                <div className="mt-1 p-2 bg-muted rounded text-sm">
-                  {preview.subject}
+            {/* Reminder Stage */}
+            {(selectedType === 'invoice' || selectedType === 'quote') && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium">Reminder Stage</Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Select the specific stage for multi-stage reminder campaigns</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
+                <Select 
+                  value={selectedStage} 
+                  onValueChange={(value: any) => setSelectedStage(value)}
+                >
+                  <SelectTrigger className="w-full rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">
+                      <div className="flex flex-col">
+                        <span>General</span>
+                        <span className="text-xs text-muted-foreground">Standard email template</span>
+                      </div>
+                    </SelectItem>
+                    {selectedType === 'invoice' && (
+                      <>
+                        <SelectItem value="before_due">
+                          <div className="flex flex-col">
+                            <span>Before Due</span>
+                            <span className="text-xs text-muted-foreground">Friendly reminder before due date</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="overdue">
+                          <div className="flex flex-col">
+                            <span>Overdue</span>
+                            <span className="text-xs text-muted-foreground">Urgent notice for overdue invoices</span>
+                          </div>
+                        </SelectItem>
+                      </>
+                    )}
+                    {selectedType === 'quote' && (
+                      <SelectItem value="follow_up">
+                        <div className="flex flex-col">
+                          <span>Follow Up</span>
+                          <span className="text-xs text-muted-foreground">Follow-up reminder for quotes</span>
+                        </div>
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
-              
-              <Separator />
-              
-              <div>
-                <Label className="text-sm font-medium">Body:</Label>
-                <div 
-                  className="mt-1 p-4 bg-white border rounded max-h-96 overflow-y-auto"
-                  dangerouslySetInnerHTML={{ __html: preview.body }}
+            )}
+            
+            {/* Status Badges */}
+            <div className="flex items-center gap-2">
+              {currentTemplate ? (
+                <Badge variant="secondary">Custom Template</Badge>
+              ) : (
+                <Badge variant="outline">Using Default Template</Badge>
+              )}
+              {(selectedType === 'invoice' || selectedType === 'quote') && selectedStage !== 'general' && (
+                <Badge variant="default">{selectedStage.replace('_', ' ').toUpperCase()}</Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Card 2: Template Editor */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card className="border-2">
+              <CardHeader>
+                <CardTitle className="text-base">Email Subject</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Input
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Enter email subject line..."
+                  className="text-base p-4 rounded-lg"
                 />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2">
+              <CardHeader>
+                <CardTitle className="text-base">Email Body</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  value={bodyHtml}
+                  onChange={(e) => setBodyHtml(e.target.value)}
+                  rows={16}
+                  className="font-mono text-sm rounded-lg border-2 p-4 resize-none"
+                  placeholder="Enter your email HTML content here..."
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Variables Helper */}
+          <div className="space-y-6">
+            <Card className="border-2">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Copy className="h-4 w-4" />
+                  Dynamic Variables
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Click to insert placeholders:
+                </p>
+                <div className="space-y-2">
+                  {availablePlaceholders.map((placeholder) => (
+                    <button
+                      key={placeholder}
+                      onClick={() => handleCopyPlaceholder(placeholder)}
+                      className="block w-full text-left px-3 py-2 text-xs bg-muted hover:bg-muted/80 rounded-lg font-mono transition-colors border border-border/50"
+                    >
+                      {placeholder}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Card 3: Actions */}
+        <Card className="border-2">
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap gap-3">
+              <Button 
+                onClick={handleSave} 
+                disabled={createTemplate.isPending || updateTemplate.isPending}
+                className="flex items-center gap-2"
+                size="lg"
+              >
+                <Save className="h-4 w-4" />
+                Save Template
+              </Button>
+              
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="lg" className="flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    Preview Template
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Email Preview</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">Subject:</Label>
+                      <div className="mt-1 p-3 bg-muted rounded-lg text-sm">
+                        {preview.subject}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Body:</Label>
+                      <div 
+                        className="mt-1 p-4 bg-background border rounded-lg max-h-96 overflow-y-auto"
+                        dangerouslySetInnerHTML={{ __html: preview.body }}
+                      />
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="lg" className="flex items-center gap-2">
+                    <RotateCcw className="h-4 w-4" />
+                    Reset to Default
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reset Template</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will restore the default template content. Any custom changes will be lost. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleReset}>
+                      Reset Template
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </TooltipProvider>
   );
 };
 
