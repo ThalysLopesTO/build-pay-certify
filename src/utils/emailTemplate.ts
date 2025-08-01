@@ -71,5 +71,33 @@ export function createEmailWrapper({
   `;
 }
 
+// ✅ Default email templates
+export const getDefaultPlainTextTemplate = (type: string, stage: string = 'general'): { subject: string; body_html: string } => {
+  const templates = {
+    invoice: {
+      subject: 'Invoice {{invoice_number}} - {{company_name}}',
+      body_html: 'Please find attached your invoice {{invoice_number}}.\n\nThank you for your business!'
+    },
+    quote: {
+      subject: 'Quote {{quote_number}} - {{company_name}}',
+      body_html: 'Please find attached your quote {{quote_number}}.\n\nWe look forward to working with you!'
+    },
+    invite: {
+      subject: 'Welcome to {{company_name}}',
+      body_html: 'Welcome to our team! Please use the following credentials to access your account.'
+    },
+    welcome: {
+      subject: 'Welcome to {{company_name}}',
+      body_html: 'Welcome! We are excited to have you on board.'
+    },
+    reminder: {
+      subject: 'Reminder - {{company_name}}',
+      body_html: 'This is a friendly reminder regarding your account.'
+    }
+  };
+
+  return templates[type as keyof typeof templates] || templates.reminder;
+};
+
 // ✅ Backward compatibility alias
 export const wrapEmailHTML = createEmailWrapper;
