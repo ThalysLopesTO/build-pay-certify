@@ -359,10 +359,19 @@ const EmailTemplatesTab = () => {
                       </div>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium">Body:</Label>
+                      <Label className="text-sm font-medium">Body (Branded Email Preview):</Label>
                       <div 
                         className="mt-1 p-4 bg-background border rounded-lg max-h-96 overflow-y-auto"
-                        dangerouslySetInnerHTML={{ __html: preview.body }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: createEmailWrapper({
+                            subject: preview.subject,
+                            bodyText: preview.body,
+                            companyName: 'Your Company Name',
+                            companyAddress: '123 Business St, City, State 12345',
+                            companyPhone: '(555) 123-4567',
+                            companyLogo: 'https://via.placeholder.com/200x80/0066cc/ffffff?text=LOGO'
+                          })
+                        }}
                       />
                     </div>
                   </div>

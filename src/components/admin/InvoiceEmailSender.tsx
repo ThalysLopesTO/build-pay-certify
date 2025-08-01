@@ -74,7 +74,13 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
       const emailResult = await sendEmail({
         to: invoice.client_email,
         subject: emailContent.subject,
-        html: emailContent.body,
+        bodyText: emailContent.body,
+        companyData: {
+          name: settings.company_name,
+          address: settings.company_address,
+          phone: settings.company_phone,
+          logo: settings.company_logo_url
+        }
       });
 
       if (emailResult.success) {
@@ -163,11 +169,13 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
               </div>
               
               <div>
-                <Label className="text-sm font-medium">Body:</Label>
-                <div 
-                  className="mt-1 p-4 bg-white border rounded max-h-64 overflow-y-auto text-sm"
-                  dangerouslySetInnerHTML={{ __html: generateEmailContent().body }}
-                />
+                <Label className="text-sm font-medium">Body (Preview):</Label>
+                <div className="mt-1 p-2 bg-muted rounded text-sm max-h-32 overflow-y-auto">
+                  {generateEmailContent().body}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  This text will be automatically wrapped in your company's branded email template when sent.
+                </p>
               </div>
             </div>
           </div>

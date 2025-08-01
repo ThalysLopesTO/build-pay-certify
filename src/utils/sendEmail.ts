@@ -1,7 +1,15 @@
+import { createEmailWrapper, EmailWrapperData } from './emailTemplate';
+
 interface SendEmailParams {
   to: string;
   subject: string;
-  html: string;
+  bodyText: string;
+  companyData: {
+    name: string;
+    address?: string;
+    phone?: string;
+    logo?: string;
+  };
 }
 
 interface SendEmailResponse {
@@ -13,9 +21,22 @@ interface SendEmailResponse {
 export const sendEmail = async ({
   to,
   subject,
-  html
+  bodyText,
+  companyData
 }: SendEmailParams): Promise<SendEmailResponse> => {
   try {
+    // Create branded HTML email
+    const emailWrapperData: EmailWrapperData = {
+      subject,
+      bodyText,
+      companyName: companyData.name,
+      companyAddress: companyData.address || '',
+      companyPhone: companyData.phone || '',
+      companyLogo: companyData.logo
+    };
+
+    const html = createEmailWrapper(emailWrapperData);
+
     const response = await fetch(
       'https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/send-email',
       {
