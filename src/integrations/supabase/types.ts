@@ -553,6 +553,42 @@ export type Database = {
           },
         ]
       }
+      daily_reports: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          jobsite_id: string
+          photos: string[] | null
+          report_date: string
+          submitted_by: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          jobsite_id: string
+          photos?: string[] | null
+          report_date?: string
+          submitted_by: string
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          jobsite_id?: string
+          photos?: string[] | null
+          report_date?: string
+          submitted_by?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       default_rules: {
         Row: {
           content: string | null
