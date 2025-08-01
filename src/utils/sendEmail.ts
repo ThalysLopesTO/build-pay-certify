@@ -8,7 +8,7 @@ interface SendEmailParams {
     name: string;
     address?: string;
     phone?: string;
-    logo?: string;
+    logoUrl?: string; // ✅ renamed for clarity
   };
 }
 
@@ -25,18 +25,20 @@ export const sendEmail = async ({
   companyData
 }: SendEmailParams): Promise<SendEmailResponse> => {
   try {
-    // Create branded HTML email
+    // ✅ Prepare branded email wrapper data
     const emailWrapperData: EmailWrapperData = {
       subject,
       bodyText,
       companyName: companyData.name,
       companyAddress: companyData.address || '',
       companyPhone: companyData.phone || '',
-      companyLogo: companyData.logo
+      companyLogoUrl: companyData.logoUrl || '' // ✅ consistent naming
     };
 
+    // ✅ Create branded HTML
     const html = createEmailWrapper(emailWrapperData);
 
+    // ✅ Send email via Supabase Edge Function
     const response = await fetch(
       'https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/send-email',
       {
@@ -49,12 +51,13 @@ export const sendEmail = async ({
       }
     );
 
-    const data = await response.json();
-
+    // ✅ Handle API errors cleanly
     if (!response.ok) {
-      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
+    const data = await response.json();
     return {
       success: true,
       message: data.message || '✅ Email sent successfully'

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -31,12 +30,12 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
 
+  // ✅ Generate subject & body text from template or fallback
   const generateEmailContent = () => {
     if (!settings) return { subject: '', body: '' };
 
-    // Use custom template or default
     const emailTemplate = template || getDefaultTemplate('invoice');
-    
+
     const templateData = {
       client_name: invoice.client_company,
       client_company: invoice.client_company,
@@ -53,7 +52,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
 
     return {
       subject: replacePlaceholders(emailTemplate.subject, templateData),
-      body: replacePlaceholders(emailTemplate.body_html, templateData),
+      body: replacePlaceholders(emailTemplate.body_text, templateData), // ✅ now using body_text
     };
   };
 
@@ -70,7 +69,8 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
     setIsLoading(true);
     try {
       const emailContent = generateEmailContent();
-      
+
+      // ✅ Send email with branding wrapper
       const emailResult = await sendEmail({
         to: invoice.client_email,
         subject: emailContent.subject,
@@ -79,7 +79,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
           name: settings.company_name,
           address: settings.company_address,
           phone: settings.company_phone,
-          logo: settings.company_logo_url
+          logoUrl: settings.company_logo_url, // ✅ correct key for logo
         }
       });
 
@@ -174,7 +174,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
                   {generateEmailContent().body}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  This text will be automatically wrapped in your company's branded email template when sent.
+                  This text will be automatically wrapped in your company’s branded email template when sent.
                 </p>
               </div>
             </div>

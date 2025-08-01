@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createEmailWrapper } from "../../utils/emailTemplate.ts"; // ✅ NEW: Import the branded email wrapper
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -25,6 +26,9 @@ interface Company {
     quote_reminder_days: number;
     company_email: string;
     company_name: string;
+    company_address?: string;
+    company_phone?: string;
+    company_logo_url?: string;
   };
 }
 
@@ -54,7 +58,7 @@ interface Quote {
 
 interface EmailTemplate {
   subject: string;
-  body_html: string;
+  body_text: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -63,9 +67,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log('Starting daily reminder process...');
+    console.log('📧 Starting daily reminder process...');
     
-    // Get all active companies with their settings
     const { data: companies, error: companiesError } = await supabase
       .from('companies')
       .select(`
@@ -80,21 +83,24 @@ const handler = async (req: Request): Promise<Response> => {
           enable_quote_reminders,
           quote_reminder_days,
           company_email,
-          company_name
+          company_name,
+          company_address,
+          company_phone,
+          company_logo_url
         )
       `)
       .eq('status', 'active')
       .in('subscription_status', ['active', 'trialing']);
 
     if (companiesError) {
-      console.error('Error fetching companies:', companiesError);
+      console.error('❌ Error fetching companies:', companiesError);
       return new Response(JSON.stringify({ error: 'Failed to fetch companies' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    console.log(`Processing ${companies?.length || 0} active companies`);
+    console.log(`🏢 Processing ${companies?.length || 0} active companies`);
 
     for (const company of companies || []) {
       await processCompanyReminders(company as Company);
@@ -109,7 +115,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
   } catch (error) {
-    console.error('Error in send-reminders function:', error);
+    console.error('🔥 Error in send-reminders function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -120,32 +126,30 @@ const handler = async (req: Request): Promise<Response> => {
 async function processCompanyReminders(company: Company) {
   const settings = company.company_settings;
   if (!settings) {
-    console.log(`No settings found for company ${company.name}`);
+    console.log(`⚠️ No settings found for ${company.name}`);
     return;
   }
 
-  console.log(`Processing reminders for company: ${company.name}`);
+  console.log(`📌 Processing reminders for: ${company.name}`);
 
-  // Process invoice reminders
   if (settings.enable_invoice_reminders) {
     await processInvoiceReminders(company, settings);
   }
 
-  // Process quote reminders
   if (settings.enable_quote_reminders) {
     await processQuoteReminders(company, settings);
   }
 }
 
+/* -------------------- INVOICE REMINDERS -------------------- */
 async function processInvoiceReminders(company: Company, settings: any) {
   const today = new Date();
-  const beforeDueDate = new Date();
+  const beforeDueDate = new Date(today);
   beforeDueDate.setDate(today.getDate() + settings.invoice_reminder_days_before);
   
-  const overdueDateCheck = new Date();
+  const overdueDateCheck = new Date(today);
   overdueDateCheck.setDate(today.getDate() - settings.invoice_overdue_reminder_days);
 
-  // Get unpaid invoices
   const { data: invoices, error } = await supabase
     .from('invoices')
     .select('*')
@@ -154,7 +158,7 @@ async function processInvoiceReminders(company: Company, settings: any) {
     .or(`due_date.eq.${beforeDueDate.toISOString().split('T')[0]},due_date.eq.${overdueDateCheck.toISOString().split('T')[0]}`);
 
   if (error) {
-    console.error(`Error fetching invoices for company ${company.name}:`, error);
+    console.error(`❌ Error fetching invoices for ${company.name}:`, error);
     return;
   }
 
@@ -165,25 +169,22 @@ async function processInvoiceReminders(company: Company, settings: any) {
 
     if (isBeforeDue || isOverdue) {
       const reminderType = isOverdue ? 'overdue' : 'before_due';
-      
-      // Check if reminder already sent today
       const alreadySent = await checkReminderSent(company.id, 'invoice', invoice.id, reminderType);
       if (alreadySent) {
-        console.log(`Reminder already sent for invoice ${invoice.invoice_number}`);
+        console.log(`⏩ Reminder already sent for invoice ${invoice.invoice_number}`);
         continue;
       }
-
       await sendInvoiceReminder(company, invoice as Invoice, reminderType, settings);
     }
   }
 }
 
+/* -------------------- QUOTE REMINDERS -------------------- */
 async function processQuoteReminders(company: Company, settings: any) {
   const today = new Date();
-  const reminderDate = new Date();
+  const reminderDate = new Date(today);
   reminderDate.setDate(today.getDate() - settings.quote_reminder_days);
 
-  // Get open quotes
   const { data: quotes, error } = await supabase
     .from('quotes')
     .select('*')
@@ -192,22 +193,21 @@ async function processQuoteReminders(company: Company, settings: any) {
     .eq('quote_date', reminderDate.toISOString().split('T')[0]);
 
   if (error) {
-    console.error(`Error fetching quotes for company ${company.name}:`, error);
+    console.error(`❌ Error fetching quotes for ${company.name}:`, error);
     return;
   }
 
   for (const quote of quotes || []) {
-    // Check if reminder already sent today
-    const alreadySent = await checkReminderSent(company.id, 'quote', quote.id, 'reminder');
+    const alreadySent = await checkReminderSent(company.id, 'quote', quote.id, 'follow_up');
     if (alreadySent) {
-      console.log(`Reminder already sent for quote ${quote.quote_number}`);
+      console.log(`⏩ Reminder already sent for quote ${quote.quote_number}`);
       continue;
     }
-
     await sendQuoteReminder(company, quote as Quote, settings);
   }
 }
 
+/* -------------------- CHECK REMINDER -------------------- */
 async function checkReminderSent(companyId: string, type: string, recordId: string, reminderType: string): Promise<boolean> {
   const today = new Date().toISOString().split('T')[0];
   
@@ -222,264 +222,119 @@ async function checkReminderSent(companyId: string, type: string, recordId: stri
     .limit(1);
 
   if (error) {
-    console.error('Error checking reminder logs:', error);
+    console.error('❌ Error checking reminder logs:', error);
     return false;
   }
 
   return (data?.length || 0) > 0;
 }
 
+/* -------------------- SEND REMINDERS -------------------- */
 async function sendInvoiceReminder(company: Company, invoice: Invoice, reminderType: string, settings: any) {
   try {
-    // Determine reminder stage based on type
     const reminderStage = reminderType === 'overdue' ? 'overdue' : 'before_due';
-    
-    // Get email template with stage-specific fallback
     const template = await getEmailTemplate(company.id, 'invoice', reminderStage);
-    
-    const subject = template.subject
-      .replace(/{{company_name}}/g, settings.company_name || company.name)
-      .replace(/{{invoice_number}}/g, invoice.invoice_number)
-      .replace(/{{client_company}}/g, invoice.client_company || invoice.client_name)
-      .replace(/{{client_name}}/g, invoice.client_name || invoice.client_company)
-      .replace(/{{project_name}}/g, invoice.title || 'Project')
-      .replace(/{{total_amount}}/g, invoice.total_amount.toFixed(2))
-      .replace(/{{due_date}}/g, new Date(invoice.due_date).toLocaleDateString())
-      .replace(/{{reminder_type}}/g, reminderType === 'overdue' ? 'OVERDUE' : 'DUE SOON');
 
-    const bodyHtml = template.body_html
-      .replace(/{{company_name}}/g, settings.company_name || company.name)
-      .replace(/{{company_address}}/g, settings.company_address || '')
-      .replace(/{{company_phone}}/g, settings.company_phone || '')
-      .replace(/{{hst_number}}/g, settings.hst_number || '')
+    // Replace placeholders in plain text template
+    const bodyText = template.body_text
+      .replace(/{{client_name}}/g, invoice.client_company)
       .replace(/{{invoice_number}}/g, invoice.invoice_number)
-      .replace(/{{client_company}}/g, invoice.client_company || invoice.client_name)
-      .replace(/{{client_name}}/g, invoice.client_name || invoice.client_company)
-      .replace(/{{project_name}}/g, invoice.title || 'Project')
       .replace(/{{total_amount}}/g, invoice.total_amount.toFixed(2))
-      .replace(/{{invoice_amount}}/g, `$${invoice.total_amount.toFixed(2)}`)
-      .replace(/{{due_date}}/g, new Date(invoice.due_date).toLocaleDateString())
-      .replace(/{{invoice_link}}/g, `${Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovable.app')}/invoice/${invoice.id}`)
-      .replace(/{{reminder_type}}/g, reminderType === 'overdue' ? 'OVERDUE' : 'DUE SOON');
+      .replace(/{{due_date}}/g, new Date(invoice.due_date).toLocaleDateString());
 
-    // Send email via send-email function
-    const emailResponse = await supabase.functions.invoke('send-email', {
-      body: {
-        to: invoice.client_email,
-        subject: subject,
-        html: bodyHtml
-      }
+    const html = createEmailWrapper({
+      subject: template.subject,
+      bodyText,
+      companyName: settings.company_name,
+      companyAddress: settings.company_address,
+      companyPhone: settings.company_phone,
+      companyLogo: settings.company_logo_url
     });
 
-    if (emailResponse.error) {
-      console.error(`Failed to send invoice reminder for ${invoice.invoice_number}:`, emailResponse.error);
-      return;
-    }
+    await supabase.functions.invoke('send-email', {
+      body: { to: invoice.client_email, subject: template.subject, html }
+    });
 
-    // Log the reminder
     await logReminder(company.id, 'invoice', invoice.id);
-    console.log(`Invoice reminder sent for ${invoice.invoice_number} to ${invoice.client_email}`);
+    console.log(`✅ Invoice reminder sent for ${invoice.invoice_number}`);
 
   } catch (error) {
-    console.error(`Error sending invoice reminder for ${invoice.invoice_number}:`, error);
+    console.error(`❌ Error sending invoice reminder for ${invoice.invoice_number}:`, error);
   }
 }
 
 async function sendQuoteReminder(company: Company, quote: Quote, settings: any) {
   try {
-    // Get email template with follow_up stage
     const template = await getEmailTemplate(company.id, 'quote', 'follow_up');
-    
-    const subject = template.subject
-      .replace(/{{company_name}}/g, settings.company_name || company.name)
-      .replace(/{{quote_number}}/g, quote.quote_number)
-      .replace(/{{client_name}}/g, quote.client_name)
-      .replace(/{{project_name}}/g, quote.project_name)
-      .replace(/{{total_amount}}/g, quote.total_amount.toFixed(2))
-      .replace(/{{expiry_date}}/g, quote.expiry_date ? new Date(quote.expiry_date).toLocaleDateString() : 'N/A');
 
-    const bodyHtml = template.body_html
-      .replace(/{{company_name}}/g, settings.company_name || company.name)
-      .replace(/{{company_address}}/g, settings.company_address || '')
-      .replace(/{{company_phone}}/g, settings.company_phone || '')
-      .replace(/{{quote_number}}/g, quote.quote_number)
+    const bodyText = template.body_text
       .replace(/{{client_name}}/g, quote.client_name)
-      .replace(/{{project_name}}/g, quote.project_name)
-      .replace(/{{total_amount}}/g, quote.total_amount.toFixed(2))
-      .replace(/{{quote_amount}}/g, `$${quote.total_amount.toFixed(2)}`)
-      .replace(/{{quote_date}}/g, new Date(quote.quote_date).toLocaleDateString())
-      .replace(/{{expiry_date}}/g, quote.expiry_date ? new Date(quote.expiry_date).toLocaleDateString() : 'N/A')
-      .replace(/{{quote_link}}/g, `${Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovable.app')}/quote/${quote.id}`);
+      .replace(/{{quote_number}}/g, quote.quote_number)
+      .replace(/{{total_amount}}/g, quote.total_amount.toFixed(2));
 
-    // Send email via send-email function
-    const emailResponse = await supabase.functions.invoke('send-email', {
-      body: {
-        to: quote.client_email,
-        subject: subject,
-        html: bodyHtml
-      }
+    const html = createEmailWrapper({
+      subject: template.subject,
+      bodyText,
+      companyName: settings.company_name,
+      companyAddress: settings.company_address,
+      companyPhone: settings.company_phone,
+      companyLogo: settings.company_logo_url
     });
 
-    if (emailResponse.error) {
-      console.error(`Failed to send quote reminder for ${quote.quote_number}:`, emailResponse.error);
-      return;
-    }
+    await supabase.functions.invoke('send-email', {
+      body: { to: quote.client_email, subject: template.subject, html }
+    });
 
-    // Log the reminder
     await logReminder(company.id, 'quote', quote.id);
-    console.log(`Quote reminder sent for ${quote.quote_number} to ${quote.client_email}`);
+    console.log(`✅ Quote reminder sent for ${quote.quote_number}`);
 
   } catch (error) {
-    console.error(`Error sending quote reminder for ${quote.quote_number}:`, error);
+    console.error(`❌ Error sending quote reminder for ${quote.quote_number}:`, error);
   }
 }
 
+/* -------------------- EMAIL TEMPLATE HANDLING -------------------- */
 async function getEmailTemplate(companyId: string, templateType: string, reminderStage: string = 'general'): Promise<EmailTemplate> {
-  // First try to get stage-specific template
   const { data: stageTemplate } = await supabase
     .from('email_templates')
-    .select('subject, body_html')
+    .select('subject, body_text')
     .eq('company_id', companyId)
     .eq('template_type', templateType)
     .eq('reminder_stage', reminderStage)
     .single();
 
-  if (stageTemplate) {
-    return stageTemplate;
-  }
+  if (stageTemplate) return stageTemplate;
 
-  // Fallback to general template for this type
   const { data: generalTemplate } = await supabase
     .from('email_templates')
-    .select('subject, body_html')
+    .select('subject, body_text')
     .eq('company_id', companyId)
     .eq('template_type', templateType)
     .eq('reminder_stage', 'general')
     .single();
 
-  if (generalTemplate) {
-    return generalTemplate;
-  }
+  if (generalTemplate) return generalTemplate;
 
-  // Return default template
-  console.log(`Using default template for ${templateType} with stage ${reminderStage}`);
   return getDefaultTemplate(templateType, reminderStage);
 }
 
 function getDefaultTemplate(templateType: string, reminderStage: string = 'general'): EmailTemplate {
   if (templateType === 'invoice') {
-    if (reminderStage === 'before_due') {
-      return {
-        subject: 'Friendly Reminder: Invoice {{invoice_number}} Due Soon',
-        body_html: `
-          <html>
-            <body>
-              <h2>Payment Reminder</h2>
-              <p>Dear {{client_name}},</p>
-              <p>This is a friendly reminder that Invoice {{invoice_number}} is due soon.</p>
-              <p><strong>Invoice Number:</strong> {{invoice_number}}</p>
-              <p><strong>Project:</strong> {{project_name}}</p>
-              <p><strong>Amount Due:</strong> ${{total_amount}}</p>
-              <p><strong>Due Date:</strong> {{due_date}}</p>
-              <p>You can view and pay your invoice by clicking the link below:</p>
-              <p><a href="{{invoice_link}}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a></p>
-              <p>Please ensure payment is made by the due date to avoid any late fees.</p>
-              <p>Best regards,<br>{{company_name}}</p>
-            </body>
-          </html>
-        `
-      };
-    } else if (reminderStage === 'overdue') {
-      return {
-        subject: 'URGENT: Overdue Invoice {{invoice_number}} - Payment Required',
-        body_html: `
-          <html>
-            <body>
-              <h2 style="color: #dc3545;">Overdue Invoice Notice</h2>
-              <p>Dear {{client_name}},</p>
-              <p><strong>This invoice is now overdue and requires immediate attention.</strong></p>
-              <p><strong>Invoice Number:</strong> {{invoice_number}}</p>
-              <p><strong>Project:</strong> {{project_name}}</p>
-              <p><strong>Amount Due:</strong> ${{total_amount}}</p>
-              <p><strong>Original Due Date:</strong> {{due_date}}</p>
-              <p style="color: #dc3545;"><strong>Status: OVERDUE</strong></p>
-              <p>You can view and pay your invoice by clicking the link below:</p>
-              <p><a href="{{invoice_link}}" style="background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a></p>
-              <p>Please remit payment immediately to avoid additional fees and potential collection activities.</p>
-              <p>Best regards,<br>{{company_name}}</p>
-            </body>
-          </html>
-        `
-      };
-    } else {
-      return {
-        subject: 'Invoice {{invoice_number}} from {{company_name}}',
-        body_html: `
-          <html>
-            <body>
-              <h2>Invoice {{invoice_number}}</h2>
-              <p>Dear {{client_name}},</p>
-              <p>Please find your invoice details below:</p>
-              <p><strong>Invoice Number:</strong> {{invoice_number}}</p>
-              <p><strong>Project:</strong> {{project_name}}</p>
-              <p><strong>Amount Due:</strong> ${{total_amount}}</p>
-              <p><strong>Due Date:</strong> {{due_date}}</p>
-              <p>You can view and pay your invoice by clicking the link below:</p>
-              <p><a href="{{invoice_link}}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Invoice</a></p>
-              <p>If you have any questions, please don't hesitate to contact us.</p>
-              <p>Best regards,<br>{{company_name}}</p>
-            </body>
-          </html>
-        `
-      };
-    }
+    return {
+      subject: reminderStage === 'overdue' ? 'URGENT: Overdue Invoice {{invoice_number}}' : 'Invoice {{invoice_number}} Due Soon',
+      body_text: reminderStage === 'overdue'
+        ? 'Dear {{client_name}}, your invoice {{invoice_number}} is overdue. Amount due: ${{total_amount}}. Please make payment immediately.'
+        : 'Dear {{client_name}}, this is a friendly reminder that your invoice {{invoice_number}} is due soon. Amount: ${{total_amount}}.'
+    };
   } else {
-    if (reminderStage === 'follow_up') {
-      return {
-        subject: 'Following up on Quote {{quote_number}} - {{company_name}}',
-        body_html: `
-          <html>
-            <body>
-              <h2>Following up on Quote {{quote_number}}</h2>
-              <p>Dear {{client_name}},</p>
-              <p>I wanted to follow up on the quote we sent you recently. Have you had a chance to review it?</p>
-              <p><strong>Quote Number:</strong> {{quote_number}}</p>
-              <p><strong>Project:</strong> {{project_name}}</p>
-              <p><strong>Total Amount:</strong> ${{total_amount}}</p>
-              <p><strong>Valid Until:</strong> {{expiry_date}}</p>
-              <p>You can review the quote details by clicking the link below:</p>
-              <p><a href="{{quote_link}}" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Quote</a></p>
-              <p>If you have any questions or need clarification on any aspects of the quote, please don't hesitate to reach out.</p>
-              <p>Best regards,<br>{{company_name}}</p>
-            </body>
-          </html>
-        `
-      };
-    } else {
-      return {
-        subject: 'Quote {{quote_number}} from {{company_name}}',
-        body_html: `
-          <html>
-            <body>
-              <h2>Quote {{quote_number}}</h2>
-              <p>Dear {{client_name}},</p>
-              <p>Please find your quote details below:</p>
-              <p><strong>Quote Number:</strong> {{quote_number}}</p>
-              <p><strong>Project:</strong> {{project_name}}</p>
-              <p><strong>Total Amount:</strong> ${{total_amount}}</p>
-              <p><strong>Valid Until:</strong> {{expiry_date}}</p>
-              <p>You can review the quote details by clicking the link below:</p>
-              <p><a href="{{quote_link}}" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Quote</a></p>
-              <p>If you have any questions or would like to proceed, please let us know.</p>
-              <p>Best regards,<br>{{company_name}}</p>
-            </body>
-          </html>
-        `
-      };
-    }
+    return {
+      subject: 'Following up on Quote {{quote_number}}',
+      body_text: 'Dear {{client_name}}, just following up on your quote {{quote_number}} for ${{total_amount}}. Let us know if you have questions.'
+    };
   }
 }
 
+/* -------------------- LOG REMINDER -------------------- */
 async function logReminder(companyId: string, type: string, recordId: string) {
   const { error } = await supabase
     .from('reminder_logs')
@@ -491,7 +346,7 @@ async function logReminder(companyId: string, type: string, recordId: string) {
     });
 
   if (error) {
-    console.error('Error logging reminder:', error);
+    console.error('❌ Error logging reminder:', error);
   }
 }
 
