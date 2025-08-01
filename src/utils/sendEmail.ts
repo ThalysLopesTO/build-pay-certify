@@ -14,9 +14,9 @@ interface SendEmailParams {
     name: string;
     address?: string;
     phone?: string;
-    logoUrl?: string;   // ✅ Will now pass this to the edge function too
+    logoUrl?: string;   // ✅ company logo URL for branding
   };
-  attachments?: Attachment[];
+  attachments?: Attachment[]; // ✅ Optional attachments array
 }
 
 interface SendEmailResponse {
@@ -30,32 +30,32 @@ export const sendEmail = async ({
   subject,
   bodyText,
   companyData,
-  attachments = []
+  attachments = []  // ✅ Default empty array
 }: SendEmailParams): Promise<SendEmailResponse> => {
   try {
-    // ✅ Prepare branded email wrapper data
+    // ✅ Prepare branded email wrapper data for preview
     const emailWrapperData: EmailWrapperData = {
       subject,
       bodyText,
       companyName: companyData.name,
       companyAddress: companyData.address || '',
       companyPhone: companyData.phone || '',
-      companyLogoUrl: companyData.logoUrl || ''   // ✅ now handled in wrapper
+      companyLogoUrl: companyData.logoUrl || ''
     };
 
-    // ✅ Generate branded HTML email (with logo)
+    // ✅ Generate branded HTML for preview purposes
     const html = createEmailWrapper(emailWrapperData);
 
     // ✅ Build payload for Supabase Edge Function
-    const payload: any = { 
-      to, 
-      subject, 
+    const payload: any = {
+      to,
+      subject,
       html,
-      companyName: companyData.name,        // ✅ Send company name
-      companyLogoUrl: companyData.logoUrl   // ✅ Send company logo URL
+      companyName: companyData.name,          // ✅ NEW: pass company name
+      companyLogoUrl: companyData.logoUrl || '' // ✅ NEW: pass logo URL
     };
 
-    // ✅ Include attachments if any
+    // ✅ Only include attachments if present
     if (attachments.length > 0) {
       payload.attachments = attachments.map(file => ({
         filename: file.filename,
