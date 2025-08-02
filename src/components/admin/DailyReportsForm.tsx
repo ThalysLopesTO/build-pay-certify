@@ -75,157 +75,203 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
-        <DialogHeader className="border-b pb-4">
-          <DialogTitle>Create Daily Report</DialogTitle>
+      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 gap-0">
+        {/* Fixed Header */}
+        <DialogHeader className="px-6 py-4 border-b bg-background flex-shrink-0">
+          <DialogTitle className="text-xl font-semibold">Create Daily Report</DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            Submit your daily progress report for the selected jobsite
+          </p>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto px-1 space-y-6 py-4">
-              <FormField
-                control={form.control}
-                name="report_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <DatePickerField
-                      value={field.value}
-                      onChange={field.onChange}
-                      label="Report Date"
-                      placeholder="Select report date"
-                    />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="jobsite_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Jobsite</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a jobsite" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {jobsitesLoading ? (
-                          <SelectItem value="loading" disabled>Loading jobsites...</SelectItem>
-                        ) : jobsites.length === 0 ? (
-                          <SelectItem value="empty" disabled>No jobsites available</SelectItem>
-                        ) : (
-                          jobsites.map((jobsite) => (
-                            <SelectItem key={jobsite.id} value={jobsite.id}>
-                              {jobsite.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="summary"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Summary / Notes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter detailed summary of today's work, progress, issues, or observations..."
-                        className="min-h-[120px] max-h-[200px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="space-y-4">
-                <FormLabel>Photos (Optional)</FormLabel>
-                
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 bg-muted/10">
-                  <Input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="photo-upload"
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <div className="space-y-8">
+                {/* Report Date Section */}
+                <div className="space-y-3">
+                  <FormField
+                    control={form.control}
+                    name="report_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <DatePickerField
+                          value={field.value}
+                          onChange={field.onChange}
+                          label="Report Date"
+                          placeholder="Select report date"
+                        />
+                      </FormItem>
+                    )}
                   />
-                  <label htmlFor="photo-upload" className="cursor-pointer">
-                    <div className="flex flex-col items-center justify-center text-center">
-                      <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Click to upload photos or drag and drop
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Images only, max 10MB each, up to 10 files
-                      </p>
-                    </div>
-                  </label>
                 </div>
 
-                {selectedFiles.length > 0 && (
-                  <div className="border rounded-lg p-4 bg-muted/5">
-                    <p className="text-sm font-medium text-muted-foreground mb-3">
-                      {selectedFiles.length} photo{selectedFiles.length > 1 ? 's' : ''} selected
-                    </p>
-                    <div className="mt-3 grid grid-cols-3 md:grid-cols-4 gap-2 max-h-[250px] overflow-y-auto">
-                      {selectedFiles.map((file, index) => (
-                        <div key={index} className="relative group">
-                          <div className="w-[110px] h-[110px] rounded-lg border bg-muted/50 flex items-center justify-center overflow-hidden shadow-sm">
-                            {file.type.startsWith('image/') ? (
-                              <img
-                                src={URL.createObjectURL(file)}
-                                alt={`Preview ${index + 1}`}
-                                className="w-full h-full object-cover"
-                              />
+                {/* Jobsite Section */}
+                <div className="space-y-3">
+                  <FormField
+                    control={form.control}
+                    name="jobsite_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Jobsite</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-10">
+                              <SelectValue placeholder="Select a jobsite" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {jobsitesLoading ? (
+                              <SelectItem value="loading" disabled>Loading jobsites...</SelectItem>
+                            ) : jobsites.length === 0 ? (
+                              <SelectItem value="empty" disabled>No jobsites available</SelectItem>
                             ) : (
-                              <FileImage className="h-8 w-8 text-muted-foreground" />
+                              jobsites.map((jobsite) => (
+                                <SelectItem key={jobsite.id} value={jobsite.id}>
+                                  {jobsite.name}
+                                </SelectItem>
+                              ))
                             )}
-                          </div>
-                          <Button
-                            type="button"
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs hover:bg-red-600 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeFile(index)}
-                            title="Remove image"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                          <p className="text-xs text-muted-foreground mt-1 truncate max-w-[110px]">
-                            {file.name}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Summary Section */}
+                <div className="space-y-3">
+                  <FormField
+                    control={form.control}
+                    name="summary"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Summary / Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter detailed summary of today's work, progress, issues, or observations..."
+                            className="min-h-[120px] max-h-[200px] resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-xs text-muted-foreground">
+                          Minimum 10 characters required
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Photos Section */}
+                <div className="space-y-4">
+                  <div>
+                    <FormLabel className="text-sm font-medium">Photos (Optional)</FormLabel>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Upload photos to document work progress, issues, or completed tasks
+                    </p>
                   </div>
-                )}
+                  
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 bg-muted/5 hover:bg-muted/10 transition-colors">
+                    <Input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="photo-upload"
+                    />
+                    <label htmlFor="photo-upload" className="cursor-pointer">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <Upload className="h-8 w-8 text-muted-foreground mb-3" />
+                        <p className="text-sm font-medium text-foreground mb-1">
+                          Click to upload photos
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Images only, max 10MB each, up to 10 files
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {selectedFiles.length > 0 && (
+                    <div className="border rounded-lg p-4 bg-muted/5">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm font-medium">
+                          {selectedFiles.length} photo{selectedFiles.length > 1 ? 's' : ''} selected
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedFiles.length}/10 files
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-[200px] overflow-y-auto">
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="relative group">
+                            <div className="aspect-square rounded-lg border bg-muted/50 flex items-center justify-center overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                              {file.type.startsWith('image/') ? (
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={`Preview ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <FileImage className="h-8 w-8 text-muted-foreground" />
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="destructive"
+                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                              onClick={() => removeFile(index)}
+                              title="Remove image"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                            <p className="text-xs text-muted-foreground mt-2 truncate text-center">
+                              {file.name}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <DialogFooter className="mt-4 border-t pt-4 bg-background sticky bottom-0 flex-shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={submitMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={submitMutation.isPending}
-              >
-                {submitMutation.isPending ? 'Submitting...' : 'Submit Report'}
-              </Button>
-            </DialogFooter>
+            {/* Fixed Footer */}
+            <div className="border-t bg-background/95 backdrop-blur-sm flex-shrink-0">
+              <div className="px-6 py-4">
+                <div className="flex items-center justify-end gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={submitMutation.isPending}
+                    className="min-w-[100px]"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={submitMutation.isPending}
+                    className="min-w-[140px] bg-primary hover:bg-primary/90"
+                  >
+                    {submitMutation.isPending ? (
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        Submitting...
+                      </div>
+                    ) : (
+                      'Submit Report'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </form>
         </Form>
       </DialogContent>
