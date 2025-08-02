@@ -12,9 +12,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Eye, Camera, Download, FileText, MapPin, Clock, User } from 'lucide-react';
+import { Eye, Camera, Download, FileText, MapPin, Clock, User, Edit, Lock } from 'lucide-react';
 import { DailyReport } from '@/hooks/useDailyReports';
 import DailyReportDetailsModal from './DailyReportDetailsModal';
+import DailyReportEditModal from './DailyReportEditModal';
 
 interface DailyReportsTableProps {
   reports: DailyReport[];
@@ -23,6 +24,7 @@ interface DailyReportsTableProps {
 
 const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoading }) => {
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
+  const [editingReport, setEditingReport] = useState<DailyReport | null>(null);
 
   const truncateText = (text: string, maxLength: number = 100) => {
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
@@ -179,6 +181,21 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
                     
                     <TableCell className="py-4 px-6">
                       <div className="flex items-center justify-end gap-1">
+                        {report.canEdit ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingReport(report)}
+                            className="h-9 w-9 p-0 hover:bg-blue-50 hover:text-blue-600 group/btn"
+                            title="Edit report"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <div className="h-9 w-9 flex items-center justify-center" title="Report locked">
+                            <Lock className="h-4 w-4 text-muted-foreground/50" />
+                          </div>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -214,6 +231,12 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
         report={selectedReport}
         open={!!selectedReport}
         onOpenChange={(open) => !open && setSelectedReport(null)}
+      />
+
+      <DailyReportEditModal
+        report={editingReport}
+        open={!!editingReport}
+        onOpenChange={(open) => !open && setEditingReport(null)}
       />
     </>
   );

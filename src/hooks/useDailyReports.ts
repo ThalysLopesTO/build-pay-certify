@@ -13,6 +13,7 @@ export interface DailyReport {
   report_date: string;
   created_at: string;
   updated_at: string;
+  canEdit?: boolean;
   jobsites?: {
     name: string;
     address: string;
@@ -77,9 +78,109 @@ export const useDailyReports = (filters?: {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Add canEdit field based on 24-hour window and ownership
+      const reportsWithCanEdit = (data || []).map(report => {
+        const createdAt = new Date(report.created_at);
+        const now = new Date();
+        const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+        const canEdit = report.submitted_by === user.id && hoursSinceCreation < 24;
+        
+        return {
+          ...report,
+          canEdit
+        };
+      });
+      
+      return reportsWithCanEdit;
     },
     enabled: !!user?.companyId,
+  });
+};
+
+export const useDailyReportUpdate = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ reportId, data }: { reportId: string; data: DailyReportFormData }) => {
+      if (!user?.companyId) throw new Error('No company ID found');
+
+      // Check if report can be edited (24-hour window)
+      const { data: report, error: fetchError } = await supabase
+        .from('daily_reports')
+        .select('created_at, submitted_by')
+        .eq('id', reportId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const createdAt = new Date(report.created_at);
+      const now = new Date();
+      const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+
+      if (report.submitted_by !== user.id) {
+        throw new Error('You can only edit your own reports');
+      }
+
+      if (hoursSinceCreation >= 24) {
+        throw new Error('Editing window expired. Reports can only be edited for 24 hours after submission.');
+      }
+
+      // Upload new photos if any
+      const photoUrls: string[] = [];
+      
+      for (const photo of data.photos) {
+        const fileExt = photo.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${user.companyId}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('daily-report-photos')
+          .upload(filePath, photo);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from('daily-report-photos')
+          .getPublicUrl(filePath);
+
+        photoUrls.push(urlData.publicUrl);
+      }
+
+      // Update the daily report
+      const { data: updatedReport, error } = await supabase
+        .from('daily_reports')
+        .update({
+          jobsite_id: data.jobsite_id,
+          summary: data.summary,
+          photos: photoUrls.length > 0 ? photoUrls : undefined,
+          report_date: data.report_date.toISOString().split('T')[0],
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', reportId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return updatedReport;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-reports'] });
+      toast({
+        title: "Success",
+        description: "✅ Daily report updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating daily report:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update daily report. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 };
 
