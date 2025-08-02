@@ -43,7 +43,6 @@ const DatePickerField = ({ value, onChange, label, placeholder }: DatePickerFiel
             mode="single"
             selected={value}
             onSelect={onChange}
-            disabled={(date) => date < new Date()}
             initialFocus
             className={cn("p-3 pointer-events-auto")}
           />

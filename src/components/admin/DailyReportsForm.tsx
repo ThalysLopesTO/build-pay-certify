@@ -11,10 +11,14 @@ import { Input } from '@/components/ui/input';
 import { X, Upload, FileImage } from 'lucide-react';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useDailyReportSubmission, DailyReportFormData } from '@/hooks/useDailyReports';
+import DatePickerField from '@/components/foreman/DatePickerField';
 
 const formSchema = z.object({
   jobsite_id: z.string().min(1, 'Please select a jobsite'),
   summary: z.string().min(10, 'Summary must be at least 10 characters'),
+  report_date: z.date({
+    required_error: 'Please select a report date',
+  }),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -34,6 +38,7 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
     defaultValues: {
       jobsite_id: '',
       summary: '',
+      report_date: new Date(),
     },
   });
 
@@ -57,6 +62,7 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
       jobsite_id: data.jobsite_id,
       summary: data.summary,
       photos: selectedFiles,
+      report_date: data.report_date,
     };
 
     await submitMutation.mutateAsync(formData);
@@ -77,6 +83,21 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto px-1 space-y-6 py-4">
+              <FormField
+                control={form.control}
+                name="report_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <DatePickerField
+                      value={field.value}
+                      onChange={field.onChange}
+                      label="Report Date"
+                      placeholder="Select report date"
+                    />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="jobsite_id"

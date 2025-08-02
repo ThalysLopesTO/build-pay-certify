@@ -27,6 +27,7 @@ export interface DailyReportFormData {
   jobsite_id: string;
   summary: string;
   photos: File[];
+  report_date: Date;
 }
 
 export const useDailyReports = (filters?: {
@@ -121,6 +122,7 @@ export const useDailyReportSubmission = () => {
           company_id: user.companyId,
           summary: data.summary,
           photos: photoUrls,
+          report_date: data.report_date.toISOString().split('T')[0], // Format as YYYY-MM-DD
         })
         .select()
         .single();
