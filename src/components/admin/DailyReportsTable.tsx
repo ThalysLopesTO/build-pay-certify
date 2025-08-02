@@ -14,6 +14,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Eye, Camera, Download, FileText, MapPin, Clock, User, Edit, Lock } from 'lucide-react';
 import { DailyReport } from '@/hooks/useDailyReports';
+import { useDailyReportPDF } from '@/hooks/useDailyReportPDF';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import { useToast } from '@/hooks/use-toast';
 import DailyReportDetailsModal from './DailyReportDetailsModal';
 import DailyReportEditModal from './DailyReportEditModal';
 
@@ -25,6 +29,45 @@ interface DailyReportsTableProps {
 const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoading }) => {
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [editingReport, setEditingReport] = useState<DailyReport | null>(null);
+  
+  const { generateDailyReportPDF } = useDailyReportPDF();
+  const { settings: companySettings } = useCompanySettings();
+  const { logoUrl } = useCompanyLogo();
+  const { toast } = useToast();
+
+  const handleDownloadPDF = async (report: DailyReport) => {
+    try {
+      const pdfData = {
+        jobsite: report.jobsites?.name || 'Unknown Jobsite',
+        address: report.jobsites?.address || 'Unknown Address',
+        reportDate: format(new Date(report.report_date), 'MMM dd, yyyy'),
+        submittedBy: report.user_profiles ? 
+          `${report.user_profiles.first_name} ${report.user_profiles.last_name}` : 
+          'Unknown User',
+        submittedTime: format(new Date(report.created_at), 'h:mm a'),
+        summary: [report.summary],
+        photos: report.photos || [],
+      };
+
+      await generateDailyReportPDF({
+        report: pdfData,
+        companySettings,
+        logoUrl,
+      });
+
+      toast({
+        title: "Success",
+        description: "✅ PDF downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const truncateText = (text: string, maxLength: number = 100) => {
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
@@ -210,10 +253,7 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
                           size="sm"
                           className="h-9 w-9 p-0 hover:bg-primary/10 hover:text-primary group/btn"
                           title="Download PDF"
-                          onClick={() => {
-                            // TODO: Implement PDF download
-                            console.log('Download PDF for report:', report.id);
-                          }}
+                          onClick={() => handleDownloadPDF(report)}
                         >
                           <Download className="h-4 w-4" />
                         </Button>
