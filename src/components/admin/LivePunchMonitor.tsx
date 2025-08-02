@@ -31,6 +31,8 @@ interface PunchEntry {
   } | null;
   jobsites: {
     name: string;
+    latitude: number | null;
+    longitude: number | null;
   } | null;
 }
 
@@ -48,6 +50,11 @@ const LivePunchMonitor = () => {
     location: string | null;
     employeeName: string;
     timestamp: string;
+    jobsite: {
+      name: string;
+      latitude: number | null;
+      longitude: number | null;
+    } | null;
   } | null>(null);
 
   // Fetch jobsites for filter
@@ -141,7 +148,7 @@ const LivePunchMonitor = () => {
       const jobsiteIds = [...new Set(timesheets.map(t => t.jobsite_id))];
       const { data: jobsites, error: jobsitesError } = await supabase
         .from('jobsites')
-        .select('id, name')
+        .select('id, name, latitude, longitude')
         .in('id', jobsiteIds);
 
       if (jobsitesError) {
@@ -161,7 +168,9 @@ const LivePunchMonitor = () => {
             last_name: userProfile.last_name || ''
           } : null,
           jobsites: jobsite ? {
-            name: jobsite.name
+            name: jobsite.name,
+            latitude: jobsite.latitude,
+            longitude: jobsite.longitude
           } : null
         };
       });
@@ -200,7 +209,8 @@ const LivePunchMonitor = () => {
     setSelectedLocation({
       location: entry.check_in_location,
       employeeName,
-      timestamp
+      timestamp,
+      jobsite: entry.jobsites
     });
   };
 
@@ -321,6 +331,7 @@ const LivePunchMonitor = () => {
           location={selectedLocation.location}
           employeeName={selectedLocation.employeeName}
           timestamp={selectedLocation.timestamp}
+          jobsite={selectedLocation.jobsite}
         />
       )}
     </div>
