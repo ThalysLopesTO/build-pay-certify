@@ -3,11 +3,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { geocodeAddress, validateCoordinates } from '@/services/geocoding';
 
 interface JobsiteData {
   name: string;
   address: string;
   starting_date?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export const useJobsiteActions = () => {
@@ -40,6 +43,37 @@ export const useJobsiteActions = () => {
       // Add starting_date if provided
       if (data.starting_date) {
         insertData.starting_date = data.starting_date;
+      }
+
+      // Handle coordinates (manual or geocoded)
+      if (data.latitude !== undefined && data.longitude !== undefined) {
+        // Manual coordinates provided - validate them
+        if (validateCoordinates(data.latitude, data.longitude)) {
+          insertData.latitude = data.latitude;
+          insertData.longitude = data.longitude;
+        } else {
+          console.warn('Invalid coordinates provided, will attempt geocoding');
+        }
+      }
+
+      // If no valid coordinates provided, try geocoding the address
+      if (insertData.latitude === undefined || insertData.longitude === undefined) {
+        try {
+          console.log('Attempting to geocode address:', data.address);
+          const geocodeResult = await geocodeAddress(data.address.trim());
+          
+          if ('latitude' in geocodeResult && 'longitude' in geocodeResult) {
+            insertData.latitude = geocodeResult.latitude;
+            insertData.longitude = geocodeResult.longitude;
+            console.log('Geocoding successful:', geocodeResult);
+          } else {
+            console.warn('Geocoding failed:', geocodeResult.error);
+            // Don't throw error - just save without coordinates
+          }
+        } catch (geocodeError) {
+          console.warn('Geocoding error:', geocodeError);
+          // Continue without coordinates - don't fail the entire operation
+        }
       }
 
       const { data: result, error } = await supabase
@@ -201,10 +235,137 @@ export const useJobsiteActions = () => {
     },
   });
 
+  const updateJobsite = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<JobsiteData> }) => {
+      console.log('Updating jobsite:', id, data);
+      
+      if (!id) {
+        throw new Error('Jobsite ID is required for update');
+      }
+
+      const updateData: any = {};
+
+      // Handle basic fields
+      if (data.name?.trim()) {
+        updateData.name = data.name.trim();
+      }
+      
+      if (data.address?.trim()) {
+        updateData.address = data.address.trim();
+      }
+      
+      if (data.starting_date) {
+        updateData.starting_date = data.starting_date;
+      }
+
+      // Handle coordinates
+      if (data.latitude !== undefined && data.longitude !== undefined) {
+        if (validateCoordinates(data.latitude, data.longitude)) {
+          updateData.latitude = data.latitude;
+          updateData.longitude = data.longitude;
+        } else {
+          throw new Error('Invalid coordinates provided');
+        }
+      }
+
+      // If address is being updated and no coordinates provided, try geocoding
+      if (data.address?.trim() && data.latitude === undefined && data.longitude === undefined) {
+        try {
+          console.log('Address updated, attempting to geocode:', data.address);
+          const geocodeResult = await geocodeAddress(data.address.trim());
+          
+          if ('latitude' in geocodeResult && 'longitude' in geocodeResult) {
+            updateData.latitude = geocodeResult.latitude;
+            updateData.longitude = geocodeResult.longitude;
+            console.log('Geocoding successful for address update:', geocodeResult);
+          } else {
+            console.warn('Geocoding failed for address update:', geocodeResult.error);
+          }
+        } catch (geocodeError) {
+          console.warn('Geocoding error during address update:', geocodeError);
+        }
+      }
+
+      const { error } = await supabase
+        .from('jobsites')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating jobsite:', error);
+        throw new Error(error.message || 'Failed to update jobsite');
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Jobsite Updated',
+        description: 'The jobsite has been successfully updated.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['jobsites', user?.companyId] });
+    },
+    onError: (error) => {
+      console.error('Error updating jobsite:', error);
+      toast({
+        title: 'Error Updating Jobsite',
+        description: error.message || 'Failed to update jobsite. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const geocodeJobsiteAddress = useMutation({
+    mutationFn: async ({ id, address }: { id: string; address: string }) => {
+      console.log('Re-geocoding jobsite address:', id, address);
+      
+      if (!id || !address?.trim()) {
+        throw new Error('Jobsite ID and address are required for geocoding');
+      }
+
+      const geocodeResult = await geocodeAddress(address.trim());
+      
+      if ('error' in geocodeResult) {
+        throw new Error(geocodeResult.error);
+      }
+
+      // Update the jobsite with new coordinates
+      const { error } = await supabase
+        .from('jobsites')
+        .update({
+          latitude: geocodeResult.latitude,
+          longitude: geocodeResult.longitude,
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating jobsite coordinates:', error);
+        throw new Error(error.message || 'Failed to update coordinates');
+      }
+
+      return geocodeResult;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Address Geocoded',
+        description: `Coordinates updated: ${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['jobsites', user?.companyId] });
+    },
+    onError: (error) => {
+      console.error('Error geocoding address:', error);
+      toast({
+        title: 'Geocoding Failed',
+        description: error.message || 'Failed to geocode address. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     addJobsite,
+    updateJobsite,
     deleteJobsite,
     markJobsiteCompleted,
     reactivateJobsite,
+    geocodeJobsiteAddress,
   };
 };

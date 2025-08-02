@@ -3,12 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Calendar, MapPin, BarChart3, Package, ClipboardList, CheckCircle, RotateCcw } from 'lucide-react';
+import { Trash2, Calendar, MapPin, BarChart3, Package, ClipboardList, CheckCircle, RotateCcw, Edit, Globe, RefreshCw } from 'lucide-react';
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
 import { useJobsiteTasks } from '@/hooks/useJobsiteTasks';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { formatCoordinates } from '@/services/geocoding';
 import JobsiteTaskCard from './JobsiteTaskCard';
 import JobsiteMaterialTakeoff from './JobsiteMaterialTakeoff';
+import JobsiteEditModal from './JobsiteEditModal';
 
 interface Jobsite {
   id: string;
@@ -19,6 +21,8 @@ interface Jobsite {
   created_at: string;
   status?: string;
   completion_date?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface JobsiteDetailedCardProps {
@@ -30,6 +34,7 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
   const { data: tasks = [], isLoading: tasksLoading } = useJobsiteTasks(jobsite.id);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const handleDelete = async () => {
     if (window.confirm(`Are you sure you want to delete "${jobsite.name}"? This action cannot be undone.`)) {
@@ -137,9 +142,23 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
                 <BarChart3 className="h-4 w-4 mr-2 text-primary" />
                 Progress: {progressPercentage.toFixed(0)}% ({completedTasks}/{totalTasks} tasks)
               </p>
+              {jobsite.latitude !== undefined && jobsite.longitude !== undefined && (
+                <p className="flex items-center">
+                  <Globe className="h-4 w-4 mr-2 text-primary" />
+                  Coordinates: {formatCoordinates(jobsite.latitude, jobsite.longitude)}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowEditModal(true)}
+              className="text-gray-600 hover:bg-gray-50 hover:text-gray-700 p-2 rounded-full"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
             {jobsite.status === 'completed' ? (
               <Button
                 variant="ghost"
@@ -242,6 +261,12 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
         description={`Are you sure you want to reactivate "${jobsite.name}"? This will make it available in active jobsite lists again.`}
         confirmText="Reactivate"
         onConfirm={handleReactivateJobsite}
+      />
+
+      <JobsiteEditModal
+        jobsite={jobsite}
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
       />
     </Card>
   );
