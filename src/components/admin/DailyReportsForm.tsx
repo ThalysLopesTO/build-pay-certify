@@ -86,9 +86,9 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
-            {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              <div className="space-y-8">
+            {/* Scrollable Content Area with Visible Scrollbar */}
+            <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+              <div className="space-y-8 pb-4">
                 {/* Report Date Section */}
                 <div className="space-y-3">
                   <FormField
@@ -165,16 +165,18 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                   />
                 </div>
 
-                {/* Photos Section */}
-                <div className="space-y-4">
+                {/* Photos Section with Better Visual Separation */}
+                <div className="space-y-4 bg-muted/20 p-6 rounded-lg border">
                   <div>
-                    <FormLabel className="text-sm font-medium">Photos (Optional)</FormLabel>
+                    <FormLabel className="text-sm font-medium flex items-center gap-2">
+                      📸 Photos (Optional)
+                    </FormLabel>
                     <p className="text-xs text-muted-foreground mt-1">
                       Upload photos to document work progress, issues, or completed tasks
                     </p>
                   </div>
                   
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 bg-muted/5 hover:bg-muted/10 transition-colors">
+                  <div className="border-2 border-dashed border-primary/25 rounded-lg p-6 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer">
                     <Input
                       type="file"
                       multiple
@@ -185,7 +187,7 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                     />
                     <label htmlFor="photo-upload" className="cursor-pointer">
                       <div className="flex flex-col items-center justify-center text-center">
-                        <Upload className="h-8 w-8 text-muted-foreground mb-3" />
+                        <Upload className="h-10 w-10 text-primary mb-3" />
                         <p className="text-sm font-medium text-foreground mb-1">
                           Click to upload photos
                         </p>
@@ -239,12 +241,23 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                     </div>
                   )}
                 </div>
+
+                {/* Bottom Spacer for Better Scrolling */}
+                <div className="h-8"></div>
               </div>
             </div>
 
-            {/* Fixed Footer */}
-            <div className="border-t bg-background/95 backdrop-blur-sm flex-shrink-0">
+            {/* Fixed Footer with Shadow */}
+            <div className="border-t bg-background/95 backdrop-blur-sm flex-shrink-0 shadow-lg">
               <div className="px-6 py-4">
+                {/* Scroll Indicator */}
+                <div className="mb-3 text-center">
+                  <div className="inline-flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
+                    <div className="h-1 w-1 bg-muted-foreground rounded-full animate-pulse"></div>
+                    Scroll up to review all fields
+                    <div className="h-1 w-1 bg-muted-foreground rounded-full animate-pulse"></div>
+                  </div>
+                </div>
                 <div className="flex items-center justify-end gap-3">
                   <Button
                     type="button"
