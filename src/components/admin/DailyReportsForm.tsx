@@ -75,20 +75,24 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 gap-0">
-        {/* Fixed Header */}
-        <DialogHeader className="px-6 py-4 border-b bg-background flex-shrink-0">
-          <DialogTitle className="text-xl font-semibold">Create Daily Report</DialogTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Submit your daily progress report for the selected jobsite
-          </p>
-        </DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 rounded-xl shadow-2xl">
+        {/* Fixed Header with Shadow */}
+        <div className="px-6 py-5 border-b bg-background/95 backdrop-blur-sm flex-shrink-0 rounded-t-xl shadow-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-foreground">
+              Create Daily Report
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Submit your daily progress report for the selected jobsite
+            </p>
+          </DialogHeader>
+        </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
-            {/* Scrollable Content Area with Visible Scrollbar */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
-              <div className="space-y-8 pb-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full min-h-0">
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <div className="px-6 py-6 space-y-6">
                 {/* Report Date Section */}
                 <div className="space-y-3">
                   <FormField
@@ -114,18 +118,24 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                     name="jobsite_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">Jobsite</FormLabel>
+                        <FormLabel className="text-sm font-semibold text-foreground">
+                          Jobsite
+                        </FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger className="h-10">
+                            <SelectTrigger className="h-11 border-muted-foreground/20 focus:border-primary">
                               <SelectValue placeholder="Select a jobsite" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {jobsitesLoading ? (
-                              <SelectItem value="loading" disabled>Loading jobsites...</SelectItem>
+                              <SelectItem value="loading" disabled>
+                                Loading jobsites...
+                              </SelectItem>
                             ) : jobsites.length === 0 ? (
-                              <SelectItem value="empty" disabled>No jobsites available</SelectItem>
+                              <SelectItem value="empty" disabled>
+                                No jobsites available
+                              </SelectItem>
                             ) : (
                               jobsites.map((jobsite) => (
                                 <SelectItem key={jobsite.id} value={jobsite.id}>
@@ -148,16 +158,18 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                     name="summary"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">Summary / Notes</FormLabel>
+                        <FormLabel className="text-sm font-semibold text-foreground">
+                          Summary / Notes
+                        </FormLabel>
                         <FormControl>
                           <Textarea
                             placeholder="Enter detailed summary of today's work, progress, issues, or observations..."
-                            className="min-h-[120px] max-h-[200px] resize-none"
+                            className="min-h-[120px] max-h-[200px] resize-none border-muted-foreground/20 focus:border-primary"
                             {...field}
                           />
                         </FormControl>
                         <FormMessage />
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground mt-2">
                           Minimum 10 characters required
                         </p>
                       </FormItem>
@@ -165,18 +177,19 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                   />
                 </div>
 
-                {/* Photos Section with Better Visual Separation */}
-                <div className="space-y-4 bg-muted/20 p-6 rounded-lg border">
-                  <div>
-                    <FormLabel className="text-sm font-medium flex items-center gap-2">
-                      📸 Photos (Optional)
+                {/* Photos Section */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <FormLabel className="text-sm font-semibold text-foreground">
+                      Photos (Optional)
                     </FormLabel>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground">
                       Upload photos to document work progress, issues, or completed tasks
                     </p>
                   </div>
                   
-                  <div className="border-2 border-dashed border-primary/25 rounded-lg p-6 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer">
+                  {/* Upload Area */}
+                  <div className="border-2 border-dashed border-primary/30 rounded-xl p-8 bg-primary/5 hover:bg-primary/10 transition-all duration-200 hover:border-primary/50">
                     <Input
                       type="file"
                       multiple
@@ -185,9 +198,11 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                       className="hidden"
                       id="photo-upload"
                     />
-                    <label htmlFor="photo-upload" className="cursor-pointer">
+                    <label htmlFor="photo-upload" className="cursor-pointer block">
                       <div className="flex flex-col items-center justify-center text-center">
-                        <Upload className="h-10 w-10 text-primary mb-3" />
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                          <Upload className="h-6 w-6 text-primary" />
+                        </div>
                         <p className="text-sm font-medium text-foreground mb-1">
                           Click to upload photos
                         </p>
@@ -198,20 +213,21 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                     </label>
                   </div>
 
+                  {/* Selected Files Preview */}
                   {selectedFiles.length > 0 && (
-                    <div className="border rounded-lg p-4 bg-muted/5">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-sm font-medium">
+                    <div className="border rounded-xl p-4 bg-muted/30">
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-sm font-medium text-foreground">
                           {selectedFiles.length} photo{selectedFiles.length > 1 ? 's' : ''} selected
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">
                           {selectedFiles.length}/10 files
-                        </p>
+                        </div>
                       </div>
-                      <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-[200px] overflow-y-auto">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-h-[240px] overflow-y-auto">
                         {selectedFiles.map((file, index) => (
                           <div key={index} className="relative group">
-                            <div className="aspect-square rounded-lg border bg-muted/50 flex items-center justify-center overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                            <div className="aspect-square rounded-lg border-2 border-muted bg-muted/50 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors">
                               {file.type.startsWith('image/') ? (
                                 <img
                                   src={URL.createObjectURL(file)}
@@ -226,13 +242,13 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                               type="button"
                               size="sm"
                               variant="destructive"
-                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                              className="absolute -top-2 -right-2 h-7 w-7 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                               onClick={() => removeFile(index)}
                               title="Remove image"
                             >
                               <X className="h-3 w-3" />
                             </Button>
-                            <p className="text-xs text-muted-foreground mt-2 truncate text-center">
+                            <p className="text-xs text-muted-foreground mt-2 truncate text-center px-1">
                               {file.name}
                             </p>
                           </div>
@@ -243,40 +259,32 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                 </div>
 
                 {/* Bottom Spacer for Better Scrolling */}
-                <div className="h-8"></div>
+                <div className="pb-4"></div>
               </div>
             </div>
 
             {/* Fixed Footer with Shadow */}
-            <div className="border-t bg-background/95 backdrop-blur-sm flex-shrink-0 shadow-lg">
-              <div className="px-6 py-4">
-                {/* Scroll Indicator */}
-                <div className="mb-3 text-center">
-                  <div className="inline-flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
-                    <div className="h-1 w-1 bg-muted-foreground rounded-full animate-pulse"></div>
-                    Scroll up to review all fields
-                    <div className="h-1 w-1 bg-muted-foreground rounded-full animate-pulse"></div>
-                  </div>
-                </div>
+            <div className="border-t bg-background/98 backdrop-blur-sm flex-shrink-0 shadow-lg rounded-b-xl">
+              <div className="px-6 py-5">
                 <div className="flex items-center justify-end gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => onOpenChange(false)}
                     disabled={submitMutation.isPending}
-                    className="min-w-[100px]"
+                    className="min-w-[100px] h-10 border-muted-foreground/20 hover:bg-muted/50"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
                     disabled={submitMutation.isPending}
-                    className="min-w-[140px] bg-primary hover:bg-primary/90"
+                    className="min-w-[140px] h-10 bg-primary hover:bg-primary/90 shadow-md"
                   >
                     {submitMutation.isPending ? (
                       <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        Submitting...
+                        <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Submitting...</span>
                       </div>
                     ) : (
                       'Submit Report'
