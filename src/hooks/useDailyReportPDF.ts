@@ -1,212 +1,139 @@
-import { jsPDF } from 'jspdf';
-import { DailyReport } from '@/hooks/useDailyReports';
-import { CompanySettings } from '@/hooks/useCompanySettings';
-import { format } from 'date-fns';
-
-interface ExtendedJsPDF extends jsPDF {
-  lastAutoTable: { finalY: number };
-}
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export const useDailyReportPDF = () => {
-  const generateDailyReportPDF = async (data: {
-    report: DailyReport;
-    companySettings?: CompanySettings | null;
+  const generateDailyReportPDF = async ({
+    report,
+    companySettings,
+    logoUrl,
+  }: {
+    report: any;
+    companySettings?: any;
     logoUrl?: string | null;
   }) => {
-    const { report, companySettings, logoUrl } = data;
-    const doc = new jsPDF() as ExtendedJsPDF;
-
+    const doc = new jsPDF("p", "pt", "a4"); // p=portrait, points, A4 size
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 20;
-    const contentWidth = pageWidth - margin * 2;
-    let yPos = 25;
+    const margin = 40;
 
-    /** ------------------------------------------------------
-     ✅ 1. Add Light Watermark Logo
-    ------------------------------------------------------ **/
+    // --- COLORS & STYLES ---
+    const primaryColor = "#1a1a1a";
+    const accentColor = "#4a90e2"; // tweakable (StackBuild blue)
+    doc.setFont("helvetica", "normal");
+
+    // --- OPTIONAL WATERMARK ---
     if (logoUrl) {
-      try {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-          img.src = logoUrl;
-        });
-
-        doc.saveGraphicsState();
-        doc.setGState({ opacity: 0.08 });
-        doc.addImage(img, 'PNG', pageWidth / 2 - 40, pageHeight / 2 - 40, 80, 80);
-        doc.restoreGraphicsState();
-      } catch (error) {
-        console.warn('⚠️ Failed to load watermark logo:', error);
-      }
+      const watermarkSize = 250;
+      doc.addImage(
+        logoUrl,
+        "PNG",
+        pageWidth / 2 - watermarkSize / 2,
+        pageHeight / 2 - watermarkSize / 2,
+        watermarkSize,
+        watermarkSize,
+        "",
+        "FAST"
+      );
+      doc.setGState(new doc.GState({ opacity: 0.08 })); // faint watermark
     }
 
-    /** ------------------------------------------------------
-     ✅ 2. Header with Logo + Company Info
-    ------------------------------------------------------ **/
+    // --- HEADER LOGO + COMPANY INFO ---
     if (logoUrl) {
-      try {
-        const logo = new Image();
-        logo.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          logo.onload = resolve;
-          logo.onerror = reject;
-          logo.src = logoUrl;
-        });
-        doc.addImage(logo, 'PNG', pageWidth - 50, 10, 30, 30); // Logo at top right
-      } catch (error) {
-        console.warn('⚠️ Failed to load header logo:', error);
-      }
+      doc.addImage(logoUrl, "PNG", margin, 30, 80, 40, "", "FAST");
     }
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("DAILY REPORT", pageWidth / 2, 50, { align: "center" });
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.text(companySettings?.company_name || 'Company Name', margin, yPos);
-    yPos += 8;
-
-    doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    if (companySettings?.company_address) {
-      doc.text(companySettings.company_address, margin, yPos);
-      yPos += 5;
-    }
-    if (companySettings?.company_phone) {
-      doc.text(`Phone: ${companySettings.company_phone}`, margin, yPos);
-      yPos += 5;
-    }
-    if (companySettings?.company_email) {
-      doc.text(`Email: ${companySettings.company_email}`, margin, yPos);
-      yPos += 10;
+    doc.setFont("helvetica", "normal");
+    if (companySettings) {
+      doc.text(`${companySettings.name}`, pageWidth - margin, 40, { align: "right" });
+      doc.text(`${companySettings.address}`, pageWidth - margin, 55, { align: "right" });
+      doc.text(`${companySettings.phone} | ${companySettings.email}`, pageWidth - margin, 70, { align: "right" });
     }
 
-    doc.setDrawColor(200);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 10;
-
-    /** ------------------------------------------------------
-     ✅ 3. Title Section
-    ------------------------------------------------------ **/
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.text('DAILY REPORT', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 15;
-
-    /** ------------------------------------------------------
-     ✅ 4. Report Details Section
-    ------------------------------------------------------ **/
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('Report Information', margin, yPos);
-    yPos += 8;
-
-    const reportInfo = [
-      ['Jobsite:', report.jobsites?.name || 'Unknown Jobsite'],
-      ['Address:', report.jobsites?.address || 'N/A'],
-      ['Report Date:', format(new Date(report.report_date), 'PPPP')],
-      ['Submitted By:', report.user_profiles 
-        ? `${report.user_profiles.first_name} ${report.user_profiles.last_name}`
-        : 'Unknown User'],
-      ['Submitted Time:', format(new Date(report.created_at), 'h:mm a')],
-    ];
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    reportInfo.forEach(([label, value]) => {
-      doc.setFont('helvetica', 'bold');
-      doc.text(label, margin, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(value, margin + 40, yPos);
-      yPos += 6;
+    // --- REPORT INFORMATION SECTION ---
+    autoTable(doc, {
+      startY: 100,
+      head: [["Jobsite", "Address", "Report Date", "Submitted By", "Time"]],
+      body: [
+        [
+          report.jobsite || "-",
+          report.address || "-",
+          report.reportDate || "-",
+          report.submittedBy || "-",
+          report.submittedTime || "-",
+        ],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: accentColor, textColor: "#fff", halign: "center" },
+      styles: { fontSize: 10, cellPadding: 6 },
     });
 
-    yPos += 10;
+    // --- SUMMARY SECTION ---
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Summary / Notes", margin, doc.lastAutoTable.finalY + 30);
 
-    /** ------------------------------------------------------
-     ✅ 5. Summary Section
-    ------------------------------------------------------ **/
-    doc.setFont('helvetica', 'bold');
-    doc.text('Summary / Notes', margin, yPos);
-    yPos += 8;
+    const summaryY = doc.lastAutoTable.finalY + 50;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
 
-    doc.setFont('helvetica', 'normal');
-    const summaryText = report.summary || 'No summary provided.';
-    const splitSummary = doc.splitTextToSize(summaryText, contentWidth);
-    doc.text(splitSummary, margin, yPos);
-    yPos += splitSummary.length * 6 + 10;
+    const summaryText = Array.isArray(report.summary)
+      ? report.summary
+      : [report.summary];
 
-    /** ------------------------------------------------------
-     ✅ 6. Photos Section (if exists)
-    ------------------------------------------------------ **/
+    let lineY = summaryY;
+    summaryText.forEach((line: string, idx: number) => {
+      doc.text(`• ${line}`, margin, lineY);
+      lineY += 18;
+    });
+
+    // --- PHOTOS SECTION ---
     if (report.photos && report.photos.length > 0) {
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Photos (${report.photos.length} attached)`, margin, yPos);
-      yPos += 8;
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Photos", margin, lineY + 30);
 
-      let imgX = margin;
-      let imgY = yPos;
-      const imgWidth = 55;
-      const imgHeight = 40;
-      const gap = 10;
+      let photoX = margin;
+      let photoY = lineY + 50;
+      const photoSize = 90;
+      const spacing = 15;
+      let count = 0;
 
-      for (let i = 0; i < report.photos.length; i++) {
-        if (imgX + imgWidth > pageWidth - margin) {
-          imgX = margin;
-          imgY += imgHeight + gap;
-        }
-
-        if (imgY > pageHeight - 50) {
-          doc.addPage();
-          imgY = 30;
-        }
-
+      for (const photo of report.photos) {
         try {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-            img.src = report.photos[i];
-          });
-
-          doc.addImage(img, 'JPEG', imgX, imgY, imgWidth, imgHeight);
-        } catch (error) {
-          doc.setFontSize(10);
-          doc.text(`[Photo ${i + 1} failed to load]`, imgX, imgY + 10);
+          doc.addImage(photo, "JPEG", photoX, photoY, photoSize, photoSize);
+        } catch (err) {
+          console.warn("Photo could not be added:", err);
         }
 
-        imgX += imgWidth + gap;
-      }
+        photoX += photoSize + spacing;
+        count++;
 
-      yPos = imgY + imgHeight + 10;
+        // wrap to next row after 4 images
+        if (count % 4 === 0) {
+          photoX = margin;
+          photoY += photoSize + spacing;
+        }
+      }
     }
 
-    /** ------------------------------------------------------
-     ✅ 7. Footer Section
-    ------------------------------------------------------ **/
-    const pageCount = doc.getNumberOfPages();
+    // --- FOOTER ---
+    doc.setFontSize(9);
+    doc.setTextColor("#666");
+    const generatedDate = new Date().toLocaleDateString();
+    doc.text(`Generated by StackBuild • ${generatedDate}`, margin, pageHeight - 30);
+
+    // PAGE NUMBERING (if multiple pages)
+    const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      doc.setDrawColor(220);
-      doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
-
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'italic');
-      doc.text(
-        `Generated on ${format(new Date(), 'PPP')} | Page ${i} of ${pageCount}`,
-        pageWidth / 2,
-        pageHeight - 10,
-        { align: 'center' }
-      );
+      doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 30, { align: "right" });
     }
 
-    /** ------------------------------------------------------
-     ✅ 8. Save PDF
-    ------------------------------------------------------ **/
-    const filename = `Daily_Report_${report.jobsites?.name || 'Unknown'}_${format(new Date(report.report_date), 'yyyy-MM-dd')}.pdf`;
-    doc.save(filename);
+    return doc.save(`Daily_Report_${report.jobsite}_${report.reportDate}.pdf`);
   };
 
   return { generateDailyReportPDF };
