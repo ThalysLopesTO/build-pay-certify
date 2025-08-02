@@ -68,34 +68,47 @@ const DailyReportsManagement = () => {
   const canCreateReports = user?.role && ['foreman', 'admin', 'super_admin'].includes(user.role);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <ClipboardList className="h-6 w-6" />
-          <h2 className="text-2xl font-bold">Daily Reports</h2>
+    <div className="min-h-screen bg-muted/30 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header Section */}
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Daily Reports</h1>
+              <p className="text-muted-foreground mt-1">
+                View and manage all submitted daily reports from foremen across jobsites
+              </p>
+            </div>
+            {canCreateReports && (
+              <Button 
+                onClick={() => setIsFormOpen(true)} 
+                size="lg"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-3"
+              >
+                <PlusCircle className="h-5 w-5 mr-2" />
+                Create Daily Report
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Filters Section */}
+        <DailyReportsFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          onClearFilters={handleClearFilters}
+        />
+
+        {/* Reports Table */}
+        <DailyReportsTable reports={filteredReports} isLoading={isLoading} />
+
         {canCreateReports && (
-          <Button onClick={() => setIsFormOpen(true)} className="flex items-center gap-2">
-            <PlusCircle className="h-4 w-4" />
-            Create Daily Report
-          </Button>
+          <DailyReportsForm
+            open={isFormOpen}
+            onOpenChange={setIsFormOpen}
+          />
         )}
       </div>
-
-      <DailyReportsFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClearFilters={handleClearFilters}
-      />
-
-      <DailyReportsTable reports={filteredReports} isLoading={isLoading} />
-
-      {canCreateReports && (
-        <DailyReportsForm
-          open={isFormOpen}
-          onOpenChange={setIsFormOpen}
-        />
-      )}
     </div>
   );
 };
