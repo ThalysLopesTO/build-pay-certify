@@ -6,6 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Download, X, ZoomIn } from 'lucide-react';
 import { DailyReport } from '@/hooks/useDailyReports';
+import { useDailyReportPDF } from '@/hooks/useDailyReportPDF';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import { useToast } from '@/hooks/use-toast';
 
 interface DailyReportDetailsModalProps {
   report: DailyReport | null;
@@ -19,12 +23,33 @@ const DailyReportDetailsModal: React.FC<DailyReportDetailsModalProps> = ({
   onOpenChange,
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const { generateDailyReportPDF } = useDailyReportPDF();
+  const { settings: companySettings } = useCompanySettings();
+  const { logoUrl } = useCompanyLogo();
+  const { toast } = useToast();
 
   if (!report) return null;
 
-  const handleDownloadPDF = () => {
-    // TODO: Implement PDF download functionality
-    console.log('Download PDF for report:', report.id);
+  const handleDownloadPDF = async () => {
+    try {
+      await generateDailyReportPDF({
+        report,
+        companySettings,
+        logoUrl
+      });
+      
+      toast({
+        title: 'PDF Generated',
+        description: 'Daily report PDF has been downloaded successfully.'
+      });
+    } catch (error) {
+      console.error('Failed to generate daily report PDF:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate PDF. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
