@@ -150,23 +150,16 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
                     className="hover:bg-muted/40 transition-colors duration-150 group border-b last:border-b-0"
                   >
                     <TableCell className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8 bg-primary/10">
-                          <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
-                            {getJobsiteInitials(report.jobsites?.name || 'UK')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium text-sm">
-                            {report.jobsites?.name || 'Unknown Jobsite'}
-                          </div>
-                          {report.jobsites?.address && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                              <MapPin className="h-3 w-3" />
-                              {report.jobsites.address.split(',')[0]}
-                            </div>
-                          )}
+                      <div>
+                        <div className="font-medium text-sm">
+                          {report.jobsites?.name || 'Unknown Jobsite'}
                         </div>
+                        {report.jobsites?.address && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                            <MapPin className="h-3 w-3" />
+                            {report.jobsites.address.split(',')[0]}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     
