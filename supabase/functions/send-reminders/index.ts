@@ -1,6 +1,57 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createEmailWrapper } from "../../utils/emailTemplate.ts"; // ✅ NEW: Import the branded email wrapper
+
+// Email wrapper function (moved from utils to avoid import issues)
+interface EmailWrapperData {
+  bodyText: string;
+  companyName?: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyLogo?: string;
+}
+
+function createEmailWrapper(data: EmailWrapperData): string {
+  const {
+    bodyText,
+    companyName = 'StackBuild',
+    companyAddress = '',
+    companyPhone = '',
+    companyLogo = ''
+  } = data;
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Email from ${companyName}</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px;">
+          ${companyLogo ? `<img src="${companyLogo}" alt="${companyName}" style="max-height: 60px; margin-bottom: 10px;" />` : ''}
+          <h1 style="color: #333; margin: 0; font-size: 24px;">${companyName}</h1>
+        </div>
+        
+        <!-- Body Content -->
+        <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
+          ${bodyText.replace(/\n/g, '<br>')}
+        </div>
+        
+        <!-- Footer -->
+        <div style="border-top: 2px solid #eee; padding-top: 20px; text-align: center; color: #888; font-size: 12px;">
+          <p style="margin: 0;"><strong>${companyName}</strong></p>
+          ${companyAddress ? `<p style="margin: 5px 0;">${companyAddress}</p>` : ''}
+          ${companyPhone ? `<p style="margin: 5px 0;">${companyPhone}</p>` : ''}
+          <p style="margin: 10px 0 0;">This is an automated message from ${companyName}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
