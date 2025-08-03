@@ -47,14 +47,10 @@ const LivePunchMonitor = () => {
   const [flaggedEntries, setFlaggedEntries] = useState<Set<string>>(new Set());
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
   const [selectedLocation, setSelectedLocation] = useState<{
-    location: string | null;
+    punchLocation: string | null;
     employeeName: string;
     timestamp: string;
-    jobsite: {
-      name: string;
-      latitude: number | null;
-      longitude: number | null;
-    } | null;
+    // TODO: Will re-add jobsite prop later for distance calculations
   } | null>(null);
 
   // Fetch jobsites for filter
@@ -207,10 +203,10 @@ const LivePunchMonitor = () => {
       'Unknown time';
 
     setSelectedLocation({
-      location: entry.check_in_location,
+      punchLocation: entry.check_in_location,
       employeeName,
-      timestamp,
-      jobsite: entry.jobsites
+      timestamp
+      // TODO: Will re-add jobsite data later for distance calculations
     });
   };
 
@@ -323,15 +319,14 @@ const LivePunchMonitor = () => {
         />
       )}
 
-      {/* Location Map Modal */}
+      {/* Location Map Modal - Simplified */}
       {selectedLocation && (
         <LocationMapModal
           isOpen={!!selectedLocation}
           onClose={() => setSelectedLocation(null)}
-          location={selectedLocation.location}
+          punchLocation={selectedLocation.punchLocation}
           employeeName={selectedLocation.employeeName}
           timestamp={selectedLocation.timestamp}
-          jobsite={selectedLocation.jobsite}
         />
       )}
     </div>

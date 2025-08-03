@@ -56,66 +56,12 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
   onEdit,
   onDelete
 }) => {
-  // Distance calculation functions
-  const parseLocation = (locationString: string | null) => {
-    if (!locationString) return null;
-    
-    const coordRegex = /(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/;
-    const match = locationString.match(coordRegex);
-    
-    if (match) {
-      return {
-        lat: parseFloat(match[1]),
-        lng: parseFloat(match[2])
-      };
-    }
-    
-    return null;
-  };
-
-  const calculateDistance = (
-    punch: { lat: number; lng: number },
-    jobsite: { lat: number; lng: number }
-  ) => {
-    if (window.google?.maps?.geometry?.spherical) {
-      const punchLatLng = new window.google.maps.LatLng(punch.lat, punch.lng);
-      const jobsiteLatLng = new window.google.maps.LatLng(jobsite.lat, jobsite.lng);
-      return window.google.maps.geometry.spherical.computeDistanceBetween(punchLatLng, jobsiteLatLng);
-    }
-    return null;
-  };
-
-  const formatDistance = (meters: number) => {
-    if (meters >= 1000) {
-      return `${(meters / 1000).toFixed(1)}km`;
-    }
-    return `${Math.round(meters)}m`;
-  };
-
+  // TODO: Will re-add distance calculation functions later for jobsite comparison
+  
   const getDistanceStatus = (entry: PunchEntry) => {
-    const punchCoords = parseLocation(entry.check_in_location);
-    const jobsiteCoords = entry.jobsites?.latitude && entry.jobsites?.longitude ? {
-      lat: entry.jobsites.latitude,
-      lng: entry.jobsites.longitude
-    } : null;
-
-    if (!punchCoords || !jobsiteCoords) {
-      return null;
-    }
-
-    const distance = calculateDistance(punchCoords, jobsiteCoords);
-    if (distance === null) return null;
-
-    const threshold = 200; // 200 meters threshold
-    const formattedDistance = formatDistance(distance);
-    const isFarFromJobsite = distance > threshold;
-
-    return {
-      distance,
-      formattedDistance,
-      isFarFromJobsite,
-      tooltipText: `Punched in ${formattedDistance} from jobsite`
-    };
+    // TODO: Will re-implement distance calculation logic later
+    // For now, always return null to hide distance status
+    return null;
   };
 
   const isToday = (date: Date) => {
@@ -177,7 +123,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                 <TableHead>Total Time</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Location</TableHead>
-                <TableHead>Distance Flag</TableHead>
+                <TableHead>Distance Flag {/* TODO: Will re-enable later */}</TableHead>
                 <TableHead>Flag</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -235,43 +181,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                         )}
                       </TableCell>
                       <TableCell>
-                        {distanceStatus ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onViewLocation(entry)}
-                                className={cn(
-                                  "p-2 h-8 w-8",
-                                  distanceStatus.isFarFromJobsite 
-                                    ? "text-yellow-500 hover:text-yellow-600" 
-                                    : "text-green-500 hover:text-green-600"
-                                )}
-                              >
-                                {distanceStatus.isFarFromJobsite ? (
-                                  <AlertTriangle className="h-4 w-4" />
-                                ) : (
-                                  <CheckCircle className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{distanceStatus.tooltipText}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : entry.check_in_location && !entry.jobsites?.latitude ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-gray-400 text-sm cursor-help">N/A</span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Jobsite coordinates not available</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <span className="text-gray-400 text-sm">No data</span>
-                        )}
+                        {/* TODO: Will re-add distance status display later */}
+                        <span className="text-gray-400 text-sm">Disabled</span>
                       </TableCell>
                       <TableCell>
                         <Button
