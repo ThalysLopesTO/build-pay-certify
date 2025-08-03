@@ -1,13 +1,23 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Calendar, Filter } from 'lucide-react';
+import { Calendar as CalendarIcon, Building, Users, Activity } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 
 interface LivePunchFiltersProps {
   selectedDate: Date;
@@ -35,92 +45,120 @@ const LivePunchFilters: React.FC<LivePunchFiltersProps> = ({
   employees
 }) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          Filters
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Date</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "MMM dd, yyyy") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Jobsite</label>
-            <Select value={selectedJobsite} onValueChange={setSelectedJobsite}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select jobsite" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Jobsites</SelectItem>
-                {jobsites?.map((jobsite) => (
-                  <SelectItem key={jobsite.id} value={jobsite.id}>
-                    {jobsite.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Employee</label>
-            <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select employee" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Employees</SelectItem>
-                {employees?.map((employee) => (
-                  <SelectItem key={employee.user_id} value={employee.user_id}>
-                    {employee.first_name} {employee.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Status</label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="active">Clocked In</SelectItem>
-                <SelectItem value="completed">Clocked Out</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Date Picker */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground flex items-center gap-2">
+            <CalendarIcon className="h-4 w-4 text-primary" />
+            Date Filter
+          </label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left font-normal hover:bg-accent/50 border-accent/30"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, "PPP") : "All Dates"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Jobsite Filter */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Building className="h-4 w-4 text-primary" />
+            Jobsite
+          </label>
+          <Select value={selectedJobsite} onValueChange={setSelectedJobsite}>
+            <SelectTrigger className="hover:bg-accent/50 border-accent/30">
+              <SelectValue placeholder="All Jobsites" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Jobsites</SelectItem>
+              {jobsites?.map((jobsite) => (
+                <SelectItem key={jobsite.id} value={jobsite.id}>
+                  {jobsite.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Employee Filter */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            Employee
+          </label>
+          <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+            <SelectTrigger className="hover:bg-accent/50 border-accent/30">
+              <SelectValue placeholder="All Employees" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Employees</SelectItem>
+              {employees?.map((employee) => (
+                <SelectItem key={employee.user_id} value={employee.user_id}>
+                  {employee.first_name} {employee.last_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Status Filter */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Activity className="h-4 w-4 text-primary" />
+            Status
+          </label>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="hover:bg-accent/50 border-accent/30">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Clocked In</SelectItem>
+              <SelectItem value="completed">Clocked Out</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      {/* Active Filters Display */}
+      <div className="flex flex-wrap gap-2">
+        {selectedJobsite !== 'all' && (
+          <Badge variant="secondary" className="gap-1">
+            Jobsite: {jobsites?.find(j => j.id === selectedJobsite)?.name}
+          </Badge>
+        )}
+        {selectedEmployee !== 'all' && (
+          <Badge variant="secondary" className="gap-1">
+            Employee: {employees?.find(e => e.user_id === selectedEmployee)?.first_name} {employees?.find(e => e.user_id === selectedEmployee)?.last_name}
+          </Badge>
+        )}
+        {statusFilter !== 'all' && (
+          <Badge variant="secondary" className="gap-1">
+            Status: {statusFilter === 'active' ? 'Clocked In' : 'Clocked Out'}
+          </Badge>
+        )}
+        {selectedDate && (
+          <Badge variant="secondary" className="gap-1">
+            Date: {format(selectedDate, "MMM dd, yyyy")}
+          </Badge>
+        )}
+      </div>
+    </div>
   );
 };
 

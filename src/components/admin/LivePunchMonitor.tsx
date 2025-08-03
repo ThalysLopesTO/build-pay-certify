@@ -92,17 +92,11 @@ const LivePunchMonitor = () => {
 
   // Fetch punch entries for the selected date
   const { data: punchEntries, isLoading, refetch } = useQuery({
-    queryKey: ['live-punch-monitor', user?.companyId, selectedDate],
+    queryKey: ['live-punch-monitor', user?.companyId, selectedDate, selectedJobsite, selectedEmployee, statusFilter],
     queryFn: async () => {
       if (!user?.companyId) return [];
 
-      const startOfDay = new Date(selectedDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(selectedDate);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      // Get timesheets for the specific selected date only
-      const { data: timesheets, error: timesheetsError } = await supabase
+      let query = supabase
         .from('timesheets')
         .select(`
           id,
@@ -115,8 +109,28 @@ const LivePunchMonitor = () => {
           status,
           created_at
         `)
-        .eq('company_id', user.companyId)
-        .or(`and(check_in_time.gte.${startOfDay.toISOString()},check_in_time.lte.${endOfDay.toISOString()}),and(check_out_time.gte.${startOfDay.toISOString()},check_out_time.lte.${endOfDay.toISOString()}),and(check_in_time.is.null,check_out_time.is.null,created_at.gte.${startOfDay.toISOString()},created_at.lte.${endOfDay.toISOString()})`)
+        .eq('company_id', user.companyId);
+
+      // Apply filters based on selection
+      if (selectedEmployee !== 'all') {
+        query = query.eq('user_id', selectedEmployee);
+      }
+
+      if (selectedJobsite !== 'all') {
+        query = query.eq('jobsite_id', selectedJobsite);
+      }
+
+      // Only apply date filter if not showing all dates
+      if (selectedDate) {
+        const startOfDay = new Date(selectedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(selectedDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        query = query.or(`and(check_in_time.gte.${startOfDay.toISOString()},check_in_time.lte.${endOfDay.toISOString()}),and(check_out_time.gte.${startOfDay.toISOString()},check_out_time.lte.${endOfDay.toISOString()}),and(check_in_time.is.null,check_out_time.is.null,created_at.gte.${startOfDay.toISOString()},created_at.lte.${endOfDay.toISOString()})`);
+      }
+
+      const { data: timesheets, error: timesheetsError } = await query
         .order('check_in_time', { ascending: false, nullsFirst: false });
 
       if (timesheetsError) {
@@ -174,7 +188,7 @@ const LivePunchMonitor = () => {
       return combinedData;
     },
     enabled: !!user?.companyId,
-    refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
+    refetchInterval: 60000, // Refresh every 60 seconds for real-time updates
   });
 
   const handleEdit = (timesheet: any) => {
@@ -248,66 +262,87 @@ const LivePunchMonitor = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Live Punch Monitor</h1>
-          <p className="text-muted-foreground">
-            {isToday(selectedDate) 
-              ? `Real-time monitoring and editing of employee punch records for ${format(selectedDate, 'EEEE, MMMM dd, yyyy')}`
-              : `Employee punch records for ${format(selectedDate, 'EEEE, MMMM dd, yyyy')}`
-            }
+    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+      {/* Professional Header */}
+      <div className="flex items-center justify-between border-b border-border pb-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Live Punch Monitor</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl">
+            Real-time tracking and management of employee punch records
           </p>
         </div>
-        <Button onClick={handleRefresh} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
+        <Button 
+          onClick={handleRefresh} 
+          variant="outline" 
+          size="lg"
+          className="gap-2 hover:bg-accent/50 transition-all duration-200"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh Data
         </Button>
       </div>
 
-      {/* Current Date Display */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-lg font-semibold">
-            <Calendar className="h-5 w-5 text-orange-500" />
-            <span>Viewing: {format(selectedDate, 'EEEE, MMMM dd, yyyy')}</span>
-            {isToday(selectedDate) && (
-              <Badge variant="outline" className="ml-2">Today</Badge>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Filters */}
-      <LivePunchFilters
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        selectedJobsite={selectedJobsite}
-        setSelectedJobsite={setSelectedJobsite}
-        selectedEmployee={selectedEmployee}
-        setSelectedEmployee={setSelectedEmployee}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        jobsites={jobsites}
-        employees={employees}
-      />
-
-      {/* Summary Cards */}
+      {/* KPI Cards */}
       <LivePunchSummaryCards
         filteredEntries={filteredEntries}
         selectedDate={selectedDate}
       />
 
-      {/* Punch Entries Table with Edit and Delete functionality */}
-      <LivePunchTable
-        filteredEntries={filteredEntries}
-        selectedDate={selectedDate}
-        flaggedEntries={flaggedEntries}
-        onToggleFlag={toggleFlag}
-        onViewLocation={handleViewLocation}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+      {/* Modern Filter Panel */}
+      <Card className="shadow-sm border-accent/20">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-2 w-2 rounded-full bg-primary"></div>
+            <h3 className="text-lg font-semibold text-foreground">Filter Controls</h3>
+          </div>
+          <LivePunchFilters
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            selectedJobsite={selectedJobsite}
+            setSelectedJobsite={setSelectedJobsite}
+            selectedEmployee={selectedEmployee}
+            setSelectedEmployee={setSelectedEmployee}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            jobsites={jobsites}
+            employees={employees}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Results Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold text-foreground">Punch Records</h2>
+            <Badge variant="secondary" className="px-3 py-1">
+              {filteredEntries.length} {filteredEntries.length === 1 ? 'record' : 'records'}
+            </Badge>
+          </div>
+          {selectedDate && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span>{format(selectedDate, 'EEEE, MMMM dd, yyyy')}</span>
+              {isToday(selectedDate) && (
+                <Badge variant="outline" className="ml-2 text-xs">Live</Badge>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Punch Entries Table */}
+        <Card className="shadow-sm">
+          <LivePunchTable
+            filteredEntries={filteredEntries}
+            selectedDate={selectedDate}
+            flaggedEntries={flaggedEntries}
+            onToggleFlag={toggleFlag}
+            onViewLocation={handleViewLocation}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </Card>
+      </div>
 
       {/* Edit Punch Modal */}
       {editingTimesheet && (
