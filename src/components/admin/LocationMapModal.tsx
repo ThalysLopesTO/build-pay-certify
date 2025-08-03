@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MapPin, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { loadGoogleMaps } from '@/utils/loadGoogleMaps';
 
 // Global Google Maps type declaration
 declare global {
@@ -54,42 +55,34 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   // TODO: Will re-add distance calculation functions later for jobsite comparison
 
   useEffect(() => {
-    if (!isOpen || !mapRef.current || !punchCoords) {
-      console.log('🗺️ LocationMapModal: Prerequisites not met', { isOpen, hasMapRef: !!mapRef.current, hasPunchCoords: !!punchCoords });
+    if (!isOpen || !punchCoords) {
+      console.log('🗺️ LocationMapModal: Prerequisites not met', { isOpen, hasPunchCoords: !!punchCoords });
       return;
     }
 
-    console.log('🗺️ LocationMapModal: Modal opened, initializing map...', { punchCoords, employeeName });
+    console.log('🗺️ LocationMapModal: Modal opened, loading Google Maps...', { punchCoords, employeeName });
     
-    // Reset retry count and error state when modal opens
-    retryCountRef.current = 0;
+    // Reset error state when modal opens
     setMapLoadError(false);
 
-    const initializeMap = () => {
-      // Check if Google Maps API is fully loaded
-      if (!window.google || !window.google.maps || !window.google.maps.Map) {
-        retryCountRef.current++;
-        console.log(`⏳ Google Maps not ready (attempt ${retryCountRef.current}/3), retrying in 300ms...`);
-        
-        // Limit retries to 3 attempts
-        if (retryCountRef.current >= 3) {
-          console.error('❌ Google Maps failed to load after 3 attempts');
-          setMapLoadError(true);
+    const initializeMapWithGoogleMaps = async () => {
+      try {
+        // First, ensure Google Maps is loaded
+        console.log('🔄 Loading Google Maps API...');
+        await loadGoogleMaps('AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU');
+        console.log('✅ Google Maps API loaded successfully');
+
+        // Now initialize the map
+        if (!mapRef.current) {
+          console.error('❌ Map container ref not available');
           return;
         }
-        
-        setTimeout(initializeMap, 300);
-        return;
-      }
 
-      console.log('✅ Google Maps API ready, creating map instance');
+        console.log('✅ Google Maps API ready, creating map instance');
 
-      try {
         // Ensure map container has proper dimensions
-        if (mapRef.current) {
-          mapRef.current.style.height = '400px';
-          mapRef.current.style.width = '100%';
-        }
+        mapRef.current.style.height = '400px';
+        mapRef.current.style.width = '100%';
 
         // Initialize the map centered on punch-in location
         const map = new window.google.maps.Map(mapRef.current, {
@@ -127,12 +120,12 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
           if (punchMarker) punchMarker.setMap(null);
         };
       } catch (error) {
-        console.error('❌ Error initializing Google Maps:', error);
+        console.error('❌ Error loading Google Maps or initializing map:', error);
         setMapLoadError(true);
       }
     };
 
-    initializeMap();
+    initializeMapWithGoogleMaps();
   }, [isOpen, punchCoords, employeeName]);
 
   return (
