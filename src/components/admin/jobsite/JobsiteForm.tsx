@@ -47,86 +47,93 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
 
   // ✅ Initialize Google Places Autocomplete
   useEffect(() => {
-    console.log('🔍 JobsiteForm: Checking Google Maps availability...');
-    console.log('🔍 window.google:', !!window.google);
-    console.log('🔍 window.google.maps:', !!window.google?.maps);
-    console.log('🔍 window.google.maps.places:', !!window.google?.maps?.places);
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      console.log('🔍 JobsiteForm: Checking Google Maps availability...');
+      console.log('🔍 window.google:', !!window.google);
+      console.log('🔍 window.google.maps:', !!window.google?.maps);
+      console.log('🔍 window.google.maps.places:', !!window.google?.maps?.places);
+      console.log('🔍 addressInputRef.current:', !!addressInputRef.current);
 
-    const initializeAutocomplete = () => {
-      if (!addressInputRef.current) {
-        console.warn('⚠️ Address input ref not available');
-        return;
-      }
-
-      if (!window.google?.maps?.places) {
-        console.warn('⚠️ Google Maps Places API not available');
-        return;
-      }
-
-      console.log('✅ Initializing Google Places Autocomplete on input:', addressInputRef.current);
-
-      try {
-        // ✅ Initialize autocomplete
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
-          types: ['geocode'],
-          componentRestrictions: { country: ['ca', 'us'] },
-          fields: ['formatted_address', 'geometry', 'address_components'],
-        });
-
-        console.log('✅ Autocomplete initialized:', autocompleteRef.current);
-
-        // ✅ Handle place selection
-        autocompleteRef.current.addListener('place_changed', () => {
-          const place = autocompleteRef.current?.getPlace();
-          console.log('📍 Place selected:', place);
-
-          if (place?.geometry?.location) {
-            const address = place.formatted_address || '';
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
-
-            console.log('📍 Setting address and coordinates:', { address, lat, lng });
-
-            form.setValue('address', address);
-            if (!useManualCoordinates) {
-              form.setValue('latitude', lat.toString());
-              form.setValue('longitude', lng.toString());
-            }
-            setGeocodeError(null);
-          } else {
-            console.warn('⚠️ No geometry found for selected place.');
-            setGeocodeError('Unable to find location for this address');
-          }
-        });
-      } catch (error) {
-        console.error('❌ Error initializing autocomplete:', error);
-      }
-    };
-
-    // If Google Maps is already loaded, initialize immediately
-    if (window.google?.maps?.places) {
-      initializeAutocomplete();
-    } else {
-      // Wait for Google Maps to load
-      console.log('⏳ Waiting for Google Maps to load...');
-      const checkGoogleMaps = setInterval(() => {
-        if (window.google?.maps?.places) {
-          console.log('✅ Google Maps loaded, initializing autocomplete');
-          clearInterval(checkGoogleMaps);
-          initializeAutocomplete();
+      const initializeAutocomplete = () => {
+        if (!addressInputRef.current) {
+          console.warn('⚠️ Address input ref not available, retrying...');
+          // Retry after a short delay
+          setTimeout(initializeAutocomplete, 100);
+          return;
         }
-      }, 100);
 
-      // Cleanup interval after 10 seconds
-      setTimeout(() => {
-        clearInterval(checkGoogleMaps);
         if (!window.google?.maps?.places) {
-          console.error('❌ Google Maps failed to load after 10 seconds');
+          console.warn('⚠️ Google Maps Places API not available');
+          return;
         }
-      }, 10000);
-    }
+
+        console.log('✅ Initializing Google Places Autocomplete on input:', addressInputRef.current);
+
+        try {
+          // ✅ Initialize autocomplete
+          autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+            types: ['geocode'],
+            componentRestrictions: { country: ['ca', 'us'] },
+            fields: ['formatted_address', 'geometry', 'address_components'],
+          });
+
+          console.log('✅ Autocomplete initialized:', autocompleteRef.current);
+
+          // ✅ Handle place selection
+          autocompleteRef.current.addListener('place_changed', () => {
+            const place = autocompleteRef.current?.getPlace();
+            console.log('📍 Place selected:', place);
+
+            if (place?.geometry?.location) {
+              const address = place.formatted_address || '';
+              const lat = place.geometry.location.lat();
+              const lng = place.geometry.location.lng();
+
+              console.log('📍 Setting address and coordinates:', { address, lat, lng });
+
+              form.setValue('address', address);
+              if (!useManualCoordinates) {
+                form.setValue('latitude', lat.toString());
+                form.setValue('longitude', lng.toString());
+              }
+              setGeocodeError(null);
+            } else {
+              console.warn('⚠️ No geometry found for selected place.');
+              setGeocodeError('Unable to find location for this address');
+            }
+          });
+        } catch (error) {
+          console.error('❌ Error initializing autocomplete:', error);
+        }
+      };
+
+      // If Google Maps is already loaded, initialize immediately
+      if (window.google?.maps?.places) {
+        initializeAutocomplete();
+      } else {
+        // Wait for Google Maps to load
+        console.log('⏳ Waiting for Google Maps to load...');
+        const checkGoogleMaps = setInterval(() => {
+          if (window.google?.maps?.places) {
+            console.log('✅ Google Maps loaded, initializing autocomplete');
+            clearInterval(checkGoogleMaps);
+            initializeAutocomplete();
+          }
+        }, 100);
+
+        // Cleanup interval after 10 seconds
+        setTimeout(() => {
+          clearInterval(checkGoogleMaps);
+          if (!window.google?.maps?.places) {
+            console.error('❌ Google Maps failed to load after 10 seconds');
+          }
+        }, 10000);
+      }
+    }, 100); // Small delay to ensure component is mounted
 
     return () => {
+      clearTimeout(timer);
       if (autocompleteRef.current && window.google?.maps?.event) {
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
         console.log('🧹 Cleaned up Autocomplete listeners.');
