@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { MapPin, AlertTriangle } from 'lucide-react';
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
 import { validateCoordinates, formatCoordinates } from '@/services/geocoding';
+import { loadGoogleMaps } from '@/utils/loadGoogleMaps';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Jobsite name is required').min(2, 'Jobsite name must be at least 2 characters'),
@@ -40,29 +41,6 @@ interface JobsiteEditModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// ✅ Utility to dynamically load Google Maps
-const loadGoogleMaps = (apiKey: string) => {
-  return new Promise<void>((resolve, reject) => {
-    if (window.google && window.google.maps) {
-      resolve();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry`;
-    script.async = true;
-    script.defer = true;
-
-    script.onload = () => {
-      console.log('✅ Google Maps API loaded (Edit Modal)');
-      resolve();
-    };
-
-    script.onerror = () => reject(new Error('❌ Failed to load Google Maps API for Edit Modal'));
-
-    document.head.appendChild(script);
-  });
-};
 
 const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOpenChange }) => {
   const { updateJobsite, geocodeJobsiteAddress } = useJobsiteActions();

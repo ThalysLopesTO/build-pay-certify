@@ -1,6 +1,7 @@
 export const loadGoogleMaps = (apiKey: string) => {
   return new Promise<void>((resolve, reject) => {
-    if (window.google && window.google.maps) {
+    if (window.google && window.google.maps && window.google.maps.places) {
+      console.log("✅ Google Maps API already loaded");
       resolve();
       return;
     }
@@ -11,8 +12,17 @@ export const loadGoogleMaps = (apiKey: string) => {
     script.defer = true;
 
     script.onload = () => {
-      console.log("✅ Google Maps API loaded");
-      resolve();
+      console.log("✅ Google Maps API script loaded");
+      // Add a small delay to ensure all libraries are fully initialized
+      setTimeout(() => {
+        if (window.google?.maps?.places) {
+          console.log("✅ Google Places API is ready");
+          resolve();
+        } else {
+          console.error("❌ Google Places API not available after loading");
+          reject(new Error("Google Places API not available"));
+        }
+      }, 100);
     };
 
     script.onerror = () => {
