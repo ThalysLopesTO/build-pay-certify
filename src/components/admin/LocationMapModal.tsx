@@ -29,6 +29,7 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [mapLoadError, setMapLoadError] = useState(false);
+  const retryCountRef = useRef(0);
   // TODO: Will re-add distance state later for jobsite comparison
 
   const parseLocation = (locationString: string | null) => {
@@ -59,10 +60,24 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
     }
 
     console.log('🗺️ LocationMapModal: Modal opened, initializing map...', { punchCoords, employeeName });
+    
+    // Reset retry count and error state when modal opens
+    retryCountRef.current = 0;
+    setMapLoadError(false);
 
     const initializeMap = () => {
-      if (!window.google || !window.google.maps) {
-        console.log('⏳ Google Maps not ready, retrying in 300ms...');
+      // Check if Google Maps API is fully loaded
+      if (!window.google || !window.google.maps || !window.google.maps.Map) {
+        retryCountRef.current++;
+        console.log(`⏳ Google Maps not ready (attempt ${retryCountRef.current}/3), retrying in 300ms...`);
+        
+        // Limit retries to 3 attempts
+        if (retryCountRef.current >= 3) {
+          console.error('❌ Google Maps failed to load after 3 attempts');
+          setMapLoadError(true);
+          return;
+        }
+        
         setTimeout(initializeMap, 300);
         return;
       }
@@ -70,6 +85,12 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       console.log('✅ Google Maps API ready, creating map instance');
 
       try {
+        // Ensure map container has proper dimensions
+        if (mapRef.current) {
+          mapRef.current.style.height = '400px';
+          mapRef.current.style.width = '100%';
+        }
+
         // Initialize the map centered on punch-in location
         const map = new window.google.maps.Map(mapRef.current, {
           zoom: 15,
@@ -80,7 +101,11 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
         mapInstanceRef.current = map;
         console.log('✅ Map instance created successfully');
 
-        // Add punch-in marker (red)
+        // Center the map on punch-in location
+        map.setCenter(punchCoords);
+        console.log('✅ Map centered on punch-in location', punchCoords);
+
+        // Add punch-in marker (red) after map is ready
         const punchMarker = new window.google.maps.Marker({
           position: punchCoords,
           map: map,
@@ -91,8 +116,8 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
           },
         });
 
-        console.log('✅ Punch-in marker placed successfully', { position: punchCoords });
-        setMapLoadError(false); // Reset error state on successful load
+        console.log('✅ Punch-in marker placed successfully', { position: punchCoords, employeeName });
+        setMapLoadError(false);
 
         // TODO: Will re-add jobsite marker, polyline, and distance calculation later
 
