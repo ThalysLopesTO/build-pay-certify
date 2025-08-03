@@ -40,6 +40,30 @@ interface JobsiteEditModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// ✅ Utility to dynamically load Google Maps
+const loadGoogleMaps = (apiKey: string) => {
+  return new Promise<void>((resolve, reject) => {
+    if (window.google && window.google.maps) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry`;
+    script.async = true;
+    script.defer = true;
+
+    script.onload = () => {
+      console.log('✅ Google Maps API loaded (Edit Modal)');
+      resolve();
+    };
+
+    script.onerror = () => reject(new Error('❌ Failed to load Google Maps API for Edit Modal'));
+
+    document.head.appendChild(script);
+  });
+};
+
 const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOpenChange }) => {
   const { updateJobsite, geocodeJobsiteAddress } = useJobsiteActions();
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -47,7 +71,7 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
-  
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -59,48 +83,57 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
     },
   });
 
-  // Initialize Google Places Autocomplete
+  // ✅ Initialize Google Places Autocomplete when modal opens
   useEffect(() => {
-    if (!addressInputRef.current || !window.google?.maps?.places || !open) {
-      return;
-    }
+    if (!open) return;
 
-    // Initialize autocomplete
-    autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
-      types: ['geocode'],
-      componentRestrictions: { country: ['ca', 'us'] }
-    });
-
-    // Handle place selection
-    const handlePlaceSelect = () => {
-      const place = autocompleteRef.current?.getPlace();
-      
-      if (place?.geometry?.location) {
-        const address = place.formatted_address || '';
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
-
-        form.setValue('address', address);
-        if (!useManualCoordinates) {
-          form.setValue('latitude', lat.toString());
-          form.setValue('longitude', lng.toString());
+    loadGoogleMaps('AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU')
+      .then(() => {
+        if (!addressInputRef.current || !window.google?.maps?.places) {
+          console.warn('⚠️ Google Maps Places API not available in Edit Modal');
+          return;
         }
-        setGeocodeError(null);
-      } else {
-        setGeocodeError('Unable to find location for this address');
-      }
-    };
 
-    autocompleteRef.current.addListener('place_changed', handlePlaceSelect);
+        console.log('✅ Initializing Google Places Autocomplete in Edit Modal');
+
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+          types: ['geocode'],
+          componentRestrictions: { country: ['ca', 'us'] },
+          fields: ['formatted_address', 'geometry', 'address_components'],
+        });
+
+        autocompleteRef.current.addListener('place_changed', () => {
+          const place = autocompleteRef.current?.getPlace();
+          console.log('📍 Place selected (Edit Modal):', place);
+
+          if (place?.geometry?.location) {
+            const address = place.formatted_address || '';
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+
+            form.setValue('address', address);
+            if (!useManualCoordinates) {
+              form.setValue('latitude', lat.toString());
+              form.setValue('longitude', lng.toString());
+            }
+            setGeocodeError(null);
+          } else {
+            console.warn('⚠️ No geometry found for selected place (Edit Modal).');
+            setGeocodeError('Unable to find location for this address');
+          }
+        });
+      })
+      .catch((err) => console.error(err));
 
     return () => {
       if (autocompleteRef.current && window.google?.maps?.event) {
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        console.log('🧹 Cleaned up Autocomplete listeners in Edit Modal.');
       }
     };
   }, [form, useManualCoordinates, open]);
 
-  // Reset form when jobsite changes
+  // ✅ Reset form when jobsite changes
   React.useEffect(() => {
     form.reset({
       name: jobsite.name || '',
@@ -124,11 +157,11 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
         updateData.starting_date = data.starting_date;
       }
 
-      // Handle coordinates if provided
+      // ✅ Handle coordinates if provided
       if (data.latitude && data.longitude) {
         const lat = parseFloat(data.latitude);
         const lng = parseFloat(data.longitude);
-        
+
         if (!isNaN(lat) && !isNaN(lng)) {
           if (validateCoordinates(lat, lng)) {
             updateData.latitude = lat;
@@ -149,36 +182,9 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating jobsite:', error);
-      form.setError('root', { 
-        message: error?.message || 'Failed to update jobsite. Please try again.' 
+      form.setError('root', {
+        message: error?.message || 'Failed to update jobsite. Please try again.',
       });
-    }
-  };
-
-  const handleGeocodeAddress = async () => {
-    const address = form.getValues('address');
-    if (!address?.trim()) {
-      form.setError('address', { message: 'Please enter an address to geocode' });
-      return;
-    }
-
-    try {
-      setIsGeocoding(true);
-      await geocodeJobsiteAddress.mutateAsync({ 
-        id: jobsite.id, 
-        address: address.trim() 
-      });
-      
-      // The mutation will update the jobsite data, so we need to reset the form
-      // with the new coordinates after a short delay
-      setTimeout(() => {
-        // Coordinates will be updated via query invalidation
-        onOpenChange(false);
-      }, 1000);
-    } catch (error) {
-      console.error('Error geocoding address:', error);
-    } finally {
-      setIsGeocoding(false);
     }
   };
 
@@ -193,6 +199,7 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* ✅ JOBSITE NAME */}
             <FormField
               control={form.control}
               name="name"
@@ -207,6 +214,7 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
               )}
             />
 
+            {/* ✅ ADDRESS FIELD WITH AUTOCOMPLETE */}
             <FormField
               control={form.control}
               name="address"
@@ -215,15 +223,13 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                   <FormLabel>Address *</FormLabel>
                   <FormControl>
                     <div className="space-y-2">
-                      <Input 
+                      <Input
                         id="jobsite-edit-address"
                         ref={addressInputRef}
-                        placeholder="Start typing an address..." 
+                        placeholder="Start typing an address..."
                         {...field}
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Powered by Google
-                      </p>
+                      <p className="text-xs text-muted-foreground">Powered by Google</p>
                       {geocodeError && (
                         <div className="flex items-center gap-2 text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
                           <AlertTriangle className="h-3 w-3" />
@@ -237,6 +243,7 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
               )}
             />
 
+            {/* ✅ STARTING DATE */}
             <FormField
               control={form.control}
               name="starting_date"
@@ -251,6 +258,7 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
               )}
             />
 
+            {/* ✅ GPS COORDINATES */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <FormLabel className="text-sm font-medium flex items-center gap-2">
@@ -259,10 +267,7 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                 </FormLabel>
                 <div className="flex items-center space-x-2">
                   <span className="text-xs text-muted-foreground">Manual Override</span>
-                  <Switch
-                    checked={useManualCoordinates}
-                    onCheckedChange={setUseManualCoordinates}
-                  />
+                  <Switch checked={useManualCoordinates} onCheckedChange={setUseManualCoordinates} />
                 </div>
               </div>
 
@@ -282,10 +287,10 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                         {useManualCoordinates ? 'Manual Latitude' : 'Latitude'}
                       </FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           step="any"
-                          placeholder="e.g. 43.70011" 
+                          placeholder="e.g. 43.70011"
                           {...field}
                           readOnly={!useManualCoordinates}
                           className={!useManualCoordinates ? 'bg-muted/30' : ''}
@@ -305,10 +310,10 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                         {useManualCoordinates ? 'Manual Longitude' : 'Longitude'}
                       </FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           step="any"
-                          placeholder="e.g. -79.4163" 
+                          placeholder="e.g. -79.4163"
                           {...field}
                           readOnly={!useManualCoordinates}
                           className={!useManualCoordinates ? 'bg-muted/30' : ''}
@@ -319,15 +324,15 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                   )}
                 />
               </div>
-              
+
               <p className="text-xs text-muted-foreground">
-                {useManualCoordinates 
+                {useManualCoordinates
                   ? 'Manual mode: Enter coordinates directly. Valid ranges: Lat (-90 to 90), Lng (-180 to 180)'
-                  : 'Auto mode: Coordinates are fetched automatically when you select an address above.'
-                }
+                  : 'Auto mode: Coordinates are fetched automatically when you select an address above.'}
               </p>
             </div>
 
+            {/* ✅ ERROR MESSAGES */}
             {form.formState.errors.root && (
               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
                 {form.formState.errors.root.message}
@@ -335,17 +340,10 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
             )}
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={updateJobsite.isPending}
-              >
+              <Button type="submit" disabled={updateJobsite.isPending}>
                 {updateJobsite.isPending ? 'Updating...' : 'Update Jobsite'}
               </Button>
             </DialogFooter>

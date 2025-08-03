@@ -25,13 +25,39 @@ interface JobsiteFormProps {
   onCancel: () => void;
 }
 
+// ✅ Utility to dynamically load Google Maps
+const loadGoogleMaps = (apiKey: string) => {
+  return new Promise<void>((resolve, reject) => {
+    if (window.google && window.google.maps) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry`;
+    script.async = true;
+    script.defer = true;
+
+    script.onload = () => {
+      console.log('✅ Google Maps API loaded');
+      resolve();
+    };
+
+    script.onerror = () => {
+      reject(new Error('❌ Failed to load Google Maps API'));
+    };
+
+    document.head.appendChild(script);
+  });
+};
+
 const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
   const { addJobsite } = useJobsiteActions();
   const [useManualCoordinates, setUseManualCoordinates] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
-  
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -43,53 +69,52 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
     },
   });
 
-  // ✅ Initialize Google Places Autocomplete
+  // ✅ Initialize Google Places Autocomplete after script loads
   useEffect(() => {
-    if (!addressInputRef.current || !window.google?.maps?.places) {
-      console.warn('⚠️ Google Maps Places API not available');
-      return;
-    }
-
-    console.log("✅ Initializing Google Places Autocomplete...");
-
-    // Initialize autocomplete with REQUIRED fields
-    autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
-      types: ['geocode'],
-      componentRestrictions: { country: ['ca', 'us'] },
-      fields: ['formatted_address', 'geometry', 'address_components'], // ✅ Important
-    });
-
-    // Handle place selection
-    const handlePlaceSelect = () => {
-      const place = autocompleteRef.current?.getPlace();
-      console.log("📍 Place selected:", place);
-
-      if (place?.geometry?.location) {
-        const address = place.formatted_address || '';
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
-
-        // Update the form fields
-        form.setValue('address', address);
-        if (!useManualCoordinates) {
-          form.setValue('latitude', lat.toString());
-          form.setValue('longitude', lng.toString());
+    loadGoogleMaps('AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU')
+      .then(() => {
+        if (!addressInputRef.current || !window.google?.maps?.places) {
+          console.warn('⚠️ Google Maps Places API still not available after loading.');
+          return;
         }
-        setGeocodeError(null);
-      } else {
-        console.warn("⚠️ No geometry found for selected place.");
-        setGeocodeError('Unable to find location for this address');
-      }
-    };
 
-    // Add listener
-    autocompleteRef.current.addListener('place_changed', handlePlaceSelect);
+        console.log('✅ Initializing Google Places Autocomplete...');
 
-    // ✅ Cleanup for React Strict Mode double-mount
+        // ✅ Initialize autocomplete
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+          types: ['geocode'],
+          componentRestrictions: { country: ['ca', 'us'] },
+          fields: ['formatted_address', 'geometry', 'address_components'],
+        });
+
+        // ✅ Handle place selection
+        autocompleteRef.current.addListener('place_changed', () => {
+          const place = autocompleteRef.current?.getPlace();
+          console.log('📍 Place selected:', place);
+
+          if (place?.geometry?.location) {
+            const address = place.formatted_address || '';
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+
+            form.setValue('address', address);
+            if (!useManualCoordinates) {
+              form.setValue('latitude', lat.toString());
+              form.setValue('longitude', lng.toString());
+            }
+            setGeocodeError(null);
+          } else {
+            console.warn('⚠️ No geometry found for selected place.');
+            setGeocodeError('Unable to find location for this address');
+          }
+        });
+      })
+      .catch((err) => console.error(err));
+
     return () => {
       if (autocompleteRef.current && window.google?.maps?.event) {
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
-        console.log("🧹 Cleaned up Autocomplete listeners.");
+        console.log('🧹 Cleaned up Autocomplete listeners.');
       }
     };
   }, [form, useManualCoordinates]);
@@ -158,7 +183,6 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-
             {/* ✅ JOBSITE NAME */}
             <FormField
               control={form.control}
@@ -264,12 +288,11 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                   )}
                 />
               </div>
-              
+
               <p className="text-xs text-muted-foreground">
-                {useManualCoordinates 
+                {useManualCoordinates
                   ? 'Manual mode: Enter coordinates directly. Valid ranges: Lat (-90 to 90), Lng (-180 to 180)'
-                  : 'Auto mode: Coordinates are fetched automatically when you select an address above.'
-                }
+                  : 'Auto mode: Coordinates are fetched automatically when you select an address above.'}
               </p>
             </div>
 
