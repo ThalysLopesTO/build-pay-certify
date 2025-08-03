@@ -28,6 +28,7 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const [mapLoadError, setMapLoadError] = useState(false);
   // TODO: Will re-add distance state later for jobsite comparison
 
   const parseLocation = (locationString: string | null) => {
@@ -52,34 +53,61 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   // TODO: Will re-add distance calculation functions later for jobsite comparison
 
   useEffect(() => {
-    if (!isOpen || !mapRef.current || !punchCoords || !window.google) return;
+    if (!isOpen || !mapRef.current || !punchCoords) {
+      console.log('🗺️ LocationMapModal: Prerequisites not met', { isOpen, hasMapRef: !!mapRef.current, hasPunchCoords: !!punchCoords });
+      return;
+    }
 
-    // Initialize the map centered on punch-in location
-    const map = new window.google.maps.Map(mapRef.current, {
-      zoom: 15,
-      center: punchCoords,
-      mapTypeId: window.google.maps.MapTypeId.ROADMAP,
-    });
+    console.log('🗺️ LocationMapModal: Modal opened, initializing map...', { punchCoords, employeeName });
 
-    mapInstanceRef.current = map;
+    const initializeMap = () => {
+      if (!window.google || !window.google.maps) {
+        console.log('⏳ Google Maps not ready, retrying in 300ms...');
+        setTimeout(initializeMap, 300);
+        return;
+      }
 
-    // Add punch-in marker (red)
-    const punchMarker = new window.google.maps.Marker({
-      position: punchCoords,
-      map: map,
-      title: `Punch-in Location - ${employeeName}`,
-      icon: {
-        url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-        scaledSize: new window.google.maps.Size(32, 32),
-      },
-    });
+      console.log('✅ Google Maps API ready, creating map instance');
 
-    // TODO: Will re-add jobsite marker, polyline, and distance calculation later
+      try {
+        // Initialize the map centered on punch-in location
+        const map = new window.google.maps.Map(mapRef.current, {
+          zoom: 15,
+          center: punchCoords,
+          mapTypeId: window.google.maps.MapTypeId.ROADMAP,
+        });
 
-    // Cleanup function
-    return () => {
-      if (punchMarker) punchMarker.setMap(null);
+        mapInstanceRef.current = map;
+        console.log('✅ Map instance created successfully');
+
+        // Add punch-in marker (red)
+        const punchMarker = new window.google.maps.Marker({
+          position: punchCoords,
+          map: map,
+          title: `Punch-in Location - ${employeeName}`,
+          icon: {
+            url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+            scaledSize: new window.google.maps.Size(32, 32),
+          },
+        });
+
+        console.log('✅ Punch-in marker placed successfully', { position: punchCoords });
+        setMapLoadError(false); // Reset error state on successful load
+
+        // TODO: Will re-add jobsite marker, polyline, and distance calculation later
+
+        // Cleanup function
+        return () => {
+          console.log('🧹 Cleaning up map markers');
+          if (punchMarker) punchMarker.setMap(null);
+        };
+      } catch (error) {
+        console.error('❌ Error initializing Google Maps:', error);
+        setMapLoadError(true);
+      }
     };
+
+    initializeMap();
   }, [isOpen, punchCoords, employeeName]);
 
   return (
@@ -97,11 +125,23 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
           {punchCoords ? (
             <>
               {/* Interactive Google Map */}
-              <div 
-                ref={mapRef} 
-                className="w-full h-[350px] rounded-lg border shadow-sm"
-                style={{ minHeight: '350px' }}
-              />
+              {mapLoadError ? (
+                <div className="w-full h-[400px] bg-gray-100 rounded-md flex items-center justify-center">
+                  <div className="text-center">
+                    <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+                    <p className="text-lg font-semibold mb-2">Google Maps failed to load</p>
+                    <p className="text-gray-500">
+                      Please refresh the page and try again
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  ref={mapRef} 
+                  className="w-full h-[400px] rounded-md"
+                  style={{ height: '400px', width: '100%' }}
+                />
+              )}
 
               {/* TODO: Will re-add distance information section later */}
 
