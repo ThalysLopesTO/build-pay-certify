@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -7,7 +6,10 @@
     <title>StackBuild - Construction Management</title>
     <meta name="description" content="Professional construction payroll and safety certification management system" />
     <meta name="author" content="StackBuild" />
-    
+
+    <!-- ✅ Google Maps Script with Places + Geometry -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places,geometry"></script>
+
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     
@@ -42,22 +44,19 @@
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     
-    <!-- Google Maps API with Places and Geometry libraries -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBUexN8XpEhXFZGm8j8LdLXXxH3Wf-Q0rk&libraries=places,geometry"></script>
-    
-   <!-- Force light theme on every load -->
-<script>
-  (function() {
-    try {
-      // Always remove any dark mode class
-      document.documentElement.classList.remove('dark');
-      // Always save light mode in localStorage so components know
-      localStorage.setItem('theme', 'light');
-    } catch (e) {
-      console.log('Theme initialization fallback to light');
-    }
-  })();
-</script>
+    <!-- Force light theme on every load -->
+    <script>
+      (function() {
+        try {
+          // Always remove any dark mode class
+          document.documentElement.classList.remove('dark');
+          // Always save light mode in localStorage so components know
+          localStorage.setItem('theme', 'light');
+        } catch (e) {
+          console.log('Theme initialization fallback to light');
+        }
+      })();
+    </script>
   </head>
 
   <body>
