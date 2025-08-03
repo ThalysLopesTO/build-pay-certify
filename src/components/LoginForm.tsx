@@ -252,7 +252,7 @@ const LoginForm = () => {
         <div 
           className="w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
+            backgroundImage: `url('/lovable-uploads/81c0730a-56f4-4b76-b03c-d703c6fcbd76.png')`
           }}
         >
           {/* Subtle overlay for depth */}
@@ -265,7 +265,7 @@ const LoginForm = () => {
         <div 
           className="w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
+            backgroundImage: `url('/lovable-uploads/81c0730a-56f4-4b76-b03c-d703c6fcbd76.png')`
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 to-transparent"></div>
