@@ -31,7 +31,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
   const { addJobsite } = useJobsiteActions();
   const [useManualCoordinates, setUseManualCoordinates] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
-  const addressInputRef = useRef<HTMLInputElement>(null);
+  const [addressInput, setAddressInput] = useState<HTMLInputElement | null>(null);
   const autocompleteRef = useRef<any>(null);
 
   const form = useForm<FormData>({
@@ -47,99 +47,95 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
 
   // ✅ Initialize Google Places Autocomplete
   useEffect(() => {
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      console.log('🔍 JobsiteForm: Checking Google Maps availability...');
-      console.log('🔍 window.google:', !!window.google);
-      console.log('🔍 window.google.maps:', !!window.google?.maps);
-      console.log('🔍 window.google.maps.places:', !!window.google?.maps?.places);
-      console.log('🔍 addressInputRef.current:', !!addressInputRef.current);
+    if (!addressInput) return;
+    
+    console.log('🔍 JobsiteForm: Checking Google Maps availability...');
+    console.log('🔍 window.google:', !!window.google);
+    console.log('🔍 window.google.maps:', !!window.google?.maps);
+    console.log('🔍 window.google.maps.places:', !!window.google?.maps?.places);
+    console.log('🔍 addressInput:', !!addressInput);
 
-      const initializeAutocomplete = () => {
-        if (!addressInputRef.current) {
-          console.warn('⚠️ Address input ref not available, retrying...');
-          // Retry after a short delay
-          setTimeout(initializeAutocomplete, 100);
-          return;
-        }
-
-        if (!window.google?.maps?.places) {
-          console.warn('⚠️ Google Maps Places API not available');
-          return;
-        }
-
-        console.log('✅ Initializing Google Places Autocomplete on input:', addressInputRef.current);
-
-        try {
-          // ✅ Initialize autocomplete
-          autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
-            types: ['geocode'],
-            componentRestrictions: { country: ['ca', 'us'] },
-            fields: ['formatted_address', 'geometry', 'address_components'],
-          });
-
-          console.log('✅ Autocomplete initialized:', autocompleteRef.current);
-
-          // ✅ Handle place selection
-          autocompleteRef.current.addListener('place_changed', () => {
-            const place = autocompleteRef.current?.getPlace();
-            console.log('📍 Place selected:', place);
-
-            if (place?.geometry?.location) {
-              const address = place.formatted_address || '';
-              const lat = place.geometry.location.lat();
-              const lng = place.geometry.location.lng();
-
-              console.log('📍 Setting address and coordinates:', { address, lat, lng });
-
-              form.setValue('address', address);
-              if (!useManualCoordinates) {
-                form.setValue('latitude', lat.toString());
-                form.setValue('longitude', lng.toString());
-              }
-              setGeocodeError(null);
-            } else {
-              console.warn('⚠️ No geometry found for selected place.');
-              setGeocodeError('Unable to find location for this address');
-            }
-          });
-        } catch (error) {
-          console.error('❌ Error initializing autocomplete:', error);
-        }
-      };
-
-      // If Google Maps is already loaded, initialize immediately
-      if (window.google?.maps?.places) {
-        initializeAutocomplete();
-      } else {
-        // Wait for Google Maps to load
-        console.log('⏳ Waiting for Google Maps to load...');
-        const checkGoogleMaps = setInterval(() => {
-          if (window.google?.maps?.places) {
-            console.log('✅ Google Maps loaded, initializing autocomplete');
-            clearInterval(checkGoogleMaps);
-            initializeAutocomplete();
-          }
-        }, 100);
-
-        // Cleanup interval after 10 seconds
-        setTimeout(() => {
-          clearInterval(checkGoogleMaps);
-          if (!window.google?.maps?.places) {
-            console.error('❌ Google Maps failed to load after 10 seconds');
-          }
-        }, 10000);
+    const initializeAutocomplete = () => {
+      if (!addressInput) {
+        console.warn('⚠️ Address input not available');
+        return;
       }
-    }, 100); // Small delay to ensure component is mounted
+
+      if (!window.google?.maps?.places) {
+        console.warn('⚠️ Google Maps Places API not available');
+        return;
+      }
+
+      console.log('✅ Initializing Google Places Autocomplete on input:', addressInput);
+
+      try {
+        // ✅ Initialize autocomplete
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInput, {
+          types: ['geocode'],
+          componentRestrictions: { country: ['ca', 'us'] },
+          fields: ['formatted_address', 'geometry', 'address_components'],
+        });
+
+        console.log('✅ Autocomplete initialized:', autocompleteRef.current);
+
+        // ✅ Handle place selection
+        autocompleteRef.current.addListener('place_changed', () => {
+          const place = autocompleteRef.current?.getPlace();
+          console.log('📍 Place selected:', place);
+
+          if (place?.geometry?.location) {
+            const address = place.formatted_address || '';
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+
+            console.log('📍 Setting address and coordinates:', { address, lat, lng });
+
+            form.setValue('address', address);
+            if (!useManualCoordinates) {
+              form.setValue('latitude', lat.toString());
+              form.setValue('longitude', lng.toString());
+            }
+            setGeocodeError(null);
+          } else {
+            console.warn('⚠️ No geometry found for selected place.');
+            setGeocodeError('Unable to find location for this address');
+          }
+        });
+      } catch (error) {
+        console.error('❌ Error initializing autocomplete:', error);
+      }
+    };
+
+    // If Google Maps is already loaded, initialize immediately
+    if (window.google?.maps?.places) {
+      initializeAutocomplete();
+    } else {
+      // Wait for Google Maps to load
+      console.log('⏳ Waiting for Google Maps to load...');
+      const checkGoogleMaps = setInterval(() => {
+        if (window.google?.maps?.places) {
+          console.log('✅ Google Maps loaded, initializing autocomplete');
+          clearInterval(checkGoogleMaps);
+          initializeAutocomplete();
+        }
+      }, 100);
+
+      // Cleanup interval after 10 seconds
+      setTimeout(() => {
+        clearInterval(checkGoogleMaps);
+        if (!window.google?.maps?.places) {
+          console.error('❌ Google Maps failed to load after 10 seconds');
+        }
+      }, 10000);
+    }
 
     return () => {
-      clearTimeout(timer);
       if (autocompleteRef.current && window.google?.maps?.event) {
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
         console.log('🧹 Cleaned up Autocomplete listeners.');
       }
     };
-  }, [form, useManualCoordinates]);
+  }, [addressInput, form, useManualCoordinates]);
 
   // ✅ Form submit handler
   const onSubmit = async (data: FormData) => {
@@ -231,7 +227,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                     <div className="space-y-2">
                       <input
                         id="jobsite-address"
-                        ref={addressInputRef}
+                        ref={setAddressInput}
                         placeholder="Start typing an address..."
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                         {...field}
