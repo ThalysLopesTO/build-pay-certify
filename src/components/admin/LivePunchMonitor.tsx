@@ -43,7 +43,7 @@ const LivePunchMonitor = () => {
   const [selectedJobsite, setSelectedJobsite] = useState<string>('all');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [flaggedEntries, setFlaggedEntries] = useState<Set<string>>(new Set());
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -111,16 +111,19 @@ const LivePunchMonitor = () => {
         `)
         .eq('company_id', user.companyId);
 
-      // Apply filters based on selection
+      // Apply employee filter if selected
       if (selectedEmployee !== 'all') {
         query = query.eq('user_id', selectedEmployee);
       }
 
+      // Apply jobsite filter if selected
       if (selectedJobsite !== 'all') {
         query = query.eq('jobsite_id', selectedJobsite);
       }
 
-      // Only apply date filter if not showing all dates
+      // Apply date filter only if a specific date is selected
+      // If no date is selected, don't filter by date (show all historical data)
+      // If date is selected, filter to that specific date
       if (selectedDate) {
         const startOfDay = new Date(selectedDate);
         startOfDay.setHours(0, 0, 0, 0);
@@ -128,10 +131,23 @@ const LivePunchMonitor = () => {
         endOfDay.setHours(23, 59, 59, 999);
 
         query = query.or(`and(check_in_time.gte.${startOfDay.toISOString()},check_in_time.lte.${endOfDay.toISOString()}),and(check_out_time.gte.${startOfDay.toISOString()},check_out_time.lte.${endOfDay.toISOString()}),and(check_in_time.is.null,check_out_time.is.null,created_at.gte.${startOfDay.toISOString()},created_at.lte.${endOfDay.toISOString()})`);
+      } else {
+        // If no specific filters are set, default to today's records
+        const hasFilters = selectedEmployee !== 'all' || selectedJobsite !== 'all' || statusFilter !== 'all';
+        if (!hasFilters) {
+          const today = new Date();
+          const startOfToday = new Date(today);
+          startOfToday.setHours(0, 0, 0, 0);
+          const endOfToday = new Date(today);
+          endOfToday.setHours(23, 59, 59, 999);
+
+          query = query.or(`and(check_in_time.gte.${startOfToday.toISOString()},check_in_time.lte.${endOfToday.toISOString()}),and(check_out_time.gte.${startOfToday.toISOString()},check_out_time.lte.${endOfToday.toISOString()}),and(check_in_time.is.null,check_out_time.is.null,created_at.gte.${startOfToday.toISOString()},created_at.lte.${endOfToday.toISOString()})`);
+        }
       }
 
       const { data: timesheets, error: timesheetsError } = await query
-        .order('check_in_time', { ascending: false, nullsFirst: false });
+        .order('check_in_time', { ascending: false, nullsFirst: false })
+        .limit(1000); // Reasonable limit for performance
 
       if (timesheetsError) {
         console.error('Error fetching timesheets:', timesheetsError);
@@ -244,11 +260,25 @@ const LivePunchMonitor = () => {
     });
   };
 
+  const handleClearFilters = () => {
+    setSelectedDate(new Date());
+    setSelectedJobsite('all');
+    setSelectedEmployee('all');
+    setStatusFilter('all');
+  };
+
+  const hasActiveFilters = () => {
+    const today = new Date().toDateString();
+    const isNotToday = selectedDate ? selectedDate.toDateString() !== today : false;
+    return isNotToday || selectedJobsite !== 'all' || selectedEmployee !== 'all' || statusFilter !== 'all';
+  };
+
   const handleDelete = (entry: PunchEntry) => {
     deleteTimesheet.mutate(entry.id);
   };
 
-  const isToday = (date: Date) => {
+  const isToday = (date: Date | null) => {
+    if (!date) return false;
     const today = new Date();
     return date.toDateString() === today.toDateString();
   };
@@ -306,6 +336,8 @@ const LivePunchMonitor = () => {
             setStatusFilter={setStatusFilter}
             jobsites={jobsites}
             employees={employees}
+            onClearFilters={handleClearFilters}
+            hasActiveFilters={hasActiveFilters()}
           />
         </CardContent>
       </Card>
@@ -326,6 +358,12 @@ const LivePunchMonitor = () => {
               {isToday(selectedDate) && (
                 <Badge variant="outline" className="ml-2 text-xs">Live</Badge>
               )}
+            </div>
+          )}
+          {!selectedDate && hasActiveFilters() && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span>All Dates</span>
             </div>
           )}
         </div>

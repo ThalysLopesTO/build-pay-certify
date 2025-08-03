@@ -20,8 +20,8 @@ import { Calendar as CalendarIcon, Building, Users, Activity } from 'lucide-reac
 import { format } from 'date-fns';
 
 interface LivePunchFiltersProps {
-  selectedDate: Date;
-  setSelectedDate: (date: Date) => void;
+  selectedDate: Date | null;
+  setSelectedDate: (date: Date | null) => void;
   selectedJobsite: string;
   setSelectedJobsite: (jobsite: string) => void;
   selectedEmployee: string;
@@ -30,6 +30,8 @@ interface LivePunchFiltersProps {
   setStatusFilter: (status: string) => void;
   jobsites?: Array<{ id: string; name: string }>;
   employees?: Array<{ user_id: string; first_name: string; last_name: string }>;
+  onClearFilters: () => void;
+  hasActiveFilters: boolean;
 }
 
 const LivePunchFilters: React.FC<LivePunchFiltersProps> = ({
@@ -42,10 +44,28 @@ const LivePunchFilters: React.FC<LivePunchFiltersProps> = ({
   statusFilter,
   setStatusFilter,
   jobsites,
-  employees
+  employees,
+  onClearFilters,
+  hasActiveFilters
 }) => {
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-primary"></div>
+          <h3 className="text-lg font-semibold text-foreground">Filter Controls</h3>
+        </div>
+        {hasActiveFilters && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onClearFilters}
+            className="text-xs"
+          >
+            Clear All Filters
+          </Button>
+        )}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Date Picker */}
         <div className="space-y-2">
@@ -64,10 +84,20 @@ const LivePunchFilters: React.FC<LivePunchFiltersProps> = ({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
+              <div className="p-2 border-b">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSelectedDate(null)}
+                  className="w-full text-left justify-start text-xs"
+                >
+                  Show All Dates
+                </Button>
+              </div>
               <CalendarComponent
                 mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
+                selected={selectedDate || undefined}
+                onSelect={(date) => setSelectedDate(date || null)}
                 initialFocus
               />
             </PopoverContent>
@@ -140,21 +170,50 @@ const LivePunchFilters: React.FC<LivePunchFiltersProps> = ({
         {selectedJobsite !== 'all' && (
           <Badge variant="secondary" className="gap-1">
             Jobsite: {jobsites?.find(j => j.id === selectedJobsite)?.name}
+            <button 
+              onClick={() => setSelectedJobsite('all')}
+              className="ml-1 hover:bg-destructive/20 rounded-full"
+            >
+              ×
+            </button>
           </Badge>
         )}
         {selectedEmployee !== 'all' && (
           <Badge variant="secondary" className="gap-1">
             Employee: {employees?.find(e => e.user_id === selectedEmployee)?.first_name} {employees?.find(e => e.user_id === selectedEmployee)?.last_name}
+            <button 
+              onClick={() => setSelectedEmployee('all')}
+              className="ml-1 hover:bg-destructive/20 rounded-full"
+            >
+              ×
+            </button>
           </Badge>
         )}
         {statusFilter !== 'all' && (
           <Badge variant="secondary" className="gap-1">
             Status: {statusFilter === 'active' ? 'Clocked In' : 'Clocked Out'}
+            <button 
+              onClick={() => setStatusFilter('all')}
+              className="ml-1 hover:bg-destructive/20 rounded-full"
+            >
+              ×
+            </button>
           </Badge>
         )}
         {selectedDate && (
           <Badge variant="secondary" className="gap-1">
             Date: {format(selectedDate, "MMM dd, yyyy")}
+            <button 
+              onClick={() => setSelectedDate(null)}
+              className="ml-1 hover:bg-destructive/20 rounded-full"
+            >
+              ×
+            </button>
+          </Badge>
+        )}
+        {!selectedDate && (selectedEmployee !== 'all' || selectedJobsite !== 'all' || statusFilter !== 'all') && (
+          <Badge variant="outline" className="gap-1">
+            All Dates
           </Badge>
         )}
       </div>

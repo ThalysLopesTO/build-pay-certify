@@ -12,14 +12,15 @@ interface PunchEntry {
 
 interface LivePunchSummaryCardsProps {
   filteredEntries: PunchEntry[];
-  selectedDate: Date;
+  selectedDate: Date | null;
 }
 
 const LivePunchSummaryCards: React.FC<LivePunchSummaryCardsProps> = ({
   filteredEntries,
   selectedDate
 }) => {
-  const isToday = (date: Date) => {
+  const isToday = (date: Date | null) => {
+    if (!date) return false;
     const today = new Date();
     return date.toDateString() === today.toDateString();
   };
@@ -30,27 +31,27 @@ const LivePunchSummaryCards: React.FC<LivePunchSummaryCardsProps> = ({
 
   const stats = [
     {
-      title: isToday(selectedDate) ? 'Currently Clocked In' : 'Clocked In',
+      title: selectedDate ? (isToday(selectedDate) ? 'Currently Clocked In' : 'Clocked In') : 'Currently Clocked In (All Time)',
       value: currentlyClockedIn,
-      description: isToday(selectedDate) ? 'Active employees on site' : 'Active on selected date',
+      description: selectedDate ? (isToday(selectedDate) ? 'Active employees on site' : 'Active on selected date') : 'Active across all dates',
       icon: Clock,
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
       trend: isToday(selectedDate) ? '+12%' : null,
     },
     {
-      title: isToday(selectedDate) ? 'Total Punches Today' : 'Total Punches',
+      title: selectedDate ? (isToday(selectedDate) ? 'Total Punches Today' : 'Total Punches') : 'Total Punches (All Time)',
       value: totalEmployeesToday,
-      description: isToday(selectedDate) ? 'Punched in today' : 'Punched in on selected date',
+      description: selectedDate ? (isToday(selectedDate) ? 'Punched in today' : 'Punched in on selected date') : 'All punch records',
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50 dark:bg-blue-950/20',
       trend: isToday(selectedDate) ? '+8%' : null,
     },
     {
-      title: isToday(selectedDate) ? 'Active Jobsites' : 'Jobsites',
+      title: selectedDate ? (isToday(selectedDate) ? 'Active Jobsites' : 'Jobsites') : 'Jobsites (All Time)',
       value: activeJobsites,
-      description: isToday(selectedDate) ? 'Sites with activity' : 'Sites with activity on date',
+      description: selectedDate ? (isToday(selectedDate) ? 'Sites with activity' : 'Sites with activity on date') : 'All sites with activity',
       icon: MapPin,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50 dark:bg-orange-950/20',
