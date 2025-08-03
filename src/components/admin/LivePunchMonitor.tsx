@@ -319,16 +319,19 @@ const LivePunchMonitor = () => {
         />
       )}
 
-      {/* Location Map Modal - Simplified */}
-      {selectedLocation && (
-        <LocationMapModal
-          isOpen={!!selectedLocation}
-          onClose={() => setSelectedLocation(null)}
-          punchLocation={selectedLocation.punchLocation}
-          employeeName={selectedLocation.employeeName}
-          timestamp={selectedLocation.timestamp}
-        />
-      )}
+      {/* Location Map Modal */}
+      {selectedLocation && (() => {
+        const [lat, lng] = selectedLocation.punchLocation.split(',').map(Number);
+        return (
+          <LocationMapModal
+            latitude={lat}
+            longitude={lng}
+            employeeName={selectedLocation.employeeName}
+            timestamp={selectedLocation.timestamp}
+            onClose={() => setSelectedLocation(null)}
+          />
+        );
+      })()}
     </div>
   );
 };
