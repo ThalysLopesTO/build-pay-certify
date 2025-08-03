@@ -6,8 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Globe, RefreshCw } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { MapPin, AlertTriangle } from 'lucide-react';
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
+import { useGooglePlacesAutocomplete } from '@/hooks/useGooglePlacesAutocomplete';
 import { validateCoordinates, formatCoordinates } from '@/services/geocoding';
 
 const formSchema = z.object({
@@ -42,6 +44,8 @@ interface JobsiteEditModalProps {
 const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOpenChange }) => {
   const { updateJobsite, geocodeJobsiteAddress } = useJobsiteActions();
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [useManualCoordinates, setUseManualCoordinates] = useState(false);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -54,6 +58,24 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
     },
   });
 
+  const handlePlaceSelect = (place: { address: string; latitude: number; longitude: number }) => {
+    form.setValue('address', place.address);
+    if (!useManualCoordinates) {
+      form.setValue('latitude', place.latitude.toString());
+      form.setValue('longitude', place.longitude.toString());
+    }
+    setGeocodeError(null);
+  };
+
+  const handleGeocodeError = (error: string) => {
+    setGeocodeError(error);
+  };
+
+  const { inputRef, isLoading } = useGooglePlacesAutocomplete({
+    onPlaceSelect: handlePlaceSelect,
+    onError: handleGeocodeError
+  });
+
   // Reset form when jobsite changes
   React.useEffect(() => {
     form.reset({
@@ -63,6 +85,8 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
       latitude: jobsite.latitude ? jobsite.latitude.toString() : '',
       longitude: jobsite.longitude ? jobsite.longitude.toString() : '',
     });
+    setUseManualCoordinates(false);
+    setGeocodeError(null);
   }, [jobsite, form]);
 
   const onSubmit = async (data: FormData) => {
@@ -166,7 +190,23 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                 <FormItem>
                   <FormLabel>Address *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter full address" {...field} />
+                    <div className="space-y-2">
+                      <Input 
+                        ref={inputRef}
+                        placeholder="Start typing an address..." 
+                        {...field}
+                        disabled={isLoading}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Powered by Google
+                      </p>
+                      {geocodeError && (
+                        <div className="flex items-center gap-2 text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
+                          <AlertTriangle className="h-3 w-3" />
+                          {geocodeError} Enter coordinates manually below.
+                        </div>
+                      )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -187,24 +227,19 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
               )}
             />
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <FormLabel className="text-sm font-medium">GPS Coordinates</FormLabel>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGeocodeAddress}
-                  disabled={isGeocoding || geocodeJobsiteAddress.isPending}
-                  className="text-xs"
-                >
-                  {isGeocoding || geocodeJobsiteAddress.isPending ? (
-                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                  ) : (
-                    <Globe className="h-3 w-3 mr-1" />
-                  )}
-                  Geocode Address
-                </Button>
+                <FormLabel className="text-sm font-medium flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  GPS Coordinates
+                </FormLabel>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-muted-foreground">Manual Override</span>
+                  <Switch
+                    checked={useManualCoordinates}
+                    onCheckedChange={setUseManualCoordinates}
+                  />
+                </div>
               </div>
 
               {hasCoordinates && (
@@ -219,13 +254,17 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                   name="latitude"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs">Latitude</FormLabel>
+                      <FormLabel className="text-xs">
+                        {useManualCoordinates ? 'Manual Latitude' : 'Latitude'}
+                      </FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           step="any"
                           placeholder="e.g. 43.70011" 
-                          {...field} 
+                          {...field}
+                          readOnly={!useManualCoordinates}
+                          className={!useManualCoordinates ? 'bg-muted/30' : ''}
                         />
                       </FormControl>
                       <FormMessage />
@@ -238,13 +277,17 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                   name="longitude"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs">Longitude</FormLabel>
+                      <FormLabel className="text-xs">
+                        {useManualCoordinates ? 'Manual Longitude' : 'Longitude'}
+                      </FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           step="any"
                           placeholder="e.g. -79.4163" 
-                          {...field} 
+                          {...field}
+                          readOnly={!useManualCoordinates}
+                          className={!useManualCoordinates ? 'bg-muted/30' : ''}
                         />
                       </FormControl>
                       <FormMessage />
@@ -254,7 +297,10 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
               </div>
               
               <p className="text-xs text-muted-foreground">
-                Leave coordinates blank to auto-geocode from address. Valid ranges: Lat (-90 to 90), Lng (-180 to 180)
+                {useManualCoordinates 
+                  ? 'Manual mode: Enter coordinates directly. Valid ranges: Lat (-90 to 90), Lng (-180 to 180)'
+                  : 'Auto mode: Coordinates are fetched automatically when you select an address above.'
+                }
               </p>
             </div>
 

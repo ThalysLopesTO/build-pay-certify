@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,12 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { MapPin, AlertTriangle } from 'lucide-react';
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
+import { useGooglePlacesAutocomplete } from '@/hooks/useGooglePlacesAutocomplete';
+import { validateCoordinates } from '@/services/geocoding';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Jobsite name is required').min(2, 'Jobsite name must be at least 2 characters'),
   address: z.string().min(1, 'Address is required').min(5, 'Address must be at least 5 characters'),
   starting_date: z.string().min(1, 'Starting date is required'),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -23,6 +29,8 @@ interface JobsiteFormProps {
 
 const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
   const { addJobsite } = useJobsiteActions();
+  const [useManualCoordinates, setUseManualCoordinates] = useState(false);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -30,7 +38,27 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
       name: '',
       address: '',
       starting_date: '',
+      latitude: '',
+      longitude: '',
     },
+  });
+
+  const handlePlaceSelect = (place: { address: string; latitude: number; longitude: number }) => {
+    form.setValue('address', place.address);
+    if (!useManualCoordinates) {
+      form.setValue('latitude', place.latitude.toString());
+      form.setValue('longitude', place.longitude.toString());
+    }
+    setGeocodeError(null);
+  };
+
+  const handleGeocodeError = (error: string) => {
+    setGeocodeError(error);
+  };
+
+  const { inputRef, isLoading } = useGooglePlacesAutocomplete({
+    onPlaceSelect: handlePlaceSelect,
+    onError: handleGeocodeError
   });
 
   const onSubmit = async (data: FormData) => {
@@ -53,13 +81,43 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
         return;
       }
 
-      await addJobsite.mutateAsync({
+      const jobsiteData: any = {
         name: data.name.trim(),
         address: data.address.trim(),
         starting_date: data.starting_date,
-      });
+      };
+
+      // Add coordinates if provided and manual override is enabled
+      if (useManualCoordinates && data.latitude && data.longitude) {
+        const lat = parseFloat(data.latitude);
+        const lng = parseFloat(data.longitude);
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+          if (validateCoordinates(lat, lng)) {
+            jobsiteData.latitude = lat;
+            jobsiteData.longitude = lng;
+          } else {
+            form.setError('latitude', { message: 'Latitude must be between -90 and 90' });
+            form.setError('longitude', { message: 'Longitude must be between -180 and 180' });
+            return;
+          }
+        }
+      } else if (!useManualCoordinates && data.latitude && data.longitude) {
+        // Use auto-geocoded coordinates
+        const lat = parseFloat(data.latitude);
+        const lng = parseFloat(data.longitude);
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+          jobsiteData.latitude = lat;
+          jobsiteData.longitude = lng;
+        }
+      }
+
+      await addJobsite.mutateAsync(jobsiteData);
       
       form.reset();
+      setUseManualCoordinates(false);
+      setGeocodeError(null);
       onCancel();
     } catch (error) {
       console.error('Error adding jobsite:', error);
@@ -110,16 +168,100 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                 <FormItem>
                   <FormLabel>Address *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter full address" 
-                      {...field} 
-                      required
-                    />
+                    <div className="space-y-2">
+                      <Input 
+                        ref={inputRef}
+                        placeholder="Start typing an address..." 
+                        {...field} 
+                        required
+                        disabled={isLoading}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Powered by Google
+                      </p>
+                      {geocodeError && (
+                        <div className="flex items-center gap-2 text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
+                          <AlertTriangle className="h-3 w-3" />
+                          {geocodeError} Enter coordinates manually below.
+                        </div>
+                      )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <FormLabel className="text-sm font-medium flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  GPS Coordinates
+                </FormLabel>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-muted-foreground">Manual Override</span>
+                  <Switch
+                    checked={useManualCoordinates}
+                    onCheckedChange={setUseManualCoordinates}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="latitude"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">
+                        {useManualCoordinates ? 'Manual Latitude' : 'Latitude'}
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="any"
+                          placeholder="e.g. 43.70011" 
+                          {...field}
+                          readOnly={!useManualCoordinates}
+                          className={!useManualCoordinates ? 'bg-muted/30' : ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="longitude"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">
+                        {useManualCoordinates ? 'Manual Longitude' : 'Longitude'}
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="any"
+                          placeholder="e.g. -79.4163" 
+                          {...field}
+                          readOnly={!useManualCoordinates}
+                          className={!useManualCoordinates ? 'bg-muted/30' : ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <p className="text-xs text-muted-foreground">
+                {useManualCoordinates 
+                  ? 'Manual mode: Enter coordinates directly. Valid ranges: Lat (-90 to 90), Lng (-180 to 180)'
+                  : 'Auto mode: Coordinates are fetched automatically when you select an address above.'
+                }
+              </p>
+            </div>
 
             <FormField
               control={form.control}
