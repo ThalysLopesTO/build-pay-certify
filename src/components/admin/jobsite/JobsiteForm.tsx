@@ -55,20 +55,27 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
     console.log('🔍 window.google.maps.places:', !!window.google?.maps?.places);
     console.log('🔍 addressInput:', !!addressInput);
 
-    const initializeAutocomplete = () => {
-      if (!addressInput) {
-        console.warn('⚠️ Address input not available');
-        return;
-      }
-
-      if (!window.google?.maps?.places) {
-        console.warn('⚠️ Google Maps Places API not available');
-        return;
-      }
-
-      console.log('✅ Initializing Google Places Autocomplete on input:', addressInput);
-
+    const initializeAutocomplete = async () => {
       try {
+        // Load Google Maps API if not already loaded
+        if (!window.google?.maps?.places) {
+          console.log('🔄 Loading Google Maps API...');
+          await loadGoogleMaps('AIzaSyBpKV6R5yNgEjVHZv0_YXjHZD7JJb2YxCg');
+          console.log('✅ Google Maps API loaded successfully');
+        }
+
+        if (!addressInput) {
+          console.warn('⚠️ Address input not available');
+          return;
+        }
+
+        if (!window.google?.maps?.places) {
+          console.error('❌ Google Maps Places API still not available after loading');
+          return;
+        }
+
+        console.log('✅ Initializing Google Places Autocomplete on input:', addressInput);
+
         // ✅ Initialize autocomplete
         autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInput, {
           types: ['geocode'],
@@ -110,32 +117,12 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
           }
         });
       } catch (error) {
-        console.error('❌ Error initializing autocomplete:', error);
+        console.error('❌ Error loading Google Maps or initializing autocomplete:', error);
+        setGeocodeError('Failed to load address suggestions. Please enter coordinates manually.');
       }
     };
 
-    // If Google Maps is already loaded, initialize immediately
-    if (window.google?.maps?.places) {
-      initializeAutocomplete();
-    } else {
-      // Wait for Google Maps to load
-      console.log('⏳ Waiting for Google Maps to load...');
-      const checkGoogleMaps = setInterval(() => {
-        if (window.google?.maps?.places) {
-          console.log('✅ Google Maps loaded, initializing autocomplete');
-          clearInterval(checkGoogleMaps);
-          initializeAutocomplete();
-        }
-      }, 100);
-
-      // Cleanup interval after 10 seconds
-      setTimeout(() => {
-        clearInterval(checkGoogleMaps);
-        if (!window.google?.maps?.places) {
-          console.error('❌ Google Maps failed to load after 10 seconds');
-        }
-      }, 10000);
-    }
+    initializeAutocomplete();
 
     return () => {
       if (autocompleteRef.current && window.google?.maps?.event) {
