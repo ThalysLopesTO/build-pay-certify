@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,28 +43,33 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
     },
   });
 
-  // Initialize Google Places Autocomplete
+  // ✅ Initialize Google Places Autocomplete
   useEffect(() => {
     if (!addressInputRef.current || !window.google?.maps?.places) {
-      console.warn('Google Maps Places API not available');
+      console.warn('⚠️ Google Maps Places API not available');
       return;
     }
 
-    // Initialize autocomplete
+    console.log("✅ Initializing Google Places Autocomplete...");
+
+    // Initialize autocomplete with REQUIRED fields
     autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
       types: ['geocode'],
-      componentRestrictions: { country: ['ca', 'us'] }
+      componentRestrictions: { country: ['ca', 'us'] },
+      fields: ['formatted_address', 'geometry', 'address_components'], // ✅ Important
     });
 
     // Handle place selection
     const handlePlaceSelect = () => {
       const place = autocompleteRef.current?.getPlace();
-      
+      console.log("📍 Place selected:", place);
+
       if (place?.geometry?.location) {
         const address = place.formatted_address || '';
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
 
+        // Update the form fields
         form.setValue('address', address);
         if (!useManualCoordinates) {
           form.setValue('latitude', lat.toString());
@@ -73,34 +77,36 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
         }
         setGeocodeError(null);
       } else {
+        console.warn("⚠️ No geometry found for selected place.");
         setGeocodeError('Unable to find location for this address');
       }
     };
 
+    // Add listener
     autocompleteRef.current.addListener('place_changed', handlePlaceSelect);
 
+    // ✅ Cleanup for React Strict Mode double-mount
     return () => {
       if (autocompleteRef.current && window.google?.maps?.event) {
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        console.log("🧹 Cleaned up Autocomplete listeners.");
       }
     };
   }, [form, useManualCoordinates]);
 
+  // ✅ Form submit handler
   const onSubmit = async (data: FormData) => {
     try {
-      console.log('Form data being submitted:', data);
-      
-      // Validate required fields client-side
+      console.log('📤 Submitting form data:', data);
+
       if (!data.name?.trim()) {
         form.setError('name', { message: 'Jobsite name is required' });
         return;
       }
-      
       if (!data.address?.trim()) {
         form.setError('address', { message: 'Address is required' });
         return;
       }
-
       if (!data.starting_date?.trim()) {
         form.setError('starting_date', { message: 'Starting date is required' });
         return;
@@ -112,11 +118,11 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
         starting_date: data.starting_date,
       };
 
-      // Add coordinates if provided and manual override is enabled
+      // ✅ Handle coordinates
       if (useManualCoordinates && data.latitude && data.longitude) {
         const lat = parseFloat(data.latitude);
         const lng = parseFloat(data.longitude);
-        
+
         if (!isNaN(lat) && !isNaN(lng)) {
           if (validateCoordinates(lat, lng)) {
             jobsiteData.latitude = lat;
@@ -128,35 +134,19 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
           }
         }
       } else if (!useManualCoordinates && data.latitude && data.longitude) {
-        // Use auto-geocoded coordinates
-        const lat = parseFloat(data.latitude);
-        const lng = parseFloat(data.longitude);
-        
-        if (!isNaN(lat) && !isNaN(lng)) {
-          jobsiteData.latitude = lat;
-          jobsiteData.longitude = lng;
-        }
+        jobsiteData.latitude = parseFloat(data.latitude);
+        jobsiteData.longitude = parseFloat(data.longitude);
       }
 
       await addJobsite.mutateAsync(jobsiteData);
-      
+
       form.reset();
       setUseManualCoordinates(false);
       setGeocodeError(null);
       onCancel();
     } catch (error) {
-      console.error('Error adding jobsite:', error);
-      
-      // Handle specific error types
-      if (error?.message?.includes('required')) {
-        form.setError('root', { message: 'Missing required fields. Please check all fields are filled out.' });
-      } else if (error?.message?.includes('duplicate')) {
-        form.setError('name', { message: 'A jobsite with this name already exists.' });
-      } else if (error?.message?.includes('permission')) {
-        form.setError('root', { message: 'You do not have permission to add jobsites.' });
-      } else {
-        form.setError('root', { message: `Failed to add jobsite: ${error?.message || 'Unknown error'}` });
-      }
+      console.error('❌ Error adding jobsite:', error);
+      form.setError('root', { message: `Failed to add jobsite: ${error?.message || 'Unknown error'}` });
     }
   };
 
@@ -168,6 +158,8 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+
+            {/* ✅ JOBSITE NAME */}
             <FormField
               control={form.control}
               name="name"
@@ -175,17 +167,14 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                 <FormItem>
                   <FormLabel>Jobsite Name *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter jobsite name" 
-                      {...field} 
-                      required
-                    />
+                    <Input placeholder="Enter jobsite name" {...field} required />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* ✅ ADDRESS FIELD WITH AUTOCOMPLETE */}
             <FormField
               control={form.control}
               name="address"
@@ -194,16 +183,14 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                   <FormLabel>Address *</FormLabel>
                   <FormControl>
                     <div className="space-y-2">
-                      <Input 
+                      <Input
                         id="jobsite-address"
                         ref={addressInputRef}
-                        placeholder="Start typing an address..." 
-                        {...field} 
+                        placeholder="Start typing an address..."
+                        {...field}
                         required
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Powered by Google
-                      </p>
+                      <p className="text-xs text-muted-foreground">Powered by Google</p>
                       {geocodeError && (
                         <div className="flex items-center gap-2 text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
                           <AlertTriangle className="h-3 w-3" />
@@ -217,6 +204,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
               )}
             />
 
+            {/* ✅ GPS COORDINATES */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <FormLabel className="text-sm font-medium flex items-center gap-2">
@@ -225,10 +213,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                 </FormLabel>
                 <div className="flex items-center space-x-2">
                   <span className="text-xs text-muted-foreground">Manual Override</span>
-                  <Switch
-                    checked={useManualCoordinates}
-                    onCheckedChange={setUseManualCoordinates}
-                  />
+                  <Switch checked={useManualCoordinates} onCheckedChange={setUseManualCoordinates} />
                 </div>
               </div>
 
@@ -242,10 +227,10 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                         {useManualCoordinates ? 'Manual Latitude' : 'Latitude'}
                       </FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           step="any"
-                          placeholder="e.g. 43.70011" 
+                          placeholder="e.g. 43.70011"
                           {...field}
                           readOnly={!useManualCoordinates}
                           className={!useManualCoordinates ? 'bg-muted/30' : ''}
@@ -265,10 +250,10 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                         {useManualCoordinates ? 'Manual Longitude' : 'Longitude'}
                       </FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           step="any"
-                          placeholder="e.g. -79.4163" 
+                          placeholder="e.g. -79.4163"
                           {...field}
                           readOnly={!useManualCoordinates}
                           className={!useManualCoordinates ? 'bg-muted/30' : ''}
@@ -288,6 +273,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
               </p>
             </div>
 
+            {/* ✅ STARTING DATE */}
             <FormField
               control={form.control}
               name="starting_date"
@@ -295,34 +281,28 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                 <FormItem>
                   <FormLabel>Starting Date *</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="date"
-                      placeholder="Select starting date" 
-                      {...field} 
-                      required
-                    />
+                    <Input type="date" placeholder="Select starting date" {...field} required />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* ✅ ERROR MESSAGES */}
             {form.formState.errors.root && (
               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
                 {form.formState.errors.root.message}
               </div>
             )}
 
+            {/* ✅ BUTTONS */}
             <div className="flex space-x-2">
-              <Button 
-                type="submit" 
-                disabled={addJobsite.isPending}
-              >
+              <Button type="submit" disabled={addJobsite.isPending}>
                 {addJobsite.isPending ? 'Adding...' : 'Add Jobsite'}
               </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => {
                   onCancel();
                   form.reset();
