@@ -45,23 +45,35 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
     },
   });
 
-  // ✅ Initialize Google Places Autocomplete after script loads
+  // ✅ Initialize Google Places Autocomplete
   useEffect(() => {
-    loadGoogleMaps('AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU')
-      .then(() => {
-        if (!addressInputRef.current || !window.google?.maps?.places) {
-          console.warn('⚠️ Google Maps Places API still not available after loading.');
-          return;
-        }
+    console.log('🔍 JobsiteForm: Checking Google Maps availability...');
+    console.log('🔍 window.google:', !!window.google);
+    console.log('🔍 window.google.maps:', !!window.google?.maps);
+    console.log('🔍 window.google.maps.places:', !!window.google?.maps?.places);
 
-        console.log('✅ Initializing Google Places Autocomplete...');
+    const initializeAutocomplete = () => {
+      if (!addressInputRef.current) {
+        console.warn('⚠️ Address input ref not available');
+        return;
+      }
 
+      if (!window.google?.maps?.places) {
+        console.warn('⚠️ Google Maps Places API not available');
+        return;
+      }
+
+      console.log('✅ Initializing Google Places Autocomplete on input:', addressInputRef.current);
+
+      try {
         // ✅ Initialize autocomplete
         autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
           types: ['geocode'],
           componentRestrictions: { country: ['ca', 'us'] },
           fields: ['formatted_address', 'geometry', 'address_components'],
         });
+
+        console.log('✅ Autocomplete initialized:', autocompleteRef.current);
 
         // ✅ Handle place selection
         autocompleteRef.current.addListener('place_changed', () => {
@@ -72,6 +84,8 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
             const address = place.formatted_address || '';
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
+
+            console.log('📍 Setting address and coordinates:', { address, lat, lng });
 
             form.setValue('address', address);
             if (!useManualCoordinates) {
@@ -84,8 +98,33 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
             setGeocodeError('Unable to find location for this address');
           }
         });
-      })
-      .catch((err) => console.error(err));
+      } catch (error) {
+        console.error('❌ Error initializing autocomplete:', error);
+      }
+    };
+
+    // If Google Maps is already loaded, initialize immediately
+    if (window.google?.maps?.places) {
+      initializeAutocomplete();
+    } else {
+      // Wait for Google Maps to load
+      console.log('⏳ Waiting for Google Maps to load...');
+      const checkGoogleMaps = setInterval(() => {
+        if (window.google?.maps?.places) {
+          console.log('✅ Google Maps loaded, initializing autocomplete');
+          clearInterval(checkGoogleMaps);
+          initializeAutocomplete();
+        }
+      }, 100);
+
+      // Cleanup interval after 10 seconds
+      setTimeout(() => {
+        clearInterval(checkGoogleMaps);
+        if (!window.google?.maps?.places) {
+          console.error('❌ Google Maps failed to load after 10 seconds');
+        }
+      }, 10000);
+    }
 
     return () => {
       if (autocompleteRef.current && window.google?.maps?.event) {
