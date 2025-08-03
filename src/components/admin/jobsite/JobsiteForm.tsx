@@ -77,6 +77,14 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
         });
 
         console.log('✅ Autocomplete initialized:', autocompleteRef.current);
+        
+        // Debug: Check if suggestions are being triggered
+        autocompleteRef.current.addListener('predictions_changed', () => {
+          console.log('🔍 Predictions changed - autocomplete is working!');
+          const dropdown = document.querySelector('.pac-container');
+          console.log('📋 Dropdown element:', dropdown);
+          console.log('📋 Dropdown styles:', dropdown ? window.getComputedStyle(dropdown) : 'not found');
+        });
 
         // ✅ Handle place selection
         autocompleteRef.current.addListener('place_changed', () => {
