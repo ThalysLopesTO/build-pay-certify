@@ -254,7 +254,7 @@ const EmployeeLoginForm = () => {
         <div 
           className="w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
+            backgroundImage: `url('/lovable-uploads/74dfc925-201c-4e16-bcf8-37c54913180a.png')`
           }}
         >
           {/* Subtle overlay for depth */}
@@ -267,7 +267,7 @@ const EmployeeLoginForm = () => {
         <div 
           className="w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')`
+            backgroundImage: `url('/lovable-uploads/74dfc925-201c-4e16-bcf8-37c54913180a.png')`
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 to-transparent"></div>
