@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { MapPin, AlertTriangle } from 'lucide-react';
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
-import { useGooglePlacesAutocomplete } from '@/hooks/useGooglePlacesAutocomplete';
 import { validateCoordinates, formatCoordinates } from '@/services/geocoding';
 
 const formSchema = z.object({
@@ -46,6 +45,8 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [useManualCoordinates, setUseManualCoordinates] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -58,23 +59,46 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
     },
   });
 
-  const handlePlaceSelect = (place: { address: string; latitude: number; longitude: number }) => {
-    form.setValue('address', place.address);
-    if (!useManualCoordinates) {
-      form.setValue('latitude', place.latitude.toString());
-      form.setValue('longitude', place.longitude.toString());
+  // Initialize Google Places Autocomplete
+  useEffect(() => {
+    if (!addressInputRef.current || !window.google?.maps?.places || !open) {
+      return;
     }
-    setGeocodeError(null);
-  };
 
-  const handleGeocodeError = (error: string) => {
-    setGeocodeError(error);
-  };
+    // Initialize autocomplete
+    autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+      types: ['geocode'],
+      componentRestrictions: { country: ['ca', 'us'] }
+    });
 
-  const { inputRef, isLoading } = useGooglePlacesAutocomplete({
-    onPlaceSelect: handlePlaceSelect,
-    onError: handleGeocodeError
-  });
+    // Handle place selection
+    const handlePlaceSelect = () => {
+      const place = autocompleteRef.current?.getPlace();
+      
+      if (place?.geometry?.location) {
+        const address = place.formatted_address || '';
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+
+        form.setValue('address', address);
+        if (!useManualCoordinates) {
+          form.setValue('latitude', lat.toString());
+          form.setValue('longitude', lng.toString());
+        }
+        setGeocodeError(null);
+      } else {
+        setGeocodeError('Unable to find location for this address');
+      }
+    };
+
+    autocompleteRef.current.addListener('place_changed', handlePlaceSelect);
+
+    return () => {
+      if (autocompleteRef.current && window.google?.maps?.event) {
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
+  }, [form, useManualCoordinates, open]);
 
   // Reset form when jobsite changes
   React.useEffect(() => {
@@ -192,10 +216,10 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                   <FormControl>
                     <div className="space-y-2">
                       <Input 
-                        ref={inputRef}
+                        id="jobsite-edit-address"
+                        ref={addressInputRef}
                         placeholder="Start typing an address..." 
                         {...field}
-                        disabled={isLoading}
                       />
                       <p className="text-xs text-muted-foreground">
                         Powered by Google
