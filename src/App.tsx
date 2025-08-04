@@ -166,6 +166,19 @@ const AppRoutes = () => {
 
   console.log('🎯 Rendering main app routes');
 
+  // Determine default dashboard route based on user role
+  const getDefaultDashboardRoute = () => {
+    if (!user) return '/';
+    
+    if (user.role === 'employee') {
+      return '/employee/dashboard';
+    } else if (user.role === 'super_admin') {
+      return '/super-admin';
+    } else {
+      return '/admin/dashboard';
+    }
+  };
+
   return (
     <BrowserRouter>
       <Routes>
@@ -176,7 +189,7 @@ const AppRoutes = () => {
             !isAuthenticated ? (
               <HomePage />
             ) : (
-              <DashboardRouter />
+              <Navigate to={getDefaultDashboardRoute()} replace />
             )
           } 
         />
@@ -210,11 +223,11 @@ const AppRoutes = () => {
         
         <Route 
           path="/login" 
-          element={!isAuthenticated ? <LoginForm /> : <Navigate to="/" replace />} 
+          element={!isAuthenticated ? <LoginForm /> : <Navigate to={getDefaultDashboardRoute()} replace />} 
         />
         <Route 
           path="/employee-login" 
-          element={!isAuthenticated ? <EmployeeLoginForm /> : <Navigate to="/" replace />} 
+          element={!isAuthenticated ? <EmployeeLoginForm /> : <Navigate to={getDefaultDashboardRoute()} replace />} 
         />
         <Route 
           path="/employee/dashboard" 
@@ -228,11 +241,11 @@ const AppRoutes = () => {
         />
         <Route 
           path="/super-admin-login" 
-          element={!isAuthenticated ? <SuperAdminLogin /> : <Navigate to="/" replace />} 
+          element={!isAuthenticated ? <SuperAdminLogin /> : <Navigate to={getDefaultDashboardRoute()} replace />} 
         />
         <Route 
           path="/register-company" 
-          element={!isAuthenticated ? <CompanyRegistration /> : <Navigate to="/" replace />} 
+          element={!isAuthenticated ? <CompanyRegistration /> : <Navigate to={getDefaultDashboardRoute()} replace />} 
         />
         <Route 
           path="/license-expired" 
