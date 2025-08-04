@@ -22,6 +22,7 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import LicenseExpired from "./pages/LicenseExpired";
 import NotFound from "./pages/NotFound";
 import InvoicePreview from "./pages/InvoicePreview";
+import ResetPassword from "./pages/ResetPassword";
 import LicenseGuard from "./components/common/LicenseGuard";
 import SubscriptionGate from "./components/SubscriptionGate";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -250,6 +251,10 @@ const AppRoutes = () => {
         <Route 
           path="/license-expired" 
           element={isAuthenticated ? <LicenseExpired /> : <Navigate to="/login" replace />} 
+        />
+        <Route 
+          path="/reset-password" 
+          element={<ResetPassword />} 
         />
         <Route 
           path="/super-admin" 

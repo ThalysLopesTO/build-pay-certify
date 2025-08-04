@@ -1352,6 +1352,39 @@ export type Database = {
           },
         ]
       }
+      password_reset_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          updated_at: string
+          used: boolean
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          updated_at?: string
+          used?: boolean
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          updated_at?: string
+          used?: boolean
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       quote_line_items: {
         Row: {
           amount: number
@@ -1810,6 +1843,7 @@ export type Database = {
           cpp_rate: number | null
           created_at: string
           ei_rate: number | null
+          email: string | null
           first_name: string | null
           hourly_rate: number | null
           id: string
@@ -1833,6 +1867,7 @@ export type Database = {
           cpp_rate?: number | null
           created_at?: string
           ei_rate?: number | null
+          email?: string | null
           first_name?: string | null
           hourly_rate?: number | null
           id?: string
@@ -1856,6 +1891,7 @@ export type Database = {
           cpp_rate?: number | null
           created_at?: string
           ei_rate?: number | null
+          email?: string | null
           first_name?: string | null
           hourly_rate?: number | null
           id?: string
@@ -2164,6 +2200,10 @@ export type Database = {
         Returns: undefined
       }
       check_overdue_jobsites: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_password_reset_tokens: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

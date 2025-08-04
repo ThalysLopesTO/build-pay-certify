@@ -12,11 +12,13 @@ import { Building, ArrowRight, Mail, Lock, Users } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import PWAInstallButton from '@/components/common/PWAInstallButton';
 import LoginLoading from '@/components/common/LoginLoading';
+import ForgotPasswordForm from '@/components/ForgotPasswordForm';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
@@ -165,9 +167,12 @@ const LoginForm = () => {
           </Alert>
 
           {/* Login Form Card with Light Background */}
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-8">
-              <form onSubmit={handleLogin} className="space-y-6">
+          {showForgotPassword ? (
+            <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
+          ) : (
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-8">
+                <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-slate-700 font-medium text-sm">
                     Email
@@ -224,6 +229,16 @@ const LoginForm = () => {
                 </Button>
               </form>
               
+              <div className="mt-6 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-slate-600 hover:text-orange-600 underline transition-colors duration-200"
+                >
+                  Forgot your password?
+                </button>
+              </div>
+              
               <div className="mt-8 pt-6 border-t border-slate-200 text-center">
                 <p className="text-sm text-slate-600 mb-4">Don't have access?</p>
                 <Link to="/register">
@@ -238,6 +253,7 @@ const LoginForm = () => {
               </div>
             </CardContent>
           </Card>
+          )}
         </div>
       </div>
 
