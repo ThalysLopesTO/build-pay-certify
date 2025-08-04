@@ -15,39 +15,52 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setEmailError('');
 
     try {
-      // Call our edge function to handle password reset
+      // First, check if the email exists in user_profiles
+      const { data: profiles, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id, email, role')
+        .eq('email', email.toLowerCase())
+        .in('role', ['admin', 'super_admin', 'management']);
+
+      if (profileError) {
+        console.error('Error checking user profile:', profileError);
+        setEmailError('An error occurred. Please try again.');
+        return;
+      }
+
+      if (!profiles || profiles.length === 0) {
+        setEmailError('Email not found. Please double-check your entry or contact support.');
+        return;
+      }
+
+      // Email exists, proceed with password reset
       const { error } = await supabase.functions.invoke('send-password-reset', {
         body: { email }
       });
 
       if (error) {
         console.error('Password reset error:', error);
-        // Show generic message to prevent account enumeration
-        toast({
-          title: "Reset Link Sent",
-          description: "If an account with that email exists, you'll receive a password reset link shortly.",
-        });
-      } else {
-        toast({
-          title: "Reset Link Sent",
-          description: "If an account with that email exists, you'll receive a password reset link shortly.",
-        });
+        setEmailError('Failed to send reset email. Please try again.');
+        return;
       }
+
+      toast({
+        title: "Reset Link Sent",
+        description: "A password reset link has been sent to your email address.",
+      });
       
       setSubmitted(true);
     } catch (error) {
       console.error('Password reset error:', error);
-      toast({
-        title: "Reset Link Sent",
-        description: "If an account with that email exists, you'll receive a password reset link shortly.",
-      });
-      setSubmitted(true);
+      setEmailError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -103,11 +116,22 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
                 type="email"
                 placeholder="Enter your email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setEmailError(''); // Clear error when user types
+                }}
                 required
-                className="pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 text-slate-700 bg-white/60"
+                className={`pl-10 h-12 border-slate-200 focus:border-orange-500 focus:ring-orange-500 text-slate-700 bg-white/60 ${
+                  emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                }`}
               />
             </div>
+            {emailError && (
+              <p className="text-red-600 text-sm mt-1 flex items-center">
+                <span className="mr-1">⚠</span>
+                {emailError}
+              </p>
+            )}
           </div>
           
           <div className="space-y-4">
