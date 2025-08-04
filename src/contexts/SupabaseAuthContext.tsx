@@ -34,15 +34,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('✅ Logout successful');
       
-      // Wait a moment for auth state to update, then navigate
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 100);
-      
     } catch (error) {
       console.error('💥 Logout handler error:', error);
-      // Force navigation to login even if logout fails
-      window.location.href = '/login';
     }
   };
 
