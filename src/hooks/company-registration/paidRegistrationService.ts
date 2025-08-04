@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RegistrationFormData } from './types';
 import * as CryptoJS from "crypto-js";
 import { SECRET_KEY } from './constants';
+import { sendWelcomeEmail } from '@/utils/sendWelcomeEmail';
 
 export const processPaidRegistration = async (
   formData: RegistrationFormData,
@@ -156,6 +157,20 @@ export const processPaidRegistration = async (
 
   if (requestError) {
     console.warn('⚠️ Failed to insert registration request log:', requestError);
+  }
+
+  // Send welcome email to new user
+  try {
+    await sendWelcomeEmail({
+      to: formData.adminEmail,
+      firstName: formData.adminFirstName,
+      lastName: formData.adminLastName,
+      companyName: formData.companyName
+    });
+    console.log('✅ Welcome email sent successfully');
+  } catch (emailError) {
+    console.warn('⚠️ Failed to send welcome email:', emailError);
+    // Don't fail the registration if email fails
   }
 
   console.log('🎉 Registration completed successfully for new company:', company.id);
