@@ -271,6 +271,17 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
       return;
     }
 
+    // Check if this is a temporary ID and fetch the real employee data
+    if (id.startsWith('temp-')) {
+      console.error('❌ Cannot update employee with temporary ID:', id);
+      toast({
+        title: "Update Failed",
+        description: "Cannot update employee with temporary ID. Please refresh the page and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Immediately update UI with optimistic update
     const updatedEmployee = { 
       ...currentEmployee, 
