@@ -33,6 +33,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { to, subject, html, attachments }: SendEmailRequest = await req.json();
 
     console.log('Sending email to:', to, 'with subject:', subject);
+    console.log('Using RESEND_API_KEY:', Deno.env.get("RESEND_API_KEY") ? 'Available' : 'Missing');
     if (attachments) {
       console.log('Attachments:', attachments.map(a => a.filename));
     }
