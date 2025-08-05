@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RegistrationFormData } from './types';
 import * as CryptoJS from "crypto-js";
 import { SECRET_KEY } from './constants';
+import { sendWelcomeEmail } from '@/utils/emails/sendWelcomeEmail';
 
 export const processFreeRegistration = async (formData: RegistrationFormData) => {
   console.log('📝 Processing free registration - creating new company pending approval');
@@ -27,6 +28,17 @@ export const processFreeRegistration = async (formData: RegistrationFormData) =>
     console.error('❌ Free registration failed:', requestError);
     throw new Error(`Failed to submit registration request: ${requestError.message}`);
   }
+
+  // Send welcome email for free registration
+  const userName = formData.adminFirstName && formData.adminLastName 
+    ? `${formData.adminFirstName} ${formData.adminLastName}` 
+    : undefined;
+  
+  await sendWelcomeEmail({
+    to: formData.adminEmail,
+    name: userName
+  });
+  console.log('✅ Welcome email sent for free registration');
 
   return {
     success: true,
