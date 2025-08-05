@@ -38,7 +38,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailData: any = {
-      from: "StackBuild <onboarding@resend.dev>", // Temporary fallback until domain is verified
+      from: "StackBuild <no-reply@stackbuild.ca>",
       to: [to],
       subject: subject,
       html: html,
