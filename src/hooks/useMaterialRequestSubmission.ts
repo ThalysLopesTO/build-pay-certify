@@ -24,30 +24,42 @@ export const useMaterialRequestSubmission = () => {
 
   return useMutation({
     mutationFn: async (data: MaterialRequestData) => {
+      console.log('🔄 Material request submission started');
+      console.log('🔍 User info:', { userId: user?.id, companyId: user?.companyId });
+      console.log('📝 Request data:', data);
+      
       if (!user?.id || !user?.companyId) {
+        console.error('❌ User not authenticated:', { userId: user?.id, companyId: user?.companyId });
         throw new Error('User not authenticated');
       }
 
-      console.log('Submitting material request:', data);
+      console.log('✅ User authenticated, proceeding with submission');
+
+      // Prepare the insert data
+      const insertData = {
+        jobsite_id: data.jobsiteId,
+        delivery_date: data.deliveryDate.toISOString().split('T')[0],
+        delivery_time: data.deliveryTime,
+        floor_unit: data.floorUnit || null,
+        material_list: data.materialList,
+        status: 'pending' as const,
+        submitted_by: user.id,
+        company_id: user.companyId,
+      };
+      
+      console.log('📤 Inserting material request with data:', insertData);
 
       // Insert the main material request
       const { data: materialRequest, error: requestError } = await supabase
         .from('material_requests')
-        .insert({
-          jobsite_id: data.jobsiteId,
-          delivery_date: data.deliveryDate.toISOString().split('T')[0],
-          delivery_time: data.deliveryTime,
-          floor_unit: data.floorUnit || null,
-          material_list: data.materialList,
-          status: 'pending',
-          submitted_by: user.id,
-          company_id: user.companyId,
-        })
+        .insert(insertData)
         .select()
         .single();
 
+      console.log('📥 Supabase response:', { materialRequest, requestError });
+
       if (requestError) {
-        console.error('Error creating material request:', requestError);
+        console.error('❌ Error creating material request:', requestError);
         throw requestError;
       }
 
