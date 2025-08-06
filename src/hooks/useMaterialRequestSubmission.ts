@@ -25,12 +25,18 @@ export const useMaterialRequestSubmission = () => {
   return useMutation({
     mutationFn: async (data: MaterialRequestData) => {
       console.log('🔄 Material request submission started');
-      console.log('🔍 User info:', { userId: user?.id, companyId: user?.companyId });
+      console.log('🔍 Full user object:', user);
+      console.log('🔍 User info:', { userId: user?.id, companyId: user?.companyId, role: user?.role });
       console.log('📝 Request data:', data);
       
-      if (!user?.id || !user?.companyId) {
-        console.error('❌ User not authenticated:', { userId: user?.id, companyId: user?.companyId });
-        throw new Error('User not authenticated');
+      if (!user?.id) {
+        console.error('❌ User ID not found:', { user });
+        throw new Error('User not authenticated - no user ID');
+      }
+
+      if (!user?.companyId) {
+        console.error('❌ Company ID not found:', { user });
+        throw new Error('User not authenticated - no company ID');
       }
 
       console.log('✅ User authenticated, proceeding with submission');
