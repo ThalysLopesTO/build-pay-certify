@@ -39,7 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailData: any = {
-      from: "StackBuild <no-reply@stackbuild.ca>",
+      from: "Contact@stackbuild.ca",
       to: [to],
       subject: subject,
       html: html,
