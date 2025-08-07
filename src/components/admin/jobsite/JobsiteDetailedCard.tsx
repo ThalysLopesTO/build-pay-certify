@@ -11,6 +11,7 @@ import { formatCoordinates } from '@/services/geocoding';
 import JobsiteTaskCard from './JobsiteTaskCard';
 import JobsiteMaterialTakeoff from './JobsiteMaterialTakeoff';
 import JobsiteEditModal from './JobsiteEditModal';
+import EditJobsiteDialog from './EditJobsiteDialog';
 
 interface Jobsite {
   id: string;
@@ -35,6 +36,7 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const handleDelete = async () => {
     if (window.confirm(`Are you sure you want to delete "${jobsite.name}"? This action cannot be undone.`)) {
@@ -154,7 +156,7 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowEditModal(true)}
+              onClick={() => setShowEditDialog(true)}
               className="text-gray-600 hover:bg-gray-50 hover:text-gray-700 p-2 rounded-full"
             >
               <Edit className="h-4 w-4" />
@@ -267,6 +269,15 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
         jobsite={jobsite}
         open={showEditModal}
         onOpenChange={setShowEditModal}
+      />
+
+      <EditJobsiteDialog
+        isOpen={showEditDialog}
+        onClose={() => setShowEditDialog(false)}
+        jobsite={{
+          ...jobsite,
+          status: jobsite.status || 'active'
+        }}
       />
     </Card>
   );

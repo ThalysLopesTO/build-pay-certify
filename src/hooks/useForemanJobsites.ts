@@ -24,10 +24,14 @@ export const useForemanJobsites = () => {
         throw new Error('User not authenticated');
       }
 
+      // Query jobsites through the join table
       const { data, error } = await supabase
         .from('jobsites')
-        .select('*')
-        .eq('assigned_foreman_id', user.id)
+        .select(`
+          *,
+          jobsite_foremen!inner(foreman_id)
+        `)
+        .eq('jobsite_foremen.foreman_id', user.id)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 

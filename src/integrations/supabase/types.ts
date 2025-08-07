@@ -946,6 +946,35 @@ export type Database = {
           },
         ]
       }
+      jobsite_foremen: {
+        Row: {
+          created_at: string
+          foreman_id: string
+          id: string
+          jobsite_id: string
+        }
+        Insert: {
+          created_at?: string
+          foreman_id: string
+          id?: string
+          jobsite_id: string
+        }
+        Update: {
+          created_at?: string
+          foreman_id?: string
+          id?: string
+          jobsite_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobsite_foremen_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobsite_tasks: {
         Row: {
           company_id: string

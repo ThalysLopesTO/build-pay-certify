@@ -89,7 +89,12 @@ const JobsiteProgress = () => {
             <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No Assigned Projects</h3>
             <p>You haven't been assigned to any jobsites yet.</p>
-            <p className="text-sm">Contact your supervisor to get assigned to projects.</p>
+            <p className="text-sm">Contact your administrator to get assigned to projects.</p>
+            <div className="mt-4 p-4 bg-muted/30 rounded-lg max-w-md mx-auto">
+              <p className="text-xs text-muted-foreground">
+                Your administrator can assign you to projects through the Admin Panel → Jobsite Management section.
+              </p>
+            </div>
           </div>
         ) : (
           jobsites.map((jobsite) => (
