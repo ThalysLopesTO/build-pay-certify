@@ -1003,6 +1003,7 @@ export type Database = {
       jobsites: {
         Row: {
           address: string | null
+          assigned_foreman_id: string | null
           company_id: string | null
           completion_date: string | null
           created_at: string
@@ -1016,6 +1017,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          assigned_foreman_id?: string | null
           company_id?: string | null
           completion_date?: string | null
           created_at?: string
@@ -1029,6 +1031,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          assigned_foreman_id?: string | null
           company_id?: string | null
           completion_date?: string | null
           created_at?: string

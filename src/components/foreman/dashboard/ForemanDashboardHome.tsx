@@ -114,16 +114,44 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
     enabled: !!user?.companyId,
   });
 
-  // Calculate jobsite progress for the top 3 active jobsites
-  const jobsiteProgressData = jobsites.slice(0, 3).map(jobsite => {
-    // Mock progress calculation based on creation date (you can enhance this with real task data)
-    const daysSinceStart = Math.floor((new Date().getTime() - new Date(jobsite.created_at).getTime()) / (1000 * 60 * 60 * 24));
-    const progress = Math.min(daysSinceStart * 2, 100); // Mock: 2% per day, max 100%
+  // Calculate jobsite progress for the top 3 active jobsites assigned to this foreman
+  const { data: foremanJobsites = [] } = useQuery({
+    queryKey: ['foreman-assigned-jobsites', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('jobsites')
+        .select(`
+          id,
+          name,
+          created_at,
+          starting_date,
+          due_date,
+          jobsite_tasks(id, status)
+        `)
+        .eq('assigned_foreman_id', user.id)
+        .eq('status', 'active')
+        .limit(3);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const jobsiteProgressData = foremanJobsites.map(jobsite => {
+    const tasks = jobsite.jobsite_tasks || [];
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter((task: any) => task.status === 'completed').length;
+    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     
     return {
       id: jobsite.id,
       name: jobsite.name,
-      progress: progress
+      progress,
+      totalTasks,
+      completedTasks
     };
   });
 
@@ -191,7 +219,12 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
                   <div key={job.id} className="space-y-3 p-3 bg-muted/30 rounded-lg">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium truncate flex-1 mr-2">{job.name}</span>
-                      <span className="text-sm text-muted-foreground font-semibold">{job.progress}%</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {job.completedTasks}/{job.totalTasks} tasks
+                        </span>
+                        <span className="text-sm text-muted-foreground font-semibold">{job.progress}%</span>
+                      </div>
                     </div>
                     <Progress value={job.progress} className="h-2" />
                   </div>
@@ -199,7 +232,8 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
               ) : (
                 <div className="text-center py-8 text-muted-foreground text-sm">
                   <Building className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                  <p>No active jobsites</p>
+                  <p>No assigned jobsites</p>
+                  <p className="text-xs">Contact your supervisor to get assigned to projects</p>
                 </div>
               )}
             </div>
@@ -209,7 +243,7 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
               className="w-full hover:bg-primary/5" 
               onClick={() => setActiveTab('jobsite-progress')}
             >
-              View All Jobs
+              View My Projects
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           </CardContent>
