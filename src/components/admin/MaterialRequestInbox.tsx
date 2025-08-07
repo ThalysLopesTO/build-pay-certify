@@ -183,33 +183,49 @@ const MaterialRequestInbox = () => {
         onClearFilters={clearFilters}
       />
 
-      {/* Enhanced Requests List */}
-      {requests.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Inbox className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="text-lg font-semibold mb-2">No Material Requests Found</h3>
-            <p className="text-muted-foreground">
-              {searchTerm || statusFilter !== 'all' || dateFrom || dateTo || jobsiteFilter !== 'all'
-                ? 'No requests match your current filters.' 
-                : 'No material requests have been submitted yet.'
-              }
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6">
-          {requests.map((request) => (
-            <EnhancedMaterialRequestCard
-              key={request.id}
-              request={request}
-              onStatusUpdate={handleStatusUpdate}
-              onViewDetails={handleViewDetails}
-              onExportPDF={handleExportPDF}
-            />
-          ))}
-        </div>
-      )}
+      {/* Material Requests List */}
+      <div className="container max-w-7xl mx-auto">
+        {requests.length === 0 ? (
+          <Card className="shadow-sm">
+            <CardContent className="text-center py-16">
+              <div className="flex flex-col items-center gap-4">
+                <div className="bg-gray-100 p-6 rounded-full">
+                  <Inbox className="h-12 w-12 text-gray-400" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold text-gray-900">No Material Requests Found</h3>
+                  <p className="text-muted-foreground max-w-md">
+                    {searchTerm || statusFilter !== 'all' || dateFrom || dateTo || jobsiteFilter !== 'all'
+                      ? 'No requests match your current filters. Try adjusting your search criteria.' 
+                      : 'No material requests have been submitted yet. Requests will appear here once foremen submit them.'
+                    }
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {requests.length} Request{requests.length > 1 ? 's' : ''} Found
+              </h3>
+            </div>
+            
+            <div className="grid gap-6">
+              {requests.map((request) => (
+                <EnhancedMaterialRequestCard
+                  key={request.id}
+                  request={request}
+                  onStatusUpdate={handleStatusUpdate}
+                  onViewDetails={handleViewDetails}
+                  onExportPDF={handleExportPDF}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Details Panel */}
       <MaterialRequestDetailsPanel

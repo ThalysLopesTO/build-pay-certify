@@ -25,11 +25,21 @@ const EnhancedMaterialRequestCard = ({
 
   const getStatusColor = (status: RequestStatus) => {
     switch (status) {
-      case 'pending': return 'bg-warning text-warning-foreground';
-      case 'ordered': return 'bg-info text-info-foreground';
-      case 'delivered': return 'bg-success text-success-foreground';
-      case 'archived': return 'bg-muted text-muted-foreground';
-      default: return 'bg-muted text-muted-foreground';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'ordered': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'delivered': return 'bg-green-100 text-green-800 border-green-200';
+      case 'archived': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusIcon = (status: RequestStatus) => {
+    switch (status) {
+      case 'delivered': return '✅';
+      case 'ordered': return '📦';
+      case 'pending': return '⏳';
+      case 'archived': return '📁';
+      default: return '';
     }
   };
 
@@ -56,133 +66,174 @@ const EnhancedMaterialRequestCard = ({
   };
 
   return (
-    <Card className={`transition-all duration-200 hover:shadow-md ${isOverdue() ? 'border-destructive/50' : ''}`}>
+    <Card className={`transition-all duration-200 hover:shadow-lg border-l-4 ${
+      isOverdue() ? 'border-l-red-500 bg-red-50/50' : 
+      isSameDay() ? 'border-l-yellow-500 bg-yellow-50/50' : 
+      'border-l-gray-200'
+    }`}>
       <CardContent className="p-6">
-        <div className="space-y-4">
-          {/* Header */}
+        <div className="space-y-5">
+          {/* Header Section */}
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-lg font-semibold text-foreground">
+                <h3 className="text-xl font-bold text-foreground leading-tight">
                   {request.jobsites?.name || 'Unknown Jobsite'}
                 </h3>
-                <Badge className={getStatusColor(request.status)}>
-                  {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                <Badge className={`${getStatusColor(request.status)} font-medium px-3 py-1`}>
+                  {getStatusIcon(request.status)} {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                 </Badge>
-                {isOverdue() && (
-                  <Badge variant="destructive" className="text-xs">
-                    Overdue
-                  </Badge>
-                )}
-                {isSameDay() && (
-                  <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
-                    Same Day
-                  </Badge>
-                )}
               </div>
               
               {request.jobsites?.address && (
-                <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-                  <MapPin className="h-3 w-3" />
-                  <span>{request.jobsites.address}</span>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span className="text-sm">{request.jobsites.address}</span>
                 </div>
               )}
             </div>
             
-            {attachments.length > 0 && (
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Image className="h-4 w-4" />
-                <span className="text-sm">{attachments.length}</span>
-              </div>
-            )}
+            <div className="flex flex-col items-end gap-2">
+              {attachments.length > 0 && (
+                <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-xs font-medium">
+                  <Image className="h-3 w-3" />
+                  <span>{attachments.length} photo{attachments.length > 1 ? 's' : ''}</span>
+                </div>
+              )}
+              
+              {isOverdue() && (
+                <Badge variant="destructive" className="text-xs font-semibold">
+                  ⚠️ Overdue
+                </Badge>
+              )}
+              
+              {isSameDay() && !isOverdue() && (
+                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 text-xs font-semibold">
+                  ⚠️ Same-Day Delivery
+                </Badge>
+              )}
+            </div>
           </div>
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">
-                  {format(new Date(request.delivery_date), 'MMM dd, yyyy')}
-                </span>
+          {/* Delivery Information Section */}
+          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Delivery Info</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="flex items-center gap-2">
+                <div className="bg-blue-100 p-1 rounded">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Date</p>
+                  <p className="font-semibold text-sm">
+                    {format(new Date(request.delivery_date), 'MMM dd, yyyy')}
+                  </p>
+                </div>
               </div>
               
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{request.delivery_time}</span>
+              <div className="flex items-center gap-2">
+                <div className="bg-green-100 p-1 rounded">
+                  <Clock className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Time</p>
+                  <p className="font-semibold text-sm">{request.delivery_time}</p>
+                </div>
               </div>
               
               {request.floor_unit && (
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>Floor/Unit: {request.floor_unit}</span>
+                <div className="flex items-center gap-2">
+                  <div className="bg-purple-100 p-1 rounded">
+                    <MapPin className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Floor/Unit</p>
+                    <p className="font-semibold text-sm">{request.floor_unit}</p>
+                  </div>
                 </div>
               )}
             </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span>{formatUserDisplay(request.submitted_by, (request as any).submitted_by_name)}</span>
+          </div>
+
+          {/* Submitted By Section */}
+          <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <User className="h-4 w-4 text-blue-600" />
               </div>
-              
-              <div className="text-xs text-muted-foreground">
-                Submitted {format(new Date(request.created_at), 'MMM dd \'at\' h:mm a')}
+              <div>
+                <p className="font-semibold text-sm text-gray-900">
+                  {formatUserDisplay(request.submitted_by, (request as any).submitted_by_name)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Submitted {format(new Date(request.created_at), 'MMM dd \'at\' h:mm a')}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Material List Preview */}
-          <div className="space-y-2">
+          {/* Material List Section */}
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Package2 className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Materials</span>
+              <div className="bg-orange-100 p-1 rounded">
+                <Package2 className="h-4 w-4 text-orange-600" />
+              </div>
+              <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Materials</h4>
             </div>
-            <div className="bg-muted/50 rounded-md p-3">
-              <p className="text-sm text-muted-foreground">
-                {truncateText(request.material_list)}
+            <div className="bg-gray-50 border-l-4 border-l-orange-500 rounded-r-lg p-4">
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {truncateText(request.material_list, 150)}
               </p>
+              {request.material_list.length > 150 && (
+                <p className="text-xs text-blue-600 mt-2 cursor-pointer hover:underline" 
+                   onClick={() => onViewDetails(request)}>
+                  View full list...
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="flex items-center gap-2">
+          {/* Actions Section */}
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-3">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onViewDetails(request)}
-                className="flex items-center gap-1"
+                className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors"
               >
                 <Eye className="h-4 w-4" />
-                Details
+                View Details
               </Button>
               
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onExportPDF(request)}
-                className="flex items-center gap-1"
+                className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 hover:text-green-700 transition-colors"
               >
                 <Download className="h-4 w-4" />
                 Export PDF
               </Button>
             </div>
             
-            <Select
-              value={request.status}
-              onValueChange={(value: RequestStatus) => onStatusUpdate(request.id, value)}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="ordered">Ordered</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Status:</span>
+              <Select
+                value={request.status}
+                onValueChange={(value: RequestStatus) => onStatusUpdate(request.id, value)}
+              >
+                <SelectTrigger className="w-36 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">⏳ Pending</SelectItem>
+                  <SelectItem value="ordered">📦 Ordered</SelectItem>
+                  <SelectItem value="delivered">✅ Delivered</SelectItem>
+                  <SelectItem value="archived">📁 Archived</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </CardContent>
