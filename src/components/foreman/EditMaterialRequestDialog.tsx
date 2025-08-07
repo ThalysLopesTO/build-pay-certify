@@ -10,8 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import JobsiteSelect from './JobsiteSelect';
 import DatePickerField from './DatePickerField';
+import FileUploadField from './FileUploadField';
 import { useMaterialRequestEdit } from '@/hooks/useMaterialRequestEdit';
+import { useMaterialRequestAttachments, useUploadMaterialRequestAttachments, useDeleteMaterialRequestAttachment } from '@/hooks/useMaterialRequestAttachments';
 import { EnrichedMaterialRequest } from '@/hooks/useMaterialRequests';
+
+interface FileWithPreview extends File {
+  id: string;
+  preview?: string;
+}
 
 const formSchema = z.object({
   jobsiteId: z.string().min(1, 'Please select a jobsite'),
@@ -21,6 +28,7 @@ const formSchema = z.object({
   deliveryTime: z.string().min(1, 'Please enter the delivery time'),
   floorUnit: z.string().optional(),
   materialList: z.string().min(1, 'Please enter the material list'),
+  photos: z.array(z.any()).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -36,6 +44,9 @@ const EditMaterialRequestDialog: React.FC<EditMaterialRequestDialogProps> = ({
 }) => {
   const [open, setOpen] = React.useState(false);
   const editMutation = useMaterialRequestEdit();
+  const uploadMutation = useUploadMaterialRequestAttachments();
+  const deleteMutation = useDeleteMaterialRequestAttachment();
+  const { data: existingAttachments = [] } = useMaterialRequestAttachments(request.id);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -45,11 +56,13 @@ const EditMaterialRequestDialog: React.FC<EditMaterialRequestDialogProps> = ({
       deliveryTime: request.delivery_time,
       floorUnit: request.floor_unit || '',
       materialList: request.material_list,
+      photos: [],
     },
   });
 
   const onSubmit = async (data: FormData) => {
     try {
+      // Update the material request first
       await editMutation.mutateAsync({
         id: request.id,
         jobsiteId: data.jobsiteId,
@@ -58,8 +71,35 @@ const EditMaterialRequestDialog: React.FC<EditMaterialRequestDialogProps> = ({
         floorUnit: data.floorUnit,
         materialList: data.materialList,
       });
+
+      // Upload new photos if any
+      if (data.photos && data.photos.length > 0) {
+        await uploadMutation.mutateAsync({
+          files: data.photos,
+          materialRequestId: request.id,
+        });
+      }
+
       setOpen(false);
-      form.reset();
+      form.reset({
+        jobsiteId: request.jobsites?.id || '',
+        deliveryDate: new Date(request.delivery_date + 'T00:00:00'),
+        deliveryTime: request.delivery_time,
+        floorUnit: request.floor_unit || '',
+        materialList: request.material_list,
+        photos: [],
+      });
+    } catch (error) {
+      // Error is handled by the mutation hook
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId: string, filePath: string) => {
+    try {
+      await deleteMutation.mutateAsync({
+        attachmentId,
+        filePath,
+      });
     } catch (error) {
       // Error is handled by the mutation hook
     }
@@ -160,6 +200,56 @@ const EditMaterialRequestDialog: React.FC<EditMaterialRequestDialogProps> = ({
               )}
             />
 
+            {/* Existing Attachments */}
+            {existingAttachments.length > 0 && (
+              <div className="space-y-3">
+                <FormLabel>Current Photos ({existingAttachments.length})</FormLabel>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {existingAttachments.map((attachment) => (
+                    <div key={attachment.id} className="relative group">
+                      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                        {attachment.file_type.startsWith('image/') ? (
+                          <img
+                            src={`https://qsqjwpajvcmahoamwwww.supabase.co/storage/v1/object/public/material-request-attachments/${attachment.file_path}`}
+                            alt={attachment.file_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <span className="text-xs text-gray-500 text-center p-2">
+                              {attachment.file_name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteAttachment(attachment.id, attachment.file_path)}
+                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        disabled={deleteMutation.isPending}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <FormField
+              control={form.control}
+              name="photos"
+              render={({ field }) => (
+                <FileUploadField
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  disabled={editMutation.isPending || uploadMutation.isPending}
+                />
+              )}
+            />
+
             <div className="flex justify-end space-x-2">
               <Button
                 type="button"
@@ -171,10 +261,10 @@ const EditMaterialRequestDialog: React.FC<EditMaterialRequestDialogProps> = ({
               </Button>
               <Button
                 type="submit"
-                disabled={editMutation.isPending}
+                disabled={editMutation.isPending || uploadMutation.isPending}
               >
                 <Save className="h-4 w-4 mr-1" />
-                {editMutation.isPending ? 'Saving...' : 'Save Changes'}
+                {editMutation.isPending || uploadMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </form>
