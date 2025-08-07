@@ -118,21 +118,14 @@ const PayrollSummary = () => {
         });
       }
       
-      // Calculate week ending date from week start date using company's week ending day
+      // Calculate period end date from start date
       const weekStartDate = new Date(timesheet.week_start_date);
+      const periodDays = ((settings as any)?.timesheet_frequency === 'bi-weekly') ? 14 : 7;
       const weekEndDate = new Date(weekStartDate);
-      // Calculate how many days to add to get to the week ending day
-      const weekStartDayOfWeek = weekStartDate.getDay();
-      let daysToAdd = weekEndingDay - weekStartDayOfWeek;
-      if (daysToAdd < 0) {
-        daysToAdd += 7;
-      }
-      weekEndDate.setDate(weekStartDate.getDate() + daysToAdd);
-      
-      // Calculate the proper week start date that aligns with company's week ending day
-      // This ensures filtering works correctly with the week periods from useWorkWeek
-      const properWeekStartDate = new Date(weekEndDate);
-      properWeekStartDate.setDate(weekEndDate.getDate() - 6); // Week starts 6 days before ending
+      weekEndDate.setDate(weekStartDate.getDate() + (periodDays - 1));
+
+      // For filtering, use the calculated period start date string
+      const properWeekStartDate = weekStartDate;
       const properWeekStartDateString = format(properWeekStartDate, 'yyyy-MM-dd');
       
       return {
@@ -409,7 +402,7 @@ const PayrollSummary = () => {
               <div>
                 <p className="text-sm font-medium text-slate-600">Total Approved Payroll</p>
                 <p className="text-3xl font-bold text-green-600">${totalPayroll.toLocaleString()}</p>
-                <p className="text-xs text-slate-500 mt-1">From approved weekly timesheets</p>
+                <p className="text-xs text-slate-500 mt-1">From approved timesheets</p>
               </div>
               <div className="p-3 bg-green-100 rounded-full">
                 <DollarSign className="h-8 w-8 text-green-600" />
@@ -633,7 +626,7 @@ const PayrollSummary = () => {
       {/* Payroll Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Weekly Payroll Summary (Approved Timesheets Only)</CardTitle>
+          <CardTitle>Payroll Summary (Approved Timesheets Only)</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -656,7 +649,7 @@ const PayrollSummary = () => {
                      <th className="text-left p-4 font-semibold bg-slate-50">Type</th>
                      <th className="text-left p-4 font-semibold bg-slate-50">Trade</th>
                      <th className="text-left p-4 font-semibold bg-slate-50">Jobsite</th>
-                     <th className="text-left p-4 font-semibold bg-slate-50">Week Ending</th>
+                     <th className="text-left p-4 font-semibold bg-slate-50">Period Ending</th>
                      <th className="text-center p-4 font-semibold bg-slate-50">Hours</th>
                      <th className="text-center p-4 font-semibold bg-slate-50">Rate</th>
                      <th className="text-center p-4 font-semibold bg-slate-50 text-green-600">Gross Pay</th>

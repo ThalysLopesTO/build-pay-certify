@@ -223,10 +223,10 @@ const EmployeeTimesheets = () => {
         <CardHeader className="p-6 pb-4">
           <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Calendar className="h-6 w-6 text-orange-600" />
-            Employee Weekly Timesheet Submissions
+            Employee Timesheet Submissions
           </CardTitle>
           <p className="text-gray-600 mt-2">
-            Review and approve manually submitted weekly timesheets from employees
+            Review and approve manually submitted timesheets from employees
           </p>
         </CardHeader>
       </Card>
@@ -291,9 +291,9 @@ const EmployeeTimesheets = () => {
       <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
         <CardHeader className="p-6 pb-4">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-xl font-bold text-gray-900">
-              Weekly Timesheet Submissions ({timesheets.length} total)
-            </CardTitle>
+              <CardTitle className="text-xl font-bold text-gray-900">
+                Timesheet Submissions ({timesheets.length} total)
+              </CardTitle>
             {canCreateManualTimesheet && (
               <Button 
                 onClick={() => setIsCreateModalOpen(true)}

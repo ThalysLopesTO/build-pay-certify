@@ -167,6 +167,29 @@ export const useTimesheetForm = () => {
       return;
     }
 
+    // Build optional bi-weekly breakdown payload for notes
+    let notesWithBreakdown = data.notes || '';
+    if (isBiWeekly && selectedWeek) {
+      const days: { date: string; label: string; hours: number }[] = [];
+      for (let i = 0; i < 14; i++) {
+        const date = new Date(selectedWeek.startDate);
+        date.setDate(date.getDate() + i);
+        const dayIdx = date.getDay(); // 0-6
+        const dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const baseFields = ['sundayHours','mondayHours','tuesdayHours','wednesdayHours','thursdayHours','fridayHours','saturdayHours'];
+        const week2Suffix = i >= 7 ? 'Week2' : '';
+        // Prefer explicit form values to avoid stale data
+        const value = form.getValues((baseFields[dayIdx] + week2Suffix) as any) || 0;
+        days.push({
+          date: date.toISOString().split('T')[0],
+          label: `${dayLabels[dayIdx]}`,
+          hours: Number(value) || 0,
+        });
+      }
+      const marker = '__biweekly_json__=' + btoa(JSON.stringify({ days }));
+      notesWithBreakdown = [notesWithBreakdown?.trim(), marker].filter(Boolean).join('\n');
+    }
+
     const timesheetData = {
       jobsiteId: data.jobsiteId,
       weekStartDate: selectedWeek.weekStartDateString,
@@ -179,7 +202,7 @@ export const useTimesheetForm = () => {
       sundayHours: data.sundayHours + (form.getValues('sundayHoursWeek2') || 0),
       hourlyRate: hourlyRate,
       additionalExpense: data.additionalExpense || 0,
-      notes: data.notes || '',
+      notes: notesWithBreakdown,
       taxIncluded: data.tax_included || false,
     };
     
