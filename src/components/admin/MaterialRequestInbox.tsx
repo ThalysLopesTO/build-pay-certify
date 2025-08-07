@@ -5,11 +5,22 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Inbox, Package, AlertCircle, RefreshCw } from 'lucide-react';
-import { useMaterialRequestsAdmin } from '@/hooks/useMaterialRequestsAdmin';
-import MaterialRequestFilters from './MaterialRequestFilters';
-import MaterialRequestItem from './MaterialRequestItem';
+import { useToast } from '@/hooks/use-toast';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import { useEnhancedMaterialRequestsAdmin } from '@/hooks/useEnhancedMaterialRequestsAdmin';
+import { generateMaterialRequestPDF } from '@/utils/materialRequestPDFGenerator';
+import { MaterialRequest } from './types/materialRequest';
+import { supabase } from '@/integrations/supabase/client';
+import EnhancedMaterialRequestFilters from './material-requests/EnhancedMaterialRequestFilters';
+import EnhancedMaterialRequestCard from './material-requests/EnhancedMaterialRequestCard';
+import MaterialRequestDetailsPanel from './material-requests/MaterialRequestDetailsPanel';
 
 const MaterialRequestInbox = () => {
+  const { toast } = useToast();
+  const { settings } = useCompanySettings();
+  const { logoUrl } = useCompanyLogo();
+  
   const {
     requests,
     isLoading,
@@ -18,15 +29,60 @@ const MaterialRequestInbox = () => {
     setSearchTerm,
     statusFilter,
     setStatusFilter,
+    dateFrom,
+    setDateFrom,
+    dateTo,
+    setDateTo,
+    jobsiteFilter,
+    setJobsiteFilter,
     selectedRequest,
     setSelectedRequest,
-    handleStatusUpdate
-  } = useMaterialRequestsAdmin();
+    handleStatusUpdate,
+    clearFilters
+  } = useEnhancedMaterialRequestsAdmin();
+
+  const [detailsPanelOpen, setDetailsPanelOpen] = React.useState(false);
 
   const isPermissionError = (error: any) => {
     return error?.message?.includes('permission denied') || 
            error?.message?.includes('auth.users') ||
            error?.code === 'PGRST301';
+  };
+
+  const handleViewDetails = (request: MaterialRequest) => {
+    setSelectedRequest(request);
+    setDetailsPanelOpen(true);
+  };
+
+  const handleExportPDF = async (request: MaterialRequest) => {
+    try {
+      // Fetch attachments for this request
+      const { data, error } = await supabase
+        .from('material_request_attachments')
+        .select('*')
+        .eq('material_request_id', request.id);
+      
+      const attachments = data || [];
+      
+      await generateMaterialRequestPDF(
+        request as MaterialRequest & { submitted_by_name?: string },
+        settings,
+        logoUrl,
+        attachments
+      );
+      
+      toast({
+        title: "PDF Generated",
+        description: "Material request PDF has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -104,43 +160,57 @@ const MaterialRequestInbox = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <MaterialRequestFilters
+      {/* Enhanced Filters */}
+      <EnhancedMaterialRequestFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
+        dateFrom={dateFrom}
+        setDateFrom={setDateFrom}
+        dateTo={dateTo}
+        setDateTo={setDateTo}
+        jobsiteFilter={jobsiteFilter}
+        setJobsiteFilter={setJobsiteFilter}
+        onClearFilters={clearFilters}
       />
 
-      {/* Requests List */}
-      <Card>
-        <CardContent className="p-0">
-          {requests.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <Inbox className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <h3 className="text-lg font-semibold mb-2">No Material Requests Found</h3>
-              <p>
-                {searchTerm || statusFilter !== 'all' 
-                  ? 'No requests match your current filters.' 
-                  : 'No material requests have been submitted yet.'
-                }
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {requests.map((request) => (
-                <MaterialRequestItem
-                  key={request.id}
-                  request={request}
-                  selectedRequest={selectedRequest}
-                  setSelectedRequest={setSelectedRequest}
-                  onStatusUpdate={handleStatusUpdate}
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Enhanced Requests List */}
+      {requests.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Inbox className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <h3 className="text-lg font-semibold mb-2">No Material Requests Found</h3>
+            <p className="text-muted-foreground">
+              {searchTerm || statusFilter !== 'all' || dateFrom || dateTo || jobsiteFilter !== 'all'
+                ? 'No requests match your current filters.' 
+                : 'No material requests have been submitted yet.'
+              }
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6">
+          {requests.map((request) => (
+            <EnhancedMaterialRequestCard
+              key={request.id}
+              request={request}
+              onStatusUpdate={handleStatusUpdate}
+              onViewDetails={handleViewDetails}
+              onExportPDF={handleExportPDF}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Details Panel */}
+      <MaterialRequestDetailsPanel
+        request={selectedRequest}
+        isOpen={detailsPanelOpen}
+        onClose={() => setDetailsPanelOpen(false)}
+        onStatusUpdate={handleStatusUpdate}
+        onExportPDF={handleExportPDF}
+      />
     </div>
   );
 };
