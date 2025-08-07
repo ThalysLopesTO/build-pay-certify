@@ -11,7 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import JobsiteSelect from './JobsiteSelect';
 import DatePickerField from './DatePickerField';
+import FileUploadField from './FileUploadField';
 import { useMaterialRequestSubmission } from '@/hooks/useMaterialRequestSubmission';
+
+interface FileWithPreview extends File {
+  id: string;
+  preview?: string;
+}
 
 const formSchema = z.object({
   jobsiteId: z.string().min(1, 'Please select a jobsite'),
@@ -21,6 +27,7 @@ const formSchema = z.object({
   deliveryTime: z.string().min(1, 'Please enter the delivery time'),
   floorUnit: z.string().optional(),
   materialList: z.string().min(1, 'Please enter the material list'),
+  files: z.array(z.any()).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -33,6 +40,7 @@ const MaterialRequestForm = () => {
       floorUnit: '',
       materialList: '',
       deliveryTime: '',
+      files: [],
     },
   });
 
@@ -46,6 +54,7 @@ const MaterialRequestForm = () => {
       deliveryTime: data.deliveryTime,
       floorUnit: data.floorUnit,
       materialList: data.materialList,
+      files: data.files as File[],
     };
     
     submitMutation.mutate(requestData);
@@ -133,6 +142,18 @@ const MaterialRequestForm = () => {
                   </FormControl>
                   <FormMessage />
                 </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="files"
+              render={({ field }) => (
+                <FileUploadField
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  disabled={submitMutation.isPending}
+                />
               )}
             />
 

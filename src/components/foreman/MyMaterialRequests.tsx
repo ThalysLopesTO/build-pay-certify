@@ -10,6 +10,8 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { format, differenceInHours } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import EditMaterialRequestDialog from './EditMaterialRequestDialog';
+import MaterialRequestPhotosViewer from './MaterialRequestPhotosViewer';
+import MaterialRequestAttachmentsIndicator from './MaterialRequestAttachmentsIndicator';
 
 const MyMaterialRequests = () => {
   const { user } = useAuth();
@@ -218,10 +220,13 @@ const MyMaterialRequests = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 flex-wrap gap-1">
                         <EditMaterialRequestDialog
                           request={request}
                           canEdit={canEditRequest(request)}
+                        />
+                        <MaterialRequestAttachmentsIndicator
+                          materialRequestId={request.id}
                         />
                         {!canEditRequest(request) && user?.role === 'foreman' && (
                           <span className="text-xs text-gray-500">
