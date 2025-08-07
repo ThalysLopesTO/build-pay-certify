@@ -195,7 +195,12 @@ const MyMaterialRequests = () => {
                         <Calendar className="h-4 w-4 text-gray-500" />
                         <div>
                           <div>{format(new Date(request.delivery_date + 'T00:00:00'), 'PPP')}</div>
-                          <div className="text-sm text-gray-500">{request.delivery_time}</div>
+                          <div className="text-sm text-gray-500">
+                            {request.delivery_time && /^\d{2}:\d{2}$/.test(request.delivery_time)
+                              ? format(new Date(`2000-01-01T${request.delivery_time}`), 'h:mm a')
+                              : request.delivery_time
+                            }
+                          </div>
                         </div>
                       </div>
                     </TableCell>
