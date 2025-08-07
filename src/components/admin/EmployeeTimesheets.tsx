@@ -104,29 +104,81 @@ const EmployeeTimesheets = () => {
       return;
     }
 
-    const excelData = selectedTimesheetsData.map(timesheet => ({
-      'Employee': timesheet.is_manual_entry ? timesheet.manual_entry_name : (timesheet.employee_name || 'Former Employee'),
-      'Entry Type': timesheet.is_manual_entry ? 'Manual Entry' : 'Employee Submission',
-      'Week Starting': timesheet.week_start_date,
-      'Monday': timesheet.monday_hours || 0,
-      'Tuesday': timesheet.tuesday_hours || 0,
-      'Wednesday': timesheet.wednesday_hours || 0,
-      'Thursday': timesheet.thursday_hours || 0,
-      'Friday': timesheet.friday_hours || 0,
-      'Saturday': timesheet.saturday_hours || 0,
-      'Sunday': timesheet.sunday_hours || 0,
-      'Total Hours': timesheet.total_hours || 0,
-      'Hourly Rate': timesheet.hourly_rate || 0,
-      'Additional Expenses': timesheet.additional_expense || 0,
-      'Gross Pay': timesheet.gross_pay || 0,
-      'Tax Included': timesheet.tax_included ? 'Yes' : 'No',
-      'Status': timesheet.status,
-      'Submitted Date': timesheet.created_at ? new Date(timesheet.created_at).toLocaleDateString() : '',
-      'Notes': timesheet.notes || ''
-    }));
+    const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
+
+    const parseBreakdown = (notes?: string): number[] | null => {
+      if (!notes) return null;
+      try {
+        const line = notes.split('\n').find((l) => l.startsWith('__biweekly_json__='));
+        if (!line) return null;
+        const json = JSON.parse(atob(line.split('=')[1]));
+        if (Array.isArray(json?.days) && json.days.length === 14) {
+          return json.days.map((d: any) => Number(d.hours || 0));
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    };
+
+    const rows: any[][] = [];
+
+    selectedTimesheetsData.forEach((t) => {
+      const start = new Date(t.week_start_date);
+      const periodDays = isBiWeekly ? 14 : 7;
+      const end = new Date(start);
+      end.setDate(start.getDate() + (periodDays - 1));
+
+      const headersDates = Array.from({ length: periodDays }, (_, i) => format(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), 'MMM dd'));
+
+      const breakdown = isBiWeekly ? parseBreakdown(t.notes) : null;
+      const dailyHours = breakdown ?? [
+        Number(t.monday_hours || 0),
+        Number(t.tuesday_hours || 0),
+        Number(t.wednesday_hours || 0),
+        Number(t.thursday_hours || 0),
+        Number(t.friday_hours || 0),
+        Number(t.saturday_hours || 0),
+        Number(t.sunday_hours || 0),
+      ];
+      if (isBiWeekly && !breakdown) {
+        while (dailyHours.length < 14) dailyHours.push(0);
+      }
+
+      // Build header for each timesheet if first time
+      if (rows.length === 0) {
+        rows.push(['Timesheet Period', `${format(start, 'MMM dd')} – ${format(end, 'MMM dd')}`]);
+        rows.push([]);
+        rows.push([
+          'Employee', 'Entry Type', 'Jobsite', 'Period Start', 'Period End',
+          ...headersDates,
+          'Total Hours', 'Hourly Rate', 'Expenses', 'Gross Pay', 'Tax Included', 'Status', 'Submitted Date', 'Notes'
+        ]);
+      }
+
+      const employeeName = t.is_manual_entry ? (t.manual_entry_name || 'Manual Entry') : (t.employee_name || 'Former Employee');
+      const entryType = t.is_manual_entry ? 'Manual Entry' : 'Employee Submission';
+
+      rows.push([
+        employeeName,
+        entryType,
+        t.jobsite_name || '',
+        format(start, 'yyyy-MM-dd'),
+        format(end, 'yyyy-MM-dd'),
+        ...dailyHours.map((h: number) => Number(h || 0)),
+        Number(t.total_hours || dailyHours.reduce((s: number, v: number) => s + v, 0)),
+        Number(t.hourly_rate || 0),
+        Number(t.additional_expense || 0),
+        Number(t.gross_pay || 0),
+        t.tax_included ? 'Yes' : 'No',
+        t.status,
+        t.created_at ? format(new Date(t.created_at), 'yyyy-MM-dd') : '',
+        t.notes || ''
+      ]);
+    });
 
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(excelData);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, ws, 'Selected Timesheets');
 
     const filename = `Selected-Timesheets-${format(new Date(), 'MMM-dd-yyyy')}.xlsx`;

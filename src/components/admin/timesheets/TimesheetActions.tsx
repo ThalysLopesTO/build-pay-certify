@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Check, X, Edit } from 'lucide-react';
+import { Check, X, Edit, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { TimesheetPDFGenerator } from './TimesheetPDFGenerator';
 
@@ -11,6 +11,7 @@ interface TimesheetActionsProps {
   onReject: (timesheetId: string) => void;
   isApproving: boolean;
   isRejecting: boolean;
+  onTogglePreview?: (open: boolean) => void;
 }
 
 const TimesheetActions: React.FC<TimesheetActionsProps> = ({
@@ -19,7 +20,8 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
   onApprove,
   onReject,
   isApproving,
-  isRejecting
+  isRejecting,
+  onTogglePreview
 }) => {
   const { user } = useAuth();
   
@@ -47,6 +49,15 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
           onDownloadSingle={handleDownloadPDF}
         />
       )}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onTogglePreview?.(true)}
+        className="h-8 w-8 p-0"
+        title="Preview period"
+      >
+        <Eye className="h-4 w-4 text-slate-600" />
+      </Button>
       {timesheet.status !== 'approved' ? (
         <Button
           variant="ghost"

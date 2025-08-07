@@ -1,9 +1,11 @@
+import React, { useState } from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import TimesheetStatusBadge from './TimesheetStatusBadge';
 import TimesheetActions from './TimesheetActions';
+import BiWeeklyPreview from './BiWeeklyPreview';
 
 interface TimesheetRowProps {
   timesheet: any;
@@ -26,6 +28,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
   selectedTimesheets,
   onSelectTimesheet
 }) => {
+  const [showPreview, setShowPreview] = React.useState(false);
   // Calculate deductions for employees
   const isEmployee = timesheet.worker_type === 'employee';
   const grossPay = timesheet.gross_pay || 0;
@@ -51,7 +54,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
     netPay = grossPay + tax;
   }
 
-  return (
+  return (<>
     <tr className="border-b hover:bg-slate-50 transition-colors">
       {selectedTimesheets && onSelectTimesheet && (
         <td className="p-4">
@@ -124,9 +127,18 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
           onReject={onReject}
           isApproving={isApproving}
           isRejecting={isRejecting}
+          onTogglePreview={() => setShowPreview((v) => !v)}
         />
       </td>
     </tr>
+    {showPreview && (
+      <tr className="bg-slate-50/50">
+        <td colSpan={selectedTimesheets ? 12 : 11} className="p-4">
+          <BiWeeklyPreview timesheet={timesheet} frequency="bi-weekly" />
+        </td>
+      </tr>
+    )}
+    </>
   );
 };
 
