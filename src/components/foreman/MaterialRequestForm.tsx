@@ -95,7 +95,7 @@ const MaterialRequestForm = () => {
                   <FormLabel>Delivery Time</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="e.g., 9:00 AM, 2:30 PM, 14:00" 
+                      type="time"
                       {...field} 
                     />
                   </FormControl>
