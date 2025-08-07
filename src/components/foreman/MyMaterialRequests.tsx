@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Inbox, Calendar, MapPin, Package, User, AlertCircle, RefreshCw, Filter } from 'lucide-react';
 import { useMaterialRequests, EnrichedMaterialRequest } from '@/hooks/useMaterialRequests';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { format } from 'date-fns';
+import { format, differenceInHours } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import EditMaterialRequestDialog from './EditMaterialRequestDialog';
 
 const MyMaterialRequests = () => {
   const { user } = useAuth();
@@ -39,6 +40,24 @@ const MyMaterialRequests = () => {
       request.jobsites && request.jobsites.id === selectedProject
     );
   }, [materialRequests, selectedProject]);
+
+  // Check if a request can be edited by the foreman
+  const canEditRequest = (request: EnrichedMaterialRequest) => {
+    // Check if user is admin (can always edit)
+    const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+    if (isAdmin) return true;
+
+    // Check if user is foreman and request is within 24 hours
+    const isForeman = user?.role === 'foreman';
+    if (!isForeman) return false;
+
+    // Check if request was submitted by current user
+    if (request.submitted_by !== user?.id) return false;
+
+    // Check if request is within 24 hours of creation
+    const hoursSinceCreation = differenceInHours(new Date(), new Date(request.created_at));
+    return hoursSinceCreation < 24;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -143,6 +162,7 @@ const MyMaterialRequests = () => {
                   <TableHead>Order Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Materials</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -190,6 +210,22 @@ const MyMaterialRequests = () => {
                     <TableCell className="max-w-xs">
                       <div className="truncate" title={request.material_list}>
                         {request.material_list}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <EditMaterialRequestDialog
+                          request={request}
+                          canEdit={canEditRequest(request)}
+                        />
+                        {!canEditRequest(request) && user?.role === 'foreman' && (
+                          <span className="text-xs text-gray-500">
+                            {differenceInHours(new Date(), new Date(request.created_at)) >= 24
+                              ? 'Edit period expired (24h)'
+                              : 'Cannot edit'
+                            }
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
