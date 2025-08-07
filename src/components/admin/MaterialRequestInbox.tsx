@@ -64,12 +64,20 @@ const MaterialRequestInbox = () => {
       
       const attachments = data || [];
       
-      await generateMaterialRequestPDF(
-        request as MaterialRequest & { submitted_by_name?: string },
-        settings,
-        logoUrl,
+      await generateMaterialRequestPDF({
+        jobsiteName: request.jobsites?.name || 'Unknown Jobsite',
+        jobsiteAddress: request.jobsites?.address,
+        deliveryDate: request.delivery_date,
+        deliveryTime: request.delivery_time,
+        floorUnit: request.floor_unit,
+        materialList: request.material_list,
+        submittedBy: (request as any).submitted_by_name || 'Unknown User',
+        submittedAt: request.created_at,
         attachments
-      );
+      }, {
+        logoUrl,
+        companyName: settings?.company_name
+      });
       
       toast({
         title: "PDF Generated",
