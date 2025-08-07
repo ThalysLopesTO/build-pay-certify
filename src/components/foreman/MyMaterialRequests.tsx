@@ -174,7 +174,7 @@ const MyMaterialRequests = () => {
                       <div className="flex items-center space-x-2">
                         <Calendar className="h-4 w-4 text-gray-500" />
                         <div>
-                          <div>{format(new Date(request.delivery_date), 'MMM dd, yyyy')}</div>
+                          <div>{format(new Date(request.delivery_date), 'PPP')}</div>
                           <div className="text-sm text-gray-500">{request.delivery_time}</div>
                         </div>
                       </div>
