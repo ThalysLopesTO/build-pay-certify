@@ -4,18 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Users, Clock, Building, Activity, ChevronRight, CheckCircle, AlertCircle, Package, Calendar } from 'lucide-react';
+import { Clock, Building, ChevronRight, Package } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useJobsites } from '@/hooks/useJobsites';
-import ForemanTimesheetForm from '../ForemanTimesheetForm';
+import TodayPunchesCard from './TodayPunchesCard';
 
-interface LivePunchData {
-  totalEmployees: number;
-  punchedInEmployees: number;
-  isActive: boolean;
-}
 
 interface TimesheetSummary {
   pending: number;
@@ -63,42 +58,6 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
     enabled: !!user?.id,
   });
 
-  // Fetch live punch data
-  const { data: livePunchData, isLoading: punchLoading } = useQuery<LivePunchData>({
-    queryKey: ['live-punch-data', user?.companyId],
-    queryFn: async () => {
-      if (!user?.companyId) throw new Error('No company ID');
-
-      // Get all active employees for the company
-      const { data: employees, error: employeeError } = await supabase
-        .from('user_profiles')
-        .select('user_id')
-        .eq('company_id', user.companyId)
-        .eq('is_active', true)
-        .in('role', ['employee', 'foreman']);
-
-      if (employeeError) throw employeeError;
-
-      // Get today's punched in employees (no check_out_time)
-      const todayStr = new Date().toISOString().split('T')[0];
-      const { data: punchedIn, error: punchError } = await supabase
-        .from('timesheets')
-        .select('user_id')
-        .eq('company_id', user.companyId)
-        .gte('check_in_time', `${todayStr}T00:00:00`)
-        .is('check_out_time', null);
-
-      if (punchError) throw punchError;
-
-      return {
-        totalEmployees: employees?.length || 0,
-        punchedInEmployees: punchedIn?.length || 0,
-        isActive: (punchedIn?.length || 0) > 0
-      };
-    },
-    enabled: !!user?.companyId,
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
 
   // Fetch timesheet summary
   const { data: timesheetSummary } = useQuery<TimesheetSummary>({
@@ -176,22 +135,22 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
   const userInitials = userProfile ? `${userProfile.first_name?.[0] || ''}${userProfile.last_name?.[0] || ''}` : 'F';
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="p-6 space-y-8 max-w-7xl mx-auto animate-fade-in">
       {/* Welcome Banner */}
-      <Card className="border border-border shadow-lg bg-gradient-to-r from-primary/5 via-background to-primary/5">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16 border-2 border-primary/20">
+      <Card className="border border-border shadow-lg bg-gradient-to-r from-primary/5 via-background to-primary/5 rounded-xl">
+        <CardContent className="p-8">
+          <div className="flex items-center gap-6">
+            <Avatar className="h-20 w-20 border-2 border-primary/20 shadow-md">
               <AvatarImage src={userProfile?.photo_url} alt={userName} />
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
                 {userInitials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-foreground mb-1">
+              <h1 className="text-3xl font-bold text-foreground mb-2">
                 Welcome back, {userName}
               </h1>
-              <p className="text-muted-foreground mb-2">{formattedDate}</p>
+              <p className="text-muted-foreground mb-3 text-lg">{formattedDate}</p>
               <p className="text-sm text-primary font-medium">
                 Here's what's happening on your sites today
               </p>
@@ -201,58 +160,23 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
       </Card>
 
       {/* Main Dashboard Cards - First Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Live Punch Monitor Card */}
-        <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              Live Punch Monitor
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-3xl font-bold text-foreground">
-                  {punchLoading ? '...' : `${livePunchData?.punchedInEmployees || 0}`}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  of {livePunchData?.totalEmployees || 0} employees punched in
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className={`w-4 h-4 rounded-full ${livePunchData?.isActive ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
-                <Badge variant={livePunchData?.isActive ? 'default' : 'secondary'} className="px-3 py-1">
-                  {livePunchData?.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-              </div>
-            </div>
-            <Button 
-              variant="outline" 
-              className="w-full hover:bg-primary/5" 
-              onClick={() => setActiveTab('live-punch-monitor')}
-            >
-              View Full Details
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Live Punch Monitor Card - Enhanced */}
+        <TodayPunchesCard setActiveTab={setActiveTab} />
 
         {/* Job Progress Card */}
-        <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200">
+        <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200 rounded-xl">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg">
+            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Building className="h-5 w-5 text-primary" />
               </div>
               Job Progress
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             {/* Overall Progress */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Overall Progress</span>
                 <span className="text-sm text-muted-foreground font-semibold">{overallProgress}%</span>
@@ -261,21 +185,21 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
             </div>
 
             {/* Top Jobsites */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               {jobsiteProgressData.length > 0 ? (
                 jobsiteProgressData.map((job) => (
-                  <div key={job.id} className="space-y-2">
+                  <div key={job.id} className="space-y-3 p-3 bg-muted/30 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium truncate flex-1 mr-2">{job.name}</span>
-                      <span className="text-xs text-muted-foreground font-semibold">{job.progress}%</span>
+                      <span className="text-sm font-medium truncate flex-1 mr-2">{job.name}</span>
+                      <span className="text-sm text-muted-foreground font-semibold">{job.progress}%</span>
                     </div>
                     <Progress value={job.progress} className="h-2" />
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 text-muted-foreground text-sm">
-                  <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  No active jobsites
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  <Building className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                  <p>No active jobsites</p>
                 </div>
               )}
             </div>
@@ -293,51 +217,49 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
       </div>
 
       {/* Second Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Weekly Timesheet Summary Card */}
-        <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200">
+        <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200 rounded-xl">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg">
+            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Clock className="h-5 w-5 text-primary" />
               </div>
               Weekly Timesheet Summary
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-3 gap-6">
+              <div className="text-center p-4 bg-muted/30 rounded-lg">
+                <div className="text-3xl font-bold text-orange-600 mb-1">
                   {timesheetSummary?.pending || 0}
                 </div>
-                <div className="text-xs text-muted-foreground">Pending</div>
+                <div className="text-sm text-muted-foreground font-medium">Pending</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
+              <div className="text-center p-4 bg-muted/30 rounded-lg">
+                <div className="text-3xl font-bold text-green-600 mb-1">
                   {timesheetSummary?.approved || 0}
                 </div>
-                <div className="text-xs text-muted-foreground">Approved</div>
+                <div className="text-sm text-muted-foreground font-medium">Approved</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
+              <div className="text-center p-4 bg-muted/30 rounded-lg">
+                <div className="text-3xl font-bold text-primary mb-1">
                   {timesheetSummary?.total || 0}
                 </div>
-                <div className="text-xs text-muted-foreground">Total</div>
+                <div className="text-sm text-muted-foreground font-medium">Total</div>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button 
                 variant="outline" 
-                size="sm" 
-                className="flex-1"
+                className="flex-1 hover:bg-primary/5"
                 onClick={() => setActiveTab('timesheet')}
               >
                 Submit New
               </Button>
               <Button 
                 variant="outline" 
-                size="sm" 
-                className="flex-1"
+                className="flex-1 hover:bg-primary/5"
                 onClick={() => setActiveTab('employee-reports')}
               >
                 View Reports
@@ -347,22 +269,22 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
         </Card>
 
         {/* Material Requests Overview */}
-        <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200">
+        <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200 rounded-xl">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg">
+            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Package className="h-5 w-5 text-primary" />
               </div>
               Recent Material Requests
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             {recentRequests.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {recentRequests.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div key={request.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
                     <div className="flex-1">
-                      <div className="text-sm font-medium truncate">
+                      <div className="text-sm font-medium truncate mb-1">
                         {request.material_list.substring(0, 30)}...
                       </div>
                       <div className="text-xs text-muted-foreground">
@@ -371,7 +293,7 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
                     </div>
                     <Badge 
                       variant={request.status === 'approved' ? 'default' : request.status === 'pending' ? 'secondary' : 'destructive'}
-                      className="text-xs"
+                      className="text-xs font-medium"
                     >
                       {request.status}
                     </Badge>
@@ -379,24 +301,22 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6 text-muted-foreground text-sm">
-                <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                No recent requests
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                <Package className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                <p>No recent requests</p>
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button 
                 variant="outline" 
-                size="sm" 
-                className="flex-1"
+                className="flex-1 hover:bg-primary/5"
                 onClick={() => setActiveTab('material-request')}
               >
                 New Request
               </Button>
               <Button 
                 variant="outline" 
-                size="sm" 
-                className="flex-1"
+                className="flex-1 hover:bg-primary/5"
                 onClick={() => setActiveTab('my-requests')}
               >
                 View All
