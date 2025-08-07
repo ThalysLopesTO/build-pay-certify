@@ -7,6 +7,8 @@ import { useWorkWeek } from '@/hooks/useWorkWeek';
 import { useExistingTimesheets } from '@/hooks/useExistingTimesheets';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ForemanTimesheetDetailModal from './ForemanTimesheetDetailModal';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { format, addDays } from 'date-fns';
 
 interface WeeklyTimesheetBlock {
   week: {
@@ -62,14 +64,27 @@ const ForemanWeeklyTimesheetView = () => {
       </Card>
     );
   }
+  
+  const { settings } = useCompanySettings();
+  const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
+  const headerTitle = isBiWeekly ? 'Bi-Weekly Timesheet Submission' : 'Weekly Timesheet Submission';
+  const currentStartDate = workWeeks?.currentWeek?.startDate as Date | undefined;
+  const headerSubtitle = currentStartDate
+    ? `${format(currentStartDate, 'MMM dd')} – ${format(addDays(currentStartDate, isBiWeekly ? 13 : 6), 'MMM dd')}`
+    : undefined;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Clock className="h-5 w-5 text-orange-600" />
-            <span>Weekly Timesheet Submission</span>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center space-x-2">
+              <Clock className="h-5 w-5 text-primary" />
+              <span>{headerTitle}</span>
+            </span>
+            {headerSubtitle && (
+              <span className="text-sm text-muted-foreground">{headerSubtitle}</span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>

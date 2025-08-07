@@ -12,6 +12,8 @@ import ExpenseField from './timesheet/ExpenseField';
 import NotesField from './timesheet/NotesField';
 import TimesheetSummary from './timesheet/TimesheetSummary';
 import WeekSelector from './timesheet/WeekSelector';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { format, addDays } from 'date-fns';
 
 const TimesheetForm = () => {
   const {
@@ -32,6 +34,13 @@ const TimesheetForm = () => {
   const isSubmitting = submitMutation.isPending;
   const isFormDisabled = isWeekSubmitted || isSubmitting;
 
+  const { settings } = useCompanySettings();
+  const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
+  const headerTitle = isBiWeekly ? 'Bi-Weekly Timesheet' : 'Weekly Timesheet';
+  const headerSubtitle = selectedWeek
+    ? `${format(selectedWeek.startDate, 'MMM dd')} – ${format(addDays(selectedWeek.startDate, isBiWeekly ? 13 : 6), 'MMM dd')}`
+    : undefined;
+
   if (!workWeeks) {
     return (
       <Card className="max-w-4xl mx-auto">
@@ -49,7 +58,7 @@ const TimesheetForm = () => {
 
   return (
     <Card className="max-w-4xl mx-auto">
-      <TimesheetHeader />
+      <TimesheetHeader title={headerTitle} subtitle={headerSubtitle} />
       
       <CardContent className="p-6 space-y-6">
         {/* Week Selector */}

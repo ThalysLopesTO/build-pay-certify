@@ -229,7 +229,7 @@ const CompanySettings = () => {
                       <span>Timesheet Frequency</span>
                     </FormLabel>
                     <Select onValueChange={field.onChange} value={(field.value as string) || 'weekly'}>
-                      <SelectTrigger className="bg-background border-border text-foreground">
+                      <SelectTrigger className="bg-background border-border text-foreground min-h-11">
                         <SelectValue placeholder="Select frequency" />
                       </SelectTrigger>
                       <SelectContent>
@@ -237,6 +237,9 @@ const CompanySettings = () => {
                         <SelectItem value="bi-weekly">Bi-Weekly</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      This setting controls whether timesheets are submitted weekly or every two weeks.
+                    </p>
                   </FormItem>
                 )}
               />
