@@ -1,10 +1,12 @@
 
 import React from 'react';
-import { Control } from 'react-hook-form';
+import { Control, useWatch } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
-import { format, addDays, subDays } from 'date-fns';
+import { format, addDays } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 
 interface DailyHoursGridProps {
   control: Control<any>;
@@ -47,41 +49,160 @@ const DailyHoursGrid = ({ control, disabled = false, selectedWeek }: DailyHoursG
     });
   }
 
+  // Split into weeks and compute totals
+  const week1Days = orderedDays.slice(0, Math.min(7, orderedDays.length));
+  const week2Days = orderedDays.slice(7, 14);
+
+  const values = useWatch({ control }) as Record<string, number> | undefined;
+  const sumHours = (names: string[]) => names.reduce((acc, n) => acc + Number(values?.[n] ?? 0), 0);
+  const week1Total = sumHours(week1Days.map((d) => d.name));
+  const week2Total = sumHours(week2Days.map((d) => d.name));
+  const grandTotal = week1Total + week2Total;
+
+  const Section = ({
+    title,
+    children,
+    defaultOpen = true,
+  }: {
+    title: string;
+    children: React.ReactNode;
+    defaultOpen?: boolean;
+  }) => {
+    const [open, setOpen] = React.useState(defaultOpen);
+    return (
+      <div className="rounded-lg border border-border bg-muted/30 shadow-sm">
+        <Collapsible open={open} onOpenChange={setOpen}>
+          <CollapsibleTrigger
+            type="button"
+            className="flex w-full items-center justify-between px-3 py-3 min-h-11 text-left transition-colors hover:bg-muted/50"
+          >
+            <span className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">{title}</span>
+              <span className="text-xs text-muted-foreground">{open ? `Collapse ${title}` : `Expand ${title}`}</span>
+            </span>
+            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="px-3 pb-3 overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            {children}
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Daily Hours</h3>
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4">
-        {orderedDays.map((day) => (
-          <FormField
-            key={day.name}
-            control={control}
-            name={day.name}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-medium text-center block">
-                  <div className="font-semibold">{day.label}</div>
-                  {day.date && (
-                    <div className="text-xs text-gray-500 mt-1">{day.date}</div>
+      <h3 className="text-lg font-semibold text-foreground">Daily Hours</h3>
+      {frequency === 'bi-weekly' ? (
+        <div className="space-y-3">
+          <Section title="Week 1" defaultOpen>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
+              {week1Days.map((day) => (
+                <FormField
+                  key={day.name}
+                  control={control}
+                  name={day.name}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-center block">
+                        <div className="font-semibold text-foreground">{day.label}</div>
+                        {day.date && (
+                          <div className="text-xs text-muted-foreground mt-1">{day.date}</div>
+                        )}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="24"
+                          step="0.25"
+                          disabled={disabled}
+                          className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="24"
-                    step="0.25"
-                    disabled={disabled}
-                    className={disabled ? 'bg-gray-100 cursor-not-allowed' : ''}
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        ))}
-      </div>
+                />
+              ))}
+            </div>
+            <div className="mt-2 text-right text-sm text-muted-foreground">Week 1 Total: <span className="font-semibold text-foreground">{week1Total.toFixed(2)}h</span></div>
+          </Section>
+
+          <Section title="Week 2" defaultOpen={false}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
+              {week2Days.map((day) => (
+                <FormField
+                  key={day.name}
+                  control={control}
+                  name={day.name}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-center block">
+                        <div className="font-semibold text-foreground">{day.label}</div>
+                        {day.date && (
+                          <div className="text-xs text-muted-foreground mt-1">{day.date}</div>
+                        )}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="24"
+                          step="0.25"
+                          disabled={disabled}
+                          className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
+            <div className="mt-2 text-right text-sm text-muted-foreground">Week 2 Total: <span className="font-semibold text-foreground">{week2Total.toFixed(2)}h</span></div>
+          </Section>
+
+          <div className="text-right text-sm text-foreground">Grand Total: <span className="font-bold">{grandTotal.toFixed(2)}h</span></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4">
+          {orderedDays.map((day) => (
+            <FormField
+              key={day.name}
+              control={control}
+              name={day.name}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-center block">
+                    <div className="font-semibold text-foreground">{day.label}</div>
+                    {day.date && (
+                      <div className="text-xs text-muted-foreground mt-1">{day.date}</div>
+                    )}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="24"
+                      step="0.25"
+                      disabled={disabled}
+                      className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

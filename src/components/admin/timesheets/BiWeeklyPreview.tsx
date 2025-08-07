@@ -1,5 +1,7 @@
 import React from 'react';
 import { format, addDays } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 
 interface BiWeeklyPreviewProps {
   timesheet: any;
@@ -20,10 +22,10 @@ const parseBiWeeklyDays = (notes?: string): { date: string; label: string; hours
 };
 
 const DayCell = ({ title, subtitle, value }: { title: string; subtitle: string; value: number | string }) => (
-  <div className="rounded-md border border-slate-200 bg-white p-2 text-center">
-    <div className="text-xs text-slate-500">{title}</div>
-    <div className="text-[11px] text-slate-400">{subtitle}</div>
-    <div className="mt-1 font-semibold text-slate-800">{typeof value === 'number' ? value.toFixed(2) : value}</div>
+  <div className="rounded-md border border-border bg-card p-2 text-center shadow-sm">
+    <div className="text-xs text-muted-foreground">{title}</div>
+    <div className="text-[11px] text-muted-foreground/80">{subtitle}</div>
+    <div className="mt-1 font-semibold text-foreground">{typeof value === 'number' ? value.toFixed(2) : value}</div>
   </div>
 );
 
@@ -38,23 +40,22 @@ const Section = ({
 }) => {
   const [open, setOpen] = React.useState(defaultOpen);
   return (
-    <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-3 py-2 text-left"
-      >
-        <span className="text-sm font-medium text-slate-700">{title}</span>
-        <svg
-          className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+    <div className="mb-3 rounded-lg border border-border bg-muted/30 shadow-sm">
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <CollapsibleTrigger
+          type="button"
+          className="flex w-full items-center justify-between px-3 py-3 min-h-11 text-left transition-colors hover:bg-muted/50"
         >
-          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      {open && <div className="px-3 pb-3">{children}</div>}
+          <span className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">{title}</span>
+            <span className="text-xs text-muted-foreground">{open ? `Collapse ${title}` : `Expand ${title}`}</span>
+          </span>
+          <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="px-3 pb-3 overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+          {children}
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 };
@@ -91,17 +92,17 @@ const BiWeeklyPreview: React.FC<BiWeeklyPreviewProps> = ({ timesheet, frequency 
   const grandTotal = Number(timesheet.total_hours || totalWeek1 + totalWeek2 || 0);
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="mb-3 text-sm text-slate-600">Timesheet Period: <span className="font-semibold text-slate-800">{periodLabel}</span></div>
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <div className="mb-3 text-sm text-muted-foreground">Timesheet Period: <span className="font-semibold text-foreground">{periodLabel}</span></div>
       {frequency === 'bi-weekly' ? (
-        <div>
+        <div className="divide-y divide-border">
           <Section title="Week 1" defaultOpen>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
               {week1.map((d, idx) => (
                 <DayCell key={`${d.label}-${idx}`} title={`${d.label}`} subtitle={`${d.date}`} value={d.hours} />
               ))}
             </div>
-            <div className="mt-2 text-right text-sm text-slate-600">Week 1 Total: <span className="font-semibold text-slate-800">{totalWeek1.toFixed(2)}h</span></div>
+            <div className="mt-2 text-right text-sm text-muted-foreground">Week 1 Total: <span className="font-semibold text-foreground">{totalWeek1.toFixed(2)}h</span></div>
           </Section>
           <Section title="Week 2" defaultOpen={false}>
             {parsed ? (
@@ -111,13 +112,13 @@ const BiWeeklyPreview: React.FC<BiWeeklyPreviewProps> = ({ timesheet, frequency 
                     <DayCell key={`${d.label}-w2-${idx}`} title={`${d.label}`} subtitle={`${d.date}`} value={d.hours} />
                   ))}
                 </div>
-                <div className="mt-2 text-right text-sm text-slate-600">Week 2 Total: <span className="font-semibold text-slate-800">{totalWeek2.toFixed(2)}h</span></div>
+                <div className="mt-2 text-right text-sm text-muted-foreground">Week 2 Total: <span className="font-semibold text-foreground">{totalWeek2.toFixed(2)}h</span></div>
               </>
             ) : (
-              <div className="text-xs text-slate-500">No second-week daily breakdown available.</div>
+              <div className="text-xs text-muted-foreground">No second-week daily breakdown available.</div>
             )}
           </Section>
-          <div className="mt-1 text-right text-sm text-slate-700">Grand Total: <span className="font-bold text-slate-900">{grandTotal.toFixed(2)}h</span></div>
+          <div className="mt-1 text-right text-sm text-foreground">Grand Total: <span className="font-bold text-foreground">{grandTotal.toFixed(2)}h</span></div>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
