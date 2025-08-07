@@ -38,39 +38,72 @@ export const useCompanyLogo = () => {
         throw new Error('Company ID is required');
       }
 
-      // Upload file to Supabase Storage
+      // Upload file to Supabase Storage with timestamp for cache busting
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.companyId}/logo.${fileExt}`;
+      const timestamp = Date.now();
+      const fileName = `${user.companyId}/logo-${timestamp}.${fileExt}`;
+      
+      // First, try to remove any existing logo files to avoid accumulating files
+      try {
+        const { data: existingFiles } = await supabase.storage
+          .from('company-logos')
+          .list(user.companyId);
+        
+        if (existingFiles && existingFiles.length > 0) {
+          const filesToRemove = existingFiles.map(file => `${user.companyId}/${file.name}`);
+          await supabase.storage
+            .from('company-logos')
+            .remove(filesToRemove);
+        }
+      } catch (error) {
+        console.warn('Could not clean up old logo files:', error);
+        // Continue with upload even if cleanup fails
+      }
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('company-logos')
         .upload(fileName, file, {
-          upsert: true,
+          upsert: false, // Don't upsert since we're using unique filenames
         });
 
       if (uploadError) {
         throw uploadError;
       }
 
-      // Get public URL
+      // Get public URL with cache-busting parameter
       const { data: urlData } = supabase.storage
         .from('company-logos')
         .getPublicUrl(fileName);
 
+      const cacheBustedUrl = `${urlData.publicUrl}?v=${timestamp}`;
+
       // Update company record with logo URL
       const { error: updateError } = await supabase
         .from('companies')
-        .update({ logo_url: urlData.publicUrl })
+        .update({ logo_url: cacheBustedUrl })
         .eq('id', user.companyId);
 
       if (updateError) {
         throw updateError;
       }
 
-      return urlData.publicUrl;
+      return cacheBustedUrl;
     },
     onSuccess: (logoUrl) => {
+      // Force refresh by invalidating queries and updating cache
       queryClient.invalidateQueries({ queryKey: ['company-logo', user?.companyId] });
+      queryClient.setQueryData(['company-logo', user?.companyId], logoUrl);
+      
+      // Force a page refresh of cached images
+      setTimeout(() => {
+        const images = document.querySelectorAll('img[alt="Company Logo"]');
+        images.forEach((img: any) => {
+          const src = img.src;
+          img.src = '';
+          img.src = src;
+        });
+      }, 100);
+      
       toast({
         title: 'Logo Uploaded',
         description: 'Company logo has been updated successfully.',
