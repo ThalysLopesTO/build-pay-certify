@@ -13,7 +13,7 @@ import { generateMaterialRequestPDF } from '@/utils/materialRequestPDFGenerator'
 import { MaterialRequest } from './types/materialRequest';
 import { supabase } from '@/integrations/supabase/client';
 import EnhancedMaterialRequestFilters from './material-requests/EnhancedMaterialRequestFilters';
-import EnhancedMaterialRequestCard from './material-requests/EnhancedMaterialRequestCard';
+import AccordionMaterialRequestCard from './material-requests/AccordionMaterialRequestCard';
 import MaterialRequestDetailsPanel from './material-requests/MaterialRequestDetailsPanel';
 
 const MaterialRequestInbox = () => {
@@ -42,6 +42,7 @@ const MaterialRequestInbox = () => {
   } = useEnhancedMaterialRequestsAdmin();
 
   const [detailsPanelOpen, setDetailsPanelOpen] = React.useState(false);
+  const [expandedCard, setExpandedCard] = React.useState<string | null>(null);
 
   const isPermissionError = (error: any) => {
     return error?.message?.includes('permission denied') || 
@@ -158,17 +159,23 @@ const MaterialRequestInbox = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Inbox className="h-6 w-6" />
-          <h2 className="text-2xl font-bold">Material Request Inbox</h2>
-          <Badge variant="secondary">{requests.length} requests</Badge>
+    <div className="min-h-screen bg-background">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
+        <div className="container max-w-7xl mx-auto py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Inbox className="h-6 w-6 text-primary" />
+              <h2 className="text-2xl font-bold">Material Request Inbox</h2>
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                {requests.length} {requests.length === 1 ? 'Request' : 'Requests'} Found
+              </Badge>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Enhanced Filters */}
+      {/* Sticky Filters */}
       <EnhancedMaterialRequestFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -183,17 +190,17 @@ const MaterialRequestInbox = () => {
         onClearFilters={clearFilters}
       />
 
-      {/* Material Requests List */}
-      <div className="container max-w-7xl mx-auto">
+      {/* Main Content */}
+      <div className="container max-w-4xl mx-auto py-6 px-4">
         {requests.length === 0 ? (
-          <Card className="shadow-sm">
+          <Card className="shadow-sm border-0 bg-muted/30">
             <CardContent className="text-center py-16">
               <div className="flex flex-col items-center gap-4">
-                <div className="bg-gray-100 p-6 rounded-full">
-                  <Inbox className="h-12 w-12 text-gray-400" />
+                <div className="bg-muted p-6 rounded-full">
+                  <Inbox className="h-12 w-12 text-muted-foreground" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-semibold text-gray-900">No Material Requests Found</h3>
+                  <h3 className="text-xl font-semibold">No Material Requests Found</h3>
                   <p className="text-muted-foreground max-w-md">
                     {searchTerm || statusFilter !== 'all' || dateFrom || dateTo || jobsiteFilter !== 'all'
                       ? 'No requests match your current filters. Try adjusting your search criteria.' 
@@ -205,24 +212,20 @@ const MaterialRequestInbox = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {requests.length} Request{requests.length > 1 ? 's' : ''} Found
-              </h3>
-            </div>
-            
-            <div className="grid gap-6">
-              {requests.map((request) => (
-                <EnhancedMaterialRequestCard
-                  key={request.id}
-                  request={request}
-                  onStatusUpdate={handleStatusUpdate}
-                  onViewDetails={handleViewDetails}
-                  onExportPDF={handleExportPDF}
-                />
-              ))}
-            </div>
+          <div className="space-y-4">
+            {requests.map((request) => (
+              <AccordionMaterialRequestCard
+                key={request.id}
+                request={request}
+                isExpanded={expandedCard === request.id}
+                onToggle={(isExpanded) => {
+                  setExpandedCard(isExpanded ? request.id : null);
+                }}
+                onStatusUpdate={handleStatusUpdate}
+                onViewDetails={handleViewDetails}
+                onExportPDF={handleExportPDF}
+              />
+            ))}
           </div>
         )}
       </div>
