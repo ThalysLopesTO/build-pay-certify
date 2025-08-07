@@ -7,6 +7,7 @@ import { useTimesheetSubmission } from './useTimesheetSubmission';
 import { useWorkWeek } from './useWorkWeek';
 import { useExistingTimesheets } from './useExistingTimesheets';
 import { toast } from './use-toast';
+import { useCompanySettings } from './useCompanySettings';
 
 const formSchema = z.object({
   jobsiteId: z.string().min(1, 'Please select a jobsite'),
@@ -17,6 +18,14 @@ const formSchema = z.object({
   fridayHours: z.number().min(0).max(24),
   saturdayHours: z.number().min(0).max(24),
   sundayHours: z.number().min(0).max(24),
+  // Optional week 2 fields for bi-weekly frequency
+  mondayHoursWeek2: z.number().min(0).max(24).optional(),
+  tuesdayHoursWeek2: z.number().min(0).max(24).optional(),
+  wednesdayHoursWeek2: z.number().min(0).max(24).optional(),
+  thursdayHoursWeek2: z.number().min(0).max(24).optional(),
+  fridayHoursWeek2: z.number().min(0).max(24).optional(),
+  saturdayHoursWeek2: z.number().min(0).max(24).optional(),
+  sundayHoursWeek2: z.number().min(0).max(24).optional(),
   additionalExpense: z.number().min(0).optional(),
   notes: z.string().optional(),
   tax_included: z.boolean().optional(),
@@ -26,11 +35,12 @@ type FormData = z.infer<typeof formSchema>;
 
 export const useTimesheetForm = () => {
   const { user, session } = useAuth();
+  const { settings } = useCompanySettings();
   const submitMutation = useTimesheetSubmission();
   const workWeeks = useWorkWeek();
   const { data: existingTimesheets = [] } = useExistingTimesheets();
   
-  // Initialize with current week
+  // Initialize with current week/period
   const [selectedWeek, setSelectedWeek] = useState(() => 
     workWeeks?.currentWeek || null
   );
@@ -46,6 +56,14 @@ export const useTimesheetForm = () => {
       fridayHours: 0,
       saturdayHours: 0,
       sundayHours: 0,
+      // Week 2 defaults
+      mondayHoursWeek2: 0,
+      tuesdayHoursWeek2: 0,
+      wednesdayHoursWeek2: 0,
+      thursdayHoursWeek2: 0,
+      fridayHoursWeek2: 0,
+      saturdayHoursWeek2: 0,
+      sundayHoursWeek2: 0,
       additionalExpense: 0,
       notes: '',
       tax_included: false,
@@ -60,11 +78,18 @@ export const useTimesheetForm = () => {
   }, [workWeeks, selectedWeek]);
 
   const watchedValues = form.watch();
+  const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
   const totalHours = (
     watchedValues.mondayHours + watchedValues.tuesdayHours + 
     watchedValues.wednesdayHours + watchedValues.thursdayHours + 
     watchedValues.fridayHours + watchedValues.saturdayHours + 
-    watchedValues.sundayHours
+    watchedValues.sundayHours +
+    (isBiWeekly ? (
+      (watchedValues.mondayHoursWeek2 || 0) + (watchedValues.tuesdayHoursWeek2 || 0) +
+      (watchedValues.wednesdayHoursWeek2 || 0) + (watchedValues.thursdayHoursWeek2 || 0) +
+      (watchedValues.fridayHoursWeek2 || 0) + (watchedValues.saturdayHoursWeek2 || 0) +
+      (watchedValues.sundayHoursWeek2 || 0)
+    ) : 0)
   );
 
   const hourlyRate = user?.hourlyRate || 25;
@@ -145,13 +170,13 @@ export const useTimesheetForm = () => {
     const timesheetData = {
       jobsiteId: data.jobsiteId,
       weekStartDate: selectedWeek.weekStartDateString,
-      mondayHours: data.mondayHours,
-      tuesdayHours: data.tuesdayHours,
-      wednesdayHours: data.wednesdayHours,
-      thursdayHours: data.thursdayHours,
-      fridayHours: data.fridayHours,
-      saturdayHours: data.saturdayHours,
-      sundayHours: data.sundayHours,
+      mondayHours: data.mondayHours + (form.getValues('mondayHoursWeek2') || 0),
+      tuesdayHours: data.tuesdayHours + (form.getValues('tuesdayHoursWeek2') || 0),
+      wednesdayHours: data.wednesdayHours + (form.getValues('wednesdayHoursWeek2') || 0),
+      thursdayHours: data.thursdayHours + (form.getValues('thursdayHoursWeek2') || 0),
+      fridayHours: data.fridayHours + (form.getValues('fridayHoursWeek2') || 0),
+      saturdayHours: data.saturdayHours + (form.getValues('saturdayHoursWeek2') || 0),
+      sundayHours: data.sundayHours + (form.getValues('sundayHoursWeek2') || 0),
       hourlyRate: hourlyRate,
       additionalExpense: data.additionalExpense || 0,
       notes: data.notes || '',

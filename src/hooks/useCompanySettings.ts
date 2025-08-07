@@ -15,6 +15,7 @@ export interface CompanySettings {
   company_id: string | null;
   company_rules_text: string | null;
   week_ending_day: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
+  timesheet_frequency: 'weekly' | 'bi-weekly'; // Timesheet period frequency
   tax_percentage: number; // Tax percentage for timesheet calculations
   show_tax_breakdown_to_employees: boolean; // Whether to show tax breakdown to employees
   enable_invoice_reminders: boolean; // Whether to enable invoice reminders
@@ -101,7 +102,8 @@ export const useCompanySettings = () => {
             ...updatedSettings,
             company_id: user.companyId,
             company_name: updatedSettings.company_name || user.companyName || 'Unnamed Company',
-            week_ending_day: updatedSettings.week_ending_day ?? 0 // Default to Sunday
+            week_ending_day: updatedSettings.week_ending_day ?? 0, // Default to Sunday
+            timesheet_frequency: (updatedSettings as any).timesheet_frequency ?? 'weekly'
           })
           .select()
           .single();

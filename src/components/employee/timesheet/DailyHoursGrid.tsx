@@ -20,33 +20,37 @@ const DailyHoursGrid = ({ control, disabled = false, selectedWeek }: DailyHoursG
   
   // Get the week ending day from company settings (0=Sunday, 1=Monday, etc.)
   const weekEndingDay = settings?.week_ending_day ?? 0;
-  
+  const frequency = (settings as any)?.timesheet_frequency ?? 'weekly';
+
   // Calculate the week start day (6 days before the ending day)
   const weekStartDay = (weekEndingDay + 1) % 7;
+  const totalDays = frequency === 'bi-weekly' ? 14 : 7;
   
   // Base day names and field names
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const fieldNames = ['sundayHours', 'mondayHours', 'tuesdayHours', 'wednesdayHours', 'thursdayHours', 'fridayHours', 'saturdayHours'];
   
-  // Create ordered days based on company's week start
-  const orderedDays = [];
-  for (let i = 0; i < 7; i++) {
+  // Create ordered days based on company's week start and frequency
+  const orderedDays: { name: string; label: string; shortLabel: string; date: string; fullDate: Date | null }[] = [];
+  for (let i = 0; i < totalDays; i++) {
     const dayIndex = (weekStartDay + i) % 7;
     const dayDate = selectedWeek ? addDays(selectedWeek.startDate, i) : null;
+    const baseName = fieldNames[dayIndex];
+    const name = i < 7 ? baseName : `${baseName}Week2`;
     
     orderedDays.push({
-      name: fieldNames[dayIndex],
+      name,
       label: dayNames[dayIndex],
       shortLabel: dayNames[dayIndex].substring(0, 3),
-      date: dayDate ? format(dayDate, 'MMM dd') : '',
-      fullDate: dayDate
+      date: dayDate ? format(dayDate, 'EEE, MMM dd') : '',
+      fullDate: dayDate || null,
     });
   }
 
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900">Daily Hours</h3>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4">
         {orderedDays.map((day) => (
           <FormField
             key={day.name}

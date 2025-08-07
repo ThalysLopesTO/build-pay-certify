@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useCompanySettings, type CompanySettings } from '@/hooks/useCompanySettings';
 import CompanyBrandingSection from './CompanyBrandingSection';
-import { Building2, Mail, Phone, MapPin, FileText } from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, FileText, Calendar } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const CompanySettings = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useCompanySettings();
@@ -21,6 +22,7 @@ const CompanySettings = () => {
       company_email: settings?.company_email || '',
       hst_number: settings?.hst_number || '',
       tax_percentage: settings?.tax_percentage || 13,
+      timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
     },
   });
 
@@ -33,6 +35,7 @@ const CompanySettings = () => {
         company_email: settings.company_email || '',
         hst_number: settings.hst_number || '',
         tax_percentage: settings.tax_percentage || 13,
+        timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
       });
     }
   }, [settings, form]);
@@ -215,6 +218,28 @@ const CompanySettings = () => {
                     </FormItem>
                   )}
                 />
+
+              <FormField
+                control={form.control}
+                name="timesheet_frequency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center space-x-2 text-foreground">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>Timesheet Frequency</span>
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} value={(field.value as string) || 'weekly'}>
+                      <SelectTrigger className="bg-background border-border text-foreground">
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="bi-weekly">Bi-Weekly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
 
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <h4 className="font-medium text-blue-900 mb-2">Invoice Requirements</h4>

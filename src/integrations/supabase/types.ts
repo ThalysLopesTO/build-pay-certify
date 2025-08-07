@@ -498,6 +498,7 @@ export type Database = {
           quote_reminder_days: number | null
           show_tax_breakdown_to_employees: boolean | null
           tax_percentage: number | null
+          timesheet_frequency: string
           updated_at: string
           week_ending_day: number | null
         }
@@ -519,6 +520,7 @@ export type Database = {
           quote_reminder_days?: number | null
           show_tax_breakdown_to_employees?: boolean | null
           tax_percentage?: number | null
+          timesheet_frequency?: string
           updated_at?: string
           week_ending_day?: number | null
         }
@@ -540,6 +542,7 @@ export type Database = {
           quote_reminder_days?: number | null
           show_tax_breakdown_to_employees?: boolean | null
           tax_percentage?: number | null
+          timesheet_frequency?: string
           updated_at?: string
           week_ending_day?: number | null
         }
