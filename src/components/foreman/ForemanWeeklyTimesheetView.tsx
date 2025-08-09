@@ -18,6 +18,7 @@ interface WeeklyTimesheetBlock {
     weekStartDateString: string;
     label: string;
     isCurrent: boolean;
+    isSubmissionOpen?: boolean;
   };
   jobsite?: string;
   totalHours: number;
@@ -137,16 +138,14 @@ const ForemanWeeklyTimesheetView = () => {
                 </div>
 
                 {/* Status */}
-                <div className="w-full">
-                  <Badge 
-                    variant={block.isSubmitted ? "default" : "outline"}
-                    className={block.isSubmitted 
-                      ? "bg-green-100 text-green-800 border-green-300" 
-                      : "text-orange-800 border-orange-300"
-                    }
-                  >
-                    {block.isSubmitted ? 'Submitted' : 'Pending'}
-                  </Badge>
+                <div className="w-full flex gap-2 flex-wrap">
+                  {block.isSubmitted ? (
+                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">Submitted</Badge>
+                  ) : block.week.isSubmissionOpen ? (
+                    <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-50">Open to Submit</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50">In Progress</Badge>
+                  )}
                 </div>
               </Button>
             ))}

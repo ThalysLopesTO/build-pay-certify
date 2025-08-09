@@ -32,10 +32,12 @@ const TimesheetForm = () => {
   } = useTimesheetForm();
 
   const isSubmitting = submitMutation.isPending;
-  const isFormDisabled = isWeekSubmitted || isSubmitting;
-
   const { settings } = useCompanySettings();
   const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
+
+  const isSubmissionOpen = selectedWeek ? (selectedWeek as any).isSubmissionOpen ?? (new Date() >= addDays(selectedWeek.endDate, 1)) : false;
+  const isFormDisabled = isWeekSubmitted || isSubmitting || !isSubmissionOpen;
+
   const headerTitle = isBiWeekly ? 'Bi-Weekly Timesheet' : 'Weekly Timesheet';
   const headerSubtitle = selectedWeek
     ? `${format(selectedWeek.startDate, 'MMM dd')} – ${format(addDays(selectedWeek.startDate, isBiWeekly ? 13 : 6), 'MMM dd')}`
@@ -78,6 +80,11 @@ const TimesheetForm = () => {
               {isWeekSubmitted && (
                 <span className="ml-2 text-orange-700 flex items-center gap-1">
                   - Already submitted <CheckCircle className="h-4 w-4 text-green-600" />
+                </span>
+              )}
+              {!isWeekSubmitted && !isSubmissionOpen && (
+                <span className="ml-2 text-blue-700">
+                  – In Progress. You can submit after {format(addDays(selectedWeek.endDate, 1), 'EEE, MMM dd')}.
                 </span>
               )}
             </AlertDescription>
@@ -131,7 +138,9 @@ const TimesheetForm = () => {
                 ? 'Already Submitted ✅' 
                 : isSubmitting 
                   ? 'Submitting...' 
-                  : 'Submit Timesheet'
+                  : !isSubmissionOpen
+                    ? 'In Progress – Submit after period ends'
+                    : 'Submit Timesheet'
               }
             </Button>
           </form>

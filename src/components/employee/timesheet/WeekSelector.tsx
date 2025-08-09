@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, CheckCircle } from 'lucide-react';
+import { Calendar, CheckCircle, Clock } from 'lucide-react';
 
 interface WeekOption {
   startDate: Date;
@@ -15,6 +15,7 @@ interface WeekOption {
   weekStartDateString: string;
   label: string;
   isCurrent: boolean;
+  isSubmissionOpen?: boolean;
 }
 
 interface WeekSelectorProps {
@@ -38,6 +39,8 @@ const WeekSelector = ({ availableWeeks, selectedWeek, submittedWeeks, onWeekSele
           {availableWeeks.map((week) => {
             const isSubmitted = submittedWeeks.includes(week.weekStartDateString);
             const isSelected = selectedWeek?.weekStartDateString === week.weekStartDateString;
+            const openToSubmit = !isSubmitted && week.isSubmissionOpen;
+            const inProgress = !isSubmitted && !week.isSubmissionOpen;
             
             return (
               <Button
@@ -63,6 +66,16 @@ const WeekSelector = ({ availableWeeks, selectedWeek, submittedWeeks, onWeekSele
                   >
                     {week.label}
                   </Badge>
+                  {openToSubmit && (
+                    <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-50">
+                      Open to Submit
+                    </Badge>
+                  )}
+                  {inProgress && (
+                    <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 flex items-center">
+                      <Clock className="h-3 w-3 mr-1" /> In Progress
+                    </Badge>
+                  )}
                   {isSubmitted && (
                     <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
                       <CheckCircle className="h-3 w-3 mr-1" />
