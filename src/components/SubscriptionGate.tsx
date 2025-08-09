@@ -22,7 +22,9 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
     createCheckout({ planName: 'StackBuild' });
   };
 
-  if (isLoadingStatus || isLoadingLicense) {
+  // Only block on true initial load; keep UI during background refetches
+  const isInitialCheck = (isLoadingStatus && !subscriptionStatus) || (isLoadingLicense && !licenseStatus);
+  if (isInitialCheck) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

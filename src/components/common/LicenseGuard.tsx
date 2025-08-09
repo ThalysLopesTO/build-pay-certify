@@ -12,7 +12,7 @@ const LicenseGuard: React.FC<LicenseGuardProps> = ({ children }) => {
   const { data: licenseStatus, isLoading } = useLicenseStatus();
   const { user, isCompanyAdmin } = useAuth();
 
-  if (isLoading) {
+  if (isLoading && !licenseStatus) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
