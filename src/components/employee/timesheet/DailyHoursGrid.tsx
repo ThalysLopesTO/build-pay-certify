@@ -5,8 +5,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { format, addDays } from 'date-fns';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface DailyHoursGridProps {
   control: Control<any>;
@@ -59,117 +58,107 @@ const DailyHoursGrid = ({ control, disabled = false, selectedWeek }: DailyHoursG
   const week2Total = sumHours(week2Days.map((d) => d.name));
   const grandTotal = week1Total + week2Total;
 
-  const Section = ({
-    title,
-    children,
-    defaultOpen = true,
-  }: {
-    title: string;
-    children: React.ReactNode;
-    defaultOpen?: boolean;
-  }) => {
-    const [open, setOpen] = React.useState(defaultOpen);
-    return (
-      <div className="rounded-lg border border-border bg-muted/30 shadow-sm">
-        <Collapsible open={open} onOpenChange={setOpen}>
-          <CollapsibleTrigger
-            type="button"
-            className="flex w-full items-center justify-between px-3 py-3 min-h-11 text-left transition-colors hover:bg-muted/50"
-          >
-            <span className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground">{title}</span>
-              <span className="text-xs text-muted-foreground">{open ? `Collapse ${title}` : `Expand ${title}`}</span>
-            </span>
-            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="px-3 pb-3 overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            {children}
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
-    );
-  };
+  const [open, setOpen] = React.useState<string | undefined>(() => {
+    if (typeof window === 'undefined') return 'week1';
+    return localStorage.getItem('ts_lastOpenWeek') || 'week1';
+  });
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ts_lastOpenWeek', open ?? '');
+    }
+  }, [open]);
 
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-foreground">Daily Hours</h3>
-      {frequency === 'bi-weekly' ? (
         <div className="space-y-3">
-          <Section title="Week 1" defaultOpen>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
-              {week1Days.map((day) => (
-                <FormField
-                  key={day.name}
-                  control={control}
-                  name={day.name}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-center block">
-                        <div className="font-semibold text-foreground">{day.label}</div>
-                        {day.date && (
-                          <div className="text-xs text-muted-foreground mt-1">{day.date}</div>
-                        )}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="24"
-                          step="0.25"
-                          disabled={disabled}
-                          className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </div>
-            <div className="mt-2 text-right text-sm text-muted-foreground">Week 1 Total: <span className="font-semibold text-foreground">{week1Total.toFixed(2)}h</span></div>
-          </Section>
+          <Accordion type="single" collapsible value={open} onValueChange={setOpen}>
+            <AccordionItem value="week1">
+              <AccordionTrigger>Week 1</AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
+                  {week1Days.map((day) => (
+                    <FormField
+                      key={day.name}
+                      control={control}
+                      name={day.name}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-center block">
+                            <div className="font-semibold text-foreground">{day.label}</div>
+                            {day.date && (
+                              <div className="text-xs text-muted-foreground mt-1">{day.date}</div>
+                            )}
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="24"
+                              step="0.25"
+                              disabled={disabled}
+                              className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
+                              {...field}
+                              onClick={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </div>
+                <div className="mt-2 text-right text-sm text-muted-foreground">Week 1 Total: <span className="font-semibold text-foreground">{week1Total.toFixed(2)}h</span></div>
+              </AccordionContent>
+            </AccordionItem>
 
-          <Section title="Week 2" defaultOpen={false}>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
-              {week2Days.map((day) => (
-                <FormField
-                  key={day.name}
-                  control={control}
-                  name={day.name}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-center block">
-                        <div className="font-semibold text-foreground">{day.label}</div>
-                        {day.date && (
-                          <div className="text-xs text-muted-foreground mt-1">{day.date}</div>
-                        )}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="24"
-                          step="0.25"
-                          disabled={disabled}
-                          className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-            </div>
-            <div className="mt-2 text-right text-sm text-muted-foreground">Week 2 Total: <span className="font-semibold text-foreground">{week2Total.toFixed(2)}h</span></div>
-          </Section>
-
+            <AccordionItem value="week2">
+              <AccordionTrigger>Week 2</AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
+                  {week2Days.map((day) => (
+                    <FormField
+                      key={day.name}
+                      control={control}
+                      name={day.name}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-center block">
+                            <div className="font-semibold text-foreground">{day.label}</div>
+                            {day.date && (
+                              <div className="text-xs text-muted-foreground mt-1">{day.date}</div>
+                            )}
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="24"
+                              step="0.25"
+                              disabled={disabled}
+                              className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
+                              {...field}
+                              onClick={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </div>
+                <div className="mt-2 text-right text-sm text-muted-foreground">Week 2 Total: <span className="font-semibold text-foreground">{week2Total.toFixed(2)}h</span></div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
           <div className="text-right text-sm text-foreground">Grand Total: <span className="font-bold">{grandTotal.toFixed(2)}h</span></div>
         </div>
-      ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4">
           {orderedDays.map((day) => (
             <FormField
