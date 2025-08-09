@@ -71,6 +71,7 @@ const DailyHoursGrid = ({ control, disabled = false, selectedWeek }: DailyHoursG
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-foreground">Daily Hours</h3>
+      {frequency === 'bi-weekly' ? (
         <div className="space-y-3">
           <Accordion type="single" collapsible value={open} onValueChange={setOpen}>
             <AccordionItem value="week1">
@@ -159,6 +160,7 @@ const DailyHoursGrid = ({ control, disabled = false, selectedWeek }: DailyHoursG
           </Accordion>
           <div className="text-right text-sm text-foreground">Grand Total: <span className="font-bold">{grandTotal.toFixed(2)}h</span></div>
         </div>
+      ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4">
           {orderedDays.map((day) => (
             <FormField
