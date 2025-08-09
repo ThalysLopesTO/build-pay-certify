@@ -43,22 +43,6 @@ const dashboardWidgets = [
     enabled: true
   },
   {
-    id: 'certificate-expiry',
-    title: 'Certificate Expiry Trends',
-    description: 'Upcoming certificate renewals and compliance tracking',
-    icon: Award,
-    category: 'compliance',
-    enabled: false
-  },
-  {
-    id: 'employee-productivity',
-    title: 'Employee Productivity Metrics',
-    description: 'Individual and team performance indicators',
-    icon: Users,
-    category: 'operational',
-    enabled: false
-  },
-  {
     id: 'project-profitability',
     title: 'Project Profitability Analysis',
     description: 'Cost vs revenue analysis by project',
