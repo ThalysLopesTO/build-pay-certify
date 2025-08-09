@@ -71,10 +71,10 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
     return raw
       .split('\n')
       .filter((l: string) => !l.startsWith('__biweekly_json__='))
-      .join('\n')
-      .trim();
-  };
-  const [notesText, setNotesText] = useState<string>(timesheet.employee_notes ?? stripBiWeeklyMeta(timesheet.notes));
+       .join('\n')
+       .trim();
+   };
+   const [notesText, setNotesText] = useState<string>(stripBiWeeklyMeta(timesheet.notes));
 
   // Bi-weekly hours (14) state
   const parseBiWeeklyHours = (notes?: string): number[] | null => {
@@ -198,7 +198,6 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
       income_tax_rate: isPayrollEmployee ? deductionRates.incomeTaxRate : timesheet.income_tax_rate,
       cpp_rate: isPayrollEmployee ? deductionRates.cppRate : timesheet.cpp_rate,
       ei_rate: isPayrollEmployee ? deductionRates.eiRate : timesheet.ei_rate,
-      employee_notes: notesText,
     };
 
     if (isBiWeekly) {
@@ -229,6 +228,7 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
         gross_pay: isPayrollEmployee && payrollCalculations
           ? payrollCalculations.netPay
           : computedGross + Number(formData.additional_expense) + finalTaxAmount,
+        notes: notesText,
       };
       onSave(updates, originalData);
     }
