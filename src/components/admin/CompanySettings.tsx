@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -219,6 +219,34 @@ const CompanySettings = () => {
                   )}
                 />
 
+
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-2">Invoice Requirements</h4>
+                <p className="text-sm text-blue-700">
+                  Fields marked with <span className="text-red-500">*</span> are required for generating and sending professional invoices. 
+                  Complete all required fields to enable invoice email functionality.
+                </p>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      {/* Payroll & Timesheet Settings */}
+      <Card className="border-border">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-2 text-foreground">
+            <Calendar className="h-5 w-5 text-primary" />
+            <span>Payroll & Timesheet Settings</span>
+          </CardTitle>
+          <CardDescription className="mt-1">
+            This controls whether timesheets are submitted weekly or every two weeks.
+          </CardDescription>
+          <div className="h-px bg-border mt-4"></div>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <Form {...form}>
+            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
               <FormField
                 control={form.control}
                 name="timesheet_frequency"
@@ -232,7 +260,6 @@ const CompanySettings = () => {
                       value={(field.value as string) || 'weekly'}
                       onValueChange={(val) => {
                         field.onChange(val);
-                        // Persist immediately when frequency changes
                         updateSettings({ timesheet_frequency: val as any });
                       }}
                     >
@@ -244,20 +271,13 @@ const CompanySettings = () => {
                         <SelectItem value="bi-weekly">Bi-Weekly</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
                     <p className="text-sm text-muted-foreground mt-1">
                       This setting controls whether timesheets are submitted weekly or every two weeks.
                     </p>
                   </FormItem>
                 )}
               />
-
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-900 mb-2">Invoice Requirements</h4>
-                <p className="text-sm text-blue-700">
-                  Fields marked with <span className="text-red-500">*</span> are required for generating and sending professional invoices. 
-                  Complete all required fields to enable invoice email functionality.
-                </p>
-              </div>
             </form>
           </Form>
         </CardContent>
