@@ -214,6 +214,29 @@ export const useTimesheetPDF = () => {
 
       y = pdf.lastAutoTable.finalY + 8;
 
+      // Employee Notes section (cleaned)
+      const employeeNotes = (() => {
+        const raw = (timesheet as any).employee_notes ?? (typeof timesheet.notes === 'string' ? timesheet.notes : '');
+        if (!raw) return '';
+        return raw
+          .split('\n')
+          .filter((l: string) => !l.startsWith('__biweekly_json__='))
+          .join('\n')
+          .trim();
+      })();
+
+      if (employeeNotes) {
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Employee Notes', margin, y);
+        y += 6;
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        const wrapped = pdf.splitTextToSize(employeeNotes, pageWidth - margin * 2);
+        pdf.text(wrapped as unknown as string, margin, y);
+        y += (Array.isArray(wrapped) ? wrapped.length : 1) * 5 + 4;
+      }
+
       // Footer
       pdf.setFontSize(9);
       const submittedDate = timesheet.created_at

@@ -8,6 +8,10 @@ import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, Clock, DollarSign, Calculator } from 'lucide-react';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { Textarea } from '@/components/ui/textarea';
+import WeeklyHoursEditor from '@/components/admin/timesheets/WeeklyHoursEditor';
+import { getDaysForPeriod } from '@/lib/time/periods';
+import { addDays } from 'date-fns';
 
 interface TimesheetEditModalProps {
   timesheet: any;
@@ -44,10 +48,64 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   const [manualTaxAmount, setManualTaxAmount] = useState<string>('');
   const [isManualTax, setIsManualTax] = useState(false);
   
-  // Collapsible section states
+// Collapsible section states
   const [hoursOpen, setHoursOpen] = useState(true);
   const [expensesOpen, setExpensesOpen] = useState(false);
   const [taxOpen, setTaxOpen] = useState(false);
+
+  // Bi-weekly handling
+  const isBiWeekly = ((companySettings as any)?.timesheet_frequency === 'bi-weekly');
+  const [openWeek, setOpenWeek] = useState<'week1' | 'week2'>('week1');
+
+  // Period days for labels
+  const startDate = timesheet.week_start_date ? new Date(timesheet.week_start_date) : null;
+  const periodLength = isBiWeekly ? 14 : 7;
+  const endDate = startDate ? addDays(startDate, periodLength - 1) : null;
+  const allDays = startDate && endDate ? getDaysForPeriod({ start: startDate, end: endDate }) : [];
+  const week1Days = allDays.slice(0, 7);
+  const week2Days = allDays.slice(7, 14);
+
+  // Employee notes (clean, no JSON blob)
+  const stripBiWeeklyMeta = (raw?: string) => {
+    if (!raw) return '';
+    return raw
+      .split('\n')
+      .filter((l: string) => !l.startsWith('__biweekly_json__='))
+      .join('\n')
+      .trim();
+  };
+  const [notesText, setNotesText] = useState<string>(timesheet.employee_notes ?? stripBiWeeklyMeta(timesheet.notes));
+
+  // Bi-weekly hours (14) state
+  const parseBiWeeklyHours = (notes?: string): number[] | null => {
+    if (!notes) return null;
+    try {
+      const line = notes.split('\n').find((l: string) => l.startsWith('__biweekly_json__='));
+      if (!line) return null;
+      const json = JSON.parse(atob(line.split('=')[1]));
+      if (Array.isArray(json?.days) && json.days.length === 14) {
+        return json.days.map((d: any) => Number(d.hours || 0));
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const initial14 = (() => {
+    const first7 = [
+      Number(timesheet.monday_hours || 0),
+      Number(timesheet.tuesday_hours || 0),
+      Number(timesheet.wednesday_hours || 0),
+      Number(timesheet.thursday_hours || 0),
+      Number(timesheet.friday_hours || 0),
+      Number(timesheet.saturday_hours || 0),
+      Number(timesheet.sunday_hours || 0),
+    ];
+    const second7 = parseBiWeeklyHours(timesheet.notes) ?? new Array(7).fill(0);
+    return [...first7, ...second7].slice(0, 14);
+  })();
+  const [hours14, setHours14] = useState<number[]>(initial14);
 
   // Store original data for audit tracking
   const originalData = {
@@ -63,12 +121,16 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
     gross_pay: timesheet.gross_pay || 0,
   };
 
-  const totalHours = Object.entries(formData)
-    .filter(([key]) => key.includes('_hours'))
-    .reduce((sum, [, hours]) => sum + Number(hours), 0);
+  const totalHours = isBiWeekly
+    ? hours14.reduce((sum, h) => sum + Number(h || 0), 0)
+    : Object.entries(formData)
+        .filter(([key]) => key.includes('_hours'))
+        .reduce((sum, [, hours]) => sum + Number(hours), 0);
 
+  const week1Total = isBiWeekly ? hours14.slice(0, 7).reduce((s, h) => s + Number(h || 0), 0) : totalHours;
+  const week2Total = isBiWeekly ? hours14.slice(7, 14).reduce((s, h) => s + Number(h || 0), 0) : 0;
   const grossPay = totalHours * (timesheet.hourly_rate || 0);
-  
+
   // State for deduction rates (editable for payroll employees)
   const [deductionRates, setDeductionRates] = useState({
     incomeTaxRate: Number(timesheet.income_tax_rate || 12), // Default 12%
@@ -110,20 +172,66 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
     : grossPay + Number(formData.additional_expense) + finalTaxAmount;
 
   const handleSave = () => {
-    const updates = {
-      ...formData,
-      total_hours: totalHours,
-      gross_pay: isPayrollEmployee && payrollCalculations 
-        ? payrollCalculations.netPay 
-        : grossPay + Number(formData.additional_expense) + finalTaxAmount,
+    // Helper: embed/update hidden bi-weekly JSON line inside notes for exports
+    const embedBiWeeklyMeta = (base: string, hours: number[]) => {
+      const safeBase = (base || '')
+        .split('\n')
+        .filter((l) => !l.startsWith('__biweekly_json__='))
+        .join('\n')
+        .trim();
+      const days = (allDays.length === 14 ? allDays : [...week1Days, ...week2Days]).map((d, i) => ({
+        date: d.iso,
+        label: d.weekday,
+        hours: Number(hours[i] || 0),
+      }));
+      const meta = `__biweekly_json__=${btoa(JSON.stringify({ days }))}`;
+      return safeBase ? `${safeBase}\n${meta}` : meta;
+    };
+
+    const computedGross = totalHours * (timesheet.hourly_rate || 0);
+
+    const baseUpdates: any = {
+      additional_expense: formData.additional_expense,
       tax_included: isPayrollEmployee ? false : taxIncluded,
       calculated_tax: isPayrollEmployee ? 0 : finalTaxAmount,
       // Save updated deduction rates for payroll employees
       income_tax_rate: isPayrollEmployee ? deductionRates.incomeTaxRate : timesheet.income_tax_rate,
       cpp_rate: isPayrollEmployee ? deductionRates.cppRate : timesheet.cpp_rate,
-      ei_rate: isPayrollEmployee ? deductionRates.eiRate : timesheet.ei_rate
+      ei_rate: isPayrollEmployee ? deductionRates.eiRate : timesheet.ei_rate,
+      employee_notes: notesText,
     };
-    onSave(updates, originalData);
+
+    if (isBiWeekly) {
+      const week1 = hours14.slice(0, 7);
+      const total = hours14.reduce((s, h) => s + Number(h || 0), 0);
+      const gross = computedGross;
+      const updates = {
+        ...baseUpdates,
+        monday_hours: week1[0] || 0,
+        tuesday_hours: week1[1] || 0,
+        wednesday_hours: week1[2] || 0,
+        thursday_hours: week1[3] || 0,
+        friday_hours: week1[4] || 0,
+        saturday_hours: week1[5] || 0,
+        sunday_hours: week1[6] || 0,
+        total_hours: total,
+        gross_pay: isPayrollEmployee && payrollCalculations
+          ? payrollCalculations.netPay
+          : gross + Number(formData.additional_expense) + finalTaxAmount,
+        notes: embedBiWeeklyMeta(timesheet.notes, hours14),
+      };
+      onSave(updates, originalData);
+    } else {
+      const updates = {
+        ...baseUpdates,
+        ...formData,
+        total_hours: totalHours,
+        gross_pay: isPayrollEmployee && payrollCalculations
+          ? payrollCalculations.netPay
+          : computedGross + Number(formData.additional_expense) + finalTaxAmount,
+      };
+      onSave(updates, originalData);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -197,42 +305,123 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
         <div className="flex-1 overflow-y-auto space-y-4 pr-2">
           
           {/* Weekly Hours Section */}
-          <Collapsible open={hoursOpen} onOpenChange={setHoursOpen}>
-            <CollapsibleTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="w-full justify-between p-3 h-auto border rounded-lg hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span className="font-medium">Weekly Hours</span>
-                  <span className="text-sm text-muted-foreground">({totalHours.toFixed(1)}h total)</span>
+          {isBiWeekly ? (
+            <div className="space-y-3">
+              {/* Week 1 */}
+              <Collapsible open={openWeek === 'week1'} onOpenChange={(open) => setOpenWeek(open ? 'week1' : openWeek)}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-3 h-auto border rounded-lg hover:bg-muted/50"
+                    onClick={() => setOpenWeek('week1')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      <span className="font-medium">Week 1</span>
+                      <span className="text-sm text-muted-foreground">({week1Total.toFixed(1)}h)</span>
+                    </div>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${openWeek === 'week1' ? 'rotate-180' : ''}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 pt-3">
+                  <WeeklyHoursEditor
+                    days={week1Days}
+                    values={hours14.slice(0, 7)}
+                    onChange={(idx, val) => {
+                      setHours14((prev) => {
+                        const copy = [...prev];
+                        copy[idx] = val;
+                        return copy;
+                      });
+                    }}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Week 2 */}
+              <Collapsible open={openWeek === 'week2'} onOpenChange={(open) => setOpenWeek(open ? 'week2' : openWeek)}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-3 h-auto border rounded-lg hover:bg-muted/50"
+                    onClick={() => setOpenWeek('week2')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      <span className="font-medium">Week 2</span>
+                      <span className="text-sm text-muted-foreground">({week2Total.toFixed(1)}h)</span>
+                    </div>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${openWeek === 'week2' ? 'rotate-180' : ''}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 pt-3">
+                  <WeeklyHoursEditor
+                    days={week2Days}
+                    values={hours14.slice(7, 14)}
+                    onChange={(idx, val) => {
+                      setHours14((prev) => {
+                        const copy = [...prev];
+                        copy[7 + idx] = val;
+                        return copy;
+                      });
+                    }}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="text-center">
+                  <div className="font-semibold text-lg">{week1Total.toFixed(1)}h</div>
+                  <div className="text-muted-foreground">Week 1 Total</div>
                 </div>
-                <ChevronDown className={`h-4 w-4 transition-transform ${hoursOpen ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-3 pt-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {Object.entries(formData).filter(([key]) => key.includes('_hours')).map(([day, hours]) => (
-                  <div key={day} className="flex items-center gap-3">
-                    <Label className="w-20 text-sm capitalize">
-                      {day.replace('_hours', '')}:
-                    </Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="24"
-                      step="0.5"
-                      value={hours}
-                      onChange={(e) => handleInputChange(day, e.target.value)}
-                      className="h-9"
-                    />
-                    <span className="text-xs text-muted-foreground w-8">hrs</span>
-                  </div>
-                ))}
+                <div className="text-center">
+                  <div className="font-semibold text-lg">{week2Total.toFixed(1)}h</div>
+                  <div className="text-muted-foreground">Week 2 Total</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold text-lg">{totalHours.toFixed(1)}h</div>
+                  <div className="text-muted-foreground">Grand Total</div>
+                </div>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
+            </div>
+          ) : (
+            <Collapsible open={hoursOpen} onOpenChange={setHoursOpen}>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-between p-3 h-auto border rounded-lg hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span className="font-medium">Weekly Hours</span>
+                    <span className="text-sm text-muted-foreground">({totalHours.toFixed(1)}h total)</span>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${hoursOpen ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {Object.entries(formData).filter(([key]) => key.includes('_hours')).map(([day, hours]) => (
+                    <div key={day} className="flex items-center gap-3">
+                      <Label className="w-20 text-sm capitalize">
+                        {day.replace('_hours', '')}:
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="24"
+                        step="0.5"
+                        value={hours}
+                        onChange={(e) => handleInputChange(day, e.target.value)}
+                        className="h-9"
+                      />
+                      <span className="text-xs text-muted-foreground w-8">hrs</span>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
 
           {/* Additional Expenses Section */}
           <Collapsible open={expensesOpen} onOpenChange={setExpensesOpen}>
@@ -437,19 +626,21 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
           )}
 
           {/* Employee Notes Section */}
-          {timesheet.notes && (
-            <div className="border rounded-lg p-4 bg-card">
-              <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Employee Notes
-              </h4>
-              <div className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-3">
-                {timesheet.notes}
-              </div>
-            </div>
-          )}
+          <div className="border rounded-lg p-4 bg-card">
+            <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Employee Notes
+            </h4>
+            <Textarea
+              placeholder="Add any additional notes about this timesheet..."
+              value={notesText}
+              onChange={(e) => setNotesText(e.target.value)}
+              className="min-h-[100px]"
+            />
+            <p className="text-xs text-muted-foreground mt-2">These notes will show on the PDF. They won't affect hours or totals.</p>
+          </div>
 
           {/* Detailed Summary */}
           <div className="border rounded-lg p-4 bg-card">

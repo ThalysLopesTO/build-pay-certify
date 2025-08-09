@@ -67,3 +67,19 @@ export const isSubmissionOpen = (end: Date): boolean => {
 export const formatRange = (start: Date, end: Date): string => {
   return `${format(start, 'MMM dd')} – ${format(end, 'MMM dd')}`;
 };
+
+export const getDaysForPeriod = ({ start, end }: { start: Date; end: Date }): Array<{ iso: string; label: string; weekday: string }> => {
+  const days: Array<{ iso: string; label: string; weekday: string }> = [];
+  const s = startOfDay(start);
+  const e = startOfDay(end);
+  let d = s;
+  while (d <= e) {
+    days.push({
+      iso: format(d, 'yyyy-MM-dd'),
+      label: format(d, 'MMM dd'),
+      weekday: format(d, 'EEEE'),
+    });
+    d = addDays(d, 1);
+  }
+  return days;
+};
