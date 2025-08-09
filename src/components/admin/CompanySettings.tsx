@@ -228,7 +228,14 @@ const CompanySettings = () => {
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span>Timesheet Frequency</span>
                     </FormLabel>
-                    <Select onValueChange={field.onChange} value={(field.value as string) || 'weekly'}>
+                    <Select
+                      value={(field.value as string) || 'weekly'}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        // Persist immediately when frequency changes
+                        updateSettings({ timesheet_frequency: val as any });
+                      }}
+                    >
                       <SelectTrigger className="bg-background border-border text-foreground min-h-11">
                         <SelectValue placeholder="Select frequency" />
                       </SelectTrigger>
