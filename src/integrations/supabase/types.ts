@@ -499,6 +499,7 @@ export type Database = {
           show_tax_breakdown_to_employees: boolean | null
           tax_percentage: number | null
           timesheet_frequency: string
+          timezone: string
           updated_at: string
           week_ending_day: number | null
         }
@@ -521,6 +522,7 @@ export type Database = {
           show_tax_breakdown_to_employees?: boolean | null
           tax_percentage?: number | null
           timesheet_frequency?: string
+          timezone?: string
           updated_at?: string
           week_ending_day?: number | null
         }
@@ -543,6 +545,7 @@ export type Database = {
           show_tax_breakdown_to_employees?: boolean | null
           tax_percentage?: number | null
           timesheet_frequency?: string
+          timezone?: string
           updated_at?: string
           week_ending_day?: number | null
         }
