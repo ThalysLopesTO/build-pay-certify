@@ -23,59 +23,76 @@ export const useAuthState = () => {
 
     const handleAuthStateChange = async (event: string, session: Session | null) => {
       if (!isMounted) return;
+
+      // Ignore noisy events that shouldn't reset UI state
+      if (event === 'TOKEN_REFRESHED') {
+        setSession(session);
+        if (isMounted && loading) setLoading(false);
+        return;
+      }
       
       console.log('🔄 Auth state changed:', event, { 
         sessionExists: !!session, 
         userEmail: session?.user?.email,
         userId: session?.user?.id 
       });
-      setSession(session);
       
-      if (session?.user) {
-        console.log('👤 User session found, fetching profile for:', session.user.id);
-        
-        try {
-          const { profile, company, error } = await fetchUserProfile(session.user.id);
+      setSession(session);
+
+      const hasUser = !!session?.user;
+
+      if (hasUser) {
+        const shouldFetch =
+          event === 'SIGNED_IN' ||
+          event === 'USER_UPDATED' ||
+          (event === 'INITIAL_SESSION' && !user);
+
+        if (shouldFetch) {
+          console.log('👤 Fetching user profile for:', session!.user!.id);
           
-          if (!isMounted) return;
-          
-          if (error) {
-            console.warn('⚠️ Profile fetch error:', error);
-            setUser(null);
-            setCompanyError(error);
-          } else if (profile && company) {
-            const authUser: AuthUser = {
-              ...session.user,
-              role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'management' | 'employee',
-              companyId: profile.company_id,
-              companyName: company.name,
-              hourlyRate: profile.hourly_rate || 25,
-              trade: profile.trade || 'General',
-              position: profile.position || 'Worker',
-              firstName: profile.first_name || '',
-              lastName: profile.last_name || '',
-              pendingApproval: profile.pending_approval || false,
-              workerType: profile.worker_type as 'employee' | 'subcontractor' || 'subcontractor'
-            };
+          try {
+            const { profile, company, error } = await fetchUserProfile(session!.user!.id);
             
-            console.log('✅ Setting auth user:', { 
-              id: authUser.id, 
-              email: authUser.email, 
-              role: authUser.role, 
-              companyId: authUser.companyId 
-            });
-            setUser(authUser);
-            setCompanyError(null);
-          } else {
-            console.warn('⚠️ No profile or company found for user:', session.user.id);
-            setUser(null);
-            setCompanyError('Profile or company not found. Please contact your administrator.');
-          }
-        } catch (error) {
-          console.error('💥 Error fetching profile:', error);
-          if (isMounted) {
-            setUser(null);
-            setCompanyError('An unexpected error occurred while loading your profile.');
+            if (!isMounted) return;
+            
+            if (error) {
+              console.warn('⚠️ Profile fetch error:', error);
+              setUser(null);
+              setCompanyError(error);
+            } else if (profile && company) {
+              const authUser: AuthUser = {
+                ...session!.user!,
+                role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'management' | 'employee',
+                companyId: profile.company_id,
+                companyName: company.name,
+                hourlyRate: profile.hourly_rate || 25,
+                trade: profile.trade || 'General',
+                position: profile.position || 'Worker',
+                firstName: profile.first_name || '',
+                lastName: profile.last_name || '',
+                pendingApproval: profile.pending_approval || false,
+                workerType: (profile.worker_type as 'employee' | 'subcontractor') || 'subcontractor'
+              };
+              
+              console.log('✅ Setting auth user:', { 
+                id: authUser.id, 
+                email: authUser.email, 
+                role: authUser.role, 
+                companyId: authUser.companyId 
+              });
+              setUser(authUser);
+              setCompanyError(null);
+            } else {
+              console.warn('⚠️ No profile or company found for user:', session!.user!.id);
+              setUser(null);
+              setCompanyError('Profile or company not found. Please contact your administrator.');
+            }
+          } catch (error) {
+            console.error('💥 Error fetching profile:', error);
+            if (isMounted) {
+              setUser(null);
+              setCompanyError('An unexpected error occurred while loading your profile.');
+            }
           }
         }
       } else {
@@ -112,7 +129,7 @@ export const useAuthState = () => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
         
         // Handle initial session
-        await handleAuthStateChange('initial', session);
+        await handleAuthStateChange('INITIAL_SESSION', session);
         
         return () => {
           subscription.unsubscribe();

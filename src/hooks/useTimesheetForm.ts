@@ -77,6 +77,24 @@ export const useTimesheetForm = () => {
     }
   }, [workWeeks, selectedWeek]);
 
+  const draftKey = React.useMemo(() => {
+    const start = selectedWeek?.weekStartDateString || 'unknown';
+    const freq = ((settings as any)?.timesheet_frequency === 'bi-weekly') ? 'bi' : 'wk';
+    const uid = user?.id || 'anon';
+    return `timesheet:${uid}:${start}:${freq}`;
+  }, [user?.id, selectedWeek?.weekStartDateString, settings]);
+
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        form.reset(JSON.parse(raw) as any);
+      }
+    } catch (e) {
+      console.warn('Failed to restore draft', e);
+    }
+  }, [draftKey, form]);
+
   const watchedValues = form.watch();
   const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
   const totalHours = (
@@ -96,6 +114,21 @@ export const useTimesheetForm = () => {
   const grossPay = (totalHours * hourlyRate) + (watchedValues.additionalExpense || 0);
 
   const isWeekSubmitted = selectedWeek ? existingTimesheets.includes(selectedWeek.weekStartDateString) : false;
+
+  React.useEffect(() => {
+    const sub = form.watch((values) => {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify(values));
+      } catch {}
+    });
+    return () => sub.unsubscribe();
+  }, [form, draftKey]);
+
+  React.useEffect(() => {
+    if (submitMutation.isSuccess) {
+      try { localStorage.removeItem(draftKey); } catch {}
+    }
+  }, [submitMutation.isSuccess, draftKey]);
 
   const onSubmit = (data: FormData) => {
     console.log('📋 Form submission started with data:', data);

@@ -8,6 +8,7 @@ import { Edit, FileText, Download, Trash2, Plus, Eye, AlertCircle } from 'lucide
 import { useMaterialTakeoffNotes, MaterialTakeoffNote } from '@/hooks/useMaterialTakeoffNotes';
 import { useJobsites } from '@/hooks/useJobsites';
 import MaterialTakeoffNotesEditor from './MaterialTakeoffNotesEditor';
+import { useQueryClient } from '@tanstack/react-query';
 
 const MaterialTakeoffNotesTable: React.FC = () => {
   const { notes, isLoading, deleteNote, error } = useMaterialTakeoffNotes();
@@ -15,6 +16,7 @@ const MaterialTakeoffNotesTable: React.FC = () => {
   const [selectedJobsite, setSelectedJobsite] = useState<{ id: string; name: string } | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [viewMode, setViewMode] = useState<'view' | 'edit'>('edit');
+  const queryClient = useQueryClient();
 
   console.log('MaterialTakeoffNotesTable Debug:', {
     notesCount: notes?.length,
@@ -83,7 +85,7 @@ ${note.takeoff_notes}`;
               <p className="text-muted-foreground mb-4">
                 {error?.message || jobsitesError?.message || 'Failed to load material takeoff data'}
               </p>
-              <Button onClick={() => window.location.reload()}>
+              <Button onClick={() => { queryClient.invalidateQueries({ queryKey: ['material-takeoff-notes'] }); queryClient.invalidateQueries({ queryKey: ['jobsites'] }); }}>
                 Try Again
               </Button>
             </div>

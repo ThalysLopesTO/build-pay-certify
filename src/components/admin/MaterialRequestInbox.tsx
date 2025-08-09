@@ -15,11 +15,13 @@ import { supabase } from '@/integrations/supabase/client';
 import EnhancedMaterialRequestFilters from './material-requests/EnhancedMaterialRequestFilters';
 import AccordionMaterialRequestCard from './material-requests/AccordionMaterialRequestCard';
 import MaterialRequestDetailsPanel from './material-requests/MaterialRequestDetailsPanel';
+import { useQueryClient } from '@tanstack/react-query';
 
 const MaterialRequestInbox = () => {
   const { toast } = useToast();
   const { settings } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
+  const queryClient = useQueryClient();
   
   const {
     requests,
@@ -126,7 +128,7 @@ const MaterialRequestInbox = () => {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={() => window.location.reload()}
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['enhanced-material-requests'] })}
                     className="flex items-center gap-1"
                   >
                     <RefreshCw className="h-4 w-4" />
@@ -142,7 +144,7 @@ const MaterialRequestInbox = () => {
                 <p className="font-semibold">Error Loading Material Requests</p>
                 <p>We're having trouble loading the material requests. Error: {error.message}</p>
                 <Button 
-                  onClick={() => window.location.reload()} 
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ['enhanced-material-requests'] })} 
                   variant="outline" 
                   size="sm"
                   className="mt-2"
