@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Clock, Building, ChevronRight, Package, FileText } from 'lucide-react';
+import { Clock, Building, Package, FileText } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardHero from '@/components/dashboard/DashboardHero';
 import WeeklyOverviewCard from '@/components/dashboard/WeeklyOverviewCard';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useJobsites } from '@/hooks/useJobsites';
 import TodayPunchesCard from './TodayPunchesCard';
+import ForemanJobProgressCard from './ForemanJobProgressCard';
 
 
 interface TimesheetSummary {
@@ -118,59 +119,6 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
     enabled: !!user?.companyId,
   });
 
-  // Calculate jobsite progress for the top 3 active jobsites assigned to this foreman
-  const { data: foremanJobsites = [] } = useQuery({
-    queryKey: ['foreman-assigned-jobsites', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('jobsites')
-        .select(`
-          id,
-          name,
-          created_at,
-          starting_date,
-          due_date,
-          jobsite_tasks(
-            id,
-            task_name,
-            start_date,
-            end_date,
-            status
-          )
-        `)
-        .eq('assigned_foreman_id', user.id)
-        .eq('status', 'active')
-        .limit(3);
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user?.id,
-  });
-
-  const jobsiteProgressData = foremanJobsites.map((jobsite: any) => {
-    const tasks = jobsite.jobsite_tasks || [];
-    const totalTasks = tasks.length;
-    const completedTasks = tasks.filter((task: any) => task.status === 'completed').length;
-    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-    return {
-      id: jobsite.id,
-      name: jobsite.name,
-      starting_date: jobsite.starting_date,
-      due_date: jobsite.due_date,
-      progress,
-      totalTasks,
-      completedTasks,
-      tasks
-    };
-  });
-
-  const overallProgress = jobsiteProgressData.length > 0 
-    ? Math.round(jobsiteProgressData.reduce((acc, job) => acc + job.progress, 0) / jobsiteProgressData.length)
-    : 0;
 
   const userName = userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : 'Foreman';
   const userInitials = userProfile ? `${userProfile.first_name?.[0] || ''}${userProfile.last_name?.[0] || ''}` : 'F';
@@ -236,100 +184,7 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
         {/* Live Punch Monitor Card - Enhanced */}
         <TodayPunchesCard setActiveTab={setActiveTab} />
 
-        {/* Job Progress Card */}
-        <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200 rounded-xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Building className="h-5 w-5 text-primary" />
-              </div>
-              Job Progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Assigned Projects with Tasks */}
-            <div className="space-y-5">
-              {jobsiteProgressData.length > 0 ? (
-                jobsiteProgressData.map((job: any) => {
-                  const startDate = job.starting_date ? new Date(job.starting_date) : null;
-                  const dueDate = job.due_date ? new Date(job.due_date) : null;
-                  const durationDays = startDate && dueDate
-                    ? Math.max(1, Math.ceil((dueDate.getTime() - startDate.getTime()) / 86400000))
-                    : null;
-                  const tasksToShow = (job.tasks || []).slice(0, 3);
-                  return (
-                    <div key={job.id} className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border/50">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold truncate">{job.name}</div>
-                          <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-3">
-                            {startDate && (
-                              <span>Start: {startDate.toLocaleDateString()}</span>
-                            )}
-                            {durationDays ? (
-                              <span>Duration: {durationDays} days</span>
-                            ) : (
-                              <span>No due date</span>
-                            )}
-                            <span>
-                              Tasks: {job.completedTasks}/{job.totalTasks} completed
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-sm text-muted-foreground font-semibold shrink-0">{job.progress}%</span>
-                      </div>
-                      <Progress value={job.progress} className="h-2" />
-
-                      {tasksToShow.length > 0 && (
-                        <div className="space-y-2">
-                          {tasksToShow.map((t: any) => {
-                            const tStart = t.start_date ? new Date(t.start_date) : null;
-                            const tEnd = t.end_date ? new Date(t.end_date) : null;
-                            const tDuration = tStart && tEnd
-                              ? Math.max(1, Math.ceil((tEnd.getTime() - tStart.getTime()) / 86400000))
-                              : null;
-                            const variant = t.status === 'completed' ? 'default' : t.status === 'in_progress' ? 'secondary' : 'outline';
-                            return (
-                              <div key={t.id} className="flex items-center justify-between gap-3 rounded-md bg-background/50 p-2">
-                                <div className="min-w-0">
-                                  <div className="text-sm font-medium truncate">{t.task_name || 'Task'}</div>
-                                  <div className="text-xs text-muted-foreground mt-0.5">
-                                    {tStart ? tStart.toLocaleDateString() : '—'}
-                                    {' '}–{' '}
-                                    {tEnd ? tEnd.toLocaleDateString() : '—'}
-                                    {tDuration && <span> • {tDuration} days</span>}
-                                  </div>
-                                </div>
-                                <Badge variant={variant as any} className="text-[10px] uppercase tracking-wide">
-                                  {t.status?.replace('_', ' ') || 'pending'}
-                                </Badge>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  <Building className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                  <p>No assigned jobsites</p>
-                  <p className="text-xs">Contact your supervisor to get assigned to projects</p>
-                </div>
-              )}
-            </div>
-
-            <Button 
-              variant="outline" 
-              className="w-full hover:bg-primary/5" 
-              onClick={() => setActiveTab('jobsite-progress')}
-            >
-              View My Projects
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
+        <ForemanJobProgressCard onViewProjects={() => setActiveTab('jobsite-progress')} />
       </div>
 
       {/* Second Row */}
