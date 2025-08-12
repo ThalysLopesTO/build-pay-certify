@@ -129,7 +129,9 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
           ...timesheet,
           employee_name: employeeName,
           worker_type: workerType,
-          jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',
+          jobsite_name: Array.isArray((timesheet as any).jobsites)
+            ? ((timesheet as any).jobsites[0]?.name || 'Unknown Jobsite')
+            : ((timesheet as any).jobsites?.name || 'Unknown Jobsite'),
           week_ending_date: timesheet.week_start_date, // This will be the week start date from submissions
           final_total_pay: finalTotalPay,
         };

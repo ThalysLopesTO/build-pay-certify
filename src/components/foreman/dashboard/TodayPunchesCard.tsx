@@ -58,9 +58,11 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({ setActiveTab }) => 
       // Process the data to create entries for both check-in and check-out
       const entries: PunchEntry[] = [];
       
-      timesheets?.forEach((timesheet) => {
-        const employeeName = `${timesheet.user_profiles.first_name} ${timesheet.user_profiles.last_name}`;
-        const jobsiteName = timesheet.jobsites.name;
+      timesheets?.forEach((timesheet: any) => {
+        const profile = Array.isArray(timesheet.user_profiles) ? timesheet.user_profiles[0] : timesheet.user_profiles;
+        const jobsite = Array.isArray(timesheet.jobsites) ? timesheet.jobsites[0] : timesheet.jobsites;
+        const employeeName = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim();
+        const jobsiteName = jobsite?.name || '';
         
         // Add check-in entry
         entries.push({
@@ -70,7 +72,7 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({ setActiveTab }) => 
           check_out_time: timesheet.check_out_time,
           jobsite_id: timesheet.jobsite_id,
           employee_name: employeeName,
-          employee_photo: timesheet.user_profiles.photo_url,
+          employee_photo: profile?.photo_url || null,
           jobsite_name: jobsiteName,
           punch_type: 'IN',
           punch_time: timesheet.check_in_time
@@ -85,7 +87,7 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({ setActiveTab }) => 
             check_out_time: timesheet.check_out_time,
             jobsite_id: timesheet.jobsite_id,
             employee_name: employeeName,
-            employee_photo: timesheet.user_profiles.photo_url,
+            employee_photo: profile?.photo_url || null,
             jobsite_name: jobsiteName,
             punch_type: 'OUT',
             punch_time: timesheet.check_out_time

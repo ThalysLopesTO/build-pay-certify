@@ -59,15 +59,22 @@ const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({ employee, isOpen, onC
       }
 
       // Remove duplicates and return unique jobsites
-      const uniqueJobsites = data.reduce((acc: any[], current) => {
-        const exists = acc.find(item => item.jobsites.id === current.jobsites.id);
+      const uniqueJobsites = data.reduce((acc: any[], current: any) => {
+        const currentJobsite = Array.isArray(current.jobsites) ? current.jobsites[0] : current.jobsites;
+        const exists = acc.find((item: any) => {
+          const jobsite = Array.isArray(item.jobsites) ? item.jobsites[0] : item.jobsites;
+          return jobsite?.id === currentJobsite?.id;
+        });
         if (!exists) {
           acc.push(current);
         }
         return acc;
       }, []);
 
-      return uniqueJobsites.map(item => item.jobsites);
+      return uniqueJobsites.map((item: any) => {
+        const jobsite = Array.isArray(item.jobsites) ? item.jobsites[0] : item.jobsites;
+        return jobsite;
+      });
     },
     enabled: !!employee?.user_id && isOpen,
   });

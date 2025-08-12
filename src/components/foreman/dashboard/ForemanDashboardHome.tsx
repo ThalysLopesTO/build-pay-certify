@@ -106,10 +106,12 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
 
       if (error) throw error;
 
-      return data?.map(request => ({
+      return (data || []).map((request: any) => ({
         ...request,
-        jobsite_name: request.jobsites?.name || 'Unknown Site'
-      })) || [];
+        jobsite_name: Array.isArray(request.jobsites)
+          ? (request.jobsites[0]?.name || 'Unknown Site')
+          : (request.jobsites?.name || 'Unknown Site')
+      }));
     },
     enabled: !!user?.companyId,
   });
