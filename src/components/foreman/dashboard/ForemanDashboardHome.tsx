@@ -132,7 +132,13 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
           created_at,
           starting_date,
           due_date,
-          jobsite_tasks(id, status)
+          jobsite_tasks(
+            id,
+            task_name,
+            start_date,
+            end_date,
+            status
+          )
         `)
         .eq('assigned_foreman_id', user.id)
         .eq('status', 'active')
@@ -144,18 +150,21 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
     enabled: !!user?.id,
   });
 
-  const jobsiteProgressData = foremanJobsites.map(jobsite => {
+  const jobsiteProgressData = foremanJobsites.map((jobsite: any) => {
     const tasks = jobsite.jobsite_tasks || [];
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter((task: any) => task.status === 'completed').length;
     const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    
+
     return {
       id: jobsite.id,
       name: jobsite.name,
+      starting_date: jobsite.starting_date,
+      due_date: jobsite.due_date,
       progress,
       totalTasks,
-      completedTasks
+      completedTasks,
+      tasks
     };
   });
 
@@ -238,32 +247,70 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Overall Progress */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Overall Progress</span>
-                <span className="text-sm text-muted-foreground font-semibold">{overallProgress}%</span>
-              </div>
-              <Progress value={overallProgress} className="h-3" />
-            </div>
-
-            {/* Top Jobsites */}
-            <div className="space-y-4">
+            {/* Assigned Projects with Tasks */}
+            <div className="space-y-5">
               {jobsiteProgressData.length > 0 ? (
-                jobsiteProgressData.map((job) => (
-                  <div key={job.id} className="space-y-3 p-3 bg-muted/30 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium truncate flex-1 mr-2">{job.name}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {job.completedTasks}/{job.totalTasks} tasks
-                        </span>
-                        <span className="text-sm text-muted-foreground font-semibold">{job.progress}%</span>
+                jobsiteProgressData.map((job: any) => {
+                  const startDate = job.starting_date ? new Date(job.starting_date) : null;
+                  const dueDate = job.due_date ? new Date(job.due_date) : null;
+                  const durationDays = startDate && dueDate
+                    ? Math.max(1, Math.ceil((dueDate.getTime() - startDate.getTime()) / 86400000))
+                    : null;
+                  const tasksToShow = (job.tasks || []).slice(0, 3);
+                  return (
+                    <div key={job.id} className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border/50">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold truncate">{job.name}</div>
+                          <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-3">
+                            {startDate && (
+                              <span>Start: {startDate.toLocaleDateString()}</span>
+                            )}
+                            {durationDays ? (
+                              <span>Duration: {durationDays} days</span>
+                            ) : (
+                              <span>No due date</span>
+                            )}
+                            <span>
+                              Tasks: {job.completedTasks}/{job.totalTasks} completed
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-sm text-muted-foreground font-semibold shrink-0">{job.progress}%</span>
                       </div>
+                      <Progress value={job.progress} className="h-2" />
+
+                      {tasksToShow.length > 0 && (
+                        <div className="space-y-2">
+                          {tasksToShow.map((t: any) => {
+                            const tStart = t.start_date ? new Date(t.start_date) : null;
+                            const tEnd = t.end_date ? new Date(t.end_date) : null;
+                            const tDuration = tStart && tEnd
+                              ? Math.max(1, Math.ceil((tEnd.getTime() - tStart.getTime()) / 86400000))
+                              : null;
+                            const variant = t.status === 'completed' ? 'default' : t.status === 'in_progress' ? 'secondary' : 'outline';
+                            return (
+                              <div key={t.id} className="flex items-center justify-between gap-3 rounded-md bg-background/50 p-2">
+                                <div className="min-w-0">
+                                  <div className="text-sm font-medium truncate">{t.task_name || 'Task'}</div>
+                                  <div className="text-xs text-muted-foreground mt-0.5">
+                                    {tStart ? tStart.toLocaleDateString() : '—'}
+                                    {' '}–{' '}
+                                    {tEnd ? tEnd.toLocaleDateString() : '—'}
+                                    {tDuration && <span> • {tDuration} days</span>}
+                                  </div>
+                                </div>
+                                <Badge variant={variant as any} className="text-[10px] uppercase tracking-wide">
+                                  {t.status?.replace('_', ' ') || 'pending'}
+                                </Badge>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                    <Progress value={job.progress} className="h-2" />
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="text-center py-8 text-muted-foreground text-sm">
                   <Building className="h-10 w-10 mx-auto mb-3 opacity-50" />
