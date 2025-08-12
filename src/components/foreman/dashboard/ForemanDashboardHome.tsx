@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Clock, Building, ChevronRight, Package } from 'lucide-react';
+import { Clock, Building, ChevronRight, Package, FileText } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import DashboardHero from '@/components/dashboard/DashboardHero';
+import WeeklyOverviewCard from '@/components/dashboard/WeeklyOverviewCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useJobsites } from '@/hooks/useJobsites';
@@ -166,31 +168,62 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto animate-fade-in">
-      {/* Welcome Banner */}
-      <Card className="border border-border shadow-lg bg-gradient-to-r from-primary/5 via-background to-primary/5 rounded-xl">
-        <CardContent className="p-8">
-          <div className="flex items-center gap-6">
-            <Avatar className="h-20 w-20 border-2 border-primary/20 shadow-md">
-              <AvatarImage src={userProfile?.photo_url} alt={userName} />
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
-                {userInitials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                Welcome back, {userName}
-              </h1>
-              <p className="text-muted-foreground mb-3 text-lg">{formattedDate}</p>
-              <p className="text-sm text-primary font-medium">
-                Here's what's happening on your sites today
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+{/* Hero + Overview row */}
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div className="lg:col-span-2">
+    <DashboardHero
+      theme="green"
+      firstName={userProfile?.first_name || user?.firstName}
+      lastName={userProfile?.last_name || user?.lastName}
+      photoUrl={userProfile?.photo_url}
+      companyName={user?.companyName}
+      trade={user?.trade}
+      onViewProfile={() => setActiveTab('settings')}
+      statusText="Ready to Work"
+    />
+  </div>
+  <WeeklyOverviewCard
+    pending={timesheetSummary?.pending || 0}
+    approved={timesheetSummary?.approved || 0}
+    total={timesheetSummary?.total || 0}
+    theme="green"
+  />
+</div>
 
-      {/* Main Dashboard Cards - First Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+{/* Quick Actions */}
+<div className="space-y-4 mt-6">
+  <h2 className="text-xl font-bold text-slate-900">Quick Actions</h2>
+  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    {[
+      { title: 'Live Punch Monitor', icon: Clock, onClick: () => setActiveTab('live-punch-monitor'), color: 'bg-emerald-600 hover:bg-emerald-700', description: 'See activity' },
+      { title: 'New Material Request', icon: Package, onClick: () => setActiveTab('material-request'), color: 'bg-emerald-500 hover:bg-emerald-600', description: 'Order materials' },
+      { title: 'Timesheet', icon: FileText, onClick: () => setActiveTab('timesheet'), color: 'bg-emerald-700 hover:bg-emerald-800', description: 'Submit hours' },
+      { title: 'Projects', icon: Building, onClick: () => setActiveTab('jobsite-progress'), color: 'bg-emerald-600 hover:bg-emerald-700', description: 'View progress' },
+    ].map((action, index) => {
+      const Icon = action.icon;
+      return (
+        <Card 
+          key={index} 
+          className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer border-0 shadow-md"
+          onClick={action.onClick}
+        >
+          <CardContent className="p-6 text-center space-y-3">
+            <div className={`mx-auto w-12 h-12 rounded-full ${action.color} flex items-center justify-center transition-colors`}>
+              <Icon className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-900 text-sm">{action.title}</h3>
+              <p className="text-xs text-slate-600 mt-1">{action.description}</p>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    })}
+  </div>
+</div>
+
+{/* Main Dashboard Cards - First Row */}
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Live Punch Monitor Card - Enhanced */}
         <TodayPunchesCard setActiveTab={setActiveTab} />
 

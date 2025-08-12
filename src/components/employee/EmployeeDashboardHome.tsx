@@ -9,6 +9,7 @@ import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTimesheets } from '@/hooks/useTimesheets';
+import DashboardHero from '@/components/dashboard/DashboardHero';
 
 interface EmployeeDashboardHomeProps {
   onNavigateToTab: (tab: string) => void;
@@ -74,61 +75,17 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       {/* Hero Section - Welcome + Hours */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Welcome Card with Photo */}
-        <Card className="lg:col-span-2 shadow-lg border-0 bg-gradient-to-br from-white to-slate-50">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
-              {/* Employee Photo */}
-              <div className="flex-shrink-0">
-                <EmployeeAvatar 
-                  photoUrl={userProfile?.photo_url}
-                  firstName={user?.firstName}
-                  lastName={user?.lastName}
-                  size="lg"
-                  className="shadow-lg"
-                />
-              </div>
-
-              {/* Welcome Text and Info */}
-              <div className="flex-1 space-y-3">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
-                    Welcome back, {user?.firstName || 'Employee'} 👋
-                  </h1>
-                  <p className="text-slate-600 text-base">
-                    Manage your work efficiently and stay productive
-                  </p>
-                </div>
-
-                {/* Status Badge */}
-                <div className="flex items-center space-x-2">
-                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                    Ready to Work
-                  </Badge>
-                </div>
-
-                {/* Company Info */}
-                <div className="flex items-center space-x-2 text-sm text-slate-600">
-                  <Building className="h-4 w-4" />
-                  <span>{user?.companyName || 'Not Assigned'}</span>
-                  <span className="text-slate-400">•</span>
-                  <span>{user?.trade || 'General'}</span>
-                </div>
-
-                {/* Profile Link */}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => onNavigateToTab('settings')}
-                  className="w-fit"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View My Profile
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+<div className="lg:col-span-2">
+  <DashboardHero
+    theme="blue"
+    firstName={user?.firstName}
+    lastName={user?.lastName}
+    photoUrl={userProfile?.photo_url}
+    companyName={user?.companyName}
+    trade={user?.trade}
+    onViewProfile={() => onNavigateToTab('settings')}
+  />
+</div>
 
         {/* Weekly Hours Card */}
         <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-600 to-blue-700 text-white">
