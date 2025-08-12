@@ -9,7 +9,7 @@ import { AuthProvider, useAuth } from "@/contexts/SupabaseAuthContext";
 import { EmployeeProvider } from "./contexts/EmployeeContext";
 
 import { toast } from '@/hooks/use-toast';
-import HomePage from "./pages/HomePage";
+
 import LoginForm from "./components/LoginForm";
 import EmployeeLoginForm from "./components/EmployeeLoginForm";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
@@ -183,12 +183,11 @@ const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Home page - shows subscription landing for non-authenticated users */}
         <Route 
           path="/" 
           element={
             !isAuthenticated ? (
-              <HomePage />
+              <LoginForm />
             ) : (
               <Navigate to={getDefaultDashboardRoute()} replace />
             )
