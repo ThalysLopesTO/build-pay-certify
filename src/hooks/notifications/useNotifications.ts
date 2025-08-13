@@ -35,8 +35,11 @@ export const useNotifications = () => {
       return;
     }
 
+    // Create unique channel name to avoid conflicts
+    const channelName = `notifications-${user.companyId}-${user.id}-${Date.now()}`;
+    
     const channel = supabase
-      .channel('notifications-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -56,7 +59,7 @@ export const useNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.companyId, user?.role, query]);
+  }, [user?.companyId, user?.role, user?.id, query.refetch]);
 
   return query;
 };
