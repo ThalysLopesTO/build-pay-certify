@@ -221,6 +221,18 @@ const AppRoutes = () => {
           } 
         />
         
+        {/* Foreman deep link to material request details */}
+        <Route 
+          path="/foreman/material-requests/:requestId" 
+          element={
+            isAuthenticated ? (
+              <DashboardRouter />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
+        />
+        
         <Route 
           path="/login" 
           element={!isAuthenticated ? <LoginForm /> : <Navigate to={getDefaultDashboardRoute()} replace />} 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Header from '../components/Header';
 import ForemanSidebar from '../components/foreman/ForemanSidebar';
 import ForemanDashboardHome from '../components/foreman/dashboard/ForemanDashboardHome';
@@ -15,11 +15,13 @@ import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import DailyReportsManagement from '../components/admin/DailyReportsManagement';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { useState } from 'react';
 import InventoryManagement from '../components/admin/InventoryManagement';
+import { useParams } from 'react-router-dom';
 
 const ForemanDashboard = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const params = useParams();
+  const preopenRequestId = params.requestId as string | undefined;
+  const [activeTab, setActiveTab] = useState(preopenRequestId ? 'my-requests' : 'dashboard');
 
   const renderContent = () => {
     switch (activeTab) {
@@ -30,7 +32,7 @@ const ForemanDashboard = () => {
       case 'material-request':
         return <MaterialRequestForm />;
       case 'my-requests':
-        return <MyMaterialRequests />;
+        return <MyMaterialRequests initialOpenRequestId={preopenRequestId} />;
       case 'inventory':
         return <InventoryManagement />;
       case 'employees':
