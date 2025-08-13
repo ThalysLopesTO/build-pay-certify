@@ -59,6 +59,12 @@ const ManagementDashboardHome: React.FC<ManagementDashboardHomeProps> = ({ setAc
 
   const quickActions = [
     {
+      title: 'My Timesheet',
+      description: 'Submit and manage your timesheet',
+      icon: Clock,
+      id: 'my-timesheet'
+    },
+    {
       title: 'Timesheet Approval',
       description: 'Review and approve timesheets',
       icon: Clock,

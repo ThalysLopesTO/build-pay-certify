@@ -17,6 +17,7 @@ import EmployeeRegistration from '../components/admin/EmployeeRegistration';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import ManagementDashboardHome from '../components/management/ManagementDashboardHome';
 import ManagementNotifications from '../components/management/ManagementNotifications';
+import ManagementTimesheetView from '../components/management/ManagementTimesheetView';
 
 const ManagementDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -27,6 +28,8 @@ const ManagementDashboard = () => {
         return <ManagementDashboardHome setActiveTab={setActiveTab} />;
       case 'live-punch-monitor':
         return <LivePunchMonitor />;
+      case 'my-timesheet':
+        return <ManagementTimesheetView />;
       case 'timesheets':
         return <EmployeeTimesheets />;
       case 'payroll-summary':
