@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useJobsites } from '@/hooks/useJobsites';
 import TodayPunchesCard from './TodayPunchesCard';
 import ForemanJobProgressCard from './ForemanJobProgressCard';
+import { DashboardCard } from '@/components/common/DashboardCard';
 
 
 interface TimesheetSummary {
@@ -63,7 +64,7 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
 
 
   // Fetch timesheet summary
-  const { data: timesheetSummary } = useQuery<TimesheetSummary>({
+  const { data: timesheetSummary, isLoading: timesheetLoading } = useQuery<TimesheetSummary>({
     queryKey: ['timesheet-summary', user?.companyId],
     queryFn: async () => {
       if (!user?.companyId) throw new Error('No company ID');
@@ -88,7 +89,7 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
   });
 
   // Fetch recent material requests
-  const { data: recentRequests = [] } = useQuery<MaterialRequest[]>({
+  const { data: recentRequests = [], isLoading: requestsLoading } = useQuery<MaterialRequest[]>({
     queryKey: ['recent-material-requests', user?.companyId],
     queryFn: async () => {
       if (!user?.companyId) throw new Error('No company ID');
@@ -190,36 +191,11 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
       {/* Second Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Weekly Timesheet Summary Card */}
-        <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200 rounded-xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Clock className="h-5 w-5 text-primary" />
-              </div>
-              Weekly Timesheet Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-3 gap-6">
-              <div className="text-center p-4 bg-muted/30 rounded-lg">
-                <div className="text-3xl font-bold text-orange-600 mb-1">
-                  {timesheetSummary?.pending || 0}
-                </div>
-                <div className="text-sm text-muted-foreground font-medium">Pending</div>
-              </div>
-              <div className="text-center p-4 bg-muted/30 rounded-lg">
-                <div className="text-3xl font-bold text-green-600 mb-1">
-                  {timesheetSummary?.approved || 0}
-                </div>
-                <div className="text-sm text-muted-foreground font-medium">Approved</div>
-              </div>
-              <div className="text-center p-4 bg-muted/30 rounded-lg">
-                <div className="text-3xl font-bold text-primary mb-1">
-                  {timesheetSummary?.total || 0}
-                </div>
-                <div className="text-sm text-muted-foreground font-medium">Total</div>
-              </div>
-            </div>
+        <DashboardCard
+          title="Weekly Timesheet Summary"
+          icon={<Clock className="h-5 w-5" />}
+          accent="green"
+          footer={
             <div className="flex gap-3">
               <Button 
                 variant="outline" 
@@ -236,47 +212,44 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
                 View Reports
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          }
+        >
+          {timesheetLoading ? (
+            <div className="grid grid-cols-3 gap-6 animate-pulse">
+              <div className="h-20 rounded-lg bg-muted/50" />
+              <div className="h-20 rounded-lg bg-muted/50" />
+              <div className="h-20 rounded-lg bg-muted/50" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-6">
+              <div className="text-center p-4 bg-muted/30 rounded-lg">
+                <div className="text-3xl font-bold text-orange-600 mb-1" aria-label={`Pending timesheets: ${timesheetSummary?.pending || 0}`}>
+                  {timesheetSummary?.pending || 0}
+                </div>
+                <div className="text-sm text-muted-foreground font-medium">Pending</div>
+              </div>
+              <div className="text-center p-4 bg-muted/30 rounded-lg">
+                <div className="text-3xl font-bold text-green-600 mb-1" aria-label={`Approved timesheets: ${timesheetSummary?.approved || 0}`}>
+                  {timesheetSummary?.approved || 0}
+                </div>
+                <div className="text-sm text-muted-foreground font-medium">Approved</div>
+              </div>
+              <div className="text-center p-4 bg-muted/30 rounded-lg">
+                <div className="text-3xl font-bold text-primary mb-1" aria-label={`Total timesheets: ${timesheetSummary?.total || 0}`}>
+                  {timesheetSummary?.total || 0}
+                </div>
+                <div className="text-sm text-muted-foreground font-medium">Total</div>
+              </div>
+            </div>
+          )}
+        </DashboardCard>
 
         {/* Material Requests Overview */}
-        <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200 rounded-xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Package className="h-5 w-5 text-primary" />
-              </div>
-              Recent Material Requests
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {recentRequests.length > 0 ? (
-              <div className="space-y-4">
-                {recentRequests.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
-                    <div className="flex-1">
-                      <div className="text-sm font-medium truncate mb-1">
-                        {request.material_list.substring(0, 30)}...
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {request.jobsite_name} • {new Date(request.delivery_date).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <Badge 
-                      variant={request.status === 'approved' ? 'default' : request.status === 'pending' ? 'secondary' : 'destructive'}
-                      className="text-xs font-medium"
-                    >
-                      {request.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                <Package className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p>No recent requests</p>
-              </div>
-            )}
+        <DashboardCard
+          title="Recent Material Requests"
+          icon={<Package className="h-5 w-5" />}
+          accent="green"
+          footer={
             <div className="flex gap-3">
               <Button 
                 variant="outline" 
@@ -293,8 +266,42 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
                 View All
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          }
+        >
+          {requestsLoading ? (
+            <div className="space-y-4 animate-pulse">
+              <div className="h-14 rounded-lg bg-muted/50" />
+              <div className="h-14 rounded-lg bg-muted/50" />
+              <div className="h-14 rounded-lg bg-muted/50" />
+            </div>
+          ) : recentRequests.length > 0 ? (
+            <div className="space-y-4">
+              {recentRequests.map((request) => (
+                <div key={request.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
+                  <div className="flex-1">
+                    <div className="text-sm font-medium truncate mb-1">
+                      {request.material_list.substring(0, 30)}...
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {request.jobsite_name} • {new Date(request.delivery_date).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <Badge 
+                    variant={request.status === 'approved' ? 'default' : request.status === 'pending' ? 'secondary' : 'destructive'}
+                    className="text-xs font-medium"
+                  >
+                    {request.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              <Package className="h-10 w-10 mx-auto mb-3 opacity-50" />
+              <p>No recent requests</p>
+            </div>
+          )}
+        </DashboardCard>
       </div>
     </div>
   );
