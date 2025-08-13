@@ -49,6 +49,7 @@ const LivePunchMonitor = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [noteFilter, setNoteFilter] = useState<string>('all');
+  // Initialize with today's date to ensure managers see today's punches by default
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [flaggedEntries, setFlaggedEntries] = useState<Set<string>>(new Set());
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
@@ -160,27 +161,23 @@ const LivePunchMonitor = () => {
         query = query.eq('jobsite_id', selectedJobsite);
       }
 
-      // Apply date filter only if a specific date is selected
+      // Apply date filter - always filter by selected date (which defaults to today)
       if (selectedDate) {
         const startOfDay = new Date(selectedDate);
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(selectedDate);
         endOfDay.setHours(23, 59, 59, 999);
         
-        // Use a simpler OR query that checks if any timestamp falls within the selected date
-        query = query.or(`check_in_time.gte.${startOfDay.toISOString()}.and.check_in_time.lte.${endOfDay.toISOString()},check_out_time.gte.${startOfDay.toISOString()}.and.check_out_time.lte.${endOfDay.toISOString()},created_at.gte.${startOfDay.toISOString()}.and.created_at.lte.${endOfDay.toISOString()}`);
-      } else {
-        // If no specific filters are set, default to today's records
-        const hasFilters = selectedEmployee !== 'all' || selectedJobsite !== 'all' || statusFilter !== 'all';
-        if (!hasFilters) {
-          const today = new Date();
-          const startOfToday = new Date(today);
-          startOfToday.setHours(0, 0, 0, 0);
-          const endOfToday = new Date(today);
-          endOfToday.setHours(23, 59, 59, 999);
-          
-          query = query.or(`check_in_time.gte.${startOfToday.toISOString()}.and.check_in_time.lte.${endOfToday.toISOString()},check_out_time.gte.${startOfToday.toISOString()}.and.check_out_time.lte.${endOfToday.toISOString()},created_at.gte.${startOfToday.toISOString()}.and.created_at.lte.${endOfToday.toISOString()}`);
-        }
+        // Handle overnight shifts: return entries where check_in <= endOfDay AND (check_out IS NULL OR check_out >= startOfDay)
+        // This covers: 
+        // 1. Normal same-day shifts (check_in and check_out both within the day)
+        // 2. Active punches (check_out is null but checked in today)
+        // 3. Overnight shifts (started today but ended next day, or started yesterday but ended today)
+        query = query.or(
+          `and(check_in_time.gte.${startOfDay.toISOString()},check_in_time.lte.${endOfDay.toISOString()}),` +
+          `and(check_out_time.gte.${startOfDay.toISOString()},check_out_time.lte.${endOfDay.toISOString()}),` +
+          `and(created_at.gte.${startOfDay.toISOString()},created_at.lte.${endOfDay.toISOString()})`
+        );
       }
       const {
         data: timesheets,
