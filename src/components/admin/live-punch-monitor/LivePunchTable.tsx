@@ -9,6 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { MapPin, Flag, Edit, Trash2, AlertTriangle, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import WorkNoteDisplay from './WorkNoteDisplay';
 
 // Global Google Maps type declaration
 declare global {
@@ -25,6 +26,7 @@ interface PunchEntry {
   check_out_time: string | null;
   check_in_location: string | null;
   check_out_location: string | null;
+  work_note: string | null;
   status: string;
   user_profiles: {
     first_name: string;
@@ -124,6 +126,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                   <TableHead className="font-semibold text-gray-700 py-4">Check-out Time</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4">Total Time</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4">Status</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">Note</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4">Location</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4">Distance Flag {/* TODO: Will re-enable later */}</TableHead>
                   <TableHead className="font-semibold text-gray-700 py-4">Flag</TableHead>
@@ -133,7 +136,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
               <TableBody>
                 {filteredEntries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-12 text-muted-foreground bg-gray-50/30">
+                    <TableCell colSpan={11} className="text-center py-12 text-muted-foreground bg-gray-50/30">
                       <div className="flex flex-col items-center gap-2">
                         <MapPin className="h-8 w-8 text-gray-300" />
                         <p className="font-medium">No punch records found</p>
@@ -193,6 +196,9 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                         </TableCell>
                         <TableCell className="py-4">
                           {getStatusBadge(entry)}
+                        </TableCell>
+                        <TableCell className="py-4 text-center">
+                          <WorkNoteDisplay note={entry.work_note} variant="icon" />
                         </TableCell>
                         <TableCell className="py-4">
                           {entry.check_in_location ? (

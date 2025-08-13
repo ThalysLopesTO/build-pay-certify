@@ -25,6 +25,7 @@ interface PunchEntry {
   check_out_time: string | null;
   check_in_location: string | null;
   check_out_location: string | null;
+  work_note: string | null;
   status: string;
   user_profiles: {
     first_name: string;
@@ -47,6 +48,7 @@ const LivePunchMonitor = () => {
   const [selectedJobsite, setSelectedJobsite] = useState<string>('all');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [noteFilter, setNoteFilter] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [flaggedEntries, setFlaggedEntries] = useState<Set<string>>(new Set());
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
@@ -65,6 +67,7 @@ const LivePunchMonitor = () => {
     const jobsiteParam = searchParams.get('jobsite');
     const employeeParam = searchParams.get('employee');
     const statusParam = searchParams.get('status');
+    const noteParam = searchParams.get('note');
 
     if (dateParam) {
       const parsed = new Date(dateParam);
@@ -73,6 +76,7 @@ const LivePunchMonitor = () => {
     if (jobsiteParam) setSelectedJobsite(jobsiteParam);
     if (employeeParam) setSelectedEmployee(employeeParam);
     if (statusParam) setStatusFilter(statusParam);
+    if (noteParam) setNoteFilter(noteParam);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -86,8 +90,9 @@ const LivePunchMonitor = () => {
     selectedJobsite !== 'all' ? params.set('jobsite', selectedJobsite) : params.delete('jobsite');
     selectedEmployee !== 'all' ? params.set('employee', selectedEmployee) : params.delete('employee');
     statusFilter !== 'all' ? params.set('status', statusFilter) : params.delete('status');
+    noteFilter !== 'all' ? params.set('note', noteFilter) : params.delete('note');
     setSearchParams(params, { replace: true });
-  }, [selectedDate, selectedJobsite, selectedEmployee, statusFilter]);
+  }, [selectedDate, selectedJobsite, selectedEmployee, statusFilter, noteFilter]);
 
   // Fetch jobsites for filter
   const {
@@ -140,6 +145,7 @@ const LivePunchMonitor = () => {
           check_out_time,
           check_in_location,
           check_out_location,
+          work_note,
           status,
           created_at
         `).eq('company_id', user.companyId);
@@ -297,6 +303,7 @@ const LivePunchMonitor = () => {
         'Check-out': checkOut,
         'Total Time': totalTime,
         Status: status,
+        'Work Note': entry.work_note || '',
         'Check-in Location': entry.check_in_location || '',
         'Check-out Location': entry.check_out_location || '',
       };

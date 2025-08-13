@@ -137,13 +137,19 @@ export const useTimesheets = (selectedWeek?: Date) => {
 
   // Clock out mutation
   const clockOutMutation = useMutation({
-    mutationFn: async ({ timesheetId, location }: { timesheetId: string; location: string }) => {
+    mutationFn: async ({ timesheetId, location, workNote }: { timesheetId: string; location: string; workNote?: string }) => {
+      const updateData: any = {
+        check_out_time: new Date().toISOString(),
+        check_out_location: location,
+      };
+      
+      if (workNote) {
+        updateData.work_note = workNote;
+      }
+
       const { data, error } = await supabase
         .from('timesheets')
-        .update({
-          check_out_time: new Date().toISOString(),
-          check_out_location: location,
-        })
+        .update(updateData)
         .eq('id', timesheetId)
         .select()
         .single();

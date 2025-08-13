@@ -16,11 +16,13 @@ import TodayStatusBox from './time-tracker/TodayStatusBox';
 import WeeklyHistorySection from './time-tracker/WeeklyHistorySection';
 import WeekSelector from './time-tracker/WeekSelector';
 import DigitalClock from './time-tracker/DigitalClock';
+import ClockOutNoteModal from './ClockOutNoteModal';
 
 const TimeTracker = () => {
   const { user } = useAuth();
   const [selectedJobsiteId, setSelectedJobsiteId] = useState<string>('');
   const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
+  const [showClockOutModal, setShowClockOutModal] = useState(false);
   const { data: jobsites, isLoading: jobsitesLoading } = useActiveJobsites();
   const { getCurrentLocation, isGettingLocation } = useGeolocation();
 
@@ -62,14 +64,19 @@ const TimeTracker = () => {
     }
   };
 
-  const handleClockOut = async () => {
+  const handleClockOut = () => {
+    setShowClockOutModal(true);
+  };
+
+  const handleClockOutWithNote = async (note?: string) => {
     if (!todayActiveTimesheet) {
       return;
     }
 
     try {
       const location = await getCurrentLocation();
-      clockOut({ timesheetId: todayActiveTimesheet.id, location });
+      clockOut({ timesheetId: todayActiveTimesheet.id, location, workNote: note });
+      setShowClockOutModal(false);
     } catch (error) {
       console.error('Error getting location for clock out:', error);
     }
@@ -263,6 +270,13 @@ const TimeTracker = () => {
           </CardContent>
         </Card>
       )}
+
+      <ClockOutNoteModal
+        isOpen={showClockOutModal}
+        onClose={() => setShowClockOutModal(false)}
+        onClockOut={handleClockOutWithNote}
+        isLoading={isClockingOut}
+      />
     </div>
   );
 };

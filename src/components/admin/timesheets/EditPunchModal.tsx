@@ -30,7 +30,8 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
   const [formData, setFormData] = useState({
     check_in_time: '',
     check_out_time: '',
-    jobsite_id: ''
+    jobsite_id: '',
+    work_note: ''
   });
 
   useEffect(() => {
@@ -42,7 +43,8 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
         check_out_time: timesheet.check_out_time 
           ? format(new Date(timesheet.check_out_time), "yyyy-MM-dd'T'HH:mm")
           : '',
-        jobsite_id: timesheet.jobsite_id || ''
+        jobsite_id: timesheet.jobsite_id || '',
+        work_note: timesheet.work_note || ''
       });
     }
   }, [timesheet, isOpen]);
@@ -60,6 +62,9 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
     }
     if (formData.jobsite_id) {
       updateData.jobsite_id = formData.jobsite_id;
+    }
+    if (formData.work_note !== undefined) {
+      updateData.work_note = formData.work_note.trim() || null;
     }
 
     updatePunch({ 
@@ -136,6 +141,20 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
             </Select>
           </div>
 
+          <div>
+            <Label htmlFor="work_note">Work Note</Label>
+            <Textarea
+              id="work_note"
+              placeholder="Description of work performed (optional)"
+              value={formData.work_note}
+              onChange={(e) => setFormData(prev => ({ ...prev, work_note: e.target.value }))}
+              maxLength={500}
+              className="min-h-[80px]"
+            />
+            <div className="text-xs text-muted-foreground mt-1">
+              {formData.work_note.length}/500 characters
+            </div>
+          </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
