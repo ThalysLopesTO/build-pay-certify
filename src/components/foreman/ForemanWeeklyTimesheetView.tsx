@@ -30,6 +30,7 @@ const ForemanWeeklyTimesheetView = () => {
   const { user } = useAuth();
   const workWeeks = useWorkWeek();
   const { data: existingTimesheets = [] } = useExistingTimesheets();
+  const { settings } = useCompanySettings();
   const [selectedWeek, setSelectedWeek] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -66,7 +67,6 @@ const ForemanWeeklyTimesheetView = () => {
     );
   }
   
-  const { settings } = useCompanySettings();
   const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
   const headerTitle = isBiWeekly ? 'Bi-Weekly Timesheet Submission' : 'Weekly Timesheet Submission';
   const currentStartDate = workWeeks?.currentWeek?.startDate as Date | undefined;
