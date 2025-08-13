@@ -35,7 +35,10 @@ export const useWeeklyTimesheetActions = () => {
       
       const { data, error } = await supabase
         .from('weekly_timesheets')
-        .update({ status: newStatus })
+        .update({ 
+          status: newStatus,
+          updated_by: user.id 
+        })
         .eq('id', timesheetId)
         .eq('company_id', user.companyId)
         .select()
@@ -92,7 +95,10 @@ export const useWeeklyTimesheetActions = () => {
       
       const { data, error } = await supabase
         .from('weekly_timesheets')
-        .update({ status: newStatus })
+        .update({ 
+          status: newStatus,
+          updated_by: user.id 
+        })
         .eq('id', timesheetId)
         .eq('company_id', user.companyId)
         .select()
