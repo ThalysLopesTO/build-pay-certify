@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building, Calendar, ChevronRight } from "lucide-react";
 import { useForemanAssignedTasksThisWeek } from "@/hooks/foreman/useForemanAssignedTasksThisWeek";
+import { DashboardCardHeader } from "@/components/common/DashboardCardHeader";
 
 interface Props {
   onViewProjects?: () => void;
@@ -14,12 +15,11 @@ const ForemanJobProgressCard: React.FC<Props> = ({ onViewProjects }) => {
 
   return (
     <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200 rounded-xl overflow-hidden">
-      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 flex items-center gap-3">
-        <div className="p-2 bg-white/20 rounded-lg">
-          <Building className="h-5 w-5" />
-        </div>
-        <div className="font-semibold">This Week's Overview</div>
-      </div>
+      <DashboardCardHeader
+        title="This Week's Overview"
+        icon={<Building className="h-5 w-5" />}
+        accent="green"
+      />
       <CardContent className="p-6 space-y-5">
         {loading ? (
           <div className="space-y-4">
@@ -86,7 +86,7 @@ const ForemanJobProgressCard: React.FC<Props> = ({ onViewProjects }) => {
 
         <Button
           variant="outline"
-          className="w-full hover:bg-primary/5"
+          className="w-full hover:bg-primary/5 focus-visible:ring-offset-2 focus-visible:ring-2"
           onClick={onViewProjects}
         >
           View My Projects

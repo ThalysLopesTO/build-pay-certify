@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect, useRef } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -8,6 +8,7 @@ import { Users, Clock, ChevronRight, LogIn, LogOut } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { DashboardCardHeader } from '@/components/common/DashboardCardHeader';
 
 interface PunchEntry {
   id: string;
@@ -29,15 +30,23 @@ interface TodayPunchesCardProps {
 const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({ setActiveTab }) => {
   const { user } = useAuth();
 
-  const { data: todayPunches = [], isLoading } = useQuery<PunchEntry[]>({
-    queryKey: ['today-punches', user?.companyId],
+  const { data: todayPunches = [], isLoading, refetch } = useQuery<PunchEntry[]>({
+    queryKey: ['today-punches', user?.companyId, user?.id],
     queryFn: async () => {
-      if (!user?.companyId) throw new Error('No company ID');
+      if (!user?.companyId || !user?.id) throw new Error('Missing user or company ID');
 
       const today = new Date().toISOString().split('T')[0];
-      
-      // Get all punches for today
-      const { data: timesheets, error } = await supabase
+
+      // Fetch assigned jobsites for this foreman
+      const { data: assignments, error: assignErr } = await supabase
+        .from('jobsite_foremen')
+        .select('jobsite_id')
+        .eq('foreman_id', user.id);
+      if (assignErr) throw assignErr;
+      const assignedIds = (assignments || []).map((a: any) => a.jobsite_id);
+
+      // Build base query for today's timesheets
+      let query = supabase
         .from('timesheets')
         .select(`
           id,
@@ -53,18 +62,21 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({ setActiveTab }) => 
         .lte('check_in_time', `${today}T23:59:59`)
         .order('check_in_time', { ascending: false });
 
+      if (assignedIds.length > 0) {
+        query = query.in('jobsite_id', assignedIds);
+      }
+
+      const { data: timesheets, error } = await query;
       if (error) throw error;
 
-      // Process the data to create entries for both check-in and check-out
       const entries: PunchEntry[] = [];
-      
+
       timesheets?.forEach((timesheet: any) => {
         const profile = Array.isArray(timesheet.user_profiles) ? timesheet.user_profiles[0] : timesheet.user_profiles;
         const jobsite = Array.isArray(timesheet.jobsites) ? timesheet.jobsites[0] : timesheet.jobsites;
         const employeeName = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim();
         const jobsiteName = jobsite?.name || '';
-        
-        // Add check-in entry
+
         entries.push({
           id: `${timesheet.id}-in`,
           user_id: timesheet.user_id,
@@ -75,10 +87,9 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({ setActiveTab }) => 
           employee_photo: profile?.photo_url || null,
           jobsite_name: jobsiteName,
           punch_type: 'IN',
-          punch_time: timesheet.check_in_time
+          punch_time: timesheet.check_in_time,
         });
 
-        // Add check-out entry if exists
         if (timesheet.check_out_time) {
           entries.push({
             id: `${timesheet.id}-out`,
@@ -90,16 +101,15 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({ setActiveTab }) => 
             employee_photo: profile?.photo_url || null,
             jobsite_name: jobsiteName,
             punch_type: 'OUT',
-            punch_time: timesheet.check_out_time
+            punch_time: timesheet.check_out_time,
           });
         }
       });
 
-      // Sort by punch time (latest first)
       return entries.sort((a, b) => new Date(b.punch_time).getTime() - new Date(a.punch_time).getTime());
     },
-    enabled: !!user?.companyId,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    enabled: !!user?.companyId && !!user?.id,
+    refetchInterval: 30000,
   });
 
   const formatTime = (timeString: string) => {
@@ -122,33 +132,53 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({ setActiveTab }) => 
     )
   ).length;
 
+  // Realtime subscribe to updates
+  const debounceRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!user?.companyId) return;
+    const channel = supabase
+      .channel('timesheets-live-foreman')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'timesheets' },
+        () => {
+          if (debounceRef.current) window.clearTimeout(debounceRef.current);
+          debounceRef.current = window.setTimeout(() => {
+            refetch();
+          }, 300);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    };
+  }, [user?.companyId, refetch]);
+
   return (
-    <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Users className="h-5 w-5 text-primary" />
-          </div>
-          Live Punch Monitor
-          <Badge variant="outline" className="ml-auto">
-            {currentlyPunchedIn} Active
-          </Badge>
-        </CardTitle>
-      </CardHeader>
+    <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200 rounded-xl overflow-hidden">
+      <DashboardCardHeader
+        title="Live Punch Monitor"
+        icon={<Users className="h-5 w-5" />}
+        accent="green"
+        statusPill={
+          <span className="inline-flex items-center gap-2 text-xs font-medium bg-white/10 rounded-full px-3 py-1" aria-live="polite">
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            Live
+          </span>
+        }
+      />
       <CardContent className="space-y-4">
         {/* Summary Stats */}
         <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6" aria-live="polite">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">
-                {currentlyPunchedIn}
-              </div>
+              <div className="text-2xl font-bold text-primary">{currentlyPunchedIn}</div>
               <div className="text-xs text-muted-foreground">Currently In</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-foreground">
-                {todayPunches.length}
-              </div>
+              <div className="text-2xl font-bold text-foreground">{todayPunches.length}</div>
               <div className="text-xs text-muted-foreground">Total Punches</div>
             </div>
           </div>
@@ -168,7 +198,7 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({ setActiveTab }) => 
               </div>
             ) : todayPunches.length > 0 ? (
               <div className="space-y-2 pr-4">
-                {todayPunches.slice(0, 10).map((entry) => (
+                {todayPunches.slice(0, 5).map((entry) => (
                   <div key={entry.id} className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={entry.employee_photo || ''} alt={entry.employee_name} />
@@ -216,11 +246,11 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({ setActiveTab }) => 
           </ScrollArea>
         </div>
 
-        {/* Action Button */}
         <Button 
           variant="outline" 
-          className="w-full hover:bg-primary/5" 
+          className="w-full hover:bg-primary/5 focus-visible:ring-offset-2 focus-visible:ring-2" 
           onClick={() => setActiveTab('live-punch-monitor')}
+          aria-label="View full punch history"
         >
           View Full Punch History
           <ChevronRight className="h-4 w-4 ml-2" />
