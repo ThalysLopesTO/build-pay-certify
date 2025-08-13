@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,6 +13,9 @@ import EditMaterialRequestDialog from './EditMaterialRequestDialog';
 import MaterialRequestPhotosViewer from './MaterialRequestPhotosViewer';
 import MaterialRequestAttachmentsIndicator from './MaterialRequestAttachmentsIndicator';
 import { useCountdown } from '@/hooks/useCountdown';
+import MaterialRequestDetailsDrawer from './MaterialRequestDetailsDrawer';
+import { useMaterialRequestById } from '@/hooks/useMaterialRequestById';
+import { useNavigate } from 'react-router-dom';
 
 const EditWindowChip: React.FC<{ until?: string }> = ({ until }) => {
   const { totalMs, formatted } = useCountdown(until, 60000);
@@ -22,10 +25,37 @@ const EditWindowChip: React.FC<{ until?: string }> = ({ until }) => {
   );
 };
 
-const MyMaterialRequests = () => {
+interface MyMaterialRequestsProps { initialOpenRequestId?: string }
+
+const MyMaterialRequests: React.FC<MyMaterialRequestsProps> = ({ initialOpenRequestId }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: materialRequests = [], isLoading, error, refetch } = useMaterialRequests();
   const [selectedProject, setSelectedProject] = useState<string>('all');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (initialOpenRequestId) {
+      setSelectedId(initialOpenRequestId);
+      setDrawerOpen(true);
+    }
+  }, [initialOpenRequestId]);
+
+  const selectedFromList = useMemo(() => materialRequests.find(r => r.id === selectedId) || null, [materialRequests, selectedId]);
+  const { data: fetchedById } = useMaterialRequestById(selectedId || undefined);
+  const selectedRequest = selectedFromList || fetchedById || null;
+
+  const openDetails = (id: string) => {
+    setSelectedId(id);
+    setDrawerOpen(true);
+    navigate(`/foreman/material-requests/${id}`);
+  };
+  const closeDetails = () => {
+    setDrawerOpen(false);
+    setSelectedId(null);
+    try { navigate(-1); } catch {}
+  };
 
   // Get unique projects from material requests
   const projects = useMemo(() => {
@@ -180,7 +210,19 @@ const MyMaterialRequests = () => {
               </TableHeader>
               <TableBody>
                 {filteredRequests.map((request: EnrichedMaterialRequest) => (
-                  <TableRow key={request.id}>
+                  <TableRow
+                    key={request.id}
+                    role="button"
+                    tabIndex={0}
+                    className="cursor-pointer hover:bg-muted/50 focus:bg-muted/50"
+                    onClick={() => openDetails(request.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openDetails(request.id);
+                      }
+                    }}
+                  >
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <User className="h-4 w-4 text-gray-500" />
@@ -231,7 +273,7 @@ const MyMaterialRequests = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2 flex-wrap gap-1">
+                      <div className="flex items-center space-x-2 flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
                         <EditMaterialRequestDialog
                           request={request}
                           canEdit={canEditRequest(request)}
@@ -258,6 +300,12 @@ const MyMaterialRequests = () => {
             </Table>
           </div>
         )}
+
+        <MaterialRequestDetailsDrawer
+          request={selectedRequest as any}
+          isOpen={isDrawerOpen}
+          onClose={closeDetails}
+        />
       </CardContent>
     </Card>
   );
