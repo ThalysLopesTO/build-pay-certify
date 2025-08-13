@@ -117,12 +117,12 @@ const ManagementDashboardHome: React.FC<ManagementDashboardHomeProps> = ({ setAc
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto animate-fade-in">
       {/* Hero + Overview row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-stretch">
         {/* Hero Card (left) */}
         <div className="lg:col-span-2">
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-orange-50 rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-orange-50 rounded-2xl h-full">
+            <CardContent className="p-6 h-full">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 h-full">
                 <div className="flex-shrink-0">
                   <EmployeeAvatar 
                     photoUrl={userProfile?.photo_url || undefined}
@@ -171,10 +171,10 @@ const ManagementDashboardHome: React.FC<ManagementDashboardHomeProps> = ({ setAc
         </div>
 
         {/* This Week's Overview Card (right) */}
-        <div>
-          <Card className="shadow-lg border-0 overflow-hidden bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl">
-            <CardContent className="p-6">
-              <div className="space-y-5">
+        <div className="lg:h-full">
+          <Card className="shadow-lg border-0 overflow-hidden bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl h-full">
+            <CardContent className="p-6 h-full flex flex-col">
+              <div className="space-y-5 flex-1">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-white/20 rounded-full">
                     <CalendarDays className="h-5 w-5" />
@@ -184,25 +184,13 @@ const ManagementDashboardHome: React.FC<ManagementDashboardHomeProps> = ({ setAc
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4 flex-1">
                   {/* Pending Timesheets */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Pending Timesheets:</span>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">{stats?.pendingTimesheetsCount || 0}</span>
                       <span className="px-2 py-1 rounded-full bg-white/15 text-xs">Awaiting approval</span>
-                    </div>
-                  </div>
-
-                  {/* Pending Bills */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Pending Bills:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{stats?.pendingBillsCount || 0}</span>
-                      <span className="px-2 py-1 rounded-full bg-white/15 text-xs">
-                        {stats?.pendingBillsCount && stats.pendingBillsCount > 0 ? 'Unpaid' : 'All paid'}
-                        {overdueCount > 0 && ` / ${overdueCount} overdue`}
-                      </span>
                     </div>
                   </div>
 
@@ -219,20 +207,6 @@ const ManagementDashboardHome: React.FC<ManagementDashboardHomeProps> = ({ setAc
                   <div className="flex items-center justify-between">
                     <span className="text-sm">This Week Payroll:</span>
                     <span className="font-semibold">{formatCurrency(stats?.currentWeekPayroll || 0)}</span>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs opacity-90">
-                    <span>Approvals completed</span>
-                    <span>{approvalProgress}%</span>
-                  </div>
-                  <div className="w-full bg-white/20 rounded-full h-2">
-                    <div 
-                      className="bg-white h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${approvalProgress}%` }}
-                    ></div>
                   </div>
                 </div>
 
