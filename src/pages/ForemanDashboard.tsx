@@ -16,6 +16,7 @@ import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import DailyReportsManagement from '../components/admin/DailyReportsManagement';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { useState } from 'react';
+import InventoryManagement from '../components/admin/InventoryManagement';
 
 const ForemanDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -30,6 +31,8 @@ const ForemanDashboard = () => {
         return <MaterialRequestForm />;
       case 'my-requests':
         return <MyMaterialRequests />;
+      case 'inventory':
+        return <InventoryManagement />;
       case 'employees':
         return <EmployeeDirectory />;
       case 'live-punch-monitor':

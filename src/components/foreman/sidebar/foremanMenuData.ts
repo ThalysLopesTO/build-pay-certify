@@ -40,6 +40,11 @@ export const foremanMenuItems = [
     id: 'my-requests',
   },
   {
+    title: 'Inventory',
+    icon: Package,
+    id: 'inventory',
+  },
+  {
     title: 'Employees',
     icon: Users,
     id: 'employees',
@@ -101,6 +106,11 @@ export const groupedForemanItems = {
       title: 'My Requests',
       icon: Inbox,
       id: 'my-requests',
+    },
+    {
+      title: 'Inventory',
+      icon: Package,
+      id: 'inventory',
     },
   ],
   team: [
