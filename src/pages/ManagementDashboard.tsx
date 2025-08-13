@@ -24,7 +24,7 @@ const ManagementDashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <ManagementDashboardHome />;
+        return <ManagementDashboardHome setActiveTab={setActiveTab} />;
       case 'live-punch-monitor':
         return <LivePunchMonitor />;
       case 'timesheets':
@@ -52,7 +52,7 @@ const ManagementDashboard = () => {
       case 'settings':
         return <UserSettings />;
       default:
-        return <ManagementDashboardHome />;
+        return <ManagementDashboardHome setActiveTab={setActiveTab} />;
     }
   };
 
