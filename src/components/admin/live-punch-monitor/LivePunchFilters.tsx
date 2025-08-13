@@ -18,6 +18,7 @@ import {
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, Building, Users, Activity } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface LivePunchFiltersProps {
   selectedDate: Date | null;
@@ -99,6 +100,7 @@ const LivePunchFilters: React.FC<LivePunchFiltersProps> = ({
                 selected={selectedDate || undefined}
                 onSelect={(date) => setSelectedDate(date || null)}
                 initialFocus
+                className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
           </Popover>
