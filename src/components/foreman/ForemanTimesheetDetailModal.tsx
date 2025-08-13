@@ -17,14 +17,14 @@ import TimesheetSummary from '../employee/timesheet/TimesheetSummary';
 
 const formSchema = z.object({
   jobsiteId: z.string().min(1, 'Please select a jobsite'),
-  mondayHours: z.number().min(0).max(24),
-  tuesdayHours: z.number().min(0).max(24),
-  wednesdayHours: z.number().min(0).max(24),
-  thursdayHours: z.number().min(0).max(24),
-  fridayHours: z.number().min(0).max(24),
-  saturdayHours: z.number().min(0).max(24),
-  sundayHours: z.number().min(0).max(24),
-  additionalExpense: z.number().min(0).optional(),
+  mondayHours: z.coerce.number().min(0).max(24),
+  tuesdayHours: z.coerce.number().min(0).max(24),
+  wednesdayHours: z.coerce.number().min(0).max(24),
+  thursdayHours: z.coerce.number().min(0).max(24),
+  fridayHours: z.coerce.number().min(0).max(24),
+  saturdayHours: z.coerce.number().min(0).max(24),
+  sundayHours: z.coerce.number().min(0).max(24),
+  additionalExpense: z.coerce.number().min(0).optional(),
   notes: z.string().optional(),
 });
 
