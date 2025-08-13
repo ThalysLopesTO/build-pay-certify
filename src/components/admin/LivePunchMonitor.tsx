@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,9 @@ import LivePunchFilters from './live-punch-monitor/LivePunchFilters';
 import LivePunchSummaryCards from './live-punch-monitor/LivePunchSummaryCards';
 import LivePunchTable from './live-punch-monitor/LivePunchTable';
 import { useDeleteTimesheet } from '@/hooks/useDeleteTimesheet';
+import DashboardHeader from '@/components/common/DashboardHeader';
+import Papa from 'papaparse';
+import { useSearchParams } from 'react-router-dom';
 interface PunchEntry {
   id: string;
   user_id: string;
@@ -53,6 +56,38 @@ const LivePunchMonitor = () => {
     timestamp: string;
     // TODO: Will re-add jobsite prop later for distance calculations
   } | null>(null);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    // Initialize from URL params
+    const dateParam = searchParams.get('date');
+    const jobsiteParam = searchParams.get('jobsite');
+    const employeeParam = searchParams.get('employee');
+    const statusParam = searchParams.get('status');
+
+    if (dateParam) {
+      const parsed = new Date(dateParam);
+      if (!isNaN(parsed.getTime())) setSelectedDate(parsed);
+    }
+    if (jobsiteParam) setSelectedJobsite(jobsiteParam);
+    if (employeeParam) setSelectedEmployee(employeeParam);
+    if (statusParam) setStatusFilter(statusParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (selectedDate) {
+      params.set('date', format(selectedDate, 'yyyy-MM-dd'));
+    } else {
+      params.delete('date');
+    }
+    selectedJobsite !== 'all' ? params.set('jobsite', selectedJobsite) : params.delete('jobsite');
+    selectedEmployee !== 'all' ? params.set('employee', selectedEmployee) : params.delete('employee');
+    statusFilter !== 'all' ? params.set('status', statusFilter) : params.delete('status');
+    setSearchParams(params, { replace: true });
+  }, [selectedDate, selectedJobsite, selectedEmployee, statusFilter]);
 
   // Fetch jobsites for filter
   const {
@@ -243,6 +278,42 @@ const LivePunchMonitor = () => {
       description: "Punch data has been updated."
     });
   };
+
+  const handleExportCsv = () => {
+    const rows = filteredEntries.map((entry) => {
+      const employeeName = entry.user_profiles ? `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : '';
+      const jobsiteName = entry.jobsites?.name || '';
+      const checkIn = entry.check_in_time ? format(new Date(entry.check_in_time), 'yyyy-MM-dd HH:mm') : '';
+      const checkOut = entry.check_out_time ? format(new Date(entry.check_out_time), 'yyyy-MM-dd HH:mm') : '';
+      const totalMs = entry.check_in_time ? ((entry.check_out_time ? new Date(entry.check_out_time).getTime() : Date.now()) - new Date(entry.check_in_time).getTime()) : 0;
+      const hours = Math.floor(totalMs / (1000 * 60 * 60));
+      const minutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
+      const totalTime = `${hours}h ${minutes}m`;
+      const status = entry.check_out_time ? 'OUT' : 'IN';
+      return {
+        Employee: employeeName,
+        Jobsite: jobsiteName,
+        'Check-in': checkIn,
+        'Check-out': checkOut,
+        'Total Time': totalTime,
+        Status: status,
+        'Check-in Location': entry.check_in_location || '',
+        'Check-out Location': entry.check_out_location || '',
+      };
+    });
+
+    const csv = Papa.unparse(rows);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `live-punch-monitor-${selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'all-dates'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleClearFilters = () => {
     setSelectedDate(new Date());
     setSelectedJobsite('all');
@@ -268,19 +339,14 @@ const LivePunchMonitor = () => {
       </div>;
   }
   return <div className="space-y-8 p-6 max-w-7xl mx-auto">
-      {/* Professional Header */}
-      <div className="flex items-center justify-between border-b border-border pb-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Live Punch Monitor</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl">
-            Real-time tracking and management of employee punch records
-          </p>
-        </div>
-        <Button onClick={handleRefresh} variant="outline" size="lg" className="gap-2 hover:bg-accent/50 transition-all duration-200">
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh Data
-        </Button>
-      </div>
+      <DashboardHeader 
+        title="Live Punch Monitor"
+        subtitle="Real-time tracking of employee punches at assigned jobsites"
+        live
+        isRefreshing={isLoading}
+        onRefresh={handleRefresh}
+        onExportCsv={handleExportCsv}
+      />
 
       {/* KPI Cards */}
       <LivePunchSummaryCards filteredEntries={filteredEntries} selectedDate={selectedDate} />
