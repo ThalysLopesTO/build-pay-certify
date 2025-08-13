@@ -66,7 +66,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
     return null;
   };
 
-  const isToday = (date: Date) => {
+  const isToday = (date: Date | null) => {
+    if (!date) return false;
     const today = new Date();
     return date.toDateString() === today.toDateString();
   };
