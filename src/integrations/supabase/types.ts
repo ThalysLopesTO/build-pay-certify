@@ -416,7 +416,6 @@ export type Database = {
           admin_email: string
           admin_first_name: string
           admin_last_name: string
-          admin_password: string | null
           admin_user_id: string | null
           approved_at: string | null
           approved_by: string | null
@@ -435,7 +434,6 @@ export type Database = {
           admin_email: string
           admin_first_name: string
           admin_last_name: string
-          admin_password?: string | null
           admin_user_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
@@ -454,7 +452,6 @@ export type Database = {
           admin_email?: string
           admin_first_name?: string
           admin_last_name?: string
-          admin_password?: string | null
           admin_user_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
@@ -2259,6 +2256,22 @@ export type Database = {
       }
       can_add_employee_with_subscription: {
         Args: { company_id_param: string }
+        Returns: boolean
+      }
+      can_admin_update_profile: {
+        Args: {
+          target_user_id: string
+          new_role: string
+          new_company_id: string
+        }
+        Returns: boolean
+      }
+      can_self_update_profile: {
+        Args: {
+          target_user_id: string
+          new_role: string
+          new_company_id: string
+        }
         Returns: boolean
       }
       check_bills_due_soon: {

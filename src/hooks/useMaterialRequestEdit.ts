@@ -44,7 +44,12 @@ export const useMaterialRequestEdit = () => {
     },
     onError: (error: any) => {
       console.error('Error updating material request:', error);
-      toast.error('Failed to update material request. Please try again.');
+      const msg = String(error?.message || '').toLowerCase();
+      if (msg.includes('row-level security') || msg.includes('rls') || msg.includes('permission') || error?.code === '42501' || error?.status === 403) {
+        toast.error('Edit period expired or insufficient permissions (24h window).');
+      } else {
+        toast.error('Failed to update material request. Please try again.');
+      }
     },
   });
 };

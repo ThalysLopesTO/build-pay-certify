@@ -12,6 +12,15 @@ import { Button } from '@/components/ui/button';
 import EditMaterialRequestDialog from './EditMaterialRequestDialog';
 import MaterialRequestPhotosViewer from './MaterialRequestPhotosViewer';
 import MaterialRequestAttachmentsIndicator from './MaterialRequestAttachmentsIndicator';
+import { useCountdown } from '@/hooks/useCountdown';
+
+const EditWindowChip: React.FC<{ until?: string }> = ({ until }) => {
+  const { totalMs, formatted } = useCountdown(until, 60000);
+  if (!until || totalMs <= 0) return null;
+  return (
+    <Badge className="text-xs" variant="outline">Edit window: {formatted}</Badge>
+  );
+};
 
 const MyMaterialRequests = () => {
   const { user } = useAuth();
@@ -45,18 +54,20 @@ const MyMaterialRequests = () => {
 
   // Check if a request can be edited by the foreman
   const canEditRequest = (request: EnrichedMaterialRequest) => {
-    // Check if user is admin (can always edit)
-    const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
-    if (isAdmin) return true;
+    // Admins/Managers can always edit
+    const isPrivileged = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
+    if (isPrivileged) return true;
 
-    // Check if user is foreman and request is within 24 hours
-    const isForeman = user?.role === 'foreman';
-    if (!isForeman) return false;
-
-    // Check if request was submitted by current user
+    // Only foremen can edit their own within 24h and only when status allows
+    if (user?.role !== 'foreman') return false;
     if (request.submitted_by !== user?.id) return false;
 
-    // Check if request is within 24 hours of creation
+    const status = (request.status || '').toLowerCase();
+    if (status === 'delivered' || status === 'canceled') return false;
+
+    if (typeof request.canEdit === 'boolean') return request.canEdit;
+
+    // Fallback if hook didn't compute canEdit
     const hoursSinceCreation = differenceInHours(new Date(), new Date(request.created_at));
     return hoursSinceCreation < 24;
   };
@@ -225,11 +236,14 @@ const MyMaterialRequests = () => {
                           request={request}
                           canEdit={canEditRequest(request)}
                         />
+                        {canEditRequest(request) && (
+                          <EditWindowChip until={request.editableUntil} />
+                        )}
                         <MaterialRequestAttachmentsIndicator
                           materialRequestId={request.id}
                         />
                         {!canEditRequest(request) && user?.role === 'foreman' && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500" title="Edit period expired (24h after creation)">
                             {differenceInHours(new Date(), new Date(request.created_at)) >= 24
                               ? 'Edit period expired (24h)'
                               : 'Cannot edit'

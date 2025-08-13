@@ -11,6 +11,8 @@ export type EnrichedMaterialRequest = Tables<'material_requests'> & {
     name: string;
     address: string | null;
   } | null;
+  editableUntil?: string; // ISO string for 24h edit window end
+  canEdit?: boolean;
 };
 
 export const useMaterialRequests = () => {
@@ -34,6 +36,7 @@ export const useMaterialRequests = () => {
         `)
         .eq('submitted_by', user.id)
         .eq('company_id', user.companyId)
+        .order('delivery_date', { ascending: true })
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -42,7 +45,21 @@ export const useMaterialRequests = () => {
       }
 
       console.log('Fetched material requests:', data);
-      return data as EnrichedMaterialRequest[];
+      const now = Date.now();
+      const allowedStatuses = ['pending', 'ordered'];
+      const enriched = (data || []).map((req: any) => {
+        const createdAt = req?.created_at ? new Date(req.created_at).getTime() : null;
+        const editableUntilMs = createdAt ? createdAt + 24 * 60 * 60 * 1000 : null;
+        const canEdit = Boolean(
+          createdAt && editableUntilMs && now < editableUntilMs && allowedStatuses.includes((req.status || '').toLowerCase())
+        );
+        return {
+          ...req,
+          editableUntil: editableUntilMs ? new Date(editableUntilMs).toISOString() : undefined,
+          canEdit,
+        } as EnrichedMaterialRequest;
+      });
+      return enriched;
     },
     enabled: !!user?.id && !!user?.companyId,
     retry: 3,
