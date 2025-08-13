@@ -2141,6 +2141,7 @@ export type Database = {
           total_hours: number | null
           tuesday_hours: number | null
           updated_at: string
+          updated_by: string | null
           wednesday_hours: number | null
           week_start_date: string
           worker_type: string | null
@@ -2172,6 +2173,7 @@ export type Database = {
           total_hours?: number | null
           tuesday_hours?: number | null
           updated_at?: string
+          updated_by?: string | null
           wednesday_hours?: number | null
           week_start_date: string
           worker_type?: string | null
@@ -2203,6 +2205,7 @@ export type Database = {
           total_hours?: number | null
           tuesday_hours?: number | null
           updated_at?: string
+          updated_by?: string | null
           wednesday_hours?: number | null
           week_start_date?: string
           worker_type?: string | null
