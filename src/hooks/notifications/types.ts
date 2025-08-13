@@ -6,7 +6,7 @@ export interface Notification {
   description: string;
   type: 'certificate' | 'jobsite' | 'material_request' | 'attention_report' | 'bill_due_soon' | 'bill_overdue' | 'invoice_due_soon' | 'invoice_overdue';
   related_id: string | null;
-  user_role: 'admin' | 'foreman';
+  user_role: 'admin' | 'foreman' | 'management';
   target_user_id: string | null;
   is_read: boolean;
   is_dismissed: boolean;

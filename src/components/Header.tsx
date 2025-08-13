@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import ManagementNotificationBell from '@/components/management/ManagementNotificationBell';
 
 import PWAInstallButton from '@/components/common/PWAInstallButton';
 
@@ -87,8 +88,12 @@ const Header = () => {
           <PWAInstallButton />
           
           
-          {/* Notification Bell - only for admins and foremen */}
-          <NotificationBell />
+          {/* Notification Bell - role-specific */}
+          {user?.role === 'management' ? (
+            <ManagementNotificationBell />
+          ) : (
+            <NotificationBell />
+          )}
           
           {user && (
             <div className="flex items-center space-x-3">

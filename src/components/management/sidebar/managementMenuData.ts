@@ -15,7 +15,8 @@ import {
   UserCheck,
   TrendingUp,
   Wallet,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Bell
 } from 'lucide-react';
 
 export const managementMenuItems = {
@@ -24,6 +25,11 @@ export const managementMenuItems = {
       title: 'Dashboard',
       icon: LayoutDashboard,
       id: 'dashboard',
+    },
+    {
+      title: 'Notifications',
+      icon: Bell,
+      id: 'notifications',
     },
   ],
   operations: [

@@ -16,6 +16,7 @@ import EmployeeManagement from '../components/admin/EmployeeManagement';
 import EmployeeRegistration from '../components/admin/EmployeeRegistration';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import ManagementDashboardHome from '../components/management/ManagementDashboardHome';
+import ManagementNotifications from '../components/management/ManagementNotifications';
 
 const ManagementDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -46,6 +47,8 @@ const ManagementDashboard = () => {
         return <InvoiceManagement />;
       case 'reports':
         return <AttentionReportsInbox />;
+      case 'notifications':
+        return <ManagementNotifications />;
       case 'settings':
         return <UserSettings />;
       default:
