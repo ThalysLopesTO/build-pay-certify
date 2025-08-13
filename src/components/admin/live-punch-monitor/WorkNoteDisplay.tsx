@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FileText, StickyNote } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface WorkNoteDisplayProps {
   note: string | null;
@@ -14,6 +15,7 @@ const WorkNoteDisplay: React.FC<WorkNoteDisplayProps> = ({
   variant = 'icon',
   maxPreviewLength = 120 
 }) => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   if (!note || note.trim() === '') {
     return variant === 'icon' ? (
       <div className="w-5 h-5 flex items-center justify-center">
@@ -28,23 +30,51 @@ const WorkNoteDisplay: React.FC<WorkNoteDisplayProps> = ({
 
   if (variant === 'icon') {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="w-5 h-5 flex items-center justify-center cursor-help">
-              <StickyNote className="h-4 w-4 text-primary fill-primary/10" />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs p-3">
-            <div className="space-y-1">
-              <div className="font-medium text-sm">Work Note</div>
-              <div className="text-xs text-muted-foreground whitespace-pre-wrap">
-                {truncatedNote}
+      <>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div 
+                className="w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-accent rounded transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDialogOpen(true);
+                }}
+              >
+                <StickyNote className="h-4 w-4 text-primary fill-primary/10" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs p-3">
+              <div className="space-y-1">
+                <div className="font-medium text-sm">Work Note - Click to expand</div>
+                <div className="text-xs text-muted-foreground whitespace-pre-wrap">
+                  {truncatedNote}
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <StickyNote className="h-5 w-5 text-primary" />
+                Work Note
+              </DialogTitle>
+            </DialogHeader>
+            <div className="mt-4">
+              <div className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 rounded-md p-4 border max-h-96 overflow-y-auto">
+                {note}
+              </div>
+              <div className="flex justify-between items-center mt-3 text-xs text-muted-foreground">
+                <span>Work summary provided by employee</span>
+                <span>{note.length} characters</span>
               </div>
             </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
