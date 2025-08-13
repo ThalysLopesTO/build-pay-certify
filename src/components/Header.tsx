@@ -25,11 +25,16 @@ const Header = () => {
       
       await logout();
       
+      console.log('✅ Header logout completed');
+      
+      // Clear any local state and force navigation
+      window.location.href = '/login';
+      
     } catch (error) {
       console.error('Header logout error:', error);
       
       toast({
-        title: "Logout Error",
+        title: "Logout Error", 
         description: "There was an error signing out. Redirecting to login.",
         variant: "destructive",
       });
