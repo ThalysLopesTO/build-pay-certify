@@ -17,6 +17,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user, session, loading]);
 
+  const navigate = useNavigate();
+
   const handleLogout = async () => {
     console.log('🔄 Logout requested...');
     
@@ -32,7 +34,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
-      console.log('✅ Logout successful');
+      console.log('✅ Logout successful, navigating to home');
+      // Navigate to home page after successful logout
+      navigate('/', { replace: true });
       
     } catch (error) {
       console.error('💥 Logout handler error:', error);
