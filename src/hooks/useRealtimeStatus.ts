@@ -9,50 +9,65 @@ export const useRealtimeStatus = () => {
 
   useEffect(() => {
     let reconnectToastId: string | number | undefined;
+    let subscription: any = null;
 
-    // Listen to connection state changes
-    const subscription = supabase.channel('heartbeat')
-      .on('presence', { event: 'sync' }, () => {
-        if (!isConnected) {
-          setIsConnected(true);
-          setIsReconnecting(false);
-          
-          // Dismiss reconnecting toast and show success
-          if (reconnectToastId) {
-            toast.dismiss(reconnectToastId);
+    const setupSubscription = () => {
+      // Clean up existing subscription first
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
+
+      // Create unique channel name to prevent conflicts
+      const channelName = `heartbeat-${Date.now()}-${Math.random()}`;
+      
+      // Listen to connection state changes
+      subscription = supabase.channel(channelName)
+        .on('presence', { event: 'sync' }, () => {
+          if (!isConnected) {
+            setIsConnected(true);
+            setIsReconnecting(false);
+            
+            // Dismiss reconnecting toast and show success
+            if (reconnectToastId) {
+              toast.dismiss(reconnectToastId);
+            }
+            
+            toast.success('Back online', {
+              description: 'Real-time updates restored',
+              duration: 3000,
+            });
           }
-          
-          toast.success('Back online', {
-            description: 'Real-time updates restored',
-            duration: 3000,
-          });
-        }
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setIsConnected(true);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          setIsConnected(false);
-          setIsReconnecting(true);
-          
-          // Show reconnecting toast
-          reconnectToastId = toast('Reconnecting...', {
-            description: 'Real-time updates may be delayed',
-            duration: Infinity, // Keep until dismissed
-            action: {
-              label: 'Retry',
-              onClick: () => {
-                window.location.reload();
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            setIsConnected(true);
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            setIsConnected(false);
+            setIsReconnecting(true);
+            
+            // Show reconnecting toast
+            reconnectToastId = toast('Reconnecting...', {
+              description: 'Real-time updates may be delayed',
+              duration: Infinity, // Keep until dismissed
+              action: {
+                label: 'Retry',
+                onClick: () => {
+                  window.location.reload();
+                },
               },
-            },
-          });
-        }
-      });
+            });
+          }
+        });
+    };
+
+    setupSubscription();
 
     // Also listen to browser connectivity
     const handleOnline = () => {
       if (!isConnected) {
         setIsReconnecting(true);
+        // Re-establish subscription on reconnect
+        setupSubscription();
       }
     };
 
@@ -73,11 +88,13 @@ export const useRealtimeStatus = () => {
       if (reconnectToastId) {
         toast.dismiss(reconnectToastId);
       }
-      supabase.removeChannel(subscription);
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [isConnected, supabase]);
+  }, []); // Remove isConnected and supabase from dependencies
 
   return { isConnected, isReconnecting };
 };

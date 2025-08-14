@@ -157,8 +157,9 @@ const LiveActiveEmployees = () => {
     fetchActiveEmployees();
 
     // Set up real-time subscription for timesheets
+    const channelName = `timesheets-changes-${user?.companyId}-${Date.now()}`;
     const channel = supabase
-      .channel('timesheets-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {

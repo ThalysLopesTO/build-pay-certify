@@ -59,7 +59,7 @@ export const useNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.companyId, user?.role, user?.id, query.refetch]);
+  }, [user?.companyId, user?.role, user?.id]); // Remove query.refetch from dependencies
 
   return query;
 };

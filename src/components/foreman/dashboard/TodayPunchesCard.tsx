@@ -122,7 +122,11 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({
   const debounceRef = useRef<number | null>(null);
   useEffect(() => {
     if (!user?.companyId) return;
-    const channel = supabase.channel('timesheets-live-foreman').on('postgres_changes', {
+    
+    // Create unique channel name to prevent conflicts
+    const channelName = `timesheets-live-foreman-${user.companyId}-${Date.now()}`;
+    
+    const channel = supabase.channel(channelName).on('postgres_changes', {
       event: '*',
       schema: 'public',
       table: 'timesheets'
@@ -132,11 +136,12 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({
         refetch();
       }, 300);
     }).subscribe();
+    
     return () => {
       supabase.removeChannel(channel);
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
-  }, [user?.companyId, refetch]);
+  }, [user?.companyId]); // Remove refetch from dependencies
   return <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200 rounded-xl overflow-hidden">
       <DashboardCardHeader title="Live Punch Monitor" icon={<Users className="h-5 w-5" />} accent="green" statusPill={<span aria-live="polite" className="inline-flex items-center gap-2 text-xs font-medium bg-white/10 rounded-full px-3 py-1 text-gray-50">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
