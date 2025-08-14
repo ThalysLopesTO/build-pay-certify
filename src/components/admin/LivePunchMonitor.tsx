@@ -252,6 +252,9 @@ const LivePunchMonitor = () => {
     let unsubscribeFn: (() => void) | null = null;
 
     const setupSubscription = async () => {
+      console.log('🔧 LivePunchMonitor: Setting up subscription (TEMPORARILY DISABLED for debugging)');
+      // Temporarily disable to isolate the issue
+      /*
       unsubscribeFn = await subscribe(
         'timesheets_changes',
         {
@@ -269,9 +272,10 @@ const LivePunchMonitor = () => {
           });
         }
       );
+      */
     };
 
-    setupSubscription();
+    // setupSubscription(); // Temporarily disabled
 
     return () => {
       if (unsubscribeFn) {

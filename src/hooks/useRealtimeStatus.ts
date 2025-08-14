@@ -1,14 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { getSupabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const useRealtimeStatus = () => {
-  const [isConnected, setIsConnected] = useState(true);
-  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [isConnected, setIsConnected] = React.useState(true);
+  const [isReconnecting, setIsReconnecting] = React.useState(false);
   const supabase = getSupabase();
-  const channelRef = useRef<any>(null);
+  const channelRef = React.useRef<any>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     console.log('🔧 useRealtimeStatus: Setting up effect');
     let reconnectToastId: string | number | undefined;
 
