@@ -286,6 +286,17 @@ const AppRoutes = () => {
   );
 };
 
+// Wrapper component to ensure AppRoutes only renders inside providers
+const AppWithProviders: React.FC = () => {
+  return (
+    <TooltipProvider>
+      <AppRoutes />
+      <Toaster />
+      <Sonner />
+    </TooltipProvider>
+  );
+};
+
 const App: React.FC = () => {
   console.log('🚀 App component rendering');
   
@@ -294,11 +305,7 @@ const App: React.FC = () => {
       <AuthProvider>
         <RealtimeProvider>
           <EmployeeProvider>
-            <TooltipProvider>
-              <AppRoutes />
-              <Toaster />
-              <Sonner />
-            </TooltipProvider>
+            <AppWithProviders />
           </EmployeeProvider>
         </RealtimeProvider>
       </AuthProvider>
