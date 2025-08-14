@@ -3,7 +3,6 @@ import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { AuthUser } from './types';
 import { getSupabase } from '@/integrations/supabase/client';
 
-
 export const useAuthState = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
