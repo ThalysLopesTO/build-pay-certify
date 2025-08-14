@@ -4,54 +4,64 @@ import { getSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface RealtimeContextType {
-  subscribe: (channelName: string, config: any, callback: (payload: any) => void) => () => void;
+  subscribe: (channelName: string, config: any, callback: (payload: any) => void) => Promise<() => void>;
 }
 
 const RealtimeContext = createContext<RealtimeContextType | undefined>(undefined);
 
 export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, session } = useAuth();
+  // Don't use useAuth here to avoid circular dependency issues
   const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
   const supabase = getSupabase();
 
   const subscribe = (channelName: string, config: any, callback: (payload: any) => void) => {
-    if (!session || !user?.companyId) {
-      console.warn('Cannot subscribe to realtime without authenticated user');
-      return () => {};
-    }
-
-    // Create unique channel key including company context
-    const channelKey = `${channelName}_${user.companyId}`;
-    
-    // Check if channel already exists
-    if (channelsRef.current.has(channelKey)) {
-      console.log('Reusing existing channel:', channelKey);
-      return () => {};
-    }
-
-    console.log('Creating new realtime channel:', channelKey);
-    
-    const channel = supabase
-      .channel(channelKey)
-      .on('postgres_changes', config, callback)
-      .subscribe((status) => {
-        console.log('Realtime channel status:', channelKey, status);
-      });
-
-    channelsRef.current.set(channelKey, channel);
-
-    // Return unsubscribe function
-    return () => {
-      console.log('Unsubscribing from channel:', channelKey);
-      const channel = channelsRef.current.get(channelKey);
-      if (channel) {
-        supabase.removeChannel(channel);
-        channelsRef.current.delete(channelKey);
-      }
+    // Get auth info when needed, not during provider initialization
+    const getCurrentAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session;
     };
+
+    return (async () => {
+      const session = await getCurrentAuth();
+      
+      if (!session?.user) {
+        console.warn('Cannot subscribe to realtime without authenticated user');
+        return () => {};
+      }
+
+      // Create unique channel key
+      const channelKey = `${channelName}_${session.user.id}`;
+      
+      // Check if channel already exists
+      if (channelsRef.current.has(channelKey)) {
+        console.log('Reusing existing channel:', channelKey);
+        return () => {};
+      }
+
+      console.log('Creating new realtime channel:', channelKey);
+      
+      const channel = supabase
+        .channel(channelKey)
+        .on('postgres_changes', config, callback)
+        .subscribe((status) => {
+          console.log('Realtime channel status:', channelKey, status);
+        });
+
+      channelsRef.current.set(channelKey, channel);
+
+      // Return unsubscribe function
+      return () => {
+        console.log('Unsubscribing from channel:', channelKey);
+        const channel = channelsRef.current.get(channelKey);
+        if (channel) {
+          supabase.removeChannel(channel);
+          channelsRef.current.delete(channelKey);
+        }
+      };
+    })();
   };
 
-  // Clean up all channels on unmount or auth change
+  // Clean up all channels on unmount
   useEffect(() => {
     return () => {
       console.log('Cleaning up all realtime channels');
@@ -60,7 +70,7 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       channelsRef.current.clear();
     };
-  }, [supabase, user?.companyId]);
+  }, [supabase]);
 
   // Handle network reconnection
   useEffect(() => {
