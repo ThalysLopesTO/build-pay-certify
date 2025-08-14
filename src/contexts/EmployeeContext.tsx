@@ -493,7 +493,9 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
     }
   };
 
+  // Refresh employees function
   const refreshEmployees = async () => {
+    console.log('🔄 Refreshing employees...');
     await fetchEmployees();
   };
 
