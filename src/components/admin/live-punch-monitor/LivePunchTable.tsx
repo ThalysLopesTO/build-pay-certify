@@ -89,7 +89,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
     if (!entry.check_out_time) {
       return <Badge variant="default" className="bg-green-500">Clocked In</Badge>;
     } else {
-      return <Badge variant="secondary">Clocked Out</Badge>;
+      return <Badge variant="default" className="bg-green-600">Completed</Badge>;
     }
   };
 
