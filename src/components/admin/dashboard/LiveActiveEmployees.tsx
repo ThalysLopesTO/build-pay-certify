@@ -154,10 +154,12 @@ const LiveActiveEmployees = () => {
   };
 
   useEffect(() => {
+    console.log('🔧 LiveActiveEmployees: Setting up effect for company:', user?.companyId);
     fetchActiveEmployees();
 
     // Set up real-time subscription for timesheets
     const channelName = `timesheets-changes-${user?.companyId}-${Date.now()}`;
+    console.log('📡 LiveActiveEmployees: Creating channel:', channelName);
     const channel = supabase
       .channel(channelName)
       .on(
@@ -174,10 +176,13 @@ const LiveActiveEmployees = () => {
       )
       .subscribe();
 
+    console.log('✅ LiveActiveEmployees: Channel subscribed:', channelName);
+
     // Refresh every 30 seconds as backup
     const interval = setInterval(fetchActiveEmployees, 30000);
 
     return () => {
+      console.log('🧹 LiveActiveEmployees: Cleaning up channel:', channelName);
       supabase.removeChannel(channel);
       clearInterval(interval);
     };

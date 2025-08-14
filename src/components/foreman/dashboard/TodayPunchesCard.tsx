@@ -121,10 +121,12 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({
   // Realtime subscribe to updates
   const debounceRef = useRef<number | null>(null);
   useEffect(() => {
+    console.log('🔧 TodayPunchesCard: Setting up effect for company:', user?.companyId);
     if (!user?.companyId) return;
     
     // Create unique channel name to prevent conflicts
     const channelName = `timesheets-live-foreman-${user.companyId}-${Date.now()}`;
+    console.log('📡 TodayPunchesCard: Creating channel:', channelName);
     
     const channel = supabase.channel(channelName).on('postgres_changes', {
       event: '*',
@@ -137,7 +139,10 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({
       }, 300);
     }).subscribe();
     
+    console.log('✅ TodayPunchesCard: Channel subscribed:', channelName);
+    
     return () => {
+      console.log('🧹 TodayPunchesCard: Cleaning up channel:', channelName);
       supabase.removeChannel(channel);
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };

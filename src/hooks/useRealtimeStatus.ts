@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getSupabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -6,23 +6,28 @@ export const useRealtimeStatus = () => {
   const [isConnected, setIsConnected] = useState(true);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const supabase = getSupabase();
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
+    console.log('🔧 useRealtimeStatus: Setting up effect');
     let reconnectToastId: string | number | undefined;
-    let subscription: any = null;
 
     const setupSubscription = () => {
       // Clean up existing subscription first
-      if (subscription) {
-        supabase.removeChannel(subscription);
+      if (channelRef.current) {
+        console.log('🧹 useRealtimeStatus: Cleaning up existing subscription');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
 
       // Create unique channel name to prevent conflicts
       const channelName = `heartbeat-${Date.now()}-${Math.random()}`;
+      console.log('📡 useRealtimeStatus: Creating channel:', channelName);
       
       // Listen to connection state changes
-      subscription = supabase.channel(channelName)
+      channelRef.current = supabase.channel(channelName)
         .on('presence', { event: 'sync' }, () => {
+          console.log('🟢 useRealtimeStatus: Presence sync event');
           if (!isConnected) {
             setIsConnected(true);
             setIsReconnecting(false);
@@ -39,6 +44,7 @@ export const useRealtimeStatus = () => {
           }
         })
         .subscribe((status) => {
+          console.log('📊 useRealtimeStatus: Channel status:', status);
           if (status === 'SUBSCRIBED') {
             setIsConnected(true);
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -88,8 +94,10 @@ export const useRealtimeStatus = () => {
       if (reconnectToastId) {
         toast.dismiss(reconnectToastId);
       }
-      if (subscription) {
-        supabase.removeChannel(subscription);
+      if (channelRef.current) {
+        console.log('🧹 useRealtimeStatus: Final cleanup');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);

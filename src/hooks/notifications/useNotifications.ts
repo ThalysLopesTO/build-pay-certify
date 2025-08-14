@@ -31,12 +31,14 @@ export const useNotifications = () => {
 
   // Set up realtime subscription for notifications
   useEffect(() => {
+    console.log('🔧 useNotifications: Setting up effect for company:', user?.companyId);
     if (!user?.companyId || !['admin', 'super_admin', 'foreman', 'management'].includes(user?.role || '')) {
       return;
     }
 
     // Create unique channel name to avoid conflicts
     const channelName = `notifications-${user.companyId}-${user.id}-${Date.now()}`;
+    console.log('📡 useNotifications: Creating channel:', channelName);
     
     const channel = supabase
       .channel(channelName)
@@ -56,7 +58,10 @@ export const useNotifications = () => {
       )
       .subscribe();
 
+    console.log('✅ useNotifications: Channel subscribed:', channelName);
+
     return () => {
+      console.log('🧹 useNotifications: Cleaning up channel:', channelName);
       supabase.removeChannel(channel);
     };
   }, [user?.companyId, user?.role, user?.id]); // Remove query.refetch from dependencies
