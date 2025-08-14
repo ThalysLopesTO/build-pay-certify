@@ -66,7 +66,7 @@ export const useRealtimeStatus = () => {
         });
     };
 
-    setupSubscription();
+    // setupSubscription(); // DISABLED - testing which subscription causes the issue
 
     // Also listen to browser connectivity
     const handleOnline = () => {

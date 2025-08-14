@@ -31,6 +31,9 @@ export const useNotifications = () => {
 
   // Set up realtime subscription for notifications
   useEffect(() => {
+    console.log('🚫 useNotifications: DISABLED - testing which subscription causes the issue');
+    return; // Early return to disable
+    
     console.log('🔧 useNotifications: Setting up effect for company:', user?.companyId);
     if (!user?.companyId || !['admin', 'super_admin', 'foreman', 'management'].includes(user?.role || '')) {
       return;

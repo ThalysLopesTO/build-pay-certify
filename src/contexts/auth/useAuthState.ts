@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { getSupabase } from '@/integrations/supabase/client';
 import { AuthUser } from './types';
@@ -10,6 +10,7 @@ export const useAuthState = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [companyError, setCompanyError] = useState<string | null>(null);
+  const authSubscriptionRef = useRef<any>(null);
   
   // Get stable Supabase instance
   const supabase = getSupabase();
@@ -129,6 +130,14 @@ export const useAuthState = () => {
       try {
         console.log('🚀 Initializing auth...');
         
+        // Prevent multiple subscriptions
+        if (authSubscriptionRef.current) {
+          console.log('⚠️ Auth subscription already exists, skipping...');
+          return () => {
+            console.log('🚫 Returning empty cleanup function (subscription already exists)');
+          };
+        }
+        
         // Get current session without making any user table queries
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -142,14 +151,22 @@ export const useAuthState = () => {
         
         console.log('📋 Initial session check:', session?.user?.email || 'No session');
         
-        // Set up listener
+        console.log('🔧 Creating auth state change listener...');
+        console.log('🔍 About to call supabase.auth.onAuthStateChange...');
         const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+        console.log('✅ Auth subscription created successfully');
+        authSubscriptionRef.current = subscription;
         
         // Handle initial session
         await handleAuthStateChange('INITIAL_SESSION', session);
         
+        
         return () => {
-          subscription.unsubscribe();
+          console.log('🧹 Auth cleanup function returned');
+          if (authSubscriptionRef.current) {
+            authSubscriptionRef.current.unsubscribe();
+            authSubscriptionRef.current = null;
+          }
         };
       } catch (error) {
         console.error('💥 Error initializing auth:', error);
@@ -163,7 +180,9 @@ export const useAuthState = () => {
     let authCleanup: (() => void) | undefined;
     
     const setupAuth = async () => {
+      console.log('🚀 setupAuth: Starting auth setup...');
       authCleanup = await initializeAuth();
+      console.log('✅ setupAuth: Auth setup complete, cleanup function:', !!authCleanup);
     };
     
     setupAuth();
@@ -178,7 +197,10 @@ export const useAuthState = () => {
       
       // Clean up auth subscription
       if (authCleanup) {
+        console.log('🧹 useAuthState: Calling auth cleanup function');
         authCleanup();
+      } else {
+        console.warn('⚠️ useAuthState: No auth cleanup function available!');
       }
       
       window.removeEventListener('focus', handleWindowFocus);

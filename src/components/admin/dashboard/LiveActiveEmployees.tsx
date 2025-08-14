@@ -154,8 +154,18 @@ const LiveActiveEmployees = () => {
   };
 
   useEffect(() => {
-    console.log('🔧 LiveActiveEmployees: Setting up effect for company:', user?.companyId);
+    console.log('🚫 LiveActiveEmployees: DISABLED - testing which subscription causes the issue');
     fetchActiveEmployees();
+    
+    // Keep only the interval for now
+    const interval = setInterval(fetchActiveEmployees, 30000);
+    return () => {
+      clearInterval(interval);
+    };
+    
+    // DISABLED CODE:
+    /*
+    console.log('🔧 LiveActiveEmployees: Setting up effect for company:', user?.companyId);
 
     // Set up real-time subscription for timesheets
     const channelName = `timesheets-changes-${user?.companyId}-${Date.now()}`;
@@ -186,6 +196,7 @@ const LiveActiveEmployees = () => {
       supabase.removeChannel(channel);
       clearInterval(interval);
     };
+    */
   }, [user?.companyId]);
 
   const formatClockInTime = (timeString: string) => {
