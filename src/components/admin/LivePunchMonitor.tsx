@@ -278,7 +278,7 @@ const LivePunchMonitor = () => {
         unsubscribeFn();
       }
     };
-  }, [user?.companyId, selectedDate, subscribe, queryClient]);
+  }, [user?.companyId, selectedDate]); // Remove subscribe and queryClient from dependencies
   const handleEdit = (timesheet: any) => {
     setEditingTimesheet(timesheet);
   };

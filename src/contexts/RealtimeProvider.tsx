@@ -29,15 +29,9 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return () => {};
       }
 
-      // Create unique channel key
-      const channelKey = `${channelName}_${session.user.id}`;
+      // Create unique channel key with timestamp to prevent conflicts
+      const channelKey = `${channelName}_${session.user.id}_${Date.now()}`;
       
-      // Check if channel already exists
-      if (channelsRef.current.has(channelKey)) {
-        console.log('Reusing existing channel:', channelKey);
-        return () => {};
-      }
-
       console.log('Creating new realtime channel:', channelKey);
       
       const channel = supabase
