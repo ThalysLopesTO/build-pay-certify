@@ -1,79 +1,47 @@
 import React from 'react';
 import { getSupabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useRealtime } from '@/contexts/RealtimeProvider';
 
 export const useRealtimeStatus = () => {
   const [isConnected, setIsConnected] = React.useState(true);
   const [isReconnecting, setIsReconnecting] = React.useState(false);
+  const { subscribe } = useRealtime();
   const supabase = getSupabase();
-  const channelRef = React.useRef<any>(null);
 
   React.useEffect(() => {
-    console.log('🔧 useRealtimeStatus: Setting up effect');
     let reconnectToastId: string | number | undefined;
 
-    const setupSubscription = () => {
-      // Clean up existing subscription first
-      if (channelRef.current) {
-        console.log('🧹 useRealtimeStatus: Cleaning up existing subscription');
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+    // Use the new realtime provider for presence tracking
+    const unsubscribe = subscribe({
+      key: 'heartbeat_status',
+      events: [{
+        event: '*',
+        schema: 'public',
+        table: 'user_profiles' // Use a real table for connection status
+      }],
+      onMessage: () => {
+        // Connection is working if we receive any message
+        if (!isConnected) {
+          setIsConnected(true);
+          setIsReconnecting(false);
+          
+          if (reconnectToastId) {
+            toast.dismiss(reconnectToastId);
+          }
+          
+          toast.success('Back online', {
+            description: 'Real-time updates restored',
+            duration: 3000,
+          });
+        }
       }
-
-      // Create unique channel name to prevent conflicts
-      const channelName = `heartbeat-${Date.now()}-${Math.random()}`;
-      console.log('📡 useRealtimeStatus: Creating channel:', channelName);
-      
-      // Listen to connection state changes
-      channelRef.current = supabase.channel(channelName)
-        .on('presence', { event: 'sync' }, () => {
-          console.log('🟢 useRealtimeStatus: Presence sync event');
-          if (!isConnected) {
-            setIsConnected(true);
-            setIsReconnecting(false);
-            
-            // Dismiss reconnecting toast and show success
-            if (reconnectToastId) {
-              toast.dismiss(reconnectToastId);
-            }
-            
-            toast.success('Back online', {
-              description: 'Real-time updates restored',
-              duration: 3000,
-            });
-          }
-        })
-        .subscribe((status) => {
-          console.log('📊 useRealtimeStatus: Channel status:', status);
-          if (status === 'SUBSCRIBED') {
-            setIsConnected(true);
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            setIsConnected(false);
-            setIsReconnecting(true);
-            
-            // Show reconnecting toast
-            reconnectToastId = toast('Reconnecting...', {
-              description: 'Real-time updates may be delayed',
-              duration: Infinity, // Keep until dismissed
-              action: {
-                label: 'Retry',
-                onClick: () => {
-                  window.location.reload();
-                },
-              },
-            });
-          }
-        });
-    };
-
-    // setupSubscription(); // DISABLED - testing which subscription causes the issue
+    });
 
     // Also listen to browser connectivity
     const handleOnline = () => {
       if (!isConnected) {
         setIsReconnecting(true);
-        // Re-establish subscription on reconnect
-        setupSubscription();
       }
     };
 
@@ -94,15 +62,11 @@ export const useRealtimeStatus = () => {
       if (reconnectToastId) {
         toast.dismiss(reconnectToastId);
       }
-      if (channelRef.current) {
-        console.log('🧹 useRealtimeStatus: Final cleanup');
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      unsubscribe();
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []); // Remove isConnected and supabase from dependencies
+  }, []); // Empty dependencies - stable subscription
 
   return { isConnected, isReconnecting };
 };

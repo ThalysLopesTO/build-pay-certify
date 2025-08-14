@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useRealtime } from '@/contexts/RealtimeProvider';
 import { Users, Clock, RefreshCw } from 'lucide-react';
 
 interface ActiveEmployee {
@@ -17,6 +19,7 @@ interface ActiveEmployee {
 
 const LiveActiveEmployees = () => {
   const { user } = useAuth();
+  const { subscribe } = useRealtime();
   const [activeEmployees, setActiveEmployees] = useState<ActiveEmployee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -154,50 +157,32 @@ const LiveActiveEmployees = () => {
   };
 
   useEffect(() => {
-    console.log('🚫 LiveActiveEmployees: DISABLED - testing which subscription causes the issue');
     fetchActiveEmployees();
-    
-    // Keep only the interval for now
-    const interval = setInterval(fetchActiveEmployees, 30000);
-    return () => {
-      clearInterval(interval);
-    };
-    
-    // DISABLED CODE:
-    /*
-    console.log('🔧 LiveActiveEmployees: Setting up effect for company:', user?.companyId);
 
-    // Set up real-time subscription for timesheets
-    const channelName = `timesheets-changes-${user?.companyId}-${Date.now()}`;
-    console.log('📡 LiveActiveEmployees: Creating channel:', channelName);
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'timesheets',
-          filter: `company_id=eq.${user?.companyId}`
-        },
-        () => {
-          fetchActiveEmployees();
-        }
-      )
-      .subscribe();
+    if (!user?.companyId) return;
 
-    console.log('✅ LiveActiveEmployees: Channel subscribed:', channelName);
+    // Set up real-time subscription for timesheets using new provider
+    const unsubscribe = subscribe({
+      key: `timesheets_company_${user.companyId}`,
+      events: [{
+        event: '*',
+        schema: 'public',
+        table: 'timesheets',
+        filter: `company_id=eq.${user.companyId}`
+      }],
+      onMessage: () => {
+        fetchActiveEmployees();
+      }
+    });
 
     // Refresh every 30 seconds as backup
     const interval = setInterval(fetchActiveEmployees, 30000);
 
     return () => {
-      console.log('🧹 LiveActiveEmployees: Cleaning up channel:', channelName);
-      supabase.removeChannel(channel);
+      unsubscribe();
       clearInterval(interval);
     };
-    */
-  }, [user?.companyId]);
+  }, [user?.companyId]); // Stable dependencies only
 
   const formatClockInTime = (timeString: string) => {
     const time = new Date(timeString);

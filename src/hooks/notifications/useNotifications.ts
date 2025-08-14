@@ -2,11 +2,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useRealtime } from '@/contexts/RealtimeProvider';
 import { Notification } from './types';
 import { useEffect } from 'react';
 
 export const useNotifications = () => {
   const { user } = useAuth();
+  const { subscribe } = useRealtime();
 
   const query = useQuery({
     queryKey: ['notifications', user?.id, user?.role],
@@ -31,43 +33,27 @@ export const useNotifications = () => {
 
   // Set up realtime subscription for notifications
   useEffect(() => {
-    console.log('🚫 useNotifications: DISABLED - testing which subscription causes the issue');
-    return; // Early return to disable
-    
-    console.log('🔧 useNotifications: Setting up effect for company:', user?.companyId);
     if (!user?.companyId || !['admin', 'super_admin', 'foreman', 'management'].includes(user?.role || '')) {
       return;
     }
 
-    // Create unique channel name to avoid conflicts
-    const channelName = `notifications-${user.companyId}-${user.id}-${Date.now()}`;
-    console.log('📡 useNotifications: Creating channel:', channelName);
-    
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `company_id=eq.${user.companyId}`,
-        },
-        (payload) => {
-          console.log('Notification realtime update:', payload);
-          // Refetch notifications when changes occur
-          query.refetch();
-        }
-      )
-      .subscribe();
+    const unsubscribe = subscribe({
+      key: `notifications_${user.companyId}_${user.role}`,
+      events: [{
+        event: '*',
+        schema: 'public',
+        table: 'notifications',
+        filter: `company_id=eq.${user.companyId}`
+      }],
+      onMessage: (payload) => {
+        console.log('Notification realtime update:', payload);
+        // Refetch notifications when changes occur
+        query.refetch();
+      }
+    });
 
-    console.log('✅ useNotifications: Channel subscribed:', channelName);
-
-    return () => {
-      console.log('🧹 useNotifications: Cleaning up channel:', channelName);
-      supabase.removeChannel(channel);
-    };
-  }, [user?.companyId, user?.role, user?.id]); // Remove query.refetch from dependencies
+    return unsubscribe;
+  }, [user?.companyId, user?.role, user?.id]); // Stable dependencies only
 
   return query;
 };
