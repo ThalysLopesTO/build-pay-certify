@@ -160,7 +160,13 @@ export const useAuthState = () => {
       }
     };
 
-    initializeAuth();
+    let authCleanup: (() => void) | undefined;
+    
+    const setupAuth = async () => {
+      authCleanup = await initializeAuth();
+    };
+    
+    setupAuth();
 
     // Add window focus/visibility listeners
     window.addEventListener('focus', handleWindowFocus);
@@ -169,6 +175,12 @@ export const useAuthState = () => {
     return () => {
       console.log('🧹 Cleaning up auth listener');
       isMounted = false;
+      
+      // Clean up auth subscription
+      if (authCleanup) {
+        authCleanup();
+      }
+      
       window.removeEventListener('focus', handleWindowFocus);
       document.removeEventListener('visibilitychange', handleWindowFocus);
     };

@@ -121,6 +121,9 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({
   // Realtime subscribe to updates
   const debounceRef = useRef<number | null>(null);
   useEffect(() => {
+    console.log('🚫 TodayPunchesCard: Effect called but DISABLED for debugging');
+    // Temporarily disable to isolate the issue
+    /*
     console.log('🔧 TodayPunchesCard: Setting up effect for company:', user?.companyId);
     if (!user?.companyId) return;
     
@@ -146,6 +149,7 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({
       supabase.removeChannel(channel);
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
+    */
   }, [user?.companyId]); // Remove refetch from dependencies
   return <Card className="border border-border shadow-md hover:shadow-lg transition-shadow duration-200 rounded-xl overflow-hidden">
       <DashboardCardHeader title="Live Punch Monitor" icon={<Users className="h-5 w-5" />} accent="green" statusPill={<span aria-live="polite" className="inline-flex items-center gap-2 text-xs font-medium bg-white/10 rounded-full px-3 py-1 text-gray-50">
