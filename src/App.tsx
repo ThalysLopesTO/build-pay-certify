@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -153,7 +152,8 @@ const EmployeeDashboardRouter = () => {
   );
 };
 
-const AppRoutes = () => {
+// Main routing component that MUST be inside AuthProvider
+const AppRoutesInner = () => {
   const { isAuthenticated, loading, companyError, logout, user } = useAuth();
 
   console.log('🏠 AppRoutes render:', { isAuthenticated, loading, companyError });
@@ -286,17 +286,7 @@ const AppRoutes = () => {
   );
 };
 
-// Wrapper component to ensure AppRoutes only renders inside providers
-const AppWithProviders: React.FC = () => {
-  return (
-    <TooltipProvider>
-      <AppRoutes />
-      <Toaster />
-      <Sonner />
-    </TooltipProvider>
-  );
-};
-
+// App component with proper provider hierarchy
 const App: React.FC = () => {
   console.log('🚀 App component rendering');
   
@@ -305,7 +295,11 @@ const App: React.FC = () => {
       <AuthProvider>
         <RealtimeProvider>
           <EmployeeProvider>
-            <AppWithProviders />
+            <TooltipProvider>
+              <AppRoutesInner />
+              <Toaster />
+              <Sonner />
+            </TooltipProvider>
           </EmployeeProvider>
         </RealtimeProvider>
       </AuthProvider>
