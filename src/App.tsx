@@ -1,8 +1,15 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from '@/contexts/SupabaseAuthContext';
+import { RealtimeProvider } from '@/contexts/RealtimeProvider';
+import { EmployeeProvider } from '@/contexts/EmployeeContext';
 
-// Create a simple test component to isolate the issue
+// Import pages
+import HomePage from '@/pages/HomePage';
+import AdminDashboard from '@/pages/AdminDashboard';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -14,26 +21,24 @@ const queryClient = new QueryClient({
   },
 });
 
-// Simple test component that doesn't use any auth
-const SimpleTest = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-4">App is Loading</h1>
-        <p className="text-muted-foreground">Testing basic functionality...</p>
-      </div>
-    </div>
-  );
-};
-
-// Minimal app to test if the issue is in the providers
 const App: React.FC = () => {
-  console.log('🚀 Minimal App component rendering');
+  console.log('🚀 App component rendering');
   
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <SimpleTest />
+        <AuthProvider>
+          <RealtimeProvider>
+            <EmployeeProvider>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+              <Toaster />
+            </EmployeeProvider>
+          </RealtimeProvider>
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );
