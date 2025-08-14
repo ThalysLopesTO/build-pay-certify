@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { getSupabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export interface Employee {
@@ -176,12 +175,34 @@ interface EmployeeProviderProps {
 
 export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(employeeReducer, initialState);
-  const { user } = useAuth();
   const { toast } = useToast();
+  const supabase = getSupabase();
+  
+  // Get auth info asynchronously when needed instead of during initialization
+  const getAuthInfo = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session;
+  };
 
   // Fetch all employees (active and archived) on component mount
   const fetchEmployees = async () => {
-    if (!user?.companyId) return;
+    const session = await getAuthInfo();
+    if (!session?.user) {
+      console.log('No authenticated user, skipping employee fetch');
+      return;
+    }
+    
+    // Get user profile to find company ID
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('company_id')
+      .eq('user_id', session.user.id)
+      .single();
+      
+    if (!profile?.company_id) {
+      console.log('No company ID found for user');
+      return;
+    }
     
     dispatch({ type: 'SET_LOADING', payload: true });
     
@@ -195,7 +216,7 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
             name
           )
         `)
-        .eq('company_id', user.companyId)
+        .eq('company_id', profile.company_id)
         .in('role', ['employee', 'foreman', 'admin', 'management'])
         .order('created_at', { ascending: false });
 
@@ -214,12 +235,12 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
     }
   };
 
-  // Initialize employees when user/company changes
+  // Initialize employees when component mounts
   useEffect(() => {
-    if (user?.companyId && !state.initialized) {
+    if (!state.initialized) {
       fetchEmployees();
     }
-  }, [user?.companyId, state.initialized]);
+  }, [state.initialized]);
 
   // CRUD Operations with immediate UI updates (optimistic updates)
   const createEmployee = async (newEmployee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>) => {
