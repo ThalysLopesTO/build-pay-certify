@@ -1,12 +1,14 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { usePrefetchRoute } from '@/hooks/usePrefetchRoute';
 interface QuickActionsSectionProps {
   setActiveTab: (tab: string) => void;
 }
 const QuickActionsSection: React.FC<QuickActionsSectionProps> = ({
   setActiveTab
 }) => {
+  const { prefetchRoute } = usePrefetchRoute();
 const quickActions = [
     {
       id: 'add-employee',
@@ -66,7 +68,13 @@ const quickActions = [
               key={action.id} 
               onClick={action.action} 
               variant="outline" 
-              className={`h-24 flex flex-col items-center justify-center space-y-3 ${action.bgColor} ${action.borderColor} ${action.textColor} border-2 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105 w-full`}
+              className={`h-24 flex flex-col items-center justify-center space-y-3 ${action.bgColor} ${action.borderColor} ${action.textColor} border-2 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-105 w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
+              onMouseEnter={() => {
+                // Prefetch related data on hover
+                if (action.id === 'add-employee') prefetchRoute('employees');
+                if (action.id === 'create-invoice') prefetchRoute('invoices');
+                if (action.id === 'new-jobsite') prefetchRoute('jobsites');
+              }}
             >
               <span className="text-3xl">{action.icon}</span>
               <span className="text-sm font-medium text-center leading-tight">{action.title}</span>

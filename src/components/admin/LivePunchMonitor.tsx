@@ -424,9 +424,18 @@ const LivePunchMonitor = () => {
             </div>}
         </div>
 
-        {/* Punch Entries Table */}
+      {/* Punch Entries Table */}
         <Card className="shadow-sm">
-          <LivePunchTable filteredEntries={filteredEntries} selectedDate={selectedDate} flaggedEntries={flaggedEntries} onToggleFlag={toggleFlag} onViewLocation={handleViewLocation} onEdit={handleEdit} onDelete={handleDelete} />
+          <LivePunchTable 
+            filteredEntries={filteredEntries} 
+            selectedDate={selectedDate} 
+            flaggedEntries={flaggedEntries} 
+            onToggleFlag={toggleFlag} 
+            onViewLocation={handleViewLocation} 
+            onEdit={handleEdit} 
+            onDelete={handleDelete}
+            isLoading={isLoading}
+          />
         </Card>
       </div>
 

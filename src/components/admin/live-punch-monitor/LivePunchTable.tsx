@@ -47,6 +47,7 @@ interface LivePunchTableProps {
   onViewLocation: (entry: PunchEntry) => void;
   onEdit?: (entry: PunchEntry) => void;
   onDelete?: (entry: PunchEntry) => void;
+  isLoading?: boolean;
 }
 
 const LivePunchTable: React.FC<LivePunchTableProps> = ({
@@ -56,7 +57,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
   onToggleFlag,
   onViewLocation,
   onEdit,
-  onDelete
+  onDelete,
+  isLoading = false
 }) => {
   // TODO: Will re-add distance calculation functions later for jobsite comparison
   

@@ -2,9 +2,11 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { AuthProvider } from '@/contexts/SupabaseAuthContext';
 import { RealtimeProvider } from '@/contexts/RealtimeProvider';
 import { EmployeeProvider } from '@/contexts/EmployeeContext';
+import { GlobalToasts } from '@/components/common/GlobalToasts';
 
 // Import pages
 import HomePage from '@/pages/HomePage';
@@ -21,6 +23,16 @@ const queryClient = new QueryClient({
   },
 });
 
+const AppInner: React.FC = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
 const App: React.FC = () => {
   console.log('🚀 App component rendering');
   
@@ -30,12 +42,10 @@ const App: React.FC = () => {
         <AuthProvider>
           <RealtimeProvider>
             <EmployeeProvider>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+              <AppInner />
+              <GlobalToasts />
               <Toaster />
+              <SonnerToaster />
             </EmployeeProvider>
           </RealtimeProvider>
         </AuthProvider>
