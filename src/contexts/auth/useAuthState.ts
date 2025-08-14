@@ -1,7 +1,7 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { getSupabase } from '@/integrations/supabase/client';
 import { AuthUser } from './types';
 import { fetchUserProfile } from './profileService';
 
@@ -10,6 +10,9 @@ export const useAuthState = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [companyError, setCompanyError] = useState<string | null>(null);
+  
+  // Get stable Supabase instance
+  const supabase = getSupabase();
 
   console.log('🔍 Auth State Debug:', { 
     user: user ? { id: user.id, email: user.email, companyId: user.companyId } : null, 
@@ -17,6 +20,20 @@ export const useAuthState = () => {
     loading, 
     companyError 
   });
+
+  // Handle window focus to refresh session
+  const handleWindowFocus = useCallback(async () => {
+    if (document.visibilityState === 'visible') {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('🔄 Refreshed session on window focus');
+        }
+      } catch (error) {
+        console.warn('Failed to refresh session on focus:', error);
+      }
+    }
+  }, [supabase]);
 
   useEffect(() => {
     let isMounted = true;
@@ -145,11 +162,17 @@ export const useAuthState = () => {
 
     initializeAuth();
 
+    // Add window focus/visibility listeners
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleWindowFocus);
+
     return () => {
       console.log('🧹 Cleaning up auth listener');
       isMounted = false;
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleWindowFocus);
     };
-  }, []);
+  }, [handleWindowFocus, supabase]);
 
   return {
     user,

@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/SupabaseAuthContext";
 import { EmployeeProvider } from "./contexts/EmployeeContext";
+import { RealtimeProvider } from "./contexts/RealtimeProvider";
 
 import { toast } from '@/hooks/use-toast';
 
@@ -29,12 +30,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Create a stable query client instance
+// Create a stable query client instance with optimized caching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
+      staleTime: 60 * 1000, // 1 minute default
+      gcTime: 5 * 60 * 1000, // 5 minutes garbage collection
     },
   },
 });
@@ -289,13 +292,15 @@ const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <EmployeeProvider>
-          <TooltipProvider>
-            <AppRoutes />
-            <Toaster />
-            <Sonner />
-          </TooltipProvider>
-        </EmployeeProvider>
+        <RealtimeProvider>
+          <EmployeeProvider>
+            <TooltipProvider>
+              <AppRoutes />
+              <Toaster />
+              <Sonner />
+            </TooltipProvider>
+          </EmployeeProvider>
+        </RealtimeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
