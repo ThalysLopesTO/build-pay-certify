@@ -3,11 +3,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Calendar } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useRealtime } from '@/contexts/RealtimeProvider';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, isToday } from 'date-fns';
 import LocationMapModal from './LocationMapModal';
 import EditPunchModal from './timesheets/EditPunchModal';
 import LivePunchFilters from './live-punch-monitor/LivePunchFilters';
@@ -38,12 +39,11 @@ interface PunchEntry {
   } | null;
 }
 const LivePunchMonitor = () => {
-  const {
-    user
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  const supabase = getSupabase();
+  const { user } = useAuth();
+  const { subscribe } = useRealtime();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const deleteTimesheet = useDeleteTimesheet();
   const [selectedJobsite, setSelectedJobsite] = useState<string>('all');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
@@ -237,8 +237,38 @@ const LivePunchMonitor = () => {
       return combinedData;
     },
     enabled: !!user?.companyId,
-    refetchInterval: 60000 // Refresh every 60 seconds for real-time updates
+    staleTime: 30 * 1000, // 30 seconds for live data
+    gcTime: 2 * 60 * 1000, // 2 minutes
   });
+
+  // Set up realtime subscription for live updates
+  useEffect(() => {
+    if (!user?.companyId || !isToday(selectedDate)) {
+      return; // Only subscribe to realtime for today's data
+    }
+
+    console.log('🔌 Setting up realtime subscription for timesheets');
+
+    const unsubscribe = subscribe(
+      'timesheets_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'timesheets',
+        filter: `company_id=eq.${user.companyId}`,
+      },
+      (payload) => {
+        console.log('📡 Realtime timesheet update:', payload);
+        
+        // Invalidate and refetch the current query
+        queryClient.invalidateQueries({
+          queryKey: ['live-punch-monitor', user?.companyId]
+        });
+      }
+    );
+
+    return unsubscribe;
+  }, [user?.companyId, selectedDate, subscribe, queryClient]);
   const handleEdit = (timesheet: any) => {
     setEditingTimesheet(timesheet);
   };
