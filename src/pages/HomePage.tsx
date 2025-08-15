@@ -105,8 +105,8 @@ const HomePage = () => {
   // If user is authenticated, redirect them to their dashboard
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900 flex items-center justify-center p-4 overflow-x-hidden">
+      <div className="max-w-2xl w-full max-w-full">
           <Card className="border-orange-200 shadow-2xl">
             <CardHeader className="text-center pb-8">
               <CardTitle className="text-4xl font-bold text-orange-600 flex items-center justify-center mb-4">
@@ -127,9 +127,9 @@ const HomePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900 flex items-center justify-center p-4">
-      <div className="max-w-6xl w-full">
-        <div className="grid grid-cols-3 gap-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900 flex items-center justify-center p-4 overflow-x-hidden">
+      <div className="max-w-6xl w-full max-w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
           <Card className="border-orange-200 shadow-2xl">
             <CardHeader className="text-center pb-8">
