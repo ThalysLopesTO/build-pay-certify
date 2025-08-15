@@ -12,6 +12,7 @@ import { GlobalToasts } from '@/components/common/GlobalToasts';
 import PublicOrRedirect from '@/components/PublicOrRedirect';
 import LoginPage from '@/pages/LoginPage';
 import EmployeeLoginPage from '@/pages/EmployeeLoginPage';
+import AuthCallbackPage from '@/pages/AuthCallbackPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import AdminDashboard from '@/pages/AdminDashboard';
 import ForemanDashboard from '@/pages/ForemanDashboard';
@@ -36,6 +37,7 @@ const AppInner: React.FC = () => {
       <Route path="/" element={<PublicOrRedirect />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/employee-login" element={<EmployeeLoginPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       
       {/* Protected Dashboard Routes */}
       <Route path="/admin/dashboard" element={<AdminDashboard />} />

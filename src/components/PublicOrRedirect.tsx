@@ -21,22 +21,22 @@ const getDefaultRouteForRole = (role: string | undefined): string => {
 };
 
 const PublicOrRedirect = () => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated, user, ready } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated && user && !loading) {
+    if (ready && isAuthenticated && user) {
       const defaultRoute = getDefaultRouteForRole(user.role);
       console.log('🔄 User authenticated, redirecting to:', defaultRoute, 'for role:', user.role);
       navigate(defaultRoute, { replace: true });
     }
-  }, [isAuthenticated, user, loading, navigate]);
+  }, [ready, isAuthenticated, user, navigate]);
 
   // Show loading state while auth is initializing
-  if (loading) {
+  if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -49,7 +49,7 @@ const PublicOrRedirect = () => {
   // Show loading state while navigating
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     </div>
   );
 };

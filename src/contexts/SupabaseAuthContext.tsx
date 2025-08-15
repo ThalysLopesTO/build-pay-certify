@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, session, loading, companyError, setCompanyError } = useAuthState();
+  const { user, session, loading, ready, companyError, setCompanyError } = useAuthState();
 
   // Check subscription status when user logs in
   useEffect(() => {
@@ -52,7 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasUser: !!user,
     hasCompanyError: !!companyError,
     isAuthenticated,
-    loading
+    loading,
+    ready
   });
 
   return (
@@ -65,6 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout: handleLogout,
       isAuthenticated,
       loading,
+      ready,
       isCompanyAdmin,
       isSuperAdmin,
       companyError

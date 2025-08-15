@@ -7,6 +7,7 @@ export const useAuthState = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
   const [companyError, setCompanyError] = useState<string | null>(null);
   const authSubscriptionRef = useRef<any>(null);
   
@@ -32,6 +33,7 @@ export const useAuthState = () => {
         console.log('❌ No session, clearing user state');
         setUser(null);
         setLoading(false);
+        setReady(true);
         return;
       }
 
@@ -68,6 +70,7 @@ export const useAuthState = () => {
       if (isMounted) {
         setUser(authUser);
         setLoading(false);
+        setReady(true);
         setCompanyError(null);
       }
 
@@ -76,6 +79,7 @@ export const useAuthState = () => {
       if (isMounted) {
         setCompanyError('Authentication error. Please try again.');
         setLoading(false);
+        setReady(true);
       }
     }
   }, []);
@@ -97,7 +101,10 @@ export const useAuthState = () => {
         
         if (error) {
           console.error('❌ Error getting session:', error);
-          if (isMounted) setLoading(false);
+          if (isMounted) {
+            setLoading(false);
+            setReady(true);
+          }
           return;
         }
 
@@ -115,6 +122,7 @@ export const useAuthState = () => {
         console.error('💥 Error initializing auth:', error);
         if (isMounted) {
           setLoading(false);
+          setReady(true);
           setCompanyError('Failed to initialize authentication.');
         }
       }
@@ -145,6 +153,7 @@ export const useAuthState = () => {
     user,
     session,
     loading,
+    ready,
     companyError,
     setCompanyError
   };
