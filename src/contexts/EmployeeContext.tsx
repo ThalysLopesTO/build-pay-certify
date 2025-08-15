@@ -21,9 +21,6 @@ export interface Employee {
   companies?: {
     name: string;
   };
-  company_settings?: {
-    company_name: string;
-  };
 }
 
 interface EmployeeState {
@@ -217,9 +214,6 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
           companies:company_id (
             id,
             name
-          ),
-          company_settings:company_id (
-            company_name
           )
         `)
         .eq('company_id', profile.company_id)
