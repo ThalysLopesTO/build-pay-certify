@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { RegistrationFormData } from './types';
 import { processPaidRegistration } from './paidRegistrationService';
@@ -11,6 +11,7 @@ export const useRegistrationSubmission = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const handleSubmit = async (formData: RegistrationFormData) => {
     setIsLoading(true);
@@ -28,18 +29,19 @@ export const useRegistrationSubmission = () => {
         
         toast({
           title: "Registration Complete!",
-          description: `Welcome to StackBuild! Your company "${result.companyName}" has been created and activated with a Starter plan (5 employees).`,
+          description: `Welcome to StackBuild! Your company "${result.companyName}" has been created and activated. Please log in to continue.`,
         });
       } else {
         await processFreeRegistration(formData);
         
         toast({
-          title: "Registration Submitted",
-          description: "Your company registration has been submitted for approval.",
+          title: "Registration Complete!",
+          description: "Your company has been registered successfully. Please log in to continue.",
         });
       }
 
-      setIsSubmitted(true);
+      // Redirect to login page instead of showing success page
+      navigate('/login');
 
     } catch (error) {
       console.error('💥 Registration error:', error);
