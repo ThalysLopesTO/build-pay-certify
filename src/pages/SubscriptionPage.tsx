@@ -7,59 +7,63 @@ import { Check, Building, Star, Crown } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useToast } from '@/hooks/use-toast';
-
-
 const SubscriptionPage: React.FC = () => {
-  const { user } = useAuth();
-  const { createCheckout, isCreatingCheckout } = useStripeSubscription();
+  const {
+    user
+  } = useAuth();
+  const {
+    createCheckout,
+    isCreatingCheckout
+  } = useStripeSubscription();
   const [searchParams] = useSearchParams();
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     const payment = searchParams.get('payment');
     if (payment === 'success') {
       toast({
         title: "Payment successful!",
-        description: "Your subscription has been activated.",
+        description: "Your subscription has been activated."
       });
     } else if (payment === 'cancelled') {
       toast({
         title: "Payment cancelled",
         description: "Your subscription was not activated.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   }, [searchParams, toast]);
-
   const handleStartBasicSubscription = async () => {
     try {
-      await createCheckout({ planName: 'Basic' });
+      await createCheckout({
+        planName: 'Basic'
+      });
     } catch (error) {
       console.error('Error creating checkout session:', error);
       toast({
         title: "Error",
         description: "Failed to start checkout process. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const handleStartPremiumSubscription = async () => {
     try {
-      await createCheckout({ planName: 'Premium' });
+      await createCheckout({
+        planName: 'Premium'
+      });
     } catch (error) {
       console.error('Error creating checkout session:', error);
       toast({
         title: "Error",
         description: "Failed to start checkout process. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   if (user) {
-    return (
-      <div className="container mx-auto py-8 px-4">
+    return <div className="container mx-auto py-8 px-4">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4">Welcome back!</h1>
           <p className="text-lg text-muted-foreground mb-6">
@@ -69,12 +73,9 @@ const SubscriptionPage: React.FC = () => {
             <Button size="lg">Go to Dashboard</Button>
           </Link>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="container mx-auto py-8 px-4">
+  return <div className="container mx-auto py-8 px-4">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -119,11 +120,7 @@ const SubscriptionPage: React.FC = () => {
                 <span>Mobile app access</span>
               </div>
             </div>
-            <Button 
-              className="w-full mt-6" 
-              onClick={handleStartBasicSubscription}
-              disabled={isCreatingCheckout}
-            >
+            <Button className="w-full mt-6" onClick={handleStartBasicSubscription} disabled={isCreatingCheckout}>
               {isCreatingCheckout ? "Processing..." : "Subscribe to Basic"}
             </Button>
           </CardContent>
@@ -141,7 +138,8 @@ const SubscriptionPage: React.FC = () => {
             <CardTitle className="text-2xl">Premium</CardTitle>
             <CardDescription>Best for growing businesses</CardDescription>
             <div className="mt-4">
-              <span className="text-4xl font-bold">$99</span>
+              <span className="text-4xl font-bold">$197
+            </span>
               <span className="text-muted-foreground">/month</span>
             </div>
           </CardHeader>
@@ -172,11 +170,7 @@ const SubscriptionPage: React.FC = () => {
                 <span>API access</span>
               </div>
             </div>
-            <Button 
-              className="w-full mt-6" 
-              onClick={handleStartPremiumSubscription}
-              disabled={isCreatingCheckout}
-            >
+            <Button className="w-full mt-6" onClick={handleStartPremiumSubscription} disabled={isCreatingCheckout}>
               {isCreatingCheckout ? "Processing..." : "Subscribe to Premium"}
             </Button>
           </CardContent>
@@ -237,8 +231,6 @@ const SubscriptionPage: React.FC = () => {
           <Button variant="outline">Sign In</Button>
         </Link>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default SubscriptionPage;
