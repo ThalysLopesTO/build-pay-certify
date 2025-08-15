@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -416,6 +416,7 @@ export type Database = {
           admin_email: string
           admin_first_name: string
           admin_last_name: string
+          admin_password: string | null
           admin_user_id: string | null
           approved_at: string | null
           approved_by: string | null
@@ -434,6 +435,7 @@ export type Database = {
           admin_email: string
           admin_first_name: string
           admin_last_name: string
+          admin_password?: string | null
           admin_user_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
@@ -452,6 +454,7 @@ export type Database = {
           admin_email?: string
           admin_first_name?: string
           admin_last_name?: string
+          admin_password?: string | null
           admin_user_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
@@ -2244,8 +2247,8 @@ export type Database = {
     Functions: {
       approve_missed_punch_request: {
         Args:
+          | { approver_id: string; request_id: string }
           | { request_id: string }
-          | { request_id: string; approver_id: string }
         Returns: Json
       }
       calculate_invoice_totals: {
@@ -2266,17 +2269,17 @@ export type Database = {
       }
       can_admin_update_profile: {
         Args: {
-          target_user_id: string
-          new_role: string
           new_company_id: string
+          new_role: string
+          target_user_id: string
         }
         Returns: boolean
       }
       can_self_update_profile: {
         Args: {
-          target_user_id: string
-          new_role: string
           new_company_id: string
+          new_role: string
+          target_user_id: string
         }
         Returns: boolean
       }
@@ -2335,14 +2338,14 @@ export type Database = {
       get_companies_with_status: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          name: string
-          status: string
-          registration_date: string
-          expiration_date: string
           created_at: string
-          is_expired: boolean
           days_until_expiry: number
+          expiration_date: string
+          id: string
+          is_expired: boolean
+          name: string
+          registration_date: string
+          status: string
         }[]
       }
       get_company_employee_count: {
@@ -2352,29 +2355,29 @@ export type Database = {
       get_company_plan_details: {
         Args: { company_id_param: string }
         Returns: {
-          plan_type: string
-          plan_name: string
-          price_monthly: number
-          employee_limit: number
-          current_employee_count: number
-          subscription_status: string
-          subscription_end_date: string
           can_add_employees: boolean
+          current_employee_count: number
+          employee_limit: number
+          plan_name: string
+          plan_type: string
+          price_monthly: number
+          subscription_end_date: string
+          subscription_status: string
         }[]
       }
       get_material_takeoff_notes: {
         Args: { p_company_id: string }
         Returns: {
-          id: string
-          jobsite_id: string
           company_id: string
-          takeoff_notes: string
           created_at: string
-          updated_at: string
           created_by: string
-          updated_by: string
-          jobsite_name: string
+          id: string
           jobsite_address: string
+          jobsite_id: string
+          jobsite_name: string
+          takeoff_notes: string
+          updated_at: string
+          updated_by: string
         }[]
       }
       get_user_company_id: {
@@ -2384,8 +2387,8 @@ export type Database = {
       get_users_banned_this_hour: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
           banned_until: string
+          id: string
         }[]
       }
       is_admin: {
