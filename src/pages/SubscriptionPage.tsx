@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Check, Building, Star, Crown } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+
 
 const SubscriptionPage: React.FC = () => {
   const { user } = useAuth();
@@ -33,15 +33,7 @@ const SubscriptionPage: React.FC = () => {
 
   const handleStartBasicSubscription = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { planName: 'Basic' }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
+      await createCheckout({ planName: 'Basic' });
     } catch (error) {
       console.error('Error creating checkout session:', error);
       toast({
@@ -54,15 +46,7 @@ const SubscriptionPage: React.FC = () => {
 
   const handleStartPremiumSubscription = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { planName: 'Premium' }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
+      await createCheckout({ planName: 'Premium' });
     } catch (error) {
       console.error('Error creating checkout session:', error);
       toast({
