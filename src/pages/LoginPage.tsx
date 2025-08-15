@@ -9,7 +9,12 @@ const LoginPage = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Let RoleBasedRedirect handle the proper dashboard routing based on user role
+  // If already authenticated, redirect to dashboard
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/admin/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   if (isAuthenticated) {
     return (
