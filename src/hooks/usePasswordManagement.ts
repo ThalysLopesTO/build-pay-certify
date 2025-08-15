@@ -74,11 +74,26 @@ export const useUpdateOwnPassword = () => {
 
   return useMutation({
     mutationFn: async (data: UpdateOwnPasswordData) => {
+      console.log('🔐 Starting password update...');
+      
+      // Check if user is authenticated
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('❌ User not authenticated:', userError);
+        throw new Error('User not authenticated');
+      }
+      
+      console.log('✅ User authenticated, updating password...');
       const { error } = await supabase.auth.updateUser({
         password: data.password
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Password update failed:', error);
+        throw error;
+      }
+      
+      console.log('✅ Password updated successfully');
     },
     onSuccess: () => {
       toast({
