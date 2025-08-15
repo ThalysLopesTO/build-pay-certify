@@ -13,7 +13,7 @@ export const useEmployeeRegistrationForm = () => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { data: employeeLimit } = useEmployeeLimit();
-  const { createEmployee } = useEmployees();
+  const { createEmployee, refreshEmployees } = useEmployees();
 
   const form = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeSchema),
@@ -162,7 +162,7 @@ export const useEmployeeRegistrationForm = () => {
 
       console.log('Employee registered successfully:', result);
 
-      // Fetch the actual employee profile data from Supabase and update context
+      // Fetch the actual employee profile and add to context
       if (result.user) {
         const { data: employeeProfile, error: fetchError } = await supabase
           .from('user_profiles')
@@ -170,26 +170,13 @@ export const useEmployeeRegistrationForm = () => {
           .eq('user_id', result.user.id)
           .single();
 
-        if (fetchError) {
-          console.error('Error fetching employee profile after creation:', fetchError);
-          // Fallback to manual object creation if fetch fails
-          await createEmployee({
-            user_id: result.user.id,
-            company_id: user.companyId,
-            first_name: data.firstName,
-            last_name: data.lastName,
-            role: data.role,
-            trade: data.trade || 'General',
-            position: 'Worker',
-            hourly_rate: data.hourlyRate,
-            photo_url: photoUrl,
-            worker_type: data.workerType,
-            phone: data.phoneNumber,
-            is_active: true,
-          });
-        } else {
-          // Use the actual employee data from Supabase
+        if (!fetchError && employeeProfile) {
+          // Add the real employee data to context
           await createEmployee(employeeProfile);
+        } else {
+          console.error('Error fetching employee profile:', fetchError);
+          // Refresh the employee list as fallback
+          await refreshEmployees();
         }
       }
 

@@ -244,43 +244,21 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
 
   // CRUD Operations with immediate UI updates (optimistic updates)
   const createEmployee = async (newEmployee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>) => {
-    console.log('🚀 Creating employee optimistically:', newEmployee.first_name, newEmployee.last_name);
+    console.log('🚀 Adding employee to context:', newEmployee.first_name, newEmployee.last_name);
     
-    // Optimistically add employee with temporary ID
-    const tempEmployee: Employee = {
+    // Create the employee object with proper structure
+    const employee: Employee = {
       ...newEmployee,
-      id: `temp-${Date.now()}`,
+      id: newEmployee.user_id || `emp-${Date.now()}`, // Use user_id if available, fallback to generated ID
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       is_active: true,
     };
 
-    // Immediately update UI
-    dispatch({ type: 'ADD_EMPLOYEE', payload: tempEmployee });
+    // Add to state immediately
+    dispatch({ type: 'ADD_EMPLOYEE', payload: employee });
 
-    try {
-      // This is called from the registration form which handles the actual edge function call
-      // We just need to update state here after the registration is successful
-      console.log('✅ Employee created successfully in state');
-      
-      toast({
-        title: "Employee Added",
-        description: `${newEmployee.first_name} ${newEmployee.last_name} has been added successfully.`,
-      });
-      
-    } catch (error: any) {
-      console.error('❌ Error creating employee:', error);
-      
-      // Remove optimistic update on error
-      dispatch({ type: 'SET_EMPLOYEES', payload: state.employees.filter(emp => emp.id !== tempEmployee.id) });
-      
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create employee",
-        variant: "destructive",
-      });
-      throw error;
-    }
+    console.log('✅ Employee added to context successfully');
   };
 
   const updateEmployee = async (id: string, updates: Partial<Employee>, newPhoto?: File) => {
