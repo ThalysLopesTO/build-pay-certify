@@ -49,6 +49,9 @@ const ImprovedEmployeeCard: React.FC<ImprovedEmployeeCardProps> = ({
   const { user } = useAuth();
   const certStatus = getCertStatus(); // Mock status - will be replaced with real data
   
+  // Get company name from employee's company data or fallback to current user's company
+  const companyName = employee.companies?.name || user?.companyName || 'Unknown Company';
+  
   const canReset = user?.role && canResetPassword(user.role, employee.role);
 
   return (
@@ -112,7 +115,7 @@ const ImprovedEmployeeCard: React.FC<ImprovedEmployeeCardProps> = ({
               </h3>
               <div className="flex items-center gap-2 mt-1">
                 <Building2 className="h-3 w-3 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground truncate">{employee.companies?.name}</p>
+                <p className="text-sm text-muted-foreground truncate">{companyName}</p>
               </div>
               <div className="flex flex-wrap gap-2 mt-3">
                 <Badge className={`${getRoleColor(employee.role)} text-white text-xs`}>
