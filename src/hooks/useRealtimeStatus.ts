@@ -10,8 +10,11 @@ export const useRealtimeStatus = () => {
   useEffect(() => {
     let reconnectToastId: string | number | undefined;
 
+    // Create unique channel name to avoid conflicts
+    const channelName = `heartbeat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     // Listen to connection state changes
-    const subscription = supabase.channel('heartbeat')
+    const subscription = supabase.channel(channelName)
       .on('presence', { event: 'sync' }, () => {
         if (!isConnected) {
           setIsConnected(true);

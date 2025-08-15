@@ -35,8 +35,10 @@ export const useNotifications = () => {
       return;
     }
 
+    let unsubscribeRef: (() => void) | null = null;
+
     // Create unique channel name to avoid conflicts
-    const channelName = `notifications-${user.companyId}-${user.id}-${Date.now()}`;
+    const channelName = `notifications-${user.companyId}-${Math.random().toString(36).substr(2, 9)}`;
     
     const channel = supabase
       .channel(channelName)
@@ -54,9 +56,12 @@ export const useNotifications = () => {
           query.refetch();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Notifications channel status:', channelName, status);
+      });
 
     return () => {
+      console.log('Cleaning up notifications channel:', channelName);
       supabase.removeChannel(channel);
     };
   }, [user?.companyId, user?.role, user?.id, query.refetch]);
