@@ -17,7 +17,7 @@ export const processPaidRegistration = async (
   let employeeLimit = 10;
   const email = result?.customer_details?.email;
 
-  if (formData.adminEmail !== email) {
+  if (formData.adminEmail.toLowerCase() !== email.toLowerCase()) {
     throw new Error("wrong email");
   }
  
