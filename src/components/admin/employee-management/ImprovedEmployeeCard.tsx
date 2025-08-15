@@ -49,8 +49,8 @@ const ImprovedEmployeeCard: React.FC<ImprovedEmployeeCardProps> = ({
   const { user } = useAuth();
   const certStatus = getCertStatus(); // Mock status - will be replaced with real data
   
-  // Get company name from employee's company data or fallback to current user's company
-  const companyName = employee.companies?.name || user?.companyName || 'Unknown Company';
+  // Get company name from company settings (preferred) or fallback to companies table
+  const companyName = employee.company_settings?.company_name || employee.companies?.name || user?.companyName || 'Unknown Company';
   
   const canReset = user?.role && canResetPassword(user.role, employee.role);
 
