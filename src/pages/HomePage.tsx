@@ -104,26 +104,8 @@ const HomePage = () => {
 
   // If user is authenticated, redirect them to their dashboard
   if (isAuthenticated) {
-    return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900 flex items-center justify-center p-4 overflow-x-hidden">
-      <div className="max-w-2xl w-full max-w-full">
-          <Card className="border-orange-200 shadow-2xl">
-            <CardHeader className="text-center pb-8">
-              <CardTitle className="text-4xl font-bold text-orange-600 flex items-center justify-center mb-4">
-                <Building className="h-10 w-10 mr-3" />
-                StackBuild
-              </CardTitle>
-              <h1 className="text-2xl font-semibold text-slate-800 mb-2">
-                Welcome Back!
-              </h1>
-              <p className="text-slate-600 text-lg">
-                You're already logged in. Redirecting to your dashboard...
-              </p>
-            </CardHeader>
-          </Card>
-        </div>
-      </div>
-    );
+    window.location.href = '/admin/dashboard';
+    return null;
   }
 
   return (
