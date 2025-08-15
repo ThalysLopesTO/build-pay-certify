@@ -11,6 +11,19 @@ import { GlobalToasts } from '@/components/common/GlobalToasts';
 // Import pages
 import HomePage from '@/pages/HomePage';
 import AdminDashboard from '@/pages/AdminDashboard';
+import EmployeeDashboard from '@/pages/EmployeeDashboard';
+import ForemanDashboard from '@/pages/ForemanDashboard';
+import ManagementDashboard from '@/pages/ManagementDashboard';
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
+import SuperAdminLogin from '@/pages/SuperAdminLogin';
+import CompanyRegistration from '@/pages/CompanyRegistration';
+import CompanyHandbook from '@/pages/CompanyHandbook';
+import ResetPassword from '@/pages/ResetPassword';
+import LicenseExpired from '@/pages/LicenseExpired';
+import InvoicePreview from '@/pages/InvoicePreview';
+import NotFound from '@/pages/NotFound';
+import MaterialTakeoffPage from '@/pages/admin/MaterialTakeoffPage';
+import InventoryIndex from '@/pages/admin/inventory/Index';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,7 +41,20 @@ const AppInner: React.FC = () => {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+      <Route path="/foreman/dashboard" element={<ForemanDashboard />} />
+      <Route path="/management/dashboard" element={<ManagementDashboard />} />
+      <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
+      <Route path="/super-admin/login" element={<SuperAdminLogin />} />
+      <Route path="/company/registration" element={<CompanyRegistration />} />
+      <Route path="/company/handbook" element={<CompanyHandbook />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/license-expired" element={<LicenseExpired />} />
+      <Route path="/invoice-preview" element={<InvoicePreview />} />
+      <Route path="/admin/material-takeoff" element={<MaterialTakeoffPage />} />
+      <Route path="/admin/inventory" element={<InventoryIndex />} />
+      <Route path="/404" element={<NotFound />} />
+      <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
   );
 };
