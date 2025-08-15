@@ -13,7 +13,7 @@ import EmployeeLimitAlert from './EmployeeLimitAlert';
 
 const ImprovedEmployeeRegistration = () => {
   const { data: employeeLimit, isLoading: isLoadingLimit } = useEmployeeLimit();
-  const { form, loading, error, handleSubmit } = useEmployeeRegistrationForm();
+  const { form, loading, handleSubmit } = useEmployeeRegistrationForm();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-CA', {
@@ -84,16 +84,9 @@ const ImprovedEmployeeRegistration = () => {
 
               {/* Action Buttons */}
               <div className="flex justify-between items-center pt-6 border-t bg-muted/20 -mx-6 px-6 pb-0">
-                <div className="flex flex-col space-y-2">
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    <span>Employee will receive login credentials via email</span>
-                  </div>
-                   {error && (
-                     <div className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md border border-destructive/20">
-                       {error}
-                     </div>
-                   )}
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  <span>Employee will receive login credentials via email</span>
                 </div>
                 
                 <div className="flex space-x-3">

@@ -17,7 +17,7 @@ export const processPaidRegistration = async (
   let employeeLimit = 10;
   const email = result?.customer_details?.email;
 
-  if (formData.adminEmail.toLowerCase() !== email.toLowerCase()) {
+  if (formData.adminEmail !== email) {
     throw new Error("wrong email");
   }
  
@@ -28,7 +28,30 @@ export const processPaidRegistration = async (
     plan = "pro";
   }
 
-  // Sign up the admin user FIRST (before creating company)
+  // Create a NEW company for paid registrations
+  const { data: company, error: companyError } = await supabase
+    .from('companies')
+    .insert({
+      name: formData.companyName,
+      status: 'active',
+      registration_date: new Date().toISOString().split('T')[0],
+      stripe_verified: true,  // Mark as Stripe verified
+      plan: plan,  // Default to starter plan for paid registrations
+      employee_limit: employeeLimit,  // Default starter limit
+      subscription_status: "active"
+    })
+    .select()
+    .single();
+
+  if (companyError) {
+    console.error('❌ Failed to create company:', companyError);
+    throw new Error(`Failed to create company: ${companyError.message}`);
+  }
+
+  console.log('✅ New company created with ID:', company.id);
+  console.log('✅ Company settings with default rules will be created automatically via database trigger');
+
+  // Sign up the admin user
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: formData.adminEmail,
     password: formData.password,
@@ -36,7 +59,8 @@ export const processPaidRegistration = async (
       data: {
         first_name: formData.adminFirstName,
         last_name: formData.adminLastName,
-        role: 'admin'
+        role: 'admin',
+        company_id: company.id  // Ensure company_id is in user metadata
       }
     }
   });
@@ -60,29 +84,6 @@ export const processPaidRegistration = async (
   }
 
   console.log('✅ User signed in successfully');
-
-  // NOW create a NEW company for paid registrations (user is authenticated)
-  const { data: company, error: companyError } = await supabase
-    .from('companies')
-    .insert({
-      name: formData.companyName,
-      status: 'active',
-      registration_date: new Date().toISOString().split('T')[0],
-      stripe_verified: true,  // Mark as Stripe verified
-      plan: plan,  // Default to starter plan for paid registrations
-      employee_limit: employeeLimit,  // Default starter limit
-      subscription_status: "active"
-    })
-    .select()
-    .single();
-
-  if (companyError) {
-    console.error('❌ Failed to create company:', companyError);
-    throw new Error(`Failed to create company: ${companyError.message}`);
-  }
-
-  console.log('✅ New company created with ID:', company.id);
-  console.log('✅ Company settings with default rules will be created automatically via database trigger');
 
   // Create user profile with the NEW company_id
   const { data: existingProfile, error: profileCheckError } = await supabase

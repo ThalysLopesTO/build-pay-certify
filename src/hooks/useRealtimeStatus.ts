@@ -1,31 +1,23 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { getSupabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useRealtime } from '@/contexts/RealtimeProvider';
 
 export const useRealtimeStatus = () => {
-  const [isConnected, setIsConnected] = React.useState(true);
-  const [isReconnecting, setIsReconnecting] = React.useState(false);
-  const { subscribe } = useRealtime();
+  const [isConnected, setIsConnected] = useState(true);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const supabase = getSupabase();
 
-  React.useEffect(() => {
+  useEffect(() => {
     let reconnectToastId: string | number | undefined;
 
-    // Use the new realtime provider for presence tracking
-    const unsubscribe = subscribe({
-      key: 'heartbeat_status',
-      events: [{
-        event: '*',
-        schema: 'public',
-        table: 'user_profiles' // Use a real table for connection status
-      }],
-      onMessage: () => {
-        // Connection is working if we receive any message
+    // Listen to connection state changes
+    const subscription = supabase.channel('heartbeat')
+      .on('presence', { event: 'sync' }, () => {
         if (!isConnected) {
           setIsConnected(true);
           setIsReconnecting(false);
           
+          // Dismiss reconnecting toast and show success
           if (reconnectToastId) {
             toast.dismiss(reconnectToastId);
           }
@@ -35,8 +27,27 @@ export const useRealtimeStatus = () => {
             duration: 3000,
           });
         }
-      }
-    });
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setIsConnected(true);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setIsConnected(false);
+          setIsReconnecting(true);
+          
+          // Show reconnecting toast
+          reconnectToastId = toast('Reconnecting...', {
+            description: 'Real-time updates may be delayed',
+            duration: Infinity, // Keep until dismissed
+            action: {
+              label: 'Retry',
+              onClick: () => {
+                window.location.reload();
+              },
+            },
+          });
+        }
+      });
 
     // Also listen to browser connectivity
     const handleOnline = () => {
@@ -62,11 +73,11 @@ export const useRealtimeStatus = () => {
       if (reconnectToastId) {
         toast.dismiss(reconnectToastId);
       }
-      unsubscribe();
+      supabase.removeChannel(subscription);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []); // Empty dependencies - stable subscription
+  }, [isConnected, supabase]);
 
   return { isConnected, isReconnecting };
 };

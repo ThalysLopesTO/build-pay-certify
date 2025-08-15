@@ -9,18 +9,8 @@ import { EmployeeProvider } from '@/contexts/EmployeeContext';
 import { GlobalToasts } from '@/components/common/GlobalToasts';
 
 // Import pages
-import PublicOrRedirect from '@/components/PublicOrRedirect';
-import LoginPage from '@/pages/LoginPage';
-import EmployeeLoginPage from '@/pages/EmployeeLoginPage';
-import AuthCallbackPage from '@/pages/AuthCallbackPage';
-import NotFoundPage from '@/pages/NotFoundPage';
+import HomePage from '@/pages/HomePage';
 import AdminDashboard from '@/pages/AdminDashboard';
-import ForemanDashboard from '@/pages/ForemanDashboard';
-import ManagementDashboard from '@/pages/ManagementDashboard';
-import EmployeeDashboard from '@/pages/EmployeeDashboard';
-import PlanPage from '@/pages/PlanPage';
-import SubscriptionPage from '@/pages/SubscriptionPage';
-import CompanyRegistration from '@/pages/CompanyRegistration';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,27 +26,9 @@ const queryClient = new QueryClient({
 const AppInner: React.FC = () => {
   return (
     <Routes>
-      {/* Public/Auth Routes */}
-      <Route path="/" element={<PublicOrRedirect />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/employee-login" element={<EmployeeLoginPage />} />
-      <Route path="/plan" element={<PlanPage />} />
-      <Route path="/subscription" element={<SubscriptionPage />} />
-      <Route path="/register-company" element={<CompanyRegistration />} />
-      <Route path="/auth/callback" element={<AuthCallbackPage />} />
-      
-      {/* Protected Dashboard Routes */}
+      <Route path="/" element={<HomePage />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/admin/*" element={<AdminDashboard />} />
-      <Route path="/foreman/dashboard" element={<ForemanDashboard />} />
-      <Route path="/foreman/*" element={<ForemanDashboard />} />
-      <Route path="/management/dashboard" element={<ManagementDashboard />} />
-      <Route path="/management/*" element={<ManagementDashboard />} />
-      <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
-      <Route path="/employee/*" element={<EmployeeDashboard />} />
-      
-      {/* Catch-all route */}
-      <Route path="*" element={<NotFoundPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

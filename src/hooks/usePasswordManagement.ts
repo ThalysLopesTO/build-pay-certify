@@ -74,26 +74,11 @@ export const useUpdateOwnPassword = () => {
 
   return useMutation({
     mutationFn: async (data: UpdateOwnPasswordData) => {
-      console.log('🔐 Starting password update...');
-      
-      // Check if user is authenticated
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        console.error('❌ User not authenticated:', userError);
-        throw new Error('User not authenticated');
-      }
-      
-      console.log('✅ User authenticated, updating password...');
       const { error } = await supabase.auth.updateUser({
         password: data.password
       });
 
-      if (error) {
-        console.error('❌ Password update failed:', error);
-        throw error;
-      }
-      
-      console.log('✅ Password updated successfully');
+      if (error) throw error;
     },
     onSuccess: () => {
       toast({
@@ -101,24 +86,11 @@ export const useUpdateOwnPassword = () => {
         description: "Your password has been updated successfully"
       });
     },
-    onError: (error: any) => {
-      console.error('❌ Password update failed:', error);
-      
-      // Handle specific error cases
-      let errorMessage = "Failed to update password. Please try again.";
-      
-      if (error?.message?.includes("same password") || 
-          error?.message?.includes("New password should be different")) {
-        errorMessage = "New password must be different from your current password.";
-      } else if (error?.message?.includes("Password should be at least")) {
-        errorMessage = "Password must be at least 6 characters long.";
-      } else if (error?.message?.includes("weak")) {
-        errorMessage = "Password is too weak. Please choose a stronger password.";
-      }
-      
+    onError: (error) => {
+      console.error('Password update error:', error);
       toast({
         title: "Update Failed",
-        description: errorMessage,
+        description: "Failed to update password. Please try again.",
         variant: "destructive"
       });
     }

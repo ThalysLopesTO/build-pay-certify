@@ -1,11 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { useRealtime } from '@/contexts/RealtimeProvider';
 import { Users, Clock, RefreshCw } from 'lucide-react';
 
 interface ActiveEmployee {
@@ -19,7 +17,6 @@ interface ActiveEmployee {
 
 const LiveActiveEmployees = () => {
   const { user } = useAuth();
-  const { subscribe } = useRealtime();
   const [activeEmployees, setActiveEmployees] = useState<ActiveEmployee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -159,30 +156,31 @@ const LiveActiveEmployees = () => {
   useEffect(() => {
     fetchActiveEmployees();
 
-    if (!user?.companyId) return;
-
-    // Set up real-time subscription for timesheets using new provider
-    const unsubscribe = subscribe({
-      key: `timesheets_company_${user.companyId}`,
-      events: [{
-        event: '*',
-        schema: 'public',
-        table: 'timesheets',
-        filter: `company_id=eq.${user.companyId}`
-      }],
-      onMessage: () => {
-        fetchActiveEmployees();
-      }
-    });
+    // Set up real-time subscription for timesheets
+    const channel = supabase
+      .channel('timesheets-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'timesheets',
+          filter: `company_id=eq.${user?.companyId}`
+        },
+        () => {
+          fetchActiveEmployees();
+        }
+      )
+      .subscribe();
 
     // Refresh every 30 seconds as backup
     const interval = setInterval(fetchActiveEmployees, 30000);
 
     return () => {
-      unsubscribe();
+      supabase.removeChannel(channel);
       clearInterval(interval);
     };
-  }, [user?.companyId]); // Stable dependencies only
+  }, [user?.companyId]);
 
   const formatClockInTime = (timeString: string) => {
     const time = new Date(timeString);

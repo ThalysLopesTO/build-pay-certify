@@ -56,13 +56,13 @@ const ForemanDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-background w-full overflow-x-hidden">
+      <div className="flex min-h-screen bg-background w-full">
         <ForemanSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         <SidebarInset className="flex flex-col flex-1 min-w-0">
           <Header />
           <main className="flex-1 flex flex-col bg-background">
             <div className="flex-1 w-full">
-              <div className="w-full p-3 md:p-6">
+              <div className="w-full p-6">
                 <div className="flex items-center mb-6 w-full">
                   <SidebarTrigger className="mr-4 text-foreground hover:bg-muted transition-colors" />
                 </div>

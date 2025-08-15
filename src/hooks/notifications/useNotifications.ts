@@ -2,13 +2,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { useRealtime } from '@/contexts/RealtimeProvider';
 import { Notification } from './types';
 import { useEffect } from 'react';
 
 export const useNotifications = () => {
   const { user } = useAuth();
-  const { subscribe } = useRealtime();
 
   const query = useQuery({
     queryKey: ['notifications', user?.id, user?.role],
@@ -37,23 +35,31 @@ export const useNotifications = () => {
       return;
     }
 
-    const unsubscribe = subscribe({
-      key: `notifications_${user.companyId}_${user.role}`,
-      events: [{
-        event: '*',
-        schema: 'public',
-        table: 'notifications',
-        filter: `company_id=eq.${user.companyId}`
-      }],
-      onMessage: (payload) => {
-        console.log('Notification realtime update:', payload);
-        // Refetch notifications when changes occur
-        query.refetch();
-      }
-    });
+    // Create unique channel name to avoid conflicts
+    const channelName = `notifications-${user.companyId}-${user.id}-${Date.now()}`;
+    
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `company_id=eq.${user.companyId}`,
+        },
+        (payload) => {
+          console.log('Notification realtime update:', payload);
+          // Refetch notifications when changes occur
+          query.refetch();
+        }
+      )
+      .subscribe();
 
-    return unsubscribe;
-  }, [user?.companyId, user?.role, user?.id]); // Stable dependencies only
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.companyId, user?.role, user?.id, query.refetch]);
 
   return query;
 };

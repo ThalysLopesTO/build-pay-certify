@@ -251,16 +251,16 @@ const LivePunchMonitor = () => {
 
     let unsubscribeFn: (() => void) | null = null;
 
-    const setupSubscription = () => {
-      unsubscribeFn = subscribe({
-        key: `timesheets_live_monitor_${user.companyId}_${selectedDate}`,
-        events: [{
+    const setupSubscription = async () => {
+      unsubscribeFn = await subscribe(
+        'timesheets_changes',
+        {
           event: '*',
           schema: 'public',
           table: 'timesheets',
-          filter: `company_id=eq.${user.companyId}`
-        }],
-        onMessage: (payload) => {
+          filter: `company_id=eq.${user.companyId}`,
+        },
+        (payload) => {
           console.log('📡 Realtime timesheet update:', payload);
           
           // Invalidate and refetch the current query
@@ -268,7 +268,7 @@ const LivePunchMonitor = () => {
             queryKey: ['live-punch-monitor', user?.companyId]
           });
         }
-      });
+      );
     };
 
     setupSubscription();
@@ -278,7 +278,7 @@ const LivePunchMonitor = () => {
         unsubscribeFn();
       }
     };
-  }, [user?.companyId, selectedDate]); // Stable dependencies only
+  }, [user?.companyId, selectedDate, subscribe, queryClient]);
   const handleEdit = (timesheet: any) => {
     setEditingTimesheet(timesheet);
   };

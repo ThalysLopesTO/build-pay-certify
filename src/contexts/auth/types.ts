@@ -24,7 +24,6 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
-  ready: boolean;
   isCompanyAdmin: boolean;
   isSuperAdmin: boolean;
   companyError: string | null;

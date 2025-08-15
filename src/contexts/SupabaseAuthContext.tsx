@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, session, loading, ready, companyError, setCompanyError } = useAuthState();
+  const { user, session, loading, companyError, setCompanyError } = useAuthState();
 
   // Check subscription status when user logs in
   useEffect(() => {
@@ -16,8 +16,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       checkSubscriptionStatus();
     }
   }, [user, session, loading]);
-
-  const navigate = useNavigate();
 
   const handleLogout = async () => {
     console.log('🔄 Logout requested...');
@@ -34,9 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
-      console.log('✅ Logout successful, navigating to home');
-      // Navigate to home page after successful logout
-      navigate('/', { replace: true });
+      console.log('✅ Logout successful');
       
     } catch (error) {
       console.error('💥 Logout handler error:', error);
@@ -52,8 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasUser: !!user,
     hasCompanyError: !!companyError,
     isAuthenticated,
-    loading,
-    ready
+    loading
   });
 
   return (
@@ -66,7 +61,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout: handleLogout,
       isAuthenticated,
       loading,
-      ready,
       isCompanyAdmin,
       isSuperAdmin,
       companyError
