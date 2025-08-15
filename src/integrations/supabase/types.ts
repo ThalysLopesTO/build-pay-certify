@@ -2365,6 +2365,14 @@ export type Database = {
           subscription_status: string
         }[]
       }
+      get_current_user_company_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_material_takeoff_notes: {
         Args: { p_company_id: string }
         Returns: {
@@ -2409,6 +2417,10 @@ export type Database = {
       }
       is_super_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_user_admin_for_company: {
+        Args: { target_company_id: string }
         Returns: boolean
       }
       reactivate_employee: {
