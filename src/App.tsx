@@ -20,6 +20,7 @@ import ManagementDashboard from '@/pages/ManagementDashboard';
 import EmployeeDashboard from '@/pages/EmployeeDashboard';
 import PlanPage from '@/pages/PlanPage';
 import SubscriptionPage from '@/pages/SubscriptionPage';
+import CompanyRegistration from '@/pages/CompanyRegistration';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +42,7 @@ const AppInner: React.FC = () => {
       <Route path="/employee-login" element={<EmployeeLoginPage />} />
       <Route path="/plan" element={<PlanPage />} />
       <Route path="/subscription" element={<SubscriptionPage />} />
+      <Route path="/register-company" element={<CompanyRegistration />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       
       {/* Protected Dashboard Routes */}
