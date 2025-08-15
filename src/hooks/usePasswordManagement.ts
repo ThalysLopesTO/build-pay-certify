@@ -101,11 +101,24 @@ export const useUpdateOwnPassword = () => {
         description: "Your password has been updated successfully"
       });
     },
-    onError: (error) => {
-      console.error('Password update error:', error);
+    onError: (error: any) => {
+      console.error('❌ Password update failed:', error);
+      
+      // Handle specific error cases
+      let errorMessage = "Failed to update password. Please try again.";
+      
+      if (error?.message?.includes("same password") || 
+          error?.message?.includes("New password should be different")) {
+        errorMessage = "New password must be different from your current password.";
+      } else if (error?.message?.includes("Password should be at least")) {
+        errorMessage = "Password must be at least 6 characters long.";
+      } else if (error?.message?.includes("weak")) {
+        errorMessage = "Password is too weak. Please choose a stronger password.";
+      }
+      
       toast({
         title: "Update Failed",
-        description: "Failed to update password. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     }
