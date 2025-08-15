@@ -175,7 +175,7 @@ const EmployeeLoginForm = () => {
             <Users className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-700">
               This login page is specifically for employees. If you're a company admin, please use the 
-              <Link to="/login" className="font-medium underline ml-1">Company Login</Link> page.
+              <Link to="/admin-login" className="font-medium underline ml-1">Company Login</Link> page.
             </AlertDescription>
           </Alert>
 

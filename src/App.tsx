@@ -11,6 +11,8 @@ import { GlobalToasts } from '@/components/common/GlobalToasts';
 // Import pages
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
+import AdminLogin from '@/pages/AdminLogin';
+import EmployeeLogin from '@/pages/EmployeeLogin';
 import AdminDashboard from '@/pages/AdminDashboard';
 import EmployeeDashboard from '@/pages/EmployeeDashboard';
 import ForemanDashboard from '@/pages/ForemanDashboard';
@@ -42,6 +44,8 @@ const AppInner: React.FC = () => {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/admin-login" element={<AdminLogin />} />
+      <Route path="/employee-login" element={<EmployeeLogin />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
       <Route path="/foreman/dashboard" element={<ForemanDashboard />} />

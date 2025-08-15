@@ -178,11 +178,18 @@ const HomePage = () => {
                   </p>
                   <div className="mt-4 pt-4 border-t border-slate-300">
                     <p className="text-xs mb-2">Already have an account?</p>
-                    <Link to="/login">
-                      <Button variant="outline" size="sm">
-                        Sign In
-                      </Button>
-                    </Link>
+                    <div className="flex gap-2">
+                      <Link to="/admin-login">
+                        <Button variant="outline" size="sm">
+                          Admin Login
+                        </Button>
+                      </Link>
+                      <Link to="/employee-login">
+                        <Button variant="outline" size="sm">
+                          Employee Login
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -254,11 +261,18 @@ const HomePage = () => {
                   </p>
                   <div className="mt-4 pt-4 border-t border-slate-300">
                     <p className="text-xs mb-2">Already have an account?</p>
-                    <Link to="/login">
-                      <Button variant="outline" size="sm">
-                        Sign In
-                      </Button>
-                    </Link>
+                    <div className="flex gap-2">
+                      <Link to="/admin-login">
+                        <Button variant="outline" size="sm">
+                          Admin Login
+                        </Button>
+                      </Link>
+                      <Link to="/employee-login">
+                        <Button variant="outline" size="sm">
+                          Employee Login
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -327,11 +341,18 @@ const HomePage = () => {
                   </p>
                   <div className="mt-4 pt-4 border-t border-slate-300">
                     <p className="text-xs mb-2">Already have an account?</p>
-                    <Link to="/login">
-                      <Button variant="outline" size="sm">
-                        Sign In
-                      </Button>
-                    </Link>
+                    <div className="flex gap-2">
+                      <Link to="/admin-login">
+                        <Button variant="outline" size="sm">
+                          Admin Login
+                        </Button>
+                      </Link>
+                      <Link to="/employee-login">
+                        <Button variant="outline" size="sm">
+                          Employee Login
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
