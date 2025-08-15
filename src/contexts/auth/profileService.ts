@@ -13,7 +13,7 @@ export const fetchUserProfile = async (userId: string) => {
         companies (*)
       `)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     console.log('📋 Profile query result:', { profileData, profileError });
 
