@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/SupabaseAuthContext';
 import { RealtimeProvider } from '@/contexts/RealtimeProvider';
 import { EmployeeProvider } from '@/contexts/EmployeeContext';
 import { GlobalToasts } from '@/components/common/GlobalToasts';
+import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 
 // Import pages
 import HomePage from '@/pages/HomePage';
@@ -41,27 +42,29 @@ const queryClient = new QueryClient({
 
 const AppInner: React.FC = () => {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/admin-login" element={<AdminLogin />} />
-      <Route path="/employee-login" element={<EmployeeLogin />} />
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
-      <Route path="/foreman/dashboard" element={<ForemanDashboard />} />
-      <Route path="/management/dashboard" element={<ManagementDashboard />} />
-      <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
-      <Route path="/super-admin/login" element={<SuperAdminLogin />} />
-      <Route path="/company/registration" element={<CompanyRegistration />} />
-      <Route path="/company/handbook" element={<CompanyHandbook />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/license-expired" element={<LicenseExpired />} />
-      <Route path="/invoice-preview" element={<InvoicePreview />} />
-      <Route path="/admin/material-takeoff" element={<MaterialTakeoffPage />} />
-      <Route path="/admin/inventory" element={<InventoryIndex />} />
-      <Route path="/404" element={<NotFound />} />
-      <Route path="*" element={<Navigate to="/404" replace />} />
-    </Routes>
+    <RoleBasedRedirect>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/employee-login" element={<EmployeeLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+        <Route path="/foreman/dashboard" element={<ForemanDashboard />} />
+        <Route path="/management/dashboard" element={<ManagementDashboard />} />
+        <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
+        <Route path="/super-admin/login" element={<SuperAdminLogin />} />
+        <Route path="/company/registration" element={<CompanyRegistration />} />
+        <Route path="/company/handbook" element={<CompanyHandbook />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/license-expired" element={<LicenseExpired />} />
+        <Route path="/invoice-preview" element={<InvoicePreview />} />
+        <Route path="/admin/material-takeoff" element={<MaterialTakeoffPage />} />
+        <Route path="/admin/inventory" element={<InventoryIndex />} />
+        <Route path="/404" element={<NotFound />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
+      </Routes>
+    </RoleBasedRedirect>
   );
 };
 
