@@ -29,7 +29,49 @@ serve(async (req) => {
       }
     )
 
-    // Get the request data
+    // Create client for getting auth header for permission checking
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    )
+
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      console.error('Missing authorization header')
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Authorization required' 
+        }),
+        {
+          headers: corsHeaders,
+          status: 401,
+        },
+      )
+    }
+
+    // Verify the JWT token and get user
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
+    
+    if (authError || !user) {
+      console.error('Invalid authorization token:', authError)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Invalid authorization token' 
+        }),
+        {
+          headers: corsHeaders,
+          status: 401,
+        },
+      )
+    }
+
+    console.log('User authenticated:', user.email)
+
+    // Get the request data first
     let employeeData
     try {
       const requestBody = await req.json()
@@ -61,6 +103,60 @@ serve(async (req) => {
         },
       )
     }
+
+    // Check user's role and company
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('user_profiles')
+      .select('role, company_id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (profileError || !profile) {
+      console.error('Failed to get user profile:', profileError)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'User profile not found' 
+        }),
+        {
+          headers: corsHeaders,
+          status: 403,
+        },
+      )
+    }
+
+    // Check if user has permission to create employees (admin, management, or foreman)
+    const allowedRoles = ['admin', 'super_admin', 'management', 'foreman']
+    if (!allowedRoles.includes(profile.role)) {
+      console.error('User does not have permission to create employees:', profile.role)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Insufficient permissions. Only admins, management, and foremen can create employees.' 
+        }),
+        {
+          headers: corsHeaders,
+          status: 403,
+        },
+      )
+    }
+
+    // Ensure the employee is being created for the same company
+    if (employeeData.companyId !== profile.company_id) {
+      console.error('User attempting to create employee for different company')
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'You can only create employees for your own company' 
+        }),
+        {
+          headers: corsHeaders,
+          status: 403,
+        },
+      )
+    }
+
+    console.log(`User ${user.email} (${profile.role}) creating employee for company ${profile.company_id}`)
 
       console.log('Creating employee with data:', { 
         email: employeeData.email, 

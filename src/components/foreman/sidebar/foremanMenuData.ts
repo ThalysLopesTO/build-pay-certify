@@ -15,7 +15,8 @@ import {
   FileBarChart,
   Shield,
   Home,
-  ClipboardList
+  ClipboardList,
+  UserPlus
 } from 'lucide-react';
 
 export const foremanMenuItems = [
@@ -118,6 +119,11 @@ export const groupedForemanItems = {
       title: 'Employees',
       icon: Users,
       id: 'employees',
+    },
+    {
+      title: 'Employee Registration',
+      icon: UserPlus,
+      id: 'employee-registration',
     },
     {
       title: 'Live Punch Monitor',

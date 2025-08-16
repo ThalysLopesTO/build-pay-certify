@@ -9,6 +9,7 @@ import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
 import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
 import EmployeeReports from '../components/foreman/EmployeeReports';
 import JobsiteProgress from '../components/foreman/JobsiteProgress';
+import EmployeeRegistration from '../components/admin/EmployeeRegistration';
 import LivePunchMonitor from '../components/admin/LivePunchMonitor';
 import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
@@ -37,6 +38,8 @@ const ForemanDashboard = () => {
         return <EquipmentManagement />;
       case 'employees':
         return <EmployeeDirectory />;
+      case 'employee-registration':
+        return <EmployeeRegistration />;
       case 'live-punch-monitor':
         return <LivePunchMonitor />;
       case 'daily-reports':
