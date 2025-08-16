@@ -14,6 +14,7 @@ import { useJobsites } from '@/hooks/useJobsites';
 import TodayPunchesCard from './TodayPunchesCard';
 import ForemanJobProgressCard from './ForemanJobProgressCard';
 import { DashboardCard } from '@/components/common/DashboardCard';
+import WeatherCard from '../../admin/dashboard/WeatherCard';
 
 
 interface TimesheetSummary {
@@ -140,12 +141,7 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
       statusText="Ready to Work"
     />
   </div>
-  <WeeklyOverviewCard
-    pending={timesheetSummary?.pending || 0}
-    approved={timesheetSummary?.approved || 0}
-    total={timesheetSummary?.total || 0}
-    theme="green"
-  />
+  <WeatherCard variant="green" locationStrategy="jobsite-first" />
 </div>
 
 {/* Quick Actions */}

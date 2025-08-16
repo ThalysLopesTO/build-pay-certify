@@ -16,7 +16,15 @@ interface WeatherData {
   updated_at: string;
 }
 
-const WeatherCard = () => {
+interface WeatherCardProps {
+  variant?: 'orange' | 'green';
+  locationStrategy?: 'company-first' | 'jobsite-first';
+}
+
+const WeatherCard: React.FC<WeatherCardProps> = ({ 
+  variant = 'orange', 
+  locationStrategy = 'jobsite-first' 
+}) => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +43,7 @@ const WeatherCard = () => {
   };
 
   const getLocationData = async () => {
-    // Priority 1: Most recent active jobsite
+    // Try to get jobsite location first for both strategies
     try {
       const { data: jobsites } = await supabase
         .from('jobsites')
@@ -59,7 +67,7 @@ const WeatherCard = () => {
       console.error('Error fetching jobsite location:', err);
     }
 
-    // Priority 3: Default to Toronto
+    // Default to Toronto
     return {
       lat: 43.6532,
       lng: -79.3832,
@@ -114,10 +122,14 @@ const WeatherCard = () => {
     return 'Today';
   };
 
+  const gradientClass = variant === 'green' 
+    ? 'from-green-500 to-green-600' 
+    : 'from-orange-500 to-orange-600';
+
   if (loading) {
     return (
       <div className="lg:h-full">
-        <Card className="shadow-lg border-0 overflow-hidden bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl h-full">
+        <Card className={`shadow-lg border-0 overflow-hidden bg-gradient-to-br ${gradientClass} text-white rounded-2xl h-full`}>
           <CardContent className="p-6 h-full flex flex-col">
             <div className="space-y-5 flex-1">
               <div className="flex items-center space-x-3">
@@ -148,7 +160,7 @@ const WeatherCard = () => {
   if (error) {
     return (
       <div className="lg:h-full">
-        <Card className="shadow-lg border-0 overflow-hidden bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl h-full">
+        <Card className={`shadow-lg border-0 overflow-hidden bg-gradient-to-br ${gradientClass} text-white rounded-2xl h-full`}>
           <CardContent className="p-6 h-full flex flex-col justify-center items-center">
             <Eye className="h-8 w-8 opacity-50 mb-4" />
             <p className="text-sm opacity-90 mb-4 text-center">Can't load weather</p>
@@ -169,7 +181,7 @@ const WeatherCard = () => {
   if (!weatherData) {
     return (
       <div className="lg:h-full">
-        <Card className="shadow-lg border-0 overflow-hidden bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl h-full">
+        <Card className={`shadow-lg border-0 overflow-hidden bg-gradient-to-br ${gradientClass} text-white rounded-2xl h-full`}>
           <CardContent className="p-6 h-full flex flex-col justify-center items-center">
             <Settings className="h-8 w-8 opacity-50 mb-4" />
             <p className="text-sm opacity-90 mb-4 text-center">Set a location in Company Settings</p>
@@ -188,7 +200,7 @@ const WeatherCard = () => {
 
   return (
     <div className="lg:h-full">
-      <Card className="shadow-lg border-0 overflow-hidden bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl h-full">
+      <Card className={`shadow-lg border-0 overflow-hidden bg-gradient-to-br ${gradientClass} text-white rounded-2xl h-full`}>
         <CardContent className="p-6 h-full flex flex-col">
           <div className="space-y-5 flex-1">
             <div className="flex items-center space-x-3">
@@ -220,14 +232,25 @@ const WeatherCard = () => {
               <div className="text-xs opacity-75">
                 {weatherData.location} • Updated {formatTimeAgo(weatherData.updated_at)}
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="w-full justify-between text-white hover:bg-white/10 border-0 text-xs"
-              >
-                Change Location
-                <Settings className="h-3 w-3" />
-              </Button>
+              {locationStrategy === 'company-first' ? (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full justify-between text-white hover:bg-white/10 border-0 text-xs"
+                >
+                  Change Location
+                  <Settings className="h-3 w-3" />
+                </Button>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full justify-between text-white hover:bg-white/10 border-0 text-xs"
+                >
+                  View Jobsites
+                  <Settings className="h-3 w-3" />
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
