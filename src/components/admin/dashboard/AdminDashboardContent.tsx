@@ -29,6 +29,7 @@ import LicenseWarningBanner from '../../common/LicenseWarningBanner';
 import EmployeeLimitCard from './EmployeeLimitCard';
 import ProjectsProgressOverview from './ProjectsProgressOverview';
 import LiveActiveEmployees from './LiveActiveEmployees';
+import WeatherCard from './WeatherCard';
 interface AdminDashboardContentProps {
   setActiveTab: (tab: string) => void;
 }
@@ -183,60 +184,8 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
           </Card>
         </div>
 
-        {/* This Week's Overview Card (right) */}
-        <div className="lg:h-full">
-          <Card className="shadow-lg border-0 overflow-hidden bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl h-full">
-            <CardContent className="p-6 h-full flex flex-col">
-              <div className="space-y-5 flex-1">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-white/20 rounded-full">
-                    <CalendarDays className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium opacity-90">This Week's Overview</h3>
-                  </div>
-                </div>
-
-                <div className="space-y-4 flex-1">
-                  {/* Pending Timesheets */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Pending Timesheets:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{stats?.timesheetsCount || 0}</span>
-                      <span className="px-2 py-1 rounded-full bg-white/15 text-xs">Awaiting approval</span>
-                    </div>
-                  </div>
-
-                  {/* Open Reports */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Open Reports:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">0</span>
-                      <span className="px-2 py-1 rounded-full bg-white/15 text-xs">Attention reports</span>
-                    </div>
-                  </div>
-
-                  {/* This Week Hours */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Total Hours This Week:</span>
-                    <span className="font-semibold">{stats?.totalHoursThisWeek || 0}</span>
-                  </div>
-                </div>
-
-                {/* Footer Link */}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-between text-white hover:bg-white/10 border-0"
-                  onClick={() => setActiveTab('timesheets')}
-                >
-                  Go to Approvals
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Weather Today Card (right) */}
+        <WeatherCard />
       </div>
 
       {/* Quick Actions Grid */}
