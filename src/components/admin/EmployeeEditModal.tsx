@@ -52,6 +52,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   onSuccess
 }) => {
   const { updateEmployee } = useEmployees();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   
   const form = useForm<EditEmployeeFormData>({
     resolver: zodResolver(editEmployeeSchema),
@@ -83,13 +84,9 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   }, [employee, form]);
 
   const handleSubmit = async (data: EditEmployeeFormData) => {
-    console.log('handleSubmit called with data:', data);
-    console.log('employee object:', employee);
-    if (!employee) {
-      console.log('No employee found, returning early');
-      return;
-    }
-
+    if (isSubmitting || !employee) return;
+    
+    setIsSubmitting(true);
     try {
       await updateEmployee(employee.id, {
         first_name: data.firstName,
@@ -105,8 +102,9 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
       onSuccess();
       onClose();
     } catch (error) {
-      // Error handling is managed by the context
       console.error('Error updating employee:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -265,9 +263,10 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
               </Button>
               <Button 
                 type="submit" 
-                className="flex-1 bg-orange-600 hover:bg-orange-700"
+                disabled={isSubmitting}
+                className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:opacity-50"
               >
-                Update Employee
+                {isSubmitting ? 'Updating...' : 'Update Employee'}
               </Button>
             </div>
           </form>
