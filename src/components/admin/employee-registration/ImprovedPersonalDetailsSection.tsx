@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmployeeFormData } from './schemas';
 import PhotoUploadField from './PhotoUploadField';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface ImprovedPersonalDetailsSectionProps {
   form: UseFormReturn<EmployeeFormData>;
@@ -15,6 +16,27 @@ interface ImprovedPersonalDetailsSectionProps {
 }
 
 const ImprovedPersonalDetailsSection: React.FC<ImprovedPersonalDetailsSectionProps> = ({ form, formatCurrency }) => {
+  const { user } = useAuth();
+
+  // Filter available roles based on current user's role
+  const getAvailableRoles = () => {
+    if (!user?.role) return [];
+    
+    switch (user.role) {
+      case 'foreman':
+        return ['employee'];
+      case 'management':
+        return ['employee', 'foreman'];
+      case 'admin':
+      case 'super_admin':
+        return ['employee', 'foreman', 'management', 'admin'];
+      default:
+        return [];
+    }
+  };
+
+  const availableRoles = getAvailableRoles();
+
   return (
     <div className="space-y-6">
       {/* Personal Information Card */}
@@ -205,15 +227,23 @@ const ImprovedPersonalDetailsSection: React.FC<ImprovedPersonalDetailsSectionPro
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="employee">Employee</SelectItem>
-                      <SelectItem value="foreman">Foreman</SelectItem>
-                      <SelectItem value="management">Management</SelectItem>
-                      <SelectItem value="admin">
-                        <div className="flex items-center space-x-2">
-                          <Shield className="h-3 w-3" />
-                          <span>Admin</span>
-                        </div>
-                      </SelectItem>
+                      {availableRoles.includes('employee') && (
+                        <SelectItem value="employee">Employee</SelectItem>
+                      )}
+                      {availableRoles.includes('foreman') && (
+                        <SelectItem value="foreman">Foreman</SelectItem>
+                      )}
+                      {availableRoles.includes('management') && (
+                        <SelectItem value="management">Management</SelectItem>
+                      )}
+                      {availableRoles.includes('admin') && (
+                        <SelectItem value="admin">
+                          <div className="flex items-center space-x-2">
+                            <Shield className="h-3 w-3" />
+                            <span>Admin</span>
+                          </div>
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />

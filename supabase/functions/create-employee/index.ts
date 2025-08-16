@@ -141,6 +141,35 @@ serve(async (req) => {
       )
     }
 
+    // Validate role assignment permissions
+    const isValidRoleAssignment = () => {
+      switch (profile.role) {
+        case 'foreman':
+          return employeeData.role === 'employee';
+        case 'management':
+          return ['employee', 'foreman'].includes(employeeData.role);
+        case 'admin':
+        case 'super_admin':
+          return ['employee', 'foreman', 'management', 'admin'].includes(employeeData.role);
+        default:
+          return false;
+      }
+    };
+
+    if (!isValidRoleAssignment()) {
+      console.error(`User with role ${profile.role} cannot assign role ${employeeData.role}`)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: `You don't have permission to assign the role "${employeeData.role}". Your role (${profile.role}) can only assign specific roles.` 
+        }),
+        {
+          headers: corsHeaders,
+          status: 403,
+        },
+      )
+    }
+
     // Ensure the employee is being created for the same company
     if (employeeData.companyId !== profile.company_id) {
       console.error('User attempting to create employee for different company')
