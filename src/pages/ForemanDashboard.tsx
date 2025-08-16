@@ -15,7 +15,7 @@ import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import DailyReportsManagement from '../components/admin/DailyReportsManagement';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import InventoryManagement from '../components/admin/InventoryManagement';
+import EquipmentManagement from '../components/admin/inventory/EquipmentManagement';
 import { useParams } from 'react-router-dom';
 
 const ForemanDashboard = () => {
@@ -34,7 +34,7 @@ const ForemanDashboard = () => {
       case 'my-requests':
         return <MyMaterialRequests initialOpenRequestId={preopenRequestId} />;
       case 'inventory':
-        return <InventoryManagement />;
+        return <EquipmentManagement />;
       case 'employees':
         return <EmployeeDirectory />;
       case 'live-punch-monitor':

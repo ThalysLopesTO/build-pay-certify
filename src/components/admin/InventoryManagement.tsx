@@ -47,6 +47,7 @@ const InventoryManagement = () => {
   const [jobsiteFilter, setJobsiteFilter] = useState<string>('all');
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const canManageInventory = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'foreman';
 
   // Filter inventory based on search term and jobsite
   const filteredInventory = inventory.filter((item) => {
@@ -109,7 +110,7 @@ const InventoryManagement = () => {
                 Manage equipment inventory across all jobsites
               </CardDescription>
             </div>
-            {isAdmin && (
+            {canManageInventory && (
               <Button onClick={() => setIsFormOpen(true)} className="bg-orange-600 hover:bg-orange-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Equipment
@@ -156,13 +157,13 @@ const InventoryManagement = () => {
                   <TableHead>Jobsite</TableHead>
                   <TableHead>Start Date</TableHead>
                   <TableHead>Return Date</TableHead>
-                  {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                  {canManageInventory && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredInventory.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={canManageInventory ? 7 : 6} className="text-center py-8 text-muted-foreground">
                       {searchTerm || jobsiteFilter !== 'all' 
                         ? 'No inventory items match your filters'
                         : 'No inventory items found. Add some equipment to get started.'
@@ -180,7 +181,7 @@ const InventoryManagement = () => {
                       <TableCell>
                         {item.return_date ? format(new Date(item.return_date), 'MMM dd, yyyy') : 'Not returned'}
                       </TableCell>
-                      {isAdmin && (
+                      {canManageInventory && (
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
                             <Button
@@ -191,15 +192,17 @@ const InventoryManagement = () => {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setDeletingItem(item)}
-                              disabled={isDeleting}
-                              className="text-red-600 border-red-200 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {isAdmin && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setDeletingItem(item)}
+                                disabled={isDeleting}
+                                className="text-red-600 border-red-200 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       )}
