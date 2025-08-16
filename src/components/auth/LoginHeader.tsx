@@ -8,7 +8,7 @@ const LoginHeader = () => {
       <img 
         src="/lovable-uploads/04cf020d-b64e-49b8-ae51-022a05b6cad8.png" 
         alt="StackBuild" 
-        className="h-32 w-auto mx-auto mb-4"
+        className="h-40 w-auto mx-auto mb-4"
       />
       
       <h1 className="text-3xl font-bold text-slate-800 mb-2">Choose your dashboard</h1>
