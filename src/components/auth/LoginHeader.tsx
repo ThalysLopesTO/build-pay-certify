@@ -6,7 +6,7 @@ const LoginHeader = () => {
     <div className="text-center mb-8">
       {/* StackBuild Logo matching Company Login style */}
       <img 
-        src="/lovable-uploads/2b4f2222-3401-4d41-ae19-77c8f77362b6.png" 
+        src="/lovable-uploads/04cf020d-b64e-49b8-ae51-022a05b6cad8.png" 
         alt="StackBuild" 
         className="h-12 w-auto mx-auto mb-4"
       />
