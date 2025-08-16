@@ -305,7 +305,7 @@ serve(async (req) => {
     })
 
     // Use UPSERT to handle the case where trigger already created a basic profile
-    const { data: profileData_result, error: profileError } = await supabaseAdmin
+    const { data: profileData_result, error: upsertProfileError } = await supabaseAdmin
       .from('user_profiles')
       .upsert(profileData, { 
         onConflict: 'user_id',
@@ -313,8 +313,8 @@ serve(async (req) => {
       })
       .select()
 
-    if (profileError) {
-      console.error('Error creating/updating user profile:', profileError)
+    if (upsertProfileError) {
+      console.error('Error creating/updating user profile:', upsertProfileError)
       console.error('Profile data that failed:', JSON.stringify(profileData, null, 2))
       
       // Try to delete the auth user if profile creation fails
@@ -328,8 +328,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: `Failed to create/update user profile: ${profileError.message}`,
-          details: profileError
+          error: `Failed to create/update user profile: ${upsertProfileError.message}`,
+          details: upsertProfileError
         }),
         {
           headers: corsHeaders,
