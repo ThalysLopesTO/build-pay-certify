@@ -15,7 +15,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Employee creation request received')
+    console.log('🚀 Employee creation request received')
+    console.log('📋 Request method:', req.method)
+    console.log('📍 Request URL:', req.url)
 
     // Create a Supabase client with service role privileges
     const supabaseAdmin = createClient(
@@ -69,16 +71,18 @@ serve(async (req) => {
       )
     }
 
-    console.log('User authenticated:', user.email)
+    console.log('✅ User authenticated:', user.email)
 
     // Get the request data first
     let employeeData
     try {
       const requestBody = await req.json()
+      console.log('📦 Request body keys:', Object.keys(requestBody))
       employeeData = requestBody.employeeData
       
       if (!employeeData) {
-        console.error('Missing employeeData in request body')
+        console.error('❌ Missing employeeData in request body')
+        console.log('📋 Available keys in request:', Object.keys(requestBody))
         return new Response(
           JSON.stringify({ 
             success: false,
@@ -90,8 +94,16 @@ serve(async (req) => {
           },
         )
       }
+      
+      console.log('📊 Employee data received:', {
+        email: employeeData.email,
+        role: employeeData.role,
+        companyId: employeeData.companyId,
+        hasPhoto: !!employeeData.photoUrl,
+        hasCertificates: employeeData.certificates?.length > 0
+      });
     } catch (parseError) {
-      console.error('Failed to parse request body:', parseError)
+      console.error('❌ Failed to parse request body:', parseError)
       return new Response(
         JSON.stringify({ 
           success: false,
@@ -185,21 +197,21 @@ serve(async (req) => {
       )
     }
 
-    console.log(`User ${user.email} (${profile.role}) creating employee for company ${profile.company_id}`)
+    console.log(`✅ User ${user.email} (${profile.role}) creating employee for company ${profile.company_id}`)
 
-      console.log('Creating employee with data:', { 
-        email: employeeData.email, 
-        role: employeeData.role, 
-        companyId: employeeData.companyId,
-        hasPhoto: !!employeeData.photoUrl,
-        photoUrl: employeeData.photoUrl,
-        hourlyRate: employeeData.hourlyRate,
-        trade: employeeData.trade,
-        position: employeeData.position,
-        phoneNumber: employeeData.phoneNumber,
-        firstName: employeeData.firstName,
-        lastName: employeeData.lastName
-      })
+    console.log('👤 Creating employee with data:', { 
+      email: employeeData.email, 
+      role: employeeData.role, 
+      companyId: employeeData.companyId,
+      hasPhoto: !!employeeData.photoUrl,
+      photoUrl: employeeData.photoUrl,
+      hourlyRate: employeeData.hourlyRate,
+      trade: employeeData.trade,
+      position: employeeData.position,
+      phoneNumber: employeeData.phoneNumber,
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName
+    })
 
     // First, check if the company can add more employees
     const { data: canAdd, error: checkError } = await supabaseAdmin
@@ -299,7 +311,8 @@ serve(async (req) => {
       )
     }
 
-    console.log('User created successfully:', authData.user?.email)
+    console.log('✅ User created successfully:', authData.user?.email)
+    console.log('🆔 New user ID:', authData.user?.id)
 
     // Set default tax rates for payroll employees
     const defaultRates = employeeData.workerType === 'employee' ? {
@@ -367,8 +380,8 @@ serve(async (req) => {
       )
     }
 
-    console.log('Profile created/updated successfully:', profileData_result)
-    console.log('User profile processed successfully for company:', employeeData.companyId)
+    console.log('✅ Profile created/updated successfully:', profileData_result?.[0] || 'No data returned')
+    console.log('🏢 User profile processed successfully for company:', employeeData.companyId)
 
     // Create certificates if provided
     if (employeeData.certificates && employeeData.certificates.length > 0) {
@@ -421,6 +434,8 @@ serve(async (req) => {
       console.log('Certificates processed successfully')
     }
 
+    console.log('🎉 Employee creation completed successfully!')
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -434,7 +449,13 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Unexpected error in create-employee function:', error)
+    console.error('💥 Unexpected error in create-employee function:', error)
+    console.error('🔍 Error details:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack?.substring(0, 500)
+    })
+    
     return new Response(
       JSON.stringify({ 
         success: false,

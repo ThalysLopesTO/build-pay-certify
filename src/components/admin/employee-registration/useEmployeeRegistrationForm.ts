@@ -69,6 +69,15 @@ export const useEmployeeRegistrationForm = () => {
       return;
     }
 
+    console.log('🚀 Starting employee registration process...');
+    console.log('📊 Employee data:', { 
+      email: data.email, 
+      role: data.role, 
+      companyId: user?.companyId,
+      hasPhoto: !!data.photo,
+      hasCertificates: data.certificates.length > 0
+    });
+
     // Reset any previous states
     resetLoadingState();
     
@@ -78,15 +87,16 @@ export const useEmployeeRegistrationForm = () => {
     // Create abort controller for this request
     abortControllerRef.current = new AbortController();
     
-    // Set timeout for the entire operation (60 seconds)
+    // Set timeout for the entire operation (90 seconds for foremen who might have slower connections)
     timeoutRef.current = setTimeout(() => {
+      console.error('⏰ Registration timeout - process took too long');
       resetLoadingState();
       toast({
         title: "Registration Timeout",
-        description: "The registration process is taking too long. Please try again or contact support if the issue persists.",
+        description: "The registration process is taking too long. Please try again. If the problem persists, try creating the employee without a photo first.",
         variant: "destructive",
       });
-    }, 60000);
+    }, 90000);
     
     try {
       console.log('Submitting employee registration:', { 
@@ -102,29 +112,50 @@ export const useEmployeeRegistrationForm = () => {
       // Upload photo if provided
       if (data.photo) {
         setLoadingStep('Uploading employee photo...');
-        console.log('Uploading employee photo...');
-        const fileExtension = data.photo.name.split('.').pop();
-        const fileName = `${crypto.randomUUID()}.${fileExtension}`;
+        console.log('📸 Uploading employee photo...', { 
+          fileName: data.photo.name, 
+          fileSize: data.photo.size,
+          fileType: data.photo.type 
+        });
         
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('employee-photos')
-          .upload(fileName, data.photo, {
-            cacheControl: '3600',
-            upsert: false
-          });
+        try {
+          const fileExtension = data.photo.name.split('.').pop();
+          const fileName = `${crypto.randomUUID()}.${fileExtension}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('employee-photos')
+            .upload(fileName, data.photo, {
+              cacheControl: '3600',
+              upsert: false
+            });
 
-        if (uploadError) {
-          console.error('Photo upload error:', uploadError);
-          throw new Error('Failed to upload employee photo');
+          if (uploadError) {
+            console.error('❌ Photo upload error:', uploadError);
+            
+            // Provide fallback option for photo upload failures
+            const shouldContinue = confirm(
+              'Failed to upload employee photo. Would you like to continue creating the employee without a photo? You can add the photo later.'
+            );
+            
+            if (!shouldContinue) {
+              throw new Error('Photo upload failed and user chose not to continue');
+            }
+            
+            console.log('⚠️ Continuing without photo after user confirmation');
+            photoUrl = null;
+          } else {
+            // Get public URL
+            const { data: publicUrlData } = supabase.storage
+              .from('employee-photos')
+              .getPublicUrl(fileName);
+            
+            photoUrl = publicUrlData.publicUrl;
+            console.log('✅ Photo uploaded successfully:', photoUrl);
+          }
+        } catch (photoError) {
+          console.error('❌ Critical photo upload error:', photoError);
+          throw photoError;
         }
-
-        // Get public URL
-        const { data: publicUrlData } = supabase.storage
-          .from('employee-photos')
-          .getPublicUrl(fileName);
-        
-        photoUrl = publicUrlData.publicUrl;
-        console.log('Photo uploaded successfully:', photoUrl);
       }
 
       // Upload certificate files if provided
@@ -169,74 +200,119 @@ export const useEmployeeRegistrationForm = () => {
 
       // Call the Edge Function to create the employee
       setLoadingStep('Creating employee account...');
-      console.log('Calling create-employee edge function...');
+      console.log('🔧 Calling create-employee edge function...');
       
-      const { data: result, error } = await supabase.functions.invoke('create-employee', {
-        body: {
-          employeeData: {
-            companyId: user.companyId,
-            email: data.email,
-            password: data.password,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            address: data.address,
-            phoneNumber: data.phoneNumber,
-            role: data.role,
-            trade: data.trade,
-            position: data.position,
-            hourlyRate: data.hourlyRate,
-            workerType: data.workerType,
-            photoUrl: photoUrl,
-            certificates: certificateUrls,
-          }
-        },
+      const employeePayload = {
+        companyId: user.companyId,
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        address: data.address,
+        phoneNumber: data.phoneNumber,
+        role: data.role,
+        trade: data.trade,
+        position: data.position,
+        hourlyRate: data.hourlyRate,
+        workerType: data.workerType,
+        photoUrl: photoUrl,
+        certificates: certificateUrls,
+      };
+      
+      console.log('📤 Sending payload to edge function:', {
+        ...employeePayload,
+        password: '[REDACTED]',
+        certificatesCount: certificateUrls.length
       });
       
-      console.log('Edge function response:', { result, error });
+      const { data: result, error } = await supabase.functions.invoke('create-employee', {
+        body: { employeeData: employeePayload }
+      });
+      
+      console.log('📥 Edge function response received:', { 
+        hasResult: !!result, 
+        hasError: !!error,
+        resultSuccess: result?.success,
+        errorMessage: error?.message 
+      });
 
       // Check if there was a network/connection error
       if (error) {
-        console.error('Edge Function connection error:', error);
+        console.error('❌ Edge Function connection error:', error);
+        console.error('🔍 Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack?.substring(0, 500)
+        });
         throw new Error(`Failed to connect to employee registration service: ${error.message}`);
       }
 
+      // Check if we received a result
+      if (!result) {
+        console.error('❌ No result received from edge function');
+        throw new Error('No response received from employee registration service');
+      }
+
+      console.log('✅ Edge function result details:', {
+        success: result.success,
+        hasUser: !!result.user,
+        userId: result.user?.id,
+        message: result.message,
+        error: result.error
+      });
+
       // Check if the result contains an error (from the edge function)
-      if (result && !result.success) {
-        console.error('Employee registration error from edge function:', result.error);
+      if (!result.success) {
+        console.error('❌ Employee registration error from edge function:', result.error);
         throw new Error(result.error || 'Employee registration failed');
       }
 
-      // Check if the operation was successful
-      if (!result || !result.success) {
-        console.error('Employee registration failed - no success response:', result);
-        throw new Error('Employee registration failed - please try again');
-      }
-
-      console.log('Employee registered successfully:', result);
+      console.log('🎉 Employee registered successfully in edge function!');
 
       // Fetch the actual employee profile and add to context
       if (result.user) {
         setLoadingStep('Finalizing employee setup...');
-        // Add a small delay to ensure database consistency
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('👤 Fetching employee profile for user:', result.user.id);
         
-        const { data: employeeProfile, error: fetchError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('user_id', result.user.id)
-          .maybeSingle();
+        // Add a longer delay to ensure database consistency (especially for foremen on slower connections)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        try {
+          const { data: employeeProfile, error: fetchError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', result.user.id)
+            .maybeSingle();
 
-        if (!fetchError && employeeProfile) {
-          console.log('Successfully fetched employee profile:', employeeProfile);
-          // Add the real employee data to context
-          await createEmployee(employeeProfile);
-        } else {
-          console.error('Error fetching employee profile:', fetchError);
-          // Refresh the employee list as fallback
+          if (!fetchError && employeeProfile) {
+            console.log('✅ Successfully fetched employee profile:', {
+              id: employeeProfile.id,
+              email: employeeProfile.user_id,
+              name: `${employeeProfile.first_name} ${employeeProfile.last_name}`,
+              role: employeeProfile.role
+            });
+            
+            // Add the real employee data to context
+            await createEmployee(employeeProfile);
+            console.log('✅ Employee added to context successfully');
+          } else {
+            console.error('⚠️ Error fetching employee profile:', fetchError);
+            console.log('🔄 Falling back to refreshing entire employee list...');
+            // Refresh the employee list as fallback
+            await refreshEmployees();
+          }
+        } catch (profileError) {
+          console.error('❌ Critical error in profile fetch:', profileError);
+          console.log('🔄 Falling back to refreshing entire employee list...');
           await refreshEmployees();
         }
+      } else {
+        console.warn('⚠️ No user data in successful result - refreshing employee list');
+        await refreshEmployees();
       }
 
+      console.log('🎊 Registration process completed successfully!');
+      
       toast({
         title: "Employee Registered Successfully",
         description: `${data.firstName} ${data.lastName} has been added to the system. They will be required to change their password on first login.`,
@@ -244,26 +320,47 @@ export const useEmployeeRegistrationForm = () => {
 
       // Reset form
       form.reset();
+      console.log('📝 Form reset after successful registration');
       
     } catch (error: any) {
-      console.error('Employee registration error:', error);
+      console.error('💥 Employee registration error:', error);
+      console.error('🔍 Error context:', {
+        loadingStep,
+        errorName: error.name,
+        errorMessage: error.message,
+        errorStack: error.stack?.substring(0, 500)
+      });
       
       // More specific error messages based on the loading step
+      let errorTitle = "Registration Failed";
       let errorDescription = "Failed to register employee";
+      
       if (loadingStep.includes('photo')) {
-        errorDescription = "Failed to upload employee photo. Please check the file size and format.";
+        errorTitle = "Photo Upload Failed";
+        errorDescription = "Failed to upload employee photo. Please check the file size (max 5MB) and format (JPG, PNG).";
       } else if (loadingStep.includes('certificate')) {
+        errorTitle = "Certificate Upload Failed";
         errorDescription = "Failed to upload certificate files. Please check the file sizes and formats.";
       } else if (loadingStep.includes('account')) {
+        errorTitle = "Account Creation Failed";
         errorDescription = "Failed to create employee account. Please verify the email is not already in use.";
+      } else if (loadingStep.includes('setup')) {
+        errorTitle = "Setup Failed";
+        errorDescription = "Employee account was created but final setup failed. Please check the employee list.";
+      }
+      
+      // Add retry suggestion for foremen
+      if (user?.role === 'foreman') {
+        errorDescription += " If this keeps happening, try creating the employee without a photo first.";
       }
       
       toast({
-        title: "Registration Failed",
+        title: errorTitle,
         description: error.message || errorDescription,
         variant: "destructive",
       });
     } finally {
+      console.log('🧹 Cleaning up registration state...');
       resetLoadingState();
     }
   };

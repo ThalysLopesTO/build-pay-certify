@@ -86,7 +86,13 @@ const ImprovedEmployeeRegistration = () => {
               <div className="flex justify-between items-center pt-6 border-t bg-muted/20 -mx-6 px-6 pb-0">
                 <div className="flex items-center text-sm text-muted-foreground">
                   <AlertTriangle className="h-4 w-4 mr-2" />
-                  <span>Employee will receive login credentials via email</span>
+                  <span>
+                    {loading ? (
+                      loadingStep || 'Processing registration...'
+                    ) : (
+                      'Employee will receive login credentials via email'
+                    )}
+                  </span>
                 </div>
                 
                 <div className="flex space-x-3">
@@ -112,13 +118,13 @@ const ImprovedEmployeeRegistration = () => {
                   {employeeLimit && employeeLimit.currentCount < employeeLimit.employeeLimit ? (
                     <Button 
                       type="submit" 
-                      className="min-w-[180px]"
+                      className="min-w-[200px]"
                       disabled={loading || !employeeLimit?.canAddEmployee}
                     >
                       {loading ? (
                         <div className="flex items-center space-x-2">
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span className="truncate">{loadingStep || 'Creating...'}</span>
+                          <span className="truncate text-xs">{loadingStep || 'Creating...'}</span>
                         </div>
                       ) : (
                         <>
