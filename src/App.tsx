@@ -14,6 +14,7 @@ import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import AdminLogin from '@/pages/AdminLogin';
 import EmployeeLogin from '@/pages/EmployeeLogin';
+import SubscriptionPlanPage from '@/pages/SubscriptionPlanPage';
 import AdminDashboard from '@/pages/AdminDashboard';
 import EmployeeDashboard from '@/pages/EmployeeDashboard';
 import ForemanDashboard from '@/pages/ForemanDashboard';
@@ -28,6 +29,7 @@ import InvoicePreview from '@/pages/InvoicePreview';
 import NotFound from '@/pages/NotFound';
 import MaterialTakeoffPage from '@/pages/admin/MaterialTakeoffPage';
 import InventoryIndex from '@/pages/admin/inventory/Index';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,14 +46,31 @@ const AppInner: React.FC = () => {
   return (
     <RoleBasedRedirect>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Navigate to="/admin-login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/employee-login" element={<EmployeeLogin />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
-        <Route path="/foreman/dashboard" element={<ForemanDashboard />} />
-        <Route path="/management/dashboard" element={<ManagementDashboard />} />
+        <Route path="/subscription-plan" element={<SubscriptionPlanPage />} />
+        <Route path="/admin/dashboard" element={
+          <ProtectedRoute requireSubscription={true}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/employee/dashboard" element={
+          <ProtectedRoute requireSubscription={true}>
+            <EmployeeDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/foreman/dashboard" element={
+          <ProtectedRoute requireSubscription={true}>
+            <ForemanDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/management/dashboard" element={
+          <ProtectedRoute requireSubscription={true}>
+            <ManagementDashboard />
+          </ProtectedRoute>
+        } />
         <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
         <Route path="/super-admin/login" element={<SuperAdminLogin />} />
         <Route path="/company/registration" element={<CompanyRegistration />} />
@@ -59,8 +78,16 @@ const AppInner: React.FC = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/license-expired" element={<LicenseExpired />} />
         <Route path="/invoice-preview" element={<InvoicePreview />} />
-        <Route path="/admin/material-takeoff" element={<MaterialTakeoffPage />} />
-        <Route path="/admin/inventory" element={<InventoryIndex />} />
+        <Route path="/admin/material-takeoff" element={
+          <ProtectedRoute requireSubscription={true}>
+            <MaterialTakeoffPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/inventory" element={
+          <ProtectedRoute requireSubscription={true}>
+            <InventoryIndex />
+          </ProtectedRoute>
+        } />
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>

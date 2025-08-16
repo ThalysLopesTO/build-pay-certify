@@ -55,7 +55,7 @@ serve(async (req)=>{
       ],
       billing_address_collection: "required",
       success_url: `${origin}/company/registration?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/?payment=cancelled`,
+      cancel_url: `${origin}/subscription-plan?payment=cancelled`,
       metadata: {
         plan_name: planName,
         source: "stackbuild_app",

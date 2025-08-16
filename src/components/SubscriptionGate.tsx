@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useLicenseStatus } from '@/hooks/useLicenseStatus';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -85,13 +85,11 @@ const SubscriptionGate: React.FC<SubscriptionGateProps> = ({ children }) => {
               </ul>
               
               {isCompanyAdmin && (
-                <Button
-                  onClick={handleSubscribe}
-                  disabled={isCreatingCheckout}
-                  className="w-full bg-orange-600 hover:bg-orange-700"
-                >
-                  {isCreatingCheckout ? 'Processing...' : 'Renew Now'}
-                </Button>
+                <Link to="/subscription-plan">
+                  <Button className="w-full bg-orange-600 hover:bg-orange-700">
+                    View Subscription Plans
+                  </Button>
+                </Link>
               )}
             </div>
           </CardContent>
