@@ -26,12 +26,14 @@ const Header = () => {
         description: "Please wait while we sign you out.",
       });
       
+      // Call logout function
       await logout();
       
-      console.log('✅ Header logout completed');
+      console.log('✅ Header logout completed, forcing page reload...');
       
-      // Navigate to login page using React Router
-      navigate('/login', { replace: true });
+      // Force a complete page reload to ensure all state is cleared
+      // This is more reliable than relying on React state updates
+      window.location.href = '/login';
       
     } catch (error) {
       console.error('Header logout error:', error);
@@ -43,9 +45,7 @@ const Header = () => {
       });
       
       // Force redirect as fallback
-      setTimeout(() => {
-        navigate('/login', { replace: true });
-      }, 1000);
+      window.location.href = '/login';
     }
   };
 
