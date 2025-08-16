@@ -12,6 +12,7 @@ interface WeatherResponse {
   icon: string;
   humidity: number;
   wind_kmh: number;
+  apparent_temp_c?: number;
   location: string;
   updated_at: string;
 }
@@ -44,7 +45,7 @@ serve(async (req) => {
     console.log(`Fetching weather for coordinates: ${lat}, ${lon}`);
 
     // Call Open-Meteo API
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&temperature_unit=celsius&wind_speed_unit=kmh&timezone=auto`;
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&temperature_unit=celsius&wind_speed_unit=kmh&timezone=auto`;
     
     const response = await fetch(weatherUrl);
     
@@ -63,6 +64,7 @@ serve(async (req) => {
       icon,
       humidity: current.relative_humidity_2m,
       wind_kmh: Math.round(current.wind_speed_10m),
+      apparent_temp_c: current.apparent_temperature ? Math.round(current.apparent_temperature) : undefined,
       location: `${lat.toFixed(2)}, ${lon.toFixed(2)}`, // Default location format
       updated_at: new Date().toISOString()
     };

@@ -12,6 +12,7 @@ interface WeatherData {
   icon: string;
   humidity: number;
   wind_kmh: number;
+  apparent_temp_c?: number;
   location: string;
   updated_at: string;
 }
@@ -127,39 +128,39 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
     : 'from-orange-500 to-orange-600';
 
   if (loading) {
-    return (
-      <div className="lg:h-full">
-        <Card className={`shadow-lg border-0 overflow-hidden bg-gradient-to-br ${gradientClass} text-white rounded-2xl h-full`}>
-          <CardContent className="p-6 h-full flex flex-col">
-            <div className="space-y-5 flex-1">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-white/20 rounded-full animate-pulse">
-                  <Cloud className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium opacity-90">Weather Today</h3>
-                </div>
+  return (
+    <div className="h-full flex flex-col">
+      <Card className={`shadow-lg border-0 overflow-hidden bg-gradient-to-br ${gradientClass} text-white rounded-2xl h-full`}>
+        <CardContent className="p-6 h-full flex flex-col">
+          <div className="space-y-5 flex-1">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-white/20 rounded-full animate-pulse">
+                <Cloud className="h-5 w-5" />
               </div>
-              <div className="space-y-4 flex-1">
-                <div className="animate-pulse">
-                  <div className="text-4xl font-bold mb-2 bg-white/20 rounded h-12 w-24"></div>
-                  <div className="text-sm opacity-90 bg-white/20 rounded h-4 w-32 mb-4"></div>
-                  <div className="flex items-center gap-3">
-                    <div className="bg-white/20 rounded h-6 w-20"></div>
-                    <div className="bg-white/20 rounded h-6 w-20"></div>
-                  </div>
+              <div>
+                <h3 className="text-sm font-medium opacity-90">Weather Today</h3>
+              </div>
+            </div>
+            <div className="space-y-4 flex-1">
+              <div className="animate-pulse">
+                <div className="text-4xl font-bold mb-2 bg-white/20 rounded h-12 w-24"></div>
+                <div className="text-sm opacity-90 bg-white/20 rounded h-4 w-32 mb-4"></div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 rounded h-6 w-20"></div>
+                  <div className="bg-white/20 rounded h-6 w-20"></div>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
   }
 
   if (error) {
     return (
-      <div className="lg:h-full">
+      <div className="h-full flex flex-col">
         <Card className={`shadow-lg border-0 overflow-hidden bg-gradient-to-br ${gradientClass} text-white rounded-2xl h-full`}>
           <CardContent className="p-6 h-full flex flex-col justify-center items-center">
             <Eye className="h-8 w-8 opacity-50 mb-4" />
@@ -180,7 +181,7 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
 
   if (!weatherData) {
     return (
-      <div className="lg:h-full">
+      <div className="h-full flex flex-col">
         <Card className={`shadow-lg border-0 overflow-hidden bg-gradient-to-br ${gradientClass} text-white rounded-2xl h-full`}>
           <CardContent className="p-6 h-full flex flex-col justify-center items-center">
             <Settings className="h-8 w-8 opacity-50 mb-4" />
@@ -199,7 +200,7 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
   }
 
   return (
-    <div className="lg:h-full">
+    <div className="h-full flex flex-col">
       <Card className={`shadow-lg border-0 overflow-hidden bg-gradient-to-br ${gradientClass} text-white rounded-2xl h-full`}>
         <CardContent className="p-6 h-full flex flex-col">
           <div className="space-y-5 flex-1">
@@ -218,9 +219,11 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
                 <div className="text-sm opacity-90 mb-4">{weatherData.condition}</div>
                 
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="px-2 py-1 rounded-full bg-white/15">
-                    Feels Like {weatherData.humidity}°C
-                  </span>
+                  {weatherData.apparent_temp_c !== undefined && (
+                    <span className="px-2 py-1 rounded-full bg-white/15">
+                      Feels Like {weatherData.apparent_temp_c}°C
+                    </span>
+                  )}
                   <span className="px-2 py-1 rounded-full bg-white/15">
                     Wind {weatherData.wind_kmh} km/h
                   </span>

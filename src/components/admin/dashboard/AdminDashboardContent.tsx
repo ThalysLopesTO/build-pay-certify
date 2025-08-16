@@ -133,7 +133,7 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
       {/* Hero + Overview row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-stretch">
         {/* Hero Card (left) */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 h-full flex flex-col">
           <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-orange-50 rounded-2xl h-full">
             <CardContent className="p-6 h-full">
               <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 h-full">
