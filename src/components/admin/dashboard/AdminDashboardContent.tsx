@@ -153,7 +153,7 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
                       Welcome back, {firstName} 👋
                     </h1>
                     <p className="text-slate-600 text-base">
-                      Manage operations, payroll, and approvals efficiently.
+                      A great day to get a clear view of your company.
                     </p>
                   </div>
 
