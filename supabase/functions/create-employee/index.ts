@@ -238,7 +238,7 @@ serve(async (req) => {
     }
 
     // Create the user account with admin privileges
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: authData, error: userCreationError } = await supabaseAdmin.auth.admin.createUser({
       email: employeeData.email,
       password: employeeData.password,
       email_confirm: true, // Auto-confirm email
@@ -256,12 +256,12 @@ serve(async (req) => {
       },
     })
 
-    if (authError) {
-      console.error('Error creating user:', authError)
+    if (userCreationError) {
+      console.error('Error creating user:', userCreationError)
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: 'Failed to create user account: ' + authError.message
+          error: 'Failed to create user account: ' + userCreationError.message
         }),
         {
           headers: corsHeaders,
