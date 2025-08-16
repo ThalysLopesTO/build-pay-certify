@@ -1924,6 +1924,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          address: string | null
           company_id: string
           cpp_rate: number | null
           created_at: string
@@ -1948,6 +1949,7 @@ export type Database = {
           worker_type: string | null
         }
         Insert: {
+          address?: string | null
           company_id: string
           cpp_rate?: number | null
           created_at?: string
@@ -1972,6 +1974,7 @@ export type Database = {
           worker_type?: string | null
         }
         Update: {
+          address?: string | null
           company_id?: string
           cpp_rate?: number | null
           created_at?: string

@@ -8,13 +8,15 @@ export interface Employee {
   company_id?: string;
   first_name: string;
   last_name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
   role: string;
   trade?: string;
   position?: string;
   hourly_rate?: number;
   photo_url?: string;
   worker_type?: string;
-  phone?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
