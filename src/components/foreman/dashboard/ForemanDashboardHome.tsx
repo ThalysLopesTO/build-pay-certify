@@ -128,8 +128,8 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto animate-fade-in">
 {/* Hero + Overview row */}
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <div className="lg:col-span-2">
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+  <div className="lg:col-span-2 h-full flex flex-col">
     <DashboardHero
       theme="green"
       firstName={userProfile?.first_name || user?.firstName}

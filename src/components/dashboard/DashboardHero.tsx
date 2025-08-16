@@ -43,8 +43,8 @@ const DashboardHero: React.FC<DashboardHeroProps> = ({
   const fullName = `${firstName || ''} ${lastName || ''}`.trim() || 'User';
 
   return (
-    <Card className={`shadow-lg border-0 ${t.card}`}>
-      <CardContent className="p-6">
+    <Card className={`shadow-lg border-0 ${t.card} rounded-2xl h-full`}>
+      <CardContent className="p-6 h-full flex flex-col justify-center">
         <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
           <div className="flex-shrink-0">
             <EmployeeAvatar 
