@@ -66,18 +66,18 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
           
           {/* Small brand mark - logo only */}
           {!isLoading && logoUrl && (
-            <div className="bg-card border border-border rounded p-1">
+            <div className="bg-card border border-border rounded p-1.5">
               <img
                 src={logoUrl}
                 alt="Logo"
-                className="max-w-[32px] max-h-[24px] w-auto h-auto object-contain"
+                className="max-w-[48px] max-h-[32px] w-auto h-auto object-contain"
               />
             </div>
           )}
           {isLoading && (
-            <div className="bg-card border border-border rounded p-1">
-              <div className="w-8 h-6 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-3 w-3 border-b border-muted-foreground"></div>
+            <div className="bg-card border border-border rounded p-1.5">
+              <div className="w-12 h-8 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b border-muted-foreground"></div>
               </div>
             </div>
           )}
