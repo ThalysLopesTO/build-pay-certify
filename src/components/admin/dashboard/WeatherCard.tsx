@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Cloud, Sun, CloudRain, CloudSnow, Zap, Eye, Settings } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Cloud, Sun, CloudRain, CloudSnow, Zap, Eye, Settings, MapPin } from 'lucide-react';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { toast } from 'sonner';
 
 interface WeatherData {
   temp_c: number;
@@ -29,6 +32,9 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const [customLocation, setCustomLocation] = useState('');
+  const [savedCustomLocation, setSavedCustomLocation] = useState<{lat: number, lng: number, label: string} | null>(null);
   const { settings } = useCompanySettings();
   const { user } = useAuth();
 
@@ -44,7 +50,12 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
   };
 
   const getLocationData = async () => {
-    // Try to get jobsite location first for both strategies
+    // If user has set a custom location, use that first
+    if (savedCustomLocation) {
+      return savedCustomLocation;
+    }
+
+    // Try to get jobsite location for both strategies
     try {
       const { data: jobsites } = await supabase
         .from('jobsites')
@@ -74,6 +85,52 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
       lng: -79.3832,
       label: 'Toronto, ON'
     };
+  };
+
+  const geocodeLocation = async (locationName: string) => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationName)}&limit=1`);
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const result = data[0];
+        return {
+          lat: parseFloat(result.lat),
+          lng: parseFloat(result.lon),
+          label: result.display_name
+        };
+      }
+      throw new Error('Location not found');
+    } catch (error) {
+      throw new Error('Failed to find location');
+    }
+  };
+
+  const handleLocationChange = async () => {
+    if (!customLocation.trim()) {
+      toast.error('Please enter a location');
+      return;
+    }
+
+    try {
+      const location = await geocodeLocation(customLocation);
+      setSavedCustomLocation(location);
+      setLocationDialogOpen(false);
+      setCustomLocation('');
+      toast.success('Location updated successfully');
+      
+      // Fetch new weather data
+      fetchWeather();
+    } catch (error) {
+      toast.error('Could not find that location. Please try again.');
+    }
+  };
+
+  const resetToJobsiteLocation = () => {
+    setSavedCustomLocation(null);
+    setLocationDialogOpen(false);
+    toast.success('Reset to jobsite location');
+    fetchWeather();
   };
 
   const fetchWeather = async () => {
@@ -109,7 +166,7 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
 
   useEffect(() => {
     fetchWeather();
-  }, [settings, user?.companyId]);
+  }, [settings, user?.companyId, savedCustomLocation]);
 
   const formatTimeAgo = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -236,23 +293,99 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
                 {weatherData.location} • Updated {formatTimeAgo(weatherData.updated_at)}
               </div>
               {locationStrategy === 'company-first' ? (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-between text-white hover:bg-white/10 border-0 text-xs"
-                >
-                  Change Location
-                  <Settings className="h-3 w-3" />
-                </Button>
+                <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full justify-between text-white hover:bg-white/10 border-0 text-xs"
+                    >
+                      Change Location
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Change Weather Location
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Input
+                          placeholder="Enter city name (e.g., Toronto, New York)"
+                          value={customLocation}
+                          onChange={(e) => setCustomLocation(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleLocationChange();
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={handleLocationChange} className="flex-1">
+                          Update Location
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={resetToJobsiteLocation}
+                          className="flex-1"
+                        >
+                          Reset to Jobsite
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               ) : (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-between text-white hover:bg-white/10 border-0 text-xs"
-                >
-                  View Jobsites
-                  <Settings className="h-3 w-3" />
-                </Button>
+                <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full justify-between text-white hover:bg-white/10 border-0 text-xs"
+                    >
+                      Edit Location
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Change Weather Location
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Input
+                          placeholder="Enter city name (e.g., Toronto, New York)"
+                          value={customLocation}
+                          onChange={(e) => setCustomLocation(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleLocationChange();
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={handleLocationChange} className="flex-1">
+                          Update Location
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={resetToJobsiteLocation}
+                          className="flex-1"
+                        >
+                          Reset to Jobsite
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               )}
             </div>
           </div>
