@@ -99,7 +99,7 @@ const EquipmentManagement = () => {
   });
   const [viewingItem, setViewingItem] = useState<InventoryItem | null>(null);
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const canManageInventory = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'foreman';
 
   // Get equipment status
   const getEquipmentStatus = (item: InventoryItem) => {
@@ -352,7 +352,7 @@ const EquipmentManagement = () => {
               </Button>
             )}
             
-            {isAdmin && (
+            {canManageInventory && (
               <Button onClick={() => setIsFormOpen(true)} className="ml-auto bg-primary hover:bg-primary/90">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Equipment
@@ -372,13 +372,13 @@ const EquipmentManagement = () => {
                   <TableHead>Jobsite</TableHead>
                   <TableHead>Start Date</TableHead>
                   <TableHead>Return Date</TableHead>
-                  {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                  {canManageInventory && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredInventory.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={canManageInventory ? 8 : 7} className="text-center py-8 text-muted-foreground">
                       {searchTerm || jobsiteFilter !== 'all' || statusFilter !== 'all' || dateRange.from
                         ? 'No equipment items match your filters'
                         : 'No equipment items found. Add some equipment to get started.'
@@ -406,7 +406,7 @@ const EquipmentManagement = () => {
                             : <span className="text-muted-foreground text-sm">Not set</span>
                           }
                         </TableCell>
-                        {isAdmin && (
+                        {canManageInventory && (
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-2">
                               <TooltipProvider>
@@ -601,7 +601,7 @@ const EquipmentManagement = () => {
               </div>
               
               <div className="pt-4 flex justify-between">
-                {isAdmin && (
+                {canManageInventory && (
                   <Button onClick={() => {
                     setViewingItem(null);
                     handleEditItem(viewingItem);
