@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { UserPlus, Save, User, Camera, Shield, Mail, Smartphone, MapPin, DollarSign, Briefcase, Users, AlertTriangle } from 'lucide-react';
+import { UserPlus, Save, User, Camera, Shield, Mail, Smartphone, MapPin, DollarSign, Briefcase, Users, AlertTriangle, X } from 'lucide-react';
 import { useEmployeeLimit } from '@/hooks/useEmployeeLimit';
 import { useEmployeeRegistrationForm } from './useEmployeeRegistrationForm';
 import ImprovedPersonalDetailsSection from './ImprovedPersonalDetailsSection';
@@ -13,7 +13,7 @@ import EmployeeLimitAlert from './EmployeeLimitAlert';
 
 const ImprovedEmployeeRegistration = () => {
   const { data: employeeLimit, isLoading: isLoadingLimit } = useEmployeeLimit();
-  const { form, loading, handleSubmit } = useEmployeeRegistrationForm();
+  const { form, loading, loadingStep, handleSubmit, cancelRegistration } = useEmployeeRegistrationForm();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-CA', {
@@ -98,16 +98,27 @@ const ImprovedEmployeeRegistration = () => {
                   >
                     Reset Form
                   </Button>
+                  {loading && (
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={cancelRegistration}
+                      className="min-w-[100px]"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  )}
                   {employeeLimit && employeeLimit.currentCount < employeeLimit.employeeLimit ? (
                     <Button 
                       type="submit" 
-                      className="min-w-[140px]"
+                      className="min-w-[180px]"
                       disabled={loading || !employeeLimit?.canAddEmployee}
                     >
                       {loading ? (
                         <div className="flex items-center space-x-2">
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>Creating...</span>
+                          <span className="truncate">{loadingStep || 'Creating...'}</span>
                         </div>
                       ) : (
                         <>

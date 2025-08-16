@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,9 +11,33 @@ import { employeeSchema, EmployeeFormData } from './schemas';
 
 export const useEmployeeRegistrationForm = () => {
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<string>('');
   const { user } = useAuth();
   const { data: employeeLimit } = useEmployeeLimit();
   const { createEmployee, refreshEmployees } = useEmployees();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Cleanup function to reset loading state and clear timeouts
+  const resetLoadingState = () => {
+    setLoading(false);
+    setLoadingStep('');
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      resetLoadingState();
+    };
+  }, []);
 
   const form = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeSchema),
@@ -45,7 +69,24 @@ export const useEmployeeRegistrationForm = () => {
       return;
     }
 
+    // Reset any previous states
+    resetLoadingState();
+    
     setLoading(true);
+    setLoadingStep('Preparing registration...');
+    
+    // Create abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
+    // Set timeout for the entire operation (60 seconds)
+    timeoutRef.current = setTimeout(() => {
+      resetLoadingState();
+      toast({
+        title: "Registration Timeout",
+        description: "The registration process is taking too long. Please try again or contact support if the issue persists.",
+        variant: "destructive",
+      });
+    }, 60000);
     
     try {
       console.log('Submitting employee registration:', { 
@@ -60,6 +101,7 @@ export const useEmployeeRegistrationForm = () => {
 
       // Upload photo if provided
       if (data.photo) {
+        setLoadingStep('Uploading employee photo...');
         console.log('Uploading employee photo...');
         const fileExtension = data.photo.name.split('.').pop();
         const fileName = `${crypto.randomUUID()}.${fileExtension}`;
@@ -86,6 +128,9 @@ export const useEmployeeRegistrationForm = () => {
       }
 
       // Upload certificate files if provided
+      if (data.certificates.length > 0) {
+        setLoadingStep('Uploading certificate files...');
+      }
       for (const certificate of data.certificates) {
         const certData: any = {
           name: certificate.name,
@@ -123,6 +168,9 @@ export const useEmployeeRegistrationForm = () => {
       }
 
       // Call the Edge Function to create the employee
+      setLoadingStep('Creating employee account...');
+      console.log('Calling create-employee edge function...');
+      
       const { data: result, error } = await supabase.functions.invoke('create-employee', {
         body: {
           employeeData: {
@@ -143,6 +191,8 @@ export const useEmployeeRegistrationForm = () => {
           }
         },
       });
+      
+      console.log('Edge function response:', { result, error });
 
       // Check if there was a network/connection error
       if (error) {
@@ -166,6 +216,7 @@ export const useEmployeeRegistrationForm = () => {
 
       // Fetch the actual employee profile and add to context
       if (result.user) {
+        setLoadingStep('Finalizing employee setup...');
         // Add a small delay to ensure database consistency
         await new Promise(resolve => setTimeout(resolve, 500));
         
@@ -196,19 +247,32 @@ export const useEmployeeRegistrationForm = () => {
       
     } catch (error: any) {
       console.error('Employee registration error:', error);
+      
+      // More specific error messages based on the loading step
+      let errorDescription = "Failed to register employee";
+      if (loadingStep.includes('photo')) {
+        errorDescription = "Failed to upload employee photo. Please check the file size and format.";
+      } else if (loadingStep.includes('certificate')) {
+        errorDescription = "Failed to upload certificate files. Please check the file sizes and formats.";
+      } else if (loadingStep.includes('account')) {
+        errorDescription = "Failed to create employee account. Please verify the email is not already in use.";
+      }
+      
       toast({
         title: "Registration Failed",
-        description: error.message || "Failed to register employee",
+        description: error.message || errorDescription,
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      resetLoadingState();
     }
   };
 
   return {
     form,
     loading,
+    loadingStep,
     handleSubmit,
+    cancelRegistration: resetLoadingState,
   };
 };
