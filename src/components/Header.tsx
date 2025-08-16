@@ -6,6 +6,7 @@ import { LogOut, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import { useNavigate } from 'react-router-dom';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import ManagementNotificationBell from '@/components/management/ManagementNotificationBell';
 import PWAInstallButton from '@/components/common/PWAInstallButton';
@@ -14,6 +15,7 @@ import MobileTopBar from '@/components/mobile/MobileTopBar';
 const Header = () => {
   const { user, logout } = useAuth();
   const { logoUrl, isLoading } = useCompanyLogo();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
@@ -28,8 +30,8 @@ const Header = () => {
       
       console.log('✅ Header logout completed');
       
-      // Clear any local state and force navigation
-      window.location.href = '/login';
+      // Navigate to login page using React Router
+      navigate('/login', { replace: true });
       
     } catch (error) {
       console.error('Header logout error:', error);
@@ -42,7 +44,7 @@ const Header = () => {
       
       // Force redirect as fallback
       setTimeout(() => {
-        window.location.href = '/login';
+        navigate('/login', { replace: true });
       }, 1000);
     }
   };
