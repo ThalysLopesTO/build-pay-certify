@@ -54,7 +54,7 @@ serve(async (req)=>{
         }
       ],
       billing_address_collection: "required",
-      success_url: `${origin}/register-company?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/company/registration?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?payment=cancelled`,
       metadata: {
         plan_name: planName,
