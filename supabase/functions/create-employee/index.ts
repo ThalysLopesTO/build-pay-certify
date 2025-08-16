@@ -62,18 +62,19 @@ serve(async (req) => {
       )
     }
 
-    console.log('Creating employee with data:', { 
-      email: employeeData.email, 
-      role: employeeData.role, 
-      companyId: employeeData.companyId,
-      hasPhoto: !!employeeData.photoUrl,
-      photoUrl: employeeData.photoUrl,
-      hourlyRate: employeeData.hourlyRate,
-      trade: employeeData.trade,
-      phoneNumber: employeeData.phoneNumber,
-      firstName: employeeData.firstName,
-      lastName: employeeData.lastName
-    })
+      console.log('Creating employee with data:', { 
+        email: employeeData.email, 
+        role: employeeData.role, 
+        companyId: employeeData.companyId,
+        hasPhoto: !!employeeData.photoUrl,
+        photoUrl: employeeData.photoUrl,
+        hourlyRate: employeeData.hourlyRate,
+        trade: employeeData.trade,
+        position: employeeData.position,
+        phoneNumber: employeeData.phoneNumber,
+        firstName: employeeData.firstName,
+        lastName: employeeData.lastName
+      })
 
     // First, check if the company can add more employees
     const { data: canAdd, error: checkError } = await supabaseAdmin
@@ -220,7 +221,7 @@ serve(async (req) => {
         last_name: employeeData.lastName,
         role: employeeData.role,
         trade: employeeData.trade || 'General',
-        position: 'Worker', // Default position since it's not collected in the form
+        position: employeeData.position || 'Worker',
         hourly_rate: parseFloat(employeeData.hourlyRate) || null,
         photo_url: employeeData.photoUrl || null,
         phone: employeeData.phoneNumber || null,

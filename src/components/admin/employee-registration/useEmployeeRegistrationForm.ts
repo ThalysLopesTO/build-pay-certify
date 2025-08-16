@@ -26,6 +26,7 @@ export const useEmployeeRegistrationForm = () => {
       phoneNumber: '',
       role: 'employee',
       trade: '',
+      position: '',
       hourlyRate: 0,
       workerType: 'subcontractor',
       photo: undefined,
@@ -134,6 +135,7 @@ export const useEmployeeRegistrationForm = () => {
             phoneNumber: data.phoneNumber,
             role: data.role,
             trade: data.trade,
+            position: data.position,
             hourlyRate: data.hourlyRate,
             workerType: data.workerType,
             photoUrl: photoUrl,
@@ -164,13 +166,17 @@ export const useEmployeeRegistrationForm = () => {
 
       // Fetch the actual employee profile and add to context
       if (result.user) {
+        // Add a small delay to ensure database consistency
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         const { data: employeeProfile, error: fetchError } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('user_id', result.user.id)
-          .single();
+          .maybeSingle();
 
         if (!fetchError && employeeProfile) {
+          console.log('Successfully fetched employee profile:', employeeProfile);
           // Add the real employee data to context
           await createEmployee(employeeProfile);
         } else {

@@ -237,6 +237,20 @@ const ImprovedPersonalDetailsSection: React.FC<ImprovedPersonalDetailsSectionPro
 
             <FormField
               control={form.control}
+              name="position"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Position *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Site Supervisor, Lead Technician" className="h-10" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="hourlyRate"
               render={({ field }) => (
                 <FormItem>
