@@ -57,13 +57,13 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   const form = useForm<EditEmployeeFormData>({
     resolver: zodResolver(editEmployeeSchema),
     defaultValues: {
-      firstName: employee?.first_name || '',
-      lastName: employee?.last_name || '',
-      position: employee?.position || '',
-      trade: employee?.trade || '',
-      role: (employee?.role as any) || 'employee',
-      hourlyRate: employee?.hourly_rate || 0,
-      workerType: (employee?.worker_type as any) || 'subcontractor',
+      firstName: '',
+      lastName: '',
+      position: '',
+      trade: '',
+      role: 'employee',
+      hourlyRate: 0,
+      workerType: 'subcontractor',
       photo: undefined,
     },
   });
@@ -194,10 +194,10 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -218,10 +218,10 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Worker Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select worker type" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
