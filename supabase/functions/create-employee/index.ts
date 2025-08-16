@@ -176,26 +176,64 @@ serve(async (req) => {
 
     console.log('User created successfully:', authData.user?.email)
 
-    // Check if user profile already exists before creating one
-    const { data: existingProfile, error: profileCheckError } = await supabaseAdmin
-      .from('user_profiles')
-      .select('id')
-      .eq('user_id', authData.user.id)
-      .single()
+    // Set default tax rates for payroll employees
+    const defaultRates = employeeData.workerType === 'employee' ? {
+      income_tax_rate: 12.00,
+      cpp_rate: 5.95,
+      ei_rate: 1.63
+    } : {};
 
-    if (profileCheckError && profileCheckError.code !== 'PGRST116') {
-      console.error('Error checking existing profile:', profileCheckError)
-      // Try to delete the auth user if profile check fails
+    // Prepare profile data with detailed logging
+    const profileData = {
+      user_id: authData.user.id,
+      company_id: employeeData.companyId,
+      first_name: employeeData.firstName,
+      last_name: employeeData.lastName,
+      role: employeeData.role,
+      trade: employeeData.trade || 'General',
+      position: employeeData.position || 'Worker',
+      hourly_rate: parseFloat(employeeData.hourlyRate) || null,
+      photo_url: employeeData.photoUrl || null,
+      phone: employeeData.phoneNumber || null,
+      pending_approval: false,
+      worker_type: employeeData.workerType || 'subcontractor',
+      is_active: true, // Ensure new employees are active by default
+      ...defaultRates
+    }
+    
+    console.log('Creating/updating profile with data:', {
+      ...profileData,
+      hourly_rate_original: employeeData.hourlyRate,
+      hourly_rate_parsed: parseFloat(employeeData.hourlyRate),
+      photo_url_original: employeeData.photoUrl
+    })
+
+    // Use UPSERT to handle the case where trigger already created a basic profile
+    const { data: profileData_result, error: profileError } = await supabaseAdmin
+      .from('user_profiles')
+      .upsert(profileData, { 
+        onConflict: 'user_id',
+        ignoreDuplicates: false 
+      })
+      .select()
+
+    if (profileError) {
+      console.error('Error creating/updating user profile:', profileError)
+      console.error('Profile data that failed:', JSON.stringify(profileData, null, 2))
+      
+      // Try to delete the auth user if profile creation fails
       try {
         await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-        console.log('Cleaned up auth user after profile check failure')
+        console.log('Cleaned up auth user after profile creation failure')
       } catch (cleanupError) {
         console.error('Failed to cleanup auth user:', cleanupError)
       }
+      
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: 'Failed to check existing user profile: ' + profileCheckError.message
+          error: `Failed to create/update user profile: ${profileError.message}`,
+          details: profileError
         }),
         {
           headers: corsHeaders,
@@ -204,76 +242,8 @@ serve(async (req) => {
       )
     }
 
-    // Only create profile if it doesn't exist
-    if (!existingProfile) {
-      // Set default tax rates for payroll employees
-      const defaultRates = employeeData.workerType === 'employee' ? {
-        income_tax_rate: 12.00,
-        cpp_rate: 5.95,
-        ei_rate: 1.63
-      } : {};
-
-      // Prepare profile data with detailed logging
-      const profileData = {
-        user_id: authData.user.id,
-        company_id: employeeData.companyId,
-        first_name: employeeData.firstName,
-        last_name: employeeData.lastName,
-        role: employeeData.role,
-        trade: employeeData.trade || 'General',
-        position: employeeData.position || 'Worker',
-        hourly_rate: parseFloat(employeeData.hourlyRate) || null,
-        photo_url: employeeData.photoUrl || null,
-        phone: employeeData.phoneNumber || null,
-        pending_approval: false,
-        worker_type: employeeData.workerType || 'subcontractor',
-        is_active: true, // Ensure new employees are active by default
-        ...defaultRates
-      }
-      
-      console.log('Inserting profile with data:', {
-        ...profileData,
-        hourly_rate_original: employeeData.hourlyRate,
-        hourly_rate_parsed: parseFloat(employeeData.hourlyRate),
-        photo_url_original: employeeData.photoUrl
-      })
-
-      const { data: profileInsertData, error: profileError } = await supabaseAdmin
-        .from('user_profiles')
-        .insert(profileData)
-        .select()
-
-      if (profileError) {
-        console.error('Error creating user profile:', profileError)
-        console.error('Profile data that failed:', JSON.stringify(profileData, null, 2))
-        
-        // Try to delete the auth user if profile creation fails
-        try {
-          await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-          console.log('Cleaned up auth user after profile creation failure')
-        } catch (cleanupError) {
-          console.error('Failed to cleanup auth user:', cleanupError)
-        }
-        
-        return new Response(
-          JSON.stringify({ 
-            success: false,
-            error: `Failed to create user profile: ${profileError.message}`,
-            details: profileError
-          }),
-          {
-            headers: corsHeaders,
-            status: 500,
-          },
-        )
-      }
-
-      console.log('Profile created successfully:', profileInsertData)
-
-      console.log('User profile created successfully for company:', employeeData.companyId)
-    } else {
-      console.log('User profile already exists for user:', authData.user.id)
-    }
+    console.log('Profile created/updated successfully:', profileData_result)
+    console.log('User profile processed successfully for company:', employeeData.companyId)
 
     // Create certificates if provided
     if (employeeData.certificates && employeeData.certificates.length > 0) {
