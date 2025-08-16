@@ -14,21 +14,39 @@ export const login = async (email: string, password: string, expectedRole?: 'emp
   // If role verification is requested, check the user's role
   if (expectedRole && data.user) {
     try {
+      console.log('🔍 Verifying user role for:', data.user.email, 'Expected role:', expectedRole);
+      
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
-        .select('role')
+        .select('role, company_id')
         .eq('user_id', data.user.id)
         .single();
 
-      if (profileError || !profile) {
+      console.log('📊 Profile query result:', { profile, profileError });
+
+      if (profileError) {
+        console.error('❌ Profile error details:', profileError);
         // Sign out the user since they shouldn't be logged in
         await supabase.auth.signOut();
         return { 
           error: { 
-            message: "Unable to verify user role. Please contact your administrator." 
+            message: `Profile access error: ${profileError.message}. Please contact your administrator.` 
           } 
         };
       }
+
+      if (!profile) {
+        console.error('❌ No profile found for user');
+        // Sign out the user since they shouldn't be logged in
+        await supabase.auth.signOut();
+        return { 
+          error: { 
+            message: "User profile not found. Please contact your administrator." 
+          } 
+        };
+      }
+
+      console.log('✅ User profile found:', profile);
 
       // Check role compatibility
       if (expectedRole === 'employee' && profile.role !== 'employee') {
