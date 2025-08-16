@@ -207,7 +207,7 @@ const WeatherCard = () => {
                 
                 <div className="flex items-center gap-3 text-xs">
                   <span className="px-2 py-1 rounded-full bg-white/15">
-                    Humidity {weatherData.humidity}%
+                    Feels Like {weatherData.humidity}°C
                   </span>
                   <span className="px-2 py-1 rounded-full bg-white/15">
                     Wind {weatherData.wind_kmh} km/h
