@@ -265,31 +265,56 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
           }
         >
           {requestsLoading ? (
-            <div className="space-y-4 animate-pulse">
-              <div className="h-14 rounded-lg bg-muted/50" />
-              <div className="h-14 rounded-lg bg-muted/50" />
-              <div className="h-14 rounded-lg bg-muted/50" />
+            <div className="space-y-3 animate-pulse">
+              <div className="h-16 rounded-lg bg-muted/50" />
+              <div className="h-16 rounded-lg bg-muted/50" />
+              <div className="h-16 rounded-lg bg-muted/50" />
             </div>
           ) : recentRequests.length > 0 ? (
-            <div className="space-y-4">
-              {recentRequests.map((request) => (
-                <div key={request.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/50">
-                  <div className="flex-1">
-                    <div className="text-sm font-medium truncate mb-1">
-                      {request.material_list.substring(0, 30)}...
+            <div className="space-y-3">
+              {recentRequests.map((request) => {
+                const createdDate = new Date(request.created_at);
+                const dayOfWeek = createdDate.toLocaleDateString('en-US', { weekday: 'short' });
+                const dateFormatted = createdDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                
+                return (
+                  <div key={request.id} className="flex items-center gap-4 p-4 bg-muted/20 rounded-lg border border-border/30 hover:bg-muted/30 transition-colors">
+                    {/* Date Circle */}
+                    <div className="flex flex-col items-center justify-center w-12 h-12 bg-emerald-100 rounded-full border border-emerald-200">
+                      <div className="text-xs font-semibold text-emerald-700 leading-none">{dayOfWeek}</div>
+                      <div className="text-xs text-emerald-600 leading-none mt-0.5">{dateFormatted.split(' ')[1]}</div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {request.jobsite_name} • {new Date(request.delivery_date).toLocaleDateString()}
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-foreground text-sm mb-1 truncate">
+                        {request.jobsite_name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Delivery: {new Date(request.delivery_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </div>
                     </div>
+                    
+                    {/* Status Badge */}
+                    <Badge 
+                      variant={
+                        request.status === 'delivered' ? 'default' :
+                        request.status === 'ordered' ? 'secondary' :
+                        'outline'
+                      }
+                      className={`text-xs font-medium shrink-0 ${
+                        request.status === 'delivered' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                        request.status === 'ordered' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                        'bg-amber-100 text-amber-700 border-amber-200'
+                      }`}
+                    >
+                      {request.status === 'pending' ? 'Pending' :
+                       request.status === 'ordered' ? 'Ordered' :
+                       'Delivered'}
+                    </Badge>
                   </div>
-                  <Badge 
-                    variant={request.status === 'approved' ? 'default' : request.status === 'pending' ? 'secondary' : 'destructive'}
-                    className="text-xs font-medium"
-                  >
-                    {request.status}
-                  </Badge>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground text-sm">
