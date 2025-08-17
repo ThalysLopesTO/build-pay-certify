@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useSearchParams } from 'react-router-dom';
-import { Users, Clock, RefreshCw, LogIn, LogOut } from 'lucide-react';
+import { Users, Clock, RefreshCw, LogIn, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 interface PunchActivity {
   id: string;
@@ -27,6 +28,8 @@ const LiveActiveEmployees = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const fetchActivities = async (isManualRefresh = false) => {
     // Get the date from URL parameter or default to today
@@ -297,83 +300,123 @@ const LiveActiveEmployees = () => {
             No punch activities for this date
           </div>
         ) : (
-          <div className="space-y-4">
-            {activities.map((activity) => (
-              <div key={activity.id} className="relative">
-                <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-card to-card/50 rounded-lg border border-border shadow-sm hover:shadow-md transition-all duration-200">
-                  {/* Status Icon */}
-                  <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                    activity.activity_type === 'punch_in' 
-                      ? activity.is_active 
-                        ? 'bg-emerald-100 text-emerald-600' 
-                        : 'bg-blue-100 text-blue-600' 
-                      : 'bg-red-100 text-red-600'
-                  }`}>
-                    {activity.activity_type === 'punch_in' ? (
-                      <LogIn className="h-5 w-5" />
-                    ) : (
-                      <LogOut className="h-5 w-5" />
-                    )}
-                  </div>
+          <>
+            <div className="space-y-2">
+              {activities
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((activity) => (
+                <div key={activity.id} className="relative">
+                  <div className="flex items-center gap-3 p-2 bg-gradient-to-r from-card to-card/50 rounded-lg border border-border shadow-sm hover:shadow-md transition-all duration-200">
+                    {/* Status Icon */}
+                    <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
+                      activity.activity_type === 'punch_in' 
+                        ? activity.is_active 
+                          ? 'bg-emerald-100 text-emerald-600' 
+                          : 'bg-blue-100 text-blue-600' 
+                        : 'bg-red-100 text-red-600'
+                    }`}>
+                      {activity.activity_type === 'punch_in' ? (
+                        <LogIn className="h-3 w-3" />
+                      ) : (
+                        <LogOut className="h-3 w-3" />
+                      )}
+                    </div>
 
-                  {/* Main Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
+                    {/* Main Content */}
+                    <div className="flex-1 min-w-0 flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-foreground truncate">
-                          {activity.employee_name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-semibold text-foreground truncate">
+                            {activity.employee_name}
+                          </h3>
+                          {activity.role && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                              {activity.role.charAt(0).toUpperCase() + activity.role.slice(1)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
                           {activity.jobsite_name}
                         </p>
-                        {activity.role && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                            {activity.role.charAt(0).toUpperCase() + activity.role.slice(1)}
-                          </span>
-                        )}
                       </div>
 
                       {/* Time and Status */}
-                      <div className="flex flex-col items-end gap-2">
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
                           <span className="font-medium">
                             {formatClockInTime(activity.timestamp)}
                           </span>
                         </div>
                         
-                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                           activity.activity_type === 'punch_in'
                             ? activity.is_active
-                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                              : 'bg-blue-100 text-blue-700 border border-blue-200'
-                            : 'bg-red-100 text-red-700 border border-red-200'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-blue-100 text-blue-700'
+                            : 'bg-red-100 text-red-700'
                         }`}>
                           {activity.activity_type === 'punch_in' 
                             ? activity.is_active 
-                              ? '🟢 Currently Active'
-                              : '🔵 Punched In'
-                            : `🔴 Punched Out`
+                              ? '🟢 Active'
+                              : '🔵 In'
+                            : `🔴 Out`
                           }
                         </div>
 
                         {activity.time_worked && (
-                          <div className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
-                            Total: {activity.time_worked}
+                          <div className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
+                            {activity.time_worked}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Activity indicator line */}
-                {activity.is_active && (
-                  <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-emerald-400 to-emerald-600 animate-pulse"></div>
-                )}
+                  {/* Activity indicator line */}
+                  {activity.is_active && (
+                    <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-emerald-400 to-emerald-600 animate-pulse"></div>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            {/* Pagination */}
+            {activities.length > itemsPerPage && (
+              <div className="flex items-center justify-between pt-4 border-t border-border">
+                <div className="text-xs text-muted-foreground">
+                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, activities.length)} of {activities.length} activities
+                </div>
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: Math.ceil(activities.length / itemsPerPage) }, (_, i) => i + 1).map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => setCurrentPage(prev => Math.min(Math.ceil(activities.length / itemsPerPage), prev + 1))}
+                        className={currentPage === Math.ceil(activities.length / itemsPerPage) ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
