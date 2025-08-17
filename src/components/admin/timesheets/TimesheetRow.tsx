@@ -12,8 +12,10 @@ interface TimesheetRowProps {
   onEdit: (timesheet: any) => void;
   onApprove: (timesheetId: string) => void;
   onReject: (timesheetId: string) => void;
+  onDelete?: (timesheet: any) => void;
   isApproving: boolean;
   isRejecting: boolean;
+  isDeleting?: boolean;
   selectedTimesheets?: Set<string>;
   onSelectTimesheet?: (id: string, checked: boolean) => void;
 }
@@ -23,8 +25,10 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
   onEdit,
   onApprove,
   onReject,
+  onDelete,
   isApproving,
   isRejecting,
+  isDeleting = false,
   selectedTimesheets,
   onSelectTimesheet
 }) => {
@@ -125,8 +129,10 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
           onEdit={onEdit}
           onApprove={onApprove}
           onReject={onReject}
+          onDelete={onDelete}
           isApproving={isApproving}
           isRejecting={isRejecting}
+          isDeleting={isDeleting}
           onTogglePreview={() => setShowPreview((v) => !v)}
         />
       </td>

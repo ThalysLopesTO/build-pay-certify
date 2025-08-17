@@ -8,8 +8,10 @@ interface TimesheetTableProps {
   onEdit: (timesheet: any) => void;
   onApprove: (timesheetId: string) => void;
   onReject: (timesheetId: string) => void;
+  onDelete?: (timesheet: any) => void;
   isApproving: boolean;
   isRejecting: boolean;
+  isDeleting?: boolean;
   selectedTimesheets?: Set<string>;
   onSelectAll?: (checked: boolean) => void;
   onSelectTimesheet?: (id: string, checked: boolean) => void;
@@ -21,8 +23,10 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
   onEdit,
   onApprove,
   onReject,
+  onDelete,
   isApproving,
   isRejecting,
+  isDeleting = false,
   selectedTimesheets,
   onSelectAll,
   onSelectTimesheet
@@ -74,8 +78,10 @@ const TimesheetTable: React.FC<TimesheetTableProps> = ({
                 onEdit={onEdit}
                 onApprove={onApprove}
                 onReject={onReject}
+                onDelete={onDelete}
                 isApproving={isApproving}
                 isRejecting={isRejecting}
+                isDeleting={isDeleting}
                 selectedTimesheets={selectedTimesheets}
                 onSelectTimesheet={onSelectTimesheet}
               />

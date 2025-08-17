@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Check, X, Edit, Eye } from 'lucide-react';
+import { Check, X, Edit, Eye, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { TimesheetPDFGenerator } from './TimesheetPDFGenerator';
 
@@ -9,8 +9,10 @@ interface TimesheetActionsProps {
   onEdit: (timesheet: any) => void;
   onApprove: (timesheetId: string) => void;
   onReject: (timesheetId: string) => void;
+  onDelete?: (timesheet: any) => void;
   isApproving: boolean;
   isRejecting: boolean;
+  isDeleting?: boolean;
   onTogglePreview?: (open: boolean) => void;
 }
 
@@ -19,14 +21,19 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
   onEdit,
   onApprove,
   onReject,
+  onDelete,
   isApproving,
   isRejecting,
+  isDeleting = false,
   onTogglePreview
 }) => {
   const { user } = useAuth();
   
   // Check if user can export PDFs (Admin and Management only)
   const canExportPDF = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
+  
+  // Check if user can manage timesheets (delete permissions)
+  const canManageTimesheets = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
   
   // Check if this is the current user's own timesheet (managers can't approve their own)
   const isOwnTimesheet = timesheet.user_id === user?.id || timesheet.submitted_by === user?.id;
@@ -117,6 +124,20 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
           title={isOwnTimesheet ? "You cannot modify your own timesheet approval" : "Timesheet already rejected - click to revert"}
         >
           <X className="h-4 w-4" />
+        </Button>
+      )}
+
+      {/* Delete Button - Only for admins and management */}
+      {canManageTimesheets && onDelete && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onDelete(timesheet)}
+          disabled={isDeleting}
+          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+          title="Delete timesheet"
+        >
+          <Trash2 className="h-4 w-4" />
         </Button>
       )}
     </div>

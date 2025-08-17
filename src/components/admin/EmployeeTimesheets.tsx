@@ -7,6 +7,7 @@ import { useWeeklyTimesheets } from '@/hooks/useWeeklyTimesheets';
 import { useWeeklyTimesheetActions } from '@/hooks/useWeeklyTimesheetActions';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useCreateManualTimesheet } from '@/hooks/useCreateManualTimesheet';
+import { useDeleteWeeklyTimesheet } from '@/hooks/useDeleteWeeklyTimesheet';
 import { useTimesheetPDF } from '@/hooks/useTimesheetPDF';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
@@ -14,6 +15,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Calendar, Plus, Download, RefreshCw } from 'lucide-react';
 import TimesheetEditModal from '@/components/admin/timesheets/TimesheetEditModal';
 import CreateManualTimesheetModal from '@/components/admin/timesheets/CreateManualTimesheetModal';
+import { TimesheetDeleteConfirmDialog } from '@/components/admin/timesheets/TimesheetDeleteConfirmDialog';
 import TimesheetFilters from '@/components/admin/timesheets/TimesheetFilters';
 import TimesheetTable from '@/components/admin/timesheets/TimesheetTable';
 import * as XLSX from 'xlsx';
@@ -24,6 +26,7 @@ const EmployeeTimesheets = () => {
   const { user } = useAuth();
   const { approveTimesheet, rejectTimesheet, editTimesheet, isApproving, isRejecting, isEditing } = useWeeklyTimesheetActions();
   const { createManualTimesheet, isCreating } = useCreateManualTimesheet();
+  const { mutate: deleteTimesheet, isPending: isDeleting } = useDeleteWeeklyTimesheet();
   const { generateTimesheetPDF } = useTimesheetPDF();
   const { settings } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
@@ -36,6 +39,8 @@ const EmployeeTimesheets = () => {
   });
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [deletingTimesheet, setDeletingTimesheet] = useState<any>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedTimesheets, setSelectedTimesheets] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'pdf' | 'xlsx' | ''>('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -72,6 +77,30 @@ const EmployeeTimesheets = () => {
   const handleCreateManualTimesheet = (data: any) => {
     createManualTimesheet(data);
     setIsCreateModalOpen(false);
+  };
+
+  const handleDelete = (timesheet: any) => {
+    setDeletingTimesheet(timesheet);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deletingTimesheet) {
+      deleteTimesheet(deletingTimesheet.id, {
+        onSuccess: () => {
+          setShowDeleteDialog(false);
+          setDeletingTimesheet(null);
+        },
+        onError: () => {
+          // Error handling is done in the hook
+        }
+      });
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false);
+    setDeletingTimesheet(null);
   };
 
   // Handle select all
@@ -364,8 +393,10 @@ const EmployeeTimesheets = () => {
             onEdit={handleEdit}
             onApprove={handleApprove}
             onReject={handleReject}
+            onDelete={handleDelete}
             isApproving={isApproving}
             isRejecting={isRejecting}
+            isDeleting={isDeleting}
             selectedTimesheets={selectedTimesheets}
             onSelectAll={handleSelectAll}
             onSelectTimesheet={handleSelectTimesheet}
@@ -389,6 +420,15 @@ const EmployeeTimesheets = () => {
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreateManualTimesheet}
         isSaving={isCreating}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <TimesheetDeleteConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        timesheet={deletingTimesheet}
+        isDeleting={isDeleting}
       />
     </div>
   );
