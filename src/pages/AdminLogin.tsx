@@ -7,13 +7,23 @@ const AdminLogin = () => {
   return (
     <div>
       <LoginForm />
-      <div className="text-center mt-6">
-        <p className="text-slate-600 mb-4">New company?</p>
-        <Link to="/subscription-plan">
-          <Button variant="outline" className="border-orange-200 text-orange-600 hover:bg-orange-50">
-            View Plans & Start Free Trial
-          </Button>
-        </Link>
+      <div className="text-center mt-6 space-y-4">
+        <div>
+          <p className="text-slate-600 mb-4">New company?</p>
+          <Link to="/subscription-plan">
+            <Button variant="outline" className="border-orange-200 text-orange-600 hover:bg-orange-50">
+              View Plans & Start Free Trial
+            </Button>
+          </Link>
+        </div>
+        <div>
+          <p className="text-slate-600 mb-4">Employee?</p>
+          <Link to="/employee-login">
+            <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
+              Employee Login
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );

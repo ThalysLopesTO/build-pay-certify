@@ -45,7 +45,7 @@ const createWelcomeEmailHTML = (userName: string, email: string, companyName: st
 
           <!-- Login Button -->
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://app.stackbuild.ca/login" 
+            <a href="https://app.stackbuild.ca/admin-login" 
                style="display: inline-block; background: linear-gradient(135deg, #1e40af, #3b82f6); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);">
               Login to StackBuild →
             </a>

@@ -29,7 +29,7 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
       console.log('✅ Mobile logout completed');
       
       // Clear any local state and force navigation
-      window.location.href = '/login';
+      window.location.href = '/admin-login';
       
     } catch (error) {
       console.error('Mobile logout error:', error);
@@ -42,7 +42,7 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
       
       // Force redirect as fallback
       setTimeout(() => {
-        window.location.href = '/login';
+        window.location.href = '/admin-login';
       }, 1000);
     }
   };
