@@ -363,12 +363,6 @@ const LiveActiveEmployees = () => {
                             : `🔴 Out`
                           }
                         </div>
-
-                        {activity.time_worked && (
-                          <div className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
-                            {activity.time_worked}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
