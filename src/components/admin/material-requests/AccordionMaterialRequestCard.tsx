@@ -106,6 +106,12 @@ const AccordionMaterialRequestCard = ({
                 </div>
                 
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <User className="h-3 w-3" />
+                    <span className="font-medium text-foreground">
+                      {formatUserDisplay(request.submitted_by, (request as any).submitted_by_name)}
+                    </span>
+                  </div>
                   {request.jobsites?.address && (
                     <div className="flex items-center gap-1 truncate">
                       <MapPin className="h-3 w-3 flex-shrink-0" />
