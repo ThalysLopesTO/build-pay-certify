@@ -325,16 +325,9 @@ const LiveActiveEmployees = () => {
                     {/* Main Content */}
                     <div className="flex-1 min-w-0 flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-semibold text-foreground truncate">
-                            {activity.employee_name}
-                          </h3>
-                          {activity.role && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
-                              {activity.role.charAt(0).toUpperCase() + activity.role.slice(1)}
-                            </span>
-                          )}
-                        </div>
+                        <h3 className="text-sm font-semibold text-foreground truncate">
+                          {activity.employee_name}
+                        </h3>
                         <p className="text-xs text-muted-foreground truncate">
                           {activity.jobsite_name}
                         </p>
