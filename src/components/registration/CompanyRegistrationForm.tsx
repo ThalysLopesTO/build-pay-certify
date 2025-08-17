@@ -160,7 +160,7 @@ const CompanyRegistrationForm: React.FC<CompanyRegistrationFormProps> = ({
             >
               {isLoading ? 'Submitting...' : 'Submit Registration'}
             </Button>
-            <Link to="/login">
+            <Link to="/admin-login">
               <Button variant="outline" type="button">
                 Back to Login
               </Button>

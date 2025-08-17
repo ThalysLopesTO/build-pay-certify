@@ -11,7 +11,7 @@ import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 
 // Import pages
 import HomePage from '@/pages/HomePage';
-import LoginPage from '@/pages/LoginPage';
+
 import AdminLogin from '@/pages/AdminLogin';
 import EmployeeLogin from '@/pages/EmployeeLogin';
 import SubscriptionPlanPage from '@/pages/SubscriptionPlanPage';
@@ -47,7 +47,7 @@ const AppInner: React.FC = () => {
     <RoleBasedRedirect>
       <Routes>
         <Route path="/" element={<Navigate to="/admin-login" replace />} />
-        <Route path="/login" element={<LoginPage />} />
+        
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/employee-login" element={<EmployeeLogin />} />
         <Route path="/subscription-plan" element={<SubscriptionPlanPage />} />
