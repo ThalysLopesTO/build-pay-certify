@@ -273,9 +273,9 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                             )}
                             {onDelete && (
                               <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <AlertDialogTrigger asChild>
                                       <Button
                                         variant="ghost"
                                         size="sm"
@@ -283,12 +283,12 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                                       >
                                         <Trash2 className="h-4 w-4 text-red-500" />
                                       </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Delete punch record</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </AlertDialogTrigger>
+                                    </AlertDialogTrigger>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Delete punch record</p>
+                                  </TooltipContent>
+                                </Tooltip>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Delete Punch Record</AlertDialogTitle>
