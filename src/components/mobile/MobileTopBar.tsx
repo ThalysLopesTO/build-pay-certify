@@ -70,13 +70,13 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
               <img
                 src={logoUrl}
                 alt="Logo"
-                className="max-w-[100px] max-h-[80px] w-auto h-auto object-contain"
+                className="max-w-[120px] max-h-[100px] w-auto h-auto object-contain"
               />
             </div>
           )}
           {isLoading && (
             <div className="bg-card border border-border rounded p-1">
-              <div className="w-25 h-20 flex items-center justify-center">
+              <div className="w-30 h-25 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b border-muted-foreground"></div>
               </div>
             </div>
