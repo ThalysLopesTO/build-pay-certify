@@ -49,8 +49,8 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
 
   return (
     <div className="md:hidden sticky top-0 z-50 bg-background border-b border-border">
-      <div className="flex items-center justify-between w-full px-3 py-2 max-w-full overflow-hidden">
-        {/* Left: Hamburger + Small Brand */}
+      <div className="flex items-center justify-between w-full px-3 py-3 max-w-full overflow-hidden">
+        {/* Left: Hamburger + Brand */}
         <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
           {onToggleSidebar && (
             <Button
@@ -64,19 +64,19 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
             </Button>
           )}
           
-          {/* Small brand mark - logo only */}
+          {/* Brand mark - bigger logo for better visibility */}
           {!isLoading && logoUrl && (
-            <div className="bg-card border border-border rounded p-1.5">
+            <div className="bg-card border border-border rounded p-1">
               <img
                 src={logoUrl}
                 alt="Logo"
-                className="max-w-[48px] max-h-[32px] w-auto h-auto object-contain"
+                className="max-w-[80px] max-h-[40px] w-auto h-auto object-contain"
               />
             </div>
           )}
           {isLoading && (
-            <div className="bg-card border border-border rounded p-1.5">
-              <div className="w-12 h-8 flex items-center justify-center">
+            <div className="bg-card border border-border rounded p-1">
+              <div className="w-20 h-10 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b border-muted-foreground"></div>
               </div>
             </div>
