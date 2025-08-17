@@ -144,6 +144,34 @@ export const useEnhancedMaterialRequestsAdmin = () => {
     },
   });
 
+  // Delete material request
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('material_requests')
+        .delete()
+        .eq('id', id)
+        .eq('company_id', user?.companyId); // Ensure company isolation
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enhanced-material-requests', user?.companyId] });
+      toast({
+        title: 'Request Deleted',
+        description: 'Material request has been permanently deleted.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting request:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete request. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Enhanced filter function
   const filteredRequests = requests.filter(request => {
     // Search filter
@@ -171,6 +199,10 @@ export const useEnhancedMaterialRequestsAdmin = () => {
     updateStatusMutation.mutate({ id, status });
   };
 
+  const handleDeleteRequest = (id: string) => {
+    deleteMutation.mutate(id);
+  };
+
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
@@ -196,6 +228,7 @@ export const useEnhancedMaterialRequestsAdmin = () => {
     selectedRequest,
     setSelectedRequest,
     handleStatusUpdate,
+    handleDeleteRequest,
     clearFilters
   };
 };

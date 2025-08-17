@@ -14,7 +14,8 @@ import {
   Download, 
   Image,
   ChevronDown,
-  Building2
+  Building2,
+  Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { MaterialRequest, RequestStatus } from '../types/materialRequest';
@@ -27,6 +28,8 @@ interface AccordionMaterialRequestCardProps {
   onStatusUpdate: (id: string, status: RequestStatus) => void;
   onViewDetails: (request: MaterialRequest) => void;
   onExportPDF: (request: MaterialRequest) => void;
+  onDelete: (id: string) => void;
+  isAdmin: boolean;
 }
 
 const AccordionMaterialRequestCard = ({
@@ -35,7 +38,9 @@ const AccordionMaterialRequestCard = ({
   onToggle,
   onStatusUpdate,
   onViewDetails,
-  onExportPDF
+  onExportPDF,
+  onDelete,
+  isAdmin
 }: AccordionMaterialRequestCardProps) => {
   const { data: attachments = [] } = useMaterialRequestAttachments(request.id);
 
@@ -281,6 +286,18 @@ const AccordionMaterialRequestCard = ({
                   <Download className="h-4 w-4" />
                   Export PDF
                 </Button>
+
+                {isAdmin && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDelete(request.id)}
+                    className="flex items-center gap-2 hover:bg-destructive/10 hover:border-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                )}
               </div>
               
               <div className="flex items-center gap-2">

@@ -15,13 +15,16 @@ import { supabase } from '@/integrations/supabase/client';
 import EnhancedMaterialRequestFilters from './material-requests/EnhancedMaterialRequestFilters';
 import AccordionMaterialRequestCard from './material-requests/AccordionMaterialRequestCard';
 import MaterialRequestDetailsPanel from './material-requests/MaterialRequestDetailsPanel';
+import { DeleteConfirmDialog } from './material-requests/DeleteConfirmDialog';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const MaterialRequestInbox = () => {
   const { toast } = useToast();
   const { settings } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   const {
     requests,
@@ -40,11 +43,14 @@ const MaterialRequestInbox = () => {
     selectedRequest,
     setSelectedRequest,
     handleStatusUpdate,
+    handleDeleteRequest,
     clearFilters
   } = useEnhancedMaterialRequestsAdmin();
 
   const [detailsPanelOpen, setDetailsPanelOpen] = React.useState(false);
   const [expandedCard, setExpandedCard] = React.useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [requestToDelete, setRequestToDelete] = React.useState<MaterialRequest | null>(null);
 
   const isPermissionError = (error: any) => {
     return error?.message?.includes('permission denied') || 
@@ -95,6 +101,24 @@ const MaterialRequestInbox = () => {
       });
     }
   };
+
+  const handleDeleteClick = (id: string) => {
+    const request = requests.find(r => r.id === id);
+    if (request) {
+      setRequestToDelete(request);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (requestToDelete) {
+      handleDeleteRequest(requestToDelete.id);
+      setDeleteDialogOpen(false);
+      setRequestToDelete(null);
+    }
+  };
+
+  const isCompanyAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   if (isLoading) {
     return (
@@ -226,6 +250,8 @@ const MaterialRequestInbox = () => {
                 onStatusUpdate={handleStatusUpdate}
                 onViewDetails={handleViewDetails}
                 onExportPDF={handleExportPDF}
+                onDelete={handleDeleteClick}
+                isAdmin={isCompanyAdmin}
               />
             ))}
           </div>
@@ -239,6 +265,14 @@ const MaterialRequestInbox = () => {
         onClose={() => setDetailsPanelOpen(false)}
         onStatusUpdate={handleStatusUpdate}
         onExportPDF={handleExportPDF}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        request={requestToDelete}
       />
     </div>
   );
