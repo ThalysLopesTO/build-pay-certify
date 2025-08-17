@@ -17,7 +17,7 @@ const RoleBasedRedirect: React.FC<RoleBasedRedirectProps> = ({ children }) => {
     if (!isAuthenticated || !user) {
       // Not authenticated - allow access to login pages but redirect dashboard pages to login
       if (location.pathname.includes('/dashboard')) {
-        navigate('/admin-login', { replace: true });
+        navigate('/login', { replace: true });
       }
       // Allow access to login pages, home page, and registration pages when not authenticated
       return;
@@ -37,7 +37,7 @@ const RoleBasedRedirect: React.FC<RoleBasedRedirectProps> = ({ children }) => {
         case 'employee':
           return '/employee/dashboard';
         default:
-          return '/admin-login';
+          return '/login';
       }
     };
 
@@ -49,7 +49,7 @@ const RoleBasedRedirect: React.FC<RoleBasedRedirectProps> = ({ children }) => {
     // If authenticated user is on wrong dashboard or on login/home pages, redirect to correct dashboard
     if (
       isDashboardRoute && location.pathname !== expectedPath ||
-      
+      location.pathname === '/login' ||
       location.pathname === '/admin-login' ||
       location.pathname === '/employee-login' ||
       location.pathname === '/'

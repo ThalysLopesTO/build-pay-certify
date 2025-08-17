@@ -43,7 +43,7 @@ const InvoicePreview = () => {
 
   // Restrict access to admin only
   if (!user || !['admin', 'super_admin'].includes(user.role)) {
-    return <Navigate to="/admin-login" replace />;
+    return <Navigate to="/login" replace />;
   }
   if (invoiceLoading || companyLoading || logoLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50">

@@ -33,7 +33,7 @@ const Header = () => {
       
       // Force a complete page reload to ensure all state is cleared
       // This is more reliable than relying on React state updates
-      window.location.href = '/admin-login';
+      window.location.href = '/login';
       
     } catch (error) {
       console.error('Header logout error:', error);
@@ -45,7 +45,7 @@ const Header = () => {
       });
       
       // Force redirect as fallback
-      window.location.href = '/admin-login';
+      window.location.href = '/login';
     }
   };
 

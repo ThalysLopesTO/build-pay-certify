@@ -61,7 +61,7 @@ const SubscriptionLanding = () => {
               <p className="text-xs text-slate-500 mb-2">
                 Already have an account?
               </p>
-              <Link to="/admin-login">
+              <Link to="/login">
                 <Button variant="outline" size="sm">
                   Sign In
                 </Button>

@@ -59,7 +59,7 @@ const RegistrationSuccess = () => {
             )}
             
             <div className="pt-4 border-t">
-              <Link to={paymentSuccess ? "/admin-login" : "/"}>
+              <Link to={paymentSuccess ? "/login" : "/"}>
                 <Button className="w-full bg-orange-600 hover:bg-orange-700">
                   {paymentSuccess ? 'Sign In Now' : 'Return to Home'}
                 </Button>
