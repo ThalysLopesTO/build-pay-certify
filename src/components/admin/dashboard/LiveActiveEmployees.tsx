@@ -297,53 +297,80 @@ const LiveActiveEmployees = () => {
             No punch activities for this date
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {activities.map((activity) => (
-              <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <div className={`p-1.5 rounded-full ${
+              <div key={activity.id} className="relative">
+                <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-card to-card/50 rounded-lg border border-border shadow-sm hover:shadow-md transition-all duration-200">
+                  {/* Status Icon */}
+                  <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
                     activity.activity_type === 'punch_in' 
                       ? activity.is_active 
-                        ? 'bg-green-100' 
-                        : 'bg-blue-100' 
-                      : 'bg-red-100'
+                        ? 'bg-emerald-100 text-emerald-600' 
+                        : 'bg-blue-100 text-blue-600' 
+                      : 'bg-red-100 text-red-600'
                   }`}>
                     {activity.activity_type === 'punch_in' ? (
-                      <LogIn className={`h-3 w-3 ${
-                        activity.is_active ? 'text-green-600' : 'text-blue-600'
-                      }`} />
+                      <LogIn className="h-5 w-5" />
                     ) : (
-                      <LogOut className="h-3 w-3 text-red-600" />
+                      <LogOut className="h-5 w-5" />
                     )}
                   </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">{activity.employee_name}</div>
-                    <div className="text-sm text-gray-600">{activity.jobsite_name}</div>
-                    {activity.role && (
-                      <div className="text-xs text-blue-600 font-medium capitalize">{activity.role}</div>
-                    )}
+
+                  {/* Main Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-foreground truncate">
+                          {activity.employee_name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          {activity.jobsite_name}
+                        </p>
+                        {activity.role && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                            {activity.role.charAt(0).toUpperCase() + activity.role.slice(1)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Time and Status */}
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          <span className="font-medium">
+                            {formatClockInTime(activity.timestamp)}
+                          </span>
+                        </div>
+                        
+                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                          activity.activity_type === 'punch_in'
+                            ? activity.is_active
+                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                              : 'bg-blue-100 text-blue-700 border border-blue-200'
+                            : 'bg-red-100 text-red-700 border border-red-200'
+                        }`}>
+                          {activity.activity_type === 'punch_in' 
+                            ? activity.is_active 
+                              ? '🟢 Currently Active'
+                              : '🔵 Punched In'
+                            : `🔴 Punched Out`
+                          }
+                        </div>
+
+                        {activity.time_worked && (
+                          <div className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded">
+                            Total: {activity.time_worked}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center text-sm text-gray-600 mb-1">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {formatClockInTime(activity.timestamp)}
-                  </div>
-                  <div className={`text-xs font-medium ${
-                    activity.activity_type === 'punch_in'
-                      ? activity.is_active
-                        ? 'text-green-600'
-                        : 'text-blue-600'
-                      : 'text-red-600'
-                  }`}>
-                    {activity.activity_type === 'punch_in' 
-                      ? activity.is_active 
-                        ? 'Currently Active'
-                        : 'Punched In'
-                      : `Punched Out${activity.time_worked ? ` • ${activity.time_worked}` : ''}`
-                    }
-                  </div>
-                </div>
+
+                {/* Activity indicator line */}
+                {activity.is_active && (
+                  <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-emerald-400 to-emerald-600 animate-pulse"></div>
+                )}
               </div>
             ))}
           </div>
