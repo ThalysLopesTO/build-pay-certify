@@ -1,14 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, Clock, DollarSign, Calculator } from 'lucide-react';
+import { ChevronDown, Clock, DollarSign, Calculator, AlertCircle } from 'lucide-react';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import WeeklyHoursEditor from '@/components/admin/timesheets/WeeklyHoursEditor';
 import { getDaysForPeriod } from '@/lib/time/periods';
 import { addDays } from 'date-fns';
@@ -26,8 +28,21 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   onSave,
   isSaving
 }) => {
-  const { settings: companySettings } = useCompanySettings();
+  const { user } = useAuth();
+  const { settings: companySettings, isLoading: settingsLoading } = useCompanySettings();
   const taxRate = companySettings?.tax_percentage || 13;
+  
+  // Permission check - only admin, super_admin, and management can edit timesheets
+  const canEditTimesheets = user?.role && ['admin', 'super_admin', 'management'].includes(user.role);
+  
+  // Enhanced bi-weekly detection with fallback logic
+  const isBiWeekly = (() => {
+    // First check company settings
+    if (companySettings?.timesheet_frequency === 'bi-weekly') return true;
+    // Fallback: detect from timesheet notes containing bi-weekly data
+    if (timesheet.notes && timesheet.notes.includes('__biweekly_json__=')) return true;
+    return false;
+  })();
   
   // Check worker type to determine what to show
   const isPayrollEmployee = timesheet.worker_type === 'employee';
@@ -53,8 +68,6 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   const [expensesOpen, setExpensesOpen] = useState(false);
   const [taxOpen, setTaxOpen] = useState(false);
 
-  // Bi-weekly handling
-  const isBiWeekly = ((companySettings as any)?.timesheet_frequency === 'bi-weekly');
   const [openWeek, setOpenWeek] = useState<'week1' | 'week2'>('week1');
 
   // Period days for labels
@@ -76,23 +89,33 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
    };
    const [notesText, setNotesText] = useState<string>(stripBiWeeklyMeta(timesheet.notes));
 
-  // Bi-weekly hours (14) state
+  // Enhanced bi-weekly hours parsing with better error handling
   const parseBiWeeklyHours = (notes?: string): number[] | null => {
-    if (!notes) return null;
+    if (!notes || !isBiWeekly) return null;
     try {
       const line = notes.split('\n').find((l: string) => l.startsWith('__biweekly_json__='));
       if (!line) return null;
-      const json = JSON.parse(atob(line.split('=')[1]));
+      
+      const encodedData = line.split('=')[1];
+      if (!encodedData) return null;
+      
+      const json = JSON.parse(atob(encodedData));
       if (Array.isArray(json?.days) && json.days.length === 14) {
         return json.days.map((d: any) => Number(d.hours || 0));
       }
       return null;
-    } catch {
+    } catch (error) {
+      console.error('Error parsing bi-weekly hours:', error);
       return null;
     }
   };
 
+  // Initialize bi-weekly hours with improved logic
   const initial14 = (() => {
+    if (!isBiWeekly) {
+      return new Array(14).fill(0);
+    }
+    
     const first7 = [
       Number(timesheet.monday_hours || 0),
       Number(timesheet.tuesday_hours || 0),
@@ -102,8 +125,11 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
       Number(timesheet.saturday_hours || 0),
       Number(timesheet.sunday_hours || 0),
     ];
-    const second7 = parseBiWeeklyHours(timesheet.notes) ?? new Array(7).fill(0);
-    return [...first7, ...second7].slice(0, 14);
+    
+    const parsedWeek2 = parseBiWeeklyHours(timesheet.notes);
+    const second7 = parsedWeek2?.slice(7, 14) || new Array(7).fill(0);
+    
+    return [...first7, ...second7];
   })();
   const [hours14, setHours14] = useState<number[]>(initial14);
 
@@ -241,18 +267,64 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
     }));
   };
 
+  // Permission check UI
+  if (!canEditTimesheets) {
+    return (
+      <Dialog open={true} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Access Denied
+            </DialogTitle>
+          </DialogHeader>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              You don't have permission to edit timesheets. Only administrators and managers can edit timesheet entries.
+            </AlertDescription>
+          </Alert>
+          <div className="flex justify-end pt-4">
+            <Button onClick={onClose} variant="outline">Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Loading state while fetching company settings
+  if (settingsLoading) {
+    return (
+      <Dialog open={true} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Loading...</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Edit Timesheet
+            Edit Timesheet {isBiWeekly && <span className="text-sm font-normal text-muted-foreground">(Bi-weekly)</span>}
           </DialogTitle>
           {/* Employee Type Label */}
           <div className="text-sm text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
             <span className="font-medium">Employee Type:</span> 
             {isPayrollEmployee ? ' Payroll — With Deductions' : ' Subcontractor (HST Optional)'}
+            {isBiWeekly && (
+              <span className="ml-2 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs font-medium">
+                BI-WEEKLY
+              </span>
+            )}
           </div>
         </DialogHeader>
 

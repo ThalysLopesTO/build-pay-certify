@@ -135,8 +135,13 @@ export const useWeeklyTimesheetActions = () => {
       updates: any;
       originalData: any;
     }) => {
-      if (!user?.id) {
+      if (!user?.id || !user?.companyId) {
         throw new Error('User not authenticated');
+      }
+
+      // Permission check - only admin, super_admin, and management can edit timesheets
+      if (!user.role || !['admin', 'super_admin', 'management'].includes(user.role)) {
+        throw new Error('You do not have permission to edit timesheets');
       }
 
       console.log('Editing weekly timesheet:', timesheetId, updates);
