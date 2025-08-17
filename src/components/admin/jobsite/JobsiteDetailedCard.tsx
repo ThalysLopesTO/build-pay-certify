@@ -12,6 +12,7 @@ import JobsiteTaskCard from './JobsiteTaskCard';
 import JobsiteMaterialTakeoff from './JobsiteMaterialTakeoff';
 import JobsiteEditModal from './JobsiteEditModal';
 import EditJobsiteDialog from './EditJobsiteDialog';
+import JobsiteDeleteDialog from './JobsiteDeleteDialog';
 
 interface Jobsite {
   id: string;
@@ -31,21 +32,26 @@ interface JobsiteDetailedCardProps {
 }
 
 const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) => {
-  const { deleteJobsite, markJobsiteCompleted, reactivateJobsite } = useJobsiteActions();
+  const { deleteJobsite, archiveJobsite, cascadeDeleteJobsite, markJobsiteCompleted, reactivateJobsite } = useJobsiteActions();
   const { data: tasks = [], isLoading: tasksLoading } = useJobsiteTasks(jobsite.id);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const handleDelete = async () => {
-    if (window.confirm(`Are you sure you want to delete "${jobsite.name}"? This action cannot be undone.`)) {
-      try {
-        await deleteJobsite.mutateAsync(jobsite.id);
-      } catch (error) {
-        console.error('Error deleting jobsite:', error);
-      }
+  const handleDelete = (archiveInstead: boolean) => {
+    if (archiveInstead) {
+      archiveJobsite.mutateAsync(jobsite.id);
+    } else {
+      deleteJobsite.mutateAsync(jobsite.id);
     }
+    setShowDeleteDialog(false);
+  };
+
+  const handleCascadeDelete = () => {
+    cascadeDeleteJobsite.mutateAsync(jobsite.id);
+    setShowDeleteDialog(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -185,8 +191,8 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleDelete}
-              disabled={deleteJobsite.isPending}
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={deleteJobsite.isPending || archiveJobsite.isPending || cascadeDeleteJobsite.isPending}
               className="text-destructive hover:bg-destructive/10 hover:text-destructive p-2 rounded-full"
             >
               <Trash2 className="h-4 w-4" />
@@ -278,6 +284,15 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
           ...jobsite,
           status: jobsite.status || 'active'
         }}
+      />
+
+      <JobsiteDeleteDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        jobsite={jobsite}
+        onConfirmDelete={handleDelete}
+        onConfirmCascade={handleCascadeDelete}
+        isDeleting={deleteJobsite.isPending || archiveJobsite.isPending || cascadeDeleteJobsite.isPending}
       />
     </Card>
   );
