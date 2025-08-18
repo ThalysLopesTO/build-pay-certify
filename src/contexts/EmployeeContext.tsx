@@ -364,7 +364,7 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
         })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
       const updateResult = await withTimeout(
         Promise.resolve(updatePromise), 
