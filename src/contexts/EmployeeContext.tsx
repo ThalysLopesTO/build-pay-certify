@@ -263,6 +263,16 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
     console.log('✅ Employee added to context successfully');
   };
 
+  // Helper function to add timeout to promises
+  const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => 
+        setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
+      )
+    ]);
+  };
+
   const updateEmployee = async (id: string, updates: Partial<Employee>, newPhoto?: File) => {
     console.log('🔄 Updating employee optimistically:', id, updates);
     
@@ -292,6 +302,27 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
     dispatch({ type: 'UPDATE_EMPLOYEE', payload: updatedEmployee });
 
     try {
+      // Handle auth email update if email is being changed
+      if (updates.email) {
+        console.log('📧 Updating auth email...');
+        const { data: emailUpdateData, error: emailUpdateError } = await supabase.functions.invoke(
+          'update-user-email',
+          {
+            body: {
+              userId: currentEmployee.user_id,
+              newEmail: updates.email
+            }
+          }
+        );
+
+        if (emailUpdateError || !emailUpdateData?.success) {
+          const errorMessage = emailUpdateError?.message || emailUpdateData?.error || 'Failed to update login email';
+          throw new Error(`Email update failed: ${errorMessage}`);
+        }
+        
+        console.log('✅ Auth email updated successfully');
+      }
+
       let photoUrl = updates.photo_url;
 
       // Handle photo upload if provided with timeout
@@ -307,14 +338,11 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
             upsert: true
           });
 
-        // Add timeout to upload
-        const uploadResult = await Promise.race([
-          uploadPromise,
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Photo upload timed out after 15 seconds')), 15000)
-          )
-        ]);
-
+        const uploadResult = await withTimeout(
+          Promise.resolve(uploadPromise), 
+          15000, 
+          'Photo upload timed out after 15 seconds'
+        );
         const { data: uploadData, error: uploadError } = uploadResult as any;
         if (uploadError) throw new Error('Failed to upload employee photo');
 
@@ -338,13 +366,11 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
         .select()
         .single();
 
-      const updateResult = await Promise.race([
-        updatePromise,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database update timed out after 10 seconds')), 10000)
-        )
-      ]);
-
+      const updateResult = await withTimeout(
+        Promise.resolve(updatePromise), 
+        10000, 
+        'Database update timed out after 10 seconds'
+      );
       const { data, error } = updateResult as any;
 
       if (error) throw error;
