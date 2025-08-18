@@ -15,17 +15,12 @@ export const useEmployeeRegistrationForm = () => {
   const { user } = useAuth();
   const { data: employeeLimit } = useEmployeeLimit();
   const { createEmployee, refreshEmployees } = useEmployees();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Cleanup function to reset loading state and clear timeouts
+  // Cleanup function to reset loading state and abort any ongoing requests
   const resetLoadingState = () => {
     setLoading(false);
     setLoadingStep('');
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -86,17 +81,6 @@ export const useEmployeeRegistrationForm = () => {
     
     // Create abort controller for this request
     abortControllerRef.current = new AbortController();
-    
-    // Set timeout for the entire operation (90 seconds for foremen who might have slower connections)
-    timeoutRef.current = setTimeout(() => {
-      console.error('⏰ Registration timeout - process took too long');
-      resetLoadingState();
-      toast({
-        title: "Registration Timeout",
-        description: "The registration process is taking too long. Please try again. If the problem persists, try creating the employee without a photo first.",
-        variant: "destructive",
-      });
-    }, 90000);
     
     try {
       console.log('Submitting employee registration:', { 
