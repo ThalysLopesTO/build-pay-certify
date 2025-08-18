@@ -294,19 +294,28 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
     try {
       let photoUrl = updates.photo_url;
 
-      // Handle photo upload if provided
+      // Handle photo upload if provided with timeout
       if (newPhoto) {
         console.log('📸 Uploading new photo...');
         const fileExtension = newPhoto.name.split('.').pop();
         const fileName = `${id}.${fileExtension}`;
         
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const uploadPromise = supabase.storage
           .from('employee-photos')
           .upload(fileName, newPhoto, {
             cacheControl: '3600',
             upsert: true
           });
 
+        // Add timeout to upload
+        const uploadResult = await Promise.race([
+          uploadPromise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Photo upload timed out after 15 seconds')), 15000)
+          )
+        ]);
+
+        const { data: uploadData, error: uploadError } = uploadResult as any;
         if (uploadError) throw new Error('Failed to upload employee photo');
 
         const { data: publicUrlData } = supabase.storage
@@ -317,8 +326,8 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
         console.log('✅ Photo uploaded successfully:', photoUrl);
       }
 
-      // Update in Supabase
-      const { data, error } = await supabase
+      // Update in Supabase with timeout
+      const updatePromise = supabase
         .from('user_profiles')
         .update({
           ...updates,
@@ -328,6 +337,15 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
         .eq('id', id)
         .select()
         .single();
+
+      const updateResult = await Promise.race([
+        updatePromise,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database update timed out after 10 seconds')), 10000)
+        )
+      ]);
+
+      const { data, error } = updateResult as any;
 
       if (error) throw error;
 

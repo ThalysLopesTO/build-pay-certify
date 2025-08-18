@@ -84,6 +84,13 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
     if (!employee) return;
     
     setIsSubmitting(true);
+    
+    // Safety timeout to reset loading state
+    const safetyTimeout = setTimeout(() => {
+      console.warn('⚠️ Update operation timed out, resetting UI state');
+      setIsSubmitting(false);
+    }, 20000); // 20 second safety timeout
+    
     try {
       await updateEmployee(employee.id, {
         first_name: data.first_name,
@@ -98,10 +105,12 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
         worker_type: data.worker_type,
       });
       
+      clearTimeout(safetyTimeout);
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Error updating employee:', error);
+      clearTimeout(safetyTimeout);
     } finally {
       setIsSubmitting(false);
     }
