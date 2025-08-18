@@ -48,7 +48,10 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
   };
 
   return (
-    <div className="md:hidden sticky top-0 z-50 bg-background border-b border-border">
+    <div 
+      className="md:hidden sticky top-0 z-50 bg-background border-b border-border"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       <div className="flex items-center justify-between w-full px-3 py-3 max-w-full overflow-hidden">
         {/* Left: Hamburger + Brand */}
         <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
