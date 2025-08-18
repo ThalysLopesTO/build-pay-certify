@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/SupabaseAuthContext';
 import { RealtimeProvider } from '@/contexts/RealtimeProvider';
 import { EmployeeProvider } from '@/contexts/EmployeeContext';
 import { GlobalToasts } from '@/components/common/GlobalToasts';
+import IOSInstallTip from '@/components/common/IOSInstallTip';
 import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 
 // Import pages
@@ -108,6 +109,7 @@ const App: React.FC = () => {
               <GlobalToasts />
               <Toaster />
               <SonnerToaster />
+              <IOSInstallTip />
             </EmployeeProvider>
           </RealtimeProvider>
         </AuthProvider>

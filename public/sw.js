@@ -1,34 +1,46 @@
-const CACHE_NAME = 'stackbuild-v1';
+const CACHE_NAME = 'stackbuild-v2';
 const OFFLINE_URL = '/offline.html';
 
-// Assets to cache on install
+// Assets to cache on install (app shell)
 const STATIC_CACHE_URLS = [
   '/',
   '/offline.html',
-  '/login',
-  '/dashboard',
-  '/employee-dashboard',
   '/manifest.json'
 ];
 
-// Cache-first strategy for these routes
+// Cache-first strategy for static assets
 const CACHE_FIRST_ROUTES = [
   '/static/',
   '/assets/',
   '/icons/',
+  '/screenshots/',
   '.js',
   '.css',
   '.png',
   '.jpg',
+  '.jpeg',
   '.svg',
-  '.ico'
+  '.ico',
+  '.woff',
+  '.woff2',
+  '.ttf'
 ];
 
-// Network-first strategy for these routes  
+// Network-first strategy for API calls (with caching for offline)
 const NETWORK_FIRST_ROUTES = [
   '/api/',
+  '/rest/v1/',
+  '/storage/v1/object/public'
+];
+
+// Routes to never cache
+const NO_CACHE_ROUTES = [
   '/auth/',
-  '/supabase/'
+  '/rest/v1/auth/',
+  '/realtime/',
+  '/functions/v1/',
+  'socket.io',
+  'websocket'
 ];
 
 self.addEventListener('install', (event) => {
@@ -73,7 +85,17 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Handle navigation requests
+  // Skip caching for certain routes
+  if (NO_CACHE_ROUTES.some(route => url.pathname.includes(route) || url.hostname.includes(route))) {
+    return;
+  }
+
+  // Skip non-GET requests for caching
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // Handle navigation requests (SPA routing support)
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -89,8 +111,8 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // Return cached version or offline page
-          return caches.match(request)
+          // Return cached version or offline page for SPA routes
+          return caches.match('/')
             .then((cachedResponse) => {
               return cachedResponse || caches.match(OFFLINE_URL);
             });
@@ -100,7 +122,11 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Cache-first strategy for static assets
-  if (CACHE_FIRST_ROUTES.some(route => url.pathname.includes(route))) {
+  if (CACHE_FIRST_ROUTES.some(route => 
+    url.pathname.includes(route) || 
+    url.pathname.endsWith(route) ||
+    url.hostname !== location.hostname
+  )) {
     event.respondWith(
       caches.match(request)
         .then((cachedResponse) => {
@@ -118,34 +144,39 @@ self.addEventListener('fetch', (event) => {
                   });
               }
               return response;
+            })
+            .catch(() => {
+              // For images and assets, return a placeholder or skip
+              return new Response('', { status: 204 });
             });
         })
     );
     return;
   }
 
-  // Network-first strategy for API calls
+  // Stale-while-revalidate for API GET requests
   if (NETWORK_FIRST_ROUTES.some(route => url.pathname.includes(route))) {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(request, responseClone);
-              });
-          }
-          return response;
-        })
-        .catch(() => {
-          return caches.match(request);
+      caches.open(CACHE_NAME)
+        .then((cache) => {
+          return fetch(request)
+            .then((response) => {
+              // Cache successful responses
+              if (response.status === 200) {
+                cache.put(request, response.clone());
+              }
+              return response;
+            })
+            .catch(() => {
+              // Return cached version if network fails
+              return cache.match(request);
+            });
         })
     );
     return;
   }
 
-  // Default: try network first, fallback to cache
+  // Default: network-first with cache fallback
   event.respondWith(
     fetch(request)
       .catch(() => {
