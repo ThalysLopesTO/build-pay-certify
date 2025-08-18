@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Building, User, Clock, Timer, FileText, AlertTriangle, Award, Settings, ArrowRight, Eye } from 'lucide-react';
+import { Building, User, Clock, Timer, FileText, AlertTriangle, Award, Settings, ArrowRight, Eye, AlertCircle } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,6 +60,13 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       onClick: () => onNavigateToTab('timesheet'),
       color: 'bg-blue-600 hover:bg-blue-700',
       description: 'Submit hours'
+    },
+    {
+      title: 'Missed Punch',
+      icon: AlertCircle,
+      onClick: () => onNavigateToTab('missed-punch-requests'),
+      color: 'bg-red-600 hover:bg-red-700',
+      description: 'Report missed punch'
     },
     {
       title: 'Certificates',
@@ -124,7 +131,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       {/* Quick Actions */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-slate-900">Quick Actions</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {quickActions.map((action, index) => {
             const Icon = action.icon;
             return (

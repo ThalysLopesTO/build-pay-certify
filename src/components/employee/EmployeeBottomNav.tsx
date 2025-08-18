@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, FileText, AlertTriangle, Settings, Home } from 'lucide-react';
+import { Clock, FileText, AlertTriangle, Settings, Home, AlertCircle } from 'lucide-react';
 
 interface EmployeeBottomNavProps {
   activeTab: string;
@@ -22,16 +22,16 @@ const EmployeeBottomNav: React.FC<EmployeeBottomNavProps> = ({ activeTab, onTabC
       color: 'text-blue-600'
     },
     {
+      id: 'missed-punch-requests',
+      label: 'Missed Punch',
+      icon: AlertCircle,
+      color: 'text-red-600'
+    },
+    {
       id: 'attention-report',
       label: 'Report',
       icon: AlertTriangle,
       color: 'text-orange-600'
-    },
-    {
-      id: 'my-reports',
-      label: 'My Reports',
-      icon: FileText,
-      color: 'text-green-600'
     },
     {
       id: 'settings',
