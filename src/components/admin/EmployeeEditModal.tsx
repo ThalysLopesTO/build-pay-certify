@@ -83,34 +83,54 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   const handleSubmit = async (data: EditEmployeeFormData) => {
     if (!employee) return;
     
+    console.log('🚀 Starting employee update process...', { employeeId: employee.id, hasPhoto: !!data.photo });
     setIsSubmitting(true);
     
     // Safety timeout to reset loading state
     const safetyTimeout = setTimeout(() => {
       console.warn('⚠️ Update operation timed out, resetting UI state');
       setIsSubmitting(false);
-    }, 20000); // 20 second safety timeout
+    }, 30000); // 30 second safety timeout for photo uploads
     
     try {
-      await updateEmployee(employee.id, {
+      console.log('📝 Preparing update data...');
+      
+      // Extract photo file from form data
+      const photoFile = data.photo instanceof File ? data.photo : undefined;
+      
+      console.log('📋 Update payload:', {
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email || undefined,
-        phone: data.phone || undefined,
-        address: data.address || undefined,
-        position: data.position || undefined,
-        trade: data.trade || undefined,
-        role: data.role,
-        hourly_rate: data.hourly_rate || undefined,
-        worker_type: data.worker_type,
+        hasPhoto: !!photoFile,
+        photoName: photoFile?.name
       });
       
+      await updateEmployee(
+        employee.id, 
+        {
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email || undefined,
+          phone: data.phone || undefined,
+          address: data.address || undefined,
+          position: data.position || undefined,
+          trade: data.trade || undefined,
+          role: data.role,
+          hourly_rate: data.hourly_rate || undefined,
+          worker_type: data.worker_type,
+        },
+        photoFile // Pass the photo file as the third parameter
+      );
+      
+      console.log('✅ Employee update completed successfully');
       clearTimeout(safetyTimeout);
       onSuccess();
       onClose();
     } catch (error) {
-      console.error('Error updating employee:', error);
+      console.error('❌ Error updating employee:', error);
       clearTimeout(safetyTimeout);
+      // Don't throw the error to prevent unhandled promise rejection
     } finally {
       setIsSubmitting(false);
     }

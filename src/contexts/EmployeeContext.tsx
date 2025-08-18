@@ -373,13 +373,26 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
       );
       const { data, error } = updateResult as any;
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database update failed:', error);
+        throw error;
+      }
+
+      if (!data) {
+        console.warn('⚠️ No data returned from update, employee may not exist');
+        throw new Error('Employee not found or update failed');
+      }
 
       // Update with final server response
       const finalEmployee = { ...data, photo_url: photoUrl };
       dispatch({ type: 'UPDATE_EMPLOYEE', payload: finalEmployee });
 
-      console.log('✅ Employee updated successfully in Supabase');
+      console.log('✅ Employee updated successfully in Supabase', { 
+        employeeId: finalEmployee.id,
+        updatedFields: Object.keys(updates),
+        hasNewPhoto: !!newPhoto
+      });
+      
       toast({
         title: "Employee Updated",
         description: `${updates.first_name || currentEmployee.first_name} ${updates.last_name || currentEmployee.last_name} has been updated successfully.`,
