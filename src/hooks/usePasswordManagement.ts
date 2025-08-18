@@ -11,6 +11,7 @@ interface ResetPasswordData {
 }
 
 interface UpdateOwnPasswordData {
+  currentPassword: string;
   password: string;
 }
 
@@ -74,6 +75,17 @@ export const useUpdateOwnPassword = () => {
 
   return useMutation({
     mutationFn: async (data: UpdateOwnPasswordData) => {
+      // First verify current password by attempting to sign in
+      const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
+        email: (await supabase.auth.getUser()).data.user?.email || '',
+        password: data.currentPassword
+      });
+
+      if (signInError) {
+        throw new Error('Current password is incorrect');
+      }
+
+      // If current password is correct, update to new password
       const { error } = await supabase.auth.updateUser({
         password: data.password
       });

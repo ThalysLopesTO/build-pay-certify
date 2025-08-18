@@ -16,13 +16,17 @@ const PasswordTab = () => {
   const passwordForm = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
     defaultValues: {
+      currentPassword: '',
       password: '',
       confirmPassword: '',
     },
   });
 
   const onPasswordSubmit = (data: PasswordFormData) => {
-    updatePassword.mutate({ password: data.password });
+    updatePassword.mutate({ 
+      currentPassword: data.currentPassword,
+      password: data.password 
+    });
     passwordForm.reset();
   };
 
@@ -34,6 +38,20 @@ const PasswordTab = () => {
       <CardContent>
         <Form {...passwordForm}>
           <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+            <FormField
+              control={passwordForm.control}
+              name="currentPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Current Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={passwordForm.control}
               name="password"
