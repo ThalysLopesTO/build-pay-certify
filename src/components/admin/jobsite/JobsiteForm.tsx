@@ -144,7 +144,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
             {/* BUTTONS */}
             <div className="flex space-x-2">
               <Button type="submit" disabled={addJobsite.isPending || assignForemen.isPending}>
-                {(addJobsite.isPending || assignForemen.isPending) ? 'Adding...' : 'Add Jobsite'}
+                {addJobsite.isPending ? 'Creating jobsite...' : assignForemen.isPending ? 'Assigning foremen...' : 'Add Jobsite'}
               </Button>
               <Button
                 type="button"

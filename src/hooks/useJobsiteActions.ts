@@ -56,22 +56,29 @@ export const useJobsiteActions = () => {
         }
       }
 
-      // If no valid coordinates provided, try geocoding the address
+      // If no valid coordinates provided, try geocoding the address with timeout
       if (insertData.latitude === undefined || insertData.longitude === undefined) {
         try {
           console.log('Attempting to geocode address:', data.address);
-          const geocodeResult = await geocodeAddress(data.address.trim());
           
-          if ('latitude' in geocodeResult && 'longitude' in geocodeResult) {
+          // Add timeout for geocoding request (5 seconds max)
+          const geocodePromise = geocodeAddress(data.address.trim());
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Geocoding timeout')), 5000)
+          );
+          
+          const geocodeResult = await Promise.race([geocodePromise, timeoutPromise]) as any;
+          
+          if (geocodeResult && 'latitude' in geocodeResult && 'longitude' in geocodeResult) {
             insertData.latitude = geocodeResult.latitude;
             insertData.longitude = geocodeResult.longitude;
             console.log('Geocoding successful:', geocodeResult);
           } else {
-            console.warn('Geocoding failed:', geocodeResult.error);
+            console.warn('Geocoding failed:', (geocodeResult as any)?.error || 'Unknown error');
             // Don't throw error - just save without coordinates
           }
         } catch (geocodeError) {
-          console.warn('Geocoding error:', geocodeError);
+          console.warn('Geocoding error (continuing without coordinates):', geocodeError);
           // Continue without coordinates - don't fail the entire operation
         }
       }
