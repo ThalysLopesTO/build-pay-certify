@@ -302,9 +302,75 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
     dispatch({ type: 'UPDATE_EMPLOYEE', payload: updatedEmployee });
 
     try {
-      // Handle auth email update if email is being changed
-      if (updates.email) {
-        console.log('📧 Updating auth email...');
+      let photoUrl = updates.photo_url;
+
+      // Step 1: Handle photo upload first (if provided) - with timeout
+      if (newPhoto) {
+        console.log('📸 Step 1: Uploading new photo...');
+        const fileExtension = newPhoto.name.split('.').pop();
+        const fileName = `${id}.${fileExtension}`;
+        
+        const uploadResult = await withTimeout(
+          supabase.storage
+            .from('employee-photos')
+            .upload(fileName, newPhoto, {
+              cacheControl: '3600',
+              upsert: true
+            }) as any, 
+          15000, 
+          'Photo upload timed out after 15 seconds'
+        );
+        const { data: uploadData, error: uploadError } = uploadResult as any;
+        if (uploadError) {
+          console.error('❌ Photo upload failed:', uploadError);
+          throw new Error('Failed to upload employee photo');
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('employee-photos')
+          .getPublicUrl(fileName);
+        
+        photoUrl = publicUrlData.publicUrl;
+        console.log('✅ Photo uploaded successfully:', photoUrl);
+      }
+
+      // Step 2: Update database with new photo URL - increased timeout for complex operations
+      console.log('📝 Step 2: Updating database...');
+      const updateResult = await withTimeout(
+        supabase
+          .from('user_profiles')
+          .update({
+            ...updates,
+            photo_url: photoUrl,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id)
+          .select()
+          .maybeSingle() as any, 
+        25000, 
+        'Database update timed out after 25 seconds'
+      );
+      const { data, error } = updateResult as any;
+
+      if (error) {
+        console.error('❌ Database update failed:', error);
+        throw new Error(`Database update failed: ${error.message || 'Unknown error'}`);
+      }
+
+      if (!data) {
+        console.warn('⚠️ No data returned from update, employee may not exist');
+        throw new Error('Employee not found or update failed - no data returned');
+      }
+
+      // Update with final server response
+      const finalEmployee = { ...data, photo_url: photoUrl };
+      dispatch({ type: 'UPDATE_EMPLOYEE', payload: finalEmployee });
+
+      console.log('✅ Step 2 completed: Database updated successfully');
+
+      // Step 3: Handle auth email update last (if email is being changed)
+      if (updates.email && updates.email !== currentEmployee.email) {
+        console.log('📧 Step 3: Updating auth email...');
         const { data: emailUpdateData, error: emailUpdateError } = await supabase.functions.invoke(
           'update-user-email',
           {
@@ -316,81 +382,25 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
         );
 
         if (emailUpdateError || !emailUpdateData?.success) {
+          console.warn('⚠️ Email update failed, but database update succeeded');
           const errorMessage = emailUpdateError?.message || emailUpdateData?.error || 'Failed to update login email';
-          throw new Error(`Email update failed: ${errorMessage}`);
+          // Don't throw here - database update already succeeded
+          toast({
+            title: "Partial Update",
+            description: "Employee profile updated, but login email update failed. Contact support.",
+            variant: "destructive",
+          });
+          return; // Exit early
         }
         
         console.log('✅ Auth email updated successfully');
       }
 
-      let photoUrl = updates.photo_url;
-
-      // Handle photo upload if provided with timeout
-      if (newPhoto) {
-        console.log('📸 Uploading new photo...');
-        const fileExtension = newPhoto.name.split('.').pop();
-        const fileName = `${id}.${fileExtension}`;
-        
-        const uploadPromise = supabase.storage
-          .from('employee-photos')
-          .upload(fileName, newPhoto, {
-            cacheControl: '3600',
-            upsert: true
-          });
-
-        const uploadResult = await withTimeout(
-          Promise.resolve(uploadPromise), 
-          15000, 
-          'Photo upload timed out after 15 seconds'
-        );
-        const { data: uploadData, error: uploadError } = uploadResult as any;
-        if (uploadError) throw new Error('Failed to upload employee photo');
-
-        const { data: publicUrlData } = supabase.storage
-          .from('employee-photos')
-          .getPublicUrl(fileName);
-        
-        photoUrl = publicUrlData.publicUrl;
-        console.log('✅ Photo uploaded successfully:', photoUrl);
-      }
-
-      // Update in Supabase with timeout
-      const updatePromise = supabase
-        .from('user_profiles')
-        .update({
-          ...updates,
-          photo_url: photoUrl,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .select()
-        .maybeSingle();
-
-      const updateResult = await withTimeout(
-        Promise.resolve(updatePromise), 
-        10000, 
-        'Database update timed out after 10 seconds'
-      );
-      const { data, error } = updateResult as any;
-
-      if (error) {
-        console.error('❌ Database update failed:', error);
-        throw error;
-      }
-
-      if (!data) {
-        console.warn('⚠️ No data returned from update, employee may not exist');
-        throw new Error('Employee not found or update failed');
-      }
-
-      // Update with final server response
-      const finalEmployee = { ...data, photo_url: photoUrl };
-      dispatch({ type: 'UPDATE_EMPLOYEE', payload: finalEmployee });
-
-      console.log('✅ Employee updated successfully in Supabase', { 
+      console.log('✅ All steps completed successfully', { 
         employeeId: finalEmployee.id,
         updatedFields: Object.keys(updates),
-        hasNewPhoto: !!newPhoto
+        hasNewPhoto: !!newPhoto,
+        emailUpdated: !!(updates.email && updates.email !== currentEmployee.email)
       });
       
       toast({
