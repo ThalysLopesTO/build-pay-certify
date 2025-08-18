@@ -85,7 +85,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
     
     setIsSubmitting(true);
     try {
-      await updateEmployee(employee.user_id, {
+      await updateEmployee(employee.id, {
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email || undefined,
