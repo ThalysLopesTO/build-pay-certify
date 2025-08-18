@@ -43,8 +43,8 @@ interface JobsiteEditModalProps {
 
 
 const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOpenChange }) => {
-  const { updateJobsite, geocodeJobsiteAddress } = useJobsiteActions();
-  const [isGeocoding, setIsGeocoding] = useState(false);
+  const { updateJobsite } = useJobsiteActions();
+  // Geocoding removed for simpler jobsite management
   const [useManualCoordinates, setUseManualCoordinates] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
   const addressInputRef = useRef<HTMLInputElement>(null);
