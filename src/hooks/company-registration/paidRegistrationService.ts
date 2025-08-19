@@ -24,7 +24,7 @@ export const processPaidRegistration = async (
   const planStripe = result.metadata.plan_name
 
   if (planStripe === "Premium") {
-    employeeLimit = 20;
+    employeeLimit = 50;
     plan = "pro";
   }
 
