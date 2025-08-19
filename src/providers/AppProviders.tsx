@@ -1,37 +1,52 @@
+// src/providers/AppProviders.tsx
 import { PropsWithChildren, useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { AuthProvider } from "@/contexts/SupabaseAuthContext";
 import { RealtimeProvider } from "@/contexts/RealtimeProvider";
 
+// (Optional) Devtools — only in development
+// import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
 export function AppProviders({ children }: PropsWithChildren) {
-  // Light global refresh on focus/online (safe + debounce)
+  // Soft refresh mounted queries when app regains focus or network returns.
   useEffect(() => {
-    let t: any;
-    const refresh = () => {
-      clearTimeout(t);
-      t = setTimeout(() => {
-        // Invalidate only lightweight, always-on queries if you have tags,
-        // or use a general soft invalidate:
-        queryClient.invalidateQueries();
+    let timer: number | undefined;
+
+    const softInvalidate = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        // Refresh ONLY active (mounted) queries to avoid noisy network traffic
+        queryClient.invalidateQueries({ refetchType: "active" });
       }, 300);
     };
-    const onVis = () => document.visibilityState === "visible" && refresh();
-    window.addEventListener("online", refresh);
-    document.addEventListener("visibilitychange", onVis);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") softInvalidate();
+    };
+
+    window.addEventListener("online", softInvalidate);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
-      window.removeEventListener("online", refresh);
-      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("online", softInvalidate);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (timer) window.clearTimeout(timer);
     };
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
+      {/* Your auth session and RLS remain unchanged */}
       <AuthProvider>
+        {/* RealtimeProvider stays mounted across routes (no socket tear-down) */}
         <RealtimeProvider>
           {children}
         </RealtimeProvider>
       </AuthProvider>
+
+      {/* (Optional) enable while debugging cache/refetch behavior */}
+      {/* {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />} */}
     </QueryClientProvider>
   );
 }
