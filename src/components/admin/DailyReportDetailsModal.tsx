@@ -34,7 +34,6 @@ const DailyReportDetailsModal: React.FC<DailyReportDetailsModalProps> = ({
     try {
       // Transform report data to match PDF generator expectations
       const pdfReportData = {
-        ...report,
         jobsite: report.jobsites?.name || 'Unknown Jobsite',
         address: report.jobsites?.address || 'No address provided', 
         reportDate: report.report_date,
@@ -43,12 +42,24 @@ const DailyReportDetailsModal: React.FC<DailyReportDetailsModalProps> = ({
           : 'Unknown User',
         submittedTime: format(new Date(report.created_at), 'h:mm a'),
         summary: report.summary,
-        photos: report.photos
+        photos: (report.photos || []).map(photoUrl => ({
+          src: photoUrl,
+          caption: undefined,
+          takenAt: undefined,
+          mime: 'JPEG' as const
+        }))
+      };
+
+      const pdfCompanySettings = {
+        name: companySettings?.company_name,
+        address: companySettings?.company_address,
+        phone: companySettings?.company_phone,
+        email: companySettings?.company_email,
       };
 
       await generateDailyReportPDF({
         report: pdfReportData,
-        companySettings,
+        companySettings: pdfCompanySettings,
         logoUrl
       });
       

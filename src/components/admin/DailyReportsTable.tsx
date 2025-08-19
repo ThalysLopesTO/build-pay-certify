@@ -45,13 +45,25 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
           `${report.user_profiles.first_name} ${report.user_profiles.last_name}` : 
           'Unknown User',
         submittedTime: format(new Date(report.created_at), 'h:mm a'),
-        summary: [report.summary],
-        photos: report.photos || [],
+        summary: report.summary,
+        photos: (report.photos || []).map(photoUrl => ({
+          src: photoUrl,
+          caption: undefined,
+          takenAt: undefined,
+          mime: 'JPEG' as const
+        }))
+      };
+
+      const pdfCompanySettings = {
+        name: companySettings?.company_name,
+        address: companySettings?.company_address,
+        phone: companySettings?.company_phone,
+        email: companySettings?.company_email,
       };
 
       await generateDailyReportPDF({
         report: pdfData,
-        companySettings,
+        companySettings: pdfCompanySettings,
         logoUrl,
       });
 
