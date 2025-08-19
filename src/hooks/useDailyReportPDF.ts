@@ -4,7 +4,6 @@ import autoTable from "jspdf-autotable";
 
 interface ExtendedJsPDF extends jsPDF {
   lastAutoTable?: { finalY: number };
-  getImageProperties?: (imageData: string) => { width: number; height: number };
 }
 
 // ---------- Config ----------
