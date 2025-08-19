@@ -29,20 +29,7 @@ export const useDailyReportPDF = () => {
     doc.setFont("helvetica", "normal");
 
     // --- OPTIONAL WATERMARK ---
-    if (logoUrl) {
-      const watermarkSize = 250;
-      doc.addImage(
-        logoUrl,
-        "PNG",
-        pageWidth / 2 - watermarkSize / 2,
-        pageHeight / 2 - watermarkSize / 2,
-        watermarkSize,
-        watermarkSize,
-        "",
-        "FAST"
-      );
-      doc.setGState({ opacity: 0.08 }); // faint watermark
-    }
+    // Watermark disabled due to jsPDF compatibility issues
 
     // --- HEADER LOGO + COMPANY INFO ---
     if (logoUrl) {
