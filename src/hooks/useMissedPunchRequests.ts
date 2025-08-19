@@ -174,32 +174,72 @@ export const useApproveMissedPunchRequest = () => {
 
   return useMutation({
     mutationFn: async (requestId: string) => {
+      console.log('Approving missed punch request:', requestId);
+      
       const { data, error } = await supabase.rpc('approve_missed_punch_request', {
         request_id: requestId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database function error:', error);
+        throw error;
+      }
+      
+      console.log('Approval response:', data);
       return data;
     },
     onSuccess: (data: any) => {
-      // Invalidate all related queries to ensure immediate refresh
-      queryClient.invalidateQueries({ queryKey: ['missed-punch-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['my-missed-punch-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['timesheets'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
-      queryClient.invalidateQueries({ queryKey: ['live-punch-monitor'] });
-      queryClient.invalidateQueries({ queryKey: ['live-punch-data'] });
+      console.log('Processing approval success:', data);
+      
+      // Invalidate all related queries to ensure immediate refresh across all components
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['missed-punch-requests'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-missed-punch-requests'] }),
+        queryClient.invalidateQueries({ queryKey: ['timesheets'] }),
+        queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] }),
+        queryClient.invalidateQueries({ queryKey: ['live-punch-monitor'] }),
+        queryClient.invalidateQueries({ queryKey: ['live-punch-data'] }),
+        // Force refetch of current data
+        queryClient.refetchQueries({ queryKey: ['live-punch-data'] }),
+        queryClient.refetchQueries({ queryKey: ['live-punch-monitor'] })
+      ]).catch(console.error);
       
       if (data && typeof data === 'object' && data.success) {
-        toast.success('Request approved and timesheet updated');
+        const details = data.details;
+        if (details) {
+          const actionMessages = {
+            'created_new_in': 'Created new timesheet entry with punch in time',
+            'created_new_both': 'Created new timesheet entry with both punch times',
+            'updated_existing_in': 'Updated existing timesheet with punch in time',
+            'updated_existing_out': 'Updated existing timesheet with punch out time',
+            'updated_existing_both': 'Updated existing timesheet with both punch times'
+          };
+          
+          const actionMessage = actionMessages[details.action as keyof typeof actionMessages] || 'Updated timesheet';
+          const employeeName = details.employee_name || 'Employee';
+          const jobsiteName = details.jobsite_name || 'jobsite';
+          
+          toast.success(
+            `✅ ${actionMessage} for ${employeeName} at ${jobsiteName}`,
+            {
+              duration: 5000,
+              description: `Date: ${details.date}${details.check_in_time ? `\nIn: ${new Date(details.check_in_time).toLocaleTimeString()}` : ''}${details.check_out_time ? `\nOut: ${new Date(details.check_out_time).toLocaleTimeString()}` : ''}`
+            }
+          );
+        } else {
+          toast.success('✅ Request approved and timesheet updated successfully');
+        }
       } else {
-        const errorMessage = data && typeof data === 'object' && data.error ? data.error : 'Failed to approve request';
-        toast.error(errorMessage);
+        const errorMessage = data && typeof data === 'object' && data.error 
+          ? data.error 
+          : 'Failed to approve request - unexpected response format';
+        console.error('Approval failed:', errorMessage, data);
+        toast.error(`❌ ${errorMessage}`);
       }
     },
     onError: (error) => {
       console.error('Failed to approve request:', error);
-      toast.error('Failed to approve request');
+      toast.error('❌ Failed to approve request. Please try again or check the logs.');
     },
   });
 };
