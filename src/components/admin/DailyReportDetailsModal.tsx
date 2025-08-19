@@ -32,8 +32,22 @@ const DailyReportDetailsModal: React.FC<DailyReportDetailsModalProps> = ({
 
   const handleDownloadPDF = async () => {
     try {
+      // Transform report data to match PDF generator expectations
+      const pdfReportData = {
+        ...report,
+        jobsite: report.jobsites?.name || 'Unknown Jobsite',
+        address: report.jobsites?.address || 'No address provided', 
+        reportDate: report.report_date,
+        submittedBy: report.user_profiles 
+          ? `${report.user_profiles.first_name || ''} ${report.user_profiles.last_name || ''}`.trim()
+          : 'Unknown User',
+        submittedTime: format(new Date(report.created_at), 'h:mm a'),
+        summary: report.summary,
+        photos: report.photos
+      };
+
       await generateDailyReportPDF({
-        report,
+        report: pdfReportData,
         companySettings,
         logoUrl
       });
