@@ -1,39 +1,37 @@
-
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useRef } from 'react';
 import { AuthContextType } from './auth/types';
 import { useAuthState } from './auth/useAuthState';
 import { login, loginWithUsername, signUp, logout, checkSubscriptionStatus } from './auth/authService';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom'; // ❌ unused
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, session, loading, companyError, setCompanyError } = useAuthState();
 
-  // Check subscription status when user logs in
+  // Optional: prevent duplicate subscription checks
+  const lastCheckedSessionId = useRef<string | null>(null);
   useEffect(() => {
     if (user && session && !loading) {
-      checkSubscriptionStatus();
+      if (lastCheckedSessionId.current !== session.access_token) {
+        lastCheckedSessionId.current = session.access_token;
+        checkSubscriptionStatus();
+      }
     }
   }, [user, session, loading]);
 
   const handleLogout = async () => {
     console.log('🔄 Logout requested...');
-    
     try {
-      // Clear company error first
       setCompanyError(null);
-      
-      // Call logout service
       const { error } = await logout();
-      
       if (error) {
         console.error('❌ Logout failed:', error);
         throw error;
       }
-      
       console.log('✅ Logout successful');
-      
+      // No need to manually tear down realtime channels here:
+      // RealtimeProvider clears on SIGNED_OUT automatically.
     } catch (error) {
       console.error('💥 Logout handler error:', error);
     }
@@ -42,14 +40,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isCompanyAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isSuperAdmin = user?.role === 'super_admin';
   const isAuthenticated = !!session && !!user && !companyError;
-
-  console.log('🏗️ AuthProvider state:', {
-    hasSession: !!session,
-    hasUser: !!user,
-    hasCompanyError: !!companyError,
-    isAuthenticated,
-    loading
-  });
 
   return (
     <AuthContext.Provider value={{
