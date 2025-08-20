@@ -37,6 +37,7 @@ const formSchema = z.object({
   sundayHoursWeek2: z.coerce.number().min(0).max(24).optional(),
   additionalExpense: z.coerce.number().min(0).optional(),
   notes: z.string().optional(),
+  tax_included: z.boolean().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -79,6 +80,7 @@ const ForemanTimesheetDetailModal = ({
       sundayHoursWeek2: 0,
       additionalExpense: 0,
       notes: '',
+      tax_included: false,
     },
   });
 
@@ -138,6 +140,7 @@ const ForemanTimesheetDetailModal = ({
       hourlyRate: hourlyRate,
       additionalExpense: data.additionalExpense || 0,
       notes: data.notes || '',
+      taxIncluded: data.tax_included || false,
     };
     
     submitMutation.mutate(timesheetData, {
@@ -213,6 +216,9 @@ const ForemanTimesheetDetailModal = ({
                 totalHours={totalHours}
                 hourlyRate={hourlyRate}
                 grossPay={grossPay}
+                form={form}
+                disabled={isFormDisabled}
+                workerType={user?.workerType || user?.user_metadata?.worker_type || 'employee'}
               />
 
               <div className="flex space-x-3 pt-4">
