@@ -35,6 +35,14 @@ import { cn } from '@/lib/utils';
 import { useJobsites } from '@/hooks/useJobsites';
 import { CreateInventoryItem, InventoryItem } from '@/hooks/useInventory';
 
+// Helper function to format dates in local timezone to avoid timezone shifts
+const formatDateForDatabase = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const inventorySchema = z.object({
   jobsite_id: z.string().min(1, 'Jobsite is required'),
   equipment_name: z.string().min(1, 'Equipment name is required'),
@@ -213,7 +221,7 @@ const InventoryForm = ({ isOpen, onClose, onSubmit, initialData, isSubmitting }:
                       <Calendar
                         mode="single"
                         selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                        onSelect={(date) => field.onChange(date ? formatDateForDatabase(date) : '')}
                         disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
                         initialFocus
                         className="p-3 pointer-events-auto"
@@ -254,7 +262,7 @@ const InventoryForm = ({ isOpen, onClose, onSubmit, initialData, isSubmitting }:
                       <Calendar
                         mode="single"
                         selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                        onSelect={(date) => field.onChange(date ? formatDateForDatabase(date) : '')}
                         disabled={(date) => date < new Date('1900-01-01')}
                         initialFocus
                         className="p-3 pointer-events-auto"
