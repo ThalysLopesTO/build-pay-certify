@@ -216,6 +216,7 @@ const InventoryForm = ({ isOpen, onClose, onSubmit, initialData, isSubmitting }:
                         onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
                         disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
                         initialFocus
+                        className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
@@ -256,6 +257,7 @@ const InventoryForm = ({ isOpen, onClose, onSubmit, initialData, isSubmitting }:
                         onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
                         disabled={(date) => date < new Date('1900-01-01')}
                         initialFocus
+                        className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
