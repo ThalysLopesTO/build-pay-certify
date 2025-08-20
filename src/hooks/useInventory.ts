@@ -38,15 +38,17 @@ export const useInventory = () => {
   const queryClient = useQueryClient();
 
   const inventoryQuery = useQuery({
-    queryKey: ['inventory', user?.companyId],
+    queryKey: ['inventory', user?.companyId, user?.id],
     queryFn: async () => {
-      console.log('Fetching inventory for company:', user?.companyId);
+      console.log('🔍 [Inventory Query] Starting fetch...');
+      console.log('🔍 [Inventory Query] User:', user?.id, 'Company:', user?.companyId);
       
       if (!user?.companyId) {
-        console.log('No company ID available');
+        console.log('❌ [Inventory Query] No company ID available');
         return [];
       }
 
+      console.log('📡 [Inventory Query] Fetching from Supabase...');
       const { data, error } = await supabase
         .from('inventory')
         .select(`
@@ -60,11 +62,12 @@ export const useInventory = () => {
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching inventory:', error);
+        console.error('❌ [Inventory Query] Supabase error:', error);
         throw error;
       }
       
-      console.log('Inventory fetched:', data);
+      console.log('✅ [Inventory Query] Raw data received:', data?.length, 'items');
+      console.log('✅ [Inventory Query] Data:', data);
       
       // Add status field based on return_date
       const inventoryWithStatus = data.map(item => {
@@ -77,9 +80,14 @@ export const useInventory = () => {
         return { ...item, status };
       });
       
+      console.log('✅ [Inventory Query] Final processed data:', inventoryWithStatus.length, 'items');
       return inventoryWithStatus as InventoryItem[];
     },
     enabled: !!user?.companyId,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always refetch for fresh data
   });
 
   const createInventoryMutation = useMutation({
@@ -110,7 +118,9 @@ export const useInventory = () => {
       return data;
     },
     onSuccess: () => {
+      console.log('✅ [Create Mutation] Success - invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.refetchQueries({ queryKey: ['inventory'] });
       toast({
         title: "Success",
         description: "Inventory item created successfully",
@@ -151,7 +161,9 @@ export const useInventory = () => {
       return data;
     },
     onSuccess: () => {
+      console.log('✅ [Update Mutation] Success - invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.refetchQueries({ queryKey: ['inventory'] });
       toast({
         title: "Success",
         description: "Inventory item updated successfully",
@@ -241,6 +253,12 @@ export const useInventory = () => {
     },
   });
 
+  const forceRefresh = () => {
+    console.log('🔄 [Force Refresh] Manually refreshing inventory data...');
+    queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    queryClient.refetchQueries({ queryKey: ['inventory'] });
+  };
+
   return {
     inventory: inventoryQuery.data || [],
     isLoading: inventoryQuery.isLoading,
@@ -253,5 +271,7 @@ export const useInventory = () => {
     isUpdating: updateInventoryMutation.isPending,
     isDeleting: deleteInventoryMutation.isPending,
     isReturning: setAsReturnedMutation.isPending,
+    forceRefresh,
+    refetch: inventoryQuery.refetch,
   };
 };
