@@ -39,7 +39,6 @@ export const useMyTimesheetHistory = () => {
         .select(`
           id,
           week_start_date,
-          week_end_date,
           total_hours,
           gross_pay,
           status,
@@ -67,7 +66,10 @@ export const useMyTimesheetHistory = () => {
       }
 
       return data.map(timesheet => {
-        // Use actual week end date from database
+        // Calculate week end date based on start date
+        const startDate = new Date(timesheet.week_start_date);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 13); // Bi-weekly (14 days - 1)
 
         // Parse bi-weekly data if present
         let biWeeklyData = null;
@@ -96,7 +98,7 @@ export const useMyTimesheetHistory = () => {
         return {
           id: timesheet.id,
           week_start_date: timesheet.week_start_date,
-          week_end_date: timesheet.week_end_date,
+          week_end_date: endDate.toISOString().split('T')[0],
           total_hours: timesheet.total_hours || 0,
           gross_pay: grossPay,
           net_pay: netPay,
