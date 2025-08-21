@@ -1610,6 +1610,39 @@ export type Database = {
           },
         ]
       }
+      registration_access_log: {
+        Row: {
+          accessed_at: string | null
+          accessed_by: string | null
+          action: string
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          request_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_at?: string | null
+          accessed_by?: string | null
+          action: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          request_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_at?: string | null
+          accessed_by?: string | null
+          action?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          request_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       registration_audit_log: {
         Row: {
           action: string
@@ -1644,6 +1677,13 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "company_registration_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_audit_log_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "company_registration_summary"
             referencedColumns: ["id"]
           },
         ]
@@ -2283,7 +2323,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      company_registration_summary: {
+        Row: {
+          admin_email_display: string | null
+          admin_first_name_display: string | null
+          admin_last_name_display: string | null
+          company_email_display: string | null
+          company_name: string | null
+          created_at: string | null
+          id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          admin_email_display?: never
+          admin_first_name_display?: never
+          admin_last_name_display?: never
+          company_email_display?: never
+          company_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          admin_email_display?: never
+          admin_first_name_display?: never
+          admin_last_name_display?: never
+          company_email_display?: never
+          company_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approve_missed_punch_request: {
