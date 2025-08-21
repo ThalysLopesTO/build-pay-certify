@@ -135,52 +135,47 @@ export const useWeeklyTimesheetActions = () => {
       updates: any;
       originalData: any;
     }) => {
+      console.log('🔍 Weekly timesheet edit attempt:', {
+        userId: user?.id,
+        userRole: user?.role,
+        companyId: user?.companyId,
+        timesheetId,
+        updates
+      });
+
       if (!user?.id || !user?.companyId) {
         throw new Error('User not authenticated');
       }
 
-      // Permission check - only admin, super_admin, and management can edit timesheets
-      if (!user.role || !['admin', 'super_admin', 'management'].includes(user.role)) {
+      // Permission check - only admin, super_admin, management, and foreman can edit timesheets
+      if (!user.role || !['admin', 'super_admin', 'management', 'foreman'].includes(user.role)) {
         throw new Error('You do not have permission to edit timesheets');
       }
 
-      console.log('Editing weekly timesheet:', timesheetId, updates);
+      console.log('📝 Editing weekly timesheet with verified permissions');
       
-      // Update the timesheet
+      // Update the timesheet with enhanced error handling
       const { data, error } = await supabase
         .from('weekly_timesheets')
-        .update(updates)
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', timesheetId)
         .eq('company_id', user.companyId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
-        console.error('Error editing timesheet:', error);
+        console.error('❌ Error editing timesheet:', error);
         throw error;
       }
 
-      // Create audit log entry
-      const changes = {
-        original: originalData,
-        updated: updates,
-        fields_changed: Object.keys(updates)
-      };
-
-      const { error: auditError } = await supabase
-        .from('weekly_timesheet_audit_logs')
-        .insert({
-          timesheet_id: timesheetId,
-          edited_by_user_id: user.id,
-          company_id: user.companyId,
-          changes: changes,
-          notes: `Timesheet edited by admin/foreman`
-        });
-
-      if (auditError) {
-        console.error('Error creating audit log:', auditError);
-        // Don't throw error here, as the main update succeeded
+      if (!data) {
+        throw new Error('Failed to update timesheet - no data returned or access denied');
       }
+
+      console.log('✅ Weekly timesheet updated successfully:', data);
 
       return data;
     },
