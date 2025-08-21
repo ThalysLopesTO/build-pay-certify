@@ -60,8 +60,15 @@ const TimesheetCard: React.FC<TimesheetCardProps> = ({ timesheet }) => {
       : `${format(start, 'MMM dd')} - ${format(end, 'MMM dd, yyyy')}`;
   };
 
+  const isSubcontractor = timesheet.worker_type === 'subcontractor';
   const taxBreakdown = timesheet.calculated_tax && timesheet.calculated_tax > 0 
-    ? formatTaxBreakdown(timesheet.gross_pay, timesheet.net_pay || timesheet.gross_pay, timesheet.calculated_tax)
+    ? formatTaxBreakdown(
+        timesheet.gross_pay, 
+        timesheet.net_pay || timesheet.gross_pay, 
+        timesheet.calculated_tax,
+        isSubcontractor,
+        timesheet.tax_included
+      )
     : null;
 
   return (
@@ -113,11 +120,16 @@ const TimesheetCard: React.FC<TimesheetCardProps> = ({ timesheet }) => {
             <DollarSign className="h-4 w-4 text-primary" />
             <div>
               <p className="text-xs text-muted-foreground">
-                {timesheet.tax_included ? 'Gross Pay' : 'Pay'}
+                {isSubcontractor && timesheet.tax_included ? 'Total Pay' : 'Gross Pay'}
               </p>
-              <p className="font-semibold">{formatCurrency(timesheet.gross_pay)}</p>
-              {timesheet.tax_included && (
-                <p className="text-xs text-muted-foreground">incl. taxes</p>
+              <p className="font-semibold">
+                {isSubcontractor && timesheet.tax_included 
+                  ? formatCurrency(timesheet.net_pay || timesheet.gross_pay)
+                  : formatCurrency(timesheet.gross_pay)
+                }
+              </p>
+              {isSubcontractor && timesheet.tax_included && (
+                <p className="text-xs text-muted-foreground">incl. HST</p>
               )}
             </div>
           </div>
@@ -153,11 +165,15 @@ const TimesheetCard: React.FC<TimesheetCardProps> = ({ timesheet }) => {
                     <span className="font-medium">{taxBreakdown.gross}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Tax ({taxBreakdown.taxPercentage}%): </span>
-                    <span className="font-medium text-red-600">-{taxBreakdown.tax}</span>
+                    <span className="text-muted-foreground">
+                      HST ({taxBreakdown.taxPercentage}%): 
+                    </span>
+                    <span className={`font-medium ${taxBreakdown.isAddition ? 'text-green-600' : 'text-red-600'}`}>
+                      {taxBreakdown.isAddition ? '+' : '-'}{taxBreakdown.tax}
+                    </span>
                   </div>
                   <div className="col-span-2 pt-2 border-t">
-                    <span className="text-muted-foreground">Net Pay: </span>
+                    <span className="text-muted-foreground">{taxBreakdown.netLabel}: </span>
                     <span className="font-semibold text-green-600">{taxBreakdown.net}</span>
                   </div>
                 </div>

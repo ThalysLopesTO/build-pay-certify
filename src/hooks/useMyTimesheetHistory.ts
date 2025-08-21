@@ -84,10 +84,16 @@ export const useMyTimesheetHistory = () => {
           }
         }
 
-        // Calculate net pay if tax information is available
+        // Calculate net pay based on worker type and tax inclusion
         const grossPay = timesheet.gross_pay || 0;
         const taxAmount = timesheet.calculated_tax || 0;
-        const netPay = timesheet.tax_included ? grossPay - taxAmount : grossPay;
+        
+        // For subcontractors with tax_included=true: net_pay = gross_pay + tax (HST is added)
+        // For employees: net_pay = gross_pay - deductions
+        const isSubcontractor = timesheet.worker_type === 'subcontractor';
+        const netPay = isSubcontractor && timesheet.tax_included 
+          ? grossPay + taxAmount  // Subcontractor: gross + HST = total
+          : grossPay;             // Employee: gross - deductions handled elsewhere
 
         return {
           id: timesheet.id,

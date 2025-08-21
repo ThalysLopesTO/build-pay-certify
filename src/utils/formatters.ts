@@ -10,12 +10,14 @@ export const formatCurrencyWithTax = (amount: number, taxIncluded: boolean = fal
   return taxIncluded ? `${formatted} (incl. HST)` : `${formatted} (+ HST)`;
 };
 
-export const formatTaxBreakdown = (grossPay: number, netPay: number, taxAmount: number) => {
+export const formatTaxBreakdown = (grossPay: number, netPay: number, taxAmount: number, isSubcontractor: boolean = false, taxIncluded: boolean = false) => {
   return {
     gross: formatCurrency(grossPay),
     net: formatCurrency(netPay),
     tax: formatCurrency(taxAmount),
-    taxPercentage: grossPay > 0 ? ((taxAmount / grossPay) * 100).toFixed(1) : '0.0'
+    taxPercentage: grossPay > 0 ? ((taxAmount / grossPay) * 100).toFixed(1) : '0.0',
+    isAddition: isSubcontractor && taxIncluded, // For subcontractors, tax is added
+    netLabel: isSubcontractor && taxIncluded ? 'Total Pay' : 'Net Pay'
   };
 };
 
