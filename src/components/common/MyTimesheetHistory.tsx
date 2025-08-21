@@ -163,11 +163,11 @@ const MyTimesheetHistory = () => {
 
                 <div className="flex justify-between items-center mt-4 pt-3 border-t text-xs text-muted-foreground">
                   <span>
-                    Submitted: {format(new Date(timesheet.submitted_at), 'PPP')}
+                    Submitted: {format(new Date(timesheet.created_at), 'PPP')}
                   </span>
-                  {timesheet.reviewed_at && (
+                  {timesheet.updated_at && timesheet.updated_at !== timesheet.created_at && (
                     <span>
-                      Reviewed: {format(new Date(timesheet.reviewed_at), 'PPP')}
+                      Last Updated: {format(new Date(timesheet.updated_at), 'PPP')}
                     </span>
                   )}
                 </div>

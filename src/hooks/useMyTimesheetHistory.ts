@@ -9,9 +9,8 @@ export interface TimesheetHistoryEntry {
   total_hours: number;
   gross_pay: number;
   status: string;
-  submitted_at: string;
-  reviewed_at?: string;
-  reviewed_by?: string;
+  created_at: string;
+  updated_at?: string;
   jobsite_name?: string;
   worker_type: string;
   hourly_rate: number;
@@ -37,9 +36,8 @@ export const useMyTimesheetHistory = () => {
           total_hours,
           gross_pay,
           status,
-          submitted_at,
-          reviewed_at,
-          reviewed_by,
+          created_at,
+          updated_at,
           worker_type,
           hourly_rate,
           notes,
@@ -82,9 +80,8 @@ export const useMyTimesheetHistory = () => {
           total_hours: timesheet.total_hours || 0,
           gross_pay: timesheet.gross_pay || 0,
           status: timesheet.status || 'pending',
-          submitted_at: timesheet.submitted_at,
-          reviewed_at: timesheet.reviewed_at,
-          reviewed_by: timesheet.reviewed_by,
+          created_at: timesheet.created_at,
+          updated_at: timesheet.updated_at,
           jobsite_name: (timesheet.jobsites as any)?.name || 'Unknown Jobsite',
           worker_type: timesheet.worker_type || 'employee',
           hourly_rate: timesheet.hourly_rate || 0,
