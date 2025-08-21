@@ -53,8 +53,21 @@ const TimesheetCard: React.FC<TimesheetCardProps> = ({ timesheet }) => {
   };
 
   const formatDateRange = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // Parse as local date to avoid timezone issues
+    const startParts = startDate.split('-');
+    const start = new Date(
+      parseInt(startParts[0]), 
+      parseInt(startParts[1]) - 1, 
+      parseInt(startParts[2])
+    );
+    
+    const endParts = endDate.split('-');
+    const end = new Date(
+      parseInt(endParts[0]), 
+      parseInt(endParts[1]) - 1, 
+      parseInt(endParts[2])
+    );
+    
     return isMobile 
       ? `${format(start, 'MMM dd')} - ${format(end, 'MMM dd')}`
       : `${format(start, 'MMM dd')} - ${format(end, 'MMM dd, yyyy')}`;
