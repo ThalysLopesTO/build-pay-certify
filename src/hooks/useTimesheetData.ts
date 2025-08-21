@@ -19,7 +19,7 @@ export const useTimesheetData = ({ userId, weekStartDate, enabled = true }: UseT
       const { data: timesheet, error } = await supabase
         .from('weekly_timesheets')
         .select('*')
-        .eq('user_id', userId)
+        .eq('submitted_by', userId)
         .eq('week_start_date', weekStartDate)
         .eq('company_id', user.companyId)
         .maybeSingle();
