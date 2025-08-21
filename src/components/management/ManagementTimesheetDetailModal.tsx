@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar, AlertTriangle, CheckCircle, Save, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useTimesheetSubmission } from '@/hooks/useTimesheetSubmission';
+import { useTimesheetData } from '@/hooks/useTimesheetData';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { isSubmissionOpen } from '@/lib/time/periods';
 import { format } from 'date-fns';
@@ -50,6 +51,13 @@ const ManagementTimesheetDetailModal = ({
   const { user } = useAuth();
   const { settings } = useCompanySettings();
   const submitMutation = useTimesheetSubmission();
+  
+  // Fetch existing timesheet data for the selected week
+  const { data: existingTimesheetData } = useTimesheetData({
+    userId: user?.id,
+    weekStartDate: selectedWeek?.weekStartDateString,
+    enabled: !!selectedWeek?.weekStartDateString && !!user?.id
+  });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -67,6 +75,42 @@ const ManagementTimesheetDetailModal = ({
       tax_included: false,
     },
   });
+
+  // Load existing timesheet data when available
+  React.useEffect(() => {
+    if (isOpen && existingTimesheetData) {
+      const formData: FormData = {
+        jobsiteId: existingTimesheetData.jobsite_id || '',
+        mondayHours: existingTimesheetData.monday_hours || 0,
+        tuesdayHours: existingTimesheetData.tuesday_hours || 0,
+        wednesdayHours: existingTimesheetData.wednesday_hours || 0,
+        thursdayHours: existingTimesheetData.thursday_hours || 0,
+        fridayHours: existingTimesheetData.friday_hours || 0,
+        saturdayHours: existingTimesheetData.saturday_hours || 0,
+        sundayHours: existingTimesheetData.sunday_hours || 0,
+        additionalExpense: existingTimesheetData.additional_expense || 0,
+        notes: existingTimesheetData.notes || '',
+        tax_included: existingTimesheetData.tax_included || false,
+      };
+
+      form.reset(formData);
+    } else if (isOpen && !existingTimesheetData) {
+      // Reset to defaults if no existing data
+      form.reset({
+        jobsiteId: '',
+        mondayHours: 0,
+        tuesdayHours: 0,
+        wednesdayHours: 0,
+        thursdayHours: 0,
+        fridayHours: 0,
+        saturdayHours: 0,
+        sundayHours: 0,
+        additionalExpense: 0,
+        notes: '',
+        tax_included: false,
+      });
+    }
+  }, [isOpen, existingTimesheetData, form]);
 
   const watchedValues = form.watch();
   const totalHours = (

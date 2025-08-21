@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/SupabaseAuthContext';
 import { useTimesheetSubmission } from './useTimesheetSubmission';
 import { useWorkWeek } from './useWorkWeek';
 import { useExistingTimesheets } from './useExistingTimesheets';
+import { useTimesheetData } from './useTimesheetData';
 import { toast } from './use-toast';
 import { useCompanySettings } from './useCompanySettings';
 
@@ -44,6 +45,13 @@ export const useTimesheetForm = () => {
   const [selectedWeek, setSelectedWeek] = useState(() => 
     workWeeks?.currentWeek || null
   );
+  
+  // Fetch existing timesheet data for the selected week
+  const { data: existingTimesheetData } = useTimesheetData({
+    userId: user?.id,
+    weekStartDate: selectedWeek?.weekStartDateString,
+    enabled: !!selectedWeek?.weekStartDateString && !!user?.id
+  });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -84,16 +92,63 @@ export const useTimesheetForm = () => {
     return `timesheet:${uid}:${start}:${freq}`;
   }, [user?.id, selectedWeek?.weekStartDateString, settings]);
 
+  // Load existing timesheet data when available
   React.useEffect(() => {
-    try {
-      const raw = localStorage.getItem(draftKey);
-      if (raw) {
-        form.reset(JSON.parse(raw) as any);
+    if (existingTimesheetData) {
+      const formData: FormData = {
+        jobsiteId: existingTimesheetData.jobsite_id || '',
+        mondayHours: 0,
+        tuesdayHours: 0,
+        wednesdayHours: 0,
+        thursdayHours: 0,
+        fridayHours: 0,
+        saturdayHours: 0,
+        sundayHours: 0,
+        mondayHoursWeek2: 0,
+        tuesdayHoursWeek2: 0,
+        wednesdayHoursWeek2: 0,
+        thursdayHoursWeek2: 0,
+        fridayHoursWeek2: 0,
+        saturdayHoursWeek2: 0,
+        sundayHoursWeek2: 0,
+        additionalExpense: existingTimesheetData.additional_expense || 0,
+        notes: existingTimesheetData.notes || '',
+        tax_included: existingTimesheetData.tax_included || false,
+      };
+
+      // Handle bi-weekly data if present
+      if (existingTimesheetData.biWeeklyData?.days) {
+        existingTimesheetData.biWeeklyData.days.forEach((day: any, index: number) => {
+          const dayOfWeek = new Date(day.date).getDay(); // 0=Sun, 1=Mon, etc.
+          const isWeek2 = index >= 7;
+          const dayFields = ['sundayHours', 'mondayHours', 'tuesdayHours', 'wednesdayHours', 'thursdayHours', 'fridayHours', 'saturdayHours'];
+          const fieldName = dayFields[dayOfWeek] + (isWeek2 ? 'Week2' : '');
+          (formData as any)[fieldName] = day.hours || 0;
+        });
+      } else {
+        // Regular weekly data
+        formData.mondayHours = existingTimesheetData.monday_hours || 0;
+        formData.tuesdayHours = existingTimesheetData.tuesday_hours || 0;
+        formData.wednesdayHours = existingTimesheetData.wednesday_hours || 0;
+        formData.thursdayHours = existingTimesheetData.thursday_hours || 0;
+        formData.fridayHours = existingTimesheetData.friday_hours || 0;
+        formData.saturdayHours = existingTimesheetData.saturday_hours || 0;
+        formData.sundayHours = existingTimesheetData.sunday_hours || 0;
       }
-    } catch (e) {
-      console.warn('Failed to restore draft', e);
+
+      form.reset(formData);
+    } else {
+      // Load from localStorage draft if no existing data
+      try {
+        const raw = localStorage.getItem(draftKey);
+        if (raw) {
+          form.reset(JSON.parse(raw) as any);
+        }
+      } catch (e) {
+        console.warn('Failed to restore draft', e);
+      }
     }
-  }, [draftKey, form]);
+  }, [existingTimesheetData, draftKey, form]);
 
   const watchedValues = form.watch();
   const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
