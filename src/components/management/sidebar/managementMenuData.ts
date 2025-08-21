@@ -97,6 +97,11 @@ export const managementMenuItems = {
   ],
   reports: [
     {
+      title: 'My Timesheet History',
+      icon: FileSpreadsheet,
+      id: 'my-timesheet-history',
+    },
+    {
       title: 'Reports',
       icon: BarChart3,
       id: 'reports',

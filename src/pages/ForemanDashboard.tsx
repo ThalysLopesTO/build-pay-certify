@@ -14,6 +14,7 @@ import LivePunchMonitor from '../components/admin/LivePunchMonitor';
 import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
+import MyTimesheetHistory from '../components/common/MyTimesheetHistory';
 import DailyReportsManagement from '../components/admin/DailyReportsManagement';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import EquipmentManagement from '../components/admin/inventory/EquipmentManagement';
@@ -42,6 +43,8 @@ const ForemanDashboard = () => {
         return <EmployeeRegistration />;
       case 'live-punch-monitor':
         return <LivePunchMonitor />;
+      case 'my-timesheet-history':
+        return <MyTimesheetHistory />;
       case 'daily-reports':
         return <DailyReportsManagement />;
       case 'employee-reports':

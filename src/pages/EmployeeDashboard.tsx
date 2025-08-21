@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Header from '../components/Header';
 import TimesheetForm from '../components/employee/TimesheetForm';
 import AttentionReportForm from '../components/employee/AttentionReportForm';
-import MyAttentionReports from '../components/employee/MyAttentionReports';
+import MyReports from '../components/employee/MyReports';
 import CertificateStatus from '../components/employee/CertificateStatus';
 import MissedPunchRequests from '../components/employee/MissedPunchRequests';
 import CompanyRules from '../components/common/CompanyRules';
@@ -36,7 +36,7 @@ const EmployeeDashboard = () => {
       case 'attention-report':
         return <AttentionReportForm />;
       case 'my-reports':
-        return <MyAttentionReports />;
+        return <MyReports />;
       case 'certificates':
         return <CertificateStatus />;
       case 'company-rules':

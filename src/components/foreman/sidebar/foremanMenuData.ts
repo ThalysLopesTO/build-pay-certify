@@ -138,6 +138,11 @@ export const groupedForemanItems = {
   ],
   reports: [
     {
+      title: 'My Timesheet History',
+      icon: FolderClock,
+      id: 'my-timesheet-history',
+    },
+    {
       title: 'Daily Reports',
       icon: ClipboardList,
       id: 'daily-reports',

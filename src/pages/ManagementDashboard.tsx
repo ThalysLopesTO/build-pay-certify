@@ -18,6 +18,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import ManagementDashboardHome from '../components/management/ManagementDashboardHome';
 import ManagementNotifications from '../components/management/ManagementNotifications';
 import ManagementTimesheetView from '../components/management/ManagementTimesheetView';
+import MyTimesheetHistory from '../components/common/MyTimesheetHistory';
 
 const ManagementDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -48,6 +49,8 @@ const ManagementDashboard = () => {
         return <QuotesManagement />;
       case 'invoices':
         return <InvoiceManagement />;
+      case 'my-timesheet-history':
+        return <MyTimesheetHistory />;
       case 'reports':
         return <AttentionReportsInbox />;
       case 'notifications':
