@@ -61,7 +61,7 @@ export const getPreviousPeriods = ({
 
 export const isSubmissionOpen = (end: Date): boolean => {
   const now = new Date();
-  return now >= endOfDay(end);
+  return now >= startOfDay(end);
 };
 
 export const formatRange = (start: Date, end: Date): string => {

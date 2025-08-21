@@ -9,6 +9,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar, AlertTriangle, CheckCircle, Save, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useTimesheetSubmission } from '@/hooks/useTimesheetSubmission';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { isSubmissionOpen } from '@/lib/time/periods';
+import { format } from 'date-fns';
 import JobsiteSelector from '../employee/timesheet/JobsiteSelector';
 import DailyHoursGrid from '../employee/timesheet/DailyHoursGrid';
 import ExpenseField from '../employee/timesheet/ExpenseField';
@@ -26,6 +29,7 @@ const formSchema = z.object({
   sundayHours: z.coerce.number().min(0).max(24),
   additionalExpense: z.coerce.number().min(0).optional(),
   notes: z.string().optional(),
+  tax_included: z.boolean().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -44,6 +48,7 @@ const ManagementTimesheetDetailModal = ({
   existingTimesheets 
 }: ManagementTimesheetDetailModalProps) => {
   const { user } = useAuth();
+  const { settings } = useCompanySettings();
   const submitMutation = useTimesheetSubmission();
 
   const form = useForm<FormData>({
@@ -59,6 +64,7 @@ const ManagementTimesheetDetailModal = ({
       sundayHours: 0,
       additionalExpense: 0,
       notes: '',
+      tax_included: false,
     },
   });
 
@@ -75,7 +81,8 @@ const ManagementTimesheetDetailModal = ({
 
   const isWeekSubmitted = selectedWeek ? existingTimesheets.includes(selectedWeek.weekStartDateString) : false;
   const isSubmitting = submitMutation.isPending;
-  const isFormDisabled = isWeekSubmitted || isSubmitting;
+  const isSubmissionOpenForWeek = selectedWeek ? isSubmissionOpen(selectedWeek.endDate) : false;
+  const isFormDisabled = isWeekSubmitted || isSubmitting || !isSubmissionOpenForWeek;
 
   const onSubmit = (data: FormData) => {
     if (!selectedWeek) return;
@@ -93,6 +100,7 @@ const ManagementTimesheetDetailModal = ({
       hourlyRate: hourlyRate,
       additionalExpense: data.additionalExpense || 0,
       notes: data.notes || '',
+      taxIncluded: data.tax_included || false,
     };
     
     submitMutation.mutate(timesheetData, {
@@ -135,13 +143,13 @@ const ManagementTimesheetDetailModal = ({
                 <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
                   Submitted
                 </span>
-              ) : selectedWeek.isSubmissionOpen ? (
+              ) : isSubmissionOpenForWeek ? (
                 <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
                   Open for Submission
                 </span>
               ) : (
                 <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">
-                  Draft
+                  Draft - Available {format(selectedWeek.endDate, 'MMM dd')}
                 </span>
               )}
             </div>
@@ -162,8 +170,18 @@ const ManagementTimesheetDetailModal = ({
             </AlertDescription>
           </Alert>
 
+          {/* Submission Availability Alert */}
+          {!isWeekSubmitted && !isSubmissionOpenForWeek && (
+            <Alert className="bg-amber-50 border-amber-200">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                <strong>Submission Not Available:</strong> You can submit this timesheet starting {format(selectedWeek.endDate, 'EEEE, MMM dd')} (the last day of the period).
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Manager Timesheet Note */}
-          {!isWeekSubmitted && (
+          {!isWeekSubmitted && isSubmissionOpenForWeek && (
             <Alert className="bg-amber-50 border-amber-200">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <AlertDescription className="text-amber-800">
@@ -202,6 +220,9 @@ const ManagementTimesheetDetailModal = ({
                 totalHours={totalHours}
                 hourlyRate={hourlyRate}
                 grossPay={grossPay}
+                form={form}
+                disabled={isFormDisabled}
+                workerType={user?.workerType || user?.user_metadata?.worker_type || 'employee'}
               />
 
               <div className="flex space-x-3 pt-4">
