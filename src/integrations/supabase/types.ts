@@ -2508,13 +2508,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_users_banned_this_hour: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          banned_until: string
-          id: string
-        }[]
-      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
