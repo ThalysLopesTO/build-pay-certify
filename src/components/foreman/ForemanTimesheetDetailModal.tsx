@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import { Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useTimesheetSubmission } from '@/hooks/useTimesheetSubmission';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useTimesheetData } from '@/hooks/useTimesheetData';
 import { isSubmissionOpen } from '@/lib/time/periods';
 import { format, addDays } from 'date-fns';
 import JobsiteSelector from '../employee/timesheet/JobsiteSelector';
@@ -58,6 +59,13 @@ const ForemanTimesheetDetailModal = ({
   const { user } = useAuth();
   const { settings } = useCompanySettings();
   const submitMutation = useTimesheetSubmission();
+  
+  // Fetch existing timesheet data
+  const { data: existingTimesheetData, isLoading: isLoadingTimesheetData } = useTimesheetData({
+    userId: user?.id,
+    weekStartDate: selectedWeek?.weekStartDateString,
+    enabled: isOpen && !!selectedWeek && !!user?.id
+  });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -83,6 +91,70 @@ const ForemanTimesheetDetailModal = ({
       tax_included: false,
     },
   });
+
+  // Load existing timesheet data into form when available
+  useEffect(() => {
+    if (existingTimesheetData && isOpen) {
+      const formData: Partial<FormData> = {
+        jobsiteId: existingTimesheetData.jobsite_id || '',
+        mondayHours: existingTimesheetData.monday_hours || 0,
+        tuesdayHours: existingTimesheetData.tuesday_hours || 0,
+        wednesdayHours: existingTimesheetData.wednesday_hours || 0,
+        thursdayHours: existingTimesheetData.thursday_hours || 0,
+        fridayHours: existingTimesheetData.friday_hours || 0,
+        saturdayHours: existingTimesheetData.saturday_hours || 0,
+        sundayHours: existingTimesheetData.sunday_hours || 0,
+        additionalExpense: existingTimesheetData.additional_expense || 0,
+        tax_included: existingTimesheetData.tax_included || false,
+      };
+
+      // Handle bi-weekly data
+      if (existingTimesheetData.biWeeklyData) {
+        const biWeekly = existingTimesheetData.biWeeklyData;
+        formData.mondayHoursWeek2 = biWeekly.mondayHoursWeek2 || 0;
+        formData.tuesdayHoursWeek2 = biWeekly.tuesdayHoursWeek2 || 0;
+        formData.wednesdayHoursWeek2 = biWeekly.wednesdayHoursWeek2 || 0;
+        formData.thursdayHoursWeek2 = biWeekly.thursdayHoursWeek2 || 0;
+        formData.fridayHoursWeek2 = biWeekly.fridayHoursWeek2 || 0;
+        formData.saturdayHoursWeek2 = biWeekly.saturdayHoursWeek2 || 0;
+        formData.sundayHoursWeek2 = biWeekly.sundayHoursWeek2 || 0;
+        
+        // Extract original notes without bi-weekly JSON
+        const notesWithoutJson = existingTimesheetData.notes?.replace(/__biweekly_json__:.*?__end_biweekly_json__/, '').trim() || '';
+        formData.notes = notesWithoutJson;
+      } else {
+        formData.notes = existingTimesheetData.notes || '';
+      }
+
+      form.reset(formData);
+    }
+  }, [existingTimesheetData, isOpen, form]);
+
+  // Reset form when modal closes or different week is selected
+  useEffect(() => {
+    if (!isOpen || !existingTimesheetData) {
+      form.reset({
+        jobsiteId: '',
+        mondayHours: 0,
+        tuesdayHours: 0,
+        wednesdayHours: 0,
+        thursdayHours: 0,
+        fridayHours: 0,
+        saturdayHours: 0,
+        sundayHours: 0,
+        mondayHoursWeek2: 0,
+        tuesdayHoursWeek2: 0,
+        wednesdayHoursWeek2: 0,
+        thursdayHoursWeek2: 0,
+        fridayHoursWeek2: 0,
+        saturdayHoursWeek2: 0,
+        sundayHoursWeek2: 0,
+        additionalExpense: 0,
+        notes: '',
+        tax_included: false,
+      });
+    }
+  }, [isOpen, selectedWeek?.weekStartDateString, existingTimesheetData, form]);
 
   const watchedValues = form.watch();
   const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
@@ -112,7 +184,7 @@ const ForemanTimesheetDetailModal = ({
   
   // Check if submission is open (same logic as employee timesheets)
   const isSubmissionOpenForWeek = selectedWeek ? (selectedWeek as any).isSubmissionOpen ?? isSubmissionOpen(selectedWeek.endDate) : false;
-  const isFormDisabled = isWeekSubmitted || isSubmitting || !isSubmissionOpenForWeek;
+  const isFormDisabled = isWeekSubmitted || isSubmitting || !isSubmissionOpenForWeek || isLoadingTimesheetData;
 
   const onSubmit = (data: FormData) => {
     if (!selectedWeek) return;
@@ -181,7 +253,7 @@ const ForemanTimesheetDetailModal = ({
               )}
               {!isWeekSubmitted && !isSubmissionOpenForWeek && (
                 <span className="ml-2 text-blue-700">
-                  – In Progress. You can submit after {format(addDays(selectedWeek.endDate, 1), 'EEE, MMM dd')}.
+                  – In Progress. You can submit after {format(selectedWeek.endDate, 'EEE, MMM dd')}.
                 </span>
               )}
             </AlertDescription>
