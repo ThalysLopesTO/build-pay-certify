@@ -91,21 +91,26 @@ const DailyHoursGrid = ({ control, disabled = false, selectedWeek }: DailyHoursG
                               <div className="text-xs text-muted-foreground mt-1">{day.date}</div>
                             )}
                           </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="0"
-                              max="24"
-                              step="0.25"
-                              disabled={disabled}
-                              className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
-                              {...field}
-                              onClick={(e) => e.stopPropagation()}
-                              onFocus={(e) => e.stopPropagation()}
-                              onKeyDown={(e) => e.stopPropagation()}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          </FormControl>
+                           <FormControl>
+                             <Input
+                               type="number"
+                               inputMode="decimal"
+                               min="0"
+                               max="24"
+                               step="0.25"
+                               disabled={disabled}
+                               className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
+                               {...field}
+                               value={field.value === 0 ? '' : field.value}
+                               onClick={(e) => e.stopPropagation()}
+                               onFocus={(e) => {
+                                 e.stopPropagation();
+                                 e.target.select();
+                               }}
+                               onKeyDown={(e) => e.stopPropagation()}
+                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                             />
+                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -133,21 +138,26 @@ const DailyHoursGrid = ({ control, disabled = false, selectedWeek }: DailyHoursG
                               <div className="text-xs text-muted-foreground mt-1">{day.date}</div>
                             )}
                           </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="0"
-                              max="24"
-                              step="0.25"
-                              disabled={disabled}
-                              className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
-                              {...field}
-                              onClick={(e) => e.stopPropagation()}
-                              onFocus={(e) => e.stopPropagation()}
-                              onKeyDown={(e) => e.stopPropagation()}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          </FormControl>
+                           <FormControl>
+                             <Input
+                               type="number"
+                               inputMode="decimal"
+                               min="0"
+                               max="24"
+                               step="0.25"
+                               disabled={disabled}
+                               className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
+                               {...field}
+                               value={field.value === 0 ? '' : field.value}
+                               onClick={(e) => e.stopPropagation()}
+                               onFocus={(e) => {
+                                 e.stopPropagation();
+                                 e.target.select();
+                               }}
+                               onKeyDown={(e) => e.stopPropagation()}
+                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                             />
+                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -175,18 +185,21 @@ const DailyHoursGrid = ({ control, disabled = false, selectedWeek }: DailyHoursG
                       <div className="text-xs text-muted-foreground mt-1">{day.date}</div>
                     )}
                   </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="24"
-                      step="0.25"
-                      disabled={disabled}
-                      className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
+                   <FormControl>
+                     <Input
+                       type="number"
+                       inputMode="decimal"
+                       min="0"
+                       max="24"
+                       step="0.25"
+                       disabled={disabled}
+                       className={disabled ? 'opacity-60 cursor-not-allowed' : ''}
+                       {...field}
+                       value={field.value === 0 ? '' : field.value}
+                       onFocus={(e) => e.target.select()}
+                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                     />
+                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

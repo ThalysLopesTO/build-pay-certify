@@ -23,17 +23,18 @@ const WeeklyHoursEditor: React.FC<WeeklyHoursEditorProps> = ({ days, values, onC
           <Label className="w-36 text-sm">
             {d.weekday} ({d.label})
           </Label>
-          <Input
-            type="number"
-            inputMode="decimal"
-            min={0}
-            max={24}
-            step={0.5}
-            value={Number(values[idx] || 0)}
-            onChange={(e) => onChange(idx, Number(e.target.value) || 0)}
-            disabled={disabled}
-            className="h-9"
-          />
+           <Input
+             type="number"
+             inputMode="decimal"
+             min={0}
+             max={24}
+             step={0.5}
+             value={values[idx] === 0 ? '' : values[idx] || ''}
+             onFocus={(e) => e.target.select()}
+             onChange={(e) => onChange(idx, Number(e.target.value) || 0)}
+             disabled={disabled}
+             className="h-9"
+           />
           <span className="text-xs text-muted-foreground w-8">hrs</span>
         </div>
       ))}
