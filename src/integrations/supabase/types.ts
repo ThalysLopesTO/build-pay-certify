@@ -1610,6 +1610,44 @@ export type Database = {
           },
         ]
       }
+      registration_audit_log: {
+        Row: {
+          action: string
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          performed_at: string | null
+          performed_by: string | null
+          request_id: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          performed_at?: string | null
+          performed_by?: string | null
+          request_id?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          performed_at?: string | null
+          performed_by?: string | null
+          request_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_audit_log_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "company_registration_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reminder_logs: {
         Row: {
           company_id: string
