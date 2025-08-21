@@ -66,8 +66,13 @@ export const useMyTimesheetHistory = () => {
       }
 
       return data.map(timesheet => {
-        // Calculate week end date based on start date
-        const startDate = new Date(timesheet.week_start_date);
+        // Calculate week end date based on start date (parse as local date to avoid timezone issues)
+        const startDateParts = timesheet.week_start_date.split('-');
+        const startDate = new Date(
+          parseInt(startDateParts[0]), 
+          parseInt(startDateParts[1]) - 1, 
+          parseInt(startDateParts[2])
+        );
         const endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + 13); // Bi-weekly (14 days - 1)
 
