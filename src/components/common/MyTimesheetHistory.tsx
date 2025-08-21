@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Clock, Search, Filter, Calendar, RefreshCw } from 'lucide-react';
 import { useMyTimesheetHistory } from '@/hooks/useMyTimesheetHistory';
 import { useIsMobile } from '@/hooks/use-mobile';
-import TimesheetCard from './TimesheetCard';
+import TimesheetCollapsibleItem from './TimesheetCollapsibleItem';
 
 const MyTimesheetHistory = () => {
   const { data: timesheets = [], isLoading } = useMyTimesheetHistory();
@@ -123,9 +123,9 @@ const MyTimesheetHistory = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredTimesheets.map((timesheet) => (
-            <TimesheetCard key={timesheet.id} timesheet={timesheet} />
+            <TimesheetCollapsibleItem key={timesheet.id} timesheet={timesheet} />
           ))}
         </div>
       )}
