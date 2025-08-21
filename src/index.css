@@ -130,3 +130,72 @@
 .pac-container, .pac-item, .pac-item *, .pac-item-query, .pac-matched {
   box-sizing: border-box !important;
 }
+
+/* Enhanced Timesheet History Animations */
+@keyframes slide-in-from-top {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Mobile Touch Optimizations */
+@media (max-width: 768px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .mobile-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-spacing {
+    padding: 16px;
+  }
+}
+
+/* Professional Card Hover Effects */
+.timesheet-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.timesheet-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Status Badge Enhancements */
+.status-approved {
+  background: linear-gradient(135deg, hsl(142 76% 36%) 0%, hsl(142 70% 45%) 100%);
+  color: white;
+  border: none;
+}
+
+.status-pending {
+  background: linear-gradient(135deg, hsl(43 96% 56%) 0%, hsl(43 89% 65%) 100%);
+  color: hsl(43 96% 15%);
+  border: none;
+}
+
+.status-rejected {
+  background: linear-gradient(135deg, hsl(0 84% 60%) 0%, hsl(0 84% 70%) 100%);
+  color: white;
+  border: none;
+}

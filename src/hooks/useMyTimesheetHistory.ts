@@ -8,12 +8,18 @@ export interface TimesheetHistoryEntry {
   week_end_date: string;
   total_hours: number;
   gross_pay: number;
+  net_pay?: number;
   status: string;
   created_at: string;
   updated_at?: string;
   jobsite_name?: string;
   worker_type: string;
   hourly_rate: number;
+  tax_included?: boolean;
+  calculated_tax?: number;
+  income_tax_rate?: number;
+  cpp_rate?: number;
+  ei_rate?: number;
   biWeeklyData?: {
     week1: any;
     week2: any;
@@ -41,6 +47,11 @@ export const useMyTimesheetHistory = () => {
           worker_type,
           hourly_rate,
           notes,
+          tax_included,
+          calculated_tax,
+          income_tax_rate,
+          cpp_rate,
+          ei_rate,
           jobsites (
             name
           )
@@ -73,18 +84,29 @@ export const useMyTimesheetHistory = () => {
           }
         }
 
+        // Calculate net pay if tax information is available
+        const grossPay = timesheet.gross_pay || 0;
+        const taxAmount = timesheet.calculated_tax || 0;
+        const netPay = timesheet.tax_included ? grossPay - taxAmount : grossPay;
+
         return {
           id: timesheet.id,
           week_start_date: timesheet.week_start_date,
           week_end_date: endDate.toISOString().split('T')[0],
           total_hours: timesheet.total_hours || 0,
-          gross_pay: timesheet.gross_pay || 0,
+          gross_pay: grossPay,
+          net_pay: netPay,
           status: timesheet.status || 'pending',
           created_at: timesheet.created_at,
           updated_at: timesheet.updated_at,
           jobsite_name: (timesheet.jobsites as any)?.name || 'Unknown Jobsite',
           worker_type: timesheet.worker_type || 'employee',
           hourly_rate: timesheet.hourly_rate || 0,
+          tax_included: timesheet.tax_included || false,
+          calculated_tax: taxAmount,
+          income_tax_rate: timesheet.income_tax_rate,
+          cpp_rate: timesheet.cpp_rate,
+          ei_rate: timesheet.ei_rate,
           biWeeklyData
         };
       });
