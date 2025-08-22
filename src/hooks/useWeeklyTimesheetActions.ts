@@ -154,11 +154,14 @@ export const useWeeklyTimesheetActions = () => {
 
       console.log('📝 Editing weekly timesheet with verified permissions');
       
+      // Filter out generated columns before update
+      const { total_hours, gross_pay, ...updateData } = updates;
+      
       // Update the timesheet with enhanced error handling
       const { data, error } = await supabase
         .from('weekly_timesheets')
         .update({
-          ...updates,
+          ...updateData,
           updated_at: new Date().toISOString()
         })
         .eq('id', timesheetId)
