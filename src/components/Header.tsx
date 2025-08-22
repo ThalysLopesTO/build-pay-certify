@@ -29,11 +29,10 @@ const Header = () => {
       // Call logout function
       await logout();
       
-      console.log('✅ Header logout completed, forcing page reload...');
+      console.log('✅ Header logout completed, navigating to login...');
       
-      // Force a complete page reload to ensure all state is cleared
-      // This is more reliable than relying on React state updates
-      window.location.href = '/admin-login';
+      // Use React Router navigation instead of hard reload
+      navigate('/admin-login', { replace: true });
       
     } catch (error) {
       console.error('Header logout error:', error);
@@ -44,8 +43,8 @@ const Header = () => {
         variant: "destructive",
       });
       
-      // Force redirect as fallback
-      window.location.href = '/admin-login';
+      // Use navigation as fallback
+      navigate('/admin-login', { replace: true });
     }
   };
 

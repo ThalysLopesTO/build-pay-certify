@@ -6,6 +6,7 @@ import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import ManagementNotificationBell from '@/components/management/ManagementNotificationBell';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface MobileTopBarProps {
   onToggleSidebar?: () => void;
@@ -14,6 +15,7 @@ interface MobileTopBarProps {
 const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
   const { user, logout } = useAuth();
   const { logoUrl, isLoading } = useCompanyLogo();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
@@ -28,8 +30,8 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
       
       console.log('✅ Mobile logout completed');
       
-      // Clear any local state and force navigation
-      window.location.href = '/admin-login';
+      // Use React Router navigation instead of hard reload
+      navigate('/admin-login', { replace: true });
       
     } catch (error) {
       console.error('Mobile logout error:', error);
@@ -40,10 +42,8 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
         variant: "destructive",
       });
       
-      // Force redirect as fallback
-      setTimeout(() => {
-        window.location.href = '/admin-login';
-      }, 1000);
+      // Use navigation as fallback
+      navigate('/admin-login', { replace: true });
     }
   };
 
