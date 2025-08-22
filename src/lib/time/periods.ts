@@ -31,9 +31,30 @@ export const getCurrentPeriod = ({
   frequency: TimesheetFrequency;
   weekEndingIdx: number;
 }): { start: Date; end: Date } => {
-  const end = nextOccurrenceIncludingToday(today, weekEndingIdx);
-  const periodLength = frequency === 'bi-weekly' ? 14 : 7;
-  const start = addDays(end, -(periodLength - 1));
+  if (frequency === 'weekly') {
+    const end = nextOccurrenceIncludingToday(today, weekEndingIdx);
+    const start = addDays(end, -6);
+    return { start: startOfDay(start), end: startOfDay(end) };
+  }
+  
+  // For bi-weekly, we need to establish a consistent cycle
+  // Use a reference date to ensure periods align properly
+  const referenceDate = new Date('2024-01-01'); // Monday, Jan 1, 2024
+  const referenceEnd = nextOccurrenceIncludingToday(referenceDate, weekEndingIdx);
+  
+  // Calculate how many days since the reference bi-weekly period ended
+  const daysSinceReference = Math.floor((today.getTime() - referenceEnd.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Find which bi-weekly period we're in
+  const biWeeklyPeriodNumber = Math.floor(daysSinceReference / 14);
+  
+  // Calculate the end date of the current bi-weekly period
+  const currentPeriodEnd = addDays(referenceEnd, biWeeklyPeriodNumber * 14);
+  
+  // If today is after the current period end, move to the next period
+  const end = today > currentPeriodEnd ? addDays(currentPeriodEnd, 14) : currentPeriodEnd;
+  const start = addDays(end, -13);
+  
   return { start: startOfDay(start), end: startOfDay(end) };
 };
 
