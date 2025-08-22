@@ -29,8 +29,8 @@ export const useTimesheetUpdate = () => {
     mutationFn: async ({ id, data }: { id: string; data: TimesheetUpdateData }) => {
       console.log('Updating timesheet:', {company_id: user?.companyId, id}, data);
 
-      // Filter out generated columns that can't be updated
-      const { gross_pay, total_hours, ...updateData } = data;
+      // Include all fields - trigger will handle calculations correctly
+      const { ...updateData } = data;
       
       const { data: result, error } = await supabase
         .from('weekly_timesheets')
@@ -57,6 +57,8 @@ export const useTimesheetUpdate = () => {
         description: "The timesheet has been updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['timesheets'] });
     },
     onError: (error) => {
       console.error('Failed to update timesheet:', error);

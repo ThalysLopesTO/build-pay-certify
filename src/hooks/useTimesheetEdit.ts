@@ -21,7 +21,7 @@ interface EditTimesheetData {
   income_tax_rate?: number;
   cpp_rate?: number;
   ei_rate?: number;
-  note?: string;
+  notes?: string;
 }
 
 export const useTimesheetEdit = () => {
@@ -65,9 +65,12 @@ export const useTimesheetEdit = () => {
       }
 
       console.log('📋 Original timesheet found:', originalTimesheet);
+      console.log('🔄 Update data received:', data);
 
-      // Filter out generated columns before update
-      const { total_hours, gross_pay, ...updateData } = data;
+      // Include all fields including calculated ones (trigger will handle calculations)
+      const { id, ...updateData } = data;
+      
+      console.log('💾 Sending update data:', updateData);
       
       // Update the timesheet with company verification
       const { data: updatedTimesheet, error: updateError } = await supabase
@@ -94,8 +97,14 @@ export const useTimesheetEdit = () => {
 
       return updatedTimesheet;
     },
-    onSuccess: () => {
+    onSuccess: (updatedData) => {
+      // Invalidate multiple queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['weekly-timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+      
+      console.log('✅ Timesheet edit successful, cache invalidated:', updatedData);
+      
       toast({
         title: "Success",
         description: "Timesheet updated successfully!",
