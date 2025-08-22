@@ -111,8 +111,8 @@ const App: React.FC = () => {
   if (import.meta.env.DEV) console.log("🚀 App component rendering");
 
   return (
-    <AppProviders>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AppProviders>
         <EmployeeProvider>
           <AppInner />
           <GlobalToasts />
@@ -120,8 +120,8 @@ const App: React.FC = () => {
           <SonnerToaster />
           <IOSInstallTip />
         </EmployeeProvider>
-      </BrowserRouter>
-    </AppProviders>
+      </AppProviders>
+    </BrowserRouter>
   );
 };
 
