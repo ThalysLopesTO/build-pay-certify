@@ -66,23 +66,14 @@ export const useTimesheetEdit = () => {
 
       console.log('📋 Original timesheet found:', originalTimesheet);
 
+      // Filter out generated columns before update
+      const { total_hours, gross_pay, ...updateData } = data;
+      
       // Update the timesheet with company verification
       const { data: updatedTimesheet, error: updateError } = await supabase
         .from('weekly_timesheets')
         .update({
-          monday_hours: data.monday_hours,
-          tuesday_hours: data.tuesday_hours,
-          wednesday_hours: data.wednesday_hours,
-          thursday_hours: data.thursday_hours,
-          friday_hours: data.friday_hours,
-          saturday_hours: data.saturday_hours,
-          sunday_hours: data.sunday_hours,
-          additional_expense: data.additional_expense,
-          tax_included: data.tax_included,
-          calculated_tax: data.calculated_tax,
-          income_tax_rate: data.income_tax_rate,
-          cpp_rate: data.cpp_rate,
-          ei_rate: data.ei_rate,
+          ...updateData,
           updated_at: new Date().toISOString()
         })
         .eq('id', data.id)
