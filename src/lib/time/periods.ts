@@ -38,22 +38,26 @@ export const getCurrentPeriod = ({
   }
   
   // For bi-weekly, we need to establish a consistent cycle
-  // Use a reference date to ensure periods align properly
-  const referenceDate = new Date('2024-01-01'); // Monday, Jan 1, 2024
-  const referenceEnd = nextOccurrenceIncludingToday(referenceDate, weekEndingIdx);
+  // Use August 8, 2024 (Thursday) as reference - this creates periods: Aug 8-21, Aug 22-Sep 4, etc.
+  const referenceDate = new Date('2024-08-08'); // Thursday, Aug 8, 2024
+  const referenceEnd = referenceDate; // This is already a Thursday (end day)
   
   // Calculate how many days since the reference bi-weekly period ended
   const daysSinceReference = Math.floor((today.getTime() - referenceEnd.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Find which bi-weekly period we're in
+  // Find which bi-weekly period we're in (0 = Aug 8-21, 1 = Aug 22-Sep 4, etc.)
   const biWeeklyPeriodNumber = Math.floor(daysSinceReference / 14);
   
   // Calculate the end date of the current bi-weekly period
-  const currentPeriodEnd = addDays(referenceEnd, biWeeklyPeriodNumber * 14);
+  let periodEnd = addDays(referenceEnd, biWeeklyPeriodNumber * 14);
   
-  // If today is after the current period end, move to the next period
-  const end = today > currentPeriodEnd ? addDays(currentPeriodEnd, 14) : currentPeriodEnd;
-  const start = addDays(end, -13);
+  // If we're past the period end, move to the next period
+  if (today > periodEnd) {
+    periodEnd = addDays(periodEnd, 14);
+  }
+  
+  const start = addDays(periodEnd, -13);
+  const end = periodEnd;
   
   return { start: startOfDay(start), end: startOfDay(end) };
 };
