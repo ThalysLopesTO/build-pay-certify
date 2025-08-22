@@ -4,11 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../contexts/SupabaseAuthContext';
 import { useTimesheetSubmission } from './useTimesheetSubmission';
-import { useWorkWeek } from './useWorkWeek';
-import { useExistingTimesheets } from './useExistingTimesheets';
-import { useTimesheetData } from './useTimesheetData';
-import { toast } from './use-toast';
 import { useCompanySettings } from './useCompanySettings';
+import { useWorkWeek } from './useWorkWeek';
+import { useTimesheetData } from './useTimesheetData';
+import { useExistingTimesheets } from './useExistingTimesheets';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from './use-toast';
 
 const formSchema = z.object({
   jobsiteId: z.string().min(1, 'Please select a jobsite'),
@@ -165,7 +167,32 @@ export const useTimesheetForm = () => {
     ) : 0)
   );
 
-  const hourlyRate = user?.hourlyRate || 25;
+  // Fetch current hourly rate from database to ensure it's up-to-date
+  const { data: currentUserProfile } = useQuery({
+    queryKey: ['current-user-hourly-rate', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('hourly_rate')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching current hourly rate:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true
+  });
+  
+  // Use the most current hourly rate (database first, then auth fallback)
+  const hourlyRate = currentUserProfile?.hourly_rate ?? user?.hourlyRate ?? 25;
   const grossPay = (totalHours * hourlyRate) + (watchedValues.additionalExpense || 0);
 
   const isWeekSubmitted = selectedWeek ? existingTimesheets.includes(selectedWeek.weekStartDateString) : false;

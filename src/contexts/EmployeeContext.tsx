@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { getSupabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 export interface Employee {
   id: string;
@@ -179,6 +181,8 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
   const [state, dispatch] = useReducer(employeeReducer, initialState);
   const { toast } = useToast();
   const supabase = getSupabase();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   // Get auth info asynchronously when needed instead of during initialization
   const getAuthInfo = async () => {
@@ -402,6 +406,18 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
         hasNewPhoto: !!newPhoto,
         emailUpdated: !!(updates.email && updates.email !== currentEmployee.email)
       });
+      
+      // Invalidate user auth queries to refresh hourly rate in real-time
+      await queryClient.invalidateQueries({ 
+        queryKey: ['user-profile', finalEmployee.user_id] 
+      });
+      
+      // Also invalidate auth state if the current user was updated
+      if (finalEmployee.user_id === user?.id) {
+        await queryClient.invalidateQueries({ 
+          queryKey: ['auth-user'] 
+        });
+      }
       
       toast({
         title: "Employee Updated",
