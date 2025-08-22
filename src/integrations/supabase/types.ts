@@ -2536,15 +2536,7 @@ export type Database = {
         Args: { target_company_id: string }
         Returns: boolean
       }
-      is_user_admin_or_super_admin_for_view: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
       is_user_super_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_user_super_admin_for_view: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
