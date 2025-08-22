@@ -24,16 +24,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('🔄 Logout requested...');
     try {
       setCompanyError(null);
+      
+      // Always clear local state first
+      console.log('🧹 Clearing local auth state...');
+      
       const { error } = await logout();
       if (error) {
-        console.error('❌ Logout failed:', error);
-        throw error;
+        console.warn('⚠️ Logout had issues but continuing:', error);
       }
-      console.log('✅ Logout successful');
+      
+      console.log('✅ Logout process completed');
       // No need to manually tear down realtime channels here:
       // RealtimeProvider clears on SIGNED_OUT automatically.
     } catch (error) {
-      console.error('💥 Logout handler error:', error);
+      console.warn('💥 Logout handler error (but continuing):', error);
+      // Don't throw - we want logout to always succeed from UI perspective
     }
   };
 

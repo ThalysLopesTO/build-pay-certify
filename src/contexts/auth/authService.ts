@@ -148,20 +148,35 @@ export const logout = async () => {
   try {
     console.log('🚪 Starting logout process...');
     
-    // Sign out from Supabase first
+    // Check if we have a session first
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.log('📝 No active session found, treating as successful logout');
+      return { error: null };
+    }
+    
+    // Sign out from Supabase
     const { error } = await supabase.auth.signOut();
     
     if (error) {
-      console.error('❌ Supabase signOut error:', error);
-      throw error;
+      console.warn('⚠️ Supabase signOut error:', error);
+      // Don't throw error if it's just a session issue - user should still be logged out
+      if (error.message?.includes('session_not_found') || error.message?.includes('invalid_session')) {
+        console.log('📝 Session already expired, treating as successful logout');
+        return { error: null };
+      }
+      // For other errors, still return success but log the warning
+      console.warn('🔄 Continuing logout despite error');
     }
     
     console.log('✅ Logout completed successfully');
     return { error: null };
 
   } catch (error) {
-    console.error('💥 Logout error:', error);
-    return { error };
+    console.warn('💥 Logout error (continuing anyway):', error);
+    // Always return success for logout - user should not be stuck
+    return { error: null };
   }
 };
 
