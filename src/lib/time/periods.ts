@@ -42,16 +42,16 @@ export const getCurrentPeriod = ({
   // For weekEndingIdx = 4 (Thursday), periods should be Friday-Thursday, Friday-Thursday
   
   // Use a reference date that matches the week ending day
-  // For Thursday week endings, use August 8, 2024 (Thursday) as reference
-  // For Sunday week endings, use August 4, 2024 (Sunday) as reference
+  // For Thursday week endings, use August 8, 2025 (Thursday) as reference
+  // For Sunday week endings, use August 4, 2025 (Sunday) as reference
   let baseReference: Date;
   if (weekEndingIdx === 4) {
-    baseReference = new Date('2024-08-08'); // Thursday, Aug 8, 2024
+    baseReference = new Date('2025-08-08'); // Thursday, Aug 8, 2025
   } else if (weekEndingIdx === 0) {
-    baseReference = new Date('2024-08-04'); // Sunday, Aug 4, 2024
+    baseReference = new Date('2025-08-04'); // Sunday, Aug 4, 2025
   } else {
     // For other week ending days, calculate from a known Sunday
-    baseReference = new Date('2024-08-04'); // Sunday, Aug 4, 2024
+    baseReference = new Date('2025-08-04'); // Sunday, Aug 4, 2025
     const daysDiff = (weekEndingIdx - baseReference.getDay() + 7) % 7;
     baseReference = addDays(baseReference, daysDiff);
   }
