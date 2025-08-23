@@ -98,12 +98,14 @@ export const useTimesheetEdit = () => {
       return updatedTimesheet;
     },
     onSuccess: (updatedData) => {
-      // Invalidate multiple queries to ensure UI updates
+      // Invalidate multiple queries to ensure UI updates across all views
       queryClient.invalidateQueries({ queryKey: ['weekly-timesheets'] });
       queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
       queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['timesheet-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-timesheets'] });
       
-      console.log('✅ Timesheet edit successful, cache invalidated:', updatedData);
+      console.log('✅ Timesheet edit successful, all caches invalidated:', updatedData);
       
       toast({
         title: "Success",

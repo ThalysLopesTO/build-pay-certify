@@ -2439,6 +2439,15 @@ export type Database = {
         Args: { employee_user_id: string }
         Returns: Json
       }
+      fix_biweekly_timesheet_totals: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          hours_fixed: boolean
+          new_total_hours: number
+          old_total_hours: number
+          timesheet_id: string
+        }[]
+      }
       generate_invoice_number: {
         Args: Record<PropertyKey, never>
         Returns: string
