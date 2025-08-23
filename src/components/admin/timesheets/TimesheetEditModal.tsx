@@ -189,15 +189,28 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
     gross_pay: timesheet.gross_pay || 0,
   };
 
-  const totalHours = isBiWeekly
+  // Calculate total hours from current form state
+  const calculatedTotalHours = isBiWeekly
     ? hours14.reduce((sum, h) => sum + Number(h || 0), 0)
     : Object.entries(formData)
         .filter(([key]) => key.includes('_hours'))
         .reduce((sum, [, hours]) => sum + Number(hours), 0);
 
+  // Get stored total from database
+  const storedTotalHours = Number(timesheet.total_hours || 0);
+  
+  // Check for discrepancy between calculated and stored total
+  const hasHoursDiscrepancy = Math.abs(calculatedTotalHours - storedTotalHours) > 0.01;
+  
+  // Use calculated total as source of truth for display and calculations
+  const totalHours = calculatedTotalHours;
+
   const week1Total = isBiWeekly ? hours14.slice(0, 7).reduce((s, h) => s + Number(h || 0), 0) : totalHours;
   const week2Total = isBiWeekly ? hours14.slice(7, 14).reduce((s, h) => s + Number(h || 0), 0) : 0;
   const grossPay = totalHours * (timesheet.hourly_rate || 0);
+  
+  // State for handling discrepancy warning
+  const [showDiscrepancyWarning, setShowDiscrepancyWarning] = useState(hasHoursDiscrepancy);
 
   // State for deduction rates (editable for payroll employees)
   const [deductionRates, setDeductionRates] = useState({
@@ -270,8 +283,9 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
 
     if (isBiWeekly) {
       const week1 = hours14.slice(0, 7);
+      // Recalculate total hours from current form state to ensure accuracy
       const total = hours14.reduce((s, h) => s + Number(h || 0), 0);
-      const gross = computedGross;
+      const gross = total * (timesheet.hourly_rate || 0); // Use recalculated total
       const updates = {
         ...baseUpdates,
         monday_hours: week1[0] || 0,
@@ -281,21 +295,26 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
         friday_hours: week1[4] || 0,
         saturday_hours: week1[5] || 0,
         sunday_hours: week1[6] || 0,
-        total_hours: total,
+        total_hours: total, // Always use recalculated total
         gross_pay: isPayrollEmployee && payrollCalculations
           ? payrollCalculations.netPay
           : gross + Number(formData.additional_expense) + finalTaxAmount,
         notes: embedBiWeeklyMeta(timesheet.notes, hours14),
       };
+      console.log('💾 Bi-weekly save - Calculated total:', total, 'vs stored total:', storedTotalHours);
       onSave(updates, originalData);
     } else {
+      // Recalculate total hours for weekly timesheets too
+      const recalculatedTotal = Object.entries(formData)
+        .filter(([key]) => key.includes('_hours'))
+        .reduce((sum, [, hours]) => sum + Number(hours), 0);
       const updates = {
         ...baseUpdates,
         ...formData,
-        total_hours: totalHours,
+        total_hours: recalculatedTotal, // Always use recalculated total
         gross_pay: isPayrollEmployee && payrollCalculations
           ? payrollCalculations.netPay
-          : computedGross + Number(formData.additional_expense) + finalTaxAmount,
+          : (recalculatedTotal * (timesheet.hourly_rate || 0)) + Number(formData.additional_expense) + finalTaxAmount,
         notes: notesText,
       };
       onSave(updates, originalData);
@@ -369,6 +388,27 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
             )}
           </div>
         </DialogHeader>
+
+        {/* Hours Discrepancy Warning */}
+        {showDiscrepancyWarning && hasHoursDiscrepancy && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <div>
+                <span className="font-medium">Hours Mismatch Detected:</span> The displayed total ({calculatedTotalHours.toFixed(1)}h) differs from the stored total ({storedTotalHours.toFixed(1)}h). 
+                This may cause inconsistencies between admin and employee views.
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDiscrepancyWarning(false)}
+                className="ml-4 shrink-0"
+              >
+                Got it
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Summary Section - Always Visible */}
         <div className="flex-shrink-0 bg-muted/50 rounded-lg p-4 mb-4">
