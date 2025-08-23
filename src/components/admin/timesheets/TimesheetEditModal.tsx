@@ -70,13 +70,55 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
 
   const [openWeek, setOpenWeek] = useState<'week1' | 'week2'>('week1');
 
-  // Period days for labels
-  const startDate = timesheet.week_start_date ? new Date(timesheet.week_start_date) : null;
-  const periodLength = isBiWeekly ? 14 : 7;
-  const endDate = startDate ? addDays(startDate, periodLength - 1) : null;
-  const allDays = startDate && endDate ? getDaysForPeriod({ start: startDate, end: endDate }) : [];
-  const week1Days = allDays.slice(0, 7);
-  const week2Days = allDays.slice(7, 14);
+  // Period days for labels - prioritize stored bi-weekly JSON dates
+  const getPeriodsFromBiWeeklyData = (notes?: string): { allDays: any[], week1Days: any[], week2Days: any[] } => {
+    if (!notes || !isBiWeekly) return { allDays: [], week1Days: [], week2Days: [] };
+    
+    try {
+      const line = notes.split('\n').find((l: string) => l.startsWith('__biweekly_json__='));
+      if (!line) return { allDays: [], week1Days: [], week2Days: [] };
+      
+      const encodedData = line.split('=')[1];
+      if (!encodedData) return { allDays: [], week1Days: [], week2Days: [] };
+      
+      const json = JSON.parse(atob(encodedData));
+      if (Array.isArray(json?.days) && json.days.length === 14) {
+        const allDays = json.days.map((d: any) => ({
+          iso: d.date,
+          label: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+          weekday: new Date(d.date).toLocaleDateString('en-US', { weekday: 'long' })
+        }));
+        
+        return {
+          allDays,
+          week1Days: allDays.slice(0, 7),
+          week2Days: allDays.slice(7, 14)
+        };
+      }
+    } catch (error) {
+      console.error('Error parsing bi-weekly dates:', error);
+    }
+    
+    return { allDays: [], week1Days: [], week2Days: [] };
+  };
+
+  // Try to get dates from stored bi-weekly JSON first, fallback to calculation
+  const storedPeriods = getPeriodsFromBiWeeklyData(timesheet.notes);
+  
+  let allDays, week1Days, week2Days;
+  
+  if (storedPeriods.allDays.length > 0) {
+    // Use dates from stored bi-weekly JSON data
+    ({ allDays, week1Days, week2Days } = storedPeriods);
+  } else {
+    // Fallback to calculated dates for timesheets without stored JSON
+    const startDate = timesheet.week_start_date ? new Date(timesheet.week_start_date) : null;
+    const periodLength = isBiWeekly ? 14 : 7;
+    const endDate = startDate ? addDays(startDate, periodLength - 1) : null;
+    allDays = startDate && endDate ? getDaysForPeriod({ start: startDate, end: endDate }) : [];
+    week1Days = allDays.slice(0, 7);
+    week2Days = allDays.slice(7, 14);
+  }
 
   // Employee notes (clean, no JSON blob)
   const stripBiWeeklyMeta = (raw?: string) => {
