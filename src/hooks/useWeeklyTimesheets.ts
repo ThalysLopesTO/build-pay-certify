@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { validateTimesheetHours, getCorrectTotalHours } from '@/utils/timesheetDataUtils';
 
 interface TimesheetFilters {
   employeeName?: string;
@@ -124,6 +125,10 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
         const finalTotalPay = timesheet.tax_included 
           ? (timesheet.gross_pay || 0) + (timesheet.calculated_tax || 0)
           : (timesheet.gross_pay || 0);
+
+        // Validate and get correct total hours
+        const validation = validateTimesheetHours(timesheet);
+        const correctTotalHours = getCorrectTotalHours(timesheet);
         
         return {
           ...timesheet,
@@ -134,6 +139,10 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
             : ((timesheet as any).jobsites?.name || 'Unknown Jobsite'),
           week_ending_date: timesheet.week_start_date, // This will be the week start date from submissions
           final_total_pay: finalTotalPay,
+          // Enhanced data validation fields
+          corrected_total_hours: correctTotalHours,
+          data_validation: validation,
+          has_data_issues: validation.hasDiscrepancy || validation.missingBiWeeklyData
         };
       });
 

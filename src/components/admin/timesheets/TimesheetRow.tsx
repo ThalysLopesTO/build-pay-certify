@@ -3,9 +3,11 @@ import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
+import { AlertTriangle } from 'lucide-react';
 import TimesheetStatusBadge from './TimesheetStatusBadge';
 import TimesheetActions from './TimesheetActions';
 import BiWeeklyPreview from './BiWeeklyPreview';
+import { shouldShowDataWarning } from '@/utils/timesheetDataUtils';
 
 interface TimesheetRowProps {
   timesheet: any;
@@ -96,7 +98,16 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
         {format(new Date(timesheet.week_start_date), 'MMM dd, yyyy')}
       </td>
       <td className="p-4 text-center font-mono text-sm">
-        {timesheet.total_hours.toFixed(2)}h
+        <div className="flex items-center justify-center gap-1">
+          <span>
+            {(timesheet.corrected_total_hours || timesheet.total_hours || 0).toFixed(2)}h
+          </span>
+          {shouldShowDataWarning(timesheet) && (
+            <div title="Data inconsistency detected - hours may need verification">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+            </div>
+          )}
+        </div>
       </td>
       <td className="p-4 text-center font-mono text-sm">
         ${grossPay.toFixed(2)}
