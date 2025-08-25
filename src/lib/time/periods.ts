@@ -37,41 +37,43 @@ export const getCurrentPeriod = ({
     return { start: startOfDay(start), end: startOfDay(end) };
   }
   
-  // For bi-weekly, establish a consistent cycle based on the company's week ending day
-  // Create a reference date that aligns with the company's week structure
-  // For weekEndingIdx = 4 (Thursday), periods should be Friday-Thursday, Friday-Thursday
+  // For bi-weekly periods, ensure they always start the day after week ending day
+  // and span exactly 14 days (2 weeks)
   
-  // Use a reference date that matches the week ending day
-  // For Thursday week endings, use August 8, 2025 (Thursday) as reference
-  // For Sunday week endings, use August 4, 2025 (Sunday) as reference
-  let baseReference: Date;
+  // Find the most recent occurrence of the week ending day
+  const mostRecentEndDay = nextOccurrenceIncludingToday(today, weekEndingIdx);
+  
+  // If today is the week ending day or before, we might be in the previous period
+  // Calculate which bi-weekly period we're in by using a stable reference
+  
+  // Use a known reference date - August 8, 2024 was a Thursday
+  const referenceThursday = new Date('2024-08-08');
+  let referenceEnd: Date;
+  
   if (weekEndingIdx === 4) {
-    baseReference = new Date('2025-08-08'); // Thursday, Aug 8, 2025
-  } else if (weekEndingIdx === 0) {
-    baseReference = new Date('2025-08-04'); // Sunday, Aug 4, 2025
+    // Thursday week ending - use the reference as-is
+    referenceEnd = referenceThursday;
   } else {
-    // For other week ending days, calculate from a known Sunday
-    baseReference = new Date('2025-08-04'); // Sunday, Aug 4, 2025
-    const daysDiff = (weekEndingIdx - baseReference.getDay() + 7) % 7;
-    baseReference = addDays(baseReference, daysDiff);
+    // Calculate the reference end day for other week ending days
+    const daysDiff = (weekEndingIdx - referenceThursday.getDay() + 7) % 7;
+    referenceEnd = addDays(referenceThursday, daysDiff);
   }
   
-  const referenceEnd = baseReference;
+  // Calculate days since reference end
+  const daysSinceRef = Math.floor((mostRecentEndDay.getTime() - referenceEnd.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Calculate how many days since the reference bi-weekly period ended
-  const daysSinceReference = Math.floor((today.getTime() - referenceEnd.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Find which bi-weekly period we're in
-  const biWeeklyPeriodNumber = Math.floor(daysSinceReference / 14);
+  // Find which bi-weekly cycle we're in (cycles are 14 days apart)
+  const biWeeklyCycle = Math.floor(daysSinceRef / 14);
   
   // Calculate the end date of the current bi-weekly period
-  let periodEnd = addDays(referenceEnd, biWeeklyPeriodNumber * 14);
+  let periodEnd = addDays(referenceEnd, biWeeklyCycle * 14);
   
-  // If we're past the period end, move to the next period
+  // If today is after this period end, move to next period
   if (today > periodEnd) {
     periodEnd = addDays(periodEnd, 14);
   }
   
+  // Period starts the day after the previous period's end (14 days before current end)
   const start = addDays(periodEnd, -13);
   const end = periodEnd;
   

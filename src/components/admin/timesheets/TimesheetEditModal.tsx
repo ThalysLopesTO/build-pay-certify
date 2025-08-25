@@ -10,10 +10,12 @@ import { ChevronDown, Clock, DollarSign, Calculator, AlertCircle } from 'lucide-
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import WeeklyHoursEditor from '@/components/admin/timesheets/WeeklyHoursEditor';
-import { getDaysForPeriod } from '@/lib/time/periods';
-import { addDays } from 'date-fns';
+import { getDaysForPeriod, getWeekdayIndex, getCurrentPeriod } from '@/lib/time/periods';
+import { addDays, format } from 'date-fns';
+import { useMemo } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 interface TimesheetEditModalProps {
   timesheet: any;
@@ -70,55 +72,91 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
 
   const [openWeek, setOpenWeek] = useState<'week1' | 'week2'>('week1');
 
-  // Period days for labels - prioritize stored bi-weekly JSON dates
-  const getPeriodsFromBiWeeklyData = (notes?: string): { allDays: any[], week1Days: any[], week2Days: any[] } => {
-    if (!notes || !isBiWeekly) return { allDays: [], week1Days: [], week2Days: [] };
+  // Calculate correct period dates based on company settings
+  const correctPeriodDates = useMemo(() => {
+    if (!companySettings || !timesheet || !isBiWeekly) return null;
     
-    try {
-      const line = notes.split('\n').find((l: string) => l.startsWith('__biweekly_json__='));
-      if (!line) return { allDays: [], week1Days: [], week2Days: [] };
-      
-      const encodedData = line.split('=')[1];
-      if (!encodedData) return { allDays: [], week1Days: [], week2Days: [] };
-      
-      const json = JSON.parse(atob(encodedData));
-      if (Array.isArray(json?.days) && json.days.length === 14) {
-        const allDays = json.days.map((d: any) => ({
-          iso: d.date,
-          label: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-          weekday: new Date(d.date).toLocaleDateString('en-US', { weekday: 'long' })
-        }));
-        
-        return {
-          allDays,
-          week1Days: allDays.slice(0, 7),
-          week2Days: allDays.slice(7, 14)
-        };
-      }
-    } catch (error) {
-      console.error('Error parsing bi-weekly dates:', error);
+    const weekEndingIdx = getWeekdayIndex(companySettings.week_ending_day || 0);
+    const storedStart = new Date(timesheet.week_start_date);
+    
+    // Calculate what the correct period should be based on the stored end date
+    const storedEnd = addDays(storedStart, 13); // 14 days total (start is day 0)
+    
+    // For Thursday week ending (weekEndingIdx = 4), periods should run Friday to Thursday
+    // Check if stored dates align with company settings
+    const expectedStartDayOfWeek = (weekEndingIdx + 1) % 7; // Day after week ending
+    const actualStartDayOfWeek = storedStart.getDay();
+    
+    const datesAreCorrect = actualStartDayOfWeek === expectedStartDayOfWeek;
+    
+    if (datesAreCorrect) {
+      return {
+        start: storedStart,
+        end: storedEnd,
+        isCorrect: true
+      };
     }
     
-    return { allDays: [], week1Days: [], week2Days: [] };
-  };
+    // Calculate correct dates using the period generation logic
+    const correctPeriod = getCurrentPeriod({
+      today: storedEnd, // Use stored end as reference point
+      frequency: 'bi-weekly',
+      weekEndingIdx
+    });
+    
+    return {
+      start: correctPeriod.start,
+      end: correctPeriod.end,
+      isCorrect: false,
+      storedStart,
+      storedEnd
+    };
+  }, [companySettings, timesheet, isBiWeekly]);
 
-  // Try to get dates from stored bi-weekly JSON first, fallback to calculation
-  const storedPeriods = getPeriodsFromBiWeeklyData(timesheet.notes);
-  
-  let allDays, week1Days, week2Days;
-  
-  if (storedPeriods.allDays.length > 0) {
-    // Use dates from stored bi-weekly JSON data
-    ({ allDays, week1Days, week2Days } = storedPeriods);
-  } else {
-    // Fallback to calculated dates for timesheets without stored JSON
+  // Generate period dates - prioritize correct dates over stored JSON
+  const periodDates = useMemo(() => {
+    if (!isBiWeekly) return [];
+    
+    // Use correct period dates if available
+    if (correctPeriodDates) {
+      const dates = [];
+      let currentDate = new Date(correctPeriodDates.start);
+      const endDate = new Date(correctPeriodDates.end);
+      
+      while (currentDate <= endDate) {
+        dates.push(new Date(currentDate));
+        currentDate = addDays(currentDate, 1);
+      }
+      return dates;
+    }
+    
+    // Fallback to stored timesheet dates
     const startDate = timesheet.week_start_date ? new Date(timesheet.week_start_date) : null;
-    const periodLength = isBiWeekly ? 14 : 7;
+    const periodLength = 14;
     const endDate = startDate ? addDays(startDate, periodLength - 1) : null;
-    allDays = startDate && endDate ? getDaysForPeriod({ start: startDate, end: endDate }) : [];
-    week1Days = allDays.slice(0, 7);
-    week2Days = allDays.slice(7, 14);
-  }
+    
+    if (startDate && endDate) {
+      const dates = [];
+      let currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        dates.push(new Date(currentDate));
+        currentDate = addDays(currentDate, 1);
+      }
+      return dates;
+    }
+    
+    return [];
+  }, [isBiWeekly, correctPeriodDates, timesheet]);
+
+  // Convert period dates to the expected format for WeeklyHoursEditor
+  const allDays = periodDates.map(date => ({
+    iso: format(date, 'yyyy-MM-dd'),
+    label: format(date, 'MMM dd'),
+    weekday: format(date, 'EEEE')
+  }));
+  
+  const week1Days = allDays.slice(0, 7);
+  const week2Days = allDays.slice(7, 14);
 
   // Employee notes (clean, no JSON blob)
   const stripBiWeeklyMeta = (raw?: string) => {
@@ -131,49 +169,40 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
    };
    const [notesText, setNotesText] = useState<string>(stripBiWeeklyMeta(timesheet.notes));
 
-  // Enhanced bi-weekly hours parsing with better error handling
-  const parseBiWeeklyHours = (notes?: string): number[] | null => {
-    if (!notes || !isBiWeekly) return null;
+  // Initialize hours state for bi-weekly (14 days) - prioritize correct period dates
+  const [hours14, setHours14] = useState<number[]>(() => {
+    if (!isBiWeekly) return new Array(14).fill(0);
+    
+    const initialHours: { [key: string]: number } = {};
+    
+    // Parse stored bi-weekly JSON hours
+    let storedHours: { [key: string]: number } = {};
     try {
-      const line = notes.split('\n').find((l: string) => l.startsWith('__biweekly_json__='));
-      if (!line) return null;
-      
-      const encodedData = line.split('=')[1];
-      if (!encodedData) return null;
-      
-      const json = JSON.parse(atob(encodedData));
-      if (Array.isArray(json?.days) && json.days.length === 14) {
-        return json.days.map((d: any) => Number(d.hours || 0));
+      const line = timesheet.notes?.split('\n').find((l: string) => l.startsWith('__biweekly_json__='));
+      if (line) {
+        const encodedData = line.split('=')[1];
+        if (encodedData) {
+          const json = JSON.parse(atob(encodedData));
+          if (Array.isArray(json?.days)) {
+            json.days.forEach((day: any) => {
+              storedHours[day.date] = Number(day.hours || 0);
+            });
+          }
+        }
       }
-      return null;
     } catch (error) {
-      console.error('Error parsing bi-weekly hours:', error);
-      return null;
-    }
-  };
-
-  // Initialize bi-weekly hours with improved logic
-  const initial14 = (() => {
-    if (!isBiWeekly) {
-      return new Array(14).fill(0);
+      console.error('Error parsing stored bi-weekly hours:', error);
     }
     
-    const first7 = [
-      Number(timesheet.monday_hours || 0),
-      Number(timesheet.tuesday_hours || 0),
-      Number(timesheet.wednesday_hours || 0),
-      Number(timesheet.thursday_hours || 0),
-      Number(timesheet.friday_hours || 0),
-      Number(timesheet.saturday_hours || 0),
-      Number(timesheet.sunday_hours || 0),
-    ];
+    // Map hours to correct period dates
+    const hours = new Array(14).fill(0);
+    periodDates.forEach((date, index) => {
+      const dateKey = format(date, 'yyyy-MM-dd');
+      hours[index] = storedHours[dateKey] || 0;
+    });
     
-    const parsedWeek2 = parseBiWeeklyHours(timesheet.notes);
-    const second7 = parsedWeek2?.slice(7, 14) || new Array(7).fill(0);
-    
-    return [...first7, ...second7];
-  })();
-  const [hours14, setHours14] = useState<number[]>(initial14);
+    return hours;
+  });
 
   // Store original data for audit tracking
   const originalData = {
@@ -189,28 +218,43 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
     gross_pay: timesheet.gross_pay || 0,
   };
 
-  // Calculate total hours from current form state
-  const calculatedTotalHours = isBiWeekly
-    ? hours14.reduce((sum, h) => sum + Number(h || 0), 0)
-    : Object.entries(formData)
+  // Calculate total hours - prioritize database value for display, calculated for validation
+  const calculatedTotalHours = useMemo(() => {
+    if (isBiWeekly) {
+      return hours14.reduce((sum, h) => sum + Number(h || 0), 0);
+    }
+    return Object.entries(formData)
         .filter(([key]) => key.includes('_hours'))
         .reduce((sum, [, hours]) => sum + Number(hours), 0);
+  }, [isBiWeekly, hours14, formData]);
 
-  // Get stored total from database
-  const storedTotalHours = Number(timesheet.total_hours || 0);
+  // Use database total_hours for display consistency, but validate against calculated
+  const displayTotalHours = timesheet?.total_hours ? Number(timesheet.total_hours) : calculatedTotalHours;
   
-  // Check for discrepancy between calculated and stored total
-  const hasHoursDiscrepancy = Math.abs(calculatedTotalHours - storedTotalHours) > 0.01;
+  // Show validation warnings
+  const [showHoursDiscrepancy, setShowHoursDiscrepancy] = useState(false);
+  const [showDateDiscrepancy, setShowDateDiscrepancy] = useState(false);
   
-  // Use calculated total as source of truth for display and calculations
-  const totalHours = calculatedTotalHours;
+  useEffect(() => {
+    if (isBiWeekly && timesheet?.total_hours) {
+      const dbHours = Number(timesheet.total_hours);
+      const discrepancy = Math.abs(dbHours - calculatedTotalHours);
+      setShowHoursDiscrepancy(discrepancy > 0.01);
+    }
+  }, [isBiWeekly, timesheet?.total_hours, calculatedTotalHours]);
+
+  useEffect(() => {
+    if (correctPeriodDates) {
+      setShowDateDiscrepancy(!correctPeriodDates.isCorrect);
+    }
+  }, [correctPeriodDates]);
+
+  const totalHours = displayTotalHours;
 
   const week1Total = isBiWeekly ? hours14.slice(0, 7).reduce((s, h) => s + Number(h || 0), 0) : totalHours;
   const week2Total = isBiWeekly ? hours14.slice(7, 14).reduce((s, h) => s + Number(h || 0), 0) : 0;
   const grossPay = totalHours * (timesheet.hourly_rate || 0);
   
-  // State for handling discrepancy warning
-  const [showDiscrepancyWarning, setShowDiscrepancyWarning] = useState(hasHoursDiscrepancy);
 
   // State for deduction rates (editable for payroll employees)
   const [deductionRates, setDeductionRates] = useState({
@@ -283,26 +327,52 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
 
     if (isBiWeekly) {
       const week1 = hours14.slice(0, 7);
-      // Recalculate total hours from current form state to ensure accuracy
-      const total = hours14.reduce((s, h) => s + Number(h || 0), 0);
-      const gross = total * (timesheet.hourly_rate || 0); // Use recalculated total
-      const updates = {
-        ...baseUpdates,
-        monday_hours: week1[0] || 0,
-        tuesday_hours: week1[1] || 0,
-        wednesday_hours: week1[2] || 0,
-        thursday_hours: week1[3] || 0,
-        friday_hours: week1[4] || 0,
-        saturday_hours: week1[5] || 0,
-        sunday_hours: week1[6] || 0,
-        total_hours: total, // Always use recalculated total
-        gross_pay: isPayrollEmployee && payrollCalculations
-          ? payrollCalculations.netPay
-          : gross + Number(formData.additional_expense) + finalTaxAmount,
-        notes: embedBiWeeklyMeta(timesheet.notes, hours14),
-      };
-      console.log('💾 Bi-weekly save - Calculated total:', total, 'vs stored total:', storedTotalHours);
-      onSave(updates, originalData);
+        // For bi-weekly timesheets, update the stored JSON with correct dates and recalculated hours
+        const total = calculatedTotalHours; // Use calculated total
+        const gross = total * (timesheet.hourly_rate || 0);
+        
+        // Update the JSON data to use correct period dates
+        const biWeeklyData = {
+          days: allDays.map((day, index) => ({
+            date: day.iso,
+            hours: Number(hours14[index] || 0).toString(),
+            label: day.label,
+            weekday: day.weekday
+          })),
+          totalHours: total.toString(),
+          startDate: allDays[0]?.iso,
+          endDate: allDays[13]?.iso
+        };
+        
+        const encodedJson = btoa(JSON.stringify(biWeeklyData));
+        const otherNotes = timesheet.notes
+          ? timesheet.notes.split('\n').filter((line: string) => !line.startsWith('__biweekly_json__=')).join('\n')
+          : '';
+        const newNotes = otherNotes 
+          ? `${otherNotes}\n__biweekly_json__=${encodedJson}`
+          : `__biweekly_json__=${encodedJson}`;
+        
+        const updates = {
+          ...baseUpdates,
+          monday_hours: week1[0] || 0,
+          tuesday_hours: week1[1] || 0,
+          wednesday_hours: week1[2] || 0,
+          thursday_hours: week1[3] || 0,
+          friday_hours: week1[4] || 0,
+          saturday_hours: week1[5] || 0,
+          sunday_hours: week1[6] || 0,
+          total_hours: total, // Use recalculated total
+          gross_pay: isPayrollEmployee && payrollCalculations
+            ? payrollCalculations.netPay
+            : gross + Number(formData.additional_expense) + finalTaxAmount,
+          notes: newNotes,
+          // Update week_start_date if period dates were corrected
+          ...(correctPeriodDates && !correctPeriodDates.isCorrect && {
+            week_start_date: format(correctPeriodDates.start, 'yyyy-MM-dd')
+          })
+        };
+        console.log('💾 Bi-weekly save - Calculated total:', total, 'Corrected dates:', !correctPeriodDates?.isCorrect);
+        onSave(updates, originalData);
     } else {
       // Recalculate total hours for weekly timesheets too
       const recalculatedTotal = Object.entries(formData)
@@ -389,23 +459,31 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
           </div>
         </DialogHeader>
 
-        {/* Hours Discrepancy Warning */}
-        {showDiscrepancyWarning && hasHoursDiscrepancy && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <div>
-                <span className="font-medium">Hours Mismatch Detected:</span> The displayed total ({calculatedTotalHours.toFixed(1)}h) differs from the stored total ({storedTotalHours.toFixed(1)}h). 
-                This may cause inconsistencies between admin and employee views.
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDiscrepancyWarning(false)}
-                className="ml-4 shrink-0"
-              >
-                Got it
-              </Button>
+        {/* Validation Warnings */}
+        {showDateDiscrepancy && correctPeriodDates && (
+          <Alert className="border-yellow-500 bg-yellow-50 mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Period Date Mismatch Detected</AlertTitle>
+            <AlertDescription>
+              Stored dates don't align with company week ending settings. 
+              Expected: {format(correctPeriodDates.start, 'MMM dd')} – {format(correctPeriodDates.end, 'MMM dd')}
+              {correctPeriodDates.storedStart && (
+                <>
+                  <br />Stored: {format(correctPeriodDates.storedStart, 'MMM dd')} – {format(correctPeriodDates.storedEnd!, 'MMM dd')}
+                </>
+              )}
+              <br />Dates have been corrected automatically.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {showHoursDiscrepancy && (
+          <Alert className="border-orange-500 bg-orange-50 mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Hours Discrepancy Detected</AlertTitle>
+            <AlertDescription>
+              Database shows {timesheet?.total_hours} hours, but calculated total is {calculatedTotalHours.toFixed(1)} hours.
+              Saving will update the database with the recalculated total.
             </AlertDescription>
           </Alert>
         )}
@@ -415,10 +493,15 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
           {isPayrollEmployee && payrollCalculations ? (
             // Payroll employee summary with deductions
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-              <div className="text-center">
-                <div className="font-semibold text-lg">{totalHours.toFixed(1)}h</div>
-                <div className="text-muted-foreground">Total Hours</div>
-              </div>
+            <div className="text-center">
+              <div className="font-semibold text-lg">{totalHours.toFixed(1)}h</div>
+              <div className="text-muted-foreground">Total Hours</div>
+              {showHoursDiscrepancy && (
+                <div className="text-xs text-orange-600">
+                  Calculated: {calculatedTotalHours.toFixed(1)}h
+                </div>
+              )}
+            </div>
               <div className="text-center">
                 <div className="font-semibold text-lg">${payrollCalculations.grossWithExpenses.toFixed(2)}</div>
                 <div className="text-muted-foreground">Gross Pay</div>
@@ -438,6 +521,11 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
               <div className="text-center">
                 <div className="font-semibold text-lg">{totalHours.toFixed(1)}h</div>
                 <div className="text-muted-foreground">Total Hours</div>
+                {showHoursDiscrepancy && (
+                  <div className="text-xs text-orange-600">
+                    Calculated: {calculatedTotalHours.toFixed(1)}h
+                  </div>
+                )}
               </div>
               <div className="text-center">
                 <div className="font-semibold text-lg">${grossPay.toFixed(2)}</div>
