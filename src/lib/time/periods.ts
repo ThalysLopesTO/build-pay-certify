@@ -115,3 +115,13 @@ export const getDaysForPeriod = ({ start, end }: { start: Date; end: Date }): Ar
   }
   return days;
 };
+
+export const getBiWeeklyDays = ({ start, end }: { start: Date; end: Date }): { week1Days: Array<{ iso: string; label: string; weekday: string }>, week2Days: Array<{ iso: string; label: string; weekday: string }> } => {
+  const allDays = getDaysForPeriod({ start, end });
+  
+  // For bi-weekly periods, split into two weeks (7 days each)
+  const week1Days = allDays.slice(0, 7);
+  const week2Days = allDays.slice(7, 14);
+  
+  return { week1Days, week2Days };
+};

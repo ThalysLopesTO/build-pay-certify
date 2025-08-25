@@ -11,11 +11,12 @@ import { Save, AlertTriangle } from 'lucide-react';
 import WeeklyHoursEditor from '@/components/admin/timesheets/WeeklyHoursEditor';
 import { BiWeeklyHoursEditor } from '@/components/admin/timesheets/BiWeeklyHoursEditor';
 import { TimesheetSummaryCard } from '@/components/admin/timesheets/TimesheetSummaryCard';
-import { getDaysForPeriod, getWeekdayIndex, getCurrentPeriod } from '@/lib/time/periods';
+import { getDaysForPeriod, getBiWeeklyDays, getWeekdayIndex, getCurrentPeriod } from '@/lib/time/periods';
 import { addDays, format } from 'date-fns';
 import { useMemo } from 'react';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { calculatePayrollTotals } from '@/utils/taxCalculations';
 
 interface TimesheetEditModalProps {
   timesheet: any;
@@ -81,16 +82,16 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
 
   // Generate days arrays for bi-weekly display
   const { allDays, week1Days, week2Days } = useMemo(() => {
-    const all = getDaysForPeriod({ start: periodStart, end: periodEnd });
-    
-    if (isBiWeekly && all.length >= 14) {
+    if (isBiWeekly) {
+      const { week1Days, week2Days } = getBiWeeklyDays({ start: periodStart, end: periodEnd });
       return {
-        allDays: all,
-        week1Days: all.slice(0, 7),
-        week2Days: all.slice(7, 14)
+        allDays: [...week1Days, ...week2Days],
+        week1Days,
+        week2Days
       };
     }
     
+    const all = getDaysForPeriod({ start: periodStart, end: periodEnd });
     return {
       allDays: all,
       week1Days: all.slice(0, 7),
@@ -173,6 +174,7 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   // Tax settings
   const [includeTaxes, setIncludeTaxes] = useState(timesheet.include_taxes !== false);
   const [taxPercentage, setTaxPercentage] = useState(timesheet.tax_percentage || taxRate);
+  const [taxIncluded, setTaxIncluded] = useState(false);
 
   // Notes state (filter out bi-weekly JSON from display)
   const [notesValue, setNotesValue] = useState(() => {
@@ -202,29 +204,21 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   const totalHoursDiscrepancy = Math.abs(displayTotalHours - calculatedTotalHours);
 
   const totalExpenses = expenses.gas + expenses.perDiem + expenses.additional;
-  const grossPay = (calculatedTotalHours * (timesheet.hourly_rate || 0)) + totalExpenses;
+  const workerType = timesheet.worker_type || 'employee';
+  
+  // Calculate payroll totals with proper tax handling
+  const payrollCalculation = useMemo(() => {
+    return calculatePayrollTotals(
+      calculatedTotalHours,
+      timesheet.hourly_rate || 0,
+      totalExpenses,
+      workerType,
+      taxPercentage,
+      taxIncluded
+    );
+  }, [calculatedTotalHours, timesheet.hourly_rate, totalExpenses, workerType, taxPercentage, taxIncluded]);
 
-  // Payroll calculations for employees
-  const payrollCalculations = useMemo(() => {
-    if (!isPayrollEmployee || !includeTaxes) return null;
-
-    const cpp = grossPay * 0.0595; // 2024 CPP rate
-    const ei = grossPay * 0.0229; // 2024 EI rate
-    const federalTax = grossPay * 0.15; // Simplified federal tax
-    const provincialTax = grossPay * (taxPercentage / 100 - 0.15); // Provincial portion
-
-    const netPay = grossPay - cpp - ei - federalTax - provincialTax;
-
-    return {
-      cpp,
-      ei,
-      federalTax,
-      provincialTax,
-      netPay
-    };
-  }, [isPayrollEmployee, includeTaxes, grossPay, taxPercentage]);
-
-  const totalPay = payrollCalculations ? payrollCalculations.netPay : grossPay;
+  const { grossPay, netPay, taxAmount, breakdown } = payrollCalculation;
 
   const handleSave = () => {
     const updatedData: any = {
@@ -319,7 +313,7 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
           totalHours={displayTotalHours}
           calculatedHours={calculatedTotalHours}
           grossPay={grossPay}
-          totalPay={totalPay}
+          totalPay={netPay}
           hasDiscrepancy={totalHoursDiscrepancy > 0.01}
           dateFixed={true} // Since we fixed the dates in migration
         />
@@ -407,77 +401,78 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
                 </div>
               </div>
 
-              {/* Payroll Deductions/Tax Control Section - Only for employees */}
-              {isPayrollEmployee && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Tax & Payroll</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-semibold">Tax Control</h4>
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="include-taxes"
-                          checked={includeTaxes}
-                          onCheckedChange={setIncludeTaxes}
-                          disabled={!canEditTimesheets}
-                        />
-                        <Label htmlFor="include-taxes">Include taxes in calculation</Label>
-                      </div>
-                      
-                      {includeTaxes && (
-                        <div className="space-y-2">
-                          <Label htmlFor="tax-percentage">Tax Percentage</Label>
-                          <Input
-                            id="tax-percentage"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            value={taxPercentage}
-                            onChange={(e) => setTaxPercentage(parseFloat(e.target.value) || 0)}
-                            disabled={!canEditTimesheets}
-                          />
-                        </div>
-                      )}
+              {/* Tax Controls for Subcontractors */}
+              {workerType === 'subcontractor' && (
+                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="tax-included" className="text-sm font-medium">
+                        HST Included in Rate
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Toggle if HST is already included in the hourly rate
+                      </p>
                     </div>
-
-                    <div className="space-y-4">
-                      <h4 className="font-semibold">Payroll Summary</h4>
-                      <div className="space-y-2 text-sm bg-muted/50 p-4 rounded-lg">
-                        <div className="flex justify-between">
-                          <span>Gross Pay:</span>
-                          <span className="font-medium">${grossPay.toFixed(2)}</span>
-                        </div>
-                        
-                        {payrollCalculations && (
-                          <>
-                            <div className="flex justify-between">
-                              <span>Federal Tax:</span>
-                              <span className="font-medium text-red-600">-${payrollCalculations.federalTax.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Provincial Tax:</span>
-                              <span className="font-medium text-red-600">-${payrollCalculations.provincialTax.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>CPP:</span>
-                              <span className="font-medium text-red-600">-${payrollCalculations.cpp.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>EI:</span>
-                              <span className="font-medium text-red-600">-${payrollCalculations.ei.toFixed(2)}</span>
-                            </div>
-                            <div className="border-t pt-2 flex justify-between font-semibold">
-                              <span>Net Pay:</span>
-                              <span className="text-green-600">${payrollCalculations.netPay.toFixed(2)}</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                    <Switch
+                      id="tax-included"
+                      checked={taxIncluded}
+                      onCheckedChange={setTaxIncluded}
+                      disabled={!canEditTimesheets}
+                    />
                   </div>
                 </div>
               )}
+              
+              {/* Payroll Summary */}
+              <div className="mt-6 p-4 bg-muted rounded-lg">
+                <h4 className="text-sm font-medium mb-3">
+                  {workerType === 'employee' ? 'Payroll Summary' : 'Payment Summary'}
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <span>Gross Pay:</span>
+                  <span className="font-medium">${grossPay.toFixed(2)}</span>
+                  
+                  {workerType === 'employee' ? (
+                    <>
+                      {breakdown.cpp && (
+                        <>
+                          <span>CPP:</span>
+                          <span className="text-destructive">-${breakdown.cpp.toFixed(2)}</span>
+                        </>
+                      )}
+                      {breakdown.ei && (
+                        <>
+                          <span>EI:</span>
+                          <span className="text-destructive">-${breakdown.ei.toFixed(2)}</span>
+                        </>
+                      )}
+                      {breakdown.federalTax && (
+                        <>
+                          <span>Federal Tax:</span>
+                          <span className="text-destructive">-${breakdown.federalTax.toFixed(2)}</span>
+                        </>
+                      )}
+                      {breakdown.provincialTax && (
+                        <>
+                          <span>Provincial Tax:</span>
+                          <span className="text-destructive">-${breakdown.provincialTax.toFixed(2)}</span>
+                        </>
+                      )}
+                      <span className="font-medium border-t pt-1">Net Pay:</span>
+                      <span className="font-medium text-primary border-t pt-1">${netPay.toFixed(2)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>HST ({taxPercentage}%):</span>
+                      <span className={taxIncluded ? "text-destructive" : "text-primary"}>
+                        {taxIncluded ? '-' : '+'}${taxAmount.toFixed(2)}
+                      </span>
+                      <span className="font-medium border-t pt-1">Total Pay:</span>
+                      <span className="font-medium text-primary border-t pt-1">${netPay.toFixed(2)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
           </TabsContent>
 
