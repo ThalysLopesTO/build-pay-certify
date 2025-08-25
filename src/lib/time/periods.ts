@@ -37,27 +37,15 @@ export const getCurrentPeriod = ({
     return { start: startOfDay(start), end: startOfDay(end) };
   }
   
-  // For bi-weekly periods, ensure they always start the day after week ending day
-  // and span exactly 14 days (2 weeks)
+  // For bi-weekly periods, ensure they always start on Friday and end on Thursday
+  // for Thursday week-ending companies (Aug 8 - Aug 21 pattern)
   
   // Find the most recent occurrence of the week ending day
   const mostRecentEndDay = nextOccurrenceIncludingToday(today, weekEndingIdx);
   
-  // If today is the week ending day or before, we might be in the previous period
-  // Calculate which bi-weekly period we're in by using a stable reference
-  
-  // Use a known reference date - August 8, 2024 was a Thursday
-  const referenceThursday = new Date('2024-08-08');
-  let referenceEnd: Date;
-  
-  if (weekEndingIdx === 4) {
-    // Thursday week ending - use the reference as-is
-    referenceEnd = referenceThursday;
-  } else {
-    // Calculate the reference end day for other week ending days
-    const daysDiff = (weekEndingIdx - referenceThursday.getDay() + 7) % 7;
-    referenceEnd = addDays(referenceThursday, daysDiff);
-  }
+  // Use a known reference date - August 21, 2024 was a Thursday (end of bi-weekly period)
+  // This ensures Aug 8 - Aug 21 pattern for Thursday week-ending companies
+  const referenceEnd = new Date('2024-08-21');
   
   // Calculate days since reference end
   const daysSinceRef = Math.floor((mostRecentEndDay.getTime() - referenceEnd.getTime()) / (1000 * 60 * 60 * 24));
@@ -73,7 +61,8 @@ export const getCurrentPeriod = ({
     periodEnd = addDays(periodEnd, 14);
   }
   
-  // Period starts the day after the previous period's end (14 days before current end)
+  // For bi-weekly periods, start is always Friday (14 days before end + 1)
+  // This ensures Friday-Thursday boundaries: Aug 8 (Fri) - Aug 21 (Thu)
   const start = addDays(periodEnd, -13);
   const end = periodEnd;
   

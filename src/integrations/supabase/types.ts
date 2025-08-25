@@ -2448,6 +2448,19 @@ export type Database = {
           timesheet_id: string
         }[]
       }
+      generate_biweekly_json: {
+        Args: {
+          fri_h?: number
+          mon_h?: number
+          sat_h?: number
+          start_date: string
+          sun_h?: number
+          thu_h?: number
+          tue_h?: number
+          wed_h?: number
+        }
+        Returns: string
+      }
       generate_invoice_number: {
         Args: Record<PropertyKey, never>
         Returns: string
