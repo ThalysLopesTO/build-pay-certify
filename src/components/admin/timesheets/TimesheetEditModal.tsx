@@ -170,10 +170,11 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
    const [notesText, setNotesText] = useState<string>(stripBiWeeklyMeta(timesheet.notes));
 
   // Initialize hours state for bi-weekly (14 days) - prioritize correct period dates
-  const [hours14, setHours14] = useState<number[]>(() => {
-    if (!isBiWeekly) return new Array(14).fill(0);
-    
-    const initialHours: { [key: string]: number } = {};
+  const [hours14, setHours14] = useState<number[]>(() => new Array(14).fill(0));
+
+  // Effect to populate hours when timesheet or period dates change
+  useEffect(() => {
+    if (!isBiWeekly || !timesheet) return;
     
     // Parse stored bi-weekly JSON hours
     let storedHours: { [key: string]: number } = {};
@@ -194,15 +195,33 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
       console.error('Error parsing stored bi-weekly hours:', error);
     }
     
+    // If no JSON data, try to use individual day columns
+    if (Object.keys(storedHours).length === 0) {
+      const dailyHours = [
+        timesheet.monday_hours || 0,
+        timesheet.tuesday_hours || 0,
+        timesheet.wednesday_hours || 0,
+        timesheet.thursday_hours || 0,
+        timesheet.friday_hours || 0,
+        timesheet.saturday_hours || 0,
+        timesheet.sunday_hours || 0,
+        0, 0, 0, 0, 0, 0, 0 // Second week defaults to 0
+      ];
+      setHours14(dailyHours);
+      return;
+    }
+    
     // Map hours to correct period dates
     const hours = new Array(14).fill(0);
-    periodDates.forEach((date, index) => {
-      const dateKey = format(date, 'yyyy-MM-dd');
-      hours[index] = storedHours[dateKey] || 0;
-    });
+    if (periodDates.length === 14) {
+      periodDates.forEach((date, index) => {
+        const dateKey = format(date, 'yyyy-MM-dd');
+        hours[index] = storedHours[dateKey] || 0;
+      });
+    }
     
-    return hours;
-  });
+    setHours14(hours);
+  }, [isBiWeekly, timesheet, periodDates]);
 
   // Store original data for audit tracking
   const originalData = {
