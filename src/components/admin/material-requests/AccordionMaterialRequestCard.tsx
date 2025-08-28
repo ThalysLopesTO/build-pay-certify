@@ -15,11 +15,13 @@ import {
   Image,
   ChevronDown,
   Building2,
-  Trash2
+  Trash2,
+  Edit
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { MaterialRequest, RequestStatus } from '../types/materialRequest';
 import { useMaterialRequestAttachments } from '@/hooks/useMaterialRequestAttachments';
+import AdminEditMaterialRequestDialog from './AdminEditMaterialRequestDialog';
 
 interface AccordionMaterialRequestCardProps {
   request: MaterialRequest;
@@ -294,15 +296,31 @@ const AccordionMaterialRequestCard = ({
                 </Button>
 
                 {isAdmin && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDelete(request.id)}
-                    className="flex items-center gap-2 hover:bg-destructive/10 hover:border-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </Button>
+                  <>
+                    <AdminEditMaterialRequestDialog
+                      request={request}
+                      isAdmin={isAdmin}
+                      trigger={
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2 hover:bg-primary/10 hover:border-primary hover:text-primary"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Edit Request
+                        </Button>
+                      }
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onDelete(request.id)}
+                      className="flex items-center gap-2 hover:bg-destructive/10 hover:border-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                  </>
                 )}
               </div>
               

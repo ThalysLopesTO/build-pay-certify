@@ -265,6 +265,7 @@ const MaterialRequestInbox = () => {
         onClose={() => setDetailsPanelOpen(false)}
         onStatusUpdate={handleStatusUpdate}
         onExportPDF={handleExportPDF}
+        isAdmin={isCompanyAdmin}
       />
 
       {/* Delete Confirmation Dialog */}

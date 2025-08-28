@@ -4,6 +4,7 @@ export type RequestStatus = 'pending' | 'ordered' | 'delivered' | 'archived';
 export interface MaterialRequest {
   id: string;
   jobsites: {
+    id: string;
     name: string;
     address: string;
   } | null;
@@ -14,4 +15,5 @@ export interface MaterialRequest {
   status: RequestStatus;
   created_at: string;
   submitted_by: string;
+  submitted_by_name?: string;
 }

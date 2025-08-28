@@ -3,12 +3,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, MapPin, Package2, User, Download, X, Image } from 'lucide-react';
+import { Calendar, MapPin, Package2, User, Download, X, Image, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { MaterialRequest, RequestStatus } from '../types/materialRequest';
 import { useMaterialRequestAttachments } from '@/hooks/useMaterialRequestAttachments';
 import MaterialRequestPhotosViewer from '@/components/foreman/MaterialRequestPhotosViewer';
 import { supabase } from '@/integrations/supabase/client';
+import AdminEditMaterialRequestDialog from './AdminEditMaterialRequestDialog';
 
 interface MaterialRequestDetailsPanelProps {
   request: MaterialRequest | null;
@@ -16,6 +17,7 @@ interface MaterialRequestDetailsPanelProps {
   onClose: () => void;
   onStatusUpdate: (id: string, status: RequestStatus) => void;
   onExportPDF: (request: MaterialRequest) => void;
+  isAdmin?: boolean;
 }
 
 const MaterialRequestDetailsPanel = ({
@@ -23,7 +25,8 @@ const MaterialRequestDetailsPanel = ({
   isOpen,
   onClose,
   onStatusUpdate,
-  onExportPDF
+  onExportPDF,
+  isAdmin = false
 }: MaterialRequestDetailsPanelProps) => {
   const { data: attachments = [] } = useMaterialRequestAttachments(request?.id);
 
@@ -200,13 +203,30 @@ const MaterialRequestDetailsPanel = ({
               </Select>
             </div>
 
-            <Button
-              onClick={() => onExportPDF(request)}
-              className="w-full flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Export as PDF
-            </Button>
+            <div className="flex gap-2">
+              {isAdmin && (
+                <AdminEditMaterialRequestDialog
+                  request={request}
+                  isAdmin={isAdmin}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      className="flex-1 flex items-center gap-2"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Edit Request
+                    </Button>
+                  }
+                />
+              )}
+              <Button
+                onClick={() => onExportPDF(request)}
+                className="flex-1 flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export PDF
+              </Button>
+            </div>
           </div>
         </div>
       </SheetContent>
