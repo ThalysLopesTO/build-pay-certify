@@ -28,7 +28,40 @@ export const processPaidRegistration = async (
     plan = "pro";
   }
 
-  // Create a NEW company for paid registrations
+  // Sign up the admin user FIRST to satisfy RLS policies
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email: formData.adminEmail,
+    password: formData.password,
+    options: {
+      data: {
+        first_name: formData.adminFirstName,
+        last_name: formData.adminLastName,
+        role: 'admin'
+      }
+    }
+  });
+
+  if (authError) {
+    console.error('❌ User signup failed:', authError);
+    throw new Error(`Failed to create user account: ${authError.message}`);
+  }
+
+  console.log('✅ User signed up with ID:', authData.user?.id);
+
+  // Sign the user in immediately to authenticate before creating company
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: formData.adminEmail,
+    password: formData.password
+  });
+
+  if (signInError) {
+    console.error('❌ Sign-in failed:', signInError);
+    throw new Error(`Sign-in failed after registration: ${signInError.message}`);
+  }
+
+  console.log('✅ User signed in successfully');
+
+  // Now create the company with authenticated user (satisfies RLS policies)
   const { data: company, error: companyError } = await supabase
     .from('companies')
     .insert({
@@ -50,40 +83,6 @@ export const processPaidRegistration = async (
 
   console.log('✅ New company created with ID:', company.id);
   console.log('✅ Company settings with default rules will be created automatically via database trigger');
-
-  // Sign up the admin user
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: formData.adminEmail,
-    password: formData.password,
-    options: {
-      data: {
-        first_name: formData.adminFirstName,
-        last_name: formData.adminLastName,
-        role: 'admin',
-        company_id: company.id  // Ensure company_id is in user metadata
-      }
-    }
-  });
-
-  if (authError) {
-    console.error('❌ User signup failed:', authError);
-    throw new Error(`Failed to create user account: ${authError.message}`);
-  }
-
-  console.log('✅ User signed up with ID:', authData.user?.id);
-
-  // Sign the user in immediately
-  const { error: signInError } = await supabase.auth.signInWithPassword({
-    email: formData.adminEmail,
-    password: formData.password
-  });
-
-  if (signInError) {
-    console.error('❌ Sign-in failed:', signInError);
-    throw new Error(`Sign-in failed after registration: ${signInError.message}`);
-  }
-
-  console.log('✅ User signed in successfully');
 
   // Create user profile with the NEW company_id
   const { data: existingProfile, error: profileCheckError } = await supabase
