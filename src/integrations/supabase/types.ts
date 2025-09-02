@@ -2219,6 +2219,7 @@ export type Database = {
           manual_entry_name: string | null
           monday_hours: number | null
           notes: string | null
+          periods: Json[] | null
           saturday_hours: number | null
           status: string
           submitted_by: string | null
@@ -2251,6 +2252,7 @@ export type Database = {
           manual_entry_name?: string | null
           monday_hours?: number | null
           notes?: string | null
+          periods?: Json[] | null
           saturday_hours?: number | null
           status?: string
           submitted_by?: string | null
@@ -2283,6 +2285,7 @@ export type Database = {
           manual_entry_name?: string | null
           monday_hours?: number | null
           notes?: string | null
+          periods?: Json[] | null
           saturday_hours?: number | null
           status?: string
           submitted_by?: string | null
