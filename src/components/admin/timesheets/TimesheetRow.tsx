@@ -94,7 +94,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
           {isEmployee ? "Employee" : "Subcontractor"}
         </Badge>
       </td>
-      <td className="p-4 text-sm">{timesheet.jobsite_name}</td>
+      <td className="p-4 text-sm">{timesheet.jobsite.name}</td>
       <td className="p-4 text-sm">
         {format(new Date(timesheet.week_start_date), 'MMM dd, yyyy')}
       </td>

@@ -23,9 +23,13 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
       // Get weekly timesheets - these are employee submissions
       let query = supabase
         .from('weekly_timesheets_2')
-        .select(`*`);
-        // .eq('company_id', user.companyId)
-        // .order('created_at', { ascending: false });
+        .select(`*,
+          jobsite:jobsite_id (
+            id,
+            name
+          )`);
+      // .eq('company_id', user.companyId)
+      // .order('created_at', { ascending: false });
       // Apply status filter if provided
       if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status);
