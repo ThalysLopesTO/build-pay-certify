@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -71,7 +72,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
         </td>
       )}
       <td className="p-4 font-medium">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 text-nowrap">
           <span>
             {timesheet.is_manual_entry 
               ? timesheet.manual_entry_name 
@@ -79,7 +80,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
             }
           </span>
           {timesheet.is_manual_entry && (
-            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+            <Badge variant="secondary" className="text-xs text-nowrap bg-blue-100 text-blue-700 border-blue-200">
               Manual Entry
             </Badge>
           )}
@@ -100,7 +101,7 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
       <td className="p-4 text-center font-mono text-sm">
         <div className="flex items-center justify-center gap-1">
           <span>
-            {(timesheet.corrected_total_hours || timesheet.total_hours || 0).toFixed(2)}h
+            {(timesheet.total_hours || 0).toFixed(2)}h
           </span>
           {shouldShowDataWarning(timesheet) && (
             <div title="Data inconsistency detected - hours may need verification">
@@ -110,23 +111,23 @@ const TimesheetRow: React.FC<TimesheetRowProps> = ({
         </div>
       </td>
       <td className="p-4 text-center font-mono text-sm">
-        ${grossPay.toFixed(2)}
+        ${timesheet.gross_pay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </td>
       <td className="p-4 text-center font-mono text-sm">
         {isEmployee ? (
           <span className="text-red-600">
-            -${deductions.toFixed(2)}
+            -${timesheet.tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         ) : timesheet.tax_included ? (
           <span className="text-blue-600">
-            +${(timesheet.calculated_tax || 0).toFixed(2)}
+            +${(timesheet.tax).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         ) : (
           <span className="text-slate-400">-</span>
         )}
       </td>
       <td className="p-4 text-center font-mono text-sm font-semibold">
-        ${netPay.toFixed(2)}
+        ${timesheet.total_pay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </td>
       <td className="p-4">
         <TimesheetStatusBadge status={timesheet.status} />

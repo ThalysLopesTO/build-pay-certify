@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -130,19 +131,10 @@ export const useWeeklyTimesheetActions = () => {
   });
 
   const editTimesheet = useMutation({
-    mutationFn: async ({ timesheetId, updates, originalData }: { 
+    mutationFn: async ({ timesheetId, updates }: { 
       timesheetId: string; 
       updates: any;
-      originalData: any;
     }) => {
-      console.log('🔍 Weekly timesheet edit attempt:', {
-        userId: user?.id,
-        userRole: user?.role,
-        companyId: user?.companyId,
-        timesheetId,
-        updates
-      });
-
       if (!user?.id || !user?.companyId) {
         throw new Error('User not authenticated');
       }
@@ -154,18 +146,14 @@ export const useWeeklyTimesheetActions = () => {
 
       console.log('📝 Editing weekly timesheet with verified permissions');
       
-      // Filter out generated columns before update
-      const { total_hours, gross_pay, ...updateData } = updates;
-      
       // Update the timesheet with enhanced error handling
       const { data, error } = await supabase
-        .from('weekly_timesheets')
+        .from('weekly_timesheets_2')
         .update({
-          ...updateData,
+          ...updates,
           updated_at: new Date().toISOString()
         })
         .eq('id', timesheetId)
-        .eq('company_id', user.companyId)
         .select()
         .maybeSingle();
 

@@ -59,9 +59,9 @@ export const TimesheetSummaryCard: React.FC<TimesheetSummaryCardProps> = ({
           <div className="space-y-2">
             <h3 className="text-lg font-semibold text-primary">Total Pay</h3>
             <div className="space-y-1">
-              <p className="text-xl font-bold text-green-600">${totalPay.toFixed(2)}</p>
+              <p className="text-xl font-bold text-green-600">${totalPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               <p className="text-sm text-muted-foreground">
-                Gross: ${grossPay.toFixed(2)}
+                Gross: ${grossPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </div>

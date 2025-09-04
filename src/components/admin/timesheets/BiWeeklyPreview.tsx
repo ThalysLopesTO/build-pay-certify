@@ -94,39 +94,39 @@ const BiWeeklyPreview: React.FC<BiWeeklyPreviewProps> = ({ timesheet, frequency 
   return (
     <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
       <div className="mb-3 text-sm text-muted-foreground">Timesheet Period: <span className="font-semibold text-foreground">{periodLabel}</span></div>
-      {frequency === 'bi-weekly' ? (
-        <div className="divide-y divide-border">
-          <Section title="Week 1" defaultOpen>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
-              {week1.map((d, idx) => (
-                <DayCell key={`${d.label}-${idx}`} title={`${d.label}`} subtitle={`${d.date}`} value={d.hours} />
-              ))}
-            </div>
-            <div className="mt-2 text-right text-sm text-muted-foreground">Week 1 Total: <span className="font-semibold text-foreground">{totalWeek1.toFixed(2)}h</span></div>
-          </Section>
-          <Section title="Week 2" defaultOpen={false}>
-            {parsed ? (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
-                  {week2.map((d, idx) => (
-                    <DayCell key={`${d.label}-w2-${idx}`} title={`${d.label}`} subtitle={`${d.date}`} value={d.hours} />
-                  ))}
-                </div>
-                <div className="mt-2 text-right text-sm text-muted-foreground">Week 2 Total: <span className="font-semibold text-foreground">{totalWeek2.toFixed(2)}h</span></div>
-              </>
-            ) : (
-              <div className="text-xs text-muted-foreground">No second-week daily breakdown available.</div>
-            )}
-          </Section>
-          <div className="mt-1 text-right text-sm text-foreground">Grand Total: <span className="font-bold text-foreground">{grandTotal.toFixed(2)}h</span></div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
-          {week1.map((d, idx) => (
-            <DayCell key={`${d.label}-${idx}`} title={`${d.label}`} subtitle={`${d.date}`} value={d.hours} />
-          ))}
-        </div>
-      )}
+
+      <div className="divide-y divide-border">
+        {timesheet.periods.map((w, i) => {
+          const totalWeek = w.days.reduce((s, d) => {
+            const hours = Object.values(d)[0] as number;
+            return s + (hours || 0);
+          }, 0);
+
+          return (
+            <Section key={i} title={`Week ${i + 1}`} defaultOpen>
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+                {w.days.map((d, idx) => {
+                  const c = addDays(start, i * 7 + idx); // ✅ correct day offset
+                  const label = format(c, 'EEE');        // Mon, Tue, ...
+                  const date = format(c, 'MMM dd');      // Jan 01
+
+                  const hours = Object.values(d)[0] as number;
+
+                  return (
+                    <DayCell
+                      key={`${i}-${idx}`}
+                      title={label}
+                      subtitle={date}
+                      value={hours} 
+                    />
+                  )
+                })}
+              </div>
+              <div className="mt-2 text-right text-sm text-muted-foreground">Week {i + 1} Total: <span className="font-semibold text-foreground">{totalWeek.toFixed(2)}h</span></div>
+            </Section>
+          )
+        })}
+      </div>
     </div>
   );
 };

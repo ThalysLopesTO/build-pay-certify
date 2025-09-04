@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
@@ -12,9 +13,10 @@ interface TimesheetSummaryProps {
   form?: UseFormReturn<any>;
   disabled?: boolean;
   workerType?: 'employee' | 'subcontractor';
+  onChange?: (values: any) => void;
 }
 
-const TimesheetSummary = ({ totalHours, hourlyRate, grossPay, form, disabled = false, workerType = 'subcontractor' }: TimesheetSummaryProps) => {
+const TimesheetSummary = ({ totalHours, hourlyRate, grossPay, form, disabled = false, workerType = 'subcontractor', onChange }: TimesheetSummaryProps) => {
   const { settings } = useCompanySettings();
   const taxPercentage = settings?.tax_percentage || 13;
   const showTaxBreakdown = settings?.show_tax_breakdown_to_employees ?? true;
@@ -38,6 +40,16 @@ const TimesheetSummary = ({ totalHours, hourlyRate, grossPay, form, disabled = f
   
   const finalTotalPay = workerType === 'employee' ? (grossPay - totalDeductions) : (grossPay + calculatedTax);
 
+  useEffect(() => {
+    onChange?.({ 
+      totalPay: finalTotalPay, 
+      tax: calculatedTax,
+      totalHours: totalHours,
+      grossPay: grossPay,
+      hoursPay: payBeforeTax,
+  });
+  }, [grossPay, totalHours, hourlyRate, taxIncluded]);
+  
   return (
     <div className="bg-slate-50 p-6 rounded-lg space-y-4">
       <h3 className="text-lg font-semibold text-slate-800 mb-4">Timesheet Summary</h3>
@@ -93,7 +105,7 @@ const TimesheetSummary = ({ totalHours, hourlyRate, grossPay, form, disabled = f
         </div>
         <div className="text-center">
           <p className="text-sm text-slate-600">Hours Pay</p>
-          <p className="text-2xl font-bold text-purple-600">${payBeforeTax.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-purple-600">${payBeforeTax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
         </div>
       </div>
 
@@ -105,7 +117,7 @@ const TimesheetSummary = ({ totalHours, hourlyRate, grossPay, form, disabled = f
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-slate-600">Gross Pay:</span>
-              <span className="font-medium text-slate-800">${grossPay.toFixed(2)}</span>
+              <span className="font-medium text-slate-800">${grossPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="border-t border-slate-200 pt-2">
               <div className="text-slate-600 mb-1">Deductions:</div>
@@ -147,16 +159,16 @@ const TimesheetSummary = ({ totalHours, hourlyRate, grossPay, form, disabled = f
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-600">Gross Pay:</span>
-                <span className="font-medium text-slate-800">${grossPay.toFixed(2)}</span>
+                <span className="font-medium text-slate-800">${grossPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Tax ({taxPercentage}%):</span>
-                <span className="font-medium text-blue-600">+${calculatedTax.toFixed(2)}</span>
+                <span className="font-medium text-blue-600">+${calculatedTax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="border-t border-slate-200 pt-2">
                 <div className="flex justify-between">
                   <span className="font-medium text-slate-700">Final Total Pay:</span>
-                  <span className="font-bold text-green-600 text-lg">${finalTotalPay.toFixed(2)}</span>
+                  <span className="font-bold text-green-600 text-lg">${finalTotalPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
             </div>
@@ -172,7 +184,7 @@ const TimesheetSummary = ({ totalHours, hourlyRate, grossPay, form, disabled = f
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="font-medium text-slate-700">Gross Pay:</span>
-                <span className="font-bold text-green-600 text-lg">${grossPay.toFixed(2)}</span>
+                <span className="font-bold text-green-600 text-lg">${grossPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
             

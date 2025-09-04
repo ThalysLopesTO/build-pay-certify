@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,11 +9,12 @@ import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, DollarSign } from 'lucide-react';
-import { format, startOfWeek, addDays } from 'date-fns';
+import { format, startOfWeek, addDays, getDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useWorkWeek } from '@/hooks/useWorkWeek';
+import { calculateTax } from '@/utils/taxCalculations';
 
 interface CreateManualTimesheetModalProps {
   isOpen: boolean;
@@ -33,6 +35,13 @@ interface TimesheetFormData {
   fridayHours: number;
   saturdayHours: number;
   sundayHours: number;
+  mondayHours2?: number;
+  tuesdayHours2?: number;
+  wednesdayHours2?: number;
+  thursdayHours2?: number;
+  fridayHours2?: number;
+  saturdayHours2?: number;
+  sundayHours2?: number;
   hourlyRate: number;
   additionalExpense: number;
   taxIncluded: boolean;
@@ -41,6 +50,7 @@ interface TimesheetFormData {
   cppRate: number;
   eiRate: number;
   notes: string;
+  frequency?: 'weekly' | 'bi-weekly'; // New field for timesheet frequency
 }
 
 const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
@@ -51,8 +61,8 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
 }) => {
   const { data: jobsites = [] } = useActiveJobsites();
   const { settings } = useCompanySettings();
-  const workWeeks = useWorkWeek();
-  
+  // const workWeeks = useWorkWeek();
+
   const [formData, setFormData] = useState<TimesheetFormData>({
     employeeName: '',
     workerType: 'subcontractor',
@@ -71,32 +81,40 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
     incomeTaxRate: 12, // Default 12%
     cppRate: 5.95, // Default 5.95%
     eiRate: 1.63, // Default 1.63%
-    notes: ''
+    notes: '',
   });
 
   // Calculate totals
-  const totalHours = formData.mondayHours + formData.tuesdayHours + formData.wednesdayHours + 
-                    formData.thursdayHours + formData.fridayHours + formData.saturdayHours + formData.sundayHours;
-  
+  const totalHours =
+    formData.mondayHours +
+    formData.tuesdayHours +
+    formData.wednesdayHours +
+    formData.thursdayHours +
+    formData.fridayHours +
+    formData.saturdayHours +
+    formData.sundayHours +
+    (formData.frequency === "bi-weekly"
+      ? (formData.mondayHours2 || 0) +
+      (formData.tuesdayHours2 || 0) +
+      (formData.wednesdayHours2 || 0) +
+      (formData.thursdayHours2 || 0) +
+      (formData.fridayHours2 || 0) +
+      (formData.saturdayHours2 || 0) +
+      (formData.sundayHours2 || 0)
+      : 0);
+
   const grossPay = (totalHours * formData.hourlyRate) + formData.additionalExpense;
-  
-  // Calculate based on worker type
-  let calculatedTax = 0;
-  let deductions = 0;
-  let totalPay = grossPay;
-  
-  if (formData.workerType === 'subcontractor') {
-    const taxRate = settings?.tax_percentage || 13;
-    calculatedTax = formData.taxIncluded ? (grossPay * taxRate / 100) : 0;
-    totalPay = grossPay + calculatedTax;
-  } else {
-    // Employee: calculate deductions using editable rates
-    const incomeTax = grossPay * (formData.incomeTaxRate / 100);
-    const cpp = grossPay * (formData.cppRate / 100);
-    const ei = grossPay * (formData.eiRate / 100);
-    deductions = incomeTax + cpp + ei;
-    totalPay = grossPay - deductions;
-  }
+
+  const tax = calculateTax({
+    tax_included: formData.taxIncluded,
+    type: formData.workerType,
+    tax_percentage: settings?.tax_percentage,
+    gross_pay: grossPay,
+  })
+
+  const calculatedTax = tax.calculatedTax;
+  const deductions = tax.deductions;
+  const totalPay = tax.totalPay;
 
   const handleInputChange = (field: keyof TimesheetFormData, value: any) => {
     setFormData(prev => ({
@@ -120,8 +138,43 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
     }
 
     // Get the Monday of the selected week
-    const weekStart = startOfWeek(formData.selectedDate, { weekStartsOn: 1 });
+    const weekStart = getFriday(formData.selectedDate);
     const weekStartDateString = format(weekStart, 'yyyy-MM-dd');
+
+    const tax = calculateTax({
+      tax_included: formData.taxIncluded,
+      type: formData.workerType,
+      tax_percentage: settings?.tax_percentage,
+      gross_pay: grossPay,
+    })
+
+    const periods = [{
+      week: "week1",
+      days: [
+        { friday: formData.fridayHours },
+        { saturday: formData.saturdayHours },
+        { sunday: formData.sundayHours },
+        { monday: formData.mondayHours },
+        { tuesday: formData.tuesdayHours },
+        { wednesday: formData.wednesdayHours },
+        { thursday: formData.thursdayHours },
+      ]
+    }]
+
+    if (formData.frequency === 'bi-weekly') {
+      periods.push({
+        week: "week2",
+        days: [
+          { friday: formData.fridayHours2 ?? 0 },
+          { saturday: formData.saturdayHours2 ?? 0 },
+          { sunday: formData.sundayHours2 ?? 0 },
+          { monday: formData.mondayHours2 ?? 0 },
+          { tuesday: formData.tuesdayHours2 ?? 0 },
+          { wednesday: formData.wednesdayHours2 ?? 0 },
+          { thursday: formData.thursdayHours2 ?? 0 },
+        ],
+      });
+    }
 
     const timesheetData = {
       manual_entry_name: formData.employeeName.trim(),
@@ -129,25 +182,24 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
       worker_type: formData.workerType,
       jobsite_id: formData.jobsiteId,
       week_start_date: weekStartDateString,
-      monday_hours: formData.mondayHours,
-      tuesday_hours: formData.tuesdayHours,
-      wednesday_hours: formData.wednesdayHours,
-      thursday_hours: formData.thursdayHours,
-      friday_hours: formData.fridayHours,
-      saturday_hours: formData.saturdayHours,
-      sunday_hours: formData.sundayHours,
       hourly_rate: formData.hourlyRate,
       additional_expense: formData.additionalExpense,
       tax_included: formData.taxIncluded,
-      calculated_tax: calculatedTax,
-      // Store custom deduction rates for employees
-      income_tax_rate: formData.workerType === 'employee' ? formData.incomeTaxRate : null,
-      cpp_rate: formData.workerType === 'employee' ? formData.cppRate : null,
-      ei_rate: formData.workerType === 'employee' ? formData.eiRate : null,
+      tax: calculatedTax,
+      income_tax: tax.incomeTax,
+      cpp: tax.cpp,
+      ei: tax.ei,
+      income_tax_rate: formData.incomeTaxRate,
+      cpp_rate: formData.cppRate,
+      ei_rate: formData.eiRate,
       notes: formData.notes || null,
-      status: 'pending'
+      status: 'pending',
+      gross_pay: grossPay,
+      total_pay: totalPay,
+      total_hours: totalHours,
+      hours_pay: totalHours * formData.hourlyRate,
+      periods,
     };
-
     onSave(timesheetData);
   };
 
@@ -180,6 +232,12 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
     }
   }, [isOpen]);
 
+  function getFriday(date: Date) {
+    const day = getDay(date); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+    const diff = day <= 5 ? 5 - day : -(day - 5);
+    return addDays(date, diff);
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -196,19 +254,19 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Hours</p>
-                  <p className="text-2xl font-bold text-blue-600">{totalHours.toFixed(1)}</p>
+                  <p className="text-2xl font-bold text-blue-600">{totalHours.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Gross Pay</p>
-                  <p className="text-2xl font-bold text-green-600">${grossPay.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-green-600">${grossPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Tax (13%)</p>
-                  <p className="text-2xl font-bold text-orange-600">${calculatedTax.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-orange-600">${calculatedTax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Pay</p>
-                  <p className="text-2xl font-bold text-purple-600">${totalPay.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-purple-600">${totalPay.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
               </div>
             ) : (
@@ -236,7 +294,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="workerType">Worker Type *</Label>
+              <Label htmlFor="workerType">Worker Type*</Label>
               <Select value={formData.workerType} onValueChange={(value: 'employee' | 'subcontractor') => handleInputChange('workerType', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select worker type" />
@@ -249,7 +307,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="employeeName">Employee Full Name *</Label>
+              <Label htmlFor="employeeName">Employee Full Name*</Label>
               <Input
                 id="employeeName"
                 type="text"
@@ -261,7 +319,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="jobsite">Jobsite *</Label>
+              <Label htmlFor="jobsite">Jobsite*</Label>
               <Select value={formData.jobsiteId} onValueChange={(value) => handleInputChange('jobsiteId', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select jobsite" />
@@ -277,7 +335,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="dateSelect">Week Starting Date *</Label>
+              <Label htmlFor="dateSelect">Week Starting Date*</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -289,7 +347,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.selectedDate ? (
-                      format(startOfWeek(formData.selectedDate, { weekStartsOn: 1 }), "PPP")
+                      format(getFriday(formData.selectedDate), "PPP")
                     ) : (
                       <span>Pick a date</span>
                     )}
@@ -323,50 +381,68 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
                 />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="workerType">Frequency*</Label>
+              <Select value={formData.frequency} onValueChange={(value: 'weekly' | 'bi-weekly') => handleInputChange('frequency', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="bi-weekly">Bi-Weekly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Weekly Hours */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Weekly Hours</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-              {(() => {
-                // Get the week ending day from company settings (0=Sunday, 1=Monday, etc.)
-                const weekEndingDay = settings?.week_ending_day ?? 0;
-                
-                // Calculate the week start day (day after the ending day)
-                const weekStartDay = (weekEndingDay + 1) % 7;
-                
-                // Base day names and field names
-                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                const fieldNames = ['sundayHours', 'mondayHours', 'tuesdayHours', 'wednesdayHours', 'thursdayHours', 'fridayHours', 'saturdayHours'];
-                
-                // Create ordered days based on company's week start
-                const orderedDays = [];
-                for (let i = 0; i < 7; i++) {
-                  const dayIndex = (weekStartDay + i) % 7;
-                  orderedDays.push({
-                    day: fieldNames[dayIndex],
-                    label: dayNames[dayIndex].substring(0, 3)
-                  });
-                }
-                
-                return orderedDays;
-              })().map(({ day, label }) => (
-                <div key={day} className="space-y-1">
-                  <Label className="text-sm font-medium text-gray-700">{label}</Label>
-                  <Input
-                    type="number"
-                    step="0.25"
-                    min="0"
-                    max="24"
-                    placeholder="0"
-                    value={formData[day as keyof TimesheetFormData] as number}
-                    onChange={(e) => handleHoursChange(day, e.target.value)}
-                    className="text-center"
-                  />
+            <hr />
+            <h3 className="font-bold text-gray-900">
+              {formData.frequency === 'bi-weekly' ? 'Bi-Weekly Hours' : 'Weekly Hours'}
+            </h3>
+
+            {Array.from({ length: formData.frequency === 'bi-weekly' ? 2 : 1 }, (_, i) => i + 1).map((weekNum) => (
+              <div key={weekNum} className="space-y-3 border p-4 rounded-lg">
+                {formData.frequency === 'bi-weekly' && (
+                  <p className="text-sm font-bold text-gray-700">Week {weekNum}</p>
+                )}
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                  {(() => {
+                    const weekEndingDay = settings?.week_ending_day ?? 0;
+                    const weekStartDay = (weekEndingDay + 1) % 7;
+                    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    const fieldNames = ['sundayHours', 'mondayHours', 'tuesdayHours', 'wednesdayHours', 'thursdayHours', 'fridayHours', 'saturdayHours'];
+
+                    const orderedDays = [];
+                    for (let i = 0; i < 7; i++) {
+                      const dayIndex = (weekStartDay + i) % 7;
+                      orderedDays.push({
+                        day: weekNum === 1 ? fieldNames[dayIndex] : `${fieldNames[dayIndex]}2`,
+                        label: dayNames[dayIndex].substring(0, 3)
+                      });
+                    }
+                    return orderedDays;
+                  })().map(({ day, label }) => (
+                    <div key={day} className="space-y-1">
+                      <Label className="text-sm font-medium text-gray-700">{label}</Label>
+                      <Input
+                        type="number"
+                        step="0.25"
+                        min="0"
+                        max="24"
+                        placeholder="0"
+                        value={formData[day as keyof TimesheetFormData] as number || 0}
+                        onChange={(e) => handleHoursChange(day, e.target.value)}
+                        className="text-center"
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+            <hr />
           </div>
 
           {/* Additional Information */}
@@ -388,7 +464,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
               </div>
             </div>
 
-            {formData.workerType === 'subcontractor' ? (
+            {formData.workerType === 'subcontractor' && (
               <div className="space-y-3">
                 <Label>Tax Control</Label>
                 <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
@@ -404,15 +480,19 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
                   </div>
                 </div>
               </div>
-            ) : (
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {formData.workerType === 'employee' && (
               <div className="space-y-3">
                 <Label>Payroll Deductions (Editable)</Label>
                 <div className="p-3 bg-gray-50 rounded-lg space-y-3">
                   <p className="text-sm font-medium text-gray-900 mb-2">Deduction Rates:</p>
-                  
+
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs">Income Tax (%)</Label>
+                      <Label>Income Tax (%)</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -424,7 +504,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">CPP (%)</Label>
+                      <Label className="">CPP (%)</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -436,7 +516,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">EI (%)</Label>
+                      <Label>EI (%)</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -448,8 +528,8 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
                       />
                     </div>
                   </div>
-                  
-                  <div className="space-y-1 text-xs text-gray-600 border-t pt-2">
+
+                  <div className="space-y-2 text-xs text-gray-600 border-t pt-2">
                     <div className="flex justify-between">
                       <span>Income Tax ({formData.incomeTaxRate}%):</span>
                       <span>${(grossPay * (formData.incomeTaxRate / 100)).toFixed(2)}</span>
@@ -462,7 +542,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
                       <span>EI ({formData.eiRate}%):</span>
                       <span>${(grossPay * (formData.eiRate / 100)).toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between font-medium text-gray-900 pt-1 border-t">
+                    <div className="flex justify-between font-medium text-gray-900 pt-2 border-t">
                       <span>Total Deductions:</span>
                       <span>${deductions.toFixed(2)}</span>
                     </div>
@@ -490,8 +570,8 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             disabled={!formData.employeeName.trim() || !formData.jobsiteId || !formData.selectedDate || isSaving}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +40,11 @@ const formSchema = z.object({
   additionalExpense: z.coerce.number().min(0).optional(),
   notes: z.string().optional(),
   tax_included: z.boolean().optional(),
+  tax: z.number().optional(),
+  total_hours: z.number().optional(),
+  total_pay: z.number().optional(),
+  hours_pay: z.number().optional(),
+  gross_pay: z.number().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -50,16 +56,16 @@ interface ForemanTimesheetDetailModalProps {
   existingTimesheets: string[];
 }
 
-const ForemanTimesheetDetailModal = ({ 
-  isOpen, 
-  onClose, 
-  selectedWeek, 
-  existingTimesheets 
+const ForemanTimesheetDetailModal = ({
+  isOpen,
+  onClose,
+  selectedWeek,
+  existingTimesheets
 }: ForemanTimesheetDetailModalProps) => {
   const { user } = useAuth();
   const { settings } = useCompanySettings();
   const submitMutation = useTimesheetSubmission();
-  
+
   // Fetch existing timesheet data
   const { data: existingTimesheetData, isLoading: isLoadingTimesheetData } = useTimesheetData({
     userId: user?.id,
@@ -118,7 +124,7 @@ const ForemanTimesheetDetailModal = ({
         formData.fridayHoursWeek2 = biWeekly.fridayHoursWeek2 || 0;
         formData.saturdayHoursWeek2 = biWeekly.saturdayHoursWeek2 || 0;
         formData.sundayHoursWeek2 = biWeekly.sundayHoursWeek2 || 0;
-        
+
         // Extract original notes without bi-weekly JSON
         const notesWithoutJson = existingTimesheetData.notes?.replace(/__biweekly_json__:.*?__end_biweekly_json__/, '').trim() || '';
         formData.notes = notesWithoutJson;
@@ -158,22 +164,22 @@ const ForemanTimesheetDetailModal = ({
 
   const watchedValues = form.watch();
   const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
-  
+
   // Calculate total hours including Week 2 for bi-weekly timesheets
   const week1Hours = (
-    watchedValues.mondayHours + watchedValues.tuesdayHours + 
-    watchedValues.wednesdayHours + watchedValues.thursdayHours + 
-    watchedValues.fridayHours + watchedValues.saturdayHours + 
+    watchedValues.mondayHours + watchedValues.tuesdayHours +
+    watchedValues.wednesdayHours + watchedValues.thursdayHours +
+    watchedValues.fridayHours + watchedValues.saturdayHours +
     watchedValues.sundayHours
   );
-  
+
   const week2Hours = isBiWeekly ? (
-    (watchedValues.mondayHoursWeek2 || 0) + (watchedValues.tuesdayHoursWeek2 || 0) + 
-    (watchedValues.wednesdayHoursWeek2 || 0) + (watchedValues.thursdayHoursWeek2 || 0) + 
-    (watchedValues.fridayHoursWeek2 || 0) + (watchedValues.saturdayHoursWeek2 || 0) + 
+    (watchedValues.mondayHoursWeek2 || 0) + (watchedValues.tuesdayHoursWeek2 || 0) +
+    (watchedValues.wednesdayHoursWeek2 || 0) + (watchedValues.thursdayHoursWeek2 || 0) +
+    (watchedValues.fridayHoursWeek2 || 0) + (watchedValues.saturdayHoursWeek2 || 0) +
     (watchedValues.sundayHoursWeek2 || 0)
   ) : 0;
-  
+
   const totalHours = week1Hours + week2Hours;
 
   const hourlyRate = parseFloat(user?.user_metadata?.hourly_rate || '25');
@@ -181,13 +187,41 @@ const ForemanTimesheetDetailModal = ({
 
   const isWeekSubmitted = selectedWeek ? existingTimesheets.includes(selectedWeek.weekStartDateString) : false;
   const isSubmitting = submitMutation.isPending;
-  
+
   // Check if submission is open (same logic as employee timesheets)
   const isSubmissionOpenForWeek = selectedWeek ? (selectedWeek as any).isSubmissionOpen ?? isSubmissionOpen(selectedWeek.endDate) : false;
   const isFormDisabled = isWeekSubmitted || isSubmitting || !isSubmissionOpenForWeek || isLoadingTimesheetData;
 
   const onSubmit = (data: FormData) => {
     if (!selectedWeek) return;
+
+    const periods = [{
+      week: "week1",
+      days: [
+        { friday: data.fridayHours },
+        { saturday: data.saturdayHours },
+        { sunday: data.sundayHours },
+        { monday: data.mondayHours },
+        { tuesday: data.tuesdayHours },
+        { wednesday: data.wednesdayHours },
+        { thursday: data.thursdayHours },
+      ]
+    }]
+
+    if (isBiWeekly) {
+      periods.push({
+        week: "week2",
+        days: [
+          { friday: data.fridayHoursWeek2 || 0 },
+          { saturday: data.saturdayHoursWeek2 || 0 },
+          { sunday: data.sundayHoursWeek2 || 0 },
+          { monday: data.mondayHoursWeek2 || 0 },
+          { tuesday: data.tuesdayHoursWeek2 || 0 },
+          { wednesday: data.wednesdayHoursWeek2 || 0 },
+          { thursday: data.thursdayHoursWeek2 || 0 },
+        ]
+      })
+    }
 
     const timesheetData = {
       jobsiteId: data.jobsiteId,
@@ -199,7 +233,6 @@ const ForemanTimesheetDetailModal = ({
       fridayHours: data.fridayHours,
       saturdayHours: data.saturdayHours,
       sundayHours: data.sundayHours,
-      // Include Week 2 fields for bi-weekly timesheets
       ...(isBiWeekly && {
         mondayHoursWeek2: data.mondayHoursWeek2 || 0,
         tuesdayHoursWeek2: data.tuesdayHoursWeek2 || 0,
@@ -213,6 +246,12 @@ const ForemanTimesheetDetailModal = ({
       additionalExpense: data.additionalExpense || 0,
       notes: data.notes || '',
       taxIncluded: data.tax_included || false,
+      periods,
+      tax: data.tax || 0,
+      total_hours: data.total_hours || 0,
+      total_pay: data.total_pay || 0,
+      hours_pay: data.hours_pay || 0,
+      gross_pay: data.gross_pay || 0
     };
     
     submitMutation.mutate(timesheetData, {
@@ -264,7 +303,7 @@ const ForemanTimesheetDetailModal = ({
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <strong>You've already submitted hours for this week.</strong> 
+                <strong>You've already submitted hours for this week.</strong>
                 The form has been disabled to prevent duplicate submissions.
               </AlertDescription>
             </Alert>
@@ -274,9 +313,9 @@ const ForemanTimesheetDetailModal = ({
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <JobsiteSelector control={form.control} />
 
-              <DailyHoursGrid 
-                control={form.control} 
-                disabled={isFormDisabled} 
+              <DailyHoursGrid
+                control={form.control}
+                disabled={isFormDisabled}
                 selectedWeek={selectedWeek}
               />
 
@@ -284,33 +323,40 @@ const ForemanTimesheetDetailModal = ({
 
               <NotesField control={form.control} disabled={isFormDisabled} />
 
-              <TimesheetSummary 
+              <TimesheetSummary
                 totalHours={totalHours}
                 hourlyRate={hourlyRate}
                 grossPay={grossPay}
                 form={form}
                 disabled={isFormDisabled}
+                onChange={(val) => {
+                  form.setValue("tax", val.tax);
+                  form.setValue("total_pay", val.totalPay);
+                  form.setValue("total_hours", val.totalHours);
+                  form.setValue("hours_pay", val.hoursPay);
+                  form.setValue("gross_pay", val.grossPay);
+                }}
                 workerType={user?.workerType || user?.user_metadata?.worker_type || 'employee'}
               />
 
               <div className="flex space-x-3 pt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={handleClose}
                   className="flex-1"
                 >
                   Cancel
                 </Button>
-                
+
                 {!isWeekSubmitted && (
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="flex-1 bg-orange-600 hover:bg-orange-700"
                     disabled={isFormDisabled}
                   >
-                    {isSubmitting 
-                      ? 'Submitting...' 
+                    {isSubmitting
+                      ? 'Submitting...'
                       : !isSubmissionOpenForWeek
                         ? 'In Progress – Submit after period ends'
                         : 'Submit Timesheet'

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +19,12 @@ interface TimesheetData {
   additionalExpense?: number;
   notes?: string;
   taxIncluded?: boolean;
+  periods: any;
+  tax: any;
+  total_hours: any;
+  gross_pay: any;
+  hours_pay: any;
+  total_pay: any;
 }
 
 export const useTimesheetSubmission = () => {
@@ -36,13 +43,6 @@ export const useTimesheetSubmission = () => {
           .single();
         userProfile = profileData;
       }
-      console.log('🔍 Starting timesheet submission with user:', { 
-        userId: user?.id, 
-        companyId: user?.companyId,
-        email: user?.email,
-        hasSession: !!session,
-        sessionValid: !!session?.access_token
-      });
 
       // Enhanced authentication checks
       if (!session?.access_token) {
@@ -60,23 +60,10 @@ export const useTimesheetSubmission = () => {
         throw new Error('No company assigned to your account. Please contact your administrator.');
       }
 
-      // Validate timesheet data
-      const totalHours = data.mondayHours + data.tuesdayHours + data.wednesdayHours + 
-                        data.thursdayHours + data.fridayHours + data.saturdayHours + data.sundayHours;
-      
-      if (totalHours === 0) {
-        throw new Error('Please enter at least one hour for the week');
-      }
-
-      // Calculate tax if included
-      const payBeforeTax = totalHours * data.hourlyRate;
-      const calculatedTax = data.taxIncluded ? (payBeforeTax * 0.13) : 0; // Default to 13% if not specified
-
       // Get employee name from user profile
-      const employeeName = user.firstName && user.lastName 
+      const employeeName = user.firstName && user.lastName
         ? `${user.firstName} ${user.lastName}`.trim()
         : 'Unknown Employee';
-
       // Create the payload - do NOT include total_hours or gross_pay as they are calculated by the trigger
       const timesheetPayload = {
         submitted_by: user.id,
@@ -95,18 +82,21 @@ export const useTimesheetSubmission = () => {
         notes: data.notes || '',
         status: 'pending',
         tax_included: data.taxIncluded || false,
-        calculated_tax: calculatedTax,
+        tax: data.tax || 0,
         employee_name: employeeName,
         worker_type: userProfile?.worker_type || 'subcontractor',
         income_tax_rate: userProfile?.income_tax_rate || null,
         cpp_rate: userProfile?.cpp_rate || null,
         ei_rate: userProfile?.ei_rate || null,
+        periods: data.periods,
+        total_hours: data.total_hours || 0,
+        gross_pay: data.gross_pay || 0,
+        hours_pay: data.hours_pay || 0,
+        total_pay: data.total_pay || 0
       };
 
-      console.log('📝 Submitting timesheet to database with payload:', timesheetPayload);
-
       const { data: result, error } = await supabase
-        .from('weekly_timesheets')
+        .from('weekly_timesheets_2')
         .insert([timesheetPayload])
         .select('*')
         .single();
@@ -119,16 +109,16 @@ export const useTimesheetSubmission = () => {
           hint: error.hint,
           code: error.code
         });
-        
+
         // Provide more specific error messages based on the actual error
         if (error.code === '42501') {
           throw new Error('Permission denied. Please ensure you are logged in and try again. If the problem persists, contact your administrator.');
         }
-        
+
         if (error.code === 'PGRST301') {
           throw new Error('Database constraint violation. Please check your timesheet data.');
         }
-        
+
         if (error.message?.includes('duplicate key')) {
           throw new Error('A timesheet for this week already exists. Please edit the existing timesheet instead.');
         }
@@ -136,7 +126,7 @@ export const useTimesheetSubmission = () => {
         if (error.message?.includes('violates row-level security')) {
           throw new Error('Security policy violation. Please log out and log back in, then try again.');
         }
-        
+
         throw new Error(error.message || 'Failed to submit timesheet');
       }
 
@@ -145,20 +135,20 @@ export const useTimesheetSubmission = () => {
     },
     onSuccess: (data, variables) => {
       console.log('🎉 Timesheet submission successful, updating cache immediately');
-      
+
       // Immediately update the existing timesheets cache
       queryClient.setQueryData(['existing-timesheets', user?.id], (oldData: string[] = []) => {
         return [...oldData, variables.weekStartDate];
       });
-      
+
       // Invalidate related queries to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['timesheets'] });
       queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
       queryClient.invalidateQueries({ queryKey: ['weekly-hours-summary'] });
-      
+
       toast({
         title: "Timesheet Submitted",
-        description: `Weekly timesheet for ${data.total_hours || 0} hours submitted successfully`,
+        description: `Weekly timesheet for ${data?.total_hours || 0} hours submitted successfully`,
       });
     },
     onError: (error) => {

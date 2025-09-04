@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,8 @@ import { addDays, format } from 'date-fns';
 import { useMemo } from 'react';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { calculatePayrollTotals } from '@/utils/taxCalculations';
+import { calculatePayrollTotals, calculateTax } from '@/utils/taxCalculations';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface TimesheetEditModalProps {
   timesheet: any;
@@ -25,6 +27,17 @@ interface TimesheetEditModalProps {
   isSaving: boolean;
 }
 
+type DayEntry = {
+  [day: string]: number; // e.g. { "monday": 3 }
+};
+
+type WeekPeriod = {
+  week: string; // e.g. "week1"
+  days: DayEntry[];
+};
+
+type Timesheet = WeekPeriod[];
+
 const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   timesheet,
   onClose,
@@ -32,137 +45,25 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   isSaving
 }) => {
   const { user } = useAuth();
-  const { settings: companySettings, isLoading: settingsLoading } = useCompanySettings();
-  const taxRate = companySettings?.tax_percentage || 13;
-  
+  // const { settings: companySettings, isLoading: settingsLoading } = useCompanySettings();
+  const [newTimesheet, setNewTimesheet] = useState<Timesheet>(timesheet.periods || []);
+
   // Permission check - only admin, super_admin, and management can edit timesheets
   const canEditTimesheets = user?.role && ['admin', 'super_admin', 'management'].includes(user.role);
-  
-  // Enhanced bi-weekly detection with fallback logic
-  const isBiWeekly = (() => {
-    // First check company settings
-    if (companySettings?.timesheet_frequency === 'bi-weekly') return true;
-    // Fallback: detect from timesheet notes containing bi-weekly data
-    if (timesheet.notes && timesheet.notes.includes('__biweekly_json__=')) return true;
-    return false;
-  })();
-  
-  // Check worker type to determine what to show
-  const isPayrollEmployee = timesheet.worker_type === 'employee';
+  const isBiWeekly = timesheet?.periods.length === 2;
 
   // Calculate the correct period dates using fixed logic
   const { periodStart, periodEnd } = useMemo(() => {
-    if (!companySettings) return { periodStart: new Date(), periodEnd: new Date() };
-    
-    const weekEndingIdx = getWeekdayIndex(companySettings.week_ending_day || 0);
-    const frequency = companySettings.timesheet_frequency || 'weekly';
-    
-    // For bi-weekly timesheets, calculate the correct period based on the start date
-    if (frequency === 'bi-weekly' && timesheet.week_start_date) {
-      const start = new Date(timesheet.week_start_date);
-      const end = addDays(start, 13); // 14-day period (13 days after start)
-      return { periodStart: start, periodEnd: end };
+    if (!timesheet?.week_start_date || !timesheet?.periods?.length) {
+      return { periodStart: new Date(), periodEnd: new Date() };
     }
-    
-    // For weekly timesheets
-    if (timesheet.week_start_date) {
-      const start = new Date(timesheet.week_start_date);
-      const end = addDays(start, 6); // 7-day period
-      return { periodStart: start, periodEnd: end };
-    }
-    
-    // Fallback to current period calculation and transform to consistent format
-    const currentPeriod = getCurrentPeriod({
-      today: new Date(),
-      frequency,
-      weekEndingIdx
-    });
-    return { periodStart: currentPeriod.start, periodEnd: currentPeriod.end };
-  }, [companySettings, timesheet.week_start_date]);
 
-  // Generate days arrays for bi-weekly display
-  const { allDays, week1Days, week2Days } = useMemo(() => {
-    if (isBiWeekly) {
-      const { week1Days, week2Days } = getBiWeeklyDays({ start: periodStart, end: periodEnd });
-      return {
-        allDays: [...week1Days, ...week2Days],
-        week1Days,
-        week2Days
-      };
-    }
-    
-    const all = getDaysForPeriod({ start: periodStart, end: periodEnd });
-    return {
-      allDays: all,
-      week1Days: all.slice(0, 7),
-      week2Days: []
-    };
-  }, [periodStart, periodEnd, isBiWeekly]);
+    const start = new Date(timesheet.week_start_date);
+    const totalDays = timesheet.periods.length * 7; // each period = 7 days
+    const end = addDays(start, totalDays - 1);
 
-  // State for hours (both weekly and bi-weekly)
-  const [hours, setHours] = useState<number[]>(() => {
-    if (!isBiWeekly) {
-      return [
-        timesheet.monday_hours || 0,
-        timesheet.tuesday_hours || 0,
-        timesheet.wednesday_hours || 0,
-        timesheet.thursday_hours || 0,
-        timesheet.friday_hours || 0,
-        timesheet.saturday_hours || 0,
-        timesheet.sunday_hours || 0,
-      ];
-    }
-    return Array(7).fill(0);
-  });
-
-  // State for bi-weekly hours (14 days)
-  const [hours14, setHours14] = useState<number[]>(() => {
-    if (isBiWeekly) {
-      // Try to parse from bi-weekly JSON first
-      if (timesheet.notes && timesheet.notes.includes('__biweekly_json__=')) {
-        try {
-          const base64Match = timesheet.notes.match(/__biweekly_json__=([^_\s]+)__end_biweekly_json__/);
-          if (base64Match) {
-            const decoded = atob(base64Match[1]);
-            const data = JSON.parse(decoded);
-            if (data.days && Array.isArray(data.days)) {
-              return data.days.map((day: any) => day.hours || 0);
-            }
-          }
-        } catch (e) {
-          console.error('Error parsing bi-weekly JSON:', e);
-        }
-      }
-      
-      // Fallback to individual columns
-      return [
-        timesheet.monday_hours || 0,
-        timesheet.tuesday_hours || 0,
-        timesheet.wednesday_hours || 0,
-        timesheet.thursday_hours || 0,
-        timesheet.friday_hours || 0,
-        timesheet.saturday_hours || 0,
-        timesheet.sunday_hours || 0,
-        0, 0, 0, 0, 0, 0, 0 // Second week defaults to 0
-      ];
-    }
-    return Array(14).fill(0);
-  });
-
-  // Initialize hours state correctly when timesheet data becomes available
-  useEffect(() => {
-    if (timesheet && !isBiWeekly) {
-      setHours([
-        timesheet.monday_hours || 0,
-        timesheet.tuesday_hours || 0,
-        timesheet.wednesday_hours || 0,
-        timesheet.thursday_hours || 0,
-        timesheet.friday_hours || 0,
-        timesheet.saturday_hours || 0,
-        timesheet.sunday_hours || 0,
-      ]);
-    }
-  }, [timesheet, isBiWeekly]);
+    return { periodStart: start, periodEnd: end };
+  }, [timesheet.week_start_date, timesheet.periods]);
 
   // Expenses state
   const [expenses, setExpenses] = useState({
@@ -171,122 +72,90 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
     additional: timesheet.additional_expense || 0,
   });
 
-  // Tax settings
-  const [includeTaxes, setIncludeTaxes] = useState(timesheet.include_taxes !== false);
-  const [taxPercentage, setTaxPercentage] = useState(timesheet.tax_percentage || taxRate);
-  const [taxIncluded, setTaxIncluded] = useState(false);
-
-  // Notes state (filter out bi-weekly JSON from display)
-  const [notesValue, setNotesValue] = useState(() => {
-    if (!timesheet.notes) return '';
-    
-    // Remove bi-weekly JSON from display
-    const notes = timesheet.notes.replace(/__biweekly_json__=.*?__end_biweekly_json__/g, '').trim();
-    return notes;
-  });
-
-  const handleInputChange = (index: number, value: number) => {
-    const newHours = [...hours];
-    newHours[index] = value;
-    setHours(newHours);
-  };
+  
+  const [taxIncluded, setTaxIncluded] = useState(timesheet.tax_included || false);
+  const [notesValue, setNotesValue] = useState(timesheet.notes || '');
+  const [additionalExpense, setAdditionalExpense] = useState(timesheet.additional_expense || 0);
 
   const handleExpenseChange = (field: string, value: number) => {
     setExpenses(prev => ({ ...prev, [field]: value }));
   };
 
-  // Calculate totals
-  const calculatedTotalHours = isBiWeekly 
-    ? hours14.reduce((sum, h) => sum + (h || 0), 0)
-    : hours.reduce((sum, h) => sum + (h || 0), 0);
+  const recordedTotalHours = timesheet.total_hours || 0;
 
-  const displayTotalHours = timesheet.total_hours || calculatedTotalHours;
-  const totalHoursDiscrepancy = Math.abs(displayTotalHours - calculatedTotalHours);
+  const calculatedTotalHours = newTimesheet.reduce((sum: number, week: any) => {
+    return sum + week.days.reduce((s: number, d: any) => s + (Object.values(d)[0] as number || 0), 0);
+  }, 0);
 
-  const totalExpenses = expenses.gas + expenses.perDiem + expenses.additional;
+  const totalHoursDiscrepancy = Math.abs(recordedTotalHours - calculatedTotalHours);
+
+  // const totalExpenses = expenses.gas + expenses.perDiem + expenses.additional;
   const workerType = timesheet.worker_type || 'employee';
-  
-  // Calculate payroll totals with proper tax handling
-  const payrollCalculation = useMemo(() => {
-    return calculatePayrollTotals(
-      calculatedTotalHours,
-      timesheet.hourly_rate || 0,
-      totalExpenses,
-      workerType,
-      taxPercentage,
-      taxIncluded
-    );
-  }, [calculatedTotalHours, timesheet.hourly_rate, totalExpenses, workerType, taxPercentage, taxIncluded]);
 
-  const { grossPay, netPay, taxAmount, breakdown } = payrollCalculation;
+  const calculatedGrossPay = (calculatedTotalHours * timesheet.hourly_rate) + additionalExpense;
+
+  const taxPercentage = 13; // Default tax percentage for subcontractors
+
+  const tax = calculateTax({
+    type: timesheet.worker_type || 'employee',
+    tax_percentage: taxPercentage,
+    gross_pay: calculatedGrossPay,
+    tax_included: taxIncluded,
+    income_tax_rate: timesheet.income_tax_rate,
+    cpp_rate: timesheet.cpp_rate,
+    ei_rate: timesheet.ei_rate
+  })
 
   const handleSave = () => {
     const updatedData: any = {
       ...timesheet,
-      total_hours: calculatedTotalHours,
-      gas_expense: expenses.gas,
-      per_diem: expenses.perDiem,
-      additional_expense: expenses.additional,
-      include_taxes: includeTaxes,
-      tax_percentage: taxPercentage,
+      periods: newTimesheet,                  
+      total_hours: calculatedTotalHours,      
+      gross_pay: calculatedGrossPay,          
+      // gas_expense: expenses.gas,
+      // per_diem: expenses.perDiem,
+      // tax_percentage: taxPercentage,
+      additional_expense: additionalExpense,
+      tax_included: taxIncluded,
       notes: notesValue,
-      gross_pay: grossPay,
+      total_pay: tax.totalPay,
+      income_tax: tax.incomeTax,
+      tax: tax.calculatedTax,
+      cpp: tax.cpp,
+      ei: tax.ei,
+      hours_pay: calculatedTotalHours * timesheet.hourly_rate,
     };
-
-    // Handle hours differently for bi-weekly vs weekly
-    if (isBiWeekly) {
-      // Embed bi-weekly data as JSON in notes
-      const biWeeklyData = {
-        days: hours14.map((hours, index) => ({
-          date: format(addDays(periodStart, index), 'yyyy-MM-dd'),
-          hours: hours || 0
-        }))
-      };
-      
-      const base64Data = btoa(JSON.stringify(biWeeklyData));
-      
-      // Clean existing bi-weekly JSON and add new one
-      let cleanNotes = notesValue.replace(/__biweekly_json__=.*?__end_biweekly_json__/g, '').trim();
-      if (cleanNotes && !cleanNotes.endsWith('\n')) cleanNotes += '\n';
-      
-      updatedData.notes = `${cleanNotes}__biweekly_json__=${base64Data}__end_biweekly_json__`;
-      
-      // Also update individual day columns with first week data
-      updatedData.monday_hours = hours14[0] || 0;
-      updatedData.tuesday_hours = hours14[1] || 0;
-      updatedData.wednesday_hours = hours14[2] || 0;
-      updatedData.thursday_hours = hours14[3] || 0;
-      updatedData.friday_hours = hours14[4] || 0;
-      updatedData.saturday_hours = hours14[5] || 0;
-      updatedData.sunday_hours = hours14[6] || 0;
-    } else {
-      // Weekly timesheet - update individual day columns
-      updatedData.monday_hours = hours[0] || 0;
-      updatedData.tuesday_hours = hours[1] || 0;
-      updatedData.wednesday_hours = hours[2] || 0;
-      updatedData.thursday_hours = hours[3] || 0;
-      updatedData.friday_hours = hours[4] || 0;
-      updatedData.saturday_hours = hours[5] || 0;
-      updatedData.sunday_hours = hours[6] || 0;
-    }
 
     onSave(updatedData, timesheet);
   };
 
   // Get display name
-  const displayName = timesheet.user_profiles 
-    ? `${timesheet.user_profiles.first_name} ${timesheet.user_profiles.last_name}`
-    : 'Unknown Employee';
+  const displayName = timesheet.employee_name;
 
-  if (settingsLoading) {
-    return (
-      <Dialog open={true} onOpenChange={onClose}>
-        <DialogContent>
-          <div>Loading...</div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  // if (settingsLoading) {
+  //   return (
+  //     <Dialog open={true} onOpenChange={onClose}>
+  //       <DialogContent>
+  //         <div>Loading...</div>
+  //       </DialogContent>
+  //     </Dialog>
+  //   );
+  // }
+
+  const start = timesheet.week_start_date ? new Date(timesheet.week_start_date) : new Date();
+
+  const handleChange = (weekIndex: number, dayIndex: number, value: number) => {
+    setNewTimesheet((prev) => {
+      const updated = [...prev];
+      updated[weekIndex] = {
+        ...updated[weekIndex],
+        days: updated[weekIndex].days.map((d: any, i: number) =>
+          i === dayIndex ? { [Object.keys(d)[0]]: value } : d
+        ),
+      };
+      return updated;
+    });
+  };
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -310,10 +179,10 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
         <TimesheetSummaryCard
           periodStart={periodStart}
           periodEnd={periodEnd}
-          totalHours={displayTotalHours}
-          calculatedHours={calculatedTotalHours}
-          grossPay={grossPay}
-          totalPay={netPay}
+          totalHours={calculatedTotalHours}
+          calculatedHours={totalHoursDiscrepancy}
+          grossPay={calculatedGrossPay}
+          totalPay={tax.totalPay}
           hasDiscrepancy={totalHoursDiscrepancy > 0.01}
           dateFixed={true} // Since we fixed the dates in migration
         />
@@ -326,34 +195,63 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
           </TabsList>
 
           <TabsContent value="hours" className="space-y-6">
-            {isBiWeekly ? (
-              <BiWeeklyHoursEditor
-                week1Days={week1Days}
-                week2Days={week2Days}
-                week1Values={hours14.slice(0, 7)}
-                week2Values={hours14.slice(7, 14)}
-                onWeek1Change={(index, value) => {
-                  const newHours = [...hours14];
-                  newHours[index] = value;
-                  setHours14(newHours);
-                }}
-                onWeek2Change={(index, value) => {
-                  const newHours = [...hours14];
-                  newHours[index + 7] = value;
-                  setHours14(newHours);
-                }}
-                disabled={!canEditTimesheets}
-              />
-            ) : (
-              <div className="max-w-2xl mx-auto">
-                <WeeklyHoursEditor
-                  days={allDays}
-                  values={hours}
-                  onChange={handleInputChange}
-                  disabled={!canEditTimesheets}
-                />
-              </div>
-            )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {newTimesheet.map((w: any, i) => {
+                const totalWeek = w.days.reduce((s, d) => {
+                  const hours = Object.values(d)[0] as number;
+                  return s + (hours || 0);
+                }, 0);
+
+                return (
+                  <Card key={`w-${i}`} className="border-2 border-primary/20">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-base flex items-center justify-between">
+                        <span>Week {i + 1}</span>
+                        <span className="text-sm font-medium text-primary">
+                          {totalWeek}h total
+                        </span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="grid grid-cols-1 gap-3">
+                        {w.days.map((day, idx) => {
+                          const c = addDays(start, i * 7 + idx); // ✅ correct day offset
+                          const label = format(c, 'EEEE');        // Mon, Tue, ...
+                          const date = format(c, 'MMM dd');      // Jan 01
+
+                          const hours = Object.values(day)[0] as number;
+
+                          return (
+                            <div key={`w${i}-d${idx}`} className="flex items-center gap-3">
+                              <Label className="w-32 text-sm font-medium">
+                                {date}
+                              </Label>
+                              <Label className="w-16 text-xs text-muted-foreground">
+                                {label}
+                              </Label>
+                              <Input
+                                type="number"
+                                inputMode="decimal"
+                                min={0}
+                                max={24}
+                                step={0.5}
+                                value={hours === 0 ? "" : hours || ""}
+                                onFocus={(e) => e.target.select()}
+                                onChange={(e) =>
+                                  handleChange(i, idx, Number(e.target.value) || 0)
+                                }
+                                className="h-9 w-20"
+                              />
+                              <span className="text-xs text-muted-foreground w-8">hrs</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
           </TabsContent>
 
           <TabsContent value="expenses" className="space-y-6">
@@ -393,8 +291,8 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
                       type="number"
                       step="0.01"
                       min="0"
-                      value={expenses.additional || ''}
-                      onChange={(e) => handleExpenseChange('additional', parseFloat(e.target.value) || 0)}
+                      value={additionalExpense}
+                      onChange={(e) => setAdditionalExpense(Number(e.target.value) || 0)}
                       disabled={!canEditTimesheets}
                     />
                   </div>
@@ -422,7 +320,7 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
                   </div>
                 </div>
               )}
-              
+
               {/* Payroll Summary */}
               <div className="mt-6 p-4 bg-muted rounded-lg">
                 <h4 className="text-sm font-medium mb-3">
@@ -430,45 +328,33 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <span>Gross Pay:</span>
-                  <span className="font-medium">${grossPay.toFixed(2)}</span>
-                  
+                  <span className="font-medium">${calculatedGrossPay.toFixed(2)}</span>
+
                   {workerType === 'employee' ? (
                     <>
-                      {breakdown.cpp && (
+                      {tax.cpp && (
                         <>
                           <span>CPP:</span>
-                          <span className="text-destructive">-${breakdown.cpp.toFixed(2)}</span>
+                          <span className="text-destructive">-${tax.cpp.toFixed(2)}</span>
                         </>
                       )}
-                      {breakdown.ei && (
+                      {tax.ei && (
                         <>
                           <span>EI:</span>
-                          <span className="text-destructive">-${breakdown.ei.toFixed(2)}</span>
-                        </>
-                      )}
-                      {breakdown.federalTax && (
-                        <>
-                          <span>Federal Tax:</span>
-                          <span className="text-destructive">-${breakdown.federalTax.toFixed(2)}</span>
-                        </>
-                      )}
-                      {breakdown.provincialTax && (
-                        <>
-                          <span>Provincial Tax:</span>
-                          <span className="text-destructive">-${breakdown.provincialTax.toFixed(2)}</span>
+                          <span className="text-destructive">-${tax.ei.toFixed(2)}</span>
                         </>
                       )}
                       <span className="font-medium border-t pt-1">Net Pay:</span>
-                      <span className="font-medium text-primary border-t pt-1">${netPay.toFixed(2)}</span>
+                      <span className="font-medium text-primary border-t pt-1">${tax.totalPay.toFixed(2)}</span>
                     </>
                   ) : (
                     <>
                       <span>HST ({taxPercentage}%):</span>
-                      <span className={taxIncluded ? "text-destructive" : "text-primary"}>
-                        {taxIncluded ? '-' : '+'}${taxAmount.toFixed(2)}
+                      <span className={!taxIncluded ? "text-destructive" : "text-primary"}>
+                        {taxIncluded ? '+' : '-'}${tax.calculatedTax.toFixed(2)}
                       </span>
                       <span className="font-medium border-t pt-1">Total Pay:</span>
-                      <span className="font-medium text-primary border-t pt-1">${netPay.toFixed(2)}</span>
+                      <span className="font-medium text-primary border-t pt-1">${tax.totalPay.toFixed(2)}</span>
                     </>
                   )}
                 </div>

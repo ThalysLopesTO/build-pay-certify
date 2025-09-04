@@ -1,4 +1,4 @@
-import { addDays, startOfDay, endOfDay, format } from 'date-fns';
+import { addDays, startOfDay, endOfDay, format, getDay } from 'date-fns';
 
 export type TimesheetFrequency = 'weekly' | 'bi-weekly';
 
@@ -36,36 +36,36 @@ export const getCurrentPeriod = ({
     const start = addDays(end, -6);
     return { start: startOfDay(start), end: startOfDay(end) };
   }
-  
+
   // For bi-weekly periods, ensure they always start on Friday and end on Thursday
   // for Thursday week-ending companies (Aug 8 - Aug 21 pattern)
-  
+
   // Find the most recent occurrence of the week ending day
   const mostRecentEndDay = nextOccurrenceIncludingToday(today, weekEndingIdx);
-  
+
   // Use a known reference date - August 21, 2024 was a Thursday (end of bi-weekly period)
   // This ensures Aug 8 - Aug 21 pattern for Thursday week-ending companies
   const referenceEnd = new Date('2024-08-21');
-  
+
   // Calculate days since reference end
   const daysSinceRef = Math.floor((mostRecentEndDay.getTime() - referenceEnd.getTime()) / (1000 * 60 * 60 * 24));
-  
+
   // Find which bi-weekly cycle we're in (cycles are 14 days apart)
   const biWeeklyCycle = Math.floor(daysSinceRef / 14);
-  
+
   // Calculate the end date of the current bi-weekly period
   let periodEnd = addDays(referenceEnd, biWeeklyCycle * 14);
-  
+
   // If today is after this period end, move to next period
   if (today > periodEnd) {
     periodEnd = addDays(periodEnd, 14);
   }
-  
+
   // For bi-weekly periods, start is always Friday (14 days before end + 1)
   // This ensures Friday-Thursday boundaries: Aug 8 (Fri) - Aug 21 (Thu)
   const start = addDays(periodEnd, -13);
   const end = periodEnd;
-  
+
   return { start: startOfDay(start), end: startOfDay(end) };
 };
 
@@ -80,14 +80,26 @@ export const getPreviousPeriods = ({
   weekEndingIdx: number;
   count: number;
 }): Array<{ start: Date; end: Date }> => {
-  const { end: currentEnd } = getCurrentPeriod({ today, frequency, weekEndingIdx });
-  const periodLength = frequency === 'bi-weekly' ? 14 : 7;
+  const periodLength = frequency === "bi-weekly" ? 14 : 7;
   const periods: Array<{ start: Date; end: Date }> = [];
-  for (let i = 0; i < count; i++) {
-    const end = addDays(currentEnd, -i * periodLength);
-    const start = addDays(end, -(periodLength - 1));
+
+  // Align today to the last Thursday (week ends on Thursday)
+  const dayOfWeek = getDay(today); // 0 = Sun … 4 = Thu, 5 = Fri
+  const offsetToThursday = (4 - dayOfWeek + 7) % 7;
+  const currentEnd = startOfDay(addDays(today, offsetToThursday)); // most recent Thursday
+
+  // First period
+  let end = currentEnd;
+  let start = addDays(end, -(periodLength - 1));
+  periods.push({ start: startOfDay(start), end: startOfDay(end) });
+
+  // Remaining periods: chain backwards
+  for (let i = 1; i < count; i++) {
+    end = addDays(start, -1); // one day before previous start
+    start = addDays(end, -(periodLength - 1));
     periods.push({ start: startOfDay(start), end: startOfDay(end) });
   }
+
   return periods;
 };
 
@@ -118,10 +130,10 @@ export const getDaysForPeriod = ({ start, end }: { start: Date; end: Date }): Ar
 
 export const getBiWeeklyDays = ({ start, end }: { start: Date; end: Date }): { week1Days: Array<{ iso: string; label: string; weekday: string }>, week2Days: Array<{ iso: string; label: string; weekday: string }> } => {
   const allDays = getDaysForPeriod({ start, end });
-  
+
   // For bi-weekly periods, split into two weeks (7 days each)
   const week1Days = allDays.slice(0, 7);
   const week2Days = allDays.slice(7, 14);
-  
+
   return { week1Days, week2Days };
 };

@@ -72,10 +72,59 @@ export const calculatePayrollTotals = (
   taxIncluded: boolean = false
 ): TaxCalculation => {
   const grossPay = (totalHours * hourlyRate) + expenses;
-
   if (workerType === 'employee') {
     return calculateEmployeeTax(grossPay, taxPercentage);
   } else {
     return calculateSubcontractorTax(grossPay, taxPercentage, taxIncluded);
   }
 };
+
+export const calculateTax = ({
+  type,
+  tax_percentage = 13,
+  gross_pay,
+  tax_included = false,
+  income_tax_rate = 12.00,
+  cpp_rate = 5.95,
+  ei_rate = 1.63
+}:{ 
+  type: 'employee' | 'subcontractor';
+  tax_percentage?: number;
+  gross_pay: number;
+  tax_included?: boolean;
+  income_tax_rate?: number;
+  cpp_rate?: number;
+  ei_rate?: number;
+}) => {
+  let totalPay = 0;
+  let calculatedTax = 0;
+  let deductions = 0;
+  let incomeTax = 0;
+  let cpp = 0;
+  let ei = 0;
+
+  if (type === 'subcontractor') {
+    if (tax_included) {
+      calculatedTax = gross_pay * (tax_percentage / (100 + tax_percentage));
+    }
+    totalPay = gross_pay + calculatedTax;
+  } else {
+    incomeTax = gross_pay * (income_tax_rate / 100);
+    cpp = gross_pay * (cpp_rate / 100);
+    ei = gross_pay * (ei_rate / 100);
+    deductions = incomeTax + cpp + ei;
+    totalPay = gross_pay - deductions;
+  }
+
+  return {
+    totalPay,
+    calculatedTax,
+    deductions,
+    incomeTax,
+    cpp,
+    ei,
+    incomeTaxRate: income_tax_rate,
+    cppRate: cpp_rate,
+    eiRate: ei_rate
+  };
+}

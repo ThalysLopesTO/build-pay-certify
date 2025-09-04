@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -34,16 +35,12 @@ export const useCreateManualTimesheet = () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         employee_name: timesheetData.is_manual_entry ? timesheetData.manual_entry_name : employeeName,
-        worker_type: timesheetData.worker_type || 'subcontractor',
-        income_tax_rate: timesheetData.worker_type === 'employee' ? (timesheetData.income_tax_rate || 12.00) : null,
-        cpp_rate: timesheetData.worker_type === 'employee' ? (timesheetData.cpp_rate || 5.95) : null,
-        ei_rate: timesheetData.worker_type === 'employee' ? (timesheetData.ei_rate || 1.63) : null,
       };
 
       console.log('Data being inserted into database:', dataToInsert);
 
       const { data, error } = await supabase
-        .from('weekly_timesheets')
+        .from('weekly_timesheets_2')
         .insert(dataToInsert)
         .select()
         .single();

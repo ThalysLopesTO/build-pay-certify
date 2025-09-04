@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useWeeklyTimesheets } from '@/hooks/useWeeklyTimesheets';
+import { useWeeklyTimesheets } from '@/hooks/new/useWeeklyTimesheets';
 import { useWeeklyTimesheetActions } from '@/hooks/useWeeklyTimesheetActions';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useCreateManualTimesheet } from '@/hooks/useCreateManualTimesheet';
@@ -30,13 +31,14 @@ const EmployeeTimesheets = () => {
   const { generateTimesheetPDF } = useTimesheetPDF();
   const { settings } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
-  
+
   const [filters, setFilters] = useState({
     employeeName: '',
     weekEndingDate: '',
     status: 'all',
     jobsiteId: ''
   });
+
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [deletingTimesheet, setDeletingTimesheet] = useState<any>(null);
@@ -44,10 +46,10 @@ const EmployeeTimesheets = () => {
   const [selectedTimesheets, setSelectedTimesheets] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'pdf' | 'xlsx' | ''>('');
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   const { data: timesheets = [], isLoading, error } = useWeeklyTimesheets(filters);
   const { data: employees = [] } = useEmployeeDirectory();
-  
+
   // Only admins, management, and super_admins can access Employee Timesheets (not foremen for payroll)
   const isAuthorized = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
 
@@ -68,7 +70,6 @@ const EmployeeTimesheets = () => {
       editTimesheet({
         timesheetId: editingTimesheet.id,
         updates,
-        originalData
       });
       setEditingTimesheet(null);
     }
@@ -224,14 +225,14 @@ const EmployeeTimesheets = () => {
     setIsProcessing(true);
     try {
       for (const timesheet of selectedTimesheetsData) {
-        const employeeName = timesheet.is_manual_entry 
-          ? timesheet.manual_entry_name 
+        const employeeName = timesheet.is_manual_entry
+          ? timesheet.manual_entry_name
           : timesheet.employee_name || 'Former Employee';
-        
+
         // Get jobsite name
         const jobsite = await fetch(`/api/jobsites/${timesheet.jobsite_id}`).catch(() => null);
         const jobsiteName = 'Unknown Jobsite'; // This could be enhanced with proper jobsite lookup
-        
+
         // Determine worker type
         let workerType = 'subcontractor';
         if (timesheet.is_manual_entry) {
@@ -240,7 +241,7 @@ const EmployeeTimesheets = () => {
           // For regular employee timesheets, we could fetch from user_profiles
           // For now, default to subcontractor
         }
-        
+
         await generateTimesheetPDF({
           timesheet,
           companySettings: settings,
@@ -249,7 +250,7 @@ const EmployeeTimesheets = () => {
           logoUrl,
           workerType
         });
-        
+
         // Add a small delay between downloads
         await new Promise(resolve => setTimeout(resolve, 500));
       }
@@ -338,7 +339,7 @@ const EmployeeTimesheets = () => {
                     <SelectItem value="xlsx">Download as Excel</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button 
+                <Button
                   onClick={handleBulkAction}
                   disabled={!bulkAction || isProcessing}
                   variant="outline"
@@ -356,8 +357,8 @@ const EmployeeTimesheets = () => {
                   )}
                 </Button>
               </div>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => setSelectedTimesheets(new Set())}
               >
@@ -372,11 +373,11 @@ const EmployeeTimesheets = () => {
       <Card className="bg-white rounded-xl shadow-sm border border-gray-200">
         <CardHeader className="p-6 pb-4">
           <div className="flex justify-between items-center">
-              <CardTitle className="text-xl font-bold text-gray-900">
-                Timesheet Submissions ({timesheets.length} total)
-              </CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-900">
+              Timesheet Submissions ({timesheets.length} total)
+            </CardTitle>
             {canCreateManualTimesheet && (
-              <Button 
+              <Button
                 onClick={() => setIsCreateModalOpen(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
               >
