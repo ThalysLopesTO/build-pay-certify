@@ -429,9 +429,7 @@ const BillsExpensesManagement = () => {
         <ExpenseAnalytics expenses={filteredExpenses} />
 
         {/* Enhanced Analytics Summary */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          {/* <ExpenseSummary expenses={filteredExpenses} /> */}
-        </div>
+        <ExpenseSummary expenses={filteredExpenses} />
         
         {/* Date Filter - Moved below cards */}
         <DateFilter dateFrom={dateFrom} dateTo={dateTo} onDateFromChange={setDateFrom} onDateToChange={setDateTo} onClear={() => {
