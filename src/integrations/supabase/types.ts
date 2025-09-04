@@ -269,13 +269,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "bills_expenses_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "expense_categories_hierarchy"
-            referencedColumns: ["category_id"]
-          },
-          {
             foreignKeyName: "bills_expenses_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -295,13 +288,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "bills_expenses"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bills_expenses_parent_recurring_bill_id_fkey"
-            columns: ["parent_recurring_bill_id"]
-            isOneToOne: false
-            referencedRelation: "expense_categories_hierarchy"
-            referencedColumns: ["expense_id"]
           },
         ]
       }
@@ -790,13 +776,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "expense_categories"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "expense_categories_parent_category_id_fkey"
-            columns: ["parent_category_id"]
-            isOneToOne: false
-            referencedRelation: "expense_categories_hierarchy"
-            referencedColumns: ["category_id"]
           },
         ]
       }
@@ -2646,35 +2625,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
-      }
-      expense_categories_hierarchy: {
-        Row: {
-          amount: number | null
-          category_id: string | null
-          category_level: string | null
-          company_id: string | null
-          created_at: string | null
-          expense_date: string | null
-          expense_id: string | null
-          expense_title: string | null
-          notes: string | null
-          parent_category_id: string | null
-          parent_category_name: string | null
-          payment_method: string | null
-          payment_status: string | null
-          subcategory_name: string | null
-          updated_at: string | null
-          vendor_payee: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bills_expenses_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Functions: {

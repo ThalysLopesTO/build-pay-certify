@@ -1,29 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartLegendContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { formatCurrency } from '@/utils/formatters';
 import { format, parseISO, startOfMonth } from 'date-fns';
-import { TrendingUp, BarChart3 } from 'lucide-react';
-
-interface BillExpense {
-  id: string;
-  expense_title: string;
-  category_name: string;
-  vendor_payee: string;
-  expense_date: string;
-  amount: number;
-  payment_status: 'paid' | 'unpaid' | 'scheduled';
-  payment_method?: string;
-  notes?: string;
-  attachment_url?: string;
-  is_recurring?: boolean;
-  recurrence_frequency?: string;
-  parent_recurring_bill_id?: string;
-}
+import { TrendingUp, BarChart3, BarChart4 } from 'lucide-react';
+import { ExpenseWithHierarchy } from '@/hooks/useHierarchicalCategories';
 
 interface ExpenseAnalyticsProps {
-  expenses: BillExpense[];
+  expenses: ExpenseWithHierarchy[];
 }
 
 interface MonthlyData {
@@ -33,6 +19,7 @@ interface MonthlyData {
 }
 
 const ExpenseAnalytics: React.FC<ExpenseAnalyticsProps> = ({ expenses }) => {
+  const [breakdownBy, setBreakdownBy] = useState<'parent' | 'subcategory'>('parent');
   // Process data for monthly expenses chart
   const monthlyExpenses = React.useMemo(() => {
     const monthMap = new Map<string, number>();
@@ -55,16 +42,27 @@ const ExpenseAnalytics: React.FC<ExpenseAnalyticsProps> = ({ expenses }) => {
 
     expenses.forEach(expense => {
       const monthKey = format(startOfMonth(parseISO(expense.expense_date)), 'MMM yyyy');
-      const category = expense.category_name || 'Uncategorized';
       
-      categoriesSet.add(category);
+      let categoryKey: string;
+      if (breakdownBy === 'parent') {
+        categoryKey = expense.parent_category_name || 'Uncategorized';
+      } else {
+        // For subcategory view, show as "Parent > Subcategory" or just "Parent" if no subcategory
+        if (expense.subcategory_name) {
+          categoryKey = `${expense.parent_category_name} > ${expense.subcategory_name}`;
+        } else {
+          categoryKey = expense.parent_category_name || 'Uncategorized';
+        }
+      }
+      
+      categoriesSet.add(categoryKey);
       
       if (!monthMap.has(monthKey)) {
         monthMap.set(monthKey, {});
       }
       
       const monthData = monthMap.get(monthKey)!;
-      monthData[category] = (monthData[category] || 0) + expense.amount;
+      monthData[categoryKey] = (monthData[categoryKey] || 0) + expense.amount;
     });
 
     const categories = Array.from(categoriesSet);
@@ -77,11 +75,22 @@ const ExpenseAnalytics: React.FC<ExpenseAnalyticsProps> = ({ expenses }) => {
       }))
       .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
       .slice(-12); // Last 12 months
-  }, [expenses]);
+  }, [expenses, breakdownBy]);
 
   const categories = React.useMemo(() => {
-    return Array.from(new Set(expenses.map(e => e.category_name || 'Uncategorized')));
-  }, [expenses]);
+    return Array.from(new Set(expenses.map(expense => {
+      if (breakdownBy === 'parent') {
+        return expense.parent_category_name || 'Uncategorized';
+      } else {
+        // For subcategory view
+        if (expense.subcategory_name) {
+          return `${expense.parent_category_name} > ${expense.subcategory_name}`;
+        } else {
+          return expense.parent_category_name || 'Uncategorized';
+        }
+      }
+    })));
+  }, [expenses, breakdownBy]);
 
   // Color palette for categories - using HSL colors from design system
   const categoryColors = [
@@ -196,8 +205,27 @@ const ExpenseAnalytics: React.FC<ExpenseAnalyticsProps> = ({ expenses }) => {
               <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-lg">
                 <BarChart3 className="h-5 w-5 text-white" />
               </div>
-              <CardTitle className="text-lg font-bold text-slate-900">Monthly Breakdown by Category</CardTitle>
+              <CardTitle className="text-lg font-bold text-slate-900">
+                Monthly Breakdown by {breakdownBy === 'parent' ? 'Parent Category' : 'Subcategory'}
+              </CardTitle>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setBreakdownBy(breakdownBy === 'parent' ? 'subcategory' : 'parent')}
+            >
+              {breakdownBy === 'parent' ? (
+                <>
+                  <BarChart4 className="h-4 w-4 mr-2" />
+                  Show Subcategories
+                </>
+              ) : (
+                <>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Show Parents
+                </>
+              )}
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
