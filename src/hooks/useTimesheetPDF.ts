@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -21,7 +22,8 @@ export const useTimesheetPDF = () => {
 
       if (!timesheet) throw new Error('Timesheet data is required');
 
-      const isBiWeekly = (companySettings as any)?.timesheet_frequency === 'bi-weekly';
+      const periods = Array.isArray(timesheet.periods) ? timesheet.periods : [{ days: [] }];
+      const isBiWeekly = periods.length === 2;
 
       const pdf = new jsPDF('p', 'mm', 'a4') as ExtendedJsPDF;
       const pageWidth = pdf.internal.pageSize.width;
@@ -83,76 +85,41 @@ export const useTimesheetPDF = () => {
       });
 
       y = pdf.lastAutoTable.finalY + 4;
+      const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
-      // Hours Table (supports bi-weekly)
-      const hasBiWeeklyBreakdown = isBiWeekly && typeof timesheet.notes === 'string' && timesheet.notes.includes('__biweekly_json__=');
-      if (hasBiWeeklyBreakdown) {
-        // Parse breakdown from notes
-        let days: { date: string; label: string; hours: number }[] = [];
-        try {
-          const match = timesheet.notes.split('\n').find((line: string) => line.startsWith('__biweekly_json__='));
-          if (match) {
-            const jsonBase64 = match.split('=')[1];
-            const parsed = JSON.parse(atob(jsonBase64));
-            days = Array.isArray(parsed?.days) ? parsed.days : [];
-          }
-        } catch (e) {
-          console.warn('Failed to parse bi-weekly breakdown from notes');
-        }
+      if (isBiWeekly && Array.isArray(periods[0].days) && Array.isArray(periods[1].days)) {
+        const rows = dayNames.map(day => {
+          const w1Hours = periods[0].days.find(d => d[day] !== undefined)?.[day] ?? 0;
+          const w2Hours = periods[1].days.find(d => d[day] !== undefined)?.[day] ?? 0;
+          return [day.charAt(0).toUpperCase() + day.slice(1), w1Hours.toFixed(2), w2Hours.toFixed(2)];
+        });
 
-        if (days.length === 14) {
-          // Show prominent period label
-          pdf.setFontSize(12);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text(periodTitle, margin, y);
-          y += 6;
+        // Calculate totals
+        const totalW1 = rows.reduce((sum, [, w1]) => sum + Number(w1), 0);
+        const totalW2 = rows.reduce((sum, [, , w2]) => sum + Number(w2), 0);
+        rows.push(['Total Hours', totalW1.toFixed(2), totalW2.toFixed(2)]);
 
-          // Build two 7-day tables with headers "Day – Mon dd"
-          const formatHeader = (d: {date:string; label:string}) => {
-            const dt = new Date(d.date);
-            const day = dt.toLocaleDateString(undefined, { month: 'short', day: '2-digit' });
-            return `${d.label} – ${day}`;
-          };
+        autoTable(pdf, {
+          startY: y,
+          head: [['Day', 'Hours Worked W1', 'Hours Worked W2']],
+          body: rows,
+          margin: { left: margin },
+          styles: { halign: 'center', fontSize: 10 },
+          columnStyles: { 0: { halign: 'left' } },
+          headStyles: { fillColor: [76, 175, 80], textColor: [255, 255, 255] },
+        });
 
-          const week1 = days.slice(0,7);
-          const week2 = days.slice(7,14);
+        y = pdf.lastAutoTable.finalY + 6;
+      } else {
+        // Fallback to weekly-style table
+        const weekData = dayNames.map(day => {
+          const hours = periods[0]?.days.find(d => d[day] !== undefined)?.[day] ?? 0;
+          return [day.charAt(0).toUpperCase() + day.slice(1), hours.toFixed(2)];
+        });
 
-          autoTable(pdf, {
-            startY: y,
-            theme: 'grid',
-            head: [week1.map(d => formatHeader(d))],
-            body: [week1.map(d => Number(d.hours || 0).toFixed(2))],
-            margin: { left: margin },
-            styles: { fontSize: 9, halign: 'center' },
-            headStyles: { fillColor: [76, 175, 80], textColor: [255, 255, 255] },
-          });
-          y = pdf.lastAutoTable.finalY + 6;
+        const totalHours = weekData.reduce((sum, [, hours]) => sum + Number(hours), 0);
 
-          autoTable(pdf, {
-            startY: y,
-            theme: 'grid',
-            head: [week2.map(d => formatHeader(d))],
-            body: [week2.map(d => Number(d.hours || 0).toFixed(2))],
-            margin: { left: margin },
-            styles: { fontSize: 9, halign: 'center' },
-            headStyles: { fillColor: [76, 175, 80], textColor: [255, 255, 255] },
-          });
-          y = pdf.lastAutoTable.finalY + 6;
-        }
-      }
-
-      if (!hasBiWeeklyBreakdown) {
-        // Fallback to weekly-style table with 7 days
-        const weekData = [
-          ['Monday', timesheet.monday_hours ?? 0],
-          ['Tuesday', timesheet.tuesday_hours ?? 0],
-          ['Wednesday', timesheet.wednesday_hours ?? 0],
-          ['Thursday', timesheet.thursday_hours ?? 0],
-          ['Friday', timesheet.friday_hours ?? 0],
-          ['Saturday', timesheet.saturday_hours ?? 0],
-          ['Sunday', timesheet.sunday_hours ?? 0],
-          ['Total Hours', timesheet.total_hours ?? 0],
-        ];
+        weekData.push(['Total Hours', totalHours.toFixed(2)]);
 
         autoTable(pdf, {
           startY: y,
@@ -163,6 +130,7 @@ export const useTimesheetPDF = () => {
           styles: { fontSize: 9 },
           headStyles: { fillColor: [76, 175, 80], textColor: [255, 255, 255] },
         });
+
         y = pdf.lastAutoTable.finalY + 6;
       }
 
@@ -258,8 +226,8 @@ export const useTimesheetPDF = () => {
       const fileName = `timesheet_${(employeeName || 'Unknown')
         .replace(/\\s+/g, '_')
         .toLowerCase()}_${new Date(timesheet.week_start_date)
-        .toISOString()
-        .split('T')[0]}.pdf`;
+          .toISOString()
+          .split('T')[0]}.pdf`;
       pdf.save(fileName);
     } catch (err) {
       console.error('PDF generation error:', err);
