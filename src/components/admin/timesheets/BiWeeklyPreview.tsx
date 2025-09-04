@@ -61,7 +61,7 @@ const Section = ({
 };
 
 const BiWeeklyPreview: React.FC<BiWeeklyPreviewProps> = ({ timesheet, frequency = 'bi-weekly' }) => {
-  const periodDays = frequency === 'bi-weekly' ? 14 : 7;
+  const periodDays = timesheet.periods?.reduce((sum, period: any) => sum + (period.days?.length ?? 0), 0) ?? 0;
   const start = new Date(timesheet.week_start_date);
   const end = addDays(start, periodDays - 1);
   const periodLabel = `${format(start, 'MMM dd')} – ${format(end, 'MMM dd')}`;
