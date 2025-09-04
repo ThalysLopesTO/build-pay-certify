@@ -13,7 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Building2, Calendar, Eye, Bell } from 'lucide-react';
+import { Building2, Calendar, Eye, Bell, Clock } from 'lucide-react';
+import { TIMEZONE_OPTIONS } from '@/utils/timezone';
 
 export const CompanySettingsTab = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useCompanySettings();
@@ -27,6 +28,7 @@ export const CompanySettingsTab = () => {
       hst_number: settings?.hst_number || '',
       company_rules_text: settings?.company_rules_text || '',
       week_ending_day: settings?.week_ending_day ?? 0,
+      timezone: settings?.timezone || 'America/Toronto',
       show_tax_breakdown_to_employees: settings?.show_tax_breakdown_to_employees ?? true,
       enable_invoice_reminders: settings?.enable_invoice_reminders ?? true,
       invoice_reminder_days_before: settings?.invoice_reminder_days_before ?? 3,
@@ -47,6 +49,7 @@ export const CompanySettingsTab = () => {
         hst_number: settings.hst_number || '',
         company_rules_text: settings.company_rules_text || '',
         week_ending_day: settings.week_ending_day ?? 0,
+        timezone: settings.timezone || 'America/Toronto',
         show_tax_breakdown_to_employees: settings.show_tax_breakdown_to_employees ?? true,
         enable_invoice_reminders: settings.enable_invoice_reminders ?? true,
         invoice_reminder_days_before: settings.invoice_reminder_days_before ?? 3,
@@ -165,12 +168,45 @@ export const CompanySettingsTab = () => {
                 />
 
                 {/* Week Ending Day */}
-                <div className="max-w-sm">
-                  <WeekEndingDaySelector control={form.control} />
-                  <p className="text-sm text-muted-foreground mt-3">
-                    Select the day of the week when your work week ends for timesheet calculations.
-                  </p>
-                </div>
+                 <div className="max-w-sm">
+                   <WeekEndingDaySelector control={form.control} />
+                   <p className="text-sm text-muted-foreground mt-3">
+                     Select the day of the week when your work week ends for timesheet calculations.
+                   </p>
+                 </div>
+
+                 {/* Company Timezone */}
+                 <FormField
+                   control={form.control}
+                   name="timezone"
+                   render={({ field }) => (
+                     <FormItem className="max-w-sm">
+                       <FormLabel>Company Timezone</FormLabel>
+                       <Select
+                         value={field.value || 'America/Toronto'}
+                         onValueChange={(val) => {
+                           field.onChange(val);
+                           // Persist immediately
+                           updateSettings({ timezone: val });
+                         }}
+                       >
+                         <SelectTrigger className="bg-background border-border text-foreground min-h-11">
+                           <SelectValue placeholder="Select timezone" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           {TIMEZONE_OPTIONS.map((tz) => (
+                             <SelectItem key={tz.value} value={tz.value}>
+                               {tz.label}
+                             </SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                       <FormDescription className="text-sm text-muted-foreground">
+                         All timestamps in Daily Reports, Timesheets, and other modules will be displayed in this timezone.
+                       </FormDescription>
+                     </FormItem>
+                   )}
+                 />
 
                 {/* Show Tax Breakdown */}
                 <FormField

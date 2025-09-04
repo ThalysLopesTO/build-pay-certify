@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
+import { getReportDisplayDate, getSubmissionDisplayTime } from '@/utils/timezone';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +41,7 @@ const DailyReportDetailsModal: React.FC<DailyReportDetailsModalProps> = ({
         submittedBy: report.user_profiles 
           ? `${report.user_profiles.first_name || ''} ${report.user_profiles.last_name || ''}`.trim()
           : 'Unknown User',
-        submittedTime: format(new Date(report.created_at), 'h:mm a'),
+        submittedTime: getSubmissionDisplayTime(report.created_at, companySettings?.timezone),
         summary: report.summary,
         photos: (report.photos || []).map(photoUrl => ({
           src: photoUrl,
@@ -120,11 +121,11 @@ const DailyReportDetailsModal: React.FC<DailyReportDetailsModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h4 className="font-medium text-sm text-muted-foreground">Report Date</h4>
-                <p className="font-medium">{format(new Date(report.report_date + 'T00:00:00'), 'PPPP')}</p>
+                <p className="font-medium">{getReportDisplayDate(report.report_date, companySettings?.timezone)}</p>
               </div>
               <div>
                 <h4 className="font-medium text-sm text-muted-foreground">Submitted Time</h4>
-                <p className="font-medium">{format(new Date(report.created_at), 'h:mm a')}</p>
+                <p className="font-medium">{getSubmissionDisplayTime(report.created_at, companySettings?.timezone)}</p>
               </div>
             </div>
 
