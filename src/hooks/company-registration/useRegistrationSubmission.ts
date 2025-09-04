@@ -24,11 +24,12 @@ export const useRegistrationSubmission = () => {
       console.log('💳 Payment status:', { paymentSuccess, sessionId });
 
       if (paymentSuccess && sessionId) {
+        console.log('🔄 Processing paid registration...');
         const result = await processPaidRegistration(formData, sessionId);
         
         toast({
           title: "Registration Complete!",
-          description: `Welcome to StackBuild! Your company "${result.companyName}" has been created and activated with a Starter plan (5 employees).`,
+          description: `Welcome to StackBuild! Your company "${result.companyName}" has been created and activated.`,
         });
       } else {
         await processFreeRegistration(formData);
@@ -43,11 +44,27 @@ export const useRegistrationSubmission = () => {
 
     } catch (error) {
       console.error('💥 Registration error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong. Please try again.";
+      
       toast({
         title: "Registration Error",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
+
+      // Log additional context for support
+      const paymentSuccess = searchParams.get('payment') === 'success';
+      const sessionId = searchParams.get('session_id');
+      
+      if (paymentSuccess && sessionId) {
+        console.error('🚨 CRITICAL: Paid registration failed', {
+          sessionId: sessionId.substring(0, 20) + '...',
+          companyName: formData.companyName,
+          adminEmail: formData.adminEmail,
+          timestamp: new Date().toISOString()
+        });
+      }
     } finally {
       setIsLoading(false);
     }

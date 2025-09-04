@@ -11,22 +11,45 @@ export const processPaidRegistration = async (
 ) => {
   console.log('✅ Processing paid registration - creating new isolated company');
 
-  const { data: result, error } = await supabase.functions.invoke('get-session-stripe', { body: { sessionId }});
+  try {
+    // Validate and retrieve Stripe session
+    const { data: result, error: stripeError } = await supabase.functions.invoke('get-session-stripe', { 
+      body: { sessionId }
+    });
 
-  let plan = "starter";
-  let employeeLimit = 10;
-  const email = result?.customer_details?.email;
+    if (stripeError) {
+      console.error('❌ Stripe session validation failed:', stripeError);
+      throw new Error(`Payment validation failed: ${stripeError.message || 'Unable to verify payment'}`);
+    }
 
-  if (formData.adminEmail !== email) {
-    throw new Error("wrong email");
-  }
- 
-  const planStripe = result.metadata.plan_name
+    if (!result) {
+      throw new Error('Payment session not found or invalid');
+    }
 
-  if (planStripe === "Premium") {
-    employeeLimit = 50;
-    plan = "pro";
-  }
+    let plan = "starter";
+    let employeeLimit = 10;
+    const customerEmail = result?.customer_details?.email;
+
+    if (!customerEmail) {
+      throw new Error('Customer email not found in payment session');
+    }
+
+    if (formData.adminEmail.toLowerCase() !== customerEmail.toLowerCase()) {
+      throw new Error(`Email mismatch: Registration email (${formData.adminEmail}) must match payment email (${customerEmail})`);
+    }
+   
+    const planStripe = result.metadata?.plan_name || 'StackBuild';
+
+    if (planStripe === "Premium") {
+      employeeLimit = 50;
+      plan = "pro";
+    }
+
+    console.log('✅ Payment validated successfully', { 
+      plan: planStripe, 
+      email: customerEmail,
+      sessionId: sessionId.substring(0, 20) + '...' 
+    });
 
   // Sign up the admin user FIRST to satisfy RLS policies
   const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -169,11 +192,31 @@ export const processPaidRegistration = async (
     });
     console.log('✅ Welcome email sent successfully');
 
-  console.log('🎉 Registration completed successfully for new company:', company.id);
+    console.log('🎉 Registration completed successfully for new company:', company.id);
 
-  return {
-    success: true,
-    companyId: company.id,
-    companyName: formData.companyName
-  };
+    return {
+      success: true,
+      companyId: company.id,
+      companyName: formData.companyName
+    };
+
+  } catch (error) {
+    console.error('💥 Paid registration failed:', error);
+    
+    // Provide user-friendly error messages
+    if (error instanceof Error) {
+      if (error.message.includes('Payment validation failed')) {
+        throw new Error('Unable to verify your payment. Please contact support if you were charged.');
+      }
+      if (error.message.includes('Email mismatch')) {
+        throw new Error('The email address must match the one used for payment.');
+      }
+      if (error.message.includes('already been used')) {
+        throw new Error('This payment has already been used to create an account. Please contact support.');
+      }
+      throw error;
+    }
+    
+    throw new Error('Registration failed. Please try again or contact support.');
+  }
 };
