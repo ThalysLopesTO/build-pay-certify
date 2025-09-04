@@ -17,41 +17,33 @@ import { Plus, Search, FileDown, Calendar as CalendarIcon, Edit, Trash2, Receipt
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { BillReminderDropdown } from '@/components/notifications/BillReminderDropdown';
-import { CategoryManager } from './bills-expenses/CategoryManager';
+import { HierarchicalCategoryManager } from './bills-expenses/HierarchicalCategoryManager';
+import { HierarchicalCategorySelector } from './bills-expenses/HierarchicalCategorySelector';
+import { HierarchicalCategoryFilters } from './bills-expenses/HierarchicalCategoryFilters';
 import { ExpenseSummary } from './bills-expenses/ExpenseSummary';
 import { RecurringBillForm } from './bills-expenses/RecurringBillForm';
 import { DateFilter } from './bills-expenses/DateFilter';
-interface BillExpense {
-  id: string;
-  expense_title: string;
-  category_name: string;
-  vendor_payee: string;
-  expense_date: string;
-  amount: number;
-  payment_status: 'paid' | 'unpaid' | 'scheduled';
-  payment_method?: string;
-  notes?: string;
-  attachment_url?: string;
-  is_recurring?: boolean;
-  recurrence_frequency?: string;
-  parent_recurring_bill_id?: string;
-}
-interface ExpenseCategory {
-  id: string;
-  name: string;
-}
+import { useHierarchicalCategories, ExpenseWithHierarchy } from '@/hooks/useHierarchicalCategories';
+import ExpenseAnalytics from './bills-expenses/ExpenseAnalytics';
+// Using ExpenseWithHierarchy from the hook instead of local interface
 const BillsExpensesManagement = () => {
-  const {
-    user
-  } = useAuth();
-  const [expenses, setExpenses] = useState<BillExpense[]>([]);
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const { user } = useAuth();
+  const [expenses, setExpenses] = useState<ExpenseWithHierarchy[]>([]);
+  
+  // Use hierarchical categories hook
+  const { 
+    categories, 
+    fetchCategories, 
+    getExpensesWithHierarchy, 
+    getCategoryDisplay 
+  } = useHierarchicalCategories();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<BillExpense | null>(null);
+  const [editingExpense, setEditingExpense] = useState<ExpenseWithHierarchy | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [selectedParentCategories, setSelectedParentCategories] = useState<string[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [filterVendor, setFilterVendor] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all'); // all, recurring, one-time
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
@@ -87,37 +79,12 @@ const BillsExpensesManagement = () => {
   React.useEffect(() => {
     if (user?.companyId) {
       fetchExpenses();
-      fetchCategories();
     }
-  }, [user?.companyId]);
+  }, [user?.companyId, fetchCategories]);
   const fetchExpenses = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('bills_expenses').select(`
-          *,
-          expense_categories(name)
-        `).eq('company_id', user?.companyId).order('expense_date', {
-        ascending: false
-      });
-      if (error) throw error;
-      const formattedExpenses = data?.map(expense => ({
-        id: expense.id,
-        expense_title: expense.expense_title,
-        category_name: expense.expense_categories?.name || 'Uncategorized',
-        vendor_payee: expense.vendor_payee,
-        expense_date: expense.expense_date,
-        amount: expense.amount,
-        payment_status: expense.payment_status as 'paid' | 'unpaid' | 'scheduled',
-        payment_method: expense.payment_method,
-        notes: expense.notes,
-        attachment_url: expense.attachment_url,
-        is_recurring: expense.is_recurring,
-        recurrence_frequency: expense.recurrence_frequency,
-        parent_recurring_bill_id: expense.parent_recurring_bill_id
-      })) || [];
-      setExpenses(formattedExpenses);
+      const expensesWithHierarchy = await getExpensesWithHierarchy();
+      setExpenses(expensesWithHierarchy);
     } catch (error) {
       console.error('Error fetching expenses:', error);
       toast({
@@ -129,18 +96,7 @@ const BillsExpensesManagement = () => {
       setIsLoading(false);
     }
   };
-  const fetchCategories = async () => {
-    try {
-      const {
-        data,
-        error
-      } = await supabase.from('expense_categories').select('*').eq('company_id', user?.companyId).order('name');
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
+  // Remove this function as we're using the hook
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -235,11 +191,11 @@ const BillsExpensesManagement = () => {
     setEditingExpense(null);
     setIsCreateDialogOpen(false);
   };
-  const startEdit = (expense: BillExpense) => {
+  const startEdit = (expense: ExpenseWithHierarchy) => {
     setEditingExpense(expense);
     setFormData({
       expense_title: expense.expense_title,
-      category_id: categories.find(c => c.name === expense.category_name)?.id || '',
+      category_id: expense.category_id,
       vendor_payee: expense.vendor_payee,
       expense_date: new Date(expense.expense_date),
       amount: expense.amount.toString(),
@@ -266,7 +222,7 @@ const BillsExpensesManagement = () => {
     const colorIndex = category.charCodeAt(0) % colors.length;
     return <Badge className={`${colors[colorIndex]} font-medium`}>{category}</Badge>;
   };
-  const isOverdue = (expense: BillExpense) => {
+  const isOverdue = (expense: ExpenseWithHierarchy) => {
     return expense.payment_status === 'unpaid' && new Date(expense.expense_date) < new Date();
   };
 
@@ -275,7 +231,34 @@ const BillsExpensesManagement = () => {
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = expense.expense_title.toLowerCase().includes(searchTerm.toLowerCase()) || expense.vendor_payee.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || expense.payment_status === filterStatus;
-    const matchesCategory = filterCategory === 'all' || expense.category_name === filterCategory;
+    
+    // Hierarchical category filtering using ExpenseWithHierarchy data
+    let matchesCategory = true;
+    if (selectedParentCategories.length > 0 || selectedSubcategories.length > 0) {
+      // Find the parent category ID for this expense
+      const parentCategoryId = expense.category_level === 'parent' 
+        ? expense.category_id 
+        : categories.find(cat => cat.id === expense.category_id)?.parent_category_id;
+      
+      const matchesParent = selectedParentCategories.length === 0 || 
+        selectedParentCategories.some(parentId => parentCategoryId === parentId);
+      
+      const matchesSubcategory = selectedSubcategories.length === 0 || 
+        selectedSubcategories.some(subcategoryId => expense.category_id === subcategoryId);
+      
+      // Apply proper intersection logic
+      if (selectedParentCategories.length > 0 && selectedSubcategories.length > 0) {
+        // Both filters active: must match parent AND (no subcategory OR selected subcategory)
+        matchesCategory = matchesParent && (expense.category_level === 'parent' || matchesSubcategory);
+      } else if (selectedParentCategories.length > 0) {
+        // Only parent filter: include all expenses under selected parents
+        matchesCategory = matchesParent;
+      } else {
+        // Only subcategory filter: include only selected subcategories
+        matchesCategory = matchesSubcategory;
+      }
+    }
+    
     const matchesVendor = filterVendor === 'all' || expense.vendor_payee === filterVendor;
     const matchesType = filterType === 'all' || filterType === 'recurring' && expense.is_recurring || filterType === 'one-time' && !expense.is_recurring;
     let matchesDateRange = true;
@@ -309,7 +292,7 @@ const BillsExpensesManagement = () => {
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <BillReminderDropdown />
-            <CategoryManager categories={categories} onCategoriesChange={fetchCategories} />
+            <HierarchicalCategoryManager categories={categories} onCategoriesChange={fetchCategories} />
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => resetForm()} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold">
@@ -333,20 +316,14 @@ const BillsExpensesManagement = () => {
                     })} placeholder="Enter expense description" className="h-11 bg-white border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" required />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="category" className="text-sm font-semibold text-slate-700">Category</Label>
-                      <Select value={formData.category_id} onValueChange={value => setFormData({
-                      ...formData,
-                      category_id: value
-                    })}>
-                        <SelectTrigger className="h-11 bg-white border-slate-300 focus:border-indigo-500">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map(category => <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <HierarchicalCategorySelector
+                        selectedCategoryId={formData.category_id}
+                        onCategoryChange={(categoryId) => setFormData({
+                          ...formData,
+                          category_id: categoryId
+                        })}
+                        required
+                      />
                     </div>
                   </div>
 
@@ -448,9 +425,12 @@ const BillsExpensesManagement = () => {
           </div>
         </div>
 
+        {/* Expense Analytics */}
+        <ExpenseAnalytics expenses={filteredExpenses} />
+
         {/* Enhanced Analytics Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <ExpenseSummary expenses={filteredExpenses} />
+          {/* <ExpenseSummary expenses={filteredExpenses} /> */}
         </div>
         
         {/* Date Filter - Moved below cards */}
@@ -484,17 +464,21 @@ const BillsExpensesManagement = () => {
                   </SelectContent>
                 </Select>
                 
-                <Select value={filterCategory} onValueChange={setFilterCategory}>
-                  <SelectTrigger className="w-full sm:w-48 h-11 bg-white border-slate-300">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map(category => <SelectItem key={category.id} value={category.name}>
-                        {category.name}
-                      </SelectItem>)}
-                  </SelectContent>
-                </Select>
+              <HierarchicalCategoryFilters
+                selectedParentIds={selectedParentCategories}
+                selectedSubcategoryIds={selectedSubcategories}
+                onParentChange={setSelectedParentCategories}
+                onSubcategoryChange={setSelectedSubcategories}
+                onClearAll={() => {
+                  setSelectedParentCategories([]);
+                  setSelectedSubcategories([]);
+                }}
+              />
+              {(selectedParentCategories.length > 0 || selectedSubcategories.length > 0) && (
+                <div className="text-sm text-muted-foreground">
+                  Showing {filteredExpenses.length} of {expenses.length} expenses
+                </div>
+              )}
                 
                 <Button variant="outline" className="h-11 px-4 border-slate-300 hover:bg-slate-50">
                   <FileDown className="h-4 w-4 mr-2" />
@@ -556,7 +540,14 @@ const BillsExpensesManagement = () => {
                             </Badge>}
                         </TableCell>
                         <TableCell className="py-4">
-                          {getCategoryBadge(expense.category_name)}
+                          <div className="space-y-1">
+                            {getCategoryBadge(expense.parent_category_name)}
+                            {expense.subcategory_name && (
+                              <div className="text-xs text-muted-foreground">
+                                → {expense.subcategory_name}
+                              </div>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="py-4 font-medium text-slate-700 max-w-xs truncate">
                           {expense.vendor_payee}
