@@ -232,24 +232,31 @@ const BillsExpensesManagement = () => {
     const matchesSearch = expense.expense_title.toLowerCase().includes(searchTerm.toLowerCase()) || expense.vendor_payee.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || expense.payment_status === filterStatus;
     
-    // Hierarchical category filtering
+    // Hierarchical category filtering using ExpenseWithHierarchy data
     let matchesCategory = true;
     if (selectedParentCategories.length > 0 || selectedSubcategories.length > 0) {
-      // If parent categories selected
-      const matchesParent = selectedParentCategories.length === 0 || selectedParentCategories.some(parentId => {
-        if (expense.category_level === 'parent') {
-          return expense.category_id === parentId;
-        } else {
-          // For subcategories, check if their parent is selected
-          const parentCategory = categories.find(cat => cat.id === expense.category_id)?.parent_category_id;
-          return parentCategory === parentId;
-        }
-      });
+      // Find the parent category ID for this expense
+      const parentCategoryId = expense.category_level === 'parent' 
+        ? expense.category_id 
+        : categories.find(cat => cat.id === expense.category_id)?.parent_category_id;
       
-      // If subcategories selected
-      const matchesSubcategory = selectedSubcategories.length === 0 || selectedSubcategories.includes(expense.category_id);
+      const matchesParent = selectedParentCategories.length === 0 || 
+        selectedParentCategories.some(parentId => parentCategoryId === parentId);
       
-      matchesCategory = matchesParent || matchesSubcategory;
+      const matchesSubcategory = selectedSubcategories.length === 0 || 
+        selectedSubcategories.some(subcategoryId => expense.category_id === subcategoryId);
+      
+      // Apply proper intersection logic
+      if (selectedParentCategories.length > 0 && selectedSubcategories.length > 0) {
+        // Both filters active: must match parent AND (no subcategory OR selected subcategory)
+        matchesCategory = matchesParent && (expense.category_level === 'parent' || matchesSubcategory);
+      } else if (selectedParentCategories.length > 0) {
+        // Only parent filter: include all expenses under selected parents
+        matchesCategory = matchesParent;
+      } else {
+        // Only subcategory filter: include only selected subcategories
+        matchesCategory = matchesSubcategory;
+      }
     }
     
     const matchesVendor = filterVendor === 'all' || expense.vendor_payee === filterVendor;
@@ -457,16 +464,21 @@ const BillsExpensesManagement = () => {
                   </SelectContent>
                 </Select>
                 
-                <HierarchicalCategoryFilters
-                  selectedParentIds={selectedParentCategories}
-                  selectedSubcategoryIds={selectedSubcategories}
-                  onParentChange={setSelectedParentCategories}
-                  onSubcategoryChange={setSelectedSubcategories}
-                  onClearAll={() => {
-                    setSelectedParentCategories([]);
-                    setSelectedSubcategories([]);
-                  }}
-                />
+              <HierarchicalCategoryFilters
+                selectedParentIds={selectedParentCategories}
+                selectedSubcategoryIds={selectedSubcategories}
+                onParentChange={setSelectedParentCategories}
+                onSubcategoryChange={setSelectedSubcategories}
+                onClearAll={() => {
+                  setSelectedParentCategories([]);
+                  setSelectedSubcategories([]);
+                }}
+              />
+              {(selectedParentCategories.length > 0 || selectedSubcategories.length > 0) && (
+                <div className="text-sm text-muted-foreground">
+                  Showing {filteredExpenses.length} of {expenses.length} expenses
+                </div>
+              )}
                 
                 <Button variant="outline" className="h-11 px-4 border-slate-300 hover:bg-slate-50">
                   <FileDown className="h-4 w-4 mr-2" />

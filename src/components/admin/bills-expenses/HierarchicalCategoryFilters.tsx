@@ -26,10 +26,10 @@ export const HierarchicalCategoryFilters = ({
   
   const parentCategories = getParentCategories();
   
-  // Get all subcategories for selected parents
-  const availableSubcategories = selectedParentIds.flatMap(parentId => 
-    getSubcategoriesForParent(parentId)
-  );
+  // Get all subcategories for selected parents, or all if no parents selected
+  const availableSubcategories = selectedParentIds.length > 0 
+    ? selectedParentIds.flatMap(parentId => getSubcategoriesForParent(parentId))
+    : parentCategories.flatMap(parent => getSubcategoriesForParent(parent.id));
 
   const handleParentToggle = (parentId: string, checked: boolean) => {
     if (checked) {
@@ -115,12 +115,14 @@ export const HierarchicalCategoryFilters = ({
               </div>
             </div>
 
-            {/* Subcategories (only for selected parents) */}
+            {/* Subcategories */}
             {availableSubcategories.length > 0 && (
               <div>
                 <Label className="text-xs text-muted-foreground mb-2 block">
                   Subcategories
-                  <span className="text-xs ml-1">(from selected parents)</span>
+                  {selectedParentIds.length > 0 && (
+                    <span className="text-xs ml-1">(from selected parents)</span>
+                  )}
                 </Label>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {availableSubcategories.map((subcategory) => {
