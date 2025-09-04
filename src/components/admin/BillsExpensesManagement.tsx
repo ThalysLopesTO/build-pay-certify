@@ -21,6 +21,7 @@ import { CategoryManager } from './bills-expenses/CategoryManager';
 import { ExpenseSummary } from './bills-expenses/ExpenseSummary';
 import { RecurringBillForm } from './bills-expenses/RecurringBillForm';
 import { DateFilter } from './bills-expenses/DateFilter';
+import ExpenseAnalytics from './bills-expenses/ExpenseAnalytics';
 interface BillExpense {
   id: string;
   expense_title: string;
@@ -447,6 +448,9 @@ const BillsExpensesManagement = () => {
             </Dialog>
           </div>
         </div>
+
+        {/* Expense Analytics */}
+        <ExpenseAnalytics expenses={filteredExpenses} />
 
         {/* Enhanced Analytics Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
