@@ -305,6 +305,17 @@ export const useTimesheetForm = () => {
       notesWithBreakdown = [notesWithBreakdown?.trim(), marker].filter(Boolean).join('\n');
     }
 
+    const week1Hours = data.mondayHours + data.tuesdayHours + data.wednesdayHours + 
+                       data.thursdayHours + data.fridayHours + data.saturdayHours + data.sundayHours;
+    const week2Hours = (form.getValues('mondayHoursWeek2') || 0) + (form.getValues('tuesdayHoursWeek2') || 0) +
+                       (form.getValues('wednesdayHoursWeek2') || 0) + (form.getValues('thursdayHoursWeek2') || 0) +
+                       (form.getValues('fridayHoursWeek2') || 0) + (form.getValues('saturdayHoursWeek2') || 0) +
+                       (form.getValues('sundayHoursWeek2') || 0);
+    const totalTimesheetHours = week1Hours + week2Hours;
+    const hoursPayAmount = totalTimesheetHours * hourlyRate;
+    const additionalExpenseAmount = data.additionalExpense || 0;
+    const grossPay = hoursPayAmount + additionalExpenseAmount;
+
     const timesheetData = {
       jobsiteId: data.jobsiteId,
       weekStartDate: selectedWeek.weekStartDateString,
@@ -316,9 +327,34 @@ export const useTimesheetForm = () => {
       saturdayHours: data.saturdayHours + (form.getValues('saturdayHoursWeek2') || 0),
       sundayHours: data.sundayHours + (form.getValues('sundayHoursWeek2') || 0),
       hourlyRate: hourlyRate,
-      additionalExpense: data.additionalExpense || 0,
+      additionalExpense: additionalExpenseAmount,
       notes: notesWithBreakdown,
       taxIncluded: data.tax_included || false,
+      periods: [{ // Bi-weekly periods data
+        week1: {
+          mondayHours: data.mondayHours,
+          tuesdayHours: data.tuesdayHours,
+          wednesdayHours: data.wednesdayHours,
+          thursdayHours: data.thursdayHours,
+          fridayHours: data.fridayHours,
+          saturdayHours: data.saturdayHours,
+          sundayHours: data.sundayHours,
+        },
+        week2: {
+          mondayHours: form.getValues('mondayHoursWeek2') || 0,
+          tuesdayHours: form.getValues('tuesdayHoursWeek2') || 0,
+          wednesdayHours: form.getValues('wednesdayHoursWeek2') || 0,
+          thursdayHours: form.getValues('thursdayHoursWeek2') || 0,
+          fridayHours: form.getValues('fridayHoursWeek2') || 0,
+          saturdayHours: form.getValues('saturdayHoursWeek2') || 0,
+          sundayHours: form.getValues('sundayHoursWeek2') || 0,
+        }
+      }],
+      tax: data.tax_included ? grossPay * 0.13 : 0, // 13% HST if tax included
+      total_hours: totalTimesheetHours,
+      gross_pay: grossPay,
+      hours_pay: hoursPayAmount,
+      total_pay: data.tax_included ? grossPay + (grossPay * 0.13) : grossPay,
     };
     
     console.log('🚀 Submitting timesheet with processed data:', timesheetData);
