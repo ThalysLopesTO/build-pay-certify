@@ -3,21 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
 
-interface BillExpense {
-  id: string;
-  expense_title: string;
-  category_name: string;
-  vendor_payee: string;
-  expense_date: string;
-  amount: number;
-  payment_status: 'paid' | 'unpaid' | 'scheduled';
-  payment_method?: string;
-  notes?: string;
-  attachment_url?: string;
-}
+import { ExpenseWithHierarchy } from '@/hooks/useHierarchicalCategories';
 
 interface ExpenseSummaryProps {
-  expenses: BillExpense[];
+  expenses: ExpenseWithHierarchy[];
 }
 
 export const ExpenseSummary = ({ expenses }: ExpenseSummaryProps) => {
@@ -30,10 +19,14 @@ export const ExpenseSummary = ({ expenses }: ExpenseSummaryProps) => {
     .filter(expense => expense.payment_status === 'unpaid')
     .reduce((sum, expense) => sum + expense.amount, 0);
 
-  // Top 5 categories by cost
+  // Top 5 categories by cost with hierarchical display
   const categoryTotals = expenses.reduce((acc, expense) => {
-    const category = expense.category_name || 'Uncategorized';
-    acc[category] = (acc[category] || 0) + expense.amount;
+    // Create hierarchical category display name
+    let categoryDisplay = expense.parent_category_name || 'Uncategorized';
+    if (expense.subcategory_name) {
+      categoryDisplay = `${expense.parent_category_name} > ${expense.subcategory_name}`;
+    }
+    acc[categoryDisplay] = (acc[categoryDisplay] || 0) + expense.amount;
     return acc;
   }, {} as Record<string, number>);
 

@@ -131,6 +131,12 @@ const ManagementTimesheetDetailModal = ({
   const onSubmit = (data: FormData) => {
     if (!selectedWeek) return;
 
+    const totalHours = data.mondayHours + data.tuesdayHours + data.wednesdayHours + 
+                       data.thursdayHours + data.fridayHours + data.saturdayHours + data.sundayHours;
+    const hoursPayAmount = totalHours * hourlyRate;
+    const additionalExpenseAmount = data.additionalExpense || 0;
+    const grossPay = hoursPayAmount + additionalExpenseAmount;
+    
     const timesheetData = {
       jobsiteId: data.jobsiteId,
       weekStartDate: selectedWeek.weekStartDateString,
@@ -142,9 +148,25 @@ const ManagementTimesheetDetailModal = ({
       saturdayHours: data.saturdayHours,
       sundayHours: data.sundayHours,
       hourlyRate: hourlyRate,
-      additionalExpense: data.additionalExpense || 0,
+      additionalExpense: additionalExpenseAmount,
       notes: data.notes || '',
       taxIncluded: data.tax_included || false,
+      periods: [{ // Single period data
+        week1: {
+          mondayHours: data.mondayHours,
+          tuesdayHours: data.tuesdayHours,
+          wednesdayHours: data.wednesdayHours,
+          thursdayHours: data.thursdayHours,
+          fridayHours: data.fridayHours,
+          saturdayHours: data.saturdayHours,
+          sundayHours: data.sundayHours,
+        }
+      }],
+      tax: data.tax_included ? grossPay * 0.13 : 0, // 13% HST if tax included
+      total_hours: totalHours,
+      gross_pay: grossPay,
+      hours_pay: hoursPayAmount,
+      total_pay: data.tax_included ? grossPay + (grossPay * 0.13) : grossPay,
     };
     
     submitMutation.mutate(timesheetData, {
