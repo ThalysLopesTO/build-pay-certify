@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, CheckCircle, Clock } from 'lucide-react';
+import { useNearlyTimesheet } from '@/hooks/new/useWeekly';
 
 interface WeekOption {
   startDate: Date;
@@ -16,16 +18,31 @@ interface WeekOption {
   label: string;
   isCurrent: boolean;
   isSubmissionOpen?: boolean;
+  timesheet: any;
 }
 
 interface WeekSelectorProps {
   availableWeeks: WeekOption[];
   selectedWeek: WeekOption | null;
-  submittedWeeks: string[];
+  // submittedWeeks: string[];
   onWeekSelect: (week: WeekOption) => void;
 }
 
-const WeekSelector = ({ availableWeeks, selectedWeek, submittedWeeks, onWeekSelect }: WeekSelectorProps) => {
+const WeekSelector = ({ availableWeeks, selectedWeek, onWeekSelect }: WeekSelectorProps) => {
+  const weekStartDates = availableWeeks.map(week => week.weekStartDateString);
+  const { data: timesheetData } = useNearlyTimesheet(weekStartDates);
+
+  useEffect(() => {
+  if (availableWeeks.length === 0 || !timesheetData) return;
+
+  // Only select the first week if no week is selected yet
+  if (!selectedWeek) {
+    const firstWeek = availableWeeks[0];
+    const timesheet = timesheetData.find(t => t.week_start_date === firstWeek.weekStartDateString);
+    onWeekSelect({ ...firstWeek, timesheet });
+  }
+}, [availableWeeks, timesheetData, selectedWeek, onWeekSelect]);
+
   return (
     <Card>
       <CardHeader>
@@ -36,19 +53,25 @@ const WeekSelector = ({ availableWeeks, selectedWeek, submittedWeeks, onWeekSele
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {availableWeeks.map((week) => {
-            const isSubmitted = submittedWeeks.includes(week.weekStartDateString);
+          {availableWeeks.map((week, index) => {
+            const timesheet = timesheetData?.find(
+              t => t.week_start_date === week.weekStartDateString
+            );
+            const isSubmitted = !!timesheet;
             const isSelected = selectedWeek?.weekStartDateString === week.weekStartDateString;
             const openToSubmit = !isSubmitted && week.isSubmissionOpen;
             const inProgress = !isSubmitted && !week.isSubmissionOpen;
+            
+            if (timesheet) {
+              week.timesheet = timesheet
+            }
             
             return (
               <Button
                 key={week.weekStartDateString}
                 variant={isSelected ? "default" : "outline"}
-                className={`h-auto p-4 flex flex-col items-start space-y-2 transition-all duration-200 ${
-                  isSubmitted ? 'opacity-60' : ''
-                } ${isSelected ? 'bg-orange-600 hover:bg-orange-700 border-orange-600' : ''}`}
+                className={`h-auto p-4 flex flex-col items-start space-y-2 transition-all duration-200 ${isSubmitted ? 'opacity-60' : ''
+                  } ${isSelected ? 'bg-orange-600 hover:bg-orange-700 border-orange-600' : ''}`}
                 onClick={() => onWeekSelect(week)}
               >
                 <div className="flex items-center justify-between w-full">
@@ -60,7 +83,7 @@ const WeekSelector = ({ availableWeeks, selectedWeek, submittedWeeks, onWeekSele
                   )}
                 </div>
                 <div className="flex items-center space-x-2 flex-wrap">
-                  <Badge 
+                  <Badge
                     variant={week.isCurrent ? "default" : "secondary"}
                     className={week.isCurrent ? "bg-orange-100 text-orange-800" : ""}
                   >

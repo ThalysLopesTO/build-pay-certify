@@ -1,4 +1,5 @@
-import React from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -16,6 +17,7 @@ import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { format, addDays } from 'date-fns';
 
 const TimesheetForm = () => {
+  const [selectedWeek, setSelectedWeek] = useState<any>()
   const {
     form,
     totalHours,
@@ -24,12 +26,9 @@ const TimesheetForm = () => {
     onSubmit,
     submitMutation,
     workWeeks,
-    selectedWeek,
-    setSelectedWeek,
-    existingTimesheets,
     isWeekSubmitted,
     user,
-  } = useTimesheetForm();
+  } = useTimesheetForm(selectedWeek?.timesheet);
 
   const isSubmitting = submitMutation.isPending;
   const { settings } = useCompanySettings();
@@ -67,7 +66,7 @@ const TimesheetForm = () => {
         <WeekSelector
           availableWeeks={workWeeks.availableWeeks}
           selectedWeek={selectedWeek}
-          submittedWeeks={existingTimesheets}
+          // submittedWeeks={existingTimesheets}
           onWeekSelect={setSelectedWeek}
         />
 

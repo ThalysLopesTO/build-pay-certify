@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,6 +12,7 @@ import { useExistingTimesheets } from './useExistingTimesheets';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from './use-toast';
+import { calculateTax } from '@/utils/taxCalculations';
 
 const formSchema = z.object({
   jobsiteId: z.string().min(1, 'Please select a jobsite'),
@@ -36,24 +38,24 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export const useTimesheetForm = () => {
+export const useTimesheetForm = (existingTimesheets?:any) => {
   const { user, session } = useAuth();
   const { settings } = useCompanySettings();
   const submitMutation = useTimesheetSubmission();
   const workWeeks = useWorkWeek();
-  const { data: existingTimesheets = [] } = useExistingTimesheets();
-  
+  // const { data: existingTimesheets = [] } = useExistingTimesheets();
+
   // Initialize with current week/period
-  const [selectedWeek, setSelectedWeek] = useState(() => 
-    workWeeks?.currentWeek || null
-  );
-  
+  // const [selectedWeek, setSelectedWeek] = useState(() =>
+  //   workWeeks?.currentWeek || null
+  // );
+
   // Fetch existing timesheet data for the selected week
-  const { data: existingTimesheetData } = useTimesheetData({
-    userId: user?.id,
-    weekStartDate: selectedWeek?.weekStartDateString,
-    enabled: !!selectedWeek?.weekStartDateString && !!user?.id
-  });
+  // const { data: existingTimesheetData } = useTimesheetData({
+  //   userId: user?.id,
+  //   weekStartDate: selectedWeek?.weekStartDateString,
+  //   enabled: !!selectedWeek?.weekStartDateString && !!user?.id
+  // });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -81,24 +83,24 @@ export const useTimesheetForm = () => {
   });
 
   // Update selected week when workWeeks loads
-  React.useEffect(() => {
-    if (workWeeks?.currentWeek && !selectedWeek) {
-      setSelectedWeek(workWeeks.currentWeek);
-    }
-  }, [workWeeks, selectedWeek]);
+  // React.useEffect(() => {
+  //   if (workWeeks?.currentWeek && !selectedWeek) {
+  //     setSelectedWeek(workWeeks.currentWeek);
+  //   }
+  // }, [workWeeks, selectedWeek]);
 
-  const draftKey = React.useMemo(() => {
-    const start = selectedWeek?.weekStartDateString || 'unknown';
-    const freq = ((settings as any)?.timesheet_frequency === 'bi-weekly') ? 'bi' : 'wk';
-    const uid = user?.id || 'anon';
-    return `timesheet:${uid}:${start}:${freq}`;
-  }, [user?.id, selectedWeek?.weekStartDateString, settings]);
+  // const draftKey = React.useMemo(() => {
+  //   const start = selectedWeek?.weekStartDateString || 'unknown';
+  //   const freq = ((settings as any)?.timesheet_frequency === 'bi-weekly') ? 'bi' : 'wk';
+  //   const uid = user?.id || 'anon';
+  //   return `timesheet:${uid}:${start}:${freq}`;
+  // }, [user?.id, selectedWeek?.weekStartDateString, settings]);
 
   // Load existing timesheet data when available
   React.useEffect(() => {
-    if (existingTimesheetData) {
+    if (existingTimesheets) {
       const formData: FormData = {
-        jobsiteId: existingTimesheetData.jobsite_id || '',
+        jobsiteId: existingTimesheets.jobsite_id || '',
         mondayHours: 0,
         tuesdayHours: 0,
         wednesdayHours: 0,
@@ -113,51 +115,46 @@ export const useTimesheetForm = () => {
         fridayHoursWeek2: 0,
         saturdayHoursWeek2: 0,
         sundayHoursWeek2: 0,
-        additionalExpense: existingTimesheetData.additional_expense || 0,
-        notes: existingTimesheetData.notes || '',
-        tax_included: existingTimesheetData.tax_included || false,
+        additionalExpense: existingTimesheets.additional_expense || 0,
+        notes: existingTimesheets.notes || '',
+        tax_included: existingTimesheets.tax_included || false,
       };
 
-      // Handle bi-weekly data if present
-      if (existingTimesheetData.biWeeklyData?.days) {
-        existingTimesheetData.biWeeklyData.days.forEach((day: any, index: number) => {
-          const dayOfWeek = new Date(day.date).getDay(); // 0=Sun, 1=Mon, etc.
-          const isWeek2 = index >= 7;
-          const dayFields = ['sundayHours', 'mondayHours', 'tuesdayHours', 'wednesdayHours', 'thursdayHours', 'fridayHours', 'saturdayHours'];
-          const fieldName = dayFields[dayOfWeek] + (isWeek2 ? 'Week2' : '');
-          (formData as any)[fieldName] = day.hours || 0;
+      const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+
+      // Map periods to form fields
+      existingTimesheets.periods?.forEach(period => {
+        const weekSuffix = period.week === 'week2' ? 'Week2' : '';
+
+        period.days.forEach(dayObj => {
+          // Each dayObj has one key for the day name, e.g., { monday: 4 }
+          const dayName = Object.keys(dayObj)[0] as typeof weekdays[number];
+          const hours = dayObj[dayName] || 0;
+
+          formData[`${dayName}Hours${weekSuffix}`] = hours;
         });
-      } else {
-        // Regular weekly data
-        formData.mondayHours = existingTimesheetData.monday_hours || 0;
-        formData.tuesdayHours = existingTimesheetData.tuesday_hours || 0;
-        formData.wednesdayHours = existingTimesheetData.wednesday_hours || 0;
-        formData.thursdayHours = existingTimesheetData.thursday_hours || 0;
-        formData.fridayHours = existingTimesheetData.friday_hours || 0;
-        formData.saturdayHours = existingTimesheetData.saturday_hours || 0;
-        formData.sundayHours = existingTimesheetData.sunday_hours || 0;
-      }
+      });
 
       form.reset(formData);
     } else {
       // Load from localStorage draft if no existing data
-      try {
-        const raw = localStorage.getItem(draftKey);
-        if (raw) {
-          form.reset(JSON.parse(raw) as any);
-        }
-      } catch (e) {
-        console.warn('Failed to restore draft', e);
-      }
+      // try {
+      //   const raw = localStorage.getItem(draftKey);
+      //   if (raw) {
+      //     form.reset(JSON.parse(raw) as any);
+      //   }
+      // } catch (e) {
+      //   console.warn('Failed to restore draft', e);
+      // }
     }
-  }, [existingTimesheetData, draftKey, form]);
+  }, [existingTimesheets, form]);
 
   const watchedValues = form.watch();
   const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
   const totalHours = (
-    watchedValues.mondayHours + watchedValues.tuesdayHours + 
-    watchedValues.wednesdayHours + watchedValues.thursdayHours + 
-    watchedValues.fridayHours + watchedValues.saturdayHours + 
+    watchedValues.mondayHours + watchedValues.tuesdayHours +
+    watchedValues.wednesdayHours + watchedValues.thursdayHours +
+    watchedValues.fridayHours + watchedValues.saturdayHours +
     watchedValues.sundayHours +
     (isBiWeekly ? (
       (watchedValues.mondayHoursWeek2 || 0) + (watchedValues.tuesdayHoursWeek2 || 0) +
@@ -172,57 +169,61 @@ export const useTimesheetForm = () => {
     queryKey: ['current-user-hourly-rate', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      
+
       const { data, error } = await supabase
         .from('user_profiles')
         .select('hourly_rate')
         .eq('user_id', user.id)
         .single();
-        
+
       if (error) {
         console.error('Error fetching current hourly rate:', error);
         return null;
       }
-      
+
       return data;
     },
     enabled: !!user?.id,
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true
   });
-  
+
   // Use the most current hourly rate (database first, then auth fallback)
   const hourlyRate = currentUserProfile?.hourly_rate ?? user?.hourlyRate ?? 25;
   const grossPay = (totalHours * hourlyRate) + (watchedValues.additionalExpense || 0);
 
-  const isWeekSubmitted = selectedWeek ? existingTimesheets.includes(selectedWeek.weekStartDateString) : false;
+  const isWeekSubmitted = existingTimesheets;
 
-  React.useEffect(() => {
-    const sub = form.watch((values) => {
-      try {
-        localStorage.setItem(draftKey, JSON.stringify(values));
-      } catch {}
-    });
-    return () => sub.unsubscribe();
-  }, [form, draftKey]);
+  // React.useEffect(() => {
+  //   const sub = form.watch((values) => {
+  //     try {
+  //       localStorage.setItem(draftKey, JSON.stringify(values));
+  //     } catch {
+  //       console.log('Failed to save draft');
+  //     }
+  //   });
+  //   return () => sub.unsubscribe();
+  // }, [form]);
 
-  React.useEffect(() => {
-    if (submitMutation.isSuccess) {
-      try { localStorage.removeItem(draftKey); } catch {}
-    }
-  }, [submitMutation.isSuccess, draftKey]);
+  // React.useEffect(() => {
+  //   if (submitMutation.isSuccess) {
+  //     try { localStorage.removeItem(draftKey); } catch {
+  //       console.log('Failed to remove draft');
+  //     }
+  //   }
+  // }, [submitMutation.isSuccess, draftKey]);
 
   const onSubmit = (data: FormData) => {
     console.log('📋 Form submission started with data:', data);
-    console.log('👤 Current user state:', { 
-      userId: user?.id, 
-      companyId: user?.companyId, 
+    console.log('👤 Current user state:', {
+      userId: user?.id,
+      companyId: user?.companyId,
       email: user?.email,
       isAuthenticated: !!user?.id,
       hasSession: !!session,
       sessionValid: !!session?.access_token
     });
-    
+
     // Enhanced validation checks
     if (totalHours === 0) {
       toast({
@@ -256,7 +257,7 @@ export const useTimesheetForm = () => {
     if (!user?.companyId) {
       console.error('❌ Company validation failed: No company ID');
       toast({
-        title: "Company Assignment Error", 
+        title: "Company Assignment Error",
         description: "No company assigned to your account. Please contact your administrator.",
         variant: "destructive",
       });
@@ -282,82 +283,73 @@ export const useTimesheetForm = () => {
       return;
     }
 
-    // Build optional bi-weekly breakdown payload for notes
-    let notesWithBreakdown = data.notes || '';
-    if (isBiWeekly && selectedWeek) {
-      const days: { date: string; label: string; hours: number }[] = [];
-      for (let i = 0; i < 14; i++) {
-        const date = new Date(selectedWeek.startDate);
-        date.setDate(date.getDate() + i);
-        const dayIdx = date.getDay(); // 0-6
-        const dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-        const baseFields = ['sundayHours','mondayHours','tuesdayHours','wednesdayHours','thursdayHours','fridayHours','saturdayHours'];
-        const week2Suffix = i >= 7 ? 'Week2' : '';
-        // Prefer explicit form values to avoid stale data
-        const value = form.getValues((baseFields[dayIdx] + week2Suffix) as any) || 0;
-        days.push({
-          date: date.toISOString().split('T')[0],
-          label: `${dayLabels[dayIdx]}`,
-          hours: Number(value) || 0,
-        });
-      }
-      const marker = '__biweekly_json__=' + btoa(JSON.stringify({ days }));
-      notesWithBreakdown = [notesWithBreakdown?.trim(), marker].filter(Boolean).join('\n');
-    }
-
-    const week1Hours = data.mondayHours + data.tuesdayHours + data.wednesdayHours + 
-                       data.thursdayHours + data.fridayHours + data.saturdayHours + data.sundayHours;
+    const week1Hours = data.mondayHours + data.tuesdayHours + data.wednesdayHours +
+      data.thursdayHours + data.fridayHours + data.saturdayHours + data.sundayHours;
     const week2Hours = (form.getValues('mondayHoursWeek2') || 0) + (form.getValues('tuesdayHoursWeek2') || 0) +
-                       (form.getValues('wednesdayHoursWeek2') || 0) + (form.getValues('thursdayHoursWeek2') || 0) +
-                       (form.getValues('fridayHoursWeek2') || 0) + (form.getValues('saturdayHoursWeek2') || 0) +
-                       (form.getValues('sundayHoursWeek2') || 0);
+      (form.getValues('wednesdayHoursWeek2') || 0) + (form.getValues('thursdayHoursWeek2') || 0) +
+      (form.getValues('fridayHoursWeek2') || 0) + (form.getValues('saturdayHoursWeek2') || 0) +
+      (form.getValues('sundayHoursWeek2') || 0);
+
     const totalTimesheetHours = week1Hours + week2Hours;
     const hoursPayAmount = totalTimesheetHours * hourlyRate;
     const additionalExpenseAmount = data.additionalExpense || 0;
     const grossPay = hoursPayAmount + additionalExpenseAmount;
 
+    const tax = calculateTax({
+      gross_pay: grossPay,
+      tax_included: false,
+      type: 'employee'
+    });
+
+    const periods = [{
+      week: "week1",
+      days: [
+        { friday: data.fridayHours },
+        { saturday: data.saturdayHours },
+        { sunday: data.sundayHours },
+        { monday: data.mondayHours },
+        { tuesday: data.tuesdayHours },
+        { wednesday: data.wednesdayHours },
+        { thursday: data.thursdayHours },
+      ]
+    }]
+
+    if (isBiWeekly) {
+      periods.push({
+        week: "week2",
+        days: [
+          { friday: data.fridayHoursWeek2 || 0 },
+          { saturday: data.saturdayHoursWeek2 || 0 },
+          { sunday: data.sundayHoursWeek2 || 0 },
+          { monday: data.mondayHoursWeek2 || 0 },
+          { tuesday: data.tuesdayHoursWeek2 || 0 },
+          { wednesday: data.wednesdayHoursWeek2 || 0 },
+          { thursday: data.thursdayHoursWeek2 || 0 },
+        ]
+      })
+    }
+
     const timesheetData = {
-      jobsiteId: data.jobsiteId,
-      weekStartDate: selectedWeek.weekStartDateString,
-      mondayHours: data.mondayHours + (form.getValues('mondayHoursWeek2') || 0),
-      tuesdayHours: data.tuesdayHours + (form.getValues('tuesdayHoursWeek2') || 0),
-      wednesdayHours: data.wednesdayHours + (form.getValues('wednesdayHoursWeek2') || 0),
-      thursdayHours: data.thursdayHours + (form.getValues('thursdayHoursWeek2') || 0),
-      fridayHours: data.fridayHours + (form.getValues('fridayHoursWeek2') || 0),
-      saturdayHours: data.saturdayHours + (form.getValues('saturdayHoursWeek2') || 0),
-      sundayHours: data.sundayHours + (form.getValues('sundayHoursWeek2') || 0),
-      hourlyRate: hourlyRate,
-      additionalExpense: additionalExpenseAmount,
-      notes: notesWithBreakdown,
-      taxIncluded: data.tax_included || false,
-      periods: [{ // Bi-weekly periods data
-        week1: {
-          mondayHours: data.mondayHours,
-          tuesdayHours: data.tuesdayHours,
-          wednesdayHours: data.wednesdayHours,
-          thursdayHours: data.thursdayHours,
-          fridayHours: data.fridayHours,
-          saturdayHours: data.saturdayHours,
-          sundayHours: data.sundayHours,
-        },
-        week2: {
-          mondayHours: form.getValues('mondayHoursWeek2') || 0,
-          tuesdayHours: form.getValues('tuesdayHoursWeek2') || 0,
-          wednesdayHours: form.getValues('wednesdayHoursWeek2') || 0,
-          thursdayHours: form.getValues('thursdayHoursWeek2') || 0,
-          fridayHours: form.getValues('fridayHoursWeek2') || 0,
-          saturdayHours: form.getValues('saturdayHoursWeek2') || 0,
-          sundayHours: form.getValues('sundayHoursWeek2') || 0,
-        }
-      }],
-      tax: data.tax_included ? grossPay * 0.13 : 0, // 13% HST if tax included
+      jobsite_id: data.jobsiteId,
+      week_start_date: selectedWeek.weekStartDateString,
+      additional_expense: additionalExpenseAmount,
+      notes: data.notes,
+      tax_included: false,
+      periods: periods,
+      tax: 0, // 13% HST if tax included
       total_hours: totalTimesheetHours,
       gross_pay: grossPay,
       hours_pay: hoursPayAmount,
-      total_pay: data.tax_included ? grossPay + (grossPay * 0.13) : grossPay,
+      total_pay: tax.totalPay,
+      hourly_rate: hourlyRate,
+      income_tax: tax.incomeTax,
+      cpp: tax.cpp,
+      ei: tax.ei,
+      income_tax_rate: tax.incomeTaxRate,
+      cpp_rate: tax.cppRate,
+      ei_rate: tax.eiRate,
     };
-    
-    console.log('🚀 Submitting timesheet with processed data:', timesheetData);
+
     submitMutation.mutate(timesheetData);
   };
 
@@ -369,8 +361,8 @@ export const useTimesheetForm = () => {
     onSubmit,
     submitMutation,
     workWeeks,
-    selectedWeek,
-    setSelectedWeek,
+    // selectedWeek,
+    // setSelectedWeek,
     existingTimesheets,
     isWeekSubmitted,
     user,
