@@ -19,6 +19,7 @@ import DailyHoursGrid from '../employee/timesheet/DailyHoursGrid';
 import ExpenseField from '../employee/timesheet/ExpenseField';
 import NotesField from '../employee/timesheet/NotesField';
 import TimesheetSummary from '../employee/timesheet/TimesheetSummary';
+import { calculateTax } from '@/utils/taxCalculations';
 
 const formSchema = z.object({
   jobsiteId: z.string().min(1, 'Please select a jobsite'),
@@ -52,26 +53,21 @@ type FormData = z.infer<typeof formSchema>;
 interface ForemanTimesheetDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedWeek: any;
-  existingTimesheets: string[];
+  timesheet: any;
 }
 
 const ForemanTimesheetDetailModal = ({
   isOpen,
   onClose,
-  selectedWeek,
-  existingTimesheets
+  timesheet,
 }: ForemanTimesheetDetailModalProps) => {
   const { user } = useAuth();
   const { settings } = useCompanySettings();
   const submitMutation = useTimesheetSubmission();
 
-  // Fetch existing timesheet data
-  const { data: existingTimesheetData, isLoading: isLoadingTimesheetData } = useTimesheetData({
-    userId: user?.id,
-    weekStartDate: selectedWeek?.weekStartDateString,
-    enabled: isOpen && !!selectedWeek && !!user?.id
-  });
+  const selectedWeek = timesheet?.week;
+  const existingTimesheetData = timesheet?.timesheet;
+  const isWeekSubmitted = existingTimesheetData;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -100,40 +96,29 @@ const ForemanTimesheetDetailModal = ({
 
   // Load existing timesheet data into form when available
   useEffect(() => {
-    if (existingTimesheetData && isOpen) {
-      const formData: Partial<FormData> = {
-        jobsiteId: existingTimesheetData.jobsite_id || '',
-        mondayHours: existingTimesheetData.monday_hours || 0,
-        tuesdayHours: existingTimesheetData.tuesday_hours || 0,
-        wednesdayHours: existingTimesheetData.wednesday_hours || 0,
-        thursdayHours: existingTimesheetData.thursday_hours || 0,
-        fridayHours: existingTimesheetData.friday_hours || 0,
-        saturdayHours: existingTimesheetData.saturday_hours || 0,
-        sundayHours: existingTimesheetData.sunday_hours || 0,
-        additionalExpense: existingTimesheetData.additional_expense || 0,
-        tax_included: existingTimesheetData.tax_included || false,
-      };
+    if (!existingTimesheetData || !isOpen) return;
 
-      // Handle bi-weekly data
-      if (existingTimesheetData.biWeeklyData) {
-        const biWeekly = existingTimesheetData.biWeeklyData;
-        formData.mondayHoursWeek2 = biWeekly.mondayHoursWeek2 || 0;
-        formData.tuesdayHoursWeek2 = biWeekly.tuesdayHoursWeek2 || 0;
-        formData.wednesdayHoursWeek2 = biWeekly.wednesdayHoursWeek2 || 0;
-        formData.thursdayHoursWeek2 = biWeekly.thursdayHoursWeek2 || 0;
-        formData.fridayHoursWeek2 = biWeekly.fridayHoursWeek2 || 0;
-        formData.saturdayHoursWeek2 = biWeekly.saturdayHoursWeek2 || 0;
-        formData.sundayHoursWeek2 = biWeekly.sundayHoursWeek2 || 0;
+  const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
-        // Extract original notes without bi-weekly JSON
-        const notesWithoutJson = existingTimesheetData.notes?.replace(/__biweekly_json__:.*?__end_biweekly_json__/, '').trim() || '';
-        formData.notes = notesWithoutJson;
-      } else {
-        formData.notes = existingTimesheetData.notes || '';
-      }
+  const formData: Partial<FormData> = {
+    jobsiteId: existingTimesheetData.jobsite_id || '',
+    additionalExpense: existingTimesheetData.additional_expense || 0,
+    tax_included: existingTimesheetData.tax_included || false,
+    notes: existingTimesheetData.notes || ''
+  };
 
-      form.reset(formData);
-    }
+  // Map periods to form fields
+  existingTimesheetData.periods?.forEach(period => {
+    const weekSuffix = period.week === 'week2' ? 'Week2' : '';
+    
+    weekdays.forEach(day => {
+      // Find the value for the day
+      const dayObj = period.days.find(d => d[day] !== undefined);
+      formData[`${day}Hours${weekSuffix}`] = dayObj ? dayObj[day] : 0;
+    });
+  });
+
+  form.reset(formData);
   }, [existingTimesheetData, isOpen, form]);
 
   // Reset form when modal closes or different week is selected
@@ -185,12 +170,18 @@ const ForemanTimesheetDetailModal = ({
   const hourlyRate = parseFloat(user?.user_metadata?.hourly_rate || '25');
   const grossPay = (totalHours * hourlyRate) + (watchedValues.additionalExpense || 0);
 
-  const isWeekSubmitted = selectedWeek ? existingTimesheets.includes(selectedWeek.weekStartDateString) : false;
   const isSubmitting = submitMutation.isPending;
 
   // Check if submission is open (same logic as employee timesheets)
   const isSubmissionOpenForWeek = selectedWeek ? (selectedWeek as any).isSubmissionOpen ?? isSubmissionOpen(selectedWeek.endDate) : false;
-  const isFormDisabled = isWeekSubmitted || isSubmitting || !isSubmissionOpenForWeek || isLoadingTimesheetData;
+
+  const isFormDisabled = isWeekSubmitted || isSubmitting || !isSubmissionOpenForWeek;
+
+  const tax = calculateTax({
+    gross_pay: grossPay,
+    tax_included: watchedValues.tax_included || false,
+    type: "subcontractor"
+  })
 
   const onSubmit = (data: FormData) => {
     if (!selectedWeek) return;
@@ -224,36 +215,26 @@ const ForemanTimesheetDetailModal = ({
     }
 
     const timesheetData = {
-      jobsiteId: data.jobsiteId,
-      weekStartDate: selectedWeek.weekStartDateString,
-      mondayHours: data.mondayHours,
-      tuesdayHours: data.tuesdayHours,
-      wednesdayHours: data.wednesdayHours,
-      thursdayHours: data.thursdayHours,
-      fridayHours: data.fridayHours,
-      saturdayHours: data.saturdayHours,
-      sundayHours: data.sundayHours,
-      ...(isBiWeekly && {
-        mondayHoursWeek2: data.mondayHoursWeek2 || 0,
-        tuesdayHoursWeek2: data.tuesdayHoursWeek2 || 0,
-        wednesdayHoursWeek2: data.wednesdayHoursWeek2 || 0,
-        thursdayHoursWeek2: data.thursdayHoursWeek2 || 0,
-        fridayHoursWeek2: data.fridayHoursWeek2 || 0,
-        saturdayHoursWeek2: data.saturdayHoursWeek2 || 0,
-        sundayHoursWeek2: data.sundayHoursWeek2 || 0,
-      }),
-      hourlyRate: hourlyRate,
-      additionalExpense: data.additionalExpense || 0,
+      jobsite_id: data.jobsiteId,
+      week_start_date: selectedWeek.weekStartDateString,
+      hourly_rate: hourlyRate,
+      additional_expense: data.additionalExpense || 0,
       notes: data.notes || '',
-      taxIncluded: data.tax_included || false,
+      tax_included: data.tax_included || false,
       periods,
       tax: data.tax || 0,
       total_hours: data.total_hours || 0,
       total_pay: data.total_pay || 0,
       hours_pay: data.hours_pay || 0,
-      gross_pay: data.gross_pay || 0
+      gross_pay: data.gross_pay || 0,
+      income_tax: tax.incomeTax,
+      cpp: tax.cpp,
+      ei: tax.ei,
+      income_tax_rate: 0,
+      cpp_rate: 0,
+      ei_rate: 0,
     };
-    
+
     submitMutation.mutate(timesheetData, {
       onSuccess: () => {
         form.reset();
@@ -267,7 +248,7 @@ const ForemanTimesheetDetailModal = ({
     onClose();
   };
 
-  if (!selectedWeek) return null;
+  if (!timesheet || !selectedWeek) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

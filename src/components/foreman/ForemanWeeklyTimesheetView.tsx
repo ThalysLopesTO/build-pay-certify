@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,8 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import ForemanTimesheetDetailModal from './ForemanTimesheetDetailModal';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { format, addDays } from 'date-fns';
+import { useNearlyTimesheet } from '@/hooks/new/useWeekly';
+import { formatCurrency } from '@/utils/formatter';
 
 interface WeeklyTimesheetBlock {
   week: {
@@ -20,6 +23,7 @@ interface WeeklyTimesheetBlock {
     isCurrent: boolean;
     isSubmissionOpen?: boolean;
   };
+  timesheet?: any;
   jobsite?: string;
   totalHours: number;
   previewPay: number;
@@ -29,30 +33,28 @@ interface WeeklyTimesheetBlock {
 const ForemanWeeklyTimesheetView = () => {
   const { user } = useAuth();
   const workWeeks = useWorkWeek();
+
   const { data: existingTimesheets = [] } = useExistingTimesheets();
   const { settings } = useCompanySettings();
-  const [selectedWeek, setSelectedWeek] = useState<any>(null);
+  const [selectedTimesheet, setSelectedTimesheet] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const hourlyRate = parseFloat(user?.user_metadata?.hourly_rate || '25');
+  const weekStartDates = workWeeks.availableWeeks.map(week => week.weekStartDateString);
+  const { data: timesheetData } = useNearlyTimesheet(weekStartDates);
 
-  // Create timesheet blocks for the last 3 weeks
   const timesheetBlocks: WeeklyTimesheetBlock[] = workWeeks?.availableWeeks.map(week => {
-    const isSubmitted = existingTimesheets.includes(week.weekStartDateString);
-    
+    const timesheet = timesheetData?.find(t => t.week_start_date === week.weekStartDateString);
+    const isSubmitted = !!timesheet;
+
     return {
       week,
-      jobsite: isSubmitted ? 'Selected Site' : undefined, // This would come from actual data
-      totalHours: isSubmitted ? 40 : 0, // This would come from actual data
-      previewPay: isSubmitted ? (40 * hourlyRate) : 0,
+      timesheet,
+      jobsite: timesheet?.jobsite?.name || undefined,
+      totalHours: timesheet?.total_hours || 0,
+      previewPay: timesheet?.total_pay || 0,
       isSubmitted,
     };
   }) || [];
-
-  const handleWeekClick = (block: WeeklyTimesheetBlock) => {
-    setSelectedWeek(block.week);
-    setIsModalOpen(true);
-  };
 
   if (!workWeeks) {
     return (
@@ -66,13 +68,20 @@ const ForemanWeeklyTimesheetView = () => {
       </Card>
     );
   }
-  
+
+  const hourlyRate = parseFloat(user?.user_metadata?.hourly_rate || '25');
+
   const isBiWeekly = (settings as any)?.timesheet_frequency === 'bi-weekly';
   const headerTitle = isBiWeekly ? 'Bi-Weekly Timesheet Submission' : 'Weekly Timesheet Submission';
   const currentStartDate = workWeeks?.currentWeek?.startDate as Date | undefined;
   const headerSubtitle = currentStartDate
-    ? `${format(currentStartDate, 'MMM dd')} – ${format(addDays(currentStartDate, isBiWeekly ? 13 : 6), 'MMM dd')}`
+    ? `${format(currentStartDate, 'MMM dd')} - ${format(addDays(currentStartDate, isBiWeekly ? 13 : 6), 'MMM dd')}`
     : undefined;
+
+  const handleWeekClick = (block: WeeklyTimesheetBlock) => {
+    setSelectedTimesheet(block);
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -95,7 +104,9 @@ const ForemanWeeklyTimesheetView = () => {
                 key={block.week.weekStartDateString}
                 variant="outline"
                 className="h-auto p-6 flex flex-col items-start space-y-3 hover:shadow-md transition-all duration-200"
-                onClick={() => handleWeekClick(block)}
+                onClick={() => {
+                  handleWeekClick(block)
+                }}
               >
                 {/* Week Range */}
                 <div className="flex items-center justify-between w-full">
@@ -110,7 +121,7 @@ const ForemanWeeklyTimesheetView = () => {
                 </div>
 
                 {/* Week Label */}
-                <Badge 
+                <Badge
                   variant={block.week.isCurrent ? "default" : "secondary"}
                   className={block.week.isCurrent ? "bg-orange-100 text-orange-800" : ""}
                 >
@@ -133,7 +144,7 @@ const ForemanWeeklyTimesheetView = () => {
                   </div>
                   <div className="text-center">
                     <p className="text-gray-600">Preview Pay</p>
-                    <p className="font-bold text-green-600">${block.previewPay.toFixed(2)}</p>
+                    <p className="font-bold text-green-600">${formatCurrency(block.previewPay)}</p>
                   </div>
                 </div>
 
@@ -178,8 +189,7 @@ const ForemanWeeklyTimesheetView = () => {
       <ForemanTimesheetDetailModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        selectedWeek={selectedWeek}
-        existingTimesheets={existingTimesheets}
+        timesheet={selectedTimesheet}
       />
     </div>
   );

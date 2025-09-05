@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React from 'react';
 import { Control, useWatch } from 'react-hook-form';
@@ -73,7 +74,7 @@ const DailyHoursGrid = ({ control, disabled = false, selectedWeek }: DailyHoursG
       <h3 className="text-lg font-semibold text-foreground">Daily Hours</h3>
       {frequency === 'bi-weekly' ? (
         <div className="space-y-3">
-          <Accordion type="single" collapsible value={open} onValueChange={setOpen}>
+          <Accordion type="single" collapsible value={open} onValueChange={setOpen} >
             <AccordionItem value="week1">
               <AccordionTrigger>Week 1</AccordionTrigger>
               <AccordionContent>

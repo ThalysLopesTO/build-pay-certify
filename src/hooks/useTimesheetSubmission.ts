@@ -6,19 +6,11 @@ import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface TimesheetData {
-  jobsiteId: string;
-  weekStartDate: string;
-  mondayHours: number;
-  tuesdayHours: number;
-  wednesdayHours: number;
-  thursdayHours: number;
-  fridayHours: number;
-  saturdayHours: number;
-  sundayHours: number;
-  hourlyRate: number;
-  additionalExpense?: number;
+  jobsite_id: string;
+  week_start_date: string;
+  additional_expense?: number;
   notes?: string;
-  taxIncluded?: boolean;
+  tax_included?: boolean;
   periods: any;
   tax: any;
   total_hours: any;
@@ -66,33 +58,15 @@ export const useTimesheetSubmission = () => {
         : 'Unknown Employee';
       // Create the payload - do NOT include total_hours or gross_pay as they are calculated by the trigger
       const timesheetPayload = {
+        ...data,
         submitted_by: user.id,
         company_id: user.companyId,
-        jobsite_id: data.jobsiteId,
-        week_start_date: data.weekStartDate,
-        monday_hours: data.mondayHours,
-        tuesday_hours: data.tuesdayHours,
-        wednesday_hours: data.wednesdayHours,
-        thursday_hours: data.thursdayHours,
-        friday_hours: data.fridayHours,
-        saturday_hours: data.saturdayHours,
-        sunday_hours: data.sundayHours,
-        hourly_rate: data.hourlyRate,
-        additional_expense: data.additionalExpense || 0,
-        notes: data.notes || '',
         status: 'pending',
-        tax_included: data.taxIncluded || false,
-        tax: data.tax || 0,
         employee_name: employeeName,
         worker_type: userProfile?.worker_type || 'subcontractor',
         income_tax_rate: userProfile?.income_tax_rate || null,
         cpp_rate: userProfile?.cpp_rate || null,
         ei_rate: userProfile?.ei_rate || null,
-        periods: data.periods,
-        total_hours: data.total_hours || 0,
-        gross_pay: data.gross_pay || 0,
-        hours_pay: data.hours_pay || 0,
-        total_pay: data.total_pay || 0
       };
 
       const { data: result, error } = await supabase
@@ -137,9 +111,9 @@ export const useTimesheetSubmission = () => {
       console.log('🎉 Timesheet submission successful, updating cache immediately');
 
       // Immediately update the existing timesheets cache
-      queryClient.setQueryData(['existing-timesheets', user?.id], (oldData: string[] = []) => {
-        return [...oldData, variables.weekStartDate];
-      });
+      // queryClient.setQueryData(['existing-timesheets', user?.id], (oldData: string[] = []) => {
+      //   return [...oldData, variables.weekStartDate];
+      // });
 
       // Invalidate related queries to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['timesheets'] });
