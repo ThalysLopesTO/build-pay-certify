@@ -138,19 +138,11 @@ const ManagementTimesheetDetailModal = ({
     const grossPay = hoursPayAmount + additionalExpenseAmount;
     
     const timesheetData = {
-      jobsiteId: data.jobsiteId,
-      weekStartDate: selectedWeek.weekStartDateString,
-      mondayHours: data.mondayHours,
-      tuesdayHours: data.tuesdayHours,
-      wednesdayHours: data.wednesdayHours,
-      thursdayHours: data.thursdayHours,
-      fridayHours: data.fridayHours,
-      saturdayHours: data.saturdayHours,
-      sundayHours: data.sundayHours,
-      hourlyRate: hourlyRate,
-      additionalExpense: additionalExpenseAmount,
+      jobsite_id: data.jobsiteId,
+      week_start_date: selectedWeek.weekStartDateString,
+      additional_expense: additionalExpenseAmount,
       notes: data.notes || '',
-      taxIncluded: data.tax_included || false,
+      tax_included: data.tax_included || false,
       periods: [{ // Single period data
         week1: {
           mondayHours: data.mondayHours,
