@@ -28,8 +28,11 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
             id,
             name
           )`);
-      // .eq('company_id', user.companyId)
-      // .order('created_at', { ascending: false });
+        console.log({filters});
+      if (filters.employeeName) {
+        query = query.eq('employee_name', filters.employeeName);
+      }
+
       // Apply status filter if provided
       if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status);
