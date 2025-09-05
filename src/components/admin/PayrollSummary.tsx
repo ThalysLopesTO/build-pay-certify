@@ -14,6 +14,7 @@ import { useWorkWeek } from '@/hooks/useWorkWeek';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useTimesheetPDF } from '@/hooks/useTimesheetPDF';
+import { MonthlyPayrollAnalytics } from '@/components/admin/payroll/MonthlyPayrollAnalytics';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
@@ -441,6 +442,14 @@ const PayrollSummary = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Monthly Payroll Analytics */}
+      {payrollEntries.length > 0 && (
+        <MonthlyPayrollAnalytics 
+          payrollEntries={payrollEntries}
+          taxIncluded={taxIncluded}
+        />
+      )}
 
       {/* Filters & Options Section */}
       <Card>
