@@ -28,7 +28,7 @@ const TimesheetForm = () => {
     workWeeks,
     isWeekSubmitted,
     user,
-  } = useTimesheetForm(selectedWeek?.timesheet);
+  } = useTimesheetForm(selectedWeek);
 
   const isSubmitting = submitMutation.isPending;
   const { settings } = useCompanySettings();

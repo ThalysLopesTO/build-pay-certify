@@ -119,6 +119,7 @@ export const useTimesheetSubmission = () => {
       queryClient.invalidateQueries({ queryKey: ['timesheets'] });
       queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
       queryClient.invalidateQueries({ queryKey: ['weekly-hours-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['nearly-timesheets'] });
 
       toast({
         title: "Timesheet Submitted",

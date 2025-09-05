@@ -36,24 +36,13 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export const useTimesheetForm = (existingTimesheets?:any) => {
+export const useTimesheetForm = (selectedWeek?:any) => {
   const { user, session } = useAuth();
   const { settings } = useCompanySettings();
   const submitMutation = useTimesheetSubmission();
   const workWeeks = useWorkWeek();
-  // const { data: existingTimesheets = [] } = useExistingTimesheets();
-
-  // Initialize with current week/period
-  // const [selectedWeek, setSelectedWeek] = useState(() =>
-  //   workWeeks?.currentWeek || null
-  // );
-
-  // Fetch existing timesheet data for the selected week
-  // const { data: existingTimesheetData } = useTimesheetData({
-  //   userId: user?.id,
-  //   weekStartDate: selectedWeek?.weekStartDateString,
-  //   enabled: !!selectedWeek?.weekStartDateString && !!user?.id
-  // });
+  
+  const existingTimesheets = selectedWeek?.timesheet;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -136,7 +125,6 @@ export const useTimesheetForm = (existingTimesheets?:any) => {
 
       form.reset(formData);
     } else {
-      console.log("reset")
       form.reset({
         jobsiteId: '',
         mondayHours: 0,
