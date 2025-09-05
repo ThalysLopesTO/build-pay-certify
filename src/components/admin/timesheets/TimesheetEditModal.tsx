@@ -128,8 +128,6 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
       ei: tax.ei,
       hours_pay: calculatedTotalHours * timesheet.hourly_rate,
     };
-    console.log("💾 Saving updated timesheet:", updatedData);
-    return;
     onSave(updatedData, timesheet);
   };
 
