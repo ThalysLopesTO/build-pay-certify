@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,8 +7,6 @@ import { useAuth } from '../contexts/SupabaseAuthContext';
 import { useTimesheetSubmission } from './useTimesheetSubmission';
 import { useCompanySettings } from './useCompanySettings';
 import { useWorkWeek } from './useWorkWeek';
-import { useTimesheetData } from './useTimesheetData';
-import { useExistingTimesheets } from './useExistingTimesheets';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from './use-toast';
@@ -98,6 +96,7 @@ export const useTimesheetForm = (existingTimesheets?:any) => {
 
   // Load existing timesheet data when available
   React.useEffect(() => {
+    console.log({existingTimesheets})
     if (existingTimesheets) {
       const formData: FormData = {
         jobsiteId: existingTimesheets.jobsite_id || '',
@@ -137,15 +136,28 @@ export const useTimesheetForm = (existingTimesheets?:any) => {
 
       form.reset(formData);
     } else {
-      // Load from localStorage draft if no existing data
-      // try {
-      //   const raw = localStorage.getItem(draftKey);
-      //   if (raw) {
-      //     form.reset(JSON.parse(raw) as any);
-      //   }
-      // } catch (e) {
-      //   console.warn('Failed to restore draft', e);
-      // }
+      console.log("reset")
+      form.reset({
+        jobsiteId: '',
+        mondayHours: 0,
+        tuesdayHours: 0,
+        wednesdayHours: 0,
+        thursdayHours: 0,
+        fridayHours: 0,
+        saturdayHours: 0,
+        sundayHours: 0,
+        // Week 2 defaults
+        mondayHoursWeek2: 0,
+        tuesdayHoursWeek2: 0,
+        wednesdayHoursWeek2: 0,
+        thursdayHoursWeek2: 0,
+        fridayHoursWeek2: 0,
+        saturdayHoursWeek2: 0,
+        sundayHoursWeek2: 0,
+        additionalExpense: 0,
+        notes: '',
+        tax_included: false,
+      });
     }
   }, [existingTimesheets, form]);
 
