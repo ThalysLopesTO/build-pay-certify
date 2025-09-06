@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { InvoiceEmailSender } from './InvoiceEmailSender';
+import { MonthlyInvoiceAnalytics } from './invoices/MonthlyInvoiceAnalytics';
 
 const InvoiceTracker = () => {
   const navigate = useNavigate();
@@ -200,6 +201,14 @@ const InvoiceTracker = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Monthly Invoice Analytics */}
+      <MonthlyInvoiceAnalytics 
+        invoices={filteredInvoices}
+        statusFilter={statusFilter}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+      />
 
       {/* Filters and Actions */}
       <Card className="shadow-sm">
