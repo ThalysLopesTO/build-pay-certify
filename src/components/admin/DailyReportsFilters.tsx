@@ -8,6 +8,8 @@ import { CalendarIcon, Search, X, Filter } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { cn } from '@/lib/utils';
 import { useJobsites } from '@/hooks/useJobsites';
 
@@ -29,6 +31,8 @@ const DailyReportsFilters: React.FC<DailyReportsFiltersProps> = ({
   onClearFilters,
 }) => {
   const { data: jobsites = [] } = useJobsites();
+  const { settings: companySettings } = useCompanySettings();
+  const timezone = companySettings?.timezone || 'America/Toronto';
   const [dateFrom, setDateFrom] = React.useState<Date | undefined>(
     filters.date_from ? new Date(filters.date_from) : undefined
   );
@@ -38,17 +42,21 @@ const DailyReportsFilters: React.FC<DailyReportsFiltersProps> = ({
 
   const handleDateFromChange = (date: Date | undefined) => {
     setDateFrom(date);
+    // Convert the selected date to company timezone for filtering
+    const dateInTimezone = date ? formatInTimeZone(date, timezone, 'yyyy-MM-dd') : undefined;
     onFiltersChange({
       ...filters,
-      date_from: date ? format(date, 'yyyy-MM-dd') : undefined,
+      date_from: dateInTimezone,
     });
   };
 
   const handleDateToChange = (date: Date | undefined) => {
     setDateTo(date);
+    // Convert the selected date to company timezone for filtering
+    const dateInTimezone = date ? formatInTimeZone(date, timezone, 'yyyy-MM-dd') : undefined;
     onFiltersChange({
       ...filters,
-      date_to: date ? format(date, 'yyyy-MM-dd') : undefined,
+      date_to: dateInTimezone,
     });
   };
 

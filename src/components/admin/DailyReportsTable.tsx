@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import EmployeeAvatar from '@/components/ui/employee-avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent } from '@/components/ui/card';
 import { Eye, Camera, Download, FileText, MapPin, Clock, User, Edit, Lock } from 'lucide-react';
 import { DailyReport } from '@/hooks/useDailyReports';
@@ -60,6 +61,7 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
         address: companySettings?.company_address,
         phone: companySettings?.company_phone,
         email: companySettings?.company_email,
+        timezone: companySettings?.timezone,
       };
 
       await generateDailyReportPDF({
@@ -178,14 +180,29 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
                     
                     <TableCell className="py-4">
                       <div className="flex items-center gap-2">
-                        <Avatar className="h-7 w-7 bg-secondary">
-                          <AvatarFallback className="text-xs bg-secondary">
-                            {report.user_profiles ? 
-                              `${report.user_profiles.first_name?.charAt(0) || ''}${report.user_profiles.last_name?.charAt(0) || ''}` : 
-                              'UU'
-                            }
-                          </AvatarFallback>
-                        </Avatar>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="cursor-pointer">
+                                <EmployeeAvatar
+                                  photoUrl={report.user_profiles?.photo_url}
+                                  firstName={report.user_profiles?.first_name}
+                                  lastName={report.user_profiles?.last_name}
+                                  size="sm"
+                                  className="h-8 w-8"
+                                />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {report.user_profiles ? 
+                                  `${report.user_profiles.first_name} ${report.user_profiles.last_name}` : 
+                                  'Unknown User'
+                                }
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         <div>
                           <div className="text-sm font-medium">
                             {report.user_profiles ? 

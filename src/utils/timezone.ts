@@ -43,8 +43,9 @@ export const getReportDisplayDate = (
   reportDate: string,
   timezone: string = DEFAULT_TIMEZONE
 ): string => {
-  // For report dates, we want to show them as-is since they're date-only
-  return format(new Date(reportDate + 'T00:00:00'), 'MMM dd, yyyy');
+  // Convert the report date to the company timezone
+  const dateInTimezone = toZonedTime(new Date(reportDate + 'T00:00:00'), timezone);
+  return format(dateInTimezone, 'MMM dd, yyyy');
 };
 
 /**
