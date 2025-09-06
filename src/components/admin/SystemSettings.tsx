@@ -10,7 +10,8 @@ import { AdvancedControlsTab } from './system-settings/AdvancedControlsTab';
 import { AnalyticsControlTab } from './system-settings/AnalyticsControlTab';
 import EmailTemplatesTab from './system-settings/EmailTemplatesTab';
 import { ReminderLogsTab } from './system-settings/ReminderLogsTab';
-import { Building2, Users, Mail, DollarSign, Settings, BarChart3, FileText, Bell } from 'lucide-react';
+import MaterialCatalogManagement from './material-catalog/MaterialCatalogManagement';
+import { Building2, Users, Mail, DollarSign, Settings, BarChart3, FileText, Bell, Package } from 'lucide-react';
 const SystemSettings = () => {
   const [activeTab, setActiveTab] = useState('company');
   return <div className="max-w-6xl mx-auto space-y-6">
@@ -25,7 +26,7 @@ const SystemSettings = () => {
       <Card>
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="company" className="flex items-center space-x-2">
                 <Building2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Company</span>
@@ -42,6 +43,10 @@ const SystemSettings = () => {
               <TabsTrigger value="templates" className="flex items-center space-x-2">
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline">Templates</span>
+              </TabsTrigger>
+              <TabsTrigger value="materials" className="flex items-center space-x-2">
+                <Package className="h-4 w-4" />
+                <span className="hidden sm:inline">Materials</span>
               </TabsTrigger>
               <TabsTrigger value="financial" className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4" />
@@ -77,6 +82,10 @@ const SystemSettings = () => {
 
             <TabsContent value="templates" className="mt-6">
               <EmailTemplatesTab />
+            </TabsContent>
+
+            <TabsContent value="materials" className="mt-6">
+              <MaterialCatalogManagement />
             </TabsContent>
 
             <TabsContent value="financial" className="mt-6">
