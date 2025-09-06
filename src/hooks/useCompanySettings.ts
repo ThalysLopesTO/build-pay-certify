@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,7 @@ export interface CompanySettings {
   invoice_overdue_reminder_days: number; // Days after due date to send overdue reminder
   enable_quote_reminders: boolean; // Whether to enable quote reminders
   quote_reminder_days: number; // Days after quote date to send reminder
+  start_date?: string;
   created_at: string;
   updated_at: string;
 }
@@ -123,6 +125,7 @@ export const useCompanySettings = () => {
         title: 'Settings Updated',
         description: 'Company settings have been updated successfully.',
       });
+      updateSettingsMutation.reset();
     },
     onError: (error) => {
       console.error('Error updating company settings:', error);
@@ -131,6 +134,7 @@ export const useCompanySettings = () => {
         description: 'Failed to update company settings. Please try again.',
         variant: 'destructive',
       });
+      updateSettingsMutation.reset();
     },
   });
 

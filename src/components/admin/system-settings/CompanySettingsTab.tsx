@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useCompanySettings, type CompanySettings as CompanySettingsType } from '@/hooks/useCompanySettings';
 import CompanyBrandingSection from '../CompanyBrandingSection';
@@ -13,12 +14,18 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Building2, Calendar, Eye, Bell, Clock } from 'lucide-react';
+import { Building2, Eye, Bell, Clock, CalendarIcon } from 'lucide-react';
 import { TIMEZONE_OPTIONS } from '@/utils/timezone';
+import { Popover } from '@radix-ui/react-popover';
+import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
 
 export const CompanySettingsTab = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useCompanySettings();
-  
+  const [selectedDate, setSelectedDate] = useState<Date>()
+
   const form = useForm<Partial<CompanySettingsType>>({
     defaultValues: {
       company_name: settings?.company_name || '',
@@ -36,8 +43,14 @@ export const CompanySettingsTab = () => {
       enable_quote_reminders: settings?.enable_quote_reminders ?? true,
       quote_reminder_days: settings?.quote_reminder_days ?? 14,
       timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
+      start_date: settings.start_date || "",
     }
   });
+
+  useEffect(() => {
+    const date = settings?.start_date ? new Date(settings?.start_date) : new Date();
+    setSelectedDate(date);
+  }, [settings])
 
   React.useEffect(() => {
     if (settings) {
@@ -57,6 +70,7 @@ export const CompanySettingsTab = () => {
         enable_quote_reminders: settings.enable_quote_reminders ?? true,
         quote_reminder_days: settings.quote_reminder_days ?? 14,
         timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
+        start_date: settings.start_date || "",
       });
     }
   }, [settings, form]);
@@ -64,6 +78,11 @@ export const CompanySettingsTab = () => {
   const onSubmit = (data: Partial<CompanySettingsType>) => {
     updateSettings(data);
   };
+
+  function handleDateSelect(e: Date) {
+    form.setValue("start_date", e.toISOString());
+    setSelectedDate(e);
+  }
 
   if (isLoading) {
     return (
@@ -104,14 +123,14 @@ export const CompanySettingsTab = () => {
                 <CompanyBrandingSection />
               </CardContent>
             </Card>
-            
+
             {/* Company Information */}
-            <CompanyInformationForm 
+            <CompanyInformationForm
               form={form}
               onSubmit={onSubmit}
               isUpdating={isUpdating}
             />
-            
+
             {/* Company Rules & Policies */}
             <div className="space-y-4">
               <Card className="shadow-sm border-border">
@@ -125,13 +144,13 @@ export const CompanySettingsTab = () => {
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Payroll & Timesheet Settings */}
             <Card className="shadow-sm border-border">
               <CardHeader className="border-b border-border">
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <div className="p-2 bg-primary/10 rounded-lg">
-                    <Calendar className="h-5 w-5 text-primary" />
+                    <CalendarIcon className="h-5 w-5 text-primary" />
                   </div>
                   Payroll & Timesheet Settings
                 </CardTitle>
@@ -167,46 +186,77 @@ export const CompanySettingsTab = () => {
                   )}
                 />
 
-                {/* Week Ending Day */}
-                 <div className="max-w-sm">
-                   <WeekEndingDaySelector control={form.control} />
-                   <p className="text-sm text-muted-foreground mt-3">
-                     Select the day of the week when your work week ends for timesheet calculations.
-                   </p>
-                 </div>
+                <div className="max-w-sm">
+                  <FormLabel className="flex items-center space-x-2 text-foreground">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span>Start Date</span>
+                  </FormLabel>
 
-                 {/* Company Timezone */}
-                 <FormField
-                   control={form.control}
-                   name="timezone"
-                   render={({ field }) => (
-                     <FormItem className="max-w-sm">
-                       <FormLabel>Company Timezone</FormLabel>
-                       <Select
-                         value={field.value || 'America/Toronto'}
-                         onValueChange={(val) => {
-                           field.onChange(val);
-                           // Persist immediately
-                           updateSettings({ timezone: val });
-                         }}
-                       >
-                         <SelectTrigger className="bg-background border-border text-foreground min-h-11">
-                           <SelectValue placeholder="Select timezone" />
-                         </SelectTrigger>
-                         <SelectContent>
-                           {TIMEZONE_OPTIONS.map((tz) => (
-                             <SelectItem key={tz.value} value={tz.value}>
-                               {tz.label}
-                             </SelectItem>
-                           ))}
-                         </SelectContent>
-                       </Select>
-                       <FormDescription className="text-sm text-muted-foreground">
-                         All timestamps in Daily Reports, Timesheets, and other modules will be displayed in this timezone.
-                       </FormDescription>
-                     </FormItem>
-                   )}
-                 />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal mt-2",
+                          !form && "text-muted-foreground"
+                        )}
+                      >
+                        {selectedDate ? format(selectedDate, "PPP")
+                          : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={handleDateSelect}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Week Ending Day */}
+                <div className="max-w-sm">
+                  <WeekEndingDaySelector control={form.control} />
+                  <p className="text-sm text-muted-foreground mt-3">
+                    Select the day of the week when your work week ends for timesheet calculations.
+                  </p>
+                </div>
+
+                {/* Company Timezone */}
+                <FormField
+                  control={form.control}
+                  name="timezone"
+                  render={({ field }) => (
+                    <FormItem className="max-w-sm">
+                      <FormLabel>Company Timezone</FormLabel>
+                      <Select
+                        value={field.value || 'America/Toronto'}
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          // Persist immediately
+                          updateSettings({ timezone: val });
+                        }}
+                      >
+                        <SelectTrigger className="bg-background border-border text-foreground min-h-11">
+                          <SelectValue placeholder="Select timezone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIMEZONE_OPTIONS.map((tz) => (
+                            <SelectItem key={tz.value} value={tz.value}>
+                              {tz.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-sm text-muted-foreground">
+                        All timestamps in Daily Reports, Timesheets, and other modules will be displayed in this timezone.
+                      </FormDescription>
+                    </FormItem>
+                  )}
+                />
 
                 {/* Show Tax Breakdown */}
                 <FormField
@@ -269,7 +319,7 @@ export const CompanySettingsTab = () => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -293,7 +343,7 @@ export const CompanySettingsTab = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="invoice_overdue_reminder_days"
@@ -343,7 +393,7 @@ export const CompanySettingsTab = () => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className="max-w-md">
                     <FormField
                       control={form.control}
@@ -378,9 +428,9 @@ export const CompanySettingsTab = () => {
             {/* Save Button - Fixed at bottom */}
             <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border p-6 -mx-6">
               <div className="max-w-5xl mx-auto">
-                <Button 
-                  type="submit" 
-                  disabled={isUpdating} 
+                <Button
+                  type="submit"
+                  disabled={isUpdating}
                   size="lg"
                   className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all duration-200 hover:shadow-xl"
                 >

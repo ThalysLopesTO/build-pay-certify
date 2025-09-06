@@ -14,8 +14,10 @@ export const useWorkWeek = () => {
     const weekEndingIdx = settings.week_ending_day ?? 0; // 0=Sun
     const frequency = ((settings as any).timesheet_frequency ?? 'weekly') as 'weekly' | 'bi-weekly';
 
+    const startDate = settings.start_date ? new Date(settings.start_date) : new Date();
+
     // Build current + previous 2 periods
-    const periods = getPreviousPeriods({ today: new Date(), frequency, weekEndingIdx, count: 3 });
+    const periods = getPreviousPeriods({ today: startDate, frequency, weekEndingIdx, count: 3 });
 
     const weeks = periods.map((p, idx) => {
       const current = idx === 0;
