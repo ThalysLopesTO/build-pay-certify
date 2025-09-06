@@ -15,6 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import JobsiteSelect from './JobsiteSelect';
 import DatePickerField from './DatePickerField';
+import { MaterialOrderTable, OrderLineItem } from './material-request/MaterialOrderTable';
+import { MaterialOrderSummary } from './material-request/MaterialOrderSummary';
 import { useMaterialRequestSubmission } from '@/hooks/useMaterialRequestSubmission';
 import { useMaterialTakeoffs } from '@/hooks/useMaterialTakeoffs';
 
@@ -25,7 +27,7 @@ const formSchema = z.object({
   }),
   deliveryTime: z.string().min(1, 'Please enter the delivery time'),
   floorUnit: z.string().optional(),
-  materialList: z.string().min(1, 'Please enter the material list'),
+  materialList: z.string().optional(), // Now optional since we use lineItems
   takeoffItems: z.array(z.object({
     takeoffId: z.string(),
     requestedQty: z.number().min(0.01, 'Quantity must be greater than 0'),
@@ -44,6 +46,17 @@ const MaterialRequestFormEnhanced = () => {
   const [selectedJobsite, setSelectedJobsite] = useState<string>('');
   const [showTakeoffItems, setShowTakeoffItems] = useState(false);
   const [selectedTakeoffItems, setSelectedTakeoffItems] = useState<Record<string, number>>({});
+  const [lineItems, setLineItems] = useState<OrderLineItem[]>([
+    {
+      id: `line_${Date.now()}`,
+      quantity: 1,
+      unit: 'pcs',
+      materialName: '',
+      spec: '',
+      notes: '',
+      isCustom: true,
+    }
+  ]);
 
   const { data: takeoffs = [] } = useMaterialTakeoffs(selectedJobsite || undefined);
   const submitMutation = useMaterialRequestSubmission();
@@ -85,10 +98,29 @@ const MaterialRequestFormEnhanced = () => {
   };
 
   const onSubmit = (data: FormData) => {
+    // Validate line items
+    const validLineItems = lineItems.filter(item => item.materialName.trim());
+    if (validLineItems.length === 0) {
+      // Show error - need at least one line item
+      return;
+    }
+
     // Build takeoff items from selections
     const takeoffItems = Object.entries(selectedTakeoffItems).map(([takeoffId, quantity]) => ({
       takeoffId,
       requestedQty: quantity,
+    }));
+
+    // Transform line items for submission
+    const transformedLineItems = validLineItems.map((item, index) => ({
+      catalog_item_id: item.catalogItemId || null,
+      quantity: item.quantity,
+      unit: item.unit,
+      material_name: item.materialName,
+      spec_override: item.spec || null,
+      notes: item.notes || null,
+      is_custom: item.isCustom,
+      line_order: index,
     }));
 
     // Transform the data to match MaterialRequestData interface
@@ -97,13 +129,25 @@ const MaterialRequestFormEnhanced = () => {
       deliveryDate: data.deliveryDate,
       deliveryTime: data.deliveryTime,
       floorUnit: data.floorUnit,
-      materialList: data.materialList,
+      materialList: '', // Keep empty for backward compatibility
       takeoffItems,
+      lineItems: transformedLineItems,
+      hasLineItems: true,
     };
     
     submitMutation.mutate(requestData);
     form.reset();
     setSelectedTakeoffItems({});
+    // Reset line items to initial state
+    setLineItems([{
+      id: `line_${Date.now()}`,
+      quantity: 1,
+      unit: 'pcs',
+      materialName: '',
+      spec: '',
+      notes: '',
+      isCustom: true,
+    }]);
   };
 
   const getStatusColor = (status: string) => {
@@ -271,31 +315,28 @@ const MaterialRequestFormEnhanced = () => {
                 </div>
               )}
 
-              <FormField
-                control={form.control}
-                name="materialList"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <span>Material List</span>
-                      {Object.keys(selectedTakeoffItems).length > 0 && (
-                        <div className="flex items-center space-x-1 text-sm text-amber-600">
-                          <AlertTriangle className="h-4 w-4" />
-                          <span>Include any additional items not in takeoff</span>
-                        </div>
-                      )}
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter detailed list of additional materials needed..."
-                        className="min-h-[120px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Package className="h-5 w-5" />
+                  <h3 className="text-lg font-medium">Material Order</h3>
+                  {Object.keys(selectedTakeoffItems).length > 0 && (
+                    <div className="flex items-center space-x-1 text-sm text-amber-600">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>Add any additional items not in takeoff above</span>
+                    </div>
+                  )}
+                </div>
+                
+                <MaterialOrderTable
+                  lineItems={lineItems}
+                  onChange={setLineItems}
+                  errors={{}}
+                />
+                
+                {lineItems.length > 0 && (
+                  <MaterialOrderSummary lineItems={lineItems} />
                 )}
-              />
+              </div>
 
               <Button
                 type="submit"
