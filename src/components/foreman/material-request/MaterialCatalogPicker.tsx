@@ -23,17 +23,18 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data: catalogItems = [] } = useMaterialCatalog(searchTerm, undefined, true);
+  const { data: catalogItems = [], isLoading } = useMaterialCatalog(searchTerm, undefined, true);
 
   // Filter results based on search term with debouncing
   const filteredItems = catalogItems.filter(item =>
+    searchTerm.trim() === '' || // Show all if no search term
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (item.spec_size && item.spec_size.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()))
   ).slice(0, 10); // Limit to 10 results
 
   const hasResults = filteredItems.length > 0;
-  const showCustomOption = searchTerm.trim().length > 2 && 
+  const showCustomOption = searchTerm.trim().length > 0 && 
     !filteredItems.some(item => item.name.toLowerCase() === searchTerm.toLowerCase());
 
   useEffect(() => {
@@ -60,6 +61,10 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
     setSearchTerm(newValue);
     setIsOpen(true);
     onCustom(newValue); // Always treat as custom while typing
+  };
+
+  const handleInputFocus = () => {
+    setIsOpen(true);
   };
 
   const handleItemSelect = (item: MaterialCatalogItem) => {
@@ -115,22 +120,39 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
           ref={inputRef}
           value={searchTerm}
           onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
+          onFocus={handleInputFocus}
           onKeyDown={handleKeyDown}
           placeholder="Search materials or type custom..."
           className="pl-9"
         />
       </div>
 
-      {isOpen && (hasResults || showCustomOption) && (
-        <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-md max-h-60 overflow-y-auto">
-          {filteredItems.map((item, index) => (
+      {isOpen && (
+        <div className="absolute z-[100] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {isLoading && (
+            <div className="px-3 py-2 text-center text-muted-foreground">
+              Loading materials...
+            </div>
+          )}
+          
+          {!isLoading && !hasResults && !showCustomOption && searchTerm.trim() === '' && (
+            <div className="px-3 py-2 text-center text-muted-foreground">
+              Start typing to search materials...
+            </div>
+          )}
+          
+          {!isLoading && !hasResults && !showCustomOption && searchTerm.trim() !== '' && (
+            <div className="px-3 py-2 text-center text-muted-foreground">
+              No materials found. Type more to add as custom.
+            </div>
+          )}
+          {!isLoading && filteredItems.map((item, index) => (
             <div
               key={item.id}
               onClick={() => handleItemSelect(item)}
               className={cn(
-                "px-3 py-2 cursor-pointer hover:bg-muted/50",
-                highlightedIndex === index && "bg-muted"
+                "px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
+                highlightedIndex === index && "bg-gray-100 dark:bg-gray-700"
               )}
             >
               <div className="flex items-center justify-between">
@@ -153,12 +175,12 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
             </div>
           ))}
 
-          {showCustomOption && (
+          {!isLoading && showCustomOption && (
             <div
               onClick={handleCustomSelect}
               className={cn(
-                "px-3 py-2 cursor-pointer hover:bg-muted/50 border-t",
-                highlightedIndex === filteredItems.length && "bg-muted"
+                "px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-700",
+                highlightedIndex === filteredItems.length && "bg-gray-100 dark:bg-gray-700"
               )}
             >
               <div className="flex items-center gap-2">
