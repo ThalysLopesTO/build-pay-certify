@@ -25,16 +25,16 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load all materials when dropdown is open, filter when searching
+  // Load all materials when dropdown is open, filter client-side
   const { data: catalogItems = [], isLoading } = useMaterialCatalog(
-    isOpen ? (searchTerm.length >= 2 ? searchTerm : '') : undefined, undefined, true
+    isOpen ? '' : undefined, undefined, true
   );
 
   // Filter results - show all on focus, filter on search
   const filteredItems = catalogItems.filter(item =>
     searchTerm.length === 0 || 
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ).slice(0, 20); // Show more items
+  ).slice(0, 50); // Show more items for better browsing
 
   const hasResults = filteredItems.length > 0;
   const showCustomOption = searchTerm.trim().length > 0 && 
@@ -186,9 +186,9 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
             </div>
           )}
           
-          {!isLoading && !hasResults && !showCustomOption && searchTerm.trim() === '' && (
+          {!isLoading && !hasResults && !showCustomOption && (
             <div className="px-3 py-2 text-center text-muted-foreground">
-              Start typing to search materials...
+              No materials available
             </div>
           )}
           
