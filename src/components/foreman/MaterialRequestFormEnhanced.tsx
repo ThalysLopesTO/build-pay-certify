@@ -52,7 +52,6 @@ const MaterialRequestFormEnhanced = () => {
       quantity: 1,
       unit: 'pcs',
       materialName: '',
-      spec: '',
       notes: '',
       isCustom: true,
     }
@@ -117,7 +116,7 @@ const MaterialRequestFormEnhanced = () => {
       quantity: item.quantity,
       unit: item.unit,
       material_name: item.materialName,
-      spec_override: item.spec || null,
+      spec_override: null,
       notes: item.notes || null,
       is_custom: item.isCustom,
       line_order: index,
@@ -144,7 +143,6 @@ const MaterialRequestFormEnhanced = () => {
       quantity: 1,
       unit: 'pcs',
       materialName: '',
-      spec: '',
       notes: '',
       isCustom: true,
     }]);

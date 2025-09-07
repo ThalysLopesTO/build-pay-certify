@@ -16,7 +16,6 @@ export interface OrderLineItem {
   quantity: number;
   unit: string;
   materialName: string;
-  spec: string;
   notes: string;
   isCustom: boolean;
   catalogItemId?: string;
@@ -115,31 +114,6 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
         </div>
 
         <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1">Spec/Size</label>
-          {editingCell?.rowId === item.id && editingCell?.field === 'spec' ? (
-            <Input
-              value={item.spec}
-              onChange={(e) => updateLine(item.id, 'spec', e.target.value)}
-              onBlur={handleCellBlur}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === 'Escape') {
-                  handleCellBlur();
-                }
-              }}
-              autoFocus
-              className="h-9"
-            />
-          ) : (
-            <div
-              onClick={() => handleCellEdit(item.id, 'spec')}
-              className="min-h-[36px] p-2 rounded border cursor-text hover:bg-muted/50 text-sm flex items-center"
-            >
-              {item.spec || 'Tap to edit...'}
-            </div>
-          )}
-        </div>
-
-        <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">Notes</label>
           {editingCell?.rowId === item.id && editingCell?.field === 'notes' ? (
             <Textarea
@@ -174,7 +148,6 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
       quantity: 1,
       unit: 'pcs',
       materialName: '',
-      spec: '',
       notes: '',
       isCustom: true,
     };
@@ -205,7 +178,6 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
   const handleMaterialSelect = (id: string, catalogItem: any) => {
     updateLine(id, 'catalogItemId', catalogItem.id);
     updateLine(id, 'materialName', catalogItem.name);
-    updateLine(id, 'spec', catalogItem.spec_size || '');
     updateLine(id, 'unit', catalogItem.unit);
     updateLine(id, 'category', catalogItem.category);
     updateLine(id, 'isCustom', false);
@@ -251,8 +223,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                 <TableHead className="w-20">Qty</TableHead>
                 <TableHead className="w-24">Unit</TableHead>
                 <TableHead className="min-w-[300px]">Material</TableHead>
-                <TableHead className="min-w-[200px]">Spec/Size</TableHead>
-                <TableHead className="min-w-[150px]">Notes</TableHead>
+                <TableHead className="min-w-[200px]">Notes</TableHead>
                 <TableHead className="w-20">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -304,29 +275,6 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                         </Badge>
                       )}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {editingCell?.rowId === item.id && editingCell?.field === 'spec' ? (
-                      <Input
-                        value={item.spec}
-                        onChange={(e) => updateLine(item.id, 'spec', e.target.value)}
-                        onBlur={handleCellBlur}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === 'Escape') {
-                            handleCellBlur();
-                          }
-                        }}
-                        autoFocus
-                        className="w-full"
-                      />
-                    ) : (
-                      <div
-                        onClick={() => handleCellEdit(item.id, 'spec')}
-                        className="min-h-[2rem] p-2 rounded cursor-text hover:bg-muted/50 text-sm"
-                      >
-                        {item.spec || 'Click to edit...'}
-                      </div>
-                    )}
                   </TableCell>
                   <TableCell>
                     {editingCell?.rowId === item.id && editingCell?.field === 'notes' ? (

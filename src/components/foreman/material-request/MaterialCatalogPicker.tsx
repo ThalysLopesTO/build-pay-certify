@@ -25,15 +25,16 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data: catalogItems = [], isLoading } = useMaterialCatalog(searchTerm, undefined, true);
+  // Load all materials when dropdown is open, filter when searching
+  const { data: catalogItems = [], isLoading } = useMaterialCatalog(
+    isOpen ? (searchTerm.length >= 2 ? searchTerm : '') : undefined, undefined, true
+  );
 
-  // Filter results based on search term with debouncing
+  // Filter results - show all on focus, filter on search
   const filteredItems = catalogItems.filter(item =>
-    searchTerm.trim() === '' || // Show all if no search term
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.spec_size && item.spec_size.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()))
-  ).slice(0, 10); // Limit to 10 results
+    searchTerm.length === 0 || 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  ).slice(0, 20); // Show more items
 
   const hasResults = filteredItems.length > 0;
   const showCustomOption = searchTerm.trim().length > 0 && 
@@ -102,6 +103,10 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
   const handleInputFocus = () => {
     updateDropdownPosition();
     setIsOpen(true);
+    // Clear search term to show all materials initially
+    if (!searchTerm) {
+      setSearchTerm('');
+    }
   };
 
   const handleItemSelect = (item: MaterialCatalogItem) => {
@@ -202,22 +207,10 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
               )}
             >
               <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{item.name}</div>
-                  {item.spec_size && (
-                    <div className="text-sm text-muted-foreground">{item.spec_size}</div>
-                  )}
-                </div>
-                <div className="flex gap-1">
-                  <Badge variant="outline" className="text-xs">{item.unit}</Badge>
-                  <Badge variant="secondary" className="text-xs">{item.category}</Badge>
+                <div className="font-medium text-sm">
+                  {item.name} ({item.unit})
                 </div>
               </div>
-              {item.sku && (
-                <div className="text-xs text-muted-foreground font-mono mt-1">
-                  SKU: {item.sku}
-                </div>
-              )}
             </div>
           ))}
 
