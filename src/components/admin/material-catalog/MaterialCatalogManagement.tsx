@@ -3,16 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MaterialCatalogTable } from './MaterialCatalogTable';
+import { MaterialCategoryGroup } from './MaterialCategoryGroup';
 import { MaterialCatalogForm } from './MaterialCatalogForm';
+import { MaterialImportDialog } from './MaterialImportDialog';
 import { useMaterialCatalog, MATERIAL_CATEGORIES } from '@/hooks/useMaterialCatalog';
-import { Search, Plus, Package } from 'lucide-react';
+import { Search, Plus, Package, Upload } from 'lucide-react';
 
 const MaterialCatalogManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [showActiveOnly, setShowActiveOnly] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
   const { data: catalogItems = [], isLoading } = useMaterialCatalog(
@@ -45,10 +47,16 @@ const MaterialCatalogManagement = () => {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle>Catalog Items</CardTitle>
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Material
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowImport(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+              <Button onClick={() => setShowForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Material
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -57,7 +65,7 @@ const MaterialCatalogManagement = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name, spec, or SKU..."
+                placeholder="Search by name, category, or SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
@@ -85,12 +93,35 @@ const MaterialCatalogManagement = () => {
             </Button>
           </div>
 
-          {/* Table */}
-          <MaterialCatalogTable
-            items={catalogItems}
-            isLoading={isLoading}
-            onEdit={handleEdit}
-          />
+          {/* Category Groups */}
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(
+                catalogItems.reduce((groups, item) => {
+                  const category = item.category;
+                  if (!groups[category]) groups[category] = [];
+                  groups[category].push(item);
+                  return groups;
+                }, {} as Record<string, typeof catalogItems>)
+              )
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([category, items]) => (
+                  <MaterialCategoryGroup
+                    key={category}
+                    category={category}
+                    items={items}
+                    onEdit={handleEdit}
+                  />
+                ))
+              }
+            </div>
+          )}
 
           {/* Empty State */}
           {!isLoading && catalogItems.length === 0 && (
@@ -121,6 +152,13 @@ const MaterialCatalogManagement = () => {
           onClose={handleFormClose}
         />
       )}
+
+      {/* Import Modal */}
+      <MaterialImportDialog
+        open={showImport}
+        onOpenChange={setShowImport}
+        existingItems={catalogItems}
+      />
     </div>
   );
 };

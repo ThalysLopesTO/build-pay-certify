@@ -21,7 +21,6 @@ export interface MaterialCatalogItem {
 export interface CreateMaterialCatalogItem {
   sku?: string;
   name: string;
-  spec_size?: string;
   unit: string;
   category: string;
   notes?: string;
@@ -56,7 +55,7 @@ export const useMaterialCatalog = (searchTerm?: string, category?: string, activ
       }
 
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,spec_size.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%`);
+        query = query.or(`name.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`);
       }
 
       const { data, error } = await query;

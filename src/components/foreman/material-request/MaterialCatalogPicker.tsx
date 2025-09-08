@@ -197,22 +197,51 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
               No materials found. Type more to add as custom.
             </div>
           )}
-          {!isLoading && filteredItems.map((item, index) => (
-            <div
-              key={item.id}
-              onClick={() => handleItemSelect(item)}
-              className={cn(
-                "px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
-                highlightedIndex === index && "bg-gray-100 dark:bg-gray-700"
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <div className="font-medium text-sm">
-                  {item.name} ({item.unit})
-                </div>
-              </div>
+          {!isLoading && hasResults && (
+            <div className="max-h-48 overflow-y-auto">
+              {Object.entries(
+                filteredItems.reduce((groups, item) => {
+                  const category = item.category;
+                  if (!groups[category]) groups[category] = [];
+                  groups[category].push(item);
+                  return groups;
+                }, {} as Record<string, typeof filteredItems>)
+              )
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([category, items]) => (
+                  <div key={category}>
+                    <div className="px-3 py-1 text-xs font-medium text-muted-foreground bg-muted/50 sticky top-0">
+                      {category} ({items.length})
+                    </div>
+                    {items.map((item, categoryIndex) => {
+                      const globalIndex = filteredItems.findIndex(i => i.id === item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => handleItemSelect(item)}
+                          className={cn(
+                            "px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
+                            highlightedIndex === globalIndex && "bg-gray-100 dark:bg-gray-700"
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-sm">
+                              {item.name} ({item.unit})
+                            </div>
+                            {item.sku && (
+                              <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                                {item.sku}
+                              </code>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))
+              }
             </div>
-          ))}
+          )}
 
           {!isLoading && showCustomOption && (
             <div

@@ -26,7 +26,6 @@ import { useMaterialCatalogMutations, MaterialCatalogItem, MATERIAL_UNITS, MATER
 const formSchema = z.object({
   sku: z.string().optional(),
   name: z.string().min(1, 'Name is required'),
-  spec_size: z.string().optional(),
   unit: z.string().min(1, 'Unit is required'),
   category: z.string().min(1, 'Category is required'),
   notes: z.string().optional(),
@@ -52,7 +51,6 @@ export const MaterialCatalogForm: React.FC<MaterialCatalogFormProps> = ({
     defaultValues: {
       sku: item?.sku || '',
       name: item?.name || '',
-      spec_size: item?.spec_size || '',
       unit: item?.unit || 'pcs',
       category: item?.category || '',
       notes: item?.notes || '',
@@ -72,7 +70,6 @@ export const MaterialCatalogForm: React.FC<MaterialCatalogFormProps> = ({
         unit: data.unit,
         category: data.category,
         sku: data.sku,
-        spec_size: data.spec_size,
         notes: data.notes,
         is_active: data.is_active,
       });
@@ -92,19 +89,22 @@ export const MaterialCatalogForm: React.FC<MaterialCatalogFormProps> = ({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Material Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Metal Stud" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Material Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Drywall 5/8&quot; x 9'" {...field} />
+                      </FormControl>
+                      <div className="text-xs text-muted-foreground">
+                        Include size/specs in the name (e.g., "Metal Stud 3 5/8&quot; 20G")
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
               <FormField
                 control={form.control}
@@ -121,19 +121,6 @@ export const MaterialCatalogForm: React.FC<MaterialCatalogFormProps> = ({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="spec_size"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Specification / Size</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., 3 5/8, 18G, 9'" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
