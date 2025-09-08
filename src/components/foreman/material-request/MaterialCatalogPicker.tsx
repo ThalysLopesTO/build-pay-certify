@@ -28,9 +28,9 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load materials filtered by category when dropdown is open
+  // Load materials when dropdown is open and category is selected
   const { data: catalogItems = [], isLoading } = useMaterialCatalog(
-    isOpen ? searchTerm : undefined, 
+    isOpen && selectedCategory ? (searchTerm || '') : undefined, 
     selectedCategory || undefined, 
     true
   );
@@ -126,8 +126,8 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
   const handleInputFocus = () => {
     updateDropdownPosition();
     setIsOpen(true);
-    // Clear search term to show all materials initially
-    if (!searchTerm) {
+    // Show all materials from category when focused
+    if (selectedCategory && !searchTerm) {
       setSearchTerm('');
     }
   };
