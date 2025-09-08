@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { MATERIAL_UNITS } from '@/hooks/useMaterialCatalog';
 
+// Material import utilities for Excel/CSV processing
 export interface ImportedMaterial {
   name: string;
   category: string;
