@@ -83,7 +83,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
               <SelectTrigger className="h-9">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white z-50">
                 {MATERIAL_UNITS.map((unit) => (
                   <SelectItem key={unit} value={unit}>
                     {unit}
@@ -103,7 +103,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
             <SelectTrigger className="h-9">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white z-50">
               {categories.map((category) => (
                 <SelectItem key={category.id} value={category.name}>
                   {category.name}
@@ -280,7 +280,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                       <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white z-50">
                         {MATERIAL_UNITS.map((unit) => (
                           <SelectItem key={unit} value={unit}>
                             {unit}
@@ -297,7 +297,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white z-50">
                         {categories.map((category) => (
                           <SelectItem key={category.id} value={category.name}>
                             {category.name}
