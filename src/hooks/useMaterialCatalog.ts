@@ -77,10 +77,17 @@ export const useMaterialCatalogMutations = () => {
     mutationFn: async (item: CreateMaterialCatalogItem) => {
       if (!user?.companyId || !user?.id) throw new Error('User not authenticated');
 
+      // Ensure empty strings are converted to null to avoid unique constraint violations
+      const processedItem = {
+        ...item,
+        sku: item.sku?.trim() || null,
+        notes: item.notes?.trim() || null,
+      };
+
       const { data, error } = await supabase
         .from('material_catalog_items')
         .insert({
-          ...item,
+          ...processedItem,
           company_id: user.companyId,
           created_by: user.id,
         })
@@ -110,9 +117,16 @@ export const useMaterialCatalogMutations = () => {
     mutationFn: async (item: UpdateMaterialCatalogItem) => {
       const { id, ...updateData } = item;
       
+      // Ensure empty strings are converted to null to avoid unique constraint violations
+      const processedUpdateData = {
+        ...updateData,
+        sku: updateData.sku?.trim() || null,
+        notes: updateData.notes?.trim() || null,
+      };
+      
       const { data, error } = await supabase
         .from('material_catalog_items')
-        .update(updateData)
+        .update(processedUpdateData)
         .eq('id', id)
         .select()
         .single();

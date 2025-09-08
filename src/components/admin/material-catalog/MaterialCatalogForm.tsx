@@ -62,19 +62,26 @@ export const MaterialCatalogForm: React.FC<MaterialCatalogFormProps> = ({
   });
 
   const onSubmit = (data: FormData) => {
+    // Convert empty SKU string to null to avoid unique constraint violations
+    const processedData = {
+      ...data,
+      sku: data.sku?.trim() || null,
+      notes: data.notes?.trim() || null,
+    };
+
     if (isEdit && item) {
       updateItem({
         id: item.id,
-        ...data,
+        ...processedData,
       });
     } else {
       createItem({
-        name: data.name,
-        unit: data.unit,
-        category: data.category,
-        sku: data.sku,
-        notes: data.notes,
-        is_active: data.is_active,
+        name: processedData.name,
+        unit: processedData.unit,
+        category: processedData.category,
+        sku: processedData.sku,
+        notes: processedData.notes,
+        is_active: processedData.is_active,
       });
     }
     onClose();
