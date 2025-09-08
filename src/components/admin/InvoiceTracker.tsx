@@ -9,6 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useJobsites } from '@/hooks/useJobsites';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import { generateBrandedInvoicePDF } from './BrandedInvoicePDF';
+import { useToast } from '@/hooks/use-toast';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
 import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2 } from 'lucide-react';
@@ -23,6 +27,9 @@ const InvoiceTracker = () => {
   const { user } = useAuth();
   const { invoices, isLoading, updateInvoiceStatus, deleteInvoice, isDeleting } = useInvoices();
   const { data: jobsites } = useJobsites();
+  const { settings: companySettings } = useCompanySettings();
+  const { logoUrl } = useCompanyLogo();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [jobsiteFilter, setJobsiteFilter] = useState('all');
@@ -91,6 +98,33 @@ const InvoiceTracker = () => {
 
   const handleViewInvoice = (invoiceId: string) => {
     navigate(`/invoices/${invoiceId}/preview`);
+  };
+
+  const handleDownloadPDF = async (invoice: Invoice) => {
+    try {
+      if (!companySettings) {
+        toast({
+          title: "Error",
+          description: "Company settings not loaded. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await generateBrandedInvoicePDF(invoice, companySettings, logoUrl);
+      
+      toast({
+        title: "Success",
+        description: "Invoice PDF downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewDetails = (invoice: Invoice) => {
@@ -466,8 +500,8 @@ const InvoiceTracker = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleViewInvoice(invoice.id)}
-                          title="View Full Invoice"
+                          onClick={() => handleDownloadPDF(invoice)}
+                          title="Download PDF"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
