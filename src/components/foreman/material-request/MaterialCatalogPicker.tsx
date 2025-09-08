@@ -10,12 +10,14 @@ import { cn } from '@/lib/utils';
 
 interface MaterialCatalogPickerProps {
   value: string;
+  selectedCategory?: string;
   onSelect: (item: MaterialCatalogItem) => void;
   onCustom: (materialName: string) => void;
 }
 
 export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
   value,
+  selectedCategory,
   onSelect,
   onCustom,
 }) => {
@@ -26,17 +28,21 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load all materials when dropdown is open, filter client-side
+  // Load materials filtered by category when dropdown is open
   const { data: catalogItems = [], isLoading } = useMaterialCatalog(
-    isOpen ? '' : undefined, undefined, true
+    isOpen ? searchTerm : undefined, 
+    selectedCategory || undefined, 
+    true
   );
   const { data: categories = [] } = useMaterialCategories();
 
-  // Filter results - show all on focus, filter on search
-  const filteredItems = catalogItems.filter(item =>
-    searchTerm.length === 0 || 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ).slice(0, 50); // Show more items for better browsing
+  // Filter results - show category items on focus, filter on search
+  const filteredItems = catalogItems.filter(item => {
+    const matchesSearch = searchTerm.length === 0 || 
+      item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || item.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  }).slice(0, 50);
 
   // Group items by category, ensuring proper ordering
   const groupedItems = filteredItems.reduce((acc, item) => {
@@ -181,8 +187,9 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           onKeyDown={handleKeyDown}
-          placeholder="Search materials or type custom..."
+          placeholder={selectedCategory ? `Search ${selectedCategory} materials...` : "Select category first"}
           className="pl-9"
+          disabled={!selectedCategory}
         />
       </div>
 
@@ -203,18 +210,24 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
             </div>
           )}
           
-          {!isLoading && !hasResults && !showCustomOption && (
+          {!selectedCategory && (
             <div className="px-3 py-2 text-center text-muted-foreground">
-              No materials available
+              Please select a category first to view materials
             </div>
           )}
           
-          {!isLoading && !hasResults && !showCustomOption && searchTerm.trim() !== '' && (
+          {selectedCategory && !isLoading && !hasResults && !showCustomOption && (
+            <div className="px-3 py-2 text-center text-muted-foreground">
+              No materials found in {selectedCategory}
+            </div>
+          )}
+          
+          {selectedCategory && !isLoading && !hasResults && searchTerm.trim() !== '' && (
             <div className="px-3 py-2 text-center text-muted-foreground">
               No materials found. Type more to add as custom.
             </div>
           )}
-          {!isLoading && hasResults && (
+          {selectedCategory && !isLoading && hasResults && (
             <div className="max-h-48 overflow-y-auto">
               {sortedCategories.map((category) => (
                 <div key={category}>
@@ -250,7 +263,7 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
             </div>
           )}
 
-          {!isLoading && showCustomOption && (
+          {selectedCategory && !isLoading && showCustomOption && (
             <div
               onClick={handleCustomSelect}
               className={cn(

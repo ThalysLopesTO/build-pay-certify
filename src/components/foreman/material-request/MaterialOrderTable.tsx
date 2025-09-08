@@ -10,16 +10,17 @@ import { MaterialOrderSummary } from './MaterialOrderSummary';
 import { Plus, Trash2, Copy } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MATERIAL_UNITS } from '@/hooks/useMaterialCatalog';
+import { useMaterialCategories } from '@/hooks/useMaterialCategories';
 
 export interface OrderLineItem {
   id: string;
   quantity: number;
   unit: string;
+  category: string;
   materialName: string;
   notes: string;
   isCustom: boolean;
   catalogItemId?: string;
-  category?: string;
 }
 
 interface MaterialOrderTableProps {
@@ -34,6 +35,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
   errors = {},
 }) => {
   const [editingCell, setEditingCell] = useState<{ rowId: string; field: string } | null>(null);
+  const { data: categories = [] } = useMaterialCategories();
 
   // Mobile card component
   const MobileItemCard: React.FC<{ item: OrderLineItem; index: number }> = ({ item, index }) => (
@@ -93,9 +95,29 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
         </div>
 
         <div>
+          <label className="text-xs font-medium text-muted-foreground block mb-1">Category</label>
+          <Select
+            value={item.category}
+            onValueChange={(value) => handleCategorySelect(item.id, value)}
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.name}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">Material</label>
           <MaterialCatalogPicker
             value={item.materialName}
+            selectedCategory={item.category}
             onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
             onCustom={(materialName) => handleCustomMaterial(item.id, materialName)}
           />
@@ -147,6 +169,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
       id: `line_${Date.now()}`,
       quantity: 1,
       unit: 'pcs',
+      category: '',
       materialName: '',
       notes: '',
       isCustom: true,
@@ -173,6 +196,14 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
     onChange(lineItems.map(item => 
       item.id === id ? { ...item, [field]: value } : item
     ));
+  };
+
+  const handleCategorySelect = (id: string, category: string) => {
+    updateLine(id, 'category', category);
+    // Clear material selection when category changes
+    updateLine(id, 'materialName', '');
+    updateLine(id, 'catalogItemId', undefined);
+    updateLine(id, 'isCustom', true);
   };
 
   const handleMaterialSelect = (id: string, catalogItem: any) => {
@@ -222,7 +253,8 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
               <TableRow>
                 <TableHead className="w-20">Qty</TableHead>
                 <TableHead className="w-24">Unit</TableHead>
-                <TableHead className="min-w-[300px]">Material</TableHead>
+                <TableHead className="w-32">Category</TableHead>
+                <TableHead className="min-w-[250px]">Material</TableHead>
                 <TableHead className="min-w-[200px]">Notes</TableHead>
                 <TableHead className="w-20">Actions</TableHead>
               </TableRow>
@@ -258,9 +290,27 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                     </Select>
                   </TableCell>
                   <TableCell>
+                    <Select
+                      value={item.category}
+                      onValueChange={(value) => handleCategorySelect(item.id, value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.name}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
                     <div className="space-y-2">
                       <MaterialCatalogPicker
                         value={item.materialName}
+                        selectedCategory={item.category}
                         onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
                         onCustom={(materialName) => handleCustomMaterial(item.id, materialName)}
                       />
