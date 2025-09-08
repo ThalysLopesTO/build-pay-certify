@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { MaterialCatalogPicker } from './MaterialCatalogPicker';
+import { MaterialDropdownSelector } from './MaterialDropdownSelector';
 import { MaterialOrderSummary } from './MaterialOrderSummary';
 import { Plus, Trash2, Copy } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -115,11 +115,11 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
 
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">Material</label>
-          <MaterialCatalogPicker
+          <MaterialDropdownSelector
             value={item.materialName}
             selectedCategory={item.category}
             onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
-            onCustom={(materialName) => handleCustomMaterial(item.id, materialName)}
+            onCustom={() => handleCustomMaterial(item.id, '')}
           />
           <div className="flex gap-2 mt-2">
             {item.isCustom && item.materialName && (
@@ -313,11 +313,11 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="space-y-2">
-                      <MaterialCatalogPicker
+                      <MaterialDropdownSelector
                         value={item.materialName}
                         selectedCategory={item.category}
                         onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
-                        onCustom={(materialName) => handleCustomMaterial(item.id, materialName)}
+                        onCustom={() => handleCustomMaterial(item.id, '')}
                       />
                       {item.isCustom && item.materialName && (
                         <Badge variant="outline" className="text-xs">
