@@ -199,11 +199,16 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
   };
 
   const handleCategorySelect = (id: string, category: string) => {
-    updateLine(id, 'category', category);
-    // Clear material selection when category changes
-    updateLine(id, 'materialName', '');
-    updateLine(id, 'catalogItemId', undefined);
-    updateLine(id, 'isCustom', true);
+    // Batch all updates in a single state change to prevent race conditions
+    onChange(lineItems.map(item => 
+      item.id === id ? { 
+        ...item, 
+        category, 
+        materialName: '', 
+        catalogItemId: undefined, 
+        isCustom: true 
+      } : item
+    ));
   };
 
   const handleMaterialSelect = (id: string, catalogItem: any) => {
