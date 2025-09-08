@@ -3,6 +3,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AppProviders } from "@/providers/AppProviders";
 import { EmployeeProvider } from "@/contexts/EmployeeContext";
 import { GlobalToasts } from "@/components/common/GlobalToasts";
@@ -119,6 +120,7 @@ const App: React.FC = () => {
           <Toaster />
           <SonnerToaster />
           <IOSInstallTip />
+          <SpeedInsights />
         </EmployeeProvider>
       </AppProviders>
     </BrowserRouter>
