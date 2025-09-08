@@ -11,14 +11,17 @@ import { useInvoices } from '@/hooks/useInvoices';
 import { useJobsites } from '@/hooks/useJobsites';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
-import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock } from 'lucide-react';
+import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { InvoiceEmailSender } from './InvoiceEmailSender';
+import { InvoiceDeleteConfirmDialog } from './InvoiceDeleteConfirmDialog';
 import { MonthlyInvoiceAnalytics } from './invoices/MonthlyInvoiceAnalytics';
 
 const InvoiceTracker = () => {
   const navigate = useNavigate();
-  const { invoices, isLoading, updateInvoiceStatus } = useInvoices();
+  const { user } = useAuth();
+  const { invoices, isLoading, updateInvoiceStatus, deleteInvoice, isDeleting } = useInvoices();
   const { data: jobsites } = useJobsites();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -28,6 +31,8 @@ const InvoiceTracker = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [emailInvoice, setEmailInvoice] = useState<Invoice | null>(null);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -137,6 +142,21 @@ const InvoiceTracker = () => {
     setDateFrom('');
     setDateTo('');
   };
+
+  const handleDeleteInvoice = (invoice: Invoice) => {
+    setInvoiceToDelete(invoice);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteInvoice = () => {
+    if (invoiceToDelete) {
+      deleteInvoice(invoiceToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setInvoiceToDelete(null);
+    }
+  };
+
+  const canDeleteInvoices = user?.role && ['admin', 'super_admin', 'management'].includes(user.role);
 
   if (isLoading) {
     return (
@@ -451,6 +471,17 @@ const InvoiceTracker = () => {
                         >
                           <Download className="h-4 w-4" />
                         </Button>
+
+                        {canDeleteInvoices && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteInvoice(invoice)}
+                            title="Delete Invoice"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -482,6 +513,15 @@ const InvoiceTracker = () => {
           onClose={handleCloseEmailDialog}
         />
       )}
+
+      {/* Invoice Delete Confirmation Dialog */}
+      <InvoiceDeleteConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDeleteInvoice}
+        invoice={invoiceToDelete}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };
