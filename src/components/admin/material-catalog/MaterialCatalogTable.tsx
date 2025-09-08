@@ -59,7 +59,6 @@ export const MaterialCatalogTable: React.FC<MaterialCatalogTableProps> = ({
             <TableHead>SKU</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Spec/Size</TableHead>
-            <TableHead>Unit</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -76,9 +75,6 @@ export const MaterialCatalogTable: React.FC<MaterialCatalogTableProps> = ({
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {item.spec_size || '—'}
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline">{item.unit}</Badge>
               </TableCell>
               <TableCell>
                 <Badge variant="secondary">{item.category}</Badge>

@@ -80,7 +80,20 @@ export const parseFile = async (file: File): Promise<any[][]> => {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
         
-        resolve(jsonData as any[][]);
+        // Filter out empty rows - only keep rows that have at least one non-empty cell
+        const filteredData = (jsonData as any[][]).filter((row, index) => {
+          // Always keep the header row (index 0)
+          if (index === 0) return true;
+          
+          // For data rows, check if there's at least one non-empty cell
+          return row.some(cell => 
+            cell !== undefined && 
+            cell !== null && 
+            String(cell).trim() !== ''
+          );
+        });
+        
+        resolve(filteredData);
       } catch (error) {
         reject(error);
       }
@@ -111,24 +124,31 @@ export const mapColumns = (headers: string[], data: any[][], validCategories: st
     else if (normalizedHeader.includes('active')) headerMap.active = index;
   });
 
-  return data.slice(1).map((row, index) => {
-    const material: ImportedMaterial = {
-      name: String(row[headerMap.name] || '').trim(),
-      category: String(row[headerMap.category] || '').trim(),
-      unit: String(row[headerMap.unit] || '').trim().toLowerCase(),
-      sku: headerMap.sku !== undefined ? String(row[headerMap.sku] || '').trim() : undefined,
-      notes: headerMap.notes !== undefined ? String(row[headerMap.notes] || '').trim() : undefined,
-      is_active: parseBoolean(row[headerMap.active])
-    };
+  return data.slice(1)
+    .filter((row) => {
+      // Filter out rows where essential fields are empty
+      const name = String(row[headerMap.name] || '').trim();
+      const category = String(row[headerMap.category] || '').trim();
+      return name && category; // Only process rows with both name and category
+    })
+    .map((row, index) => {
+      const material: ImportedMaterial = {
+        name: String(row[headerMap.name] || '').trim(),
+        category: String(row[headerMap.category] || '').trim(),
+        unit: String(row[headerMap.unit] || '').trim().toLowerCase(),
+        sku: headerMap.sku !== undefined ? String(row[headerMap.sku] || '').trim() : undefined,
+        notes: headerMap.notes !== undefined ? String(row[headerMap.notes] || '').trim() : undefined,
+        is_active: parseBoolean(row[headerMap.active])
+      };
 
-    const validation = validateMaterial(material, validCategories);
+      const validation = validateMaterial(material, validCategories);
 
-    return {
-      row: index + 2, // +2 because we sliced headers and arrays are 0-indexed
-      data: material,
-      validation
-    };
-  });
+      return {
+        row: index + 2, // +2 because we sliced headers and arrays are 0-indexed
+        data: material,
+        validation
+      };
+    });
 };
 
 // Validate individual material

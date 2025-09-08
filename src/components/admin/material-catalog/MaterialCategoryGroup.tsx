@@ -77,9 +77,6 @@ export const MaterialCategoryGroup: React.FC<MaterialCategoryGroupProps> = ({
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-3">
                     <span className="font-medium">{item.name}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {item.unit}
-                    </Badge>
                     {item.sku && (
                       <code className="text-xs bg-muted px-2 py-1 rounded">
                         {item.sku}
