@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useMaterialCategories } from './useMaterialCategories';
 
 export interface MaterialCatalogItem {
   id: string;
@@ -175,8 +176,8 @@ export const MATERIAL_UNITS = [
   'lb', 'kg', 'gal', 'L', 'tube', 'pack', 'case', 'pail', 'each'
 ];
 
-export const MATERIAL_CATEGORIES = [
-  'Framing', 'Drywall', 'Taping', 'Fasteners', 'Insulation', 'Flooring',
-  'Electrical', 'Plumbing', 'HVAC', 'Roofing', 'Siding', 'Windows & Doors',
-  'Paint & Finishes', 'Hardware', 'Tools', 'Safety', 'Concrete', 'Other'
-];
+// Hook to get dynamic categories for the current company
+export const useMaterialCategoriesOptions = () => {
+  const { data: categories = [] } = useMaterialCategories();
+  return categories.map(cat => cat.name);
+};

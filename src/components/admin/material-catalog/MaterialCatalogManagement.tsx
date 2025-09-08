@@ -6,7 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MaterialCategoryGroup } from './MaterialCategoryGroup';
 import { MaterialCatalogForm } from './MaterialCatalogForm';
 import { MaterialImportDialog } from './MaterialImportDialog';
-import { useMaterialCatalog, MATERIAL_CATEGORIES } from '@/hooks/useMaterialCatalog';
+import { useMaterialCatalog, useMaterialCategoriesOptions } from '@/hooks/useMaterialCatalog';
+import { CategoryManagement } from './CategoryManagement';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Plus, Package, Upload } from 'lucide-react';
 
 const MaterialCatalogManagement = () => {
@@ -16,6 +18,8 @@ const MaterialCatalogManagement = () => {
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  
+  const categories = useMaterialCategoriesOptions();
 
   const { data: catalogItems = [], isLoading } = useMaterialCatalog(
     searchTerm, 
@@ -43,7 +47,18 @@ const MaterialCatalogManagement = () => {
         </div>
       </div>
 
-      <Card>
+      <Tabs defaultValue="catalog" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="catalog">Material Catalog</TabsTrigger>
+          <TabsTrigger value="categories">Manage Categories</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="categories" className="space-y-4">
+          <CategoryManagement />
+        </TabsContent>
+        
+        <TabsContent value="catalog" className="space-y-4">
+          <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle>Catalog Items</CardTitle>
@@ -77,7 +92,7 @@ const MaterialCatalogManagement = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {MATERIAL_CATEGORIES.map((category) => (
+                {categories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}
                   </SelectItem>
@@ -143,7 +158,9 @@ const MaterialCatalogManagement = () => {
             </div>
           )}
         </CardContent>
-      </Card>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Form Modal */}
       {showForm && (

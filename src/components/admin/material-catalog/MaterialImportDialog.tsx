@@ -12,6 +12,7 @@ import { Upload, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MaterialImportPreview } from './MaterialImportPreview';
 import { parseFile, generateTemplate, mapColumns, ValidatedRow } from '@/utils/materialImportUtils';
+import { useMaterialCategoriesOptions } from '@/hooks/useMaterialCatalog';
 
 interface MaterialImportDialogProps {
   open: boolean;
@@ -27,6 +28,7 @@ export const MaterialImportDialog: React.FC<MaterialImportDialogProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [validatedRows, setValidatedRows] = useState<ValidatedRow[]>([]);
   const [step, setStep] = useState<'upload' | 'preview'>('upload');
+  const categories = useMaterialCategoriesOptions();
   const { toast } = useToast();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,7 +63,7 @@ export const MaterialImportDialog: React.FC<MaterialImportDialogProps> = ({
       }
 
       const headers = data[0].map(h => String(h).trim());
-      const mappedData = mapColumns(headers, data);
+      const mappedData = mapColumns(headers, data, categories);
       
       setValidatedRows(mappedData);
       setStep('preview');

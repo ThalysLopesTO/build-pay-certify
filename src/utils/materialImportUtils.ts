@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { MATERIAL_UNITS, MATERIAL_CATEGORIES } from '@/hooks/useMaterialCatalog';
+import { MATERIAL_UNITS } from '@/hooks/useMaterialCatalog';
 
 export interface ImportedMaterial {
   name: string;
@@ -96,7 +96,7 @@ export const parseFile = async (file: File): Promise<any[][]> => {
 };
 
 // Map columns to our expected format
-export const mapColumns = (headers: string[], data: any[][]): ValidatedRow[] => {
+export const mapColumns = (headers: string[], data: any[][], validCategories: string[] = []): ValidatedRow[] => {
   const headerMap: Record<string, number> = {};
   
   // Auto-detect column mapping (case-insensitive)
@@ -120,7 +120,7 @@ export const mapColumns = (headers: string[], data: any[][]): ValidatedRow[] => 
       is_active: parseBoolean(row[headerMap.active])
     };
 
-    const validation = validateMaterial(material);
+    const validation = validateMaterial(material, validCategories);
 
     return {
       row: index + 2, // +2 because we sliced headers and arrays are 0-indexed
@@ -131,7 +131,7 @@ export const mapColumns = (headers: string[], data: any[][]): ValidatedRow[] => 
 };
 
 // Validate individual material
-export const validateMaterial = (material: ImportedMaterial): ValidationResult => {
+export const validateMaterial = (material: ImportedMaterial, validCategories: string[] = []): ValidationResult => {
   const messages: string[] = [];
   let status: 'ok' | 'warning' | 'error' = 'ok';
 
@@ -144,9 +144,9 @@ export const validateMaterial = (material: ImportedMaterial): ValidationResult =
   if (!material.category) {
     messages.push('Category is required');
     status = 'error';
-  } else if (!MATERIAL_CATEGORIES.includes(material.category)) {
-    messages.push(`Invalid category. Must be one of: ${MATERIAL_CATEGORIES.join(', ')}`);
-    status = 'error';
+  } else if (validCategories.length > 0 && !validCategories.includes(material.category)) {
+    messages.push(`Category "${material.category}" will be created as it doesn't exist yet`);
+    if (status === 'ok') status = 'warning';
   }
 
   if (!material.unit) {

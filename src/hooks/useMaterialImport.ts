@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ImportedMaterial } from '@/utils/materialImportUtils';
+import { useMaterialCategories } from './useMaterialCategories';
 
 export interface ImportResult {
   success: number;
@@ -14,6 +15,7 @@ export const useMaterialImport = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: existingCategories = [] } = useMaterialCategories();
 
   const importMutation = useMutation({
     mutationFn: async ({ materials, existingItems }: { 
@@ -29,6 +31,30 @@ export const useMaterialImport = () => {
         failed: 0,
         errors: []
       };
+
+      // First, create any missing categories
+      const categoryNames = existingCategories.map(cat => cat.name);
+      const newCategories = [...new Set(materials.map(m => m.category))]
+        .filter(category => !categoryNames.includes(category));
+
+      for (const categoryName of newCategories) {
+        try {
+          const { error } = await supabase
+            .from('material_categories')
+            .insert({
+              name: categoryName,
+              company_id: user.companyId,
+              created_by: user.id,
+              sort_order: existingCategories.length + newCategories.indexOf(categoryName)
+            });
+
+          if (error) {
+            console.warn(`Failed to create category "${categoryName}":`, error);
+          }
+        } catch (error) {
+          console.warn(`Failed to create category "${categoryName}":`, error);
+        }
+      }
 
       for (const material of materials) {
         try {
@@ -87,6 +113,7 @@ export const useMaterialImport = () => {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['material-catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['material-categories'] });
       
       if (result.success > 0) {
         toast({

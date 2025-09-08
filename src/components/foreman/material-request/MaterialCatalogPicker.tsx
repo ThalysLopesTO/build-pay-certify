@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useMaterialCatalog, MaterialCatalogItem } from '@/hooks/useMaterialCatalog';
+import { useMaterialCategories } from '@/hooks/useMaterialCategories';
 import { Search, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,12 +30,28 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
   const { data: catalogItems = [], isLoading } = useMaterialCatalog(
     isOpen ? '' : undefined, undefined, true
   );
+  const { data: categories = [] } = useMaterialCategories();
 
   // Filter results - show all on focus, filter on search
   const filteredItems = catalogItems.filter(item =>
     searchTerm.length === 0 || 
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   ).slice(0, 50); // Show more items for better browsing
+
+  // Group items by category, ensuring proper ordering
+  const groupedItems = filteredItems.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = [];
+    }
+    acc[item.category].push(item);
+    return acc;
+  }, {} as Record<string, typeof filteredItems>);
+
+  // Sort categories by their defined order
+  const sortedCategories = categories
+    .filter(cat => groupedItems[cat.name])
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(cat => cat.name);
 
   const hasResults = filteredItems.length > 0;
   const showCustomOption = searchTerm.trim().length > 0 && 
@@ -199,47 +216,37 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
           )}
           {!isLoading && hasResults && (
             <div className="max-h-48 overflow-y-auto">
-              {Object.entries(
-                filteredItems.reduce((groups, item) => {
-                  const category = item.category;
-                  if (!groups[category]) groups[category] = [];
-                  groups[category].push(item);
-                  return groups;
-                }, {} as Record<string, typeof filteredItems>)
-              )
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([category, items]) => (
-                  <div key={category}>
-                    <div className="px-3 py-1 text-xs font-medium text-muted-foreground bg-muted/50 sticky top-0">
-                      {category} ({items.length})
-                    </div>
-                    {items.map((item, categoryIndex) => {
-                      const globalIndex = filteredItems.findIndex(i => i.id === item.id);
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={() => handleItemSelect(item)}
-                          className={cn(
-                            "px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
-                            highlightedIndex === globalIndex && "bg-gray-100 dark:bg-gray-700"
-                          )}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="font-medium text-sm">
-                              {item.name} ({item.unit})
-                            </div>
-                            {item.sku && (
-                              <code className="text-xs bg-muted px-1 py-0.5 rounded">
-                                {item.sku}
-                              </code>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+              {sortedCategories.map((category) => (
+                <div key={category}>
+                  <div className="px-3 py-1 text-xs font-medium text-muted-foreground bg-muted/50 sticky top-0">
+                    {category} ({groupedItems[category]?.length || 0})
                   </div>
-                ))
-              }
+                  {groupedItems[category]?.map((item) => {
+                    const globalIndex = filteredItems.findIndex(i => i.id === item.id);
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleItemSelect(item)}
+                        className={cn(
+                          "px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
+                          highlightedIndex === globalIndex && "bg-gray-100 dark:bg-gray-700"
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium text-sm">
+                            {item.name} ({item.unit})
+                          </div>
+                          {item.sku && (
+                            <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                              {item.sku}
+                            </code>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           )}
 

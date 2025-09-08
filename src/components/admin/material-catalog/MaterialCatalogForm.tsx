@@ -21,7 +21,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useMaterialCatalogMutations, MaterialCatalogItem, MATERIAL_UNITS, MATERIAL_CATEGORIES } from '@/hooks/useMaterialCatalog';
+import { useMaterialCatalogMutations, MaterialCatalogItem, MATERIAL_UNITS, useMaterialCategoriesOptions } from '@/hooks/useMaterialCatalog';
+import { useMaterialCategoryMutations } from '@/hooks/useMaterialCategories';
 
 const formSchema = z.object({
   sku: z.string().optional(),
@@ -44,6 +45,8 @@ export const MaterialCatalogForm: React.FC<MaterialCatalogFormProps> = ({
   onClose,
 }) => {
   const { createItem, updateItem, isCreating, isUpdating } = useMaterialCatalogMutations();
+  const { createCategory } = useMaterialCategoryMutations();
+  const categories = useMaterialCategoriesOptions();
   const isEdit = !!item;
 
   const form = useForm<FormData>({
@@ -160,13 +163,29 @@ export const MaterialCatalogForm: React.FC<MaterialCatalogFormProps> = ({
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        {MATERIAL_CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                    <div className="p-2 border-t">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          const newCategory = prompt("Enter new category name:");
+                          if (newCategory?.trim()) {
+                            createCategory({ name: newCategory.trim() });
+                          }
+                        }}
+                      >
+                        + Add new category
+                      </Button>
+                    </div>
+                  </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
