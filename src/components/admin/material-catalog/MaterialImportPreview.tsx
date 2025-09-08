@@ -72,9 +72,9 @@ export const MaterialImportPreview: React.FC<MaterialImportPreviewProps> = ({
   };
 
   return (
-    <div className="space-y-6 flex-1 overflow-hidden">
+    <div className="flex flex-col h-full max-h-[calc(90vh-8rem)]">
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 flex-shrink-0">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Total Rows</CardTitle>
@@ -113,14 +113,14 @@ export const MaterialImportPreview: React.FC<MaterialImportPreviewProps> = ({
       </div>
 
       {/* Preview Table */}
-      <Card className="flex-1 overflow-hidden">
-        <CardHeader>
+      <Card className="flex-1 min-h-0 mb-6 flex flex-col">
+        <CardHeader className="flex-shrink-0">
           <CardTitle className="flex items-center justify-between">
             <span>Preview{hasMoreRows && ` (First 20 of ${validatedRows.length} rows)`}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="h-[400px]">
+        <CardContent className="p-0 flex-1 min-h-0">
+          <ScrollArea className="h-full">
             <div className="space-y-2 p-4">
               {previewRows.map((row) => (
                 <div
@@ -163,8 +163,26 @@ export const MaterialImportPreview: React.FC<MaterialImportPreviewProps> = ({
         </CardContent>
       </Card>
 
+      {/* Error Summary */}
+      {summary.errors.length > 0 && (
+        <Card className="border-red-200 mb-6 flex-shrink-0">
+          <CardHeader>
+            <CardTitle className="text-red-600">Import Errors</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-32">
+              <ul className="text-sm space-y-1">
+                {summary.errors.map((error, index) => (
+                  <li key={index} className="text-red-600">• {error}</li>
+                ))}
+              </ul>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Actions */}
-      <div className="flex items-center justify-between pt-4 border-t">
+      <div className="flex items-center justify-between pt-4 border-t flex-shrink-0">
         <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" />
           Back to Upload
@@ -184,24 +202,6 @@ export const MaterialImportPreview: React.FC<MaterialImportPreviewProps> = ({
           </Button>
         </div>
       </div>
-
-      {/* Error Summary */}
-      {summary.errors.length > 0 && (
-        <Card className="border-red-200">
-          <CardHeader>
-            <CardTitle className="text-red-600">Import Errors</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-32">
-              <ul className="text-sm space-y-1">
-                {summary.errors.map((error, index) => (
-                  <li key={index} className="text-red-600">• {error}</li>
-                ))}
-              </ul>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
