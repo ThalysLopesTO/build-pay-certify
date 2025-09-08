@@ -5,7 +5,7 @@ import { MATERIAL_UNITS } from '@/hooks/useMaterialCatalog';
 export interface ImportedMaterial {
   name: string;
   category: string;
-  unit: string;
+  unit?: string;
   sku?: string;
   notes?: string;
   is_active: boolean;
@@ -33,7 +33,7 @@ export interface ImportSummary {
 export const TEMPLATE_HEADERS = [
   'Name',
   'Category', 
-  'Unit',
+  'Unit (Optional)',
   'SKU',
   'Notes',
   'Active'
@@ -43,7 +43,7 @@ export const TEMPLATE_HEADERS = [
 export const generateTemplate = (format: 'excel' | 'csv'): Blob => {
   const sampleData = [
     ['Drywall 5/8" x 9\'', 'Drywall', 'sheet', 'DW-58-9', 'Standard drywall sheet', 'true'],
-    ['Metal Stud 3 5/8"', 'Framing', 'pcs', 'MS-358-20G', '20 gauge metal stud', 'true'],
+    ['Metal Stud 3 5/8"', 'Framing', '', 'MS-358-20G', '20 gauge metal stud', 'true'],
     ['Joint Compound 4.5L', 'Taping', 'pail', 'JC-45L', 'Ready-mix joint compound', 'true']
   ];
 
@@ -132,10 +132,12 @@ export const mapColumns = (headers: string[], data: any[][], validCategories: st
       return name && category; // Only process rows with both name and category
     })
     .map((row, index) => {
+      const unitValue = headerMap.unit !== undefined ? String(row[headerMap.unit] || '').trim().toLowerCase() : '';
+      
       const material: ImportedMaterial = {
         name: String(row[headerMap.name] || '').trim(),
         category: String(row[headerMap.category] || '').trim(),
-        unit: String(row[headerMap.unit] || '').trim().toLowerCase(),
+        unit: unitValue || undefined,
         sku: headerMap.sku !== undefined ? String(row[headerMap.sku] || '').trim() : undefined,
         notes: headerMap.notes !== undefined ? String(row[headerMap.notes] || '').trim() : undefined,
         is_active: parseBoolean(row[headerMap.active])
@@ -170,9 +172,12 @@ export const validateMaterial = (material: ImportedMaterial, validCategories: st
     if (status === 'ok') status = 'warning';
   }
 
+  // Unit validation - optional but validate if provided
   if (!material.unit) {
-    messages.push('Unit is required');
-    status = 'error';
+    // Set default unit if none provided
+    material.unit = 'each';
+    messages.push('Unit not specified, defaulted to "each"');
+    if (status === 'ok') status = 'warning';
   } else if (!MATERIAL_UNITS.includes(material.unit)) {
     // Try to find a close match (case-insensitive)
     const matchedUnit = MATERIAL_UNITS.find(unit => 
