@@ -30,7 +30,7 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
 
   // Load materials when dropdown is open and category is selected
   const { data: catalogItems = [], isLoading } = useMaterialCatalog(
-    isOpen && selectedCategory ? (searchTerm || '') : undefined, 
+    isOpen && selectedCategory ? '' : undefined, 
     selectedCategory || undefined, 
     true
   );
@@ -126,10 +126,6 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
   const handleInputFocus = () => {
     updateDropdownPosition();
     setIsOpen(true);
-    // Show all materials from category when focused
-    if (selectedCategory && !searchTerm) {
-      setSearchTerm('');
-    }
   };
 
   const handleItemSelect = (item: MaterialCatalogItem) => {
@@ -216,15 +212,9 @@ export const MaterialCatalogPicker: React.FC<MaterialCatalogPickerProps> = ({
             </div>
           )}
           
-          {selectedCategory && !isLoading && !hasResults && !showCustomOption && (
+          {selectedCategory && !isLoading && !hasResults && (
             <div className="px-3 py-2 text-center text-muted-foreground">
-              No materials found in {selectedCategory}
-            </div>
-          )}
-          
-          {selectedCategory && !isLoading && !hasResults && searchTerm.trim() !== '' && (
-            <div className="px-3 py-2 text-center text-muted-foreground">
-              No materials found. Type more to add as custom.
+              {searchTerm.trim() ? 'No materials found matching your search' : 'No materials found in this category'}
             </div>
           )}
           {selectedCategory && !isLoading && hasResults && (
