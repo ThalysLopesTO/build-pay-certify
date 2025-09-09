@@ -28,6 +28,18 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
     .filter(t => t.payment_status === 'unpaid')
     .reduce((sum, t) => sum + t.amount, 0);
 
+  // Color palette matching the chart colors
+  const categoryColors = [
+    'hsl(221, 83%, 53%)', // Primary blue
+    'hsl(262, 83%, 58%)', // Purple
+    'hsl(142, 76%, 36%)', // Green
+    'hsl(346, 77%, 49%)', // Pink
+    'hsl(24, 95%, 53%)',  // Orange
+    'hsl(38, 92%, 50%)',  // Yellow
+    'hsl(199, 89%, 48%)', // Cyan
+    'hsl(158, 64%, 52%)', // Teal
+  ];
+
   // Get top 3 categories based on current filter
   const top3Categories = React.useMemo(() => {
     const categoryTotals: { [key: string]: number } = {};
@@ -48,10 +60,11 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
     });
 
     return Object.entries(categoryTotals)
-      .map(([categoryId, amount]) => ({
+      .map(([categoryId, amount], index) => ({
         categoryId,
         category: getCategoryDisplay(categoryId),
-        amount
+        amount,
+        color: categoryColors[index % categoryColors.length],
       }))
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 3);
@@ -128,9 +141,15 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
             ) : (
               top3Categories.map((category, index) => (
                 <div key={category.categoryId} className="flex items-center justify-between">
-                  <span className="text-xs text-slate-600 truncate" title={category.category}>
-                    {index + 1}. {category.category}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <span className="text-xs text-slate-600 truncate" title={category.category}>
+                      {index + 1}. {category.category}
+                    </span>
+                  </div>
                   <span className="text-xs font-semibold text-slate-900">
                     ${(category.amount / 1000).toFixed(0)}k
                   </span>

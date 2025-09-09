@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { DateRangeType } from '@/hooks/useDateRangeFilter';
 import { TransactionTypeFilter } from '@/hooks/useTransactionFilters';
@@ -24,16 +24,30 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
 }) => {
   const [showSubcategories, setShowSubcategories] = useState(false);
 
+  // Color palette for categories
+  const categoryColors = [
+    'hsl(221, 83%, 53%)', // Primary blue
+    'hsl(262, 83%, 58%)', // Purple
+    'hsl(142, 76%, 36%)', // Green
+    'hsl(346, 77%, 49%)', // Pink
+    'hsl(24, 95%, 53%)',  // Orange
+    'hsl(38, 92%, 50%)',  // Yellow
+    'hsl(199, 89%, 48%)', // Cyan
+    'hsl(158, 64%, 52%)', // Teal
+  ];
+
   // Process data for chart
   const chartData = React.useMemo(() => {
     // Group transactions by category
-    const categoryData: { [key: string]: { amount: number; category: string; type: string } } = {};
+    const categoryData: { [key: string]: { amount: number; category: string; type: string; color: string } } = {};
+    const categoryColorMap: { [key: string]: string } = {};
+    let colorIndex = 0;
 
     // Filter transactions based on type filter
     const filteredTransactions = transactions.filter(transaction => {
       if (transactionTypeFilter === 'all') {
-        // For "All", show expenses by default (original behavior)
-        return transaction.transaction_type === 'expense';
+        // For "All", show all transactions
+        return true;
       }
       return transaction.transaction_type === transactionTypeFilter;
     });
@@ -42,11 +56,18 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
       const categoryId = transaction.category_id;
       const categoryName = getCategoryDisplay(categoryId);
       
+      // Assign color if not already assigned
+      if (!categoryColorMap[categoryId]) {
+        categoryColorMap[categoryId] = categoryColors[colorIndex % categoryColors.length];
+        colorIndex++;
+      }
+      
       if (!categoryData[categoryId]) {
         categoryData[categoryId] = { 
           amount: 0, 
           category: categoryName,
-          type: transaction.transaction_type
+          type: transaction.transaction_type,
+          color: categoryColorMap[categoryId]
         };
       }
 
@@ -93,9 +114,9 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
         </div>
         <Tabs value={dateRangeType} onValueChange={(value) => onDateRangeChange(value as DateRangeType)} className="w-full">
           <TabsList className="grid w-full grid-cols-5 h-8 bg-slate-100">
+            <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
             <TabsTrigger value="this-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">This Month</TabsTrigger>
             <TabsTrigger value="last-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Last Month</TabsTrigger>
-            <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
             <TabsTrigger value="all-time" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All-Time</TabsTrigger>
             <TabsTrigger value="custom" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Custom</TabsTrigger>
           </TabsList>
