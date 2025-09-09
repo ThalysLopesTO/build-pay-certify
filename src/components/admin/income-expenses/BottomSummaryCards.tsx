@@ -86,7 +86,7 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-green-600">
+          <div className="text-2xl font-bold text-red-600">
             ${paidAmount.toLocaleString()}
           </div>
           <p className="text-xs text-slate-500">
