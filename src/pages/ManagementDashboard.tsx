@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import ManagementSidebar from '../components/management/ManagementSidebar';
 import EmployeeTimesheets from '../components/admin/EmployeeTimesheets';
 import PayrollSummary from '../components/admin/PayrollSummary';
-import BillsExpensesManagement from '../components/admin/BillsExpensesManagement';
+import IncomeExpensesManagement from '../components/admin/IncomeExpensesManagement';
 import AttentionReportsInbox from '../components/admin/AttentionReportsInbox';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
@@ -36,7 +36,7 @@ const ManagementDashboard = () => {
       case 'payroll-summary':
         return <PayrollSummary />;
       case 'bills-expenses':
-        return <BillsExpensesManagement />;
+        return <IncomeExpensesManagement />;
       case 'employees':
         return <EmployeeManagement onNavigateToRegistration={() => setActiveTab('employee-registration')} />;
       case 'employee-registration':

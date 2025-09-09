@@ -25,7 +25,7 @@ import QuotesManagement from '@/components/admin/QuotesManagement';
 import CompanySettings from '@/components/admin/CompanySettings';
 import UserSettings from '@/components/common/UserSettings';
 import SystemSettings from '@/components/admin/SystemSettings';
-import BillsExpensesManagement from '@/components/admin/BillsExpensesManagement';
+import IncomeExpensesManagement from '@/components/admin/IncomeExpensesManagement';
 import TimeRequestsManagement from '@/components/admin/TimeRequestsManagement';
 
 const AdminDashboard = () => {
@@ -75,7 +75,7 @@ const AdminDashboard = () => {
       case 'quotes':
         return <QuotesManagement />;
       case 'bills-expenses':
-        return <BillsExpensesManagement />;
+        return <IncomeExpensesManagement />;
       case 'time-requests':
         return <TimeRequestsManagement />;
       case 'company-settings':
