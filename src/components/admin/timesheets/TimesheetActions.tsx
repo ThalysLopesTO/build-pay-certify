@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Check, X, Edit, Eye, Trash2 } from 'lucide-react';
+import { Check, X, Edit, Eye, Trash2, EyeClosed } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { TimesheetPDFGenerator } from './TimesheetPDFGenerator';
 

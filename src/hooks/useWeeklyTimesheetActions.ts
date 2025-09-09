@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 
+const TABLE_TIMESHEETS = "weekly_timesheets_2";
+
 export const useWeeklyTimesheetActions = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -20,7 +22,7 @@ export const useWeeklyTimesheetActions = () => {
       
       // Get current timesheet to determine the new status
       const { data: currentTimesheet, error: fetchError } = await supabase
-        .from('weekly_timesheets')
+        .from(TABLE_TIMESHEETS)
         .select('status')
         .eq('id', timesheetId)
         .eq('company_id', user.companyId)
@@ -35,7 +37,7 @@ export const useWeeklyTimesheetActions = () => {
       const newStatus = currentTimesheet.status === 'approved' ? 'pending' : 'approved';
       
       const { data, error } = await supabase
-        .from('weekly_timesheets')
+        .from(TABLE_TIMESHEETS)
         .update({ 
           status: newStatus,
           updated_by: user.id 
@@ -80,7 +82,7 @@ export const useWeeklyTimesheetActions = () => {
       
       // Get current timesheet to determine the new status
       const { data: currentTimesheet, error: fetchError } = await supabase
-        .from('weekly_timesheets')
+        .from(TABLE_TIMESHEETS)
         .select('status')
         .eq('id', timesheetId)
         .eq('company_id', user.companyId)
@@ -95,7 +97,7 @@ export const useWeeklyTimesheetActions = () => {
       const newStatus = currentTimesheet.status === 'rejected' ? 'pending' : 'rejected';
       
       const { data, error } = await supabase
-        .from('weekly_timesheets')
+        .from(TABLE_TIMESHEETS)
         .update({ 
           status: newStatus,
           updated_by: user.id 
@@ -148,7 +150,7 @@ export const useWeeklyTimesheetActions = () => {
       
       // Update the timesheet with enhanced error handling
       const { data, error } = await supabase
-        .from('weekly_timesheets_2')
+        .from(TABLE_TIMESHEETS)
         .update({
           ...updates,
           updated_at: new Date().toISOString()
