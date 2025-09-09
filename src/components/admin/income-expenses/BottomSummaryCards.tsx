@@ -1,39 +1,38 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3 } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { TransactionTypeFilter } from '@/hooks/useTransactionFilters';
 
-interface IncomeExpensesKPIsProps {
+interface BottomSummaryCardsProps {
   transactions: TransactionWithHierarchy[];
   transactionTypeFilter: TransactionTypeFilter;
   getCategoryDisplay: (categoryId: string) => string;
 }
 
-export const IncomeExpensesKPIs: React.FC<IncomeExpensesKPIsProps> = ({
+export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
   transactions,
   transactionTypeFilter,
   getCategoryDisplay,
 }) => {
-  // Calculate KPIs
-  const totalInflow = transactions
-    .filter(t => t.transaction_type === 'income')
+  // Calculate totals based on current filters
+  const totalFiltered = transactions.length;
+  
+  const paidAmount = transactions
+    .filter(t => t.payment_status === 'paid')
+    .reduce((sum, t) => sum + t.amount, 0);
+    
+  const unpaidAmount = transactions
+    .filter(t => t.payment_status === 'unpaid')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalOutflow = transactions
-    .filter(t => t.transaction_type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const netCashFlow = totalInflow - totalOutflow;
-
-  // Calculate top categories based on transaction type filter
-  const topCategories = React.useMemo(() => {
+  // Get top 3 categories based on current filter
+  const top3Categories = React.useMemo(() => {
     const categoryTotals: { [key: string]: number } = {};
     
     const filteredTransactions = transactions.filter(t => {
       if (transactionTypeFilter === 'all') {
-        // Show expense categories by default for "All" (original behavior)
-        return t.transaction_type === 'expense';
+        return true; // Show all for this summary
       }
       return t.transaction_type === transactionTypeFilter;
     });
@@ -53,89 +52,79 @@ export const IncomeExpensesKPIs: React.FC<IncomeExpensesKPIsProps> = ({
         amount
       }))
       .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5);
+      .slice(0, 3);
   }, [transactions, transactionTypeFilter, getCategoryDisplay]);
-
-  const getTopCategoriesTitle = () => {
-    if (transactionTypeFilter === 'income') {
-      return 'Top Income Categories';
-    } else if (transactionTypeFilter === 'expense') {
-      return 'Top Expense Categories';
-    } else {
-      return 'Top Expense Categories';
-    }
-  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* Total Inflow */}
+      {/* Total Filtered */}
       <Card className="bg-white shadow-sm border-slate-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-slate-600">Total Inflow</CardTitle>
+          <CardTitle className="text-sm font-medium text-slate-600">Total Filtered</CardTitle>
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg">
+            <DollarSign className="h-4 w-4 text-white" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-slate-900">
+            {totalFiltered}
+          </div>
+          <p className="text-xs text-slate-500">
+            transactions found
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Paid Amount */}
+      <Card className="bg-white shadow-sm border-slate-200">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-slate-600">Paid Amount</CardTitle>
           <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2 rounded-lg">
             <TrendingUp className="h-4 w-4 text-white" />
           </div>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-green-600">
-            ${totalInflow.toLocaleString()}
+            ${paidAmount.toLocaleString()}
           </div>
           <p className="text-xs text-slate-500">
-            +{transactions.filter(t => t.transaction_type === 'income').length} transactions
+            +{transactions.filter(t => t.payment_status === 'paid').length} paid
           </p>
         </CardContent>
       </Card>
 
-      {/* Total Outflow */}
+      {/* Unpaid Amount */}
       <Card className="bg-white shadow-sm border-slate-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-slate-600">Total Outflow</CardTitle>
+          <CardTitle className="text-sm font-medium text-slate-600">Unpaid Amount</CardTitle>
           <div className="bg-gradient-to-br from-red-500 to-red-600 p-2 rounded-lg">
             <TrendingDown className="h-4 w-4 text-white" />
           </div>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-red-600">
-            ${totalOutflow.toLocaleString()}
+            ${unpaidAmount.toLocaleString()}
           </div>
           <p className="text-xs text-slate-500">
-            +{transactions.filter(t => t.transaction_type === 'expense').length} transactions
+            +{transactions.filter(t => t.payment_status === 'unpaid').length} unpaid
           </p>
         </CardContent>
       </Card>
 
-      {/* Net Cash Flow */}
+      {/* Top 3 Categories */}
       <Card className="bg-white shadow-sm border-slate-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-slate-600">Net Cash Flow</CardTitle>
-          <div className={`p-2 rounded-lg ${netCashFlow >= 0 ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-red-500 to-red-600'}`}>
-            <DollarSign className="h-4 w-4 text-white" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {netCashFlow >= 0 ? '+' : ''}${netCashFlow.toLocaleString()}
-          </div>
-          <p className="text-xs text-slate-500">
-            {netCashFlow >= 0 ? 'Positive cash flow' : 'Negative cash flow'}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Top Categories */}
-      <Card className="bg-white shadow-sm border-slate-200">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-slate-600">{getTopCategoriesTitle()}</CardTitle>
+          <CardTitle className="text-sm font-medium text-slate-600">Top 3 Categories</CardTitle>
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2 rounded-lg">
             <BarChart3 className="h-4 w-4 text-white" />
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-1">
-            {topCategories.length === 0 ? (
+            {top3Categories.length === 0 ? (
               <p className="text-xs text-slate-500">No data available</p>
             ) : (
-              topCategories.map((category, index) => (
+              top3Categories.map((category, index) => (
                 <div key={category.categoryId} className="flex items-center justify-between">
                   <span className="text-xs text-slate-600 truncate" title={category.category}>
                     {index + 1}. {category.category}

@@ -91,16 +91,16 @@ export const MonthlyCashFlowChart: React.FC<MonthlyCashFlowChartProps> = ({
   };
 
   return (
-    <Card className="h-fit">
+    <Card className="bg-white shadow-sm border-slate-200">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold">Monthly Cash Flow</CardTitle>
+        <CardTitle className="text-lg font-semibold text-slate-900">Monthly Cash Flow</CardTitle>
         <Tabs value={dateRangeType} onValueChange={(value) => onDateRangeChange(value as DateRangeType)} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-8">
-            <TabsTrigger value="this-month" className="text-xs px-2">This Month</TabsTrigger>
-            <TabsTrigger value="last-month" className="text-xs px-2">Last Month</TabsTrigger>
-            <TabsTrigger value="year-to-date" className="text-xs px-2">YTD</TabsTrigger>
-            <TabsTrigger value="all-time" className="text-xs px-2">All-Time</TabsTrigger>
-            <TabsTrigger value="custom" className="text-xs px-2">Custom</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 h-8 bg-slate-100">
+            <TabsTrigger value="this-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">This Month</TabsTrigger>
+            <TabsTrigger value="last-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Last Month</TabsTrigger>
+            <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
+            <TabsTrigger value="all-time" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All-Time</TabsTrigger>
+            <TabsTrigger value="custom" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Custom</TabsTrigger>
           </TabsList>
         </Tabs>
       </CardHeader>

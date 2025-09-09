@@ -23,6 +23,7 @@ import { useTransactionFilters } from '@/hooks/useTransactionFilters';
 import { MonthlyCashFlowChart } from './income-expenses/MonthlyCashFlowChart';
 import { CategoryBreakdownChart } from './income-expenses/CategoryBreakdownChart';
 import { IncomeExpensesKPIs } from './income-expenses/IncomeExpensesKPIs';
+import { BottomSummaryCards } from './income-expenses/BottomSummaryCards';
 
 const IncomeExpensesManagement = () => {
   const { user } = useAuth();
@@ -249,7 +250,7 @@ const IncomeExpensesManagement = () => {
   }
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6 p-6 bg-slate-50 min-h-screen">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div className="flex items-start space-x-4">
@@ -292,7 +293,7 @@ const IncomeExpensesManagement = () => {
       />
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <MonthlyCashFlowChart 
           transactions={filteredTransactions}
           dateRangeType={dateRangeType}
@@ -310,23 +311,30 @@ const IncomeExpensesManagement = () => {
         />
       </div>
 
+      {/* Bottom Summary Cards */}
+      <BottomSummaryCards 
+        transactions={filteredTransactions}
+        transactionTypeFilter={transactionTypeFilter}
+        getCategoryDisplay={getCategoryDisplay}
+      />
+
       {/* Filters */}
-      <Card>
+      <Card className="bg-white shadow-sm border-slate-200">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label>Search</Label>
+              <Label className="text-slate-600">Search</Label>
               <Input
                 placeholder="Search transactions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
+                className="w-full border-slate-300"
               />
             </div>
             <div className="space-y-2">
-              <Label>Transaction Type</Label>
+              <Label className="text-slate-600">Transaction Type</Label>
               <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="border-slate-300">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -337,9 +345,9 @@ const IncomeExpensesManagement = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Status</Label>
+              <Label className="text-slate-600">Status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="border-slate-300">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -355,9 +363,9 @@ const IncomeExpensesManagement = () => {
       </Card>
 
       {/* Transactions Table */}
-      <Card>
+      <Card className="bg-white shadow-sm border-slate-200">
         <CardHeader>
-          <CardTitle>Transactions</CardTitle>
+          <CardTitle className="text-slate-900">Transactions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">

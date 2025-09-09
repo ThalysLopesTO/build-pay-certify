@@ -78,26 +78,26 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
   };
 
   return (
-    <Card className="h-fit">
+    <Card className="bg-white shadow-sm border-slate-200">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">{getChartTitle()}</CardTitle>
+          <CardTitle className="text-lg font-semibold text-slate-900">{getChartTitle()}</CardTitle>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowSubcategories(!showSubcategories)}
-            className="text-xs h-7"
+            className="text-xs h-7 border-slate-300 text-slate-600 hover:bg-slate-50"
           >
             {showSubcategories ? 'Hide' : 'Show'} Subcategories
           </Button>
         </div>
         <Tabs value={dateRangeType} onValueChange={(value) => onDateRangeChange(value as DateRangeType)} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-8">
-            <TabsTrigger value="this-month" className="text-xs px-2">This Month</TabsTrigger>
-            <TabsTrigger value="last-month" className="text-xs px-2">Last Month</TabsTrigger>
-            <TabsTrigger value="year-to-date" className="text-xs px-2">YTD</TabsTrigger>
-            <TabsTrigger value="all-time" className="text-xs px-2">All-Time</TabsTrigger>
-            <TabsTrigger value="custom" className="text-xs px-2">Custom</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 h-8 bg-slate-100">
+            <TabsTrigger value="this-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">This Month</TabsTrigger>
+            <TabsTrigger value="last-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Last Month</TabsTrigger>
+            <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
+            <TabsTrigger value="all-time" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All-Time</TabsTrigger>
+            <TabsTrigger value="custom" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Custom</TabsTrigger>
           </TabsList>
         </Tabs>
       </CardHeader>
