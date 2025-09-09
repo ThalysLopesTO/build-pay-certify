@@ -17,8 +17,12 @@ import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, Trending
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { HierarchicalCategorySelector } from './bills-expenses/HierarchicalCategorySelector';
-import { ExpenseSummary } from './bills-expenses/ExpenseSummary';
 import { useHierarchicalCategories, TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
+import { useDateRangeFilter } from '@/hooks/useDateRangeFilter';
+import { useTransactionFilters } from '@/hooks/useTransactionFilters';
+import { MonthlyCashFlowChart } from './income-expenses/MonthlyCashFlowChart';
+import { CategoryBreakdownChart } from './income-expenses/CategoryBreakdownChart';
+import { IncomeExpensesKPIs } from './income-expenses/IncomeExpensesKPIs';
 
 const IncomeExpensesManagement = () => {
   const { user } = useAuth();
@@ -30,14 +34,34 @@ const IncomeExpensesManagement = () => {
     getTransactionsWithHierarchy, 
     getCategoryDisplay 
   } = useHierarchicalCategories();
+
+  // Date range and filter management
+  const {
+    selectedRange,
+    setSelectedRange,
+    customRange,
+    setCustomRange,
+    effectiveRange,
+    isCustomRangeOpen,
+    setIsCustomRangeOpen,
+  } = useDateRangeFilter();
+
+  const {
+    transactionTypeFilter,
+    setTransactionTypeFilter,
+    statusFilter,
+    setStatusFilter,
+    searchTerm,
+    setSearchTerm,
+    dateRangeType,
+    setDateRangeType,
+    getFilteredTransactions,
+  } = useTransactionFilters();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithHierarchy | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
-  const [filterTransactionType, setFilterTransactionType] = useState<'all' | 'income' | 'expense'>('all');
 
   // Form state
   const [formData, setFormData] = useState<{
@@ -212,15 +236,13 @@ const IncomeExpensesManagement = () => {
     );
   };
 
-  // Filter transactions
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.expense_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.vendor_payee.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || transaction.payment_status === filterStatus;
-    const matchesType = filterTransactionType === 'all' || transaction.transaction_type === filterTransactionType;
-    
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  // Get filtered transactions based on all active filters
+  const filteredTransactions = getFilteredTransactions(transactions, effectiveRange);
+
+  // Sync date range between components
+  React.useEffect(() => {
+    setDateRangeType(selectedRange);
+  }, [selectedRange, setDateRangeType]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-96">Loading...</div>;
@@ -262,8 +284,31 @@ const IncomeExpensesManagement = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <ExpenseSummary expenses={filteredTransactions} transactionType={filterTransactionType} />
+      {/* KPI Cards */}
+      <IncomeExpensesKPIs 
+        transactions={filteredTransactions}
+        transactionTypeFilter={transactionTypeFilter}
+        getCategoryDisplay={getCategoryDisplay}
+      />
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MonthlyCashFlowChart 
+          transactions={filteredTransactions}
+          dateRangeType={dateRangeType}
+          onDateRangeChange={setSelectedRange}
+          transactionTypeFilter={transactionTypeFilter}
+          customRange={customRange}
+          onCustomRangeChange={setCustomRange}
+        />
+        <CategoryBreakdownChart 
+          transactions={filteredTransactions}
+          dateRangeType={dateRangeType}
+          onDateRangeChange={setSelectedRange}
+          transactionTypeFilter={transactionTypeFilter}
+          getCategoryDisplay={getCategoryDisplay}
+        />
+      </div>
 
       {/* Filters */}
       <Card>
@@ -280,7 +325,7 @@ const IncomeExpensesManagement = () => {
             </div>
             <div className="space-y-2">
               <Label>Transaction Type</Label>
-              <Select value={filterTransactionType} onValueChange={(value: 'all' | 'income' | 'expense') => setFilterTransactionType(value)}>
+              <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -293,7 +338,7 @@ const IncomeExpensesManagement = () => {
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -332,10 +377,10 @@ const IncomeExpensesManagement = () => {
               <TableBody>
                 {filteredTransactions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      {filterTransactionType === 'income' 
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      {transactionTypeFilter === 'income' 
                         ? "No income recorded. Click Add Income to record money received."
-                        : filterTransactionType === 'expense'
+                        : transactionTypeFilter === 'expense'
                         ? "No expenses recorded. Click Add Expense to track spending."
                         : "No transactions found."
                       }
