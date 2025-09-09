@@ -52,5 +52,75 @@ export const IncomeExpensesKPIs: React.FC<IncomeExpensesKPIsProps> = ({
       return 'Top Expense Categories';
     }
   };
-  return;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* Total Inflow */}
+      <Card className="bg-white shadow-sm border-slate-200">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-slate-600">Total Inflow</CardTitle>
+          <TrendingUp className="h-4 w-4 text-green-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-green-600">
+            ${totalInflow.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Income transactions
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Total Outflow */}
+      <Card className="bg-white shadow-sm border-slate-200">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-slate-600">Total Outflow</CardTitle>
+          <TrendingDown className="h-4 w-4 text-red-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-red-600">
+            ${totalOutflow.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Expense transactions
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Net Cash Flow */}
+      <Card className="bg-white shadow-sm border-slate-200">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-slate-600">Net Cash Flow</CardTitle>
+          <DollarSign className={`h-4 w-4 ${netCashFlow >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+        </CardHeader>
+        <CardContent>
+          <div className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            ${netCashFlow.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            {netCashFlow >= 0 ? 'Positive cash flow' : 'Negative cash flow'}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Top Categories */}
+      <Card className="bg-white shadow-sm border-slate-200">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-slate-600">{getTopCategoriesTitle()}</CardTitle>
+          <BarChart3 className="h-4 w-4 text-blue-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {topCategories.slice(0, 3).map((category, index) => (
+              <div key={category.categoryId} className="flex justify-between items-center">
+                <span className="text-xs text-slate-600 truncate">{category.category}</span>
+                <span className="text-xs font-medium">
+                  ${category.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
