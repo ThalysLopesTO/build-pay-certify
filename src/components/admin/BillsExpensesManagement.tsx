@@ -23,22 +23,24 @@ import { HierarchicalCategoryFilters } from './bills-expenses/HierarchicalCatego
 import { ExpenseSummary } from './bills-expenses/ExpenseSummary';
 import { RecurringBillForm } from './bills-expenses/RecurringBillForm';
 import { DateFilter } from './bills-expenses/DateFilter';
-import { useHierarchicalCategories, ExpenseWithHierarchy } from '@/hooks/useHierarchicalCategories';
+import { useHierarchicalCategories, TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import ExpenseAnalytics from './bills-expenses/ExpenseAnalytics';
 // Using ExpenseWithHierarchy from the hook instead of local interface
 const BillsExpensesManagement = () => {
   const { user } = useAuth();
-  const [expenses, setExpenses] = useState<ExpenseWithHierarchy[]>([]);
+  const [transactions, setTransactions] = useState<TransactionWithHierarchy[]>([]);
   
   // Use hierarchical categories hook
   const { 
     categories, 
     fetchCategories, 
-    getExpensesWithHierarchy, 
+    getTransactionsWithHierarchy, 
     getCategoryDisplay 
   } = useHierarchicalCategories();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<ExpenseWithHierarchy | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<TransactionWithHierarchy | null>(null);
+  const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
+  const [filterTransactionType, setFilterTransactionType] = useState<'all' | 'income' | 'expense'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -283,9 +285,9 @@ const BillsExpensesManagement = () => {
               <Receipt className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">Bills / Expenses</h1>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">Income & Expenses</h1>
               <p className="text-lg text-slate-600 font-medium">
-                Track, categorize, and analyze company expenses with ease.
+                Track income and expenses, analyze cash flow, and manage your company's finances.
               </p>
             </div>
           </div>
@@ -293,13 +295,37 @@ const BillsExpensesManagement = () => {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <BillReminderDropdown />
             <HierarchicalCategoryManager categories={categories} onCategoriesChange={fetchCategories} />
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => resetForm()} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Expense
-                </Button>
-              </DialogTrigger>
+            <div className="flex gap-3">
+              <Button onClick={() => { setTransactionType('income'); resetForm(); setIsCreateDialogOpen(true); }} className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Income
+              </Button>
+              <Button onClick={() => { setTransactionType('expense'); resetForm(); setIsCreateDialogOpen(true); }} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Expense
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Transaction Type Filter */}
+        <div className="mb-6">
+          <div className="flex gap-4 items-center">
+            <Label className="text-sm font-medium">Transaction Type:</Label>
+            <Select value={filterTransactionType} onValueChange={(value: 'all' | 'income' | 'expense') => setFilterTransactionType(value)}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Transactions</SelectItem>
+                <SelectItem value="income">Income Only</SelectItem>
+                <SelectItem value="expense">Expenses Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader className="pb-6">
                   <DialogTitle className="text-2xl font-bold text-slate-900">
@@ -578,6 +604,8 @@ const BillsExpensesManagement = () => {
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default BillsExpensesManagement;

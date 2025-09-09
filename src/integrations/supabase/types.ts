@@ -215,6 +215,7 @@ export type Database = {
           payment_status: string
           recurrence_frequency: string | null
           start_date: string | null
+          transaction_type: string
           updated_at: string
           vendor_payee: string
         }
@@ -236,6 +237,7 @@ export type Database = {
           payment_status?: string
           recurrence_frequency?: string | null
           start_date?: string | null
+          transaction_type?: string
           updated_at?: string
           vendor_payee: string
         }
@@ -257,6 +259,7 @@ export type Database = {
           payment_status?: string
           recurrence_frequency?: string | null
           start_date?: string | null
+          transaction_type?: string
           updated_at?: string
           vendor_payee?: string
         }
@@ -737,6 +740,7 @@ export type Database = {
       expense_categories: {
         Row: {
           category_level: string
+          category_type: string
           company_id: string
           created_at: string
           id: string
@@ -747,6 +751,7 @@ export type Database = {
         }
         Insert: {
           category_level?: string
+          category_type?: string
           company_id: string
           created_at?: string
           id?: string
@@ -757,6 +762,7 @@ export type Database = {
         }
         Update: {
           category_level?: string
+          category_type?: string
           company_id?: string
           created_at?: string
           id?: string

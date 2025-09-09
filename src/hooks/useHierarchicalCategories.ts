@@ -8,10 +8,11 @@ export interface HierarchicalCategory {
   category_level: 'parent' | 'subcategory';
   parent_category_id?: string;
   sort_order: number;
+  category_type: 'income' | 'expense' | 'both';
   subcategories?: HierarchicalCategory[];
 }
 
-export interface ExpenseWithHierarchy {
+export interface TransactionWithHierarchy {
   id: string;
   expense_title: string;
   vendor_payee: string;
@@ -28,22 +29,32 @@ export interface ExpenseWithHierarchy {
   parent_category_name: string;
   subcategory_name?: string;
   category_level: 'parent' | 'subcategory';
+  transaction_type: 'income' | 'expense';
 }
+
+// Keep for backward compatibility
+export interface ExpenseWithHierarchy extends TransactionWithHierarchy {}
 
 export const useHierarchicalCategories = () => {
   const { user } = useAuth();
   const [categories, setCategories] = useState<HierarchicalCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchCategories = async () => {
+  const fetchCategories = async (categoryType?: 'income' | 'expense' | 'both') => {
     if (!user?.companyId) return;
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('expense_categories')
         .select('*')
-        .eq('company_id', user.companyId)
+        .eq('company_id', user.companyId);
+
+      if (categoryType) {
+        query = query.or(`category_type.eq.${categoryType},category_type.eq.both`);
+      }
+
+      const { data, error } = await query
         .order('category_level', { ascending: true })
         .order('sort_order', { ascending: true });
 
@@ -57,11 +68,11 @@ export const useHierarchicalCategories = () => {
     }
   };
 
-  const getExpensesWithHierarchy = async (): Promise<ExpenseWithHierarchy[]> => {
+  const getTransactionsWithHierarchy = async (transactionType?: 'income' | 'expense'): Promise<TransactionWithHierarchy[]> => {
     if (!user?.companyId) return [];
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('bills_expenses')
         .select(`
           *,
@@ -72,8 +83,13 @@ export const useHierarchicalCategories = () => {
             parent_category_id
           )
         `)
-        .eq('company_id', user.companyId)
-        .order('expense_date', { ascending: false });
+        .eq('company_id', user.companyId);
+
+      if (transactionType) {
+        query = query.eq('transaction_type', transactionType);
+      }
+
+      const { data, error } = await query.order('expense_date', { ascending: false });
 
       if (error) throw error;
 
@@ -115,6 +131,7 @@ export const useHierarchicalCategories = () => {
             parent_category_name: parentCategoryName,
             subcategory_name: subcategoryName,
             category_level: category.category_level,
+            transaction_type: expense.transaction_type,
           };
         })
       );
@@ -126,8 +143,11 @@ export const useHierarchicalCategories = () => {
     }
   };
 
-  const getParentCategories = () => {
-    return categories.filter(cat => cat.category_level === 'parent');
+  const getParentCategories = (categoryType?: 'income' | 'expense') => {
+    return categories.filter(cat => 
+      cat.category_level === 'parent' && 
+      (!categoryType || cat.category_type === categoryType || cat.category_type === 'both')
+    );
   };
 
   const getSubcategoriesForParent = (parentId: string) => {
@@ -153,11 +173,15 @@ export const useHierarchicalCategories = () => {
     fetchCategories();
   }, [user?.companyId]);
 
+  // Backward compatibility
+  const getExpensesWithHierarchy = () => getTransactionsWithHierarchy('expense');
+
   return {
     categories,
     isLoading,
     fetchCategories,
-    getExpensesWithHierarchy,
+    getTransactionsWithHierarchy,
+    getExpensesWithHierarchy, // Keep for backward compatibility
     getParentCategories,
     getSubcategoriesForParent,
     getCategoryDisplay,

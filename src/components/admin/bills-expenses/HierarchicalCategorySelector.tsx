@@ -7,17 +7,19 @@ interface HierarchicalCategorySelectorProps {
   selectedCategoryId: string;
   onCategoryChange: (categoryId: string) => void;
   required?: boolean;
+  transactionType?: 'income' | 'expense';
 }
 
 export const HierarchicalCategorySelector = ({
   selectedCategoryId,
   onCategoryChange,
   required = false,
+  transactionType = 'expense'
 }: HierarchicalCategorySelectorProps) => {
   const { categories, getParentCategories, getSubcategoriesForParent } = useHierarchicalCategories();
   const [selectedParentId, setSelectedParentId] = React.useState('');
   
-  const parentCategories = getParentCategories();
+  const parentCategories = getParentCategories(transactionType);
   
   // Find the selected category and determine parent/subcategory
   const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
