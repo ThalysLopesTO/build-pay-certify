@@ -1,173 +1,25 @@
-
 import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Send } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import JobsiteSelect from './JobsiteSelect';
-import DatePickerField from './DatePickerField';
-import FileUploadField from './FileUploadField';
-import { useMaterialRequestSubmission } from '@/hooks/useMaterialRequestSubmission';
-
-interface FileWithPreview extends File {
-  id: string;
-  preview?: string;
-}
-
-const formSchema = z.object({
-  jobsiteId: z.string().min(1, 'Please select a jobsite'),
-  deliveryDate: z.date({
-    required_error: 'Please select a delivery date',
-  }),
-  deliveryTime: z.string().min(1, 'Please enter the delivery time'),
-  floorUnit: z.string().optional(),
-  materialList: z.string().min(1, 'Please enter the material list'),
-  files: z.array(z.any()).optional(),
-});
-
-type FormData = z.infer<typeof formSchema>;
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import MaterialRequestFormEnhanced from './MaterialRequestFormEnhanced';
+import { AlertTriangle, ArrowRight } from 'lucide-react';
 
 const MaterialRequestForm = () => {
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      jobsiteId: '',
-      floorUnit: '',
-      materialList: '',
-      deliveryTime: '',
-      files: [],
-    },
-  });
-
-  const submitMutation = useMaterialRequestSubmission();
-
-  const onSubmit = (data: FormData) => {
-    // Transform the data to match MaterialRequestData interface
-    const requestData = {
-      jobsiteId: data.jobsiteId,
-      deliveryDate: data.deliveryDate,
-      deliveryTime: data.deliveryTime,
-      floorUnit: data.floorUnit,
-      materialList: data.materialList,
-      files: data.files as File[],
-    };
-    
-    submitMutation.mutate(requestData);
-    form.reset();
-  };
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Send className="h-5 w-5" />
-          <span>Material Request Form</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="jobsiteId"
-              render={({ field }) => (
-                <JobsiteSelect
-                  value={field.value}
-                  onValueChange={field.onChange}
-                />
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="deliveryDate"
-              render={({ field }) => (
-                <DatePickerField
-                  value={field.value}
-                  onChange={field.onChange}
-                  label="Delivery Date"
-                  placeholder="Pick a delivery date"
-                />
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="deliveryTime"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Delivery Time</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="time"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="floorUnit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Floor / Unit (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., 3rd Floor, Unit 205" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="materialList"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Material List</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter detailed list of materials needed..."
-                      className="min-h-[120px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="files"
-              render={({ field }) => (
-                <FileUploadField
-                  value={field.value || []}
-                  onChange={field.onChange}
-                  disabled={submitMutation.isPending}
-                />
-              )}
-            />
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={submitMutation.isPending}
-            >
-              {submitMutation.isPending ? 'Submitting...' : 'Submit Material Request'}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription className="flex items-center justify-between">
+          <span>
+            <strong>Enhanced Material Request System Available!</strong> 
+            <br />
+            Use the structured catalog-based form for better organization.
+          </span>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+        </AlertDescription>
+      </Alert>
+      
+      <MaterialRequestFormEnhanced />
+    </div>
   );
 };
 

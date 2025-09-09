@@ -179,6 +179,40 @@ export const useInvoices = () => {
     },
   });
 
+  // Delete invoice
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      console.log('Deleting invoice:', invoiceId);
+      
+      if (!user?.companyId) {
+        throw new Error('Company ID is required to delete invoices');
+      }
+      
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoiceId)
+        .eq('company_id', user.companyId); // Ensure company isolation
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices', user?.companyId] });
+      toast({
+        title: 'Invoice Deleted',
+        description: 'Invoice has been deleted successfully.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting invoice:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete invoice. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     invoices,
     isLoading,
@@ -188,5 +222,7 @@ export const useInvoices = () => {
     isCreating: createInvoiceMutation.isPending,
     updateInvoiceStatus: updateInvoiceStatusMutation.mutate,
     isUpdating: updateInvoiceStatusMutation.isPending,
+    deleteInvoice: deleteInvoiceMutation.mutate,
+    isDeleting: deleteInvoiceMutation.isPending,
   };
 };

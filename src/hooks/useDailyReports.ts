@@ -21,6 +21,7 @@ export interface DailyReport {
   user_profiles?: {
     first_name: string | null;
     last_name: string | null;
+    photo_url: string | null;
   } | null;
 }
 
@@ -54,7 +55,8 @@ export const useDailyReports = (filters?: {
           ),
           user_profiles!daily_reports_submitted_by_fkey (
             first_name,
-            last_name
+            last_name,
+            photo_url
           )
         `)
         .eq('company_id', user.companyId);

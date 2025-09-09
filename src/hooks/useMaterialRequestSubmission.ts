@@ -10,11 +10,21 @@ interface MaterialRequestData {
   deliveryDate: Date;
   deliveryTime: string;
   floorUnit?: string;
-  materialList: string;
+  materialList?: string; // Keep for backward compatibility
   files?: File[];
   takeoffItems?: Array<{
     takeoffId: string;
     requestedQty: number;
+  }>;
+  lineItems?: Array<{
+    catalog_item_id?: string;
+    quantity: number;
+    unit: string;
+    material_name: string;
+    spec_override?: string;
+    notes?: string;
+    is_custom: boolean;
+    line_order: number;
   }>;
 }
 
@@ -48,10 +58,11 @@ export const useMaterialRequestSubmission = () => {
         delivery_date: data.deliveryDate.toISOString().split('T')[0],
         delivery_time: data.deliveryTime,
         floor_unit: data.floorUnit || null,
-        material_list: data.materialList,
+        material_list: data.materialList || '',
         status: 'pending' as const,
         submitted_by: user.id,
         company_id: user.companyId,
+        has_line_items: Boolean(data.lineItems && data.lineItems.length > 0),
       };
       
       console.log('📤 Inserting material request with data:', insertData);
@@ -85,8 +96,36 @@ export const useMaterialRequestSubmission = () => {
       }
 
       // If there are items not in takeoff (in materialList), we would mark as unplanned
-      if (data.materialList.trim()) {
+      if (data.materialList && data.materialList.trim()) {
         console.log('Would create unplanned request record for material request:', materialRequest.id);
+      }
+
+      // Insert line items if provided
+      if (data.lineItems && data.lineItems.length > 0) {
+        console.log('📝 Inserting line items:', data.lineItems.length);
+        
+        const lineItemsData = data.lineItems.map(item => ({
+          material_request_id: materialRequest.id,
+          catalog_item_id: item.catalog_item_id || null,
+          quantity: item.quantity,
+          unit: item.unit,
+          material_name: item.material_name,
+          spec_override: item.spec_override || null,
+          notes: item.notes || null,
+          is_custom: item.is_custom,
+          line_order: item.line_order,
+        }));
+
+        const { error: lineItemsError } = await supabase
+          .from('material_request_line_items')
+          .insert(lineItemsData);
+
+        if (lineItemsError) {
+          console.error('❌ Error creating line items:', lineItemsError);
+          throw lineItemsError;
+        }
+
+        console.log('✅ Line items created successfully');
       }
 
       // Handle file uploads if any

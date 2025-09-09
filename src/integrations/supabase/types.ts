@@ -497,6 +497,7 @@ export type Database = {
           invoice_reminder_days_before: number | null
           quote_reminder_days: number | null
           show_tax_breakdown_to_employees: boolean | null
+          start_date: string | null
           tax_percentage: number | null
           timesheet_frequency: string
           timezone: string
@@ -520,6 +521,7 @@ export type Database = {
           invoice_reminder_days_before?: number | null
           quote_reminder_days?: number | null
           show_tax_breakdown_to_employees?: boolean | null
+          start_date?: string | null
           tax_percentage?: number | null
           timesheet_frequency?: string
           timezone?: string
@@ -543,6 +545,7 @@ export type Database = {
           invoice_reminder_days_before?: number | null
           quote_reminder_days?: number | null
           show_tax_breakdown_to_employees?: boolean | null
+          start_date?: string | null
           tax_percentage?: number | null
           timesheet_frequency?: string
           timezone?: string
@@ -1104,6 +1107,84 @@ export type Database = {
           },
         ]
       }
+      material_catalog_items: {
+        Row: {
+          category: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          sku: string | null
+          spec_size: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          sku?: string | null
+          spec_size?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          sku?: string | null
+          spec_size?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      material_categories: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       material_request_attachments: {
         Row: {
           created_at: string
@@ -1148,6 +1229,63 @@ export type Database = {
           },
         ]
       }
+      material_request_line_items: {
+        Row: {
+          catalog_item_id: string | null
+          created_at: string
+          id: string
+          is_custom: boolean
+          line_order: number
+          material_name: string
+          material_request_id: string
+          notes: string | null
+          quantity: number
+          spec_override: string | null
+          unit: string
+        }
+        Insert: {
+          catalog_item_id?: string | null
+          created_at?: string
+          id?: string
+          is_custom?: boolean
+          line_order?: number
+          material_name: string
+          material_request_id: string
+          notes?: string | null
+          quantity: number
+          spec_override?: string | null
+          unit: string
+        }
+        Update: {
+          catalog_item_id?: string | null
+          created_at?: string
+          id?: string
+          is_custom?: boolean
+          line_order?: number
+          material_name?: string
+          material_request_id?: string
+          notes?: string | null
+          quantity?: number
+          spec_override?: string | null
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_catalog_item"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "material_catalog_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_material_request"
+            columns: ["material_request_id"]
+            isOneToOne: false
+            referencedRelation: "material_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       material_requests: {
         Row: {
           company_id: string | null
@@ -1155,6 +1293,7 @@ export type Database = {
           delivery_date: string
           delivery_time: string
           floor_unit: string | null
+          has_line_items: boolean
           id: string
           jobsite_id: string
           material_list: string
@@ -1168,6 +1307,7 @@ export type Database = {
           delivery_date: string
           delivery_time: string
           floor_unit?: string | null
+          has_line_items?: boolean
           id?: string
           jobsite_id: string
           material_list: string
@@ -1181,6 +1321,7 @@ export type Database = {
           delivery_date?: string
           delivery_time?: string
           floor_unit?: string | null
+          has_line_items?: boolean
           id?: string
           jobsite_id?: string
           material_list?: string

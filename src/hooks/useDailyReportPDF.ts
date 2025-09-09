@@ -47,6 +47,7 @@ type GenerateArgs = {
     address?: string;
     phone?: string;
     email?: string;
+    timezone?: string;
   };
   logoUrl?: string | null;                          // pass dataURL for best results
 };
@@ -114,7 +115,7 @@ function drawHeader(doc: ExtendedJsPDF, args: GenerateArgs) {
   lines.forEach((l) => { doc.text(l, rightX, y, { align: "right" }); y += 13; });
 }
 
-function drawFooter(doc: ExtendedJsPDF) {
+function drawFooter(doc: ExtendedJsPDF, timezone?: string) {
   const pageCount = (doc as any).getNumberOfPages();
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
@@ -126,7 +127,10 @@ function drawFooter(doc: ExtendedJsPDF) {
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.text(`Generated ${generatedDate}`, MARGIN, h - MARGIN);
+    const leftText = timezone ? 
+      `Generated ${generatedDate} • Times shown in ${timezone}` : 
+      `Generated ${generatedDate}`;
+    doc.text(leftText, MARGIN, h - MARGIN);
     doc.text(`Page ${i} of ${pageCount}`, w - MARGIN, h - MARGIN, { align: "right" });
   }
 }
@@ -363,7 +367,7 @@ export const useDailyReportPDF = () => {
     }
 
     // Footer/page numbers
-    drawFooter(doc);
+    drawFooter(doc, companySettings?.timezone);
 
     // Save
     const safeJobsite = (report.jobsite || "Jobsite").replace(/[^\w\d\-_. ]+/g, "");
