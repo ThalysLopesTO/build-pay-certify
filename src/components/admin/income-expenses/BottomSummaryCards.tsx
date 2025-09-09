@@ -16,7 +16,9 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
   getCategoryDisplay,
 }) => {
   // Calculate totals based on current filters
-  const totalFiltered = transactions.length;
+  const totalInflow = transactions
+    .filter(t => t.transaction_type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
   
   const paidAmount = transactions
     .filter(t => t.payment_status === 'paid')
@@ -57,20 +59,20 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* Total Filtered */}
+      {/* Total Inflow */}
       <Card className="bg-white shadow-sm border-slate-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-slate-600">Total Filtered</CardTitle>
+          <CardTitle className="text-sm font-medium text-slate-600">Total Inflow</CardTitle>
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg">
-            <DollarSign className="h-4 w-4 text-white" />
+            <TrendingUp className="h-4 w-4 text-white" />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-slate-900">
-            {totalFiltered}
+          <div className="text-2xl font-bold text-green-600">
+            ${totalInflow.toLocaleString()}
           </div>
           <p className="text-xs text-slate-500">
-            transactions found
+            +{transactions.filter(t => t.transaction_type === 'income').length} income
           </p>
         </CardContent>
       </Card>
