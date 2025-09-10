@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -19,8 +20,8 @@ import { cn } from '@/lib/utils';
 import { HierarchicalCategorySelector } from './bills-expenses/HierarchicalCategorySelector';
 import { HierarchicalCategoryManager } from './bills-expenses/HierarchicalCategoryManager';
 import { useHierarchicalCategories, TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
-import { useDateRangeFilter } from '@/hooks/useDateRangeFilter';
-import { useTransactionFilters } from '@/hooks/useTransactionFilters';
+import { useDateRangeFilter, DateRangeType } from '@/hooks/useDateRangeFilter';
+import { useTransactionFilters, TransactionTypeFilter } from '@/hooks/useTransactionFilters';
 import { MonthlyCashFlowChart } from './income-expenses/MonthlyCashFlowChart';
 import { CategoryBreakdownChart } from './income-expenses/CategoryBreakdownChart';
 import { IncomeExpensesKPIs } from './income-expenses/IncomeExpensesKPIs';
@@ -317,6 +318,39 @@ const IncomeExpensesManagement = () => {
           getCategoryDisplay={getCategoryDisplay}
         />
       </div>
+
+      {/* Shared Filter Bar */}
+      <Card className="bg-white shadow-sm border-slate-200">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Time Range Tabs */}
+            <div className="space-y-3">
+              <Label className="text-slate-600 font-medium">Time Range</Label>
+              <Tabs value={selectedRange} onValueChange={(value) => setSelectedRange(value as DateRangeType)} className="w-full">
+                <TabsList className="grid w-full grid-cols-5 h-9 bg-slate-100">
+                  <TabsTrigger value="this-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">This Month</TabsTrigger>
+                  <TabsTrigger value="last-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Last Month</TabsTrigger>
+                  <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
+                  <TabsTrigger value="all-time" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All-Time</TabsTrigger>
+                  <TabsTrigger value="custom" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Custom</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            {/* Transaction Type Tabs */}
+            <div className="space-y-3">
+              <Label className="text-slate-600 font-medium">Transaction Type</Label>
+              <Tabs value={transactionTypeFilter} onValueChange={(value) => setTransactionTypeFilter(value as TransactionTypeFilter)} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 h-9 bg-slate-100">
+                  <TabsTrigger value="all" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All</TabsTrigger>
+                  <TabsTrigger value="expense" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Expenses</TabsTrigger>
+                  <TabsTrigger value="income" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Income</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Bottom Summary Cards */}
       <BottomSummaryCards 

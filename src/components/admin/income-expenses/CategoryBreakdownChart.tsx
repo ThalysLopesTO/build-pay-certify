@@ -28,62 +28,75 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
 }) => {
   const [showSubcategories, setShowSubcategories] = useState(false);
 
-  // Process data for Monthly Breakdown by Parent Category (right chart)
+  // Process data for Monthly Breakdown by Parent Category (last 4 months)
   const chartData = React.useMemo(() => {
-    // Get current month for breakdown
-    const now = new Date();
-    const currentMonth = format(startOfMonth(now), 'yyyy-MM');
+    // Get last 4 months
+    const last4Months = Array.from({ length: 4 }, (_, i) => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      return {
+        date: startOfMonth(date),
+        key: format(startOfMonth(date), 'yyyy-MM'),
+        label: format(startOfMonth(date), 'MMM yyyy')
+      };
+    }).reverse();
 
-    // Filter transactions for current month and type
-    const filteredTransactions = transactions.filter(transaction => {
-      const transactionMonth = format(startOfMonth(new Date(transaction.expense_date)), 'yyyy-MM');
-      const matchesMonth = transactionMonth === currentMonth;
-      
+    // Filter transactions by type
+    const typeFilteredTransactions = transactions.filter(transaction => {
       if (transactionTypeFilter === 'all') {
         // Default to expenses when showing "All" (like original)
-        return matchesMonth && transaction.transaction_type === 'expense';
+        return transaction.transaction_type === 'expense';
       }
-      return matchesMonth && transaction.transaction_type === transactionTypeFilter;
+      return transaction.transaction_type === transactionTypeFilter;
     });
 
-    // Group by category (parent or subcategory based on toggle)
-    const categoryMap = new Map<string, { amount: number; categoryId: string; categoryName: string }>();
+    // Group transactions by month and category
+    const monthlyData = last4Months.map(month => {
+      const monthTransactions = typeFilteredTransactions.filter(transaction => {
+        const transactionMonth = format(startOfMonth(new Date(transaction.expense_date)), 'yyyy-MM');
+        return transactionMonth === month.key;
+      });
 
-    filteredTransactions.forEach(transaction => {
-      let categoryKey: string;
-      let categoryName: string;
+      // Group by category (parent or subcategory based on toggle)
+      const categoryMap = new Map<string, { amount: number; categoryId: string; categoryName: string }>();
+
+      monthTransactions.forEach(transaction => {
+        let categoryKey: string;
+        let categoryName: string;
+        
+        if (showSubcategories && transaction.subcategory_name) {
+          // Show subcategories with parent > sub format
+          categoryKey = `${transaction.category_id}_${transaction.subcategory_name}`;
+          categoryName = `${transaction.parent_category_name} > ${transaction.subcategory_name}`;
+        } else {
+          // Show parent categories only
+          categoryKey = transaction.category_id;
+          categoryName = transaction.parent_category_name || getCategoryDisplay(transaction.category_id);
+        }
+
+        if (!categoryMap.has(categoryKey)) {
+          categoryMap.set(categoryKey, {
+            amount: 0,
+            categoryId: transaction.category_id,
+            categoryName
+          });
+        }
+
+        const categoryData = categoryMap.get(categoryKey)!;
+        categoryData.amount += transaction.amount;
+      });
+
+      // Convert to chart format
+      const monthData: { [key: string]: number | string } = { month: month.label };
       
-      if (showSubcategories && transaction.subcategory_name) {
-        // Show subcategories with parent > sub format
-        categoryKey = `${transaction.category_id}_${transaction.subcategory_name}`;
-        categoryName = `${transaction.parent_category_name} > ${transaction.subcategory_name}`;
-      } else {
-        // Show parent categories only
-        categoryKey = transaction.category_id;
-        categoryName = transaction.parent_category_name || getCategoryDisplay(transaction.category_id);
-      }
+      Array.from(categoryMap.values()).forEach(category => {
+        monthData[category.categoryName] = category.amount;
+      });
 
-      if (!categoryMap.has(categoryKey)) {
-        categoryMap.set(categoryKey, {
-          amount: 0,
-          categoryId: transaction.category_id,
-          categoryName
-        });
-      }
-
-      const categoryData = categoryMap.get(categoryKey)!;
-      categoryData.amount += transaction.amount;
+      return monthData;
     });
 
-    // Convert to stacked bar chart format
-    const categories = Array.from(categoryMap.values());
-    const monthData: { [key: string]: number | string } = { month: format(now, 'MMM yyyy') };
-    
-    categories.forEach(category => {
-      monthData[category.categoryName] = category.amount;
-    });
-
-    return [monthData];
+    return monthlyData;
   }, [transactions, transactionTypeFilter, getCategoryDisplay, showSubcategories]);
 
   // Get categories for legend and bars
@@ -119,25 +132,6 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
           </Button>
         </div>
 
-        {/* Time Range Tabs */}
-        <Tabs value={dateRangeType} onValueChange={(value) => onDateRangeChange(value as DateRangeType)} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-8 bg-slate-100">
-            <TabsTrigger value="this-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">This Month</TabsTrigger>
-            <TabsTrigger value="last-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Last Month</TabsTrigger>
-            <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
-            <TabsTrigger value="all-time" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All-Time</TabsTrigger>
-            <TabsTrigger value="custom" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Custom</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {/* Transaction Type Tabs */}
-        <Tabs value={transactionTypeFilter} onValueChange={(value) => onTransactionTypeChange(value as TransactionTypeFilter)} className="w-full mt-2">
-          <TabsList className="grid w-full grid-cols-3 h-8 bg-slate-100">
-            <TabsTrigger value="all" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All</TabsTrigger>
-            <TabsTrigger value="expense" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Expenses</TabsTrigger>
-            <TabsTrigger value="income" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Income</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </CardHeader>
       <CardContent>
         <div className="h-80">

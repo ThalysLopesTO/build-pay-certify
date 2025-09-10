@@ -131,25 +131,6 @@ export const MonthlyCashFlowChart: React.FC<MonthlyCashFlowChartProps> = ({
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-semibold text-slate-900">Overall Monthly Cash Flow</CardTitle>
         
-        {/* Time Range Tabs */}
-        <Tabs value={dateRangeType} onValueChange={(value) => onDateRangeChange(value as DateRangeType)} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-8 bg-slate-100">
-            <TabsTrigger value="this-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">This Month</TabsTrigger>
-            <TabsTrigger value="last-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Last Month</TabsTrigger>
-            <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
-            <TabsTrigger value="all-time" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All-Time</TabsTrigger>
-            <TabsTrigger value="custom" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Custom</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {/* Transaction Type Tabs */}
-        <Tabs value={transactionTypeFilter} onValueChange={(value) => onTransactionTypeChange(value as TransactionTypeFilter)} className="w-full mt-2">
-          <TabsList className="grid w-full grid-cols-3 h-8 bg-slate-100">
-            <TabsTrigger value="all" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All</TabsTrigger>
-            <TabsTrigger value="expense" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Expenses</TabsTrigger>
-            <TabsTrigger value="income" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Income</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </CardHeader>
       <CardContent>
         {dateRangeType === 'custom' && (
