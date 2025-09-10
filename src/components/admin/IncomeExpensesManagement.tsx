@@ -218,12 +218,12 @@ const IncomeExpensesManagement = () => {
 
   const getStatusBadge = (status: 'paid' | 'unpaid' | 'scheduled') => {
     const config = {
-      paid: { color: 'bg-green-100 text-green-800 border-green-200', label: 'Paid' },
-      unpaid: { color: 'bg-red-100 text-red-800 border-red-200', label: 'Unpaid' },
-      scheduled: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Scheduled' }
+      paid: { color: 'bg-green-50 text-green-700 border-green-200', label: 'Paid' },
+      unpaid: { color: 'bg-red-50 text-red-700 border-red-200', label: 'Unpaid' },
+      scheduled: { color: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Scheduled' }
     };
     return (
-      <Badge className={`${config[status].color} border`}>
+      <Badge className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${config[status].color}`}>
         {config[status].label}
       </Badge>
     );
@@ -231,16 +231,56 @@ const IncomeExpensesManagement = () => {
 
   const getTransactionTypeBadge = (type: 'income' | 'expense') => {
     return type === 'income' ? (
-      <Badge className="bg-green-100 text-green-800 border-green-200 border">
-        <TrendingUp className="h-3 w-3 mr-1" />
+      <Badge className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
         Income
       </Badge>
     ) : (
-      <Badge className="bg-red-100 text-red-800 border-red-200 border">
-        <TrendingDown className="h-3 w-3 mr-1" />
+      <Badge className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-50 text-red-700 border border-red-200">
         Expense
       </Badge>
     );
+  };
+
+  const getCategoryPillBadge = (categoryId: string) => {
+    const categoryDisplay = getCategoryDisplay(categoryId);
+    if (!categoryDisplay) return null;
+    
+    const parentCategory = categoryDisplay.split(' > ')[0];
+    const color = getCategoryColor(categoryId, parentCategory);
+    
+    // Convert HSL to values for opacity backgrounds
+    const hslMatch = color.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+    if (!hslMatch) return null;
+    
+    const [, h, s, l] = hslMatch;
+    const bgColor = `hsl(${h}, ${s}%, ${l}%, 0.1)`;
+    const borderColor = `hsl(${h}, ${s}%, ${l}%, 0.3)`;
+    
+    return (
+      <Badge 
+        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border"
+        style={{
+          backgroundColor: bgColor,
+          borderColor: borderColor,
+          color: color
+        }}
+      >
+        {categoryDisplay}
+      </Badge>
+    );
+  };
+
+  const formatAmount = (amount: number, type: 'income' | 'expense') => {
+    const formatted = new Intl.NumberFormat('en-CA', {
+      style: 'currency',
+      currency: 'CAD',
+    }).format(Math.abs(amount));
+    
+    if (type === 'income') {
+      return <span className="text-green-600 font-semibold tabular-nums">+{formatted}</span>;
+    } else {
+      return <span className="text-red-600 font-semibold tabular-nums">−{formatted}</span>;
+    }
   };
 
   // Get filtered transactions based on all active filters including category
@@ -452,74 +492,103 @@ const IncomeExpensesManagement = () => {
 
       {/* Transactions Table */}
       <Card className="bg-white shadow-sm border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-slate-900">Transactions</CardTitle>
+        <CardHeader className="border-b border-slate-200 pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl font-semibold text-slate-900">
+              Transactions
+            </CardTitle>
+            <Badge variant="outline" className="text-slate-600">
+              {filteredTransactions.length} transactions
+            </Badge>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Payer/Payee</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                <TableRow className="border-b border-slate-200 bg-slate-50/50">
+                  <TableHead className="font-semibold text-slate-700 py-3">Date</TableHead>
+                  <TableHead className="font-semibold text-slate-700 py-3">Type</TableHead>
+                  <TableHead className="font-semibold text-slate-700 py-3">Title</TableHead>
+                  <TableHead className="font-semibold text-slate-700 py-3">Category</TableHead>
+                  <TableHead className="font-semibold text-slate-700 py-3">Payer/Payee</TableHead>
+                  <TableHead className="font-semibold text-slate-700 py-3 text-right">Amount</TableHead>
+                  <TableHead className="font-semibold text-slate-700 py-3">Status</TableHead>
+                  <TableHead className="font-semibold text-slate-700 py-3">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTransactions.length === 0 ? (
                   <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      {transactionTypeFilter === 'income' 
-                        ? "No income recorded. Click Add Income to record money received."
-                        : transactionTypeFilter === 'expense'
-                        ? "No expenses recorded. Click Add Expense to track spending."
-                        : "No transactions found."
-                      }
+                    <TableCell colSpan={8} className="text-center py-12 text-slate-500">
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <Receipt className="h-12 w-12 text-slate-300" />
+                        <div>
+                          <p className="text-lg font-medium">No transactions match your filters</p>
+                          <p className="text-sm">Try adjusting your filters or add a new transaction</p>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            onClick={() => { setTransactionType('income'); resetForm(); setIsCreateDialogOpen(true); }}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Add Income
+                          </Button>
+                          <Button
+                            onClick={() => { setTransactionType('expense'); resetForm(); setIsCreateDialogOpen(true); }}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Add Expense
+                          </Button>
+                        </div>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell>{format(new Date(transaction.expense_date), 'MMM dd, yyyy')}</TableCell>
-                      <TableCell>{getTransactionTypeBadge(transaction.transaction_type)}</TableCell>
-                      <TableCell>{transaction.expense_title}</TableCell>
-                       <TableCell>
-                         <div className="flex items-center gap-2">
-                           {(() => {
-                             const categoryDisplay = getCategoryDisplay(transaction.category_id);
-                             const parentCategory = categoryDisplay ? categoryDisplay.split(' > ')[0] : '';
-                             const color = parentCategory ? getCategoryColor(parentCategory, parentCategory) : '#64748b';
-                             return (
-                               <>
-                                 <div 
-                                   className="w-3 h-3 rounded-full flex-shrink-0" 
-                                   style={{ backgroundColor: color }}
-                                 />
-                                 <span className="text-sm text-slate-700">{categoryDisplay}</span>
-                               </>
-                             );
-                           })()}
-                         </div>
-                       </TableCell>
-                      <TableCell>{transaction.vendor_payee}</TableCell>
-                      <TableCell>
-                        <span className={transaction.transaction_type === 'income' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                          {transaction.transaction_type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
-                        </span>
+                    <TableRow key={transaction.id} className="border-b border-slate-100 hover:bg-slate-50/30">
+                      <TableCell className="font-medium text-slate-700 py-3">
+                        {format(new Date(transaction.expense_date), 'MMM dd, yyyy')}
                       </TableCell>
-                      <TableCell>{getStatusBadge(transaction.payment_status)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm" onClick={() => startEdit(transaction)}>
-                            <Edit className="h-4 w-4" />
+                      <TableCell className="py-3">
+                        {getTransactionTypeBadge(transaction.transaction_type)}
+                      </TableCell>
+                      <TableCell className="font-medium text-slate-900 max-w-48 truncate py-3">
+                        {transaction.expense_title}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        {getCategoryPillBadge(transaction.category_id)}
+                      </TableCell>
+                      <TableCell className="text-slate-700 max-w-32 truncate py-3">
+                        {transaction.vendor_payee}
+                      </TableCell>
+                      <TableCell className="text-right py-3">
+                        {formatAmount(transaction.amount, transaction.transaction_type)}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        {getStatusBadge(transaction.payment_status)}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEdit(transaction)}
+                            className="h-8 w-8 p-0 hover:bg-slate-100"
+                            title="Edit transaction"
+                          >
+                            <Edit className="h-3 w-3" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(transaction.id)}>
-                            <Trash2 className="h-4 w-4" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(transaction.id)}
+                            className="h-8 w-8 p-0 hover:bg-red-50 text-red-600 hover:text-red-700"
+                            title="Delete transaction"
+                          >
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </TableCell>
