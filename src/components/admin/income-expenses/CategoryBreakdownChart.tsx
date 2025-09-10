@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart3 } from 'lucide-react';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { DateRangeType } from '@/hooks/useDateRangeFilter';
 import { TransactionTypeFilter } from '@/hooks/useTransactionFilters';
@@ -99,12 +100,19 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
     return monthlyData;
   }, [transactions, transactionTypeFilter, getCategoryDisplay, showSubcategories]);
 
-  // Get categories for legend and bars
+  // Get categories for legend and bars (collect from ALL months, not just first)
   const categories = React.useMemo(() => {
-    if (chartData.length === 0) return [];
+    const allCategories = new Set<string>();
     
-    const data = chartData[0];
-    return Object.keys(data).filter(key => key !== 'month');
+    chartData.forEach(monthData => {
+      Object.keys(monthData).forEach(key => {
+        if (key !== 'month') {
+          allCategories.add(key);
+        }
+      });
+    });
+    
+    return Array.from(allCategories).sort();
   }, [chartData]);
 
   const getChartTitle = () => {
@@ -121,7 +129,10 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
     <Card className="bg-white shadow-sm border-slate-200">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-slate-900">{getChartTitle()}</CardTitle>
+          <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" />
+            {getChartTitle()}
+          </CardTitle>
           <Button
             variant="outline"
             size="sm"

@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -129,7 +129,10 @@ export const MonthlyCashFlowChart: React.FC<MonthlyCashFlowChartProps> = ({
   return (
     <Card className="bg-white shadow-sm border-slate-200">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold text-slate-900">Overall Monthly Cash Flow</CardTitle>
+        <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          Overall Monthly Cash Flow
+        </CardTitle>
         
       </CardHeader>
       <CardContent>
