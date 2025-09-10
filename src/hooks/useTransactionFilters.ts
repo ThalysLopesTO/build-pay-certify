@@ -15,6 +15,8 @@ export interface UseTransactionFiltersReturn {
   setStatusFilter: (status: StatusFilter) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (category: string) => void;
   
   // Date range integration
   dateRangeType: DateRangeType;
@@ -38,6 +40,7 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     (searchParams.get('status') as StatusFilter) || 'all'
   );
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category') || 'all');
   const [dateRangeType, setDateRangeType] = useState<DateRangeType>(
     (searchParams.get('range') as DateRangeType) || 'year-to-date'
   );
@@ -49,6 +52,7 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     if (transactionTypeFilter !== 'all') params.set('type', transactionTypeFilter);
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (searchTerm) params.set('search', searchTerm);
+    if (categoryFilter !== 'all') params.set('category', categoryFilter);
     if (dateRangeType !== 'year-to-date') params.set('range', dateRangeType);
     
     setSearchParams(params);
@@ -58,7 +62,7 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
   useEffect(() => {
     const timeoutId = setTimeout(syncToUrl, 300); // Debounce URL updates
     return () => clearTimeout(timeoutId);
-  }, [transactionTypeFilter, statusFilter, searchTerm, dateRangeType]);
+  }, [transactionTypeFilter, statusFilter, searchTerm, categoryFilter, dateRangeType]);
 
   const getFilteredTransactions = useMemo(() => {
     return (transactions: TransactionWithHierarchy[], dateRange: DateRange): TransactionWithHierarchy[] => {
@@ -74,6 +78,9 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
         // Transaction type filter
         const matchesType = transactionTypeFilter === 'all' || transaction.transaction_type === transactionTypeFilter;
         
+        // Category filter
+        const matchesCategory = categoryFilter === 'all' || transaction.category_id === categoryFilter;
+        
         // Date range filter
         let matchesDateRange = true;
         if (dateRange.start && dateRange.end) {
@@ -84,10 +91,10 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
           });
         }
         
-        return matchesSearch && matchesStatus && matchesType && matchesDateRange;
+        return matchesSearch && matchesStatus && matchesType && matchesCategory && matchesDateRange;
       });
     };
-  }, [searchTerm, statusFilter, transactionTypeFilter]);
+  }, [searchTerm, statusFilter, transactionTypeFilter, categoryFilter]);
 
   return {
     transactionTypeFilter,
@@ -96,6 +103,8 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     setStatusFilter,
     searchTerm,
     setSearchTerm,
+    categoryFilter,
+    setCategoryFilter,
     dateRangeType,
     setDateRangeType,
     getFilteredTransactions,

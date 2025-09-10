@@ -57,13 +57,12 @@ const IncomeExpensesManagement = () => {
     setStatusFilter,
     searchTerm,
     setSearchTerm,
+    categoryFilter,
+    setCategoryFilter,
     dateRangeType,
     setDateRangeType,
     getFilteredTransactions,
   } = useTransactionFilters();
-
-  // Category filter state
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithHierarchy | null>(null);
@@ -283,16 +282,8 @@ const IncomeExpensesManagement = () => {
     }
   };
 
-  // Get filtered transactions based on all active filters including category
-  const baseFilteredTransactions = getFilteredTransactions(transactions, effectiveRange);
-  const filteredTransactions = React.useMemo(() => {
-    if (categoryFilter === 'all') return baseFilteredTransactions;
-    return baseFilteredTransactions.filter(transaction => {
-      const categoryDisplay = getCategoryDisplay(transaction.category_id);
-      const parentCategory = categoryDisplay.split(' > ')[0];
-      return parentCategory === categoryFilter;
-    });
-  }, [baseFilteredTransactions, categoryFilter, getCategoryDisplay]);
+  // Get filtered transactions (now includes category filtering in the hook)
+  const filteredTransactions = getFilteredTransactions(transactions, effectiveRange);
 
   // Get unique parent categories for filter dropdown
   const availableCategories = React.useMemo(() => {
@@ -387,16 +378,10 @@ const IncomeExpensesManagement = () => {
       {/* Comprehensive Filter Bar */}
       <Card className="bg-white shadow-sm border-slate-200">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-end gap-4">
             {/* Date Range */}
-            <div className="space-y-2">
-              <Label className="text-slate-600">Date Range</Label>
-              <Tabs value={selectedRange} onValueChange={(value) => setSelectedRange(value as DateRangeType)} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 h-9 bg-slate-100">
-                  <TabsTrigger value="this-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">This Month</TabsTrigger>
-                  <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
-                </TabsList>
-              </Tabs>
+            <div className="space-y-2 min-w-[160px]">
+              <Label className="text-slate-600 text-sm">Date Range</Label>
               <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as DateRangeType)}>
                 <SelectTrigger className="border-slate-300">
                   <SelectValue />
@@ -411,9 +396,24 @@ const IncomeExpensesManagement = () => {
               </Select>
             </div>
 
+            {/* Transaction Type */}
+            <div className="space-y-2 min-w-[120px]">
+              <Label className="text-slate-600 text-sm">Type</Label>
+              <Select value={transactionTypeFilter} onValueChange={(value) => setTransactionTypeFilter(value as TransactionTypeFilter)}>
+                <SelectTrigger className="border-slate-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="expense">Expense</SelectItem>
+                  <SelectItem value="income">Income</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Search */}
-            <div className="space-y-2">
-              <Label className="text-slate-600">Search</Label>
+            <div className="space-y-2 flex-1 min-w-[200px]">
+              <Label className="text-slate-600 text-sm">Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
                 <Input
@@ -426,8 +426,8 @@ const IncomeExpensesManagement = () => {
             </div>
 
             {/* Status Filter */}
-            <div className="space-y-2">
-              <Label className="text-slate-600">Status</Label>
+            <div className="space-y-2 min-w-[120px]">
+              <Label className="text-slate-600 text-sm">Status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="border-slate-300">
                   <SelectValue />
@@ -442,13 +442,13 @@ const IncomeExpensesManagement = () => {
             </div>
 
             {/* Categories Filter */}
-            <div className="space-y-2">
-              <Label className="text-slate-600">Categories</Label>
+            <div className="space-y-2 min-w-[160px]">
+              <Label className="text-slate-600 text-sm">Categories</Label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="border-slate-300">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[300px] overflow-y-auto">
                   <SelectItem value="all">All Categories</SelectItem>
                   {availableCategories.map((category) => {
                     const color = getCategoryColor(category, category);
@@ -467,17 +467,21 @@ const IncomeExpensesManagement = () => {
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Transaction Type Tabs */}
-          <div className="mt-4">
-            <Tabs value={transactionTypeFilter} onValueChange={(value) => setTransactionTypeFilter(value as TransactionTypeFilter)} className="w-full">
-              <TabsList className="grid w-full max-w-md grid-cols-3 h-9 bg-slate-100">
-                <TabsTrigger value="all" className="text-xs px-3 data-[state=active]:bg-white data-[state=active]:text-slate-900">All</TabsTrigger>
-                <TabsTrigger value="expense" className="text-xs px-3 data-[state=active]:bg-white data-[state=active]:text-slate-900">Expenses</TabsTrigger>
-                <TabsTrigger value="income" className="text-xs px-3 data-[state=active]:bg-white data-[state=active]:text-slate-900">Income</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            {/* Export Button */}
+            <div className="space-y-2">
+              <Label className="text-slate-600 text-sm opacity-0">Export</Label>
+              <Button variant="outline" className="border-slate-300">
+                Export
+              </Button>
+            </div>
+          </div>
+          
+          {/* Transaction Count */}
+          <div className="mt-4 flex items-center justify-between">
+            <Badge variant="secondary" className="text-sm px-3 py-1">
+              {filteredTransactions.length} transactions
+            </Badge>
           </div>
         </CardContent>
       </Card>
