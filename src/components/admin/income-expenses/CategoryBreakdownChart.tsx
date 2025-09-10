@@ -6,12 +6,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { DateRangeType } from '@/hooks/useDateRangeFilter';
 import { TransactionTypeFilter } from '@/hooks/useTransactionFilters';
+import { getCategoryColor, getSubcategoryColor } from '@/utils/categoryColors';
+import { format, startOfMonth } from 'date-fns';
 
 interface CategoryBreakdownChartProps {
   transactions: TransactionWithHierarchy[];
   dateRangeType: DateRangeType;
   onDateRangeChange: (range: DateRangeType) => void;
   transactionTypeFilter: TransactionTypeFilter;
+  onTransactionTypeChange: (type: TransactionTypeFilter) => void;
   getCategoryDisplay: (categoryId: string) => string;
 }
 
@@ -20,81 +23,84 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
   dateRangeType,
   onDateRangeChange,
   transactionTypeFilter,
+  onTransactionTypeChange,
   getCategoryDisplay,
 }) => {
   const [showSubcategories, setShowSubcategories] = useState(false);
 
-  // Color palette for categories
-  const categoryColors = [
-    'hsl(221, 83%, 53%)', // Primary blue
-    'hsl(262, 83%, 58%)', // Purple
-    'hsl(142, 76%, 36%)', // Green
-    'hsl(346, 77%, 49%)', // Pink
-    'hsl(24, 95%, 53%)',  // Orange
-    'hsl(38, 92%, 50%)',  // Yellow
-    'hsl(199, 89%, 48%)', // Cyan
-    'hsl(158, 64%, 52%)', // Teal
-  ];
-
-  // Process data for chart
+  // Process data for Monthly Breakdown by Parent Category (right chart)
   const chartData = React.useMemo(() => {
-    // Group transactions by category
-    const categoryData: { [key: string]: { amount: number; category: string; type: string; color: string } } = {};
-    const categoryColorMap: { [key: string]: string } = {};
-    let colorIndex = 0;
+    // Get current month for breakdown
+    const now = new Date();
+    const currentMonth = format(startOfMonth(now), 'yyyy-MM');
 
-    // Filter transactions based on type filter
+    // Filter transactions for current month and type
     const filteredTransactions = transactions.filter(transaction => {
+      const transactionMonth = format(startOfMonth(new Date(transaction.expense_date)), 'yyyy-MM');
+      const matchesMonth = transactionMonth === currentMonth;
+      
       if (transactionTypeFilter === 'all') {
-        // For "All", show all transactions
-        return true;
+        // Default to expenses when showing "All" (like original)
+        return matchesMonth && transaction.transaction_type === 'expense';
       }
-      return transaction.transaction_type === transactionTypeFilter;
+      return matchesMonth && transaction.transaction_type === transactionTypeFilter;
     });
+
+    // Group by category (parent or subcategory based on toggle)
+    const categoryMap = new Map<string, { amount: number; categoryId: string; categoryName: string }>();
 
     filteredTransactions.forEach(transaction => {
-      const categoryId = transaction.category_id;
-      const categoryName = getCategoryDisplay(categoryId);
+      let categoryKey: string;
+      let categoryName: string;
       
-      // Assign color if not already assigned
-      if (!categoryColorMap[categoryId]) {
-        categoryColorMap[categoryId] = categoryColors[colorIndex % categoryColors.length];
-        colorIndex++;
-      }
-      
-      if (!categoryData[categoryId]) {
-        categoryData[categoryId] = { 
-          amount: 0, 
-          category: categoryName,
-          type: transaction.transaction_type,
-          color: categoryColorMap[categoryId]
-        };
+      if (showSubcategories && transaction.subcategory_name) {
+        // Show subcategories with parent > sub format
+        categoryKey = `${transaction.category_id}_${transaction.subcategory_name}`;
+        categoryName = `${transaction.parent_category_name} > ${transaction.subcategory_name}`;
+      } else {
+        // Show parent categories only
+        categoryKey = transaction.category_id;
+        categoryName = transaction.parent_category_name || getCategoryDisplay(transaction.category_id);
       }
 
-      categoryData[categoryId].amount += transaction.amount;
+      if (!categoryMap.has(categoryKey)) {
+        categoryMap.set(categoryKey, {
+          amount: 0,
+          categoryId: transaction.category_id,
+          categoryName
+        });
+      }
+
+      const categoryData = categoryMap.get(categoryKey)!;
+      categoryData.amount += transaction.amount;
     });
 
-    // Convert to array and sort by amount
-    return Object.values(categoryData)
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 10); // Show top 10 categories
+    // Convert to stacked bar chart format
+    const categories = Array.from(categoryMap.values());
+    const monthData: { [key: string]: number | string } = { month: format(now, 'MMM yyyy') };
+    
+    categories.forEach(category => {
+      monthData[category.categoryName] = category.amount;
+    });
+
+    return [monthData];
   }, [transactions, transactionTypeFilter, getCategoryDisplay, showSubcategories]);
 
-  const getBarColor = () => {
-    if (transactionTypeFilter === 'income') {
-      return 'hsl(var(--success))';
-    } else {
-      return 'hsl(var(--destructive))';
-    }
-  };
+  // Get categories for legend and bars
+  const categories = React.useMemo(() => {
+    if (chartData.length === 0) return [];
+    
+    const data = chartData[0];
+    return Object.keys(data).filter(key => key !== 'month');
+  }, [chartData]);
 
   const getChartTitle = () => {
     if (transactionTypeFilter === 'income') {
-      return 'Income by Category';
+      return 'Monthly Breakdown by Income Category';
     } else if (transactionTypeFilter === 'expense') {
-      return 'Expenses by Category';
+      return 'Monthly Breakdown by Expense Category';
     } else {
-      return 'Expenses by Category';
+      return 'Monthly Breakdown by Parent Category';
     }
   };
 
@@ -112,13 +118,24 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
             {showSubcategories ? 'Hide' : 'Show'} Subcategories
           </Button>
         </div>
+
+        {/* Time Range Tabs */}
         <Tabs value={dateRangeType} onValueChange={(value) => onDateRangeChange(value as DateRangeType)} className="w-full">
           <TabsList className="grid w-full grid-cols-5 h-8 bg-slate-100">
-            <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
             <TabsTrigger value="this-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">This Month</TabsTrigger>
             <TabsTrigger value="last-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Last Month</TabsTrigger>
+            <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
             <TabsTrigger value="all-time" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All-Time</TabsTrigger>
             <TabsTrigger value="custom" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Custom</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {/* Transaction Type Tabs */}
+        <Tabs value={transactionTypeFilter} onValueChange={(value) => onTransactionTypeChange(value as TransactionTypeFilter)} className="w-full mt-2">
+          <TabsList className="grid w-full grid-cols-3 h-8 bg-slate-100">
+            <TabsTrigger value="all" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All</TabsTrigger>
+            <TabsTrigger value="expense" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Expenses</TabsTrigger>
+            <TabsTrigger value="income" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Income</TabsTrigger>
           </TabsList>
         </Tabs>
       </CardHeader>
@@ -127,37 +144,50 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
           <ResponsiveContainer width="100%" height="100%">
             <BarChart 
               data={chartData} 
-              layout="horizontal"
-              margin={{ top: 20, right: 30, left: 80, bottom: 5 }}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
               <XAxis 
-                type="number"
+                dataKey="month"
                 className="text-xs"
                 tick={{ fontSize: 12 }}
-                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
               />
               <YAxis 
-                type="category"
-                dataKey="category"
                 className="text-xs"
                 tick={{ fontSize: 11 }}
-                width={75}
+                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
               />
               <Tooltip 
-                formatter={(value: number) => [`$${value.toLocaleString()}`, 'Amount']}
-                labelFormatter={(label) => `Category: ${label}`}
+                formatter={(value: number, name: string) => [`$${value.toLocaleString()}`, name]}
+                labelFormatter={(label) => `Month: ${label}`}
                 contentStyle={{
                   backgroundColor: 'hsl(var(--background))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
               />
-              <Bar 
-                dataKey="amount" 
-                fill={getBarColor()}
-                radius={[0, 4, 4, 0]}
+              <Legend 
+                wrapperStyle={{ paddingTop: '20px' }}
               />
+              {/* Render stacked bars for each category */}
+              {categories.map((category, index) => {
+                // Get category ID for consistent coloring
+                const categoryId = category.split(' >')[0]; // Get parent category for color
+                const color = getCategoryColor(categoryId, category);
+                const finalColor = showSubcategories && category.includes(' > ') 
+                  ? getSubcategoryColor(color) 
+                  : color;
+                
+                return (
+                  <Bar
+                    key={category}
+                    dataKey={category}
+                    stackId="category"
+                    fill={finalColor}
+                    radius={index === categories.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                  />
+                );
+              })}
             </BarChart>
           </ResponsiveContainer>
         </div>

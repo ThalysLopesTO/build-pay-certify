@@ -30,7 +30,7 @@ export interface UseTransactionFiltersReturn {
 export const useTransactionFilters = (): UseTransactionFiltersReturn => {
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Initialize from URL params
+  // Initialize from URL params - defaults: YTD + All
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<TransactionTypeFilter>(
     (searchParams.get('type') as TransactionTypeFilter) || 'all'
   );
@@ -39,7 +39,7 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
   );
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [dateRangeType, setDateRangeType] = useState<DateRangeType>(
-    (searchParams.get('range') as DateRangeType) || 'this-month'
+    (searchParams.get('range') as DateRangeType) || 'year-to-date'
   );
 
   // Sync filters to URL
@@ -49,7 +49,7 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     if (transactionTypeFilter !== 'all') params.set('type', transactionTypeFilter);
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (searchTerm) params.set('search', searchTerm);
-    if (dateRangeType !== 'this-month') params.set('range', dateRangeType);
+    if (dateRangeType !== 'year-to-date') params.set('range', dateRangeType);
     
     setSearchParams(params);
   };

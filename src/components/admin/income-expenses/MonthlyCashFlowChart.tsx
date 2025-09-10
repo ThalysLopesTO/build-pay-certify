@@ -17,6 +17,7 @@ interface MonthlyCashFlowChartProps {
   dateRangeType: DateRangeType;
   onDateRangeChange: (range: DateRangeType) => void;
   transactionTypeFilter: TransactionTypeFilter;
+  onTransactionTypeChange: (type: TransactionTypeFilter) => void;
   customRange: DateRange;
   onCustomRangeChange: (range: DateRange) => void;
 }
@@ -26,6 +27,7 @@ export const MonthlyCashFlowChart: React.FC<MonthlyCashFlowChartProps> = ({
   dateRangeType,
   onDateRangeChange,
   transactionTypeFilter,
+  onTransactionTypeChange,
   customRange,
   onCustomRangeChange,
 }) => {
@@ -33,35 +35,43 @@ export const MonthlyCashFlowChart: React.FC<MonthlyCashFlowChartProps> = ({
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(customRange.start || undefined);
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(customRange.end || undefined);
 
-  // Process data for chart
+  // Colors for income vs expenses (overall trend chart)
+  const INCOME_COLOR = 'hsl(142, 76%, 36%)'; // Green
+  const EXPENSE_COLOR = 'hsl(346, 77%, 49%)'; // Red/Pink
+
+  // Process data for Overall Monthly Cash Flow (left chart)
   const chartData = React.useMemo(() => {
-    // Group transactions by month
-    const monthlyData: { [key: string]: { income: number; expenses: number; month: string } } = {};
+    const monthMap = new Map<string, { income: number; expenses: number }>();
 
+    const last12Months = Array.from({ length: 12 }, (_, i) => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      return format(date, 'MMM yyyy');
+    }).reverse();
+
+    // Initialize all months with zero values
+    last12Months.forEach(month => {
+      monthMap.set(month, { income: 0, expenses: 0 });
+    });
+
+    // Aggregate data by month
     transactions.forEach(transaction => {
-      const date = new Date(transaction.expense_date);
-      const monthKey = format(date, 'yyyy-MM');
-      const monthLabel = format(date, 'MMM yyyy');
-
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { income: 0, expenses: 0, month: monthLabel };
-      }
-
-      if (transaction.transaction_type === 'income') {
-        monthlyData[monthKey].income += transaction.amount;
-      } else {
-        monthlyData[monthKey].expenses += transaction.amount;
+      const monthKey = format(new Date(transaction.expense_date), 'MMM yyyy');
+      if (monthMap.has(monthKey)) {
+        const monthData = monthMap.get(monthKey)!;
+        if (transaction.transaction_type === 'income') {
+          monthData.income += transaction.amount;
+        } else {
+          monthData.expenses += transaction.amount;
+        }
       }
     });
 
-    // Convert to array and sort by date
-    return Object.entries(monthlyData)
-      .map(([key, data]) => ({
-        ...data,
-        monthKey: key,
-      }))
-      .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
-      .slice(-12); // Show last 12 months
+    return Array.from(monthMap.entries()).map(([month, data]) => ({
+      month,
+      income: data.income,
+      expenses: data.expenses,
+    }));
   }, [transactions]);
 
   const handleCustomDateApply = () => {
@@ -75,16 +85,42 @@ export const MonthlyCashFlowChart: React.FC<MonthlyCashFlowChartProps> = ({
     }
   };
 
+  // Render bars based on transaction type filter
   const renderBars = () => {
     if (transactionTypeFilter === 'income') {
-      return <Bar dataKey="income" fill="hsl(var(--success))" name="Income" />;
+      return (
+        <Bar 
+          dataKey="income" 
+          fill={INCOME_COLOR}
+          name="Income"
+          radius={[4, 4, 0, 0]}
+        />
+      );
     } else if (transactionTypeFilter === 'expense') {
-      return <Bar dataKey="expenses" fill="hsl(var(--destructive))" name="Expenses" />;
+      return (
+        <Bar 
+          dataKey="expenses" 
+          fill={EXPENSE_COLOR}
+          name="Expenses"
+          radius={[4, 4, 0, 0]}
+        />
+      );
     } else {
+      // Show both income and expenses as grouped bars
       return (
         <>
-          <Bar dataKey="income" fill="hsl(var(--success))" name="Income" />
-          <Bar dataKey="expenses" fill="hsl(var(--destructive))" name="Expenses" />
+          <Bar 
+            dataKey="income" 
+            fill={INCOME_COLOR}
+            name="Income"
+            radius={[4, 4, 0, 0]}
+          />
+          <Bar 
+            dataKey="expenses" 
+            fill={EXPENSE_COLOR}
+            name="Expenses"
+            radius={[4, 4, 0, 0]}
+          />
         </>
       );
     }
@@ -93,14 +129,25 @@ export const MonthlyCashFlowChart: React.FC<MonthlyCashFlowChartProps> = ({
   return (
     <Card className="bg-white shadow-sm border-slate-200">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold text-slate-900">Monthly Cash Flow</CardTitle>
+        <CardTitle className="text-lg font-semibold text-slate-900">Overall Monthly Cash Flow</CardTitle>
+        
+        {/* Time Range Tabs */}
         <Tabs value={dateRangeType} onValueChange={(value) => onDateRangeChange(value as DateRangeType)} className="w-full">
           <TabsList className="grid w-full grid-cols-5 h-8 bg-slate-100">
-            <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
             <TabsTrigger value="this-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">This Month</TabsTrigger>
             <TabsTrigger value="last-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Last Month</TabsTrigger>
+            <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
             <TabsTrigger value="all-time" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All-Time</TabsTrigger>
             <TabsTrigger value="custom" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Custom</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {/* Transaction Type Tabs */}
+        <Tabs value={transactionTypeFilter} onValueChange={(value) => onTransactionTypeChange(value as TransactionTypeFilter)} className="w-full mt-2">
+          <TabsList className="grid w-full grid-cols-3 h-8 bg-slate-100">
+            <TabsTrigger value="all" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All</TabsTrigger>
+            <TabsTrigger value="expense" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Expenses</TabsTrigger>
+            <TabsTrigger value="income" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Income</TabsTrigger>
           </TabsList>
         </Tabs>
       </CardHeader>

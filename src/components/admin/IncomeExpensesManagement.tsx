@@ -304,6 +304,7 @@ const IncomeExpensesManagement = () => {
           dateRangeType={dateRangeType}
           onDateRangeChange={setSelectedRange}
           transactionTypeFilter={transactionTypeFilter}
+          onTransactionTypeChange={setTransactionTypeFilter}
           customRange={customRange}
           onCustomRangeChange={setCustomRange}
         />
@@ -312,6 +313,7 @@ const IncomeExpensesManagement = () => {
           dateRangeType={dateRangeType}
           onDateRangeChange={setSelectedRange}
           transactionTypeFilter={transactionTypeFilter}
+          onTransactionTypeChange={setTransactionTypeFilter}
           getCategoryDisplay={getCategoryDisplay}
         />
       </div>

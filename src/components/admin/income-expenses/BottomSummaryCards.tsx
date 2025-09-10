@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { TransactionTypeFilter } from '@/hooks/useTransactionFilters';
+import { getCategoryColor } from '@/utils/categoryColors';
 
 interface BottomSummaryCardsProps {
   transactions: TransactionWithHierarchy[];
@@ -28,18 +29,6 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
     .filter(t => t.payment_status === 'unpaid')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  // Color palette matching the chart colors
-  const categoryColors = [
-    'hsl(221, 83%, 53%)', // Primary blue
-    'hsl(262, 83%, 58%)', // Purple
-    'hsl(142, 76%, 36%)', // Green
-    'hsl(346, 77%, 49%)', // Pink
-    'hsl(24, 95%, 53%)',  // Orange
-    'hsl(38, 92%, 50%)',  // Yellow
-    'hsl(199, 89%, 48%)', // Cyan
-    'hsl(158, 64%, 52%)', // Teal
-  ];
-
   // Get top 3 categories based on current filter
   const top3Categories = React.useMemo(() => {
     const categoryTotals: { [key: string]: number } = {};
@@ -60,11 +49,11 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
     });
 
     return Object.entries(categoryTotals)
-      .map(([categoryId, amount], index) => ({
+      .map(([categoryId, amount]) => ({
         categoryId,
         category: getCategoryDisplay(categoryId),
         amount,
-        color: categoryColors[index % categoryColors.length],
+        color: getCategoryColor(categoryId, getCategoryDisplay(categoryId)),
       }))
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 3);
