@@ -22,6 +22,7 @@ import { HierarchicalCategoryManager } from './bills-expenses/HierarchicalCatego
 import { useHierarchicalCategories, TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { useDateRangeFilter, DateRangeType } from '@/hooks/useDateRangeFilter';
 import { useTransactionFilters, TransactionTypeFilter } from '@/hooks/useTransactionFilters';
+import { getCategoryColor } from '@/utils/categoryColors';
 import { MonthlyCashFlowChart } from './income-expenses/MonthlyCashFlowChart';
 import { CategoryBreakdownChart } from './income-expenses/CategoryBreakdownChart';
 import { IncomeExpensesKPIs } from './income-expenses/IncomeExpensesKPIs';
@@ -60,6 +61,9 @@ const IncomeExpensesManagement = () => {
     setDateRangeType,
     getFilteredTransactions,
   } = useTransactionFilters();
+
+  // Category filter state
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithHierarchy | null>(null);
@@ -239,8 +243,29 @@ const IncomeExpensesManagement = () => {
     );
   };
 
-  // Get filtered transactions based on all active filters
-  const filteredTransactions = getFilteredTransactions(transactions, effectiveRange);
+  // Get filtered transactions based on all active filters including category
+  const baseFilteredTransactions = getFilteredTransactions(transactions, effectiveRange);
+  const filteredTransactions = React.useMemo(() => {
+    if (categoryFilter === 'all') return baseFilteredTransactions;
+    return baseFilteredTransactions.filter(transaction => {
+      const categoryDisplay = getCategoryDisplay(transaction.category_id);
+      const parentCategory = categoryDisplay.split(' > ')[0];
+      return parentCategory === categoryFilter;
+    });
+  }, [baseFilteredTransactions, categoryFilter, getCategoryDisplay]);
+
+  // Get unique parent categories for filter dropdown
+  const availableCategories = React.useMemo(() => {
+    const categorySet = new Set<string>();
+    transactions.forEach(transaction => {
+      const categoryDisplay = getCategoryDisplay(transaction.category_id);
+      if (categoryDisplay) {
+        const parentCategory = categoryDisplay.split(' > ')[0];
+        categorySet.add(parentCategory);
+      }
+    });
+    return Array.from(categorySet).sort();
+  }, [transactions, getCategoryDisplay]);
 
   // Sync date range between components
   React.useEffect(() => {
@@ -319,72 +344,48 @@ const IncomeExpensesManagement = () => {
         />
       </div>
 
-      {/* Shared Filter Bar */}
+      {/* Comprehensive Filter Bar */}
       <Card className="bg-white shadow-sm border-slate-200">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Time Range Tabs */}
-            <div className="space-y-3">
-              <Label className="text-slate-600 font-medium">Time Range</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Date Range */}
+            <div className="space-y-2">
+              <Label className="text-slate-600">Date Range</Label>
               <Tabs value={selectedRange} onValueChange={(value) => setSelectedRange(value as DateRangeType)} className="w-full">
-                <TabsList className="grid w-full grid-cols-5 h-9 bg-slate-100">
+                <TabsList className="grid w-full grid-cols-2 h-9 bg-slate-100">
                   <TabsTrigger value="this-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">This Month</TabsTrigger>
-                  <TabsTrigger value="last-month" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Last Month</TabsTrigger>
                   <TabsTrigger value="year-to-date" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">YTD</TabsTrigger>
-                  <TabsTrigger value="all-time" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All-Time</TabsTrigger>
-                  <TabsTrigger value="custom" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Custom</TabsTrigger>
                 </TabsList>
               </Tabs>
-            </div>
-
-            {/* Transaction Type Tabs */}
-            <div className="space-y-3">
-              <Label className="text-slate-600 font-medium">Transaction Type</Label>
-              <Tabs value={transactionTypeFilter} onValueChange={(value) => setTransactionTypeFilter(value as TransactionTypeFilter)} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 h-9 bg-slate-100">
-                  <TabsTrigger value="all" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">All</TabsTrigger>
-                  <TabsTrigger value="expense" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Expenses</TabsTrigger>
-                  <TabsTrigger value="income" className="text-xs px-2 data-[state=active]:bg-white data-[state=active]:text-slate-900">Income</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Bottom Summary Cards */}
-      <BottomSummaryCards 
-        transactions={filteredTransactions}
-        transactionTypeFilter={transactionTypeFilter}
-        getCategoryDisplay={getCategoryDisplay}
-      />
-
-      {/* Filters */}
-      <Card className="bg-white shadow-sm border-slate-200">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label className="text-slate-600">Search</Label>
-              <Input
-                placeholder="Search transactions..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border-slate-300"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-slate-600">Transaction Type</Label>
-              <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
+              <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as DateRangeType)}>
                 <SelectTrigger className="border-slate-300">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Transactions</SelectItem>
-                  <SelectItem value="income">Income Only</SelectItem>
-                  <SelectItem value="expense">Expenses Only</SelectItem>
+                  <SelectItem value="this-month">This Month</SelectItem>
+                  <SelectItem value="last-month">Last Month</SelectItem>
+                  <SelectItem value="year-to-date">Year to Date</SelectItem>
+                  <SelectItem value="all-time">All Time</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Search */}
+            <div className="space-y-2">
+              <Label className="text-slate-600">Search</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                <Input
+                  placeholder="Search transactions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 border-slate-300"
+                />
+              </div>
+            </div>
+
+            {/* Status Filter */}
             <div className="space-y-2">
               <Label className="text-slate-600">Status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -399,9 +400,55 @@ const IncomeExpensesManagement = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Categories Filter */}
+            <div className="space-y-2">
+              <Label className="text-slate-600">Categories</Label>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="border-slate-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {availableCategories.map((category) => {
+                    const color = getCategoryColor(category, category);
+                    return (
+                      <SelectItem key={category} value={category}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: color }}
+                          />
+                          {category}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Transaction Type Tabs */}
+          <div className="mt-4">
+            <Tabs value={transactionTypeFilter} onValueChange={(value) => setTransactionTypeFilter(value as TransactionTypeFilter)} className="w-full">
+              <TabsList className="grid w-full max-w-md grid-cols-3 h-9 bg-slate-100">
+                <TabsTrigger value="all" className="text-xs px-3 data-[state=active]:bg-white data-[state=active]:text-slate-900">All</TabsTrigger>
+                <TabsTrigger value="expense" className="text-xs px-3 data-[state=active]:bg-white data-[state=active]:text-slate-900">Expenses</TabsTrigger>
+                <TabsTrigger value="income" className="text-xs px-3 data-[state=active]:bg-white data-[state=active]:text-slate-900">Income</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </CardContent>
       </Card>
+
+      {/* Bottom Summary Cards */}
+      <BottomSummaryCards 
+        transactions={filteredTransactions}
+        transactionTypeFilter={transactionTypeFilter}
+        getCategoryDisplay={getCategoryDisplay}
+      />
+
 
       {/* Transactions Table */}
       <Card className="bg-white shadow-sm border-slate-200">
@@ -441,7 +488,24 @@ const IncomeExpensesManagement = () => {
                       <TableCell>{format(new Date(transaction.expense_date), 'MMM dd, yyyy')}</TableCell>
                       <TableCell>{getTransactionTypeBadge(transaction.transaction_type)}</TableCell>
                       <TableCell>{transaction.expense_title}</TableCell>
-                      <TableCell>{getCategoryDisplay(transaction.category_id)}</TableCell>
+                       <TableCell>
+                         <div className="flex items-center gap-2">
+                           {(() => {
+                             const categoryDisplay = getCategoryDisplay(transaction.category_id);
+                             const parentCategory = categoryDisplay ? categoryDisplay.split(' > ')[0] : '';
+                             const color = parentCategory ? getCategoryColor(parentCategory, parentCategory) : '#64748b';
+                             return (
+                               <>
+                                 <div 
+                                   className="w-3 h-3 rounded-full flex-shrink-0" 
+                                   style={{ backgroundColor: color }}
+                                 />
+                                 <span className="text-sm text-slate-700">{categoryDisplay}</span>
+                               </>
+                             );
+                           })()}
+                         </div>
+                       </TableCell>
                       <TableCell>{transaction.vendor_payee}</TableCell>
                       <TableCell>
                         <span className={transaction.transaction_type === 'income' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
