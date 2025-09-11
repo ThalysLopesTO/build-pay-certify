@@ -2,10 +2,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3 } from 'lucide-react';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
-import { TransactionTypeFilter } from '@/hooks/useTransactionFilters';
+// Removed TransactionTypeFilter import as it no longer exists
 interface IncomeExpensesKPIsProps {
   transactions: TransactionWithHierarchy[];
-  transactionTypeFilter: TransactionTypeFilter;
+  transactionTypeFilter: string[];
   getCategoryDisplay: (categoryId: string) => string;
 }
 export const IncomeExpensesKPIs: React.FC<IncomeExpensesKPIsProps> = ({
@@ -24,11 +24,11 @@ export const IncomeExpensesKPIs: React.FC<IncomeExpensesKPIsProps> = ({
       [key: string]: number;
     } = {};
     const filteredTransactions = transactions.filter(t => {
-      if (transactionTypeFilter === 'all') {
-        // Show expense categories by default for "All" (original behavior)
+      if (transactionTypeFilter.length === 0) {
+        // Show expense categories by default when nothing selected
         return t.transaction_type === 'expense';
       }
-      return t.transaction_type === transactionTypeFilter;
+      return transactionTypeFilter.includes(t.transaction_type);
     });
     filteredTransactions.forEach(transaction => {
       const categoryId = transaction.category_id;
@@ -44,13 +44,14 @@ export const IncomeExpensesKPIs: React.FC<IncomeExpensesKPIsProps> = ({
     })).sort((a, b) => b.amount - a.amount).slice(0, 5);
   }, [transactions, transactionTypeFilter, getCategoryDisplay]);
   const getTopCategoriesTitle = () => {
-    if (transactionTypeFilter === 'income') {
-      return 'Top Income Categories';
-    } else if (transactionTypeFilter === 'expense') {
-      return 'Top Expense Categories';
-    } else {
-      return 'Top Expense Categories';
+    if (transactionTypeFilter.length === 1) {
+      if (transactionTypeFilter.includes('income')) {
+        return 'Top Income Categories';
+      } else if (transactionTypeFilter.includes('expense')) {
+        return 'Top Expense Categories';
+      }
     }
+    return 'Top Categories';
   };
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

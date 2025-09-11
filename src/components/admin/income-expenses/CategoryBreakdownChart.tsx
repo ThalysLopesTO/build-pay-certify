@@ -6,7 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { BarChart3 } from 'lucide-react';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { DateRangeType } from '@/hooks/useDateRangeFilter';
-import { TransactionTypeFilter } from '@/hooks/useTransactionFilters';
+// Removed TransactionTypeFilter import as it no longer exists
 import { getCategoryColor, getSubcategoryColor } from '@/utils/categoryColors';
 import { format, startOfMonth } from 'date-fns';
 
@@ -14,8 +14,8 @@ interface CategoryBreakdownChartProps {
   transactions: TransactionWithHierarchy[];
   dateRangeType: DateRangeType;
   onDateRangeChange: (range: DateRangeType) => void;
-  transactionTypeFilter: TransactionTypeFilter;
-  onTransactionTypeChange: (type: TransactionTypeFilter) => void;
+  transactionTypeFilter: string[];
+  onTransactionTypeChange: (types: string[]) => void;
   getCategoryDisplay: (categoryId: string) => string;
 }
 
@@ -44,11 +44,11 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
 
     // Filter transactions by type
     const typeFilteredTransactions = transactions.filter(transaction => {
-      if (transactionTypeFilter === 'all') {
-        // Default to expenses when showing "All" (like original)
+      if (transactionTypeFilter.length === 0) {
+        // Default to expenses when showing nothing selected
         return transaction.transaction_type === 'expense';
       }
-      return transaction.transaction_type === transactionTypeFilter;
+      return transactionTypeFilter.includes(transaction.transaction_type);
     });
 
     // Group transactions by month and category
@@ -116,13 +116,14 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
   }, [chartData]);
 
   const getChartTitle = () => {
-    if (transactionTypeFilter === 'income') {
-      return 'Monthly Breakdown by Income Category';
-    } else if (transactionTypeFilter === 'expense') {
-      return 'Monthly Breakdown by Expense Category';
-    } else {
-      return 'Monthly Breakdown by Parent Category';
+    if (transactionTypeFilter.length === 1) {
+      if (transactionTypeFilter.includes('income')) {
+        return 'Monthly Breakdown by Income Category';
+      } else if (transactionTypeFilter.includes('expense')) {
+        return 'Monthly Breakdown by Expense Category';
+      }
     }
+    return 'Monthly Breakdown by Categories';
   };
 
   return (

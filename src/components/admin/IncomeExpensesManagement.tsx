@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,8 @@ import { HierarchicalCategorySelector } from './bills-expenses/HierarchicalCateg
 import { HierarchicalCategoryManager } from './bills-expenses/HierarchicalCategoryManager';
 import { useHierarchicalCategories, TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { useDateRangeFilter, DateRangeType } from '@/hooks/useDateRangeFilter';
-import { useTransactionFilters, TransactionTypeFilter, StatusFilter } from '@/hooks/useTransactionFilters';
+import { useTransactionFilters } from '@/hooks/useTransactionFilters';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 import { getCategoryColor } from '@/utils/categoryColors';
 import { MonthlyCashFlowChart } from './income-expenses/MonthlyCashFlowChart';
 import { CategoryBreakdownChart } from './income-expenses/CategoryBreakdownChart';
@@ -325,8 +326,9 @@ const IncomeExpensesManagement = () => {
 
       // Generate filename with current date and filter info
       const dateStr = format(new Date(), 'yyyy-MM-dd');
-      const filterInfo = filters.transactionTypeFilter === 'all' ? 'All' : 
-                        filters.transactionTypeFilter === 'income' ? 'Income' : 'Expenses';
+      const filterInfo = filters.transactionTypeFilter.length === 0 ? 'All' : 
+                        filters.transactionTypeFilter.includes('income') && filters.transactionTypeFilter.includes('expense') ? 'All' :
+                        filters.transactionTypeFilter.includes('income') ? 'Income' : 'Expenses';
       const filename = `${filterInfo}_Transactions_${dateStr}.xlsx`;
 
       // Save file
@@ -372,6 +374,39 @@ const IncomeExpensesManagement = () => {
     });
     return Array.from(categorySet).sort();
   }, [categories]);
+
+  const availablePayees = useMemo(() => {
+    const payeeSet = new Set<string>();
+    transactions.forEach(transaction => {
+      if (transaction.vendor_payee) {
+        payeeSet.add(transaction.vendor_payee);
+      }
+    });
+    return Array.from(payeeSet).sort();
+  }, [transactions]);
+
+  // Multi-select options
+  const transactionTypeOptions: MultiSelectOption[] = [
+    { value: 'income', label: 'Income' },
+    { value: 'expense', label: 'Expense' }
+  ];
+
+  const statusOptions: MultiSelectOption[] = [
+    { value: 'paid', label: 'Paid' },
+    { value: 'unpaid', label: 'Unpaid' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'scheduled', label: 'Scheduled' }
+  ];
+
+  const categoryOptions: MultiSelectOption[] = availableCategories.map(category => ({
+    value: category,
+    label: category
+  }));
+
+  const payeeOptions: MultiSelectOption[] = availablePayees.map(payee => ({
+    value: payee,
+    label: payee
+  }));
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-96">Loading...</div>;
@@ -557,21 +592,32 @@ const IncomeExpensesManagement = () => {
                   />
                 </div>
 
+                {/* Transaction Type Filter */}
+                <MultiSelect
+                  options={transactionTypeOptions}
+                  selected={filters.transactionTypeFilter}
+                  onChange={filters.setTransactionTypeFilter}
+                  placeholder="All Transaction Types"
+                  className="border-slate-300 focus:border-green-500 focus:ring-green-500/20"
+                />
+
                 {/* Status Filter */}
-                <Select 
-                  value={filters.statusFilter} 
-                  onValueChange={(value: StatusFilter) => filters.setStatusFilter(value)}
-                >
-                  <SelectTrigger className="h-10 border-slate-300 focus:border-green-500 focus:ring-green-500/20">
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="unpaid">Unpaid</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
+                <MultiSelect
+                  options={statusOptions}
+                  selected={filters.statusFilter}
+                  onChange={filters.setStatusFilter}
+                  placeholder="All Statuses"
+                  className="border-slate-300 focus:border-green-500 focus:ring-green-500/20"
+                />
+
+                {/* Payee Filter */}
+                <MultiSelect
+                  options={payeeOptions}
+                  selected={filters.payeeFilter}
+                  onChange={filters.setPayeeFilter}
+                  placeholder="All Payers/Payees"
+                  className="border-slate-300 focus:border-green-500 focus:ring-green-500/20"
+                />
               </div>
             </div>
 
@@ -584,22 +630,13 @@ const IncomeExpensesManagement = () => {
               
               <div className="space-y-3">
                 {/* Categories Filter */}
-                <Select 
-                  value={filters.categoryFilter} 
-                  onValueChange={filters.setCategoryFilter}
-                >
-                  <SelectTrigger className="h-10 border-slate-300 focus:border-purple-500 focus:ring-purple-500/20">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {availableCategories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <MultiSelect
+                  options={categoryOptions}
+                  selected={filters.categoryFilter}
+                  onChange={filters.setCategoryFilter}
+                  placeholder="All Categories"
+                  className="border-slate-300 focus:border-purple-500 focus:ring-purple-500/20"
+                />
 
                 {/* Export Button */}
                 <Button 

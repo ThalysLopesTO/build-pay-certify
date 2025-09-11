@@ -2,12 +2,12 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
-import { TransactionTypeFilter } from '@/hooks/useTransactionFilters';
+// Removed TransactionTypeFilter import as it no longer exists
 import { getCategoryColor } from '@/utils/categoryColors';
 
 interface BottomSummaryCardsProps {
   transactions: TransactionWithHierarchy[];
-  transactionTypeFilter: TransactionTypeFilter;
+  transactionTypeFilter: string[];
   getCategoryDisplay: (categoryId: string) => string;
 }
 
@@ -32,10 +32,10 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
     const categoryTotals: { [key: string]: number } = {};
     
     const filteredTransactions = transactions.filter(t => {
-      if (transactionTypeFilter === 'all') {
+      if (transactionTypeFilter.length === 0) {
         return true; // Show all for this summary
       }
-      return t.transaction_type === transactionTypeFilter;
+      return transactionTypeFilter.includes(t.transaction_type);
     });
 
     filteredTransactions.forEach(transaction => {

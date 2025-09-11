@@ -4,19 +4,18 @@ import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { DateRange, DateRangeType } from './useDateRangeFilter';
 import { isWithinInterval, parseISO } from 'date-fns';
 
-export type TransactionTypeFilter = 'all' | 'income' | 'expense';
-export type StatusFilter = 'all' | 'paid' | 'unpaid' | 'scheduled';
-
 export interface UseTransactionFiltersReturn {
-  // Filter state
-  transactionTypeFilter: TransactionTypeFilter;
-  setTransactionTypeFilter: (type: TransactionTypeFilter) => void;
-  statusFilter: StatusFilter;
-  setStatusFilter: (status: StatusFilter) => void;
+  // Filter state - now using arrays for multi-select
+  transactionTypeFilter: string[];
+  setTransactionTypeFilter: (types: string[]) => void;
+  statusFilter: string[];
+  setStatusFilter: (statuses: string[]) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  categoryFilter: string;
-  setCategoryFilter: (category: string) => void;
+  categoryFilter: string[];
+  setCategoryFilter: (categories: string[]) => void;
+  payeeFilter: string[];
+  setPayeeFilter: (payees: string[]) => void;
   
   // Date range integration
   dateRangeType: DateRangeType;
@@ -32,15 +31,20 @@ export interface UseTransactionFiltersReturn {
 export const useTransactionFilters = (): UseTransactionFiltersReturn => {
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Initialize from URL params - defaults: YTD + All
-  const [transactionTypeFilter, setTransactionTypeFilter] = useState<TransactionTypeFilter>(
-    (searchParams.get('type') as TransactionTypeFilter) || 'all'
+  // Initialize from URL params - now supporting arrays
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string[]>(
+    searchParams.get('type')?.split(',').filter(Boolean) || []
   );
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
-    (searchParams.get('status') as StatusFilter) || 'all'
+  const [statusFilter, setStatusFilter] = useState<string[]>(
+    searchParams.get('status')?.split(',').filter(Boolean) || []
   );
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-  const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category') || 'all');
+  const [categoryFilter, setCategoryFilter] = useState<string[]>(
+    searchParams.get('category')?.split(',').filter(Boolean) || []
+  );
+  const [payeeFilter, setPayeeFilter] = useState<string[]>(
+    searchParams.get('payee')?.split(',').filter(Boolean) || []
+  );
   const [dateRangeType, setDateRangeType] = useState<DateRangeType>(
     (searchParams.get('range') as DateRangeType) || 'year-to-date'
   );
@@ -49,10 +53,11 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
   const syncToUrl = () => {
     const params = new URLSearchParams();
     
-    if (transactionTypeFilter !== 'all') params.set('type', transactionTypeFilter);
-    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (transactionTypeFilter.length > 0) params.set('type', transactionTypeFilter.join(','));
+    if (statusFilter.length > 0) params.set('status', statusFilter.join(','));
     if (searchTerm) params.set('search', searchTerm);
-    if (categoryFilter !== 'all') params.set('category', categoryFilter);
+    if (categoryFilter.length > 0) params.set('category', categoryFilter.join(','));
+    if (payeeFilter.length > 0) params.set('payee', payeeFilter.join(','));
     if (dateRangeType !== 'year-to-date') params.set('range', dateRangeType);
     
     setSearchParams(params);
@@ -62,7 +67,7 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
   useEffect(() => {
     const timeoutId = setTimeout(syncToUrl, 300); // Debounce URL updates
     return () => clearTimeout(timeoutId);
-  }, [transactionTypeFilter, statusFilter, searchTerm, categoryFilter, dateRangeType]);
+  }, [transactionTypeFilter, statusFilter, searchTerm, categoryFilter, payeeFilter, dateRangeType]);
 
   const getFilteredTransactions = useMemo(() => {
     return (transactions: TransactionWithHierarchy[], dateRange: DateRange): TransactionWithHierarchy[] => {
@@ -72,14 +77,17 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
           transaction.expense_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           transaction.vendor_payee.toLowerCase().includes(searchTerm.toLowerCase());
         
-        // Status filter
-        const matchesStatus = statusFilter === 'all' || transaction.payment_status === statusFilter;
+        // Status filter - if empty array, show all
+        const matchesStatus = statusFilter.length === 0 || statusFilter.includes(transaction.payment_status);
         
-        // Transaction type filter
-        const matchesType = transactionTypeFilter === 'all' || transaction.transaction_type === transactionTypeFilter;
+        // Transaction type filter - if empty array, show all
+        const matchesType = transactionTypeFilter.length === 0 || transactionTypeFilter.includes(transaction.transaction_type);
         
-        // Category filter
-        const matchesCategory = categoryFilter === 'all' || transaction.parent_category_name === categoryFilter;
+        // Category filter - if empty array, show all
+        const matchesCategory = categoryFilter.length === 0 || categoryFilter.includes(transaction.parent_category_name || '');
+        
+        // Payee filter - if empty array, show all
+        const matchesPayee = payeeFilter.length === 0 || payeeFilter.includes(transaction.vendor_payee);
         
         // Date range filter
         let matchesDateRange = true;
@@ -91,10 +99,10 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
           });
         }
         
-        return matchesSearch && matchesStatus && matchesType && matchesCategory && matchesDateRange;
+        return matchesSearch && matchesStatus && matchesType && matchesCategory && matchesPayee && matchesDateRange;
       });
     };
-  }, [searchTerm, statusFilter, transactionTypeFilter, categoryFilter]);
+  }, [searchTerm, statusFilter, transactionTypeFilter, categoryFilter, payeeFilter]);
 
   return {
     transactionTypeFilter,
@@ -105,6 +113,8 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     setSearchTerm,
     categoryFilter,
     setCategoryFilter,
+    payeeFilter,
+    setPayeeFilter,
     dateRangeType,
     setDateRangeType,
     getFilteredTransactions,

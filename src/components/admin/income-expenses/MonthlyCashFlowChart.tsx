@@ -10,14 +10,14 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { DateRangeType, DateRange } from '@/hooks/useDateRangeFilter';
-import { TransactionTypeFilter } from '@/hooks/useTransactionFilters';
+// Removed TransactionTypeFilter import as it no longer exists
 
 interface MonthlyCashFlowChartProps {
   transactions: TransactionWithHierarchy[];
   dateRangeType: DateRangeType;
   onDateRangeChange: (range: DateRangeType) => void;
-  transactionTypeFilter: TransactionTypeFilter;
-  onTransactionTypeChange: (type: TransactionTypeFilter) => void;
+  transactionTypeFilter: string[];
+  onTransactionTypeChange: (types: string[]) => void;
   customRange: DateRange;
   onCustomRangeChange: (range: DateRange) => void;
 }
@@ -87,7 +87,7 @@ export const MonthlyCashFlowChart: React.FC<MonthlyCashFlowChartProps> = ({
 
   // Render bars based on transaction type filter
   const renderBars = () => {
-    if (transactionTypeFilter === 'income') {
+    if (transactionTypeFilter.length === 1 && transactionTypeFilter.includes('income')) {
       return (
         <Bar 
           dataKey="income" 
@@ -96,7 +96,7 @@ export const MonthlyCashFlowChart: React.FC<MonthlyCashFlowChartProps> = ({
           radius={[4, 4, 0, 0]}
         />
       );
-    } else if (transactionTypeFilter === 'expense') {
+    } else if (transactionTypeFilter.length === 1 && transactionTypeFilter.includes('expense')) {
       return (
         <Bar 
           dataKey="expenses" 
@@ -203,7 +203,7 @@ export const MonthlyCashFlowChart: React.FC<MonthlyCashFlowChartProps> = ({
                   borderRadius: '8px',
                 }}
               />
-              {transactionTypeFilter === 'all' && (
+              {(transactionTypeFilter.length === 0 || transactionTypeFilter.length > 1) && (
                 <Legend 
                   wrapperStyle={{ fontSize: '12px' }}
                 />
