@@ -21,8 +21,8 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
     .filter(t => t.transaction_type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
   
-  const paidAmount = transactions
-    .filter(t => t.payment_status === 'paid')
+  const totalOutflow = transactions
+    .filter(t => t.transaction_type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
     
   const unpaidAmount = transactions
@@ -79,20 +79,20 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
         </CardContent>
       </Card>
 
-      {/* Paid Amount */}
+      {/* Total Outflow */}
       <Card className="bg-white shadow-sm border-slate-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-slate-600">Paid Amount</CardTitle>
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2 rounded-lg">
-            <TrendingUp className="h-4 w-4 text-white" />
+          <CardTitle className="text-sm font-medium text-slate-600">Total Outflow</CardTitle>
+          <div className="bg-gradient-to-br from-red-500 to-red-600 p-2 rounded-lg">
+            <TrendingDown className="h-4 w-4 text-white" />
           </div>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-red-600">
-            ${paidAmount.toLocaleString()}
+            ${totalOutflow.toLocaleString()}
           </div>
           <p className="text-xs text-slate-500">
-            +{transactions.filter(t => t.payment_status === 'paid').length} paid
+            +{transactions.filter(t => t.transaction_type === 'expense').length} expenses
           </p>
         </CardContent>
       </Card>
