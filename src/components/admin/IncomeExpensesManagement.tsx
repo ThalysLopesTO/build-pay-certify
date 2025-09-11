@@ -265,18 +265,14 @@ const IncomeExpensesManagement = () => {
   // Get filtered transactions (now includes category filtering in the hook)
   const filteredTransactions = filters.getFilteredTransactions(transactions, dateRange.effectiveRange);
 
-  // Get unique parent categories for filter dropdown
+  // Get all created categories for filter dropdown
   const availableCategories = React.useMemo(() => {
     const categorySet = new Set<string>();
-    transactions.forEach(transaction => {
-      const categoryDisplay = getCategoryDisplay(transaction.category_id);
-      if (categoryDisplay) {
-        const parentCategory = categoryDisplay.split(' > ')[0];
-        categorySet.add(parentCategory);
-      }
+    categories.filter(cat => cat.category_level === 'parent').forEach(category => {
+      categorySet.add(category.name);
     });
     return Array.from(categorySet).sort();
-  }, [transactions, getCategoryDisplay]);
+  }, [categories]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-96">Loading...</div>;
