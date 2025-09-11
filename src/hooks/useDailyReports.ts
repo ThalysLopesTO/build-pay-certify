@@ -217,6 +217,12 @@ export const useDailyReportSubmission = () => {
       }
 
       // Create the daily report
+      // Format report_date properly to avoid timezone issues
+      const year = data.report_date.getFullYear();
+      const month = String(data.report_date.getMonth() + 1).padStart(2, '0');
+      const day = String(data.report_date.getDate()).padStart(2, '0');
+      const reportDateString = `${year}-${month}-${day}`;
+      
       const { data: report, error } = await supabase
         .from('daily_reports')
         .insert({
@@ -225,7 +231,7 @@ export const useDailyReportSubmission = () => {
           company_id: user.companyId,
           summary: data.summary,
           photos: photoUrls,
-          report_date: data.report_date.toISOString().split('T')[0], // Format as YYYY-MM-DD
+          report_date: reportDateString,
         })
         .select()
         .single();
