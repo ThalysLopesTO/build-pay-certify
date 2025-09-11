@@ -481,45 +481,83 @@ const IncomeExpensesManagement = () => {
       </div>
 
       {/* Advanced Filters Panel */}
-      <Card className="bg-gradient-to-r from-slate-50 to-white shadow-lg border border-slate-200/60 backdrop-blur-sm">
-        <CardContent className="p-6">
-          {/* Header Section */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
-                <CalendarIcon className="h-5 w-5 text-blue-600" />
+      <Card className="bg-white shadow-sm border-slate-200 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-md">
+                <Settings className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Advanced Filters</h3>
-                <p className="text-sm text-slate-500">Refine your transaction search criteria</p>
+                <CardTitle className="text-lg font-semibold text-slate-900">Advanced Filters</CardTitle>
+                <p className="text-sm text-slate-600 mt-1">Refine your search and filter criteria</p>
               </div>
             </div>
             
-            {/* Results Count */}
-            <div className="flex items-center space-x-2">
-              <Badge variant="secondary" className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200">
-                <span className="font-semibold">{filteredTransactions.length}</span> 
-                <span className="ml-1">results</span>
+            {/* Results Count & Clear Filters */}
+            <div className="flex items-center space-x-3">
+              <Badge variant="secondary" className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 font-medium">
+                {filteredTransactions.length} results
               </Badge>
+              {(filters.transactionTypeFilter.length > 0 || 
+                filters.statusFilter.length > 0 || 
+                filters.categoryFilter.length > 0 || 
+                filters.payeeFilter.length > 0 || 
+                filters.searchTerm) && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    filters.setTransactionTypeFilter([]);
+                    filters.setStatusFilter([]);
+                    filters.setCategoryFilter([]);
+                    filters.setPayeeFilter([]);
+                    filters.setSearchTerm('');
+                  }}
+                  className="text-slate-600 hover:text-slate-900 border-slate-300"
+                >
+                  Clear All
+                </Button>
+              )}
             </div>
           </div>
+        </CardHeader>
 
-          {/* Filter Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Date Range Section */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-slate-700 flex items-center">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                Date Range
-              </label>
-              
+        <CardContent className="p-6">
+          {/* Filter Sections */}
+          <div className="space-y-6">
+            
+            {/* Search & Quick Filters Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Search */}
               <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <SearchIcon className="h-4 w-4 text-slate-500" />
+                  <label className="text-sm font-medium text-slate-700">Search Transactions</label>
+                </div>
+                <div className="relative">
+                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search by title, vendor, or payee..."
+                    value={filters.searchTerm}
+                    onChange={(e) => filters.setSearchTerm(e.target.value)}
+                    className="pl-9 h-11 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Date Range */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <CalendarIcon className="h-4 w-4 text-slate-500" />
+                  <label className="text-sm font-medium text-slate-700">Date Range</label>
+                </div>
                 <Select 
                   value={dateRange.selectedRange} 
                   onValueChange={(value: DateRangeType) => dateRange.setSelectedRange(value)}
                 >
-                  <SelectTrigger className="h-10 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20">
-                    <SelectValue placeholder="Quick select" />
+                  <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 bg-white">
+                    <SelectValue placeholder="Select date range" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="today">Today</SelectItem>
@@ -531,14 +569,20 @@ const IncomeExpensesManagement = () => {
                     <SelectItem value="custom">Custom Range</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
 
-                {/* Custom Date Range */}
-                {dateRange.selectedRange === 'custom' && (
-                  <div className="grid grid-cols-2 gap-2">
+            {/* Custom Date Range */}
+            {dateRange.selectedRange === 'custom' && (
+              <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">Start Date</label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className="h-10 justify-start text-left font-normal border-slate-300 hover:border-blue-500">
-                          {dateRange.customRange.start ? format(dateRange.customRange.start, "MMM dd, yyyy") : "Start date"}
+                        <Button variant="outline" className="w-full h-11 justify-start text-left font-normal border-slate-300 hover:border-blue-500 bg-white">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateRange.customRange.start ? format(dateRange.customRange.start, "MMM dd, yyyy") : "Select start date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -551,11 +595,15 @@ const IncomeExpensesManagement = () => {
                         />
                       </PopoverContent>
                     </Popover>
-                    
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">End Date</label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className="h-10 justify-start text-left font-normal border-slate-300 hover:border-blue-500">
-                          {dateRange.customRange.end ? format(dateRange.customRange.end, "MMM dd, yyyy") : "End date"}
+                        <Button variant="outline" className="w-full h-11 justify-start text-left font-normal border-slate-300 hover:border-blue-500 bg-white">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateRange.customRange.end ? format(dateRange.customRange.end, "MMM dd, yyyy") : "Select end date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -569,85 +617,122 @@ const IncomeExpensesManagement = () => {
                       </PopoverContent>
                     </Popover>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Search & Status Section */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-slate-700 flex items-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                Search & Status
-              </label>
-              
-              <div className="space-y-3">
-                {/* Search Input */}
-                <div className="relative">
-                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    placeholder="Search transactions..."
-                    value={filters.searchTerm}
-                    onChange={(e) => filters.setSearchTerm(e.target.value)}
-                    className="h-10 pl-9 border-slate-300 focus:border-green-500 focus:ring-green-500/20"
-                  />
                 </div>
+              </div>
+            )}
 
-                {/* Transaction Type Filter */}
+            {/* Multi-Select Filters Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Transaction Type */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <ArrowRightLeft className="h-4 w-4 text-slate-500" />
+                  <label className="text-sm font-medium text-slate-700">Type</label>
+                </div>
                 <MultiSelect
                   options={transactionTypeOptions}
                   selected={filters.transactionTypeFilter}
                   onChange={filters.setTransactionTypeFilter}
-                  placeholder="All Transaction Types"
-                  className="border-slate-300 focus:border-green-500 focus:ring-green-500/20"
+                  placeholder="Income / Expense"
+                  className="border-slate-300 focus:border-emerald-500 focus:ring-emerald-500/20 bg-white h-11"
                 />
+              </div>
 
-                {/* Status Filter */}
+              {/* Status */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-slate-500" />
+                  <label className="text-sm font-medium text-slate-700">Status</label>
+                </div>
                 <MultiSelect
                   options={statusOptions}
                   selected={filters.statusFilter}
                   onChange={filters.setStatusFilter}
-                  placeholder="All Statuses"
-                  className="border-slate-300 focus:border-green-500 focus:ring-green-500/20"
-                />
-
-                {/* Payee Filter */}
-                <MultiSelect
-                  options={payeeOptions}
-                  selected={filters.payeeFilter}
-                  onChange={filters.setPayeeFilter}
-                  placeholder="All Payers/Payees"
-                  className="border-slate-300 focus:border-green-500 focus:ring-green-500/20"
+                  placeholder="Payment Status"
+                  className="border-slate-300 focus:border-amber-500 focus:ring-amber-500/20 bg-white h-11"
                 />
               </div>
-            </div>
 
-            {/* Categories & Actions Section */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-slate-700 flex items-center">
-                <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                Categories & Actions
-              </label>
-              
-              <div className="space-y-3">
-                {/* Categories Filter */}
+              {/* Category */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Receipt className="h-4 w-4 text-slate-500" />
+                  <label className="text-sm font-medium text-slate-700">Category</label>
+                </div>
                 <MultiSelect
                   options={categoryOptions}
                   selected={filters.categoryFilter}
                   onChange={filters.setCategoryFilter}
-                  placeholder="All Categories"
-                  className="border-slate-300 focus:border-purple-500 focus:ring-purple-500/20"
+                  placeholder="Select Categories"
+                  className="border-slate-300 focus:border-purple-500 focus:ring-purple-500/20 bg-white h-11"
                 />
-
-                {/* Export Button */}
-                <Button 
-                  variant="outline" 
-                  className="w-full h-10 border-slate-300 hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100 hover:border-slate-400 transition-all duration-200"
-                  onClick={exportToExcel}
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Export Data
-                </Button>
               </div>
+
+              {/* Payer/Payee */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-4 w-4 text-slate-500" />
+                  <label className="text-sm font-medium text-slate-700">Payer/Payee</label>
+                </div>
+                <MultiSelect
+                  options={payeeOptions}
+                  selected={filters.payeeFilter}
+                  onChange={filters.setPayeeFilter}
+                  placeholder="Select Vendors"
+                  className="border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20 bg-white h-11"
+                />
+              </div>
+            </div>
+
+            {/* Active Filters Summary */}
+            {(filters.transactionTypeFilter.length > 0 || 
+              filters.statusFilter.length > 0 || 
+              filters.categoryFilter.length > 0 || 
+              filters.payeeFilter.length > 0) && (
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <div className="flex items-start space-x-2">
+                  <div className="p-1 bg-blue-100 rounded">
+                    <Settings className="h-3 w-3 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-blue-900 mb-2">Active Filters</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {filters.transactionTypeFilter.map(type => (
+                        <Badge key={type} variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                          {type === 'income' ? 'Income' : 'Expense'}
+                        </Badge>
+                      ))}
+                      {filters.statusFilter.map(status => (
+                        <Badge key={status} variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </Badge>
+                      ))}
+                      {filters.categoryFilter.map(category => (
+                        <Badge key={category} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
+                          {category}
+                        </Badge>
+                      ))}
+                      {filters.payeeFilter.map(payee => (
+                        <Badge key={payee} variant="secondary" className="bg-indigo-100 text-indigo-800 border-indigo-200">
+                          {payee}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Export Actions */}
+            <div className="flex justify-end pt-4 border-t border-slate-200">
+              <Button 
+                variant="outline" 
+                onClick={exportToExcel}
+                className="bg-white hover:bg-slate-50 border-slate-300 text-slate-700 hover:text-slate-900"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export Filtered Data
+              </Button>
             </div>
           </div>
         </CardContent>
