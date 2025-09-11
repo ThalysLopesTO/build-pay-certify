@@ -4,7 +4,7 @@ export interface Notification {
   company_id: string;
   title: string;
   description: string;
-  type: 'certificate' | 'jobsite' | 'material_request' | 'attention_report' | 'bill_due_soon' | 'bill_overdue' | 'invoice_due_soon' | 'invoice_overdue';
+  type: 'certificate' | 'jobsite' | 'material_request' | 'attention_report' | 'daily_report' | 'bill_due_soon' | 'bill_overdue' | 'invoice_due_soon' | 'invoice_overdue';
   related_id: string | null;
   user_role: 'admin' | 'foreman' | 'management';
   target_user_id: string | null;
@@ -23,6 +23,7 @@ export interface NotificationCounts {
     jobsite: number;
     material_request: number;
     attention_report: number;
+    daily_report: number;
     bill_due_soon: number;
     bill_overdue: number;
     invoice_due_soon: number;

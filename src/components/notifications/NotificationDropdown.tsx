@@ -12,7 +12,8 @@ import {
   X,
   Bell,
   DollarSign,
-  FileText
+  FileText,
+  ClipboardList
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +51,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return <Package className="h-4 w-4 text-blue-500" />;
       case 'attention_report':
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case 'daily_report':
+        return <ClipboardList className="h-4 w-4 text-green-500" />;
       case 'bill_due_soon':
         return <DollarSign className="h-4 w-4 text-orange-500" />;
       case 'bill_overdue':
@@ -73,6 +76,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return 'Material Request';
       case 'attention_report':
         return 'Attention Report';
+      case 'daily_report':
+        return 'Daily Report';
       case 'bill_due_soon':
         return 'Bill Due Soon';
       case 'bill_overdue':
@@ -102,6 +107,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         return '/admin/material-requests';
       case 'attention_report':
         return '/admin/attention-reports';
+      case 'daily_report':
+        return '/admin/daily-reports';
       case 'bill_due_soon':
       case 'bill_overdue':
         return '/admin/bills-expenses';
