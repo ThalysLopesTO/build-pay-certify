@@ -25,9 +25,7 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
     .filter(t => t.transaction_type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
     
-  const unpaidAmount = transactions
-    .filter(t => t.payment_status === 'unpaid')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const netCashFlow = totalInflow - totalOutflow;
 
   // Get top 3 categories based on current filter
   const top3Categories = React.useMemo(() => {
@@ -97,20 +95,29 @@ export const BottomSummaryCards: React.FC<BottomSummaryCardsProps> = ({
         </CardContent>
       </Card>
 
-      {/* Unpaid Amount */}
+      {/* Net Cash Flow */}
       <Card className="bg-white shadow-sm border-slate-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-slate-600">Unpaid Amount</CardTitle>
-          <div className="bg-gradient-to-br from-red-500 to-red-600 p-2 rounded-lg">
-            <TrendingDown className="h-4 w-4 text-white" />
+          <CardTitle className="text-sm font-medium text-slate-600">Net Cash Flow</CardTitle>
+          <div className={`bg-gradient-to-br p-2 rounded-lg ${
+            netCashFlow >= 0 
+              ? 'from-green-500 to-emerald-600' 
+              : 'from-red-500 to-red-600'
+          }`}>
+            {netCashFlow >= 0 ? 
+              <TrendingUp className="h-4 w-4 text-white" /> : 
+              <TrendingDown className="h-4 w-4 text-white" />
+            }
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-600">
-            ${unpaidAmount.toLocaleString()}
+          <div className={`text-2xl font-bold ${
+            netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'
+          }`}>
+            ${Math.abs(netCashFlow).toLocaleString()}
           </div>
           <p className="text-xs text-slate-500">
-            +{transactions.filter(t => t.payment_status === 'unpaid').length} unpaid
+            {netCashFlow >= 0 ? 'Positive' : 'Negative'} cash flow
           </p>
         </CardContent>
       </Card>
