@@ -55,15 +55,23 @@ export const usePrintIncomeExpenses = () => {
       printContainer.innerHTML = header;
 
       if (option === 'charts' || option === 'full') {
+        // Wait for any charts to finish rendering
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         // Capture KPIs
         const kpiElement = document.querySelector('[data-print="kpis"]');
         if (kpiElement) {
           const kpiCanvas = await html2canvas(kpiElement as HTMLElement, {
-            backgroundColor: 'white',
-            scale: 2
+            scale: 3,
+            allowTaint: true,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            width: kpiElement.scrollWidth,
+            height: kpiElement.scrollHeight
           });
           const kpiImg = document.createElement('img');
-          kpiImg.src = kpiCanvas.toDataURL();
+          kpiImg.src = kpiCanvas.toDataURL('image/png', 1.0);
           kpiImg.style.width = '100%';
           kpiImg.style.marginBottom = '20px';
           printContainer.appendChild(kpiImg);
@@ -73,11 +81,16 @@ export const usePrintIncomeExpenses = () => {
         const chartsElement = document.querySelector('[data-print="charts"]');
         if (chartsElement) {
           const chartsCanvas = await html2canvas(chartsElement as HTMLElement, {
-            backgroundColor: 'white',
-            scale: 2
+            scale: 3,
+            allowTaint: true,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            width: chartsElement.scrollWidth,
+            height: chartsElement.scrollHeight
           });
           const chartsImg = document.createElement('img');
-          chartsImg.src = chartsCanvas.toDataURL();
+          chartsImg.src = chartsCanvas.toDataURL('image/png', 1.0);
           chartsImg.style.width = '100%';
           chartsImg.style.marginBottom = '20px';
           printContainer.appendChild(chartsImg);
@@ -155,20 +168,25 @@ export const usePrintIncomeExpenses = () => {
         printContainer.appendChild(tableDiv);
       }
 
-      // Generate PDF
+      // Generate PDF with high quality settings
       const canvas = await html2canvas(printContainer, {
-        backgroundColor: 'white',
-        scale: 1,
-        useCORS: true
+        scale: 2,
+        allowTaint: true,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: printContainer.scrollWidth,
+        height: printContainer.scrollHeight
       });
 
       document.body.removeChild(printContainer);
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210;
-      const pageHeight = 295;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
       let heightLeft = imgHeight;
 
       let position = 0;
