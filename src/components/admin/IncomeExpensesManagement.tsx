@@ -11,10 +11,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { HierarchicalCategorySelector } from './bills-expenses/HierarchicalCategorySelector';
@@ -62,9 +63,13 @@ const IncomeExpensesManagement = () => {
     vendor_payee: string;
     expense_date: Date;
     amount: string;
-    payment_status: 'paid' | 'unpaid' | 'scheduled';
+    payment_status: 'paid' | 'unpaid' | 'pending';
     payment_method: string;
     notes: string;
+    is_recurring: boolean;
+    recurrence_frequency: string;
+    start_date: Date | null;
+    end_date: Date | null;
   }>({
     expense_title: '',
     category_id: '',
@@ -73,7 +78,11 @@ const IncomeExpensesManagement = () => {
     amount: '',
     payment_status: 'unpaid',
     payment_method: '',
-    notes: ''
+    notes: '',
+    is_recurring: false,
+    recurrence_frequency: 'monthly',
+    start_date: null,
+    end_date: null
   });
 
   useEffect(() => {
@@ -179,7 +188,11 @@ const IncomeExpensesManagement = () => {
       amount: '',
       payment_status: 'unpaid',
       payment_method: '',
-      notes: ''
+      notes: '',
+      is_recurring: false,
+      recurrence_frequency: 'monthly',
+      start_date: null,
+      end_date: null
     });
     setEditingTransaction(null);
     setIsCreateDialogOpen(false);
@@ -192,19 +205,24 @@ const IncomeExpensesManagement = () => {
       vendor_payee: transaction.vendor_payee,
       expense_date: new Date(transaction.expense_date),
       amount: transaction.amount.toString(),
-      payment_status: transaction.payment_status,
+      payment_status: transaction.payment_status === 'scheduled' ? 'pending' : transaction.payment_status as 'paid' | 'unpaid' | 'pending',
       payment_method: transaction.payment_method || '',
-      notes: transaction.notes || ''
+      notes: transaction.notes || '',
+      is_recurring: false,
+      recurrence_frequency: 'monthly',
+      start_date: null,
+      end_date: null
     });
     setTransactionType(transaction.transaction_type);
     setEditingTransaction(transaction);
     setIsCreateDialogOpen(true);
   };
 
-  const getStatusBadge = (status: 'paid' | 'unpaid' | 'scheduled') => {
+  const getStatusBadge = (status: 'paid' | 'unpaid' | 'pending' | 'scheduled') => {
     const config = {
       paid: { color: 'bg-green-50 text-green-700 border-green-200', label: 'Paid' },
       unpaid: { color: 'bg-red-50 text-red-700 border-red-200', label: 'Unpaid' },
+      pending: { color: 'bg-blue-50 text-blue-700 border-blue-200', label: 'Pending' },
       scheduled: { color: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Scheduled' }
     };
     return (
@@ -788,21 +806,26 @@ const IncomeExpensesManagement = () => {
               }
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Title and Category Row */}
+            <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="expense_title">
+                <Label htmlFor="expense_title" className="text-sm font-medium text-slate-700">
                   {transactionType === 'income' ? 'Income' : 'Expense'} Title *
                 </Label>
                 <Input
                   id="expense_title"
                   value={formData.expense_title}
                   onChange={(e) => setFormData({ ...formData, expense_title: e.target.value })}
-                  placeholder={`Enter ${transactionType} description`}
+                  placeholder={`Enter ${transactionType} title`}
+                  className="h-11"
                   required
                 />
               </div>
               <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-700">
+                  Category *
+                </Label>
                 <HierarchicalCategorySelector
                   selectedCategoryId={formData.category_id}
                   onCategoryChange={(categoryId) => setFormData({ ...formData, category_id: categoryId })}
@@ -812,84 +835,251 @@ const IncomeExpensesManagement = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Vendor/Payee and Amount Row */}
+            <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="vendor_payee">
-                  {transactionType === 'income' ? 'Payer' : 'Payee'} *
+                <Label htmlFor="vendor_payee" className="text-sm font-medium text-slate-700">
+                  {transactionType === 'income' ? 'Payer' : 'Vendor / Payee'} *
                 </Label>
                 <Input
                   id="vendor_payee"
                   value={formData.vendor_payee}
                   onChange={(e) => setFormData({ ...formData, vendor_payee: e.target.value })}
-                  placeholder={`Enter ${transactionType === 'income' ? 'payer' : 'payee'} name`}
+                  placeholder={`Enter ${transactionType === 'income' ? 'payer' : 'vendor/payee'} name`}
+                  className="h-11"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount *</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  placeholder="0.00"
-                  required
-                />
+                <Label htmlFor="amount" className="text-sm font-medium text-slate-700">
+                  Amount (CAD) *
+                </Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                    placeholder="0.00"
+                    className="h-11 pl-10"
+                    required
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Date and Status Row */}
+            <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Date *</Label>
+                <Label className="text-sm font-medium text-slate-700">
+                  Date of {transactionType === 'income' ? 'Income' : 'Expense'} *
+                </Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.expense_date && "text-muted-foreground")}>
+                    <Button 
+                      variant="outline" 
+                      className={cn(
+                        "w-full h-11 justify-start text-left font-normal border-slate-300",
+                        !formData.expense_date && "text-muted-foreground"
+                      )}
+                    >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {formData.expense_date ? format(formData.expense_date, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
                       selected={formData.expense_date}
                       onSelect={(date) => date && setFormData({ ...formData, expense_date: date })}
                       initialFocus
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="payment_status">Status</Label>
-                <Select value={formData.payment_status} onValueChange={(value: 'paid' | 'unpaid' | 'scheduled') => setFormData({ ...formData, payment_status: value })}>
-                  <SelectTrigger>
+                <Label htmlFor="payment_status" className="text-sm font-medium text-slate-700">
+                  Payment Status
+                </Label>
+                <Select 
+                  value={formData.payment_status} 
+                  onValueChange={(value: 'paid' | 'unpaid' | 'pending') => setFormData({ ...formData, payment_status: value })}
+                >
+                  <SelectTrigger className="h-11 border-slate-300">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="unpaid">Unpaid</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="paid">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span>Paid</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="unpaid">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-yellow-600" />
+                        <span>Unpaid</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pending">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-blue-600" />
+                        <span>Pending</span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
+            {/* Payment Method */}
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="payment_method" className="text-sm font-medium text-slate-700">
+                Payment Method
+              </Label>
+              <Select 
+                value={formData.payment_method} 
+                onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
+              >
+                <SelectTrigger className="h-11 border-slate-300">
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">
+                    <div className="flex items-center gap-2">
+                      <Banknote className="h-4 w-4 text-green-600" />
+                      <span>Cash</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="card">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-blue-600" />
+                      <span>Card</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="transfer">
+                    <div className="flex items-center gap-2">
+                      <ArrowRightLeft className="h-4 w-4 text-purple-600" />
+                      <span>Transfer</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="check">
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-4 w-4 text-orange-600" />
+                      <span>Check</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes" className="text-sm font-medium text-slate-700">
+                Notes
+              </Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Enter any additional notes..."
                 rows={3}
+                className="border-slate-300 resize-none"
               />
             </div>
 
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={resetForm}>
+            {/* Recurring Expense Toggle */}
+            {transactionType === 'expense' && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="is_recurring"
+                    checked={formData.is_recurring}
+                    onCheckedChange={(checked) => setFormData({ 
+                      ...formData, 
+                      is_recurring: checked as boolean,
+                      start_date: checked ? formData.expense_date : null
+                    })}
+                  />
+                  <Label htmlFor="is_recurring" className="text-sm font-medium text-slate-700">
+                    Make this a recurring expense
+                  </Label>
+                </div>
+
+                {formData.is_recurring && (
+                  <div className="pl-6 space-y-4 border-l-2 border-slate-200">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-600">
+                          Frequency
+                        </Label>
+                        <Select 
+                          value={formData.recurrence_frequency} 
+                          onValueChange={(value) => setFormData({ ...formData, recurrence_frequency: value })}
+                        >
+                          <SelectTrigger className="h-10 border-slate-300">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                            <SelectItem value="quarterly">Quarterly</SelectItem>
+                            <SelectItem value="yearly">Yearly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-600">
+                          End Date (Optional)
+                        </Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              className={cn(
+                                "w-full h-10 justify-start text-left font-normal border-slate-300",
+                                !formData.end_date && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {formData.end_date ? format(formData.end_date, "PPP") : "No end date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={formData.end_date || undefined}
+                              onSelect={(date) => setFormData({ ...formData, end_date: date || null })}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-3 pt-6 border-t">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={resetForm}
+                className="px-6 h-11 border-slate-300 hover:bg-slate-50"
+              >
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button 
+                type="submit"
+                className="px-6 h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm"
+              >
                 {editingTransaction ? 'Update' : 'Create'} {transactionType === 'income' ? 'Income' : 'Expense'}
               </Button>
             </div>

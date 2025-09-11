@@ -56,10 +56,10 @@ export const HierarchicalCategorySelector = ({
 
   return (
     <div className="space-y-4">
-      {/* Parent Category Selection */}
+      {/* Category Selection */}
       <div>
         <Label htmlFor="parent-category">
-          Parent Category {required && <span className="text-destructive">*</span>}
+          Category {required && <span className="text-destructive">*</span>}
         </Label>
         <Select value={selectedParentId} onValueChange={handleParentChange}>
           <SelectTrigger>
