@@ -26,6 +26,7 @@ import { getCategoryColor } from '@/utils/categoryColors';
 import { MonthlyCashFlowChart } from './income-expenses/MonthlyCashFlowChart';
 import { CategoryBreakdownChart } from './income-expenses/CategoryBreakdownChart';
 import { IncomeExpensesKPIs } from './income-expenses/IncomeExpensesKPIs';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import * as XLSX from 'xlsx';
 
 
@@ -49,6 +50,10 @@ const IncomeExpensesManagement = () => {
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithHierarchy | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   // Form state
   const [formData, setFormData] = useState<{
@@ -326,6 +331,21 @@ const IncomeExpensesManagement = () => {
   // Get filtered transactions (now includes category filtering in the hook)
   const filteredTransactions = filters.getFilteredTransactions(transactions, dateRange.effectiveRange);
 
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.searchTerm, filters.statusFilter, filters.transactionTypeFilter, filters.categoryFilter, dateRange.effectiveRange]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+  // Pagination info
+  const startItem = filteredTransactions.length === 0 ? 0 : startIndex + 1;
+  const endItem = Math.min(endIndex, filteredTransactions.length);
+
   // Get all created categories for filter dropdown
   const availableCategories = React.useMemo(() => {
     const categorySet = new Set<string>();
@@ -585,9 +605,14 @@ const IncomeExpensesManagement = () => {
             <CardTitle className="text-xl font-semibold text-slate-900">
               Transactions
             </CardTitle>
-            <Badge variant="outline" className="text-slate-600">
-              {filteredTransactions.length} transactions
-            </Badge>
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-slate-600">
+                Showing {startItem} to {endItem} of {filteredTransactions.length} transactions
+              </div>
+              <Badge variant="outline" className="text-slate-600">
+                {filteredTransactions.length} total
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -606,7 +631,7 @@ const IncomeExpensesManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTransactions.length === 0 ? (
+                {paginatedTransactions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-12 text-slate-500">
                       <div className="flex flex-col items-center justify-center space-y-3">
@@ -635,7 +660,7 @@ const IncomeExpensesManagement = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredTransactions.map((transaction) => (
+                  paginatedTransactions.map((transaction) => (
                     <TableRow key={transaction.id} className="border-b border-slate-100 hover:bg-slate-50/30">
                       <TableCell className="font-medium text-slate-700 py-3">
                         {format(new Date(transaction.expense_date), 'MMM dd, yyyy')}
@@ -686,6 +711,69 @@ const IncomeExpensesManagement = () => {
               </TableBody>
             </Table>
           </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200">
+              <div className="text-sm text-slate-700">
+                Showing {startItem} to {endItem} of {filteredTransactions.length} transactions
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) setCurrentPage(currentPage - 1);
+                      }}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNumber;
+                    if (totalPages <= 5) {
+                      pageNumber = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNumber = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNumber = totalPages - 4 + i;
+                    } else {
+                      pageNumber = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(pageNumber);
+                          }}
+                          isActive={currentPage === pageNumber}
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                      }}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 
