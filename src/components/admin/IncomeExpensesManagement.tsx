@@ -14,14 +14,14 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { HierarchicalCategorySelector } from './bills-expenses/HierarchicalCategorySelector';
 import { HierarchicalCategoryManager } from './bills-expenses/HierarchicalCategoryManager';
 import { useHierarchicalCategories, TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { useDateRangeFilter, DateRangeType } from '@/hooks/useDateRangeFilter';
-import { useTransactionFilters, TransactionTypeFilter } from '@/hooks/useTransactionFilters';
+import { useTransactionFilters, TransactionTypeFilter, StatusFilter } from '@/hooks/useTransactionFilters';
 import { getCategoryColor } from '@/utils/categoryColors';
 import { MonthlyCashFlowChart } from './income-expenses/MonthlyCashFlowChart';
 import { CategoryBreakdownChart } from './income-expenses/CategoryBreakdownChart';
@@ -40,29 +40,9 @@ const IncomeExpensesManagement = () => {
   } = useHierarchicalCategories();
 
   // Date range and filter management
-  const {
-    selectedRange,
-    setSelectedRange,
-    customRange,
-    setCustomRange,
-    effectiveRange,
-    isCustomRangeOpen,
-    setIsCustomRangeOpen,
-  } = useDateRangeFilter();
+  const dateRange = useDateRangeFilter();
 
-  const {
-    transactionTypeFilter,
-    setTransactionTypeFilter,
-    statusFilter,
-    setStatusFilter,
-    searchTerm,
-    setSearchTerm,
-    categoryFilter,
-    setCategoryFilter,
-    dateRangeType,
-    setDateRangeType,
-    getFilteredTransactions,
-  } = useTransactionFilters();
+  const filters = useTransactionFilters();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithHierarchy | null>(null);
@@ -283,7 +263,7 @@ const IncomeExpensesManagement = () => {
   };
 
   // Get filtered transactions (now includes category filtering in the hook)
-  const filteredTransactions = getFilteredTransactions(transactions, effectiveRange);
+  const filteredTransactions = filters.getFilteredTransactions(transactions, dateRange.effectiveRange);
 
   // Get unique parent categories for filter dropdown
   const availableCategories = React.useMemo(() => {
@@ -297,11 +277,6 @@ const IncomeExpensesManagement = () => {
     });
     return Array.from(categorySet).sort();
   }, [transactions, getCategoryDisplay]);
-
-  // Sync date range between components
-  React.useEffect(() => {
-    setDateRangeType(selectedRange);
-  }, [selectedRange, setDateRangeType]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-96">Loading...</div>;
@@ -350,7 +325,7 @@ const IncomeExpensesManagement = () => {
       {/* KPI Cards */}
       <IncomeExpensesKPIs 
         transactions={filteredTransactions}
-        transactionTypeFilter={transactionTypeFilter}
+        transactionTypeFilter={filters.transactionTypeFilter}
         getCategoryDisplay={getCategoryDisplay}
       />
 
@@ -358,127 +333,159 @@ const IncomeExpensesManagement = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <MonthlyCashFlowChart 
           transactions={filteredTransactions}
-          dateRangeType={dateRangeType}
-          onDateRangeChange={setSelectedRange}
-          transactionTypeFilter={transactionTypeFilter}
-          onTransactionTypeChange={setTransactionTypeFilter}
-          customRange={customRange}
-          onCustomRangeChange={setCustomRange}
+          dateRangeType={filters.dateRangeType}
+          onDateRangeChange={dateRange.setSelectedRange}
+          transactionTypeFilter={filters.transactionTypeFilter}
+          onTransactionTypeChange={filters.setTransactionTypeFilter}
+          customRange={dateRange.customRange}
+          onCustomRangeChange={dateRange.setCustomRange}
         />
         <CategoryBreakdownChart 
           transactions={filteredTransactions}
-          dateRangeType={dateRangeType}
-          onDateRangeChange={setSelectedRange}
-          transactionTypeFilter={transactionTypeFilter}
-          onTransactionTypeChange={setTransactionTypeFilter}
+          dateRangeType={filters.dateRangeType}
+          onDateRangeChange={dateRange.setSelectedRange}
+          transactionTypeFilter={filters.transactionTypeFilter}
+          onTransactionTypeChange={filters.setTransactionTypeFilter}
           getCategoryDisplay={getCategoryDisplay}
         />
       </div>
 
-      {/* Comprehensive Filter Bar */}
+      {/* Filter Bar */}
       <Card className="bg-white shadow-sm border-slate-200">
-        <CardContent className="p-6">
-          <div className="flex flex-col lg:flex-row lg:items-end gap-4">
-            {/* Date Range */}
-            <div className="space-y-2 min-w-[160px]">
-              <Label className="text-slate-600 text-sm">Date Range</Label>
-              <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as DateRangeType)}>
-                <SelectTrigger className="border-slate-300">
-                  <SelectValue />
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            {/* Date Filter */}
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4 text-slate-400" />
+              <Label className="text-sm font-medium text-slate-600">Date Filter:</Label>
+              <Select 
+                value={dateRange.selectedRange} 
+                onValueChange={(value: DateRangeType) => dateRange.setSelectedRange(value)}
+              >
+                <SelectTrigger className="w-[130px] h-9">
+                  <SelectValue placeholder="Quick Select" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="this-week">This Week</SelectItem>
                   <SelectItem value="this-month">This Month</SelectItem>
                   <SelectItem value="last-month">Last Month</SelectItem>
-                  <SelectItem value="year-to-date">Year to Date</SelectItem>
-                  <SelectItem value="all-time">All Time</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
+                  <SelectItem value="year-to-date">YTD</SelectItem>
+                  <SelectItem value="all-time">All-Time</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {dateRange.selectedRange === 'custom' && (
+                <>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-[100px] h-9 justify-start text-left font-normal text-sm">
+                        <CalendarIcon className="mr-2 h-3 w-3" />
+                        {dateRange.customRange.start ? format(dateRange.customRange.start, "MMM dd") : "From Date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.customRange.start || undefined}
+                        onSelect={(date) => dateRange.setCustomRange({ ...dateRange.customRange, start: date || null })}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-[100px] h-9 justify-start text-left font-normal text-sm">
+                        <CalendarIcon className="mr-2 h-3 w-3" />
+                        {dateRange.customRange.end ? format(dateRange.customRange.end, "MMM dd") : "To Date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.customRange.end || undefined}
+                        onSelect={(date) => dateRange.setCustomRange({ ...dateRange.customRange, end: date || null })}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </>
+              )}
             </div>
 
-            {/* Transaction Type */}
-            <div className="space-y-2 min-w-[120px]">
-              <Label className="text-slate-600 text-sm">Type</Label>
-              <Select value={transactionTypeFilter} onValueChange={(value) => setTransactionTypeFilter(value as TransactionTypeFilter)}>
-                <SelectTrigger className="border-slate-300">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Type Filter */}
+            <Select 
+              value={filters.transactionTypeFilter} 
+              onValueChange={(value: TransactionTypeFilter) => filters.setTransactionTypeFilter(value)}
+            >
+              <SelectTrigger className="w-[90px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="expense">Expense</SelectItem>
+              </SelectContent>
+            </Select>
 
-            {/* Search */}
-            <div className="space-y-2 flex-1 min-w-[200px]">
-              <Label className="text-slate-600 text-sm">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-                <Input
-                  placeholder="Search transactions..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 border-slate-300"
-                />
-              </div>
+            {/* Search Input */}
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search transactions..."
+                value={filters.searchTerm}
+                onChange={(e) => filters.setSearchTerm(e.target.value)}
+                className="w-[200px] h-9 pl-9"
+              />
             </div>
 
             {/* Status Filter */}
-            <div className="space-y-2 min-w-[120px]">
-              <Label className="text-slate-600 text-sm">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="border-slate-300">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="unpaid">Unpaid</SelectItem>
-                  <SelectItem value="scheduled">Scheduled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select 
+              value={filters.statusFilter} 
+              onValueChange={(value: StatusFilter) => filters.setStatusFilter(value)}
+            >
+              <SelectTrigger className="w-[110px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="unpaid">Unpaid</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
 
             {/* Categories Filter */}
-            <div className="space-y-2 min-w-[160px]">
-              <Label className="text-slate-600 text-sm">Categories</Label>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="border-slate-300">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px] overflow-y-auto">
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {availableCategories.map((category) => {
-                    const color = getCategoryColor(category, category);
-                    return (
-                      <SelectItem key={category} value={category}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: color }}
-                          />
-                          {category}
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select 
+              value={filters.categoryFilter} 
+              onValueChange={filters.setCategoryFilter}
+            >
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="all">All Categories</SelectItem>
+                {availableCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Export Button */}
-            <div className="space-y-2">
-              <Label className="text-slate-600 text-sm opacity-0">Export</Label>
-              <Button variant="outline" className="border-slate-300">
-                Export
-              </Button>
-            </div>
+            <Button variant="outline" className="ml-auto h-9">
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
           </div>
           
           {/* Transaction Count */}
-          <div className="mt-4 flex items-center justify-between">
+          <div className="mt-3 flex items-center">
             <Badge variant="secondary" className="text-sm px-3 py-1">
               {filteredTransactions.length} transactions
             </Badge>
@@ -489,7 +496,7 @@ const IncomeExpensesManagement = () => {
       {/* Bottom Summary Cards */}
       <BottomSummaryCards 
         transactions={filteredTransactions}
-        transactionTypeFilter={transactionTypeFilter}
+        transactionTypeFilter={filters.transactionTypeFilter}
         getCategoryDisplay={getCategoryDisplay}
       />
 

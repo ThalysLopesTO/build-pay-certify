@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } from 'date-fns';
+import { startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
 
-export type DateRangeType = 'this-month' | 'last-month' | 'year-to-date' | 'all-time' | 'custom';
+export type DateRangeType = 'today' | 'this-week' | 'this-month' | 'last-month' | 'year-to-date' | 'all-time' | 'custom';
 
 export interface DateRange {
   start: Date | null;
@@ -29,6 +29,16 @@ export const useDateRangeFilter = (
     const now = new Date();
     
     switch (selectedRange) {
+      case 'today':
+        return {
+          start: startOfDay(now),
+          end: endOfDay(now)
+        };
+      case 'this-week':
+        return {
+          start: startOfWeek(now),
+          end: endOfWeek(now)
+        };
       case 'this-month':
         return {
           start: startOfMonth(now),
