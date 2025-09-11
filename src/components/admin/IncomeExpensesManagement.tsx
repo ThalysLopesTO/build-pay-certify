@@ -26,6 +26,7 @@ import { getCategoryColor } from '@/utils/categoryColors';
 import { MonthlyCashFlowChart } from './income-expenses/MonthlyCashFlowChart';
 import { CategoryBreakdownChart } from './income-expenses/CategoryBreakdownChart';
 import { IncomeExpensesKPIs } from './income-expenses/IncomeExpensesKPIs';
+import * as XLSX from 'xlsx';
 
 
 const IncomeExpensesManagement = () => {
@@ -259,6 +260,66 @@ const IncomeExpensesManagement = () => {
       return <span className="text-green-600 font-semibold tabular-nums">+{formatted}</span>;
     } else {
       return <span className="text-red-600 font-semibold tabular-nums">−{formatted}</span>;
+    }
+  };
+
+  // Excel export function
+  const exportToExcel = () => {
+    try {
+      // Prepare data for export
+      const exportData = filteredTransactions.map(transaction => ({
+        'Date': format(new Date(transaction.expense_date), 'yyyy-MM-dd'),
+        'Type': transaction.transaction_type === 'income' ? 'Income' : 'Expense',
+        'Title': transaction.expense_title,
+        'Category': getCategoryDisplay(transaction.category_id) || 'Uncategorized',
+        'Vendor/Payee': transaction.vendor_payee,
+        'Amount': transaction.amount,
+        'Payment Status': transaction.payment_status,
+        'Payment Method': transaction.payment_method || '',
+        'Notes': transaction.notes || ''
+      }));
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 12 }, // Date
+        { wch: 10 }, // Type
+        { wch: 25 }, // Title
+        { wch: 20 }, // Category
+        { wch: 20 }, // Vendor/Payee
+        { wch: 12 }, // Amount
+        { wch: 15 }, // Payment Status
+        { wch: 15 }, // Payment Method
+        { wch: 30 }  // Notes
+      ];
+      ws['!cols'] = colWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+
+      // Generate filename with current date and filter info
+      const dateStr = format(new Date(), 'yyyy-MM-dd');
+      const filterInfo = filters.transactionTypeFilter === 'all' ? 'All' : 
+                        filters.transactionTypeFilter === 'income' ? 'Income' : 'Expenses';
+      const filename = `${filterInfo}_Transactions_${dateStr}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(wb, filename);
+
+      toast({
+        title: "Export Successful",
+        description: `Exported ${filteredTransactions.length} transactions to ${filename}`
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export transactions",
+        variant: "destructive"
+      });
     }
   };
 
@@ -506,12 +567,7 @@ const IncomeExpensesManagement = () => {
                 <Button 
                   variant="outline" 
                   className="w-full h-10 border-slate-300 hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100 hover:border-slate-400 transition-all duration-200"
-                  onClick={() => {
-                    toast({
-                      title: "Export",
-                      description: "Export functionality coming soon"
-                    });
-                  }}
+                  onClick={exportToExcel}
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Export Data
