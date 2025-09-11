@@ -98,108 +98,155 @@ export const usePrintIncomeExpenses = () => {
       }
 
       if (option === 'table' || option === 'full') {
-        // Add transaction table
-        const tableDiv = document.createElement('div');
-        tableDiv.style.marginTop = '20px';
+        // Generate table content with proper pagination
+        console.log(`Generating PDF for ${transactions.length} transactions`);
         
-        const tableHTML = `
-          <h2 style="font-size: 18px; font-weight: bold; color: #1e293b; margin-bottom: 15px;">
-            Transactions (${transactions.length} items)
-          </h2>
-          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-            <thead>
-              <tr style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0;">
-                <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Date</th>
-                <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Title</th>
-                <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Category</th>
-                <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Vendor/Payee</th>
-                <th style="padding: 8px; text-align: right; border: 1px solid #e2e8f0;">Amount</th>
-                <th style="padding: 8px; text-align: center; border: 1px solid #e2e8f0;">Status</th>
-                <th style="padding: 8px; text-align: center; border: 1px solid #e2e8f0;">Type</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${transactions.map(transaction => `
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                  <td style="padding: 8px; border: 1px solid #e2e8f0;">
-                    ${new Date(transaction.expense_date).toLocaleDateString()}
-                  </td>
-                  <td style="padding: 8px; border: 1px solid #e2e8f0;">
-                    ${transaction.expense_title}
-                  </td>
-                  <td style="padding: 8px; border: 1px solid #e2e8f0;">
-                    ${transaction.subcategory_name ? 
-                      `${transaction.parent_category_name} > ${transaction.subcategory_name}` : 
-                      transaction.parent_category_name || 'Uncategorized'}
-                  </td>
-                  <td style="padding: 8px; border: 1px solid #e2e8f0;">
-                    ${transaction.vendor_payee || '-'}
-                  </td>
-                  <td style="padding: 8px; text-align: right; border: 1px solid #e2e8f0; color: ${transaction.transaction_type === 'income' ? '#059669' : '#dc2626'};">
-                    ${transaction.transaction_type === 'income' ? '+' : '-'}$${Math.abs(transaction.amount).toFixed(2)}
-                  </td>
-                  <td style="padding: 8px; text-align: center; border: 1px solid #e2e8f0;">
-                     <span style="padding: 2px 8px; border-radius: 12px; font-size: 10px; background-color: ${
-                       transaction.payment_status === 'paid' ? '#dcfce7' : 
-                       transaction.payment_status === 'scheduled' ? '#fef3c7' : '#fee2e2'
-                     }; color: ${
-                       transaction.payment_status === 'paid' ? '#166534' : 
-                       transaction.payment_status === 'scheduled' ? '#92400e' : '#991b1b'
-                     };">
-                       ${transaction.payment_status.charAt(0).toUpperCase() + transaction.payment_status.slice(1)}
-                     </span>
-                  </td>
-                  <td style="padding: 8px; text-align: center; border: 1px solid #e2e8f0;">
-                    <span style="padding: 2px 8px; border-radius: 12px; font-size: 10px; background-color: ${
-                      transaction.transaction_type === 'income' ? '#dcfce7' : '#fee2e2'
-                    }; color: ${
-                      transaction.transaction_type === 'income' ? '#166534' : '#991b1b'
-                    };">
-                      ${transaction.transaction_type.charAt(0).toUpperCase() + transaction.transaction_type.slice(1)}
-                    </span>
-                  </td>
+        const transactionsTitle = document.createElement('h2');
+        transactionsTitle.innerHTML = `Transactions (${transactions.length} items)`;
+        transactionsTitle.style.cssText = 'font-size: 18px; font-weight: bold; color: #1e293b; margin-bottom: 15px; margin-top: 20px;';
+        printContainer.appendChild(transactionsTitle);
+
+        // Break transactions into chunks for better PDF generation
+        const ROWS_PER_CHUNK = 25; // Approximately 25-30 rows per page
+        const chunks = [];
+        for (let i = 0; i < transactions.length; i += ROWS_PER_CHUNK) {
+          chunks.push(transactions.slice(i, i + ROWS_PER_CHUNK));
+        }
+
+        console.log(`Breaking ${transactions.length} transactions into ${chunks.length} chunks`);
+
+        // Generate each chunk as a separate table
+        chunks.forEach((chunk, chunkIndex) => {
+          const tableDiv = document.createElement('div');
+          tableDiv.style.marginBottom = '30px';
+          tableDiv.style.pageBreakInside = 'avoid';
+          
+          const tableHTML = `
+            ${chunkIndex > 0 ? `<div style="page-break-before: always;"></div>` : ''}
+            ${chunkIndex > 0 ? `<h3 style="font-size: 16px; font-weight: bold; color: #1e293b; margin-bottom: 15px;">Transactions (Page ${chunkIndex + 1} of ${chunks.length})</h3>` : ''}
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px;">
+              <thead>
+                <tr style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                  <th style="padding: 6px; text-align: left; border: 1px solid #e2e8f0; font-weight: bold;">Date</th>
+                  <th style="padding: 6px; text-align: left; border: 1px solid #e2e8f0; font-weight: bold;">Title</th>
+                  <th style="padding: 6px; text-align: left; border: 1px solid #e2e8f0; font-weight: bold;">Category</th>
+                  <th style="padding: 6px; text-align: left; border: 1px solid #e2e8f0; font-weight: bold;">Vendor/Payee</th>
+                  <th style="padding: 6px; text-align: right; border: 1px solid #e2e8f0; font-weight: bold;">Amount</th>
+                  <th style="padding: 6px; text-align: center; border: 1px solid #e2e8f0; font-weight: bold;">Status</th>
+                  <th style="padding: 6px; text-align: center; border: 1px solid #e2e8f0; font-weight: bold;">Type</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
-        
-        tableDiv.innerHTML = tableHTML;
-        printContainer.appendChild(tableDiv);
+              </thead>
+              <tbody>
+                ${chunk.map(transaction => `
+                  <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 6px; border: 1px solid #e2e8f0; white-space: nowrap;">
+                      ${new Date(transaction.expense_date).toLocaleDateString()}
+                    </td>
+                    <td style="padding: 6px; border: 1px solid #e2e8f0; max-width: 120px; word-wrap: break-word;">
+                      ${transaction.expense_title}
+                    </td>
+                    <td style="padding: 6px; border: 1px solid #e2e8f0; max-width: 100px; word-wrap: break-word;">
+                      ${transaction.subcategory_name ? 
+                        `${transaction.parent_category_name} > ${transaction.subcategory_name}` : 
+                        transaction.parent_category_name || 'Uncategorized'}
+                    </td>
+                    <td style="padding: 6px; border: 1px solid #e2e8f0; max-width: 100px; word-wrap: break-word;">
+                      ${transaction.vendor_payee || '-'}
+                    </td>
+                    <td style="padding: 6px; text-align: right; border: 1px solid #e2e8f0; color: ${transaction.transaction_type === 'income' ? '#059669' : '#dc2626'}; font-weight: bold;">
+                      ${transaction.transaction_type === 'income' ? '+' : '-'}$${Math.abs(transaction.amount).toFixed(2)}
+                    </td>
+                    <td style="padding: 6px; text-align: center; border: 1px solid #e2e8f0;">
+                       <span style="padding: 2px 6px; border-radius: 8px; font-size: 9px; background-color: ${
+                         transaction.payment_status === 'paid' ? '#dcfce7' : 
+                         transaction.payment_status === 'scheduled' ? '#fef3c7' : '#fee2e2'
+                       }; color: ${
+                         transaction.payment_status === 'paid' ? '#166534' : 
+                         transaction.payment_status === 'scheduled' ? '#92400e' : '#991b1b'
+                       };">
+                         ${transaction.payment_status.charAt(0).toUpperCase() + transaction.payment_status.slice(1)}
+                       </span>
+                    </td>
+                    <td style="padding: 6px; text-align: center; border: 1px solid #e2e8f0;">
+                      <span style="padding: 2px 6px; border-radius: 8px; font-size: 9px; background-color: ${
+                        transaction.transaction_type === 'income' ? '#dcfce7' : '#fee2e2'
+                      }; color: ${
+                        transaction.transaction_type === 'income' ? '#166534' : '#991b1b'
+                      };">
+                        ${transaction.transaction_type.charAt(0).toUpperCase() + transaction.transaction_type.slice(1)}
+                      </span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+          
+          tableDiv.innerHTML = tableHTML;
+          printContainer.appendChild(tableDiv);
+        });
+
+        console.log(`Generated ${chunks.length} table chunks for PDF`);
       }
 
-      // Generate PDF with high quality settings
+      // Generate PDF with optimized settings for large content
       const canvas = await html2canvas(printContainer, {
-        scale: 2,
+        scale: 1.5, // Reduced scale for better performance with large content
         allowTaint: true,
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
         width: printContainer.scrollWidth,
-        height: printContainer.scrollHeight
+        height: printContainer.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Ensure all styles are properly applied in the clone
+          const clonedContainer = clonedDoc.querySelector('div');
+          if (clonedContainer) {
+            clonedContainer.style.fontFamily = 'Arial, sans-serif';
+          }
+        }
       });
 
       document.body.removeChild(printContainer);
 
-      const imgData = canvas.toDataURL('image/png', 1.0);
+      console.log(`Canvas generated: ${canvas.width}x${canvas.height}px`);
+
+      const imgData = canvas.toDataURL('image/png', 0.95); // Slightly compressed for better file size
       const pdf = new jsPDF('p', 'pt', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+      const imgWidth = pageWidth - 40; // Add margins
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
 
-      let position = 0;
+      let position = 20; // Top margin
+      let pageNumber = 1;
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      // First page
+      pdf.addImage(imgData, 'PNG', 20, position, imgWidth, imgHeight);
+      
+      // Add page number
+      pdf.setFontSize(10);
+      pdf.text(`Page ${pageNumber}`, pageWidth - 60, pageHeight - 20);
+      
+      heightLeft -= (pageHeight - 40); // Account for margins
 
+      // Additional pages if needed
       while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
+        position = heightLeft - imgHeight + 20; // Account for top margin
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        pageNumber++;
+        pdf.addImage(imgData, 'PNG', 20, position, imgWidth, imgHeight);
+        
+        // Add page number
+        pdf.setFontSize(10);
+        pdf.text(`Page ${pageNumber}`, pageWidth - 60, pageHeight - 20);
+        
+        heightLeft -= (pageHeight - 40);
       }
+
+      console.log(`PDF generated with ${pageNumber} pages`);
+      console.log(`Total transactions processed: ${transactions.length}`);
 
       const fileName = `income-expenses-${option}-${new Date().toISOString().split('T')[0]}.pdf`;
       pdf.save(fileName);
