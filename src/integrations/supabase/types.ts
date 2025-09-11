@@ -1156,40 +1156,62 @@ export type Database = {
           unit?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "material_catalog_items_category_id_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "material_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       material_categories: {
         Row: {
+          category_level: string
           company_id: string
           created_at: string
           created_by: string | null
           id: string
           is_active: boolean
           name: string
+          parent_category_id: string | null
           sort_order: number
           updated_at: string
         }
         Insert: {
+          category_level?: string
           company_id: string
           created_at?: string
           created_by?: string | null
           id?: string
           is_active?: boolean
           name: string
+          parent_category_id?: string | null
           sort_order?: number
           updated_at?: string
         }
         Update: {
+          category_level?: string
           company_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
           is_active?: boolean
           name?: string
+          parent_category_id?: string | null
           sort_order?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "material_categories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "material_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       material_request_attachments: {
         Row: {

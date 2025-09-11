@@ -11,7 +11,7 @@ export interface MaterialCatalogItem {
   name: string;
   spec_size?: string;
   unit: string;
-  category: string;
+  category: string; // This is now a UUID referencing material_categories.id
   notes?: string;
   is_active: boolean;
   created_at: string;
@@ -23,7 +23,8 @@ export interface CreateMaterialCatalogItem {
   sku?: string;
   name: string;
   unit: string;
-  category: string;
+  category: string; // UUID referencing material_categories.id
+  spec_size?: string;
   notes?: string;
   is_active?: boolean;
 }
@@ -190,8 +191,14 @@ export const MATERIAL_UNITS = [
   'lb', 'kg', 'gal', 'L', 'tube', 'pack', 'case', 'pail', 'each'
 ];
 
-// Hook to get dynamic categories for the current company
+// Hook to get dynamic categories for the current company (legacy - returns names only)
 export const useMaterialCategoriesOptions = () => {
   const { data: categories = [] } = useMaterialCategories();
   return categories.map(cat => cat.name);
+};
+
+// New hook to get categories with IDs for hierarchical selection
+export const useMaterialCategoriesWithIds = () => {
+  const { data: categories = [] } = useMaterialCategories();
+  return categories.map(cat => ({ id: cat.id, name: cat.name }));
 };

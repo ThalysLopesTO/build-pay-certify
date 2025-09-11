@@ -12,11 +12,15 @@ export interface MaterialCategory {
   created_at: string;
   updated_at: string;
   created_by?: string;
+  parent_category_id?: string;
+  category_level: 'parent' | 'subcategory';
 }
 
 export interface CreateMaterialCategory {
   name: string;
   sort_order?: number;
+  parent_category_id?: string;
+  category_level?: 'parent' | 'subcategory';
 }
 
 export interface UpdateMaterialCategory {

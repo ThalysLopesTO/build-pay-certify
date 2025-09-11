@@ -8,6 +8,7 @@ import { MaterialCatalogForm } from './MaterialCatalogForm';
 import { MaterialImportDialog } from './MaterialImportDialog';
 import { useMaterialCatalog, useMaterialCategoriesOptions } from '@/hooks/useMaterialCatalog';
 import { CategoryManagement } from './CategoryManagement';
+import { HierarchicalMaterialCategoryManager } from './HierarchicalMaterialCategoryManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Plus, Package, Upload } from 'lucide-react';
 
@@ -53,9 +54,15 @@ const MaterialCatalogManagement = () => {
           <TabsTrigger value="categories">Manage Categories</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="categories" className="space-y-4">
-          <CategoryManagement />
-        </TabsContent>
+            <TabsContent value="categories" className="space-y-4">
+              <HierarchicalMaterialCategoryManager 
+                categories={[]}
+                onCategoriesChange={() => {
+                  // Refresh categories when changed
+                  window.location.reload();
+                }}
+              />
+            </TabsContent>
         
         <TabsContent value="catalog" className="space-y-4">
           <Card>
