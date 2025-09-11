@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { HierarchicalCategorySelector } from './bills-expenses/HierarchicalCategorySelector';
@@ -29,6 +29,8 @@ import { MonthlyCashFlowChart } from './income-expenses/MonthlyCashFlowChart';
 import { CategoryBreakdownChart } from './income-expenses/CategoryBreakdownChart';
 import { IncomeExpensesKPIs } from './income-expenses/IncomeExpensesKPIs';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { usePrintIncomeExpenses, PrintOption } from '@/hooks/usePrintIncomeExpenses';
 import * as XLSX from 'xlsx';
 
 
@@ -47,6 +49,9 @@ const IncomeExpensesManagement = () => {
   const dateRange = useDateRangeFilter();
 
   const filters = useTransactionFilters();
+  
+  // Print functionality
+  const { generatePrintContent } = usePrintIncomeExpenses();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithHierarchy | null>(null);
@@ -348,6 +353,23 @@ const IncomeExpensesManagement = () => {
     }
   };
 
+  const handlePrint = async (option: PrintOption) => {
+    const appliedFilters = {
+      search: filters.searchTerm,
+      dateRange: `${dateRange.selectedRange}`,
+      types: filters.transactionTypeFilter,
+      statuses: filters.statusFilter,
+      categories: filters.categoryFilter,
+      payees: filters.payeeFilter
+    };
+
+    await generatePrintContent({
+      option,
+      transactions: filteredTransactions,
+      appliedFilters
+    });
+  };
+
   // Get filtered transactions (now includes category filtering in the hook)
   const filteredTransactions = filters.getFilteredTransactions(transactions, dateRange.effectiveRange);
 
@@ -431,6 +453,42 @@ const IncomeExpensesManagement = () => {
         </div>
         
         <div className="flex gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline"
+                className="bg-white border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-sm hover:shadow-md transition-all duration-200 px-4 py-2.5 text-sm font-medium"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Print Report
+                <ChevronDown className="h-3 w-3 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem 
+                onClick={() => handlePrint('charts')}
+                className="flex items-center px-3 py-2 text-sm"
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Charts & KPIs Only
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handlePrint('table')}
+                className="flex items-center px-3 py-2 text-sm"
+              >
+                <Receipt className="h-4 w-4 mr-2" />
+                Transaction Table Only
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handlePrint('full')}
+                className="flex items-center px-3 py-2 text-sm"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Full Report
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           <HierarchicalCategoryManager
             categories={categories}
             onCategoriesChange={fetchCategories}
@@ -453,14 +511,16 @@ const IncomeExpensesManagement = () => {
       </div>
 
       {/* KPI Cards */}
-      <IncomeExpensesKPIs 
-        transactions={filteredTransactions}
-        transactionTypeFilter={filters.transactionTypeFilter}
-        getCategoryDisplay={getCategoryDisplay}
-      />
+      <div data-print="kpis">
+        <IncomeExpensesKPIs 
+          transactions={filteredTransactions}
+          transactionTypeFilter={filters.transactionTypeFilter}
+          getCategoryDisplay={getCategoryDisplay}
+        />
+      </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" data-print="charts">
         <MonthlyCashFlowChart 
           transactions={filteredTransactions}
           dateRangeType={filters.dateRangeType}
@@ -739,7 +799,7 @@ const IncomeExpensesManagement = () => {
       </Card>
 
       {/* Transactions Table */}
-      <Card className="bg-white shadow-sm border-slate-200">
+      <Card className="bg-white shadow-sm border-slate-200" data-print="table">
         <CardHeader className="border-b border-slate-200 pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-semibold text-slate-900">
