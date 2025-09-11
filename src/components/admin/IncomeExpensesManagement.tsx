@@ -155,9 +155,15 @@ const IncomeExpensesManagement = () => {
       fetchTransactions();
     } catch (error) {
       console.error('Error saving transaction:', error);
+      
+      // More specific error handling for payment method validation
+      const errorMessage = error?.message?.includes('bills_expenses_payment_method_check') 
+        ? 'Invalid payment method selected. Please choose a valid payment method.'
+        : `Failed to save ${transactionType}`;
+      
       toast({
         title: "Error",
-        description: `Failed to save ${transactionType}`,
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -1136,22 +1142,22 @@ const IncomeExpensesManagement = () => {
                       <span>Cash</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="card">
+                  <SelectItem value="credit_card">
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-blue-600" />
-                      <span>Card</span>
+                      <span>Credit Card</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="transfer">
+                  <SelectItem value="bank_transfer">
                     <div className="flex items-center gap-2">
                       <ArrowRightLeft className="h-4 w-4 text-purple-600" />
-                      <span>Transfer</span>
+                      <span>Bank Transfer</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="check">
+                  <SelectItem value="cheque">
                     <div className="flex items-center gap-2">
                       <Receipt className="h-4 w-4 text-orange-600" />
-                      <span>Check</span>
+                      <span>Cheque</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
