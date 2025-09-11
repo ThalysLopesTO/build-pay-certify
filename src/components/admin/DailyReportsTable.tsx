@@ -218,7 +218,7 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
                         <div className="space-y-1">
                           <div className="flex items-center gap-1 text-sm font-medium">
                             <Clock className="h-3 w-3 text-muted-foreground" />
-                            {getReportDisplayDate(report.report_date)}
+                            {getReportDisplayDate(report.report_date, companySettings?.timezone)}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             Submitted {getSubmissionDisplayDateTime(report.created_at, companySettings?.timezone)}
