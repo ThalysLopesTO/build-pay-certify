@@ -26,7 +26,7 @@ import { getCategoryColor } from '@/utils/categoryColors';
 import { MonthlyCashFlowChart } from './income-expenses/MonthlyCashFlowChart';
 import { CategoryBreakdownChart } from './income-expenses/CategoryBreakdownChart';
 import { IncomeExpensesKPIs } from './income-expenses/IncomeExpensesKPIs';
-import { BottomSummaryCards } from './income-expenses/BottomSummaryCards';
+
 
 const IncomeExpensesManagement = () => {
   const { user } = useAuth();
@@ -493,14 +493,6 @@ const IncomeExpensesManagement = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Bottom Summary Cards */}
-      <BottomSummaryCards 
-        transactions={filteredTransactions}
-        transactionTypeFilter={filters.transactionTypeFilter}
-        getCategoryDisplay={getCategoryDisplay}
-      />
-
 
       {/* Transactions Table */}
       <Card className="bg-white shadow-sm border-slate-200">
