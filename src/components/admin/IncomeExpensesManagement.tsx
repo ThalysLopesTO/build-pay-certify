@@ -353,17 +353,21 @@ const IncomeExpensesManagement = () => {
       {/* Filter Bar */}
       <Card className="bg-white shadow-sm border-slate-200">
         <CardContent className="p-4">
-          <div className="flex items-center gap-4">
-            {/* Date Filter */}
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4 text-slate-400" />
-              <Label className="text-sm font-medium text-slate-600">Date Filter:</Label>
+          <div className="space-y-4">
+            {/* Row 1: Date Filter */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center text-sm font-medium text-slate-700">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                Date Filter:
+              </div>
+              
+              {/* Quick Select Dropdown */}
               <Select 
                 value={dateRange.selectedRange} 
                 onValueChange={(value: DateRangeType) => dateRange.setSelectedRange(value)}
               >
-                <SelectTrigger className="w-[130px] h-9">
-                  <SelectValue placeholder="Quick Select" />
+                <SelectTrigger className="w-[120px] h-9">
+                  <SelectValue placeholder="Quick select" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="today">Today</SelectItem>
@@ -375,14 +379,14 @@ const IncomeExpensesManagement = () => {
                   <SelectItem value="custom">Custom</SelectItem>
                 </SelectContent>
               </Select>
-              
+
+              {/* Custom Date Range Inputs */}
               {dateRange.selectedRange === 'custom' && (
                 <>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-[100px] h-9 justify-start text-left font-normal text-sm">
-                        <CalendarIcon className="mr-2 h-3 w-3" />
-                        {dateRange.customRange.start ? format(dateRange.customRange.start, "MMM dd") : "From Date"}
+                      <Button variant="outline" className="w-[100px] h-9 justify-start text-left font-normal text-sm text-slate-600">
+                        {dateRange.customRange.start ? format(dateRange.customRange.start, "MMM dd") : "From date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -395,12 +399,11 @@ const IncomeExpensesManagement = () => {
                       />
                     </PopoverContent>
                   </Popover>
-                  
+                  <span className="text-sm text-slate-500 px-1">to</span>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-[100px] h-9 justify-start text-left font-normal text-sm">
-                        <CalendarIcon className="mr-2 h-3 w-3" />
-                        {dateRange.customRange.end ? format(dateRange.customRange.end, "MMM dd") : "To Date"}
+                      <Button variant="outline" className="w-[100px] h-9 justify-start text-left font-normal text-sm text-slate-600">
+                        {dateRange.customRange.end ? format(dateRange.customRange.end, "MMM dd") : "To date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -417,71 +420,69 @@ const IncomeExpensesManagement = () => {
               )}
             </div>
 
-            {/* Type Filter */}
-            <Select 
-              value={filters.transactionTypeFilter} 
-              onValueChange={(value: TransactionTypeFilter) => filters.setTransactionTypeFilter(value)}
-            >
-              <SelectTrigger className="w-[90px] h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="income">Income</SelectItem>
-                <SelectItem value="expense">Expense</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Row 2: Other Filters */}
+            <div className="flex items-center gap-3">
+              {/* Search Input */}
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search expenses..."
+                  value={filters.searchTerm}
+                  onChange={(e) => filters.setSearchTerm(e.target.value)}
+                  className="w-[300px] h-9 pl-9"
+                />
+              </div>
 
-            {/* Search Input */}
-            <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search transactions..."
-                value={filters.searchTerm}
-                onChange={(e) => filters.setSearchTerm(e.target.value)}
-                className="w-[200px] h-9 pl-9"
-              />
+              {/* Status Filter */}
+              <Select 
+                value={filters.statusFilter} 
+                onValueChange={(value: StatusFilter) => filters.setStatusFilter(value)}
+              >
+                <SelectTrigger className="w-[110px] h-9">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Categories Filter */}
+              <Select 
+                value={filters.categoryFilter} 
+                onValueChange={filters.setCategoryFilter}
+              >
+                <SelectTrigger className="w-[140px] h-9">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {availableCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Export Button */}
+              <Button 
+                variant="outline" 
+                className="ml-auto h-9"
+                onClick={() => {
+                  // Export logic will be implemented here
+                  toast({
+                    title: "Export",
+                    description: "Export functionality coming soon"
+                  });
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
             </div>
-
-            {/* Status Filter */}
-            <Select 
-              value={filters.statusFilter} 
-              onValueChange={(value: StatusFilter) => filters.setStatusFilter(value)}
-            >
-              <SelectTrigger className="w-[110px] h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="unpaid">Unpaid</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Categories Filter */}
-            <Select 
-              value={filters.categoryFilter} 
-              onValueChange={filters.setCategoryFilter}
-            >
-              <SelectTrigger className="w-[140px] h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                <SelectItem value="all">All Categories</SelectItem>
-                {availableCategories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Export Button */}
-            <Button variant="outline" className="ml-auto h-9">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
           </div>
           
           {/* Transaction Count */}
