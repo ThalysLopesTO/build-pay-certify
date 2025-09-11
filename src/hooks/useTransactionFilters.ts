@@ -79,7 +79,7 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
         const matchesType = transactionTypeFilter === 'all' || transaction.transaction_type === transactionTypeFilter;
         
         // Category filter
-        const matchesCategory = categoryFilter === 'all' || transaction.category_id === categoryFilter;
+        const matchesCategory = categoryFilter === 'all' || transaction.parent_category_name === categoryFilter;
         
         // Date range filter
         let matchesDateRange = true;
