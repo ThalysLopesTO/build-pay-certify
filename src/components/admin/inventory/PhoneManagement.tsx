@@ -51,9 +51,12 @@ import {
   Search, 
   Phone, 
   Users,
+  Settings,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import PhoneFormFields from './PhoneFormFields';
+import { usePhoneCategories } from '@/hooks/usePhoneCategories';
+import PhoneCategoryManager from './PhoneCategoryManager';
 
 const PhoneManagement = () => {
   const { user } = useAuth();
@@ -72,20 +75,14 @@ const PhoneManagement = () => {
   const [deletingPhone, setDeletingPhone] = useState<CompanyPhone | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
-
-  const phoneCategories = [
-    'Employee',
-    'Foreman', 
-    'Admin/Management',
-    'Sales',
-    'Client',
-    'Supplier',
-    'Vendor',
-    'Emergency Contact',
-    'Other'
-  ];
+  
+  const { categories: dynamicCategories, isLoading: categoriesLoading } = usePhoneCategories();
+  
+  // Use dynamic categories from database
+  const phoneCategories = dynamicCategories.map(cat => cat.name);
 
   // Filter phones based on search and filters
   const filteredPhones = phones.filter((phone) => {
@@ -258,10 +255,20 @@ const PhoneManagement = () => {
             )}
             
             {isAdmin && (
-              <Button onClick={() => setIsFormOpen(true)} className="ml-auto bg-primary hover:bg-primary/90">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Contact
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowCategoryManager(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Manage Categories
+                </Button>
+                <Button onClick={() => setIsFormOpen(true)} className="ml-auto bg-primary hover:bg-primary/90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Contact
+                </Button>
+              </>
             )}
           </div>
 
@@ -373,6 +380,7 @@ const PhoneManagement = () => {
               formData={formData}
               onInputChange={handleInputChange}
               categories={phoneCategories}
+              isLoadingCategories={categoriesLoading}
             />
           </div>
           <DialogFooter>
@@ -412,6 +420,12 @@ const PhoneManagement = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Category Manager Dialog */}
+      <PhoneCategoryManager 
+        isOpen={showCategoryManager}
+        onClose={() => setShowCategoryManager(false)}
+      />
     </div>
   );
 };

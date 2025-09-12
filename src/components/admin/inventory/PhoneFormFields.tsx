@@ -20,9 +20,10 @@ interface PhoneFormFieldsProps {
   };
   onInputChange: (field: string, value: string) => void;
   categories: string[];
+  isLoadingCategories?: boolean;
 }
 
-const PhoneFormFields = ({ formData, onInputChange, categories }: PhoneFormFieldsProps) => {
+const PhoneFormFields = ({ formData, onInputChange, categories, isLoadingCategories = false }: PhoneFormFieldsProps) => {
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
     const cleaned = value.replace(/\D/g, '');
@@ -60,14 +61,20 @@ const PhoneFormFields = ({ formData, onInputChange, categories }: PhoneFormField
           <Label htmlFor="category">Category *</Label>
           <Select value={formData.category} onValueChange={(value) => onInputChange('category', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select category" />
+              <SelectValue placeholder={isLoadingCategories ? "Loading categories..." : "Select category"} />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
+              {isLoadingCategories ? (
+                <SelectItem value="" disabled>Loading categories...</SelectItem>
+              ) : categories.length === 0 ? (
+                <SelectItem value="" disabled>No categories available</SelectItem>
+              ) : (
+                categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
