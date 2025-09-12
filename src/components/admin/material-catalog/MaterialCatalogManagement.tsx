@@ -11,6 +11,7 @@ import { CategoryManagement } from './CategoryManagement';
 import { HierarchicalMaterialCategoryManager } from './HierarchicalMaterialCategoryManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Plus, Package, Upload } from 'lucide-react';
+import { queryClient } from '@/lib/queryClient';
 
 const MaterialCatalogManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,8 +59,10 @@ const MaterialCatalogManagement = () => {
               <HierarchicalMaterialCategoryManager 
                 categories={[]}
                 onCategoriesChange={() => {
-                  // Refresh categories when changed
-                  window.location.reload();
+                  // Invalidate and refetch material-related queries
+                  queryClient.invalidateQueries({ queryKey: ['material-categories'] });
+                  queryClient.invalidateQueries({ queryKey: ['material-catalog'] });
+                  queryClient.invalidateQueries({ queryKey: ['material-categories-options'] });
                 }}
               />
             </TabsContent>
