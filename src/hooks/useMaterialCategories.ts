@@ -60,6 +60,34 @@ export const useMaterialCategoryMutations = () => {
     mutationFn: async (newCategory: CreateMaterialCategory) => {
       if (!user?.companyId) throw new Error("No company ID");
 
+      // Check for existing inactive category with same name
+      const { data: existingCategory } = await supabase
+        .from("material_categories")
+        .select("*")
+        .eq("company_id", user.companyId)
+        .eq("name", newCategory.name)
+        .eq("is_active", false)
+        .maybeSingle();
+
+      if (existingCategory) {
+        // Reactivate existing category instead of creating new one
+        const { data, error } = await supabase
+          .from("material_categories")
+          .update({
+            is_active: true,
+            sort_order: newCategory.sort_order,
+            parent_category_id: newCategory.parent_category_id,
+            category_level: newCategory.category_level,
+          })
+          .eq("id", existingCategory.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+
+      // Create new category
       const { data, error } = await supabase
         .from("material_categories")
         .insert({
@@ -117,14 +145,12 @@ export const useMaterialCategoryMutations = () => {
           .eq("category", categoryId)
           .limit(1);
 
-        if (materialsUsingCategory && materialsUsingCategory.length > 0) {
-          throw new Error("Cannot delete category that is in use by materials");
-        }
+        const isInUse = materialsUsingCategory && materialsUsingCategory.length > 0;
 
         // Check if this is a parent category with subcategories
         const { data: subcategories } = await supabase
           .from("material_categories")
-          .select("id")
+          .select("id, name")
           .eq("parent_category_id", categoryId)
           .eq("is_active", true);
 
@@ -138,35 +164,72 @@ export const useMaterialCategoryMutations = () => {
             .in("category", subcategories.map(sub => sub.id))
             .limit(1);
 
-          if (subcategoriesInUse && subcategoriesInUse.length > 0) {
-            throw new Error("Cannot delete category that has subcategories currently in use by materials");
-          }
+          const subcategoriesAreInUse = subcategoriesInUse && subcategoriesInUse.length > 0;
 
-          // Soft delete all subcategories first
-          const { error: subcategoryError } = await supabase
-            .from("material_categories")
-            .update({ is_active: false })
-            .in("id", subcategories.map(sub => sub.id));
+          if (subcategoriesAreInUse) {
+            // Soft delete subcategories and rename them to free up names
+            for (const subcategory of subcategories) {
+              const timestamp = Date.now();
+              await supabase
+                .from("material_categories")
+                .update({ 
+                  is_active: false,
+                  name: `${subcategory.name}_deleted_${timestamp}`
+                })
+                .eq("id", subcategory.id);
+            }
+          } else {
+            // Hard delete subcategories since they're not in use
+            const { error: subcategoryError } = await supabase
+              .from("material_categories")
+              .delete()
+              .in("id", subcategories.map(sub => sub.id));
 
-          if (subcategoryError) {
-            console.error("❌ Error deleting subcategories:", subcategoryError);
-            throw subcategoryError;
+            if (subcategoryError) {
+              console.error("❌ Error deleting subcategories:", subcategoryError);
+              throw subcategoryError;
+            }
           }
-          console.log("✅ Subcategories deleted successfully");
+          console.log("✅ Subcategories processed successfully");
         }
 
-        // Finally, soft delete the parent category
-        const { error } = await supabase
+        // Get the category name for potential renaming
+        const { data: categoryData } = await supabase
           .from("material_categories")
-          .update({ is_active: false })
-          .eq("id", categoryId);
+          .select("name")
+          .eq("id", categoryId)
+          .single();
 
-        if (error) {
-          console.error("❌ Error deleting parent category:", error);
-          throw error;
+        if (isInUse) {
+          // Soft delete and rename to free up the name
+          const timestamp = Date.now();
+          const { error } = await supabase
+            .from("material_categories")
+            .update({ 
+              is_active: false,
+              name: `${categoryData?.name || 'category'}_deleted_${timestamp}`
+            })
+            .eq("id", categoryId);
+
+          if (error) {
+            console.error("❌ Error soft deleting category:", error);
+            throw error;
+          }
+          console.log("✅ Category soft deleted and renamed");
+        } else {
+          // Hard delete since it's not in use
+          const { error } = await supabase
+            .from("material_categories")
+            .delete()
+            .eq("id", categoryId);
+
+          if (error) {
+            console.error("❌ Error hard deleting category:", error);
+            throw error;
+          }
+          console.log("✅ Category hard deleted");
         }
         
-        console.log("✅ Parent category deleted successfully");
         return { success: true };
       } catch (error) {
         console.error("❌ Delete operation failed:", error);
