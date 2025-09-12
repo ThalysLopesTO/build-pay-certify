@@ -92,7 +92,7 @@ const VehicleManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [viewingVehicle, setViewingVehicle] = useState<Vehicle | null>(null);
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management' || user?.role === 'foreman';
+  const canManageInventory = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management' || user?.role === 'foreman';
 
   // Filter vehicles based on search and filters
   const filteredVehicles = vehicles.filter((vehicle) => {
@@ -336,7 +336,7 @@ const VehicleManagement = () => {
               </Button>
             )}
             
-            {isAdmin && (
+            {canManageInventory && (
               <Button onClick={() => setIsFormOpen(true)} className="ml-auto bg-primary hover:bg-primary/90">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Vehicle
@@ -356,13 +356,13 @@ const VehicleManagement = () => {
                   <TableHead>Status</TableHead>
                   <TableHead>Jobsite</TableHead>
                   <TableHead>Added</TableHead>
-                  {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                  {canManageInventory && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredVehicles.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={canManageInventory ? 8 : 7} className="text-center py-8 text-muted-foreground">
                       {searchTerm || jobsiteFilter !== 'all' || typeFilter !== 'all' || statusFilter !== 'all'
                         ? 'No vehicles match your filters'
                         : 'No vehicles found. Add your first vehicle to get started.'
@@ -383,7 +383,7 @@ const VehicleManagement = () => {
                         )}
                       </TableCell>
                       <TableCell>{format(new Date(vehicle.created_at), 'MMM dd, yyyy')}</TableCell>
-                      {isAdmin && (
+                       {canManageInventory && (
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
                             <TooltipProvider>
@@ -579,7 +579,7 @@ const VehicleManagement = () => {
               </div>
               
               <div className="pt-4 flex justify-between">
-                {isAdmin && (
+                {canManageInventory && (
                   <Button onClick={() => {
                     setViewingVehicle(null);
                     handleEditVehicle(viewingVehicle);

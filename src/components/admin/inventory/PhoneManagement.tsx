@@ -77,7 +77,7 @@ const PhoneManagement = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showCategoryManager, setShowCategoryManager] = useState(false);
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
+  const canManageInventory = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management' || user?.role === 'foreman';
   
   const { categories: dynamicCategories, isLoading: categoriesLoading } = usePhoneCategories();
   
@@ -254,7 +254,7 @@ const PhoneManagement = () => {
               </Button>
             )}
             
-            {isAdmin && (
+            {canManageInventory && (
               <>
                 <Button 
                   variant="outline" 
@@ -282,13 +282,13 @@ const PhoneManagement = () => {
                   <TableHead>Phone Number</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead>Added</TableHead>
-                  {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                  {canManageInventory && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredPhones.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={canManageInventory ? 6 : 5} className="text-center py-8 text-muted-foreground">
                       {searchTerm || categoryFilter !== 'all'
                         ? 'No phone contacts match your filters'
                         : 'No phone contacts found. Add your first contact to get started.'
@@ -311,7 +311,7 @@ const PhoneManagement = () => {
                         )}
                       </TableCell>
                       <TableCell>{format(new Date(phone.created_at), 'MMM dd, yyyy')}</TableCell>
-                      {isAdmin && (
+                      {canManageInventory && (
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
                             <TooltipProvider>

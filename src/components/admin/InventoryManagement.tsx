@@ -47,7 +47,7 @@ const InventoryManagement = () => {
   const [jobsiteFilter, setJobsiteFilter] = useState<string>('all');
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
-  const canManageInventory = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'foreman';
+  const canManageInventory = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management' || user?.role === 'foreman';
 
   // Filter inventory based on search term and jobsite
   const filteredInventory = inventory.filter((item) => {
