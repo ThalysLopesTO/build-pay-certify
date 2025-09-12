@@ -107,7 +107,7 @@ export const useMaterialCategoryMutations = () => {
 
   const deleteCategory = useMutation({
     mutationFn: async (categoryId: string) => {
-      // First check if category is in use
+      // First check if category is in use by materials
       const { data: materialsUsingCategory } = await supabase
         .from("material_catalog_items")
         .select("id")
@@ -118,6 +118,35 @@ export const useMaterialCategoryMutations = () => {
         throw new Error("Cannot delete category that is in use by materials");
       }
 
+      // Check if this is a parent category with subcategories
+      const { data: subcategories } = await supabase
+        .from("material_categories")
+        .select("id")
+        .eq("parent_category_id", categoryId)
+        .eq("is_active", true);
+
+      if (subcategories && subcategories.length > 0) {
+        // Check if any subcategories are in use
+        const { data: subcategoriesInUse } = await supabase
+          .from("material_catalog_items")
+          .select("id")
+          .in("category", subcategories.map(sub => sub.id))
+          .limit(1);
+
+        if (subcategoriesInUse && subcategoriesInUse.length > 0) {
+          throw new Error("Cannot delete category that has subcategories currently in use by materials");
+        }
+
+        // Soft delete all subcategories first
+        const { error: subcategoryError } = await supabase
+          .from("material_categories")
+          .update({ is_active: false })
+          .in("id", subcategories.map(sub => sub.id));
+
+        if (subcategoryError) throw subcategoryError;
+      }
+
+      // Finally, soft delete the parent category
       const { error } = await supabase
         .from("material_categories")
         .update({ is_active: false })
