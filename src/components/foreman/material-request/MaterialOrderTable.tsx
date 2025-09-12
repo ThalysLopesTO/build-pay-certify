@@ -10,7 +10,8 @@ import { MaterialOrderSummary } from './MaterialOrderSummary';
 import { Plus, Trash2, Copy } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MATERIAL_UNITS } from '@/hooks/useMaterialCatalog';
-import { useMaterialCategories } from '@/hooks/useMaterialCategories';
+import { useHierarchicalMaterialCategories } from '@/hooks/useHierarchicalMaterialCategories';
+import { HierarchicalMaterialCategorySelector } from '@/components/admin/material-catalog/HierarchicalMaterialCategorySelector';
 
 export interface OrderLineItem {
   id: string;
@@ -35,7 +36,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
   errors = {},
 }) => {
   const [editingCell, setEditingCell] = useState<{ rowId: string; field: string } | null>(null);
-  const { data: categories = [] } = useMaterialCategories();
+  const { organizedCategories, getCategoryDisplay } = useHierarchicalMaterialCategories();
 
   // Mobile card component
   const MobileItemCard: React.FC<{ item: OrderLineItem; index: number }> = ({ item, index }) => (
@@ -96,21 +97,10 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
 
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">Category</label>
-          <Select
-            value={item.category}
-            onValueChange={(value) => handleCategorySelect(item.id, value)}
-          >
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent className="bg-white z-50">
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.name}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <HierarchicalMaterialCategorySelector
+            selectedCategoryId={item.category}
+            onCategoryChange={(categoryId) => handleCategorySelect(item.id, categoryId)}
+          />
         </div>
 
         <div>
@@ -129,7 +119,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
             )}
             {!item.isCustom && item.category && (
               <Badge variant="secondary" className="text-xs">
-                {item.category}
+                {getCategoryDisplay(item.category)}
               </Badge>
             )}
           </div>
@@ -198,12 +188,12 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
     ));
   };
 
-  const handleCategorySelect = (id: string, category: string) => {
+  const handleCategorySelect = (id: string, categoryId: string) => {
     // Batch all updates in a single state change to prevent race conditions
     onChange(lineItems.map(item => 
       item.id === id ? { 
         ...item, 
-        category, 
+        category: categoryId, 
         materialName: '', 
         catalogItemId: undefined, 
         isCustom: true 
@@ -212,11 +202,17 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
   };
 
   const handleMaterialSelect = (id: string, catalogItem: any) => {
-    updateLine(id, 'catalogItemId', catalogItem.id);
-    updateLine(id, 'materialName', catalogItem.name);
-    updateLine(id, 'unit', catalogItem.unit);
-    updateLine(id, 'category', catalogItem.category);
-    updateLine(id, 'isCustom', false);
+    // Batch all updates in a single state change
+    onChange(lineItems.map(item => 
+      item.id === id ? { 
+        ...item,
+        catalogItemId: catalogItem.id,
+        materialName: catalogItem.name,
+        unit: catalogItem.unit,
+        category: catalogItem.category, // This should be the category ID
+        isCustom: false
+      } : item
+    ));
   };
 
   const handleCustomMaterial = (id: string, materialName: string) => {
@@ -295,21 +291,10 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                     </Select>
                   </TableCell>
                   <TableCell>
-                    <Select
-                      value={item.category}
-                      onValueChange={(value) => handleCategorySelect(item.id, value)}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white z-50">
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.name}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <HierarchicalMaterialCategorySelector
+                      selectedCategoryId={item.category}
+                      onCategoryChange={(categoryId) => handleCategorySelect(item.id, categoryId)}
+                    />
                   </TableCell>
                   <TableCell>
                     <div className="space-y-2">
@@ -326,7 +311,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                       )}
                       {!item.isCustom && item.category && (
                         <Badge variant="secondary" className="text-xs">
-                          {item.category}
+                          {getCategoryDisplay(item.category)}
                         </Badge>
                       )}
                     </div>

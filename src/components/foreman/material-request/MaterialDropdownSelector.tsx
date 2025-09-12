@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useMaterialCatalog, MaterialCatalogItem } from '@/hooks/useMaterialCatalog';
+import { useHierarchicalMaterialCategories } from '@/hooks/useHierarchicalMaterialCategories';
 import { Loader2, Plus } from 'lucide-react';
 
 interface MaterialDropdownSelectorProps {
@@ -18,6 +19,8 @@ export const MaterialDropdownSelector: React.FC<MaterialDropdownSelectorProps> =
   onSelect,
   onCustom,
 }) => {
+  const { getCategoryDisplay } = useHierarchicalMaterialCategories();
+  
   // Load all materials for the selected category
   const { data: catalogItems = [], isLoading } = useMaterialCatalog(
     selectedCategory ? '' : undefined,
@@ -25,13 +28,13 @@ export const MaterialDropdownSelector: React.FC<MaterialDropdownSelectorProps> =
     true
   );
 
-  // Group materials by category
+  // Group materials by category hierarchy
   const groupedItems = catalogItems.reduce((groups, item) => {
-    const category = item.category || 'Other';
-    if (!groups[category]) {
-      groups[category] = [];
+    const categoryDisplay = getCategoryDisplay(item.category || '');
+    if (!groups[categoryDisplay]) {
+      groups[categoryDisplay] = [];
     }
-    groups[category].push(item);
+    groups[categoryDisplay].push(item);
     return groups;
   }, {} as Record<string, MaterialCatalogItem[]>);
 
