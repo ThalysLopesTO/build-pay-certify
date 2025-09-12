@@ -93,6 +93,8 @@ export const HierarchicalMaterialCategoryManager = ({
   const handleDeleteCategory = (categoryId: string) => {
     console.log("🗑️ Component: Starting delete for category:", categoryId);
     deleteCategory(categoryId);
+    // Immediately trigger the callback to refresh parent component
+    setTimeout(() => onCategoriesChange(), 200);
   };
 
   const startEdit = (category: HierarchicalMaterialCategory) => {
