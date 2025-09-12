@@ -15,7 +15,7 @@ import CompanyRules from '../components/common/CompanyRules';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import MyTimesheetHistory from '../components/common/MyTimesheetHistory';
-import DailyReportsManagement from '../components/admin/DailyReportsManagement';
+import ForemanDailyReports from '../components/foreman/ForemanDailyReports';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import EquipmentManagement from '../components/admin/inventory/EquipmentManagement';
 import { useParams } from 'react-router-dom';
@@ -46,7 +46,7 @@ const ForemanDashboard = () => {
       case 'my-timesheet-history':
         return <MyTimesheetHistory />;
       case 'daily-reports':
-        return <DailyReportsManagement />;
+        return <ForemanDailyReports />;
       case 'employee-reports':
         return <EmployeeReports />;
       case 'jobsite-progress':

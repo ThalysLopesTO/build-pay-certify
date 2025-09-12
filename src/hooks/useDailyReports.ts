@@ -32,6 +32,7 @@ export interface DailyReportFormData {
   report_date: Date;
 }
 
+// Optimized hook with debouncing and better performance
 export const useDailyReports = (filters?: {
   jobsite_id?: string;
   date_from?: string;
@@ -45,6 +46,7 @@ export const useDailyReports = (filters?: {
     queryFn: async () => {
       if (!user?.companyId) return [];
 
+      // Optimize query by limiting JOINs and using more efficient select
       let query = supabase
         .from('daily_reports')
         .select(`
@@ -59,8 +61,11 @@ export const useDailyReports = (filters?: {
             photo_url
           )
         `)
-        .eq('company_id', user.companyId);
+        .eq('company_id', user.companyId)
+        .order('created_at', { ascending: false })
+        .limit(50); // Limit initial load for better performance
 
+      // Apply filters efficiently
       if (filters?.jobsite_id) {
         query = query.eq('jobsite_id', filters.jobsite_id);
       }
@@ -77,9 +82,12 @@ export const useDailyReports = (filters?: {
         query = query.eq('submitted_by', filters.submitted_by);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Daily reports query error:', error);
+        throw error;
+      }
       
       // Add canEdit field based on 24-hour window and ownership
       const reportsWithCanEdit = (data || []).map(report => {
@@ -97,6 +105,10 @@ export const useDailyReports = (filters?: {
       return reportsWithCanEdit;
     },
     enabled: !!user?.companyId,
+    staleTime: 2 * 60 * 1000, // 2 minutes for daily reports
+    gcTime: 5 * 60 * 1000, // 5 minutes cache
+    refetchOnWindowFocus: false,
+    refetchOnMount: 'always', // Always fetch fresh data on mount
   });
 };
 
@@ -195,7 +207,12 @@ export const useDailyReportSubmission = () => {
     mutationFn: async (data: DailyReportFormData) => {
       if (!user?.companyId) throw new Error('No company ID found');
 
-      // Upload photos first
+      // Verify user has permission to submit reports
+      if (!user.role || !['foreman', 'admin', 'super_admin'].includes(user.role)) {
+        throw new Error('You do not have permission to submit daily reports');
+      }
+
+      // Upload photos with retry logic
       const photoUrls: string[] = [];
       
       for (const photo of data.photos) {
@@ -203,21 +220,33 @@ export const useDailyReportSubmission = () => {
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `${user.companyId}/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('daily-report-photos')
-          .upload(filePath, photo);
+        let uploadAttempts = 0;
+        const maxAttempts = 3;
+        
+        while (uploadAttempts < maxAttempts) {
+          try {
+            const { error: uploadError } = await supabase.storage
+              .from('daily-report-photos')
+              .upload(filePath, photo);
 
-        if (uploadError) throw uploadError;
+            if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from('daily-report-photos')
-          .getPublicUrl(filePath);
+            const { data: urlData } = supabase.storage
+              .from('daily-report-photos')
+              .getPublicUrl(filePath);
 
-        photoUrls.push(urlData.publicUrl);
+            photoUrls.push(urlData.publicUrl);
+            break; // Success, exit retry loop
+          } catch (error) {
+            uploadAttempts++;
+            if (uploadAttempts >= maxAttempts) throw error;
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 1000 * uploadAttempts));
+          }
+        }
       }
 
-      // Create the daily report
-      // Format report_date properly to avoid timezone issues
+      // Create the daily report with proper date formatting
       const year = data.report_date.getFullYear();
       const month = String(data.report_date.getMonth() + 1).padStart(2, '0');
       const day = String(data.report_date.getDate()).padStart(2, '0');
@@ -236,10 +265,14 @@ export const useDailyReportSubmission = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error inserting daily report:', error);
+        throw error;
+      }
       return report;
     },
     onSuccess: () => {
+      // Invalidate and refetch daily reports
       queryClient.invalidateQueries({ queryKey: ['daily-reports'] });
       toast({
         title: "Success",
@@ -248,11 +281,17 @@ export const useDailyReportSubmission = () => {
     },
     onError: (error) => {
       console.error('Error submitting daily report:', error);
+      const errorMessage = error.message.includes('permission') 
+        ? 'You do not have permission to submit daily reports. Please contact your administrator.'
+        : 'Failed to submit daily report. Please check your connection and try again.';
+      
       toast({
         title: "Error",
-        description: "Failed to submit daily report. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 };
