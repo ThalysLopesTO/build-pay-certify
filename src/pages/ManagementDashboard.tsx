@@ -8,7 +8,7 @@ import AttentionReportsInbox from '../components/admin/AttentionReportsInbox';
 import UserSettings from '../components/common/UserSettings';
 import LicenseWarningBanner from '../components/common/LicenseWarningBanner';
 import LivePunchMonitor from '../components/admin/LivePunchMonitor';
-import InventoryManagement from '../components/admin/InventoryManagement';
+import InventoryIndex from './admin/inventory/Index';
 import SuppliersManagement from '../components/admin/SuppliersManagement';
 import QuotesManagement from '../components/admin/QuotesManagement';
 import InvoiceManagement from '../components/admin/InvoiceManagement';
@@ -42,7 +42,7 @@ const ManagementDashboard = () => {
       case 'employee-registration':
         return <EmployeeRegistration />;
       case 'inventory':
-        return <InventoryManagement />;
+        return <InventoryIndex />;
       case 'suppliers':
         return <SuppliersManagement />;
       case 'quotes':
