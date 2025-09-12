@@ -11,7 +11,8 @@ export interface MaterialCatalogItem {
   name: string;
   spec_size?: string;
   unit: string;
-  category: string; // This is now a UUID referencing material_categories.id
+  category: string; // UUID referencing material_categories.id
+  category_name: string; // Resolved category name for display
   notes?: string;
   is_active: boolean;
   created_at: string;
@@ -43,7 +44,16 @@ export const useMaterialCatalog = (searchTerm?: string, category?: string, activ
 
       let query = supabase
         .from('material_catalog_items')
-        .select('*')
+        .select(`
+          *,
+          material_categories!inner(
+            id,
+            name,
+            category_level,
+            parent_category_id,
+            material_categories!parent_category_id(name)
+          )
+        `)
         .eq('company_id', user.companyId)
         .order('category', { ascending: true })
         .order('name', { ascending: true });
@@ -63,7 +73,18 @@ export const useMaterialCatalog = (searchTerm?: string, category?: string, activ
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as MaterialCatalogItem[];
+      
+      // Transform data to include category_name
+      const transformedData = data?.map(item => ({
+        ...item,
+        category_name: item.material_categories?.category_level === 'parent' 
+          ? item.material_categories.name
+          : item.material_categories?.material_categories?.name 
+            ? `${item.material_categories.material_categories.name} > ${item.material_categories.name}`
+            : item.material_categories?.name || 'Unknown Category'
+      })) || [];
+      
+      return transformedData as MaterialCatalogItem[];
     },
     enabled: !!user?.companyId,
   });

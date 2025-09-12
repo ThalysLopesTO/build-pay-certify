@@ -121,7 +121,7 @@ const MaterialCatalogManagement = () => {
             <div className="space-y-4">
               {Object.entries(
                 catalogItems.reduce((groups, item) => {
-                  const category = item.category;
+                  const category = item.category_name;
                   if (!groups[category]) groups[category] = [];
                   groups[category].push(item);
                   return groups;
