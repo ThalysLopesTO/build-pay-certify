@@ -56,15 +56,7 @@ const MaterialCatalogManagement = () => {
         </TabsList>
         
             <TabsContent value="categories" className="space-y-4">
-              <HierarchicalMaterialCategoryManager 
-                categories={[]}
-                onCategoriesChange={() => {
-                  // Invalidate and refetch material-related queries
-                  queryClient.invalidateQueries({ queryKey: ['material-categories'] });
-                  queryClient.invalidateQueries({ queryKey: ['material-catalog'] });
-                  queryClient.invalidateQueries({ queryKey: ['material-categories-options'] });
-                }}
-              />
+              <HierarchicalMaterialCategoryManager />
             </TabsContent>
         
         <TabsContent value="catalog" className="space-y-4">

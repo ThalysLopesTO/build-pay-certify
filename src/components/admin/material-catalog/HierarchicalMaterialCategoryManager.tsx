@@ -10,14 +10,10 @@ import { useMaterialCategoryMutations } from '@/hooks/useMaterialCategories';
 import { toast } from 'sonner';
 
 interface HierarchicalMaterialCategoryManagerProps {
-  categories: HierarchicalMaterialCategory[];
-  onCategoriesChange: () => void;
+  // No props needed - component manages its own data
 }
 
-export const HierarchicalMaterialCategoryManager = ({
-  categories,
-  onCategoriesChange
-}: HierarchicalMaterialCategoryManagerProps) => {
+export const HierarchicalMaterialCategoryManager = ({}: HierarchicalMaterialCategoryManagerProps = {}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [newParentCategoryName, setNewParentCategoryName] = useState('');
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
@@ -39,7 +35,6 @@ export const HierarchicalMaterialCategoryManager = ({
       });
       setNewParentCategoryName('');
       await refetch();
-      onCategoriesChange();
       toast.success('Parent category created successfully');
     } catch (error) {
       console.error('Error creating parent category:', error);
@@ -66,7 +61,6 @@ export const HierarchicalMaterialCategoryManager = ({
       setNewSubcategoryName('');
       setSelectedParentForSubcategory('');
       await refetch();
-      onCategoriesChange();
       toast.success('Subcategory created successfully');
     } catch (error) {
       console.error('Error creating subcategory:', error);
@@ -85,7 +79,6 @@ export const HierarchicalMaterialCategoryManager = ({
       setEditingCategory(null);
       setEditingName('');
       await refetch();
-      onCategoriesChange();
       toast.success('Category updated successfully');
     } catch (error) {
       console.error('Error updating category:', error);
@@ -99,8 +92,6 @@ export const HierarchicalMaterialCategoryManager = ({
       await deleteCategory(categoryId);
       // Refresh local data immediately
       await refetch();
-      // Trigger the callback to refresh parent component after successful deletion
-      onCategoriesChange();
       toast.success('Category deleted successfully');
     } catch (error) {
       console.error('Error deleting category:', error);
