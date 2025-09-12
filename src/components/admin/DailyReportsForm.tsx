@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,6 +12,8 @@ import { X, Upload, FileImage } from 'lucide-react';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useDailyReportSubmission, DailyReportFormData } from '@/hooks/useDailyReports';
 import DatePickerField from '@/components/foreman/DatePickerField';
+import { DailyReportValidation } from '@/components/foreman/DailyReportValidation';
+import { DailyReportProgressIndicator } from '@/components/foreman/DailyReportProgressIndicator';
 
 const formSchema = z.object({
   jobsite_id: z.string().min(1, 'Please select a jobsite'),
@@ -28,10 +30,41 @@ interface DailyReportsFormProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface SubmissionStep {
+  key: string;
+  label: string;
+  status: 'pending' | 'active' | 'completed' | 'error';
+  errorMessage?: string;
+}
+
 const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [submissionSteps, setSubmissionSteps] = useState<SubmissionStep[]>([
+    { key: 'validation', label: 'Validating form data', status: 'pending' },
+    { key: 'photos', label: 'Uploading photos', status: 'pending' },
+    { key: 'database', label: 'Creating report record', status: 'pending' },
+    { key: 'complete', label: 'Submission complete', status: 'pending' }
+  ]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [submissionProgress, setSubmissionProgress] = useState(0);
+  
   const { data: jobsites = [], isLoading: jobsitesLoading } = useJobsites();
   const submitMutation = useDailyReportSubmission();
+
+  // Monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -58,20 +91,71 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
   };
 
   const onSubmit = async (data: FormData) => {
-    const formData: DailyReportFormData = {
-      jobsite_id: data.jobsite_id,
-      summary: data.summary,
-      photos: selectedFiles,
-      report_date: data.report_date,
-    };
+    if (!isOnline) {
+      console.error('Cannot submit report while offline');
+      return;
+    }
 
-    await submitMutation.mutateAsync(formData);
-    
-    // Reset form
-    form.reset();
-    setSelectedFiles([]);
-    onOpenChange(false);
+    // Reset submission state
+    setSubmissionSteps(steps => steps.map(step => ({ ...step, status: 'pending' as SubmissionStep['status'], errorMessage: undefined })));
+    setCurrentStep(0);
+    setSubmissionProgress(0);
+
+    try {
+      // Step 1: Validation
+      setSubmissionSteps(steps => steps.map((step, index) => 
+        index === 0 ? { ...step, status: 'active' as SubmissionStep['status'] } : step
+      ));
+      setSubmissionProgress(10);
+
+      const formData: DailyReportFormData = {
+        jobsite_id: data.jobsite_id,
+        summary: data.summary,
+        photos: selectedFiles,
+        report_date: data.report_date,
+      };
+
+      setSubmissionSteps(steps => steps.map((step, index) => 
+        index === 0 ? { ...step, status: 'completed' as SubmissionStep['status'] } : step
+      ));
+      setCurrentStep(1);
+      setSubmissionProgress(25);
+
+      // Submit with progress tracking
+      await submitMutation.mutateAsync(formData);
+      
+      // Complete all steps
+      setSubmissionSteps(steps => steps.map(step => ({ ...step, status: 'completed' as SubmissionStep['status'] })));
+      setSubmissionProgress(100);
+      
+      // Reset form
+      form.reset();
+      setSelectedFiles([]);
+      
+      // Close dialog after short delay
+      setTimeout(() => {
+        onOpenChange(false);
+        setSubmissionSteps(steps => steps.map(step => ({ ...step, status: 'pending' as SubmissionStep['status'] })));
+        setSubmissionProgress(0);
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Submission failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      setSubmissionSteps(steps => steps.map((step, index) => 
+        index === currentStep ? { ...step, status: 'error' as SubmissionStep['status'], errorMessage } : step
+      ));
+    }
   };
+
+  // Form validation state
+  const watchedValues = form.watch();
+  const hasJobsite = !!watchedValues.jobsite_id;
+  const hasSummary = !!watchedValues.summary;
+  const summaryLength = watchedValues.summary?.length || 0;
+  const hasValidDate = !!watchedValues.report_date;
+  const canSubmit = hasJobsite && hasSummary && summaryLength >= 10 && hasValidDate && isOnline;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -258,6 +342,26 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                   )}
                 </div>
 
+                {/* Validation Status */}
+                <DailyReportValidation
+                  isOnline={isOnline}
+                  hasJobsite={hasJobsite}
+                  hasSummary={hasSummary}
+                  summaryLength={summaryLength}
+                  hasValidDate={hasValidDate}
+                  photoCount={selectedFiles.length}
+                />
+
+                {/* Submission Progress */}
+                {(submitMutation.isPending || submissionSteps.some(step => step.status !== 'pending')) && (
+                  <DailyReportProgressIndicator
+                    isSubmitting={submitMutation.isPending}
+                    steps={submissionSteps}
+                    currentStep={currentStep}
+                    overallProgress={submissionProgress}
+                  />
+                )}
+
                 {/* Bottom Spacer for Better Scrolling */}
                 <div className="pb-4"></div>
               </div>
@@ -278,16 +382,18 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
                   </Button>
                   <Button
                     type="submit"
-                    disabled={submitMutation.isPending}
-                    className="min-w-[140px] h-10 bg-primary hover:bg-primary/90 shadow-md"
+                    disabled={submitMutation.isPending || !canSubmit}
+                    className="min-w-[140px] h-10 bg-primary hover:bg-primary/90 shadow-md disabled:opacity-50"
                   >
                     {submitMutation.isPending ? (
                       <div className="flex items-center gap-2">
                         <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         <span>Submitting...</span>
                       </div>
-                    ) : (
+                    ) : canSubmit ? (
                       'Submit Report'
+                    ) : (
+                      'Complete Form'
                     )}
                   </Button>
                 </div>
