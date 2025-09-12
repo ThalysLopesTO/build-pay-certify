@@ -414,6 +414,48 @@ export type Database = {
         }
         Relationships: []
       }
+      company_phones: {
+        Row: {
+          category: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          extension: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone_number: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          extension?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone_number: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          extension?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       company_registration_requests: {
         Row: {
           admin_email: string
