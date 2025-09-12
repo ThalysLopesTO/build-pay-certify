@@ -90,15 +90,9 @@ export const HierarchicalMaterialCategoryManager = ({
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    try {
-      await deleteCategory(categoryId);
-      onCategoriesChange();
-      toast.success('Category deleted successfully');
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      toast.error('Failed to delete category');
-    }
+  const handleDeleteCategory = (categoryId: string) => {
+    console.log("🗑️ Component: Starting delete for category:", categoryId);
+    deleteCategory(categoryId);
   };
 
   const startEdit = (category: HierarchicalMaterialCategory) => {
