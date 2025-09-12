@@ -205,46 +205,113 @@ export const useDailyReportSubmission = () => {
 
   return useMutation({
     mutationFn: async (data: DailyReportFormData) => {
-      if (!user?.companyId) throw new Error('No company ID found');
+      console.log('🔍 Starting daily report submission...', {
+        userId: user?.id,
+        companyId: user?.companyId,
+        role: user?.role,
+        isActive: user?.isActive,
+        jobsiteId: data.jobsite_id,
+        photoCount: data.photos?.length || 0,
+        reportDate: data.report_date
+      });
 
-      // Verify user has permission to submit reports
-      if (!user.role || !['foreman', 'admin', 'super_admin'].includes(user.role)) {
-        throw new Error('You do not have permission to submit daily reports');
+      // Enhanced authentication and permission checks
+      if (!user) {
+        console.error('❌ No user found in context');
+        throw new Error('AUTHENTICATION_REQUIRED|Please log in to submit reports');
       }
 
-      // Upload photos with retry logic
+      if (!user.id) {
+        console.error('❌ No user ID found');
+        throw new Error('AUTHENTICATION_INVALID|User session is invalid. Please log out and log back in.');
+      }
+
+      if (!user.companyId) {
+        console.error('❌ No company ID found for user', user.id);
+        throw new Error('COMPANY_NOT_FOUND|No company assigned to your account. Please contact your administrator.');
+      }
+
+      if (!user.role || !['foreman', 'admin', 'super_admin'].includes(user.role)) {
+        console.error('❌ User role check failed', { userRole: user.role, userId: user.id });
+        throw new Error('PERMISSION_DENIED|You do not have permission to submit daily reports. Contact your administrator.');
+      }
+
+      if (user.isActive === false) {
+        console.error('❌ User account is inactive', { userId: user.id });
+        throw new Error('ACCOUNT_INACTIVE|Your account is inactive. Please contact your administrator.');
+      }
+
+      // Validate required data
+      if (!data.jobsite_id || !data.summary || !data.report_date) {
+        console.error('❌ Missing required fields', { 
+          hasJobsite: !!data.jobsite_id,
+          hasSummary: !!data.summary,
+          hasDate: !!data.report_date
+        });
+        throw new Error('VALIDATION_ERROR|Please fill in all required fields');
+      }
+
+      console.log('✅ All validations passed, starting photo upload...');
+
+      // Upload photos with enhanced error handling
       const photoUrls: string[] = [];
       
-      for (const photo of data.photos) {
-        const fileExt = photo.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `${user.companyId}/${fileName}`;
+      if (data.photos && data.photos.length > 0) {
+        for (let i = 0; i < data.photos.length; i++) {
+          const photo = data.photos[i];
+          console.log(`📸 Uploading photo ${i + 1}/${data.photos.length}:`, {
+            name: photo.name,
+            size: photo.size,
+            type: photo.type
+          });
 
-        let uploadAttempts = 0;
-        const maxAttempts = 3;
-        
-        while (uploadAttempts < maxAttempts) {
-          try {
-            const { error: uploadError } = await supabase.storage
-              .from('daily-report-photos')
-              .upload(filePath, photo);
+          const fileExt = photo.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+          const filePath = `${user.companyId}/${fileName}`;
 
-            if (uploadError) throw uploadError;
+          let uploadAttempts = 0;
+          const maxAttempts = 3;
+          
+          while (uploadAttempts < maxAttempts) {
+            try {
+              console.log(`📤 Upload attempt ${uploadAttempts + 1} for photo ${i + 1}`);
+              
+              const { error: uploadError } = await supabase.storage
+                .from('daily-report-photos')
+                .upload(filePath, photo);
 
-            const { data: urlData } = supabase.storage
-              .from('daily-report-photos')
-              .getPublicUrl(filePath);
+              if (uploadError) {
+                console.error(`❌ Storage upload error (attempt ${uploadAttempts + 1}):`, uploadError);
+                throw new Error(`STORAGE_UPLOAD_FAILED|Photo upload failed: ${uploadError.message}`);
+              }
 
-            photoUrls.push(urlData.publicUrl);
-            break; // Success, exit retry loop
-          } catch (error) {
-            uploadAttempts++;
-            if (uploadAttempts >= maxAttempts) throw error;
-            // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 1000 * uploadAttempts));
+              const { data: urlData } = supabase.storage
+                .from('daily-report-photos')
+                .getPublicUrl(filePath);
+
+              console.log(`✅ Photo ${i + 1} uploaded successfully:`, urlData.publicUrl);
+              photoUrls.push(urlData.publicUrl);
+              break; // Success, exit retry loop
+              
+            } catch (error) {
+              uploadAttempts++;
+              console.warn(`⚠️ Photo upload attempt ${uploadAttempts} failed:`, error);
+              
+              if (uploadAttempts >= maxAttempts) {
+                console.error(`❌ Photo upload failed after ${maxAttempts} attempts:`, error);
+                throw new Error(`STORAGE_UPLOAD_FAILED|Failed to upload photo "${photo.name}" after ${maxAttempts} attempts. ${error instanceof Error ? error.message : 'Unknown error'}`);
+              }
+              
+              // Exponential backoff
+              const delay = 1000 * Math.pow(2, uploadAttempts - 1);
+              console.log(`⏱️ Waiting ${delay}ms before retry...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
           }
         }
       }
+
+      console.log('✅ All photos uploaded successfully, creating database record...');
 
       // Create the daily report with proper date formatting
       const year = data.report_date.getFullYear();
@@ -252,23 +319,48 @@ export const useDailyReportSubmission = () => {
       const day = String(data.report_date.getDate()).padStart(2, '0');
       const reportDateString = `${year}-${month}-${day}`;
       
+      const reportData = {
+        jobsite_id: data.jobsite_id,
+        submitted_by: user.id,
+        company_id: user.companyId,
+        summary: data.summary,
+        photos: photoUrls,
+        report_date: reportDateString,
+      };
+
+      console.log('💾 Inserting daily report into database:', reportData);
+      
       const { data: report, error } = await supabase
         .from('daily_reports')
-        .insert({
-          jobsite_id: data.jobsite_id,
-          submitted_by: user.id,
-          company_id: user.companyId,
-          summary: data.summary,
-          photos: photoUrls,
-          report_date: reportDateString,
-        })
+        .insert(reportData)
         .select()
         .single();
 
       if (error) {
-        console.error('Database error inserting daily report:', error);
-        throw error;
+        console.error('❌ Database error inserting daily report:', {
+          error,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          reportData
+        });
+        
+        // Provide specific error messages based on error type
+        if (error.code === '42501') {
+          throw new Error('PERMISSION_DENIED|Permission denied. Please ensure you are logged in and have the correct role.');
+        } else if (error.code === '23505') {
+          throw new Error('DUPLICATE_REPORT|A report for this date and jobsite already exists.');
+        } else if (error.message?.includes('violates row-level security')) {
+          throw new Error('RLS_VIOLATION|Security policy violation. Please log out and log back in, then try again.');
+        } else if (error.message?.includes('foreign key')) {
+          throw new Error('INVALID_JOBSITE|Invalid jobsite selected. Please refresh and try again.');
+        } else {
+          throw new Error(`DATABASE_ERROR|Database error: ${error.message}`);
+        }
       }
+
+      console.log('✅ Daily report created successfully:', report);
       return report;
     },
     onSuccess: () => {
@@ -280,14 +372,70 @@ export const useDailyReportSubmission = () => {
       });
     },
     onError: (error) => {
-      console.error('Error submitting daily report:', error);
-      const errorMessage = error.message.includes('permission') 
-        ? 'You do not have permission to submit daily reports. Please contact your administrator.'
-        : 'Failed to submit daily report. Please check your connection and try again.';
+      console.error('❌ Daily report submission failed:', error);
+      
+      // Parse error messages with specific codes
+      const errorMessage = error.message || 'Unknown error occurred';
+      const [errorCode, userMessage] = errorMessage.includes('|') 
+        ? errorMessage.split('|') 
+        : ['GENERIC_ERROR', errorMessage];
+
+      let title = "Submission Failed";
+      let description = userMessage;
+
+      switch (errorCode) {
+        case 'AUTHENTICATION_REQUIRED':
+          title = "Login Required";
+          description = "Please log in to submit daily reports";
+          break;
+        case 'AUTHENTICATION_INVALID':
+          title = "Session Expired";
+          description = "Your session has expired. Please log out and log back in.";
+          break;
+        case 'COMPANY_NOT_FOUND':
+          title = "Company Not Assigned";
+          description = "No company assigned to your account. Please contact your administrator.";
+          break;
+        case 'PERMISSION_DENIED':
+          title = "Access Denied";
+          description = "You do not have permission to submit daily reports. Contact your administrator.";
+          break;
+        case 'ACCOUNT_INACTIVE':
+          title = "Account Inactive";
+          description = "Your account is inactive. Please contact your administrator.";
+          break;
+        case 'VALIDATION_ERROR':
+          title = "Form Incomplete";
+          description = "Please fill in all required fields before submitting.";
+          break;
+        case 'STORAGE_UPLOAD_FAILED':
+          title = "Photo Upload Failed";
+          description = userMessage || "Failed to upload photos. Please check your connection and try again.";
+          break;
+        case 'DUPLICATE_REPORT':
+          title = "Report Already Exists";
+          description = "A report for this date and jobsite already exists.";
+          break;
+        case 'RLS_VIOLATION':
+          title = "Security Error";
+          description = "Security policy violation. Please log out and log back in, then try again.";
+          break;
+        case 'INVALID_JOBSITE':
+          title = "Invalid Jobsite";
+          description = "Invalid jobsite selected. Please refresh the page and try again.";
+          break;
+        case 'DATABASE_ERROR':
+          title = "Database Error";
+          description = userMessage || "Database connection failed. Please try again.";
+          break;
+        default:
+          title = "Submission Failed";
+          description = userMessage || "Failed to submit daily report. Please check your connection and try again.";
+      }
       
       toast({
-        title: "Error",
-        description: errorMessage,
+        title,
+        description,
         variant: "destructive",
       });
     },
