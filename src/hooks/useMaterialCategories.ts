@@ -107,58 +107,82 @@ export const useMaterialCategoryMutations = () => {
 
   const deleteCategory = useMutation({
     mutationFn: async (categoryId: string) => {
-      // First check if category is in use by materials
-      const { data: materialsUsingCategory } = await supabase
-        .from("material_catalog_items")
-        .select("id")
-        .eq("category", categoryId)
-        .limit(1);
-
-      if (materialsUsingCategory && materialsUsingCategory.length > 0) {
-        throw new Error("Cannot delete category that is in use by materials");
-      }
-
-      // Check if this is a parent category with subcategories
-      const { data: subcategories } = await supabase
-        .from("material_categories")
-        .select("id")
-        .eq("parent_category_id", categoryId)
-        .eq("is_active", true);
-
-      if (subcategories && subcategories.length > 0) {
-        // Check if any subcategories are in use
-        const { data: subcategoriesInUse } = await supabase
+      console.log("🗑️ Starting delete operation for category:", categoryId);
+      
+      try {
+        // First check if category is in use by materials
+        const { data: materialsUsingCategory } = await supabase
           .from("material_catalog_items")
           .select("id")
-          .in("category", subcategories.map(sub => sub.id))
+          .eq("category", categoryId)
           .limit(1);
 
-        if (subcategoriesInUse && subcategoriesInUse.length > 0) {
-          throw new Error("Cannot delete category that has subcategories currently in use by materials");
+        if (materialsUsingCategory && materialsUsingCategory.length > 0) {
+          throw new Error("Cannot delete category that is in use by materials");
         }
 
-        // Soft delete all subcategories first
-        const { error: subcategoryError } = await supabase
+        // Check if this is a parent category with subcategories
+        const { data: subcategories } = await supabase
+          .from("material_categories")
+          .select("id")
+          .eq("parent_category_id", categoryId)
+          .eq("is_active", true);
+
+        if (subcategories && subcategories.length > 0) {
+          console.log("🔍 Found subcategories to delete:", subcategories.length);
+          
+          // Check if any subcategories are in use
+          const { data: subcategoriesInUse } = await supabase
+            .from("material_catalog_items")
+            .select("id")
+            .in("category", subcategories.map(sub => sub.id))
+            .limit(1);
+
+          if (subcategoriesInUse && subcategoriesInUse.length > 0) {
+            throw new Error("Cannot delete category that has subcategories currently in use by materials");
+          }
+
+          // Soft delete all subcategories first
+          const { error: subcategoryError } = await supabase
+            .from("material_categories")
+            .update({ is_active: false })
+            .in("id", subcategories.map(sub => sub.id));
+
+          if (subcategoryError) {
+            console.error("❌ Error deleting subcategories:", subcategoryError);
+            throw subcategoryError;
+          }
+          console.log("✅ Subcategories deleted successfully");
+        }
+
+        // Finally, soft delete the parent category
+        const { error } = await supabase
           .from("material_categories")
           .update({ is_active: false })
-          .in("id", subcategories.map(sub => sub.id));
+          .eq("id", categoryId);
 
-        if (subcategoryError) throw subcategoryError;
+        if (error) {
+          console.error("❌ Error deleting parent category:", error);
+          throw error;
+        }
+        
+        console.log("✅ Parent category deleted successfully");
+        return { success: true };
+      } catch (error) {
+        console.error("❌ Delete operation failed:", error);
+        throw error;
       }
-
-      // Finally, soft delete the parent category
-      const { error } = await supabase
-        .from("material_categories")
-        .update({ is_active: false })
-        .eq("id", categoryId);
-
-      if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["material-categories"] });
-      toast.success("Category deleted successfully");
+    onSuccess: (data, variables) => {
+      console.log("✅ Delete mutation completed successfully for:", variables);
+      // Use a small delay to prevent interference with route logic
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["material-categories"] });
+        toast.success("Category deleted successfully");
+      }, 100);
     },
-    onError: (error: any) => {
+    onError: (error: any, variables) => {
+      console.error("❌ Delete mutation failed for:", variables, error);
       toast.error(`Failed to delete category: ${error.message}`);
     },
   });
