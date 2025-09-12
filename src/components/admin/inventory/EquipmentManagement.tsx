@@ -99,7 +99,7 @@ const EquipmentManagement = () => {
   });
   const [viewingItem, setViewingItem] = useState<InventoryItem | null>(null);
 
-  const canManageInventory = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'foreman';
+  const canManageInventory = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'foreman' || user?.role === 'management';
 
   // Get equipment status
   const getEquipmentStatus = (item: InventoryItem) => {

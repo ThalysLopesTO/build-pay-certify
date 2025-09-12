@@ -92,7 +92,7 @@ const VehicleManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [viewingVehicle, setViewingVehicle] = useState<Vehicle | null>(null);
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management' || user?.role === 'foreman';
 
   // Filter vehicles based on search and filters
   const filteredVehicles = vehicles.filter((vehicle) => {
