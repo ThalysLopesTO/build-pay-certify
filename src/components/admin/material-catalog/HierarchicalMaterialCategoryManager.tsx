@@ -26,7 +26,7 @@ export const HierarchicalMaterialCategoryManager = ({
   const [editingName, setEditingName] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  const { organizedCategories } = useHierarchicalMaterialCategories();
+  const { organizedCategories, refetch } = useHierarchicalMaterialCategories();
   const { createCategory, updateCategory, deleteCategory } = useMaterialCategoryMutations();
 
   const handleAddParentCategory = async () => {
@@ -38,6 +38,7 @@ export const HierarchicalMaterialCategoryManager = ({
         sort_order: organizedCategories.length
       });
       setNewParentCategoryName('');
+      await refetch();
       onCategoriesChange();
       toast.success('Parent category created successfully');
     } catch (error) {
@@ -64,6 +65,7 @@ export const HierarchicalMaterialCategoryManager = ({
       await createCategory(subcategoryData);
       setNewSubcategoryName('');
       setSelectedParentForSubcategory('');
+      await refetch();
       onCategoriesChange();
       toast.success('Subcategory created successfully');
     } catch (error) {
@@ -82,6 +84,7 @@ export const HierarchicalMaterialCategoryManager = ({
       });
       setEditingCategory(null);
       setEditingName('');
+      await refetch();
       onCategoriesChange();
       toast.success('Category updated successfully');
     } catch (error) {
@@ -94,6 +97,8 @@ export const HierarchicalMaterialCategoryManager = ({
     console.log("🗑️ Component: Starting delete for category:", categoryId);
     try {
       await deleteCategory(categoryId);
+      // Refresh local data immediately
+      await refetch();
       // Trigger the callback to refresh parent component after successful deletion
       onCategoriesChange();
       toast.success('Category deleted successfully');
