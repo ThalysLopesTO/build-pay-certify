@@ -1,20 +1,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronRight, Edit, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { MaterialCatalogItem, useMaterialCatalogMutations } from '@/hooks/useMaterialCatalog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+
+import { DraggableItem } from './DraggableItem';
 
 interface MaterialCategoryGroupProps {
   category: string;
@@ -30,7 +22,20 @@ export const MaterialCategoryGroup: React.FC<MaterialCategoryGroupProps> = ({
   defaultExpanded = true,
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  const { updateItem, deleteItem, isUpdating, isDeleting } = useMaterialCatalogMutations();
+  const [localItems, setLocalItems] = useState(items);
+  const { updateItem, deleteItem, reorderItem, isUpdating, isDeleting } = useMaterialCatalogMutations();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Update local items when props change
+  React.useEffect(() => {
+    setLocalItems(items);
+  }, [items]);
 
   const handleToggleActive = (item: MaterialCatalogItem) => {
     updateItem({
@@ -43,7 +48,27 @@ export const MaterialCategoryGroup: React.FC<MaterialCategoryGroupProps> = ({
     deleteItem(item.id);
   };
 
-  const activeCount = items.filter(item => item.is_active).length;
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = localItems.findIndex((item) => item.id === active.id);
+      const newIndex = localItems.findIndex((item) => item.id === over.id);
+
+      const newItems = arrayMove(localItems, oldIndex, newIndex);
+      setLocalItems(newItems);
+
+      // Update sort_order for all affected items
+      newItems.forEach((item, index) => {
+        const newSortOrder = (index + 1) * 10;
+        if (item.sort_order !== newSortOrder) {
+          reorderItem({ itemId: item.id, newSortOrder });
+        }
+      });
+    }
+  };
+
+  const activeCount = localItems.filter(item => item.is_active).length;
 
   return (
     <Card className="mb-4">
@@ -60,7 +85,7 @@ export const MaterialCategoryGroup: React.FC<MaterialCategoryGroupProps> = ({
             )}
             <h3 className="text-lg font-semibold">{category}</h3>
             <Badge variant="outline" className="text-xs">
-              {activeCount} of {items.length} active
+              {activeCount} of {localItems.length} active
             </Badge>
           </div>
         </div>
@@ -68,88 +93,30 @@ export const MaterialCategoryGroup: React.FC<MaterialCategoryGroupProps> = ({
       
       {isExpanded && (
         <CardContent className="pt-0">
-          <div className="space-y-2">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium">{item.name}</span>
-                    {item.sku && (
-                      <code className="text-xs bg-muted px-2 py-1 rounded">
-                        {item.sku}
-                      </code>
-                    )}
-                  </div>
-                  {item.notes && (
-                    <p className="text-sm text-muted-foreground">{item.notes}</p>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    variant={item.is_active ? "default" : "secondary"}
-                    className="text-xs"
-                  >
-                    {item.is_active ? "Active" : "Inactive"}
-                  </Badge>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleToggleActive(item)}
-                    disabled={isUpdating}
-                  >
-                    {item.is_active ? (
-                      <ToggleRight className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <ToggleLeft className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onEdit(item)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={isDeleting}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Material Item</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete "{item.name}"? This action cannot be undone.
-                          Any existing material requests referencing this item will keep their data.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(item)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={localItems.map(item => item.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {localItems.map((item) => (
+                  <DraggableItem
+                    key={item.id}
+                    item={item}
+                    onEdit={onEdit}
+                    onToggleActive={handleToggleActive}
+                    onDelete={handleDelete}
+                    isUpdating={isUpdating}
+                    isDeleting={isDeleting}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         </CardContent>
       )}
     </Card>

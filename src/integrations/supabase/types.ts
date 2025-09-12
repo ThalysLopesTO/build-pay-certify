@@ -1166,6 +1166,7 @@ export type Database = {
           name: string
           notes: string | null
           sku: string | null
+          sort_order: number
           spec_size: string | null
           unit: string
           updated_at: string
@@ -1180,6 +1181,7 @@ export type Database = {
           name: string
           notes?: string | null
           sku?: string | null
+          sort_order?: number
           spec_size?: string | null
           unit?: string
           updated_at?: string
@@ -1194,6 +1196,7 @@ export type Database = {
           name?: string
           notes?: string | null
           sku?: string | null
+          sort_order?: number
           spec_size?: string | null
           unit?: string
           updated_at?: string

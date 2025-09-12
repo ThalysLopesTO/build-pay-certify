@@ -15,6 +15,7 @@ export interface MaterialCatalogItem {
   category_name: string; // Resolved category name for display
   notes?: string;
   is_active: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
   created_by?: string;
@@ -56,6 +57,7 @@ export const useMaterialCatalog = (searchTerm?: string, category?: string, activ
         `)
         .eq('company_id', user.companyId)
         .order('category', { ascending: true })
+        .order('sort_order', { ascending: true })
         .order('name', { ascending: true });
 
       if (activeOnly) {
@@ -106,12 +108,24 @@ export const useMaterialCatalogMutations = () => {
         notes: item.notes?.trim() || null,
       };
 
+      // Get the highest sort_order for this category and add 10
+      const { data: maxSortOrderData } = await supabase
+        .from('material_catalog_items')
+        .select('sort_order')
+        .eq('company_id', user.companyId)
+        .eq('category', processedItem.category)
+        .order('sort_order', { ascending: false })
+        .limit(1);
+
+      const nextSortOrder = maxSortOrderData?.[0]?.sort_order ? maxSortOrderData[0].sort_order + 10 : 10;
+
       const { data, error } = await supabase
         .from('material_catalog_items')
         .insert({
           ...processedItem,
           company_id: user.companyId,
           created_by: user.id,
+          sort_order: nextSortOrder,
         })
         .select()
         .single();
@@ -197,13 +211,36 @@ export const useMaterialCatalogMutations = () => {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async ({ itemId, newSortOrder }: { itemId: string; newSortOrder: number }) => {
+      const { error } = await supabase
+        .from('material_catalog_items')
+        .update({ sort_order: newSortOrder })
+        .eq('id', itemId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['material-catalog'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reorder material catalog item.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     createItem: createMutation.mutate,
     updateItem: updateMutation.mutate,
     deleteItem: deleteMutation.mutate,
+    reorderItem: reorderMutation.mutate,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    isReordering: reorderMutation.isPending,
   };
 };
 
