@@ -14,14 +14,17 @@ import { Badge } from '@/components/ui/badge';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent } from '@/components/ui/card';
-import { Eye, Camera, Download, FileText, MapPin, Clock, User, Edit, Lock } from 'lucide-react';
+import { Eye, Camera, Download, FileText, MapPin, Clock, User, Edit, Lock, Trash2 } from 'lucide-react';
 import { DailyReport } from '@/hooks/useDailyReports';
 import { useDailyReportPDF } from '@/hooks/useDailyReportPDF';
+import { useDailyReportDelete } from '@/hooks/useDailyReportDelete';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import DailyReportDetailsModal from './DailyReportDetailsModal';
 import DailyReportEditModal from './DailyReportEditModal';
+import { DailyReportDeleteConfirmDialog } from './DailyReportDeleteConfirmDialog';
 
 interface DailyReportsTableProps {
   reports: DailyReport[];
@@ -31,11 +34,28 @@ interface DailyReportsTableProps {
 const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoading }) => {
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [editingReport, setEditingReport] = useState<DailyReport | null>(null);
+  const [deletingReport, setDeletingReport] = useState<DailyReport | null>(null);
   
   const { generateDailyReportPDF } = useDailyReportPDF();
+  const { mutate: deleteReport, isPending: isDeleting } = useDailyReportDelete();
   const { settings: companySettings } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
+  const { user } = useAuth();
   const { toast } = useToast();
+
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+
+  const handleDeleteReport = (report: DailyReport) => {
+    setDeletingReport(report);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deletingReport) {
+      deleteReport(deletingReport.id);
+      setDeletingReport(null);
+    }
+  };
 
   const handleDownloadPDF = async (report: DailyReport) => {
     try {
@@ -247,6 +267,18 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
                     
                     <TableCell className="py-4 px-6">
                       <div className="flex items-center justify-end gap-1">
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteReport(report)}
+                            className="h-9 w-9 p-0 hover:bg-destructive/10 hover:text-destructive group/btn"
+                            title="Delete report"
+                            disabled={isDeleting}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                         {report.canEdit ? (
                           <Button
                             variant="ghost"
@@ -300,6 +332,15 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
         report={editingReport}
         open={!!editingReport}
         onOpenChange={(open) => !open && setEditingReport(null)}
+      />
+
+      <DailyReportDeleteConfirmDialog
+        report={deletingReport}
+        open={!!deletingReport}
+        onOpenChange={(open) => !open && setDeletingReport(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        timezone={companySettings?.timezone}
       />
     </>
   );
