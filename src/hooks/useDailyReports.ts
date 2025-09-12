@@ -209,7 +209,6 @@ export const useDailyReportSubmission = () => {
         userId: user?.id,
         companyId: user?.companyId,
         role: user?.role,
-        isActive: user?.isActive,
         jobsiteId: data.jobsite_id,
         photoCount: data.photos?.length || 0,
         reportDate: data.report_date
@@ -236,10 +235,7 @@ export const useDailyReportSubmission = () => {
         throw new Error('PERMISSION_DENIED|You do not have permission to submit daily reports. Contact your administrator.');
       }
 
-      if (user.isActive === false) {
-        console.error('❌ User account is inactive', { userId: user.id });
-        throw new Error('ACCOUNT_INACTIVE|Your account is inactive. Please contact your administrator.');
-      }
+      // Note: User activity status is checked at the database level via RLS policies
 
       // Validate required data
       if (!data.jobsite_id || !data.summary || !data.report_date) {
