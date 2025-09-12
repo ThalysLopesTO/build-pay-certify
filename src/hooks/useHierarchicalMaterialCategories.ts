@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
@@ -18,14 +19,12 @@ export interface HierarchicalMaterialCategory {
 
 export const useHierarchicalMaterialCategories = () => {
   const { user } = useAuth();
-  const [categories, setCategories] = useState<HierarchicalMaterialCategory[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchCategories = async () => {
-    if (!user?.companyId) return;
+  const { data: categories = [], isLoading: loading } = useQuery({
+    queryKey: ["material-categories", user?.companyId],
+    queryFn: async () => {
+      if (!user?.companyId) throw new Error("No company ID");
 
-    try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('material_categories')
         .select('*')
@@ -34,18 +33,10 @@ export const useHierarchicalMaterialCategories = () => {
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
-
-      setCategories(data as HierarchicalMaterialCategory[]);
-    } catch (error) {
-      console.error('Error fetching material categories:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCategories();
-  }, [user?.companyId]);
+      return data as HierarchicalMaterialCategory[];
+    },
+    enabled: !!user?.companyId,
+  });
 
   const getParentCategories = useMemo(() => {
     return categories.filter(cat => cat.category_level === 'parent');
@@ -84,7 +75,6 @@ export const useHierarchicalMaterialCategories = () => {
     getParentCategories,
     getSubcategoriesForParent,
     getCategoryDisplay,
-    organizedCategories,
-    refetch: fetchCategories
+    organizedCategories
   };
 };

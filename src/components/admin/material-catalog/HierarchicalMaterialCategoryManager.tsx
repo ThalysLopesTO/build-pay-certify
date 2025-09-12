@@ -22,7 +22,7 @@ export const HierarchicalMaterialCategoryManager = ({}: HierarchicalMaterialCate
   const [editingName, setEditingName] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  const { organizedCategories, refetch } = useHierarchicalMaterialCategories();
+  const { organizedCategories } = useHierarchicalMaterialCategories();
   const { createCategory, updateCategory, deleteCategory } = useMaterialCategoryMutations();
 
   const handleAddParentCategory = async () => {
@@ -34,8 +34,6 @@ export const HierarchicalMaterialCategoryManager = ({}: HierarchicalMaterialCate
         sort_order: organizedCategories.length
       });
       setNewParentCategoryName('');
-      await refetch();
-      toast.success('Parent category created successfully');
     } catch (error) {
       console.error('Error creating parent category:', error);
       toast.error('Failed to create parent category');
@@ -60,8 +58,6 @@ export const HierarchicalMaterialCategoryManager = ({}: HierarchicalMaterialCate
       await createCategory(subcategoryData);
       setNewSubcategoryName('');
       setSelectedParentForSubcategory('');
-      await refetch();
-      toast.success('Subcategory created successfully');
     } catch (error) {
       console.error('Error creating subcategory:', error);
       toast.error('Failed to create subcategory');
@@ -78,8 +74,6 @@ export const HierarchicalMaterialCategoryManager = ({}: HierarchicalMaterialCate
       });
       setEditingCategory(null);
       setEditingName('');
-      await refetch();
-      toast.success('Category updated successfully');
     } catch (error) {
       console.error('Error updating category:', error);
       toast.error('Failed to update category');
@@ -87,12 +81,8 @@ export const HierarchicalMaterialCategoryManager = ({}: HierarchicalMaterialCate
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    console.log("🗑️ Component: Starting delete for category:", categoryId);
     try {
       await deleteCategory(categoryId);
-      // Refresh local data immediately
-      await refetch();
-      toast.success('Category deleted successfully');
     } catch (error) {
       console.error('Error deleting category:', error);
       toast.error('Failed to delete category');
