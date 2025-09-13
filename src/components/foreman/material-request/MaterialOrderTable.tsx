@@ -11,7 +11,7 @@ import { Plus, Trash2, Copy } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MATERIAL_UNITS } from '@/hooks/useMaterialCatalog';
 import { useHierarchicalMaterialCategories } from '@/hooks/useHierarchicalMaterialCategories';
-import { HierarchicalMaterialCategorySelector } from './HierarchicalMaterialCategorySelector';
+import { ExpandableTreeCategorySelector } from './ExpandableTreeCategorySelector';
 
 export interface OrderLineItem {
   id: string;
@@ -97,7 +97,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
 
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">Category</label>
-                  <HierarchicalMaterialCategorySelector
+                  <ExpandableTreeCategorySelector
                     selectedCategoryId={item.category}
                     onCategoryChange={(categoryId) => handleCategorySelect(item.id, categoryId)}
                   />
@@ -291,7 +291,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                     </Select>
                   </TableCell>
                   <TableCell>
-                      <HierarchicalMaterialCategorySelector
+                      <ExpandableTreeCategorySelector
                         selectedCategoryId={item.category}
                         onCategoryChange={(categoryId) => handleCategorySelect(item.id, categoryId)}
                       />
