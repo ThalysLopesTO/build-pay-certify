@@ -83,6 +83,9 @@ export const useEmployeeCertificates = (employeeId?: string) => {
       queryClient.invalidateQueries({ 
         queryKey: ['employee-certificates', employeeId, user?.companyId] 
       });
+      queryClient.invalidateQueries({ 
+        queryKey: ['employee-certificate-status', employeeId, user?.companyId] 
+      });
       toast({
         title: 'Certificate Deleted',
         description: 'Certificate has been removed successfully.',
@@ -105,6 +108,9 @@ export const useEmployeeCertificates = (employeeId?: string) => {
   const refreshCertificates = () => {
     queryClient.invalidateQueries({ 
       queryKey: ['employee-certificates', employeeId, user?.companyId] 
+    });
+    queryClient.invalidateQueries({ 
+      queryKey: ['employee-certificate-status', employeeId, user?.companyId] 
     });
   };
 

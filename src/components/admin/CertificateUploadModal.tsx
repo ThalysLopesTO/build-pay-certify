@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Employee {
   id: string;
@@ -52,6 +53,7 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -154,6 +156,14 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
       if (insertError) {
         throw insertError;
       }
+
+      // Invalidate queries to refresh certificate status
+      queryClient.invalidateQueries({ 
+        queryKey: ['employee-certificates', employee.user_id, user.companyId] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['employee-certificate-status', employee.user_id, user.companyId] 
+      });
 
       toast({
         title: 'Certificate Uploaded',

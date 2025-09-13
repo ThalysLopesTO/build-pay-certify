@@ -30,7 +30,7 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
   isDeleting
 }) => {
   const { user } = useAuth();
-  const { data: certStatus = 'no-certificates' } = useEmployeeCertificateStatus(employee.id);
+  const { data: certStatus = 'no-certificates' } = useEmployeeCertificateStatus(employee.user_id);
   
   const canReset = user?.role && canResetPassword(user.role, employee.role);
 

@@ -48,7 +48,7 @@ const ImprovedEmployeeCard: React.FC<ImprovedEmployeeCardProps> = ({
   isDeleting
 }) => {
   const { user } = useAuth();
-  const { data: certStatus = 'no-certificates' } = useEmployeeCertificateStatus(employee.id);
+  const { data: certStatus = 'no-certificates' } = useEmployeeCertificateStatus(employee.user_id);
   
   // Get company name from companies table or fallback to current user's company
   const companyName = employee.companies?.name || user?.companyName || 'Unknown Company';
