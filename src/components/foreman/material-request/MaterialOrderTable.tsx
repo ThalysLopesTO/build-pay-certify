@@ -11,7 +11,7 @@ import { Plus, Trash2, Copy } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MATERIAL_UNITS } from '@/hooks/useMaterialCatalog';
 import { useHierarchicalMaterialCategories } from '@/hooks/useHierarchicalMaterialCategories';
-import { CascadingMaterialCategorySelector } from './CascadingMaterialCategorySelector';
+import { HierarchicalMaterialCategorySelector } from './HierarchicalMaterialCategorySelector';
 
 export interface OrderLineItem {
   id: string;
@@ -97,10 +97,10 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
 
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">Category</label>
-          <CascadingMaterialCategorySelector
-            selectedCategoryId={item.category}
-            onCategoryChange={(categoryId) => handleCategorySelect(item.id, categoryId)}
-          />
+                  <HierarchicalMaterialCategorySelector
+                    selectedCategoryId={item.category}
+                    onCategoryChange={(categoryId) => handleCategorySelect(item.id, categoryId)}
+                  />
         </div>
 
         <div>
@@ -291,10 +291,10 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                     </Select>
                   </TableCell>
                   <TableCell>
-                    <CascadingMaterialCategorySelector
-                      selectedCategoryId={item.category}
-                      onCategoryChange={(categoryId) => handleCategorySelect(item.id, categoryId)}
-                    />
+                      <HierarchicalMaterialCategorySelector
+                        selectedCategoryId={item.category}
+                        onCategoryChange={(categoryId) => handleCategorySelect(item.id, categoryId)}
+                      />
                   </TableCell>
                   <TableCell>
                     <div className="space-y-2">
