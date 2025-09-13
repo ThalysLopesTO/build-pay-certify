@@ -10,6 +10,7 @@ import CertificateUploadModal from './CertificateUploadModal';
 
 interface Employee {
   id: string;
+  user_id: string;
   first_name: string;
   last_name: string;
 }
@@ -33,7 +34,7 @@ const EmployeeCertificatesModal: React.FC<EmployeeCertificatesModalProps> = ({
     deleteCertificate, 
     refreshCertificates,
     isDeletingCertificate 
-  } = useEmployeeCertificates(employee?.id);
+  } = useEmployeeCertificates(employee?.user_id);
 
   const getCertStatusIcon = (status: string) => {
     switch (status) {

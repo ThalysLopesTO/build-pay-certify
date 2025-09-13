@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface Employee {
   id: string;
+  user_id: string;
   first_name: string;
   last_name: string;
 }
@@ -141,7 +142,7 @@ const CertificateUploadModal: React.FC<CertificateUploadModalProps> = ({
       const { error: insertError } = await supabase
         .from('employee_certificates')
         .insert({
-          employee_id: employee.id,
+          employee_id: employee.user_id,
           company_id: user.companyId,
           certificate_name: certificateName,
           certificate_type: certificateType,
