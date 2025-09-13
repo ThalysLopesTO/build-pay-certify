@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, KeyRound } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Employee } from '@/contexts/EmployeeContext';
-import { getRoleColor, getCertStatusIcon, getCertStatusText, getCertStatus } from './employeeHelpers';
+import { getRoleColor, getCertStatusIcon, getCertStatusText } from './employeeHelpers';
+import { useEmployeeCertificateStatus } from '@/hooks/useEmployeeCertificateStatus';
 import { canResetPassword } from '@/hooks/usePasswordManagement';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
@@ -29,7 +30,7 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
   isDeleting
 }) => {
   const { user } = useAuth();
-  const certStatus = getCertStatus(); // Mock status - will be replaced with real data
+  const { data: certStatus = 'no-certificates' } = useEmployeeCertificateStatus(employee.id);
   
   const canReset = user?.role && canResetPassword(user.role, employee.role);
 

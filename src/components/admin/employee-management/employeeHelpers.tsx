@@ -28,8 +28,10 @@ export const getCertStatusIcon = (status: string): React.ReactNode => {
       return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
     case 'expired':
       return <XCircle className="h-4 w-4 text-red-500" />;
+    case 'no-certificates':
+      return <Shield className="h-4 w-4 text-muted-foreground" />;
     default:
-      return <Shield className="h-4 w-4 text-slate-500" />;
+      return <Shield className="h-4 w-4 text-muted-foreground" />;
   }
 };
 
@@ -41,6 +43,8 @@ export const getCertStatusText = (status: string): string => {
       return 'Expiring Soon';
     case 'expired':
       return 'Has Expired';
+    case 'no-certificates':
+      return 'No certificates';
     default:
       return 'Unknown';
   }

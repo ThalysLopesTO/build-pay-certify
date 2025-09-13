@@ -23,7 +23,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Employee } from '@/contexts/EmployeeContext';
-import { getRoleColor, getCertStatusIcon, getCertStatusText, getCertStatus } from './employeeHelpers';
+import { getRoleColor, getCertStatusIcon, getCertStatusText } from './employeeHelpers';
+import { useEmployeeCertificateStatus } from '@/hooks/useEmployeeCertificateStatus';
 import { canResetPassword } from '@/hooks/usePasswordManagement';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
@@ -47,7 +48,7 @@ const ImprovedEmployeeCard: React.FC<ImprovedEmployeeCardProps> = ({
   isDeleting
 }) => {
   const { user } = useAuth();
-  const certStatus = getCertStatus(); // Mock status - will be replaced with real data
+  const { data: certStatus = 'no-certificates' } = useEmployeeCertificateStatus(employee.id);
   
   // Get company name from companies table or fallback to current user's company
   const companyName = employee.companies?.name || user?.companyName || 'Unknown Company';
