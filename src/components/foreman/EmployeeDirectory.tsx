@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -7,7 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Search, Phone, Mail, MapPin, Briefcase, User, Building, Calendar, Award, Upload, Shield, AlertTriangle, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { Users, Search, Phone, Mail, MapPin, Briefcase, User, Building, Calendar, Award, Upload, Shield, AlertTriangle, CheckCircle, XCircle, Plus, ExternalLink, Trash2 } from 'lucide-react';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useEmployeeCertificateStatus } from '@/hooks/useEmployeeCertificateStatus';
 import { useEmployeeCertificates } from '@/hooks/useEmployeeCertificates';
@@ -87,7 +88,13 @@ const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({ employee, isOpen, onC
   });
 
   // Use the enhanced certificate hooks
-  const { certificates: employeeCertificates, refreshCertificates } = useEmployeeCertificates(employee?.user_id);
+  const { 
+    certificates: employeeCertificates, 
+    isLoading: isCertificatesLoading,
+    deleteCertificate,
+    isDeletingCertificate,
+    refreshCertificates 
+  } = useEmployeeCertificates(employee?.user_id);
   const { data: certificateStatus } = useEmployeeCertificateStatus(employee?.user_id);
 
   if (!employee) return null;
@@ -222,75 +229,138 @@ const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({ employee, isOpen, onC
 
           <Separator />
 
-          {/* Certificates */}
+          {/* Safety Certificates Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-base flex items-center gap-2">
-                <Award className="h-4 w-4 text-primary" />
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Shield className="h-5 w-5 text-blue-600" />
                 Safety Certificates
-                {certificateStatus && (
-                  <div className="flex items-center gap-1 ml-2">
-                    {getCertStatusIcon(certificateStatus)}
-                    <span className="text-sm text-muted-foreground">
-                      {getCertStatusText(certificateStatus)}
-                    </span>
-                  </div>
-                )}
               </h3>
               <Button
-                size="sm"
-                variant="outline"
                 onClick={() => setIsUploadModalOpen(true)}
-                className="text-xs"
+                size="sm"
+                className="bg-orange-600 hover:bg-orange-700"
               >
-                <Plus className="h-3 w-3 mr-1" />
-                Add Certificate
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Certificate
               </Button>
             </div>
-            <div className="pl-6">
-              {employeeCertificates.length > 0 ? (
-                <div className="space-y-3">
-                  {employeeCertificates.map((cert: any) => {
-                    const expiryInfo = cert.expiry_date ? formatExpiryDate(cert.expiry_date) : null;
-                    return (
-                      <div key={cert.id} className="p-3 bg-muted/30 rounded-lg border border-border/50">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{cert.certificate_name}</div>
-                            <div className="text-xs text-muted-foreground mt-1">{cert.certificate_type}</div>
-                            {cert.file_url && (
+
+            {isCertificatesLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+                <p className="mt-2 text-slate-600">Loading certificates...</p>
+              </div>
+            ) : employeeCertificates.length === 0 ? (
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  No certificates found for this employee.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-3">
+                {employeeCertificates.map((cert: any) => (
+                  <div key={cert.id} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          {cert.status === 'valid' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                          {cert.status === 'expiring' && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+                          {cert.status === 'expired' && <XCircle className="h-4 w-4 text-red-500" />}
+                          <h3 className="font-semibold">{cert.certificate_name}</h3>
+                          <Badge className={
+                            cert.status === 'valid' ? 'bg-green-100 text-green-800' :
+                            cert.status === 'expiring' ? 'bg-yellow-100 text-yellow-800' :
+                            cert.status === 'expired' ? 'bg-red-100 text-red-800' :
+                            'bg-slate-100 text-slate-800'
+                          }>
+                            {cert.status === 'valid' ? 'Valid' :
+                             cert.status === 'expiring' ? 'Expiring Soon' :
+                             cert.status === 'expired' ? 'Expired' : 'Unknown'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm text-slate-600">
+                          <div>
+                            <span className="font-medium">Type:</span>
+                            <p>{cert.certificate_type}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium">Expiry Date:</span>
+                            <p>{cert.expiry_date ? new Date(cert.expiry_date).toLocaleDateString() : 'No Expiry'}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium">Upload Date:</span>
+                            <p>{new Date(cert.upload_date).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium">File:</span>
+                            {cert.file_url ? (
                               <Button
                                 variant="link"
                                 size="sm"
-                                className="text-xs p-0 h-auto mt-1"
-                                onClick={() => window.open(cert.file_url, '_blank')}
+                                className="p-0 h-auto text-blue-600"
+                                onClick={() => window.open(cert.file_url!, '_blank')}
                               >
-                                View Certificate
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                View File
                               </Button>
+                            ) : (
+                              <p className="text-slate-400">No file attached</p>
                             )}
                           </div>
-                          {expiryInfo && (
-                            <div className="text-right">
-                              <Badge 
-                                variant={expiryInfo.badge as any} 
-                                className="text-xs"
-                              >
-                                {cert.status}
-                              </Badge>
-                              <div className={`text-xs mt-1 ${expiryInfo.color}`}>
-                                {expiryInfo.text}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
-                    );
-                  })}
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this certificate?')) {
+                            deleteCertificate(cert.id);
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        disabled={isDeletingCertificate}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Status summary */}
+            {employeeCertificates.length > 0 && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Shield className="h-4 w-4 text-blue-600" />
+                  <span className="font-semibold text-blue-900">Certificate Status Summary</span>
                 </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">No certificates on file</div>
-              )}
-            </div>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="text-center">
+                    <div className="text-green-600 font-semibold">
+                      {employeeCertificates.filter((c: any) => c.status === 'valid').length}
+                    </div>
+                    <div className="text-slate-600">Valid</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-yellow-600 font-semibold">
+                      {employeeCertificates.filter((c: any) => c.status === 'expiring').length}
+                    </div>
+                    <div className="text-slate-600">Expiring</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-red-600 font-semibold">
+                      {employeeCertificates.filter((c: any) => c.status === 'expired').length}
+                    </div>
+                    <div className="text-slate-600">Expired</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
