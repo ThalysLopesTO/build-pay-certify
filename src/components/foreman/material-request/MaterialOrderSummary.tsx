@@ -30,6 +30,15 @@ export const MaterialOrderSummary: React.FC<MaterialOrderSummaryProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Total Items:</span>
+            <span className="font-medium">{totalLines}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Categories:</span>
+            <span className="font-medium">{categoriesCount}</span>
+          </div>
+          
           <div className="border-t pt-3">
             <h4 className="text-sm font-medium mb-2">By Category:</h4>
             <div className="space-y-2">
