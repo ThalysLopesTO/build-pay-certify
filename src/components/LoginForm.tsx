@@ -229,7 +229,7 @@ const LoginForm = () => {
        */}
       <div className="flex-1 lg:block hidden relative">
         <div className="w-full h-full bg-cover bg-center bg-no-repeat" style={{
-          backgroundImage: `url('/lovable-uploads/81c0730a-56f4-4b76-b03c-d703c6fcbd76.png')`
+          backgroundImage: `url('/images/admin-login-bg.png')`
         }}>
           {/* Subtle overlay for depth */}
           <div className="absolute inset-0 bg-gradient-to-l from-slate-900/20 to-transparent"></div>
@@ -239,7 +239,7 @@ const LoginForm = () => {
       {/* Mobile: Image on top for small screens */}
       <div className="lg:hidden h-64 relative">
         <div className="w-full h-full bg-cover bg-center bg-no-repeat" style={{
-          backgroundImage: `url('/lovable-uploads/81c0730a-56f4-4b76-b03c-d703c6fcbd76.png')`
+          backgroundImage: `url('/images/admin-login-bg.png')`
         }}>
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 to-transparent"></div>
         </div>
