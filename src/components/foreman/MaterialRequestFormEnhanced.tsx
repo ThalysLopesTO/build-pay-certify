@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import toast from 'react-hot-toast';
 import { Send, AlertTriangle, Package } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -101,7 +102,16 @@ const MaterialRequestFormEnhanced = () => {
     // Validate line items
     const validLineItems = lineItems.filter(item => item.materialName.trim());
     if (validLineItems.length === 0) {
-      // Show error - need at least one line item
+      toast.error('Please add at least one material item');
+      return;
+    }
+
+    // Validate custom materials have notes
+    const customItemsWithoutNotes = validLineItems.filter(item => 
+      item.isCustom && (!item.notes || !item.notes.trim())
+    );
+    if (customItemsWithoutNotes.length > 0) {
+      toast.error('Custom materials require detailed specifications in the notes field');
       return;
     }
 

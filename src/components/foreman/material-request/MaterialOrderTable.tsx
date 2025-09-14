@@ -126,7 +126,9 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
         </div>
 
         <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1">Notes</label>
+          <label className={`text-xs font-medium block mb-1 ${item.isCustom ? 'text-orange-600 dark:text-orange-400' : 'text-muted-foreground'}`}>
+            Notes {item.isCustom && <span className="text-red-500">*</span>}
+          </label>
           {editingCell?.rowId === item.id && editingCell?.field === 'notes' ? (
             <Textarea
               value={item.notes}
@@ -138,16 +140,30 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                 }
               }}
               autoFocus
-              rows={2}
-              className="resize-none"
+              rows={3}
+              className={`resize-none ${item.isCustom && !item.notes?.trim() ? 'border-orange-200 focus:border-orange-400' : ''}`}
+              placeholder={item.isCustom ? "Required: Describe material specifications" : "Optional notes..."}
             />
           ) : (
             <div
               onClick={() => handleCellEdit(item.id, 'notes')}
-              className="min-h-[60px] p-2 rounded border cursor-text hover:bg-muted/50 text-sm"
+              className={`min-h-[60px] p-2 rounded border cursor-text hover:bg-muted/50 text-sm ${
+                item.isCustom && !item.notes?.trim() 
+                  ? 'border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800' 
+                  : ''
+              }`}
             >
-              {item.notes || 'Tap to add notes...'}
+              {item.notes || (
+                <span className={item.isCustom ? 'text-orange-600 dark:text-orange-400' : 'text-muted-foreground'}>
+                  {item.isCustom ? 'Required: Tap to add specifications' : 'Tap to add notes...'}
+                </span>
+              )}
             </div>
+          )}
+          {item.isCustom && !item.notes?.trim() && (
+            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+              Custom materials require detailed specifications
+            </p>
           )}
         </div>
       </CardContent>
@@ -331,13 +347,22 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                         autoFocus
                         rows={2}
                         className="w-full"
+                        placeholder={item.isCustom ? "Required: Describe material specifications" : "Optional notes..."}
                       />
                     ) : (
                       <div
                         onClick={() => handleCellEdit(item.id, 'notes')}
-                        className="min-h-[2rem] p-2 rounded cursor-text hover:bg-muted/50 text-sm"
+                        className={`min-h-[2rem] p-2 rounded cursor-text hover:bg-muted/50 text-sm border ${
+                          item.isCustom && !item.notes?.trim() 
+                            ? 'border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800' 
+                            : 'border-transparent'
+                        }`}
                       >
-                        {item.notes || 'Click to add notes...'}
+                        {item.notes || (
+                          <span className={item.isCustom ? 'text-orange-600 dark:text-orange-400' : 'text-muted-foreground'}>
+                            {item.isCustom ? 'Required: Click to add specifications' : 'Click to add notes...'}
+                          </span>
+                        )}
                       </div>
                     )}
                   </TableCell>
