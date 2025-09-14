@@ -355,8 +355,8 @@ const generateQuoteHTML = async (
    Helpers (layout, math, safety, PDF placement)
    =========================================================== */
 
-// A4 canvas width at 96DPI (html2canvas friendly)
-const A4_CANVAS_WIDTH = 794;
+// A4 canvas width at 96DPI (html2canvas friendly) - increased for better content fit
+const A4_CANVAS_WIDTH = 850;
 
 // Prepare an offscreen container for rendering HTML
 const prepareOffscreen = () => {
@@ -366,7 +366,7 @@ const prepareOffscreen = () => {
   el.style.top = "-9999px";
   el.style.width = `${A4_CANVAS_WIDTH}px`;
   el.style.background = "white";
-  el.style.padding = "40px";
+  el.style.padding = "60px";
   el.style.fontFamily = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans"';
   return el;
 };
@@ -456,62 +456,72 @@ const baseStyles = `
     --paid:#16a34a;        /* green */
     --warn:#f59e0b;        /* amber */
     --bad:#ef4444;         /* red */
+    --accent:#3b82f6;      /* blue accent */
   }
   *{ box-sizing:border-box; }
-  body{ margin:0; padding:0; color:var(--text); font:13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans"; }
-  .paper{ width:${A4_CANVAS_WIDTH}px; background:#fff; padding:40px; }
+  body{ margin:0; padding:0; color:var(--text); font:14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans"; }
+  .paper{ width:${A4_CANVAS_WIDTH}px; background:#fff; padding:60px; }
 
-  .row{ display:flex; gap:24px; }
-  .space{ height:16px; }
+  .row{ display:flex; gap:32px; }
+  .space{ height:24px; }
 
-  /* Header */
-  .header{ display:flex; justify-content:space-between; gap:24px; padding-bottom:16px; border-bottom:1px solid var(--border); }
-  .brand{ display:flex; align-items:center; gap:14px; }
-  .brand--textonly .brand-mark{ width:44px; height:44px; display:grid; place-items:center; background:var(--ink); color:#fff; border-radius:8px; font-weight:800; }
-  .brand-logo{ width:120px; height:54px; object-fit:contain; }
-  .brand-name{ font-weight:800; font-size:18px; color:var(--ink); letter-spacing:.2px; }
-  .brand-tag{ font-size:11px; letter-spacing:.3px; text-transform:uppercase; }
+  /* Header - Improved spacing and layout */
+  .header{ display:flex; justify-content:space-between; align-items:flex-start; gap:40px; padding-bottom:32px; border-bottom:2px solid var(--border); margin-bottom:32px; }
+  .brand{ display:flex; align-items:center; gap:18px; }
+  .brand--textonly .brand-mark{ width:56px; height:56px; display:grid; place-items:center; background:var(--accent); color:#fff; border-radius:12px; font-weight:800; font-size:18px; }
+  .brand-logo{ width:140px; height:70px; object-fit:contain; }
+  .brand-name{ font-weight:800; font-size:22px; color:var(--ink); letter-spacing:.3px; line-height:1.2; }
+  .brand-tag{ font-size:12px; letter-spacing:.4px; text-transform:uppercase; margin-top:4px; }
 
-  .meta{ text-align:right; }
-  .title{ font-size:28px; font-weight:800; margin:0 0 6px; letter-spacing:.4px; color:var(--ink); }
-  .kv{ font-size:12px; color:var(--muted); }
-  .kv b{ color:var(--text); font-weight:600; }
+  .meta{ text-align:right; min-width:280px; }
+  .title{ font-size:36px; font-weight:800; margin:0 0 16px; letter-spacing:.5px; color:var(--accent); text-transform:uppercase; }
+  .kv{ font-size:14px; color:var(--muted); margin-bottom:8px; line-height:1.4; }
+  .kv b{ color:var(--text); font-weight:700; }
 
-  /* status pill */
-  .status{ display:inline-block; margin-top:10px; padding:4px 10px; border-radius:999px; color:#fff; font-size:11px; font-weight:700; letter-spacing:.3px; }
-  .status--paid{ background:var(--paid); }
-  .status--pending{ background:var(--warn); }
-  .status--overdue{ background:var(--bad); }
-  .status--draft{ background:#94a3b8; }
+  /* status pill - Enhanced design */
+  .status{ display:inline-block; margin-top:16px; padding:8px 16px; border-radius:999px; color:#fff; font-size:12px; font-weight:700; letter-spacing:.4px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .status--paid{ background:linear-gradient(135deg, var(--paid), #22c55e); }
+  .status--pending{ background:linear-gradient(135deg, var(--warn), #fbbf24); }
+  .status--overdue{ background:linear-gradient(135deg, var(--bad), #f87171); }
+  .status--draft{ background:linear-gradient(135deg, #94a3b8, #cbd5e1); }
 
-  /* Cards */
-  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px; }
-  .card{ border:1px solid var(--border); border-radius:10px; padding:14px; }
-  .card h4{ margin:0 0 6px; color:var(--ink); font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
-  .muted{ color:var(--muted); }
+  /* Cards - Enhanced spacing and visual design */
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:28px; margin:32px 0; }
+  .card{ border:1px solid var(--border); border-radius:12px; padding:24px; background:#fefefe; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+  .card h4{ margin:0 0 12px; color:var(--ink); font-size:13px; text-transform:uppercase; letter-spacing:.6px; font-weight:700; }
+  .card div{ margin-bottom:6px; line-height:1.4; }
+  .card div:last-child{ margin-bottom:0; }
+  .muted{ color:var(--muted); font-size:13px; }
 
-  /* Table */
-  table{ width:100%; border-collapse:separate; border-spacing:0; margin-top:14px; }
+  /* Table - Better spacing and column widths */
+  table{ width:100%; border-collapse:separate; border-spacing:0; margin:32px 0; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
   thead th{
-    text-align:left; padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted);
-    background:var(--header); border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+    text-align:left; padding:16px 20px; font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--ink); font-weight:700;
+    background:linear-gradient(135deg, var(--header), #f8fafc); border-bottom:2px solid var(--border);
   }
-  thead th:last-child, tbody td.ta-r { text-align:right; }
-  tbody td{ padding:12px; border-bottom:1px solid var(--border); vertical-align:top; }
+  thead th:first-child{ width:60%; }
+  thead th:last-child{ width:40%; text-align:right; }
+  tbody td{ padding:20px; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.5; }
+  tbody td:first-child{ width:60%; }
+  tbody td:last-child{ width:40%; text-align:right; font-weight:600; }
   tbody tr:nth-child(even) td{ background:var(--zebra); }
-  .desc{ font-size:12px; color:var(--muted); margin-top:2px; }
+  tbody tr:last-child td{ border-bottom:none; }
+  .desc{ font-size:13px; color:var(--muted); margin-top:6px; line-height:1.4; }
 
-  /* Summary */
-  .summary-wrap{ display:flex; justify-content:flex-end; margin-top:14px; }
-  .summary{ width:360px; border:1px solid var(--border); border-radius:10px; padding:14px; }
-  .row-sum{ display:flex; justify-content:space-between; padding:6px 0; }
-  .row-sum + .row-sum{ border-top:1px dashed var(--border); }
-  .label{ color:var(--muted); }
-  .total{ font-size:18px; font-weight:800; color:var(--ink); }
+  /* Summary - Better sizing and positioning */
+  .summary-wrap{ display:flex; justify-content:flex-end; margin:32px 0; }
+  .summary{ width:280px; border:1px solid var(--border); border-radius:12px; padding:24px; background:#fefefe; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+  .row-sum{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; font-size:14px; }
+  .row-sum + .row-sum{ border-top:1px dashed var(--border); margin-top:8px; padding-top:16px; }
+  .label{ color:var(--muted); font-weight:500; }
+  .total{ font-size:20px; font-weight:800; color:var(--ink); padding:16px 0 8px; border-top:2px solid var(--accent); margin-top:12px; }
 
-  .notes{ margin-top:18px; padding:12px 14px; border:1px solid var(--border); border-radius:10px; background:#f8fafc; }
-  .notes h4{ margin:0 0 6px; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); }
+  /* Notes - Enhanced styling */
+  .notes{ margin:32px 0; padding:24px; border:1px solid var(--border); border-radius:12px; background:#f8fafc; }
+  .notes h4{ margin:0 0 12px; font-size:13px; letter-spacing:.6px; text-transform:uppercase; color:var(--ink); font-weight:700; }
+  .notes div{ line-height:1.6; font-size:14px; }
 
-  .footer{ margin-top:22px; text-align:center; font-size:11px; color:var(--muted); }
+  /* Footer - Better spacing */
+  .footer{ margin-top:40px; padding-top:24px; border-top:1px solid var(--border); text-align:center; font-size:12px; color:var(--muted); line-height:1.5; }
 `;
 
