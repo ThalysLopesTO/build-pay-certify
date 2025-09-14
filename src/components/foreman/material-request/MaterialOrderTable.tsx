@@ -71,7 +71,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
               min="1"
               step="0.1"
               value={item.quantity}
-              onChange={(e) => updateLine(item.id, 'quantity', parseFloat(e.target.value) || 1)}
+              onChange={(e) => updateLine(item.id, 'quantity', parseFloat(e.target.value) || 0)}
               className="h-9"
             />
           </div>
@@ -157,7 +157,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
   const addNewLine = () => {
     const newLine: OrderLineItem = {
       id: `line_${Date.now()}`,
-      quantity: 1,
+      quantity: 0,
       unit: 'pcs',
       category: '',
       materialName: '',
@@ -269,7 +269,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                       min="1"
                       step="0.1"
                       value={item.quantity}
-                      onChange={(e) => updateLine(item.id, 'quantity', parseFloat(e.target.value) || 1)}
+                      onChange={(e) => updateLine(item.id, 'quantity', parseFloat(e.target.value) || 0)}
                       className="w-16 text-center"
                       placeholder="Qty"
                     />
