@@ -11,6 +11,7 @@ interface MaterialDropdownSelectorProps {
   selectedCategory?: string;
   onSelect: (item: MaterialCatalogItem) => void;
   onCustom: () => void;
+  showCustomInput?: boolean;
 }
 
 export const MaterialDropdownSelector: React.FC<MaterialDropdownSelectorProps> = ({
@@ -18,6 +19,7 @@ export const MaterialDropdownSelector: React.FC<MaterialDropdownSelectorProps> =
   selectedCategory,
   onSelect,
   onCustom,
+  showCustomInput = false,
 }) => {
   const { getCategoryDisplay } = useHierarchicalMaterialCategories();
   
@@ -72,11 +74,13 @@ export const MaterialDropdownSelector: React.FC<MaterialDropdownSelectorProps> =
       <SelectTrigger className="w-full">
         <SelectValue 
           placeholder={
-            !selectedCategory 
-              ? "Select category first"
-              : isLoading 
-                ? "Loading materials..."
-                : "Select material"
+            showCustomInput
+              ? "Custom material - enter name below"
+              : !selectedCategory 
+                ? "Select category first"
+                : isLoading 
+                  ? "Loading materials..."
+                  : "Select material"
           }
         />
       </SelectTrigger>

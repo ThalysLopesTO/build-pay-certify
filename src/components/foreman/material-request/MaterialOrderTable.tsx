@@ -110,11 +110,26 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
             selectedCategory={item.category}
             onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
             onCustom={() => handleCustomMaterial(item.id, '')}
+            showCustomInput={item.isCustom && !item.materialName}
           />
+          {item.isCustom && !item.materialName && (
+            <div className="mt-2">
+              <Input
+                placeholder="Enter custom material name (e.g., Rockwool R22 16 In)"
+                value=""
+                onChange={(e) => updateLine(item.id, 'materialName', e.target.value)}
+                className="border-orange-200 focus:border-orange-400"
+                autoFocus
+              />
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                Enter the custom material name and add specifications in notes below
+              </p>
+            </div>
+          )}
           <div className="flex gap-2 mt-2">
             {item.isCustom && item.materialName && (
               <Badge variant="outline" className="text-xs">
-                Custom
+                Custom: {item.materialName}
               </Badge>
             )}
             {!item.isCustom && item.category && (
@@ -323,26 +338,41 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                         onCategoryChange={(categoryId) => handleCategorySelect(item.id, categoryId)}
                       />
                   </TableCell>
-                  <TableCell>
-                    <div className="space-y-2">
-                      <MaterialDropdownSelector
-                        value={item.materialName}
-                        selectedCategory={item.category}
-                        onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
-                        onCustom={() => handleCustomMaterial(item.id, '')}
-                      />
-                      {item.isCustom && item.materialName && (
-                        <Badge variant="outline" className="text-xs">
-                          Custom
-                        </Badge>
-                      )}
-                      {!item.isCustom && item.category && (
-                        <Badge variant="secondary" className="text-xs">
-                          {getCategoryDisplay(item.category)}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
+                   <TableCell>
+                     <div className="space-y-2">
+                       <MaterialDropdownSelector
+                         value={item.materialName}
+                         selectedCategory={item.category}
+                         onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
+                         onCustom={() => handleCustomMaterial(item.id, '')}
+                         showCustomInput={item.isCustom && !item.materialName}
+                       />
+                       {item.isCustom && !item.materialName && (
+                         <div className="mt-2">
+                           <Input
+                             placeholder="Enter custom material name (e.g., Rockwool R22 16 In)"
+                             value=""
+                             onChange={(e) => updateLine(item.id, 'materialName', e.target.value)}
+                             className="border-orange-200 focus:border-orange-400"
+                             autoFocus
+                           />
+                           <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                             Enter the custom material name and add specifications in notes
+                           </p>
+                         </div>
+                       )}
+                       {item.isCustom && item.materialName && (
+                         <Badge variant="outline" className="text-xs">
+                           Custom: {item.materialName}
+                         </Badge>
+                       )}
+                       {!item.isCustom && item.category && (
+                         <Badge variant="secondary" className="text-xs">
+                           {getCategoryDisplay(item.category)}
+                         </Badge>
+                       )}
+                     </div>
+                   </TableCell>
                   <TableCell>
                     {editingCell?.rowId === item.id && editingCell?.field === 'notes' ? (
                       <Textarea
