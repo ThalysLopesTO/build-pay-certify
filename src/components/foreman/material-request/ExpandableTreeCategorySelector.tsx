@@ -51,9 +51,6 @@ export const ExpandableTreeCategorySelector = ({
 
   return (
     <div>
-      <Label htmlFor="category">
-        Category {required && <span className="text-destructive">*</span>}
-      </Label>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
