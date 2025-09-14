@@ -30,12 +30,55 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log('📧 send-email function invoked');
+    
+    // Check if RESEND_API_KEY is available
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    if (!apiKey) {
+      console.error('❌ RESEND_API_KEY is not set');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "RESEND_API_KEY is not configured" 
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     const { to, subject, html, attachments }: SendEmailRequest = await req.json();
 
-    console.log('Sending email to:', to, 'with subject:', subject);
-    console.log('Using RESEND_API_KEY:', Deno.env.get("RESEND_API_KEY") ? 'Available' : 'Missing');
-    if (attachments) {
-      console.log('Attachments:', attachments.map(a => a.filename));
+    // Validate required fields
+    if (!to || !subject || !html) {
+      console.error('❌ Missing required fields:', { to: !!to, subject: !!subject, html: !!html });
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Missing required fields: to, subject, or html" 
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log('📧 Sending email:', {
+      to,
+      subject,
+      hasHtml: !!html,
+      attachmentCount: attachments?.length || 0,
+      apiKeyStatus: 'Available'
+    });
+
+    if (attachments && attachments.length > 0) {
+      console.log('📎 Attachments:', attachments.map(a => ({
+        filename: a.filename,
+        type: a.type,
+        size: a.content.length
+      })));
     }
 
     const emailData: any = {
@@ -56,7 +99,25 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailResponse = await resend.emails.send(emailData);
 
-    console.log("Email sent successfully:", emailResponse);
+    if (emailResponse.error) {
+      console.error('❌ Resend API error:', emailResponse.error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Resend API error: ${emailResponse.error.message}` 
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("✅ Email sent successfully:", {
+      id: emailResponse.data?.id,
+      to,
+      subject
+    });
 
     return new Response(
       JSON.stringify({ 
@@ -73,7 +134,12 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("Error in send-email function:", error);
+    console.error("❌ Error in send-email function:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
