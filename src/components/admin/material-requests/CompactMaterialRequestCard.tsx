@@ -102,7 +102,7 @@ const CompactMaterialRequestCard = ({
         </div>
 
         {/* Row 2: Info chips */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
           {/* Submitted by */}
           <div className="flex items-center gap-1.5 min-w-0">
             <EmployeeAvatar
@@ -154,13 +154,26 @@ const CompactMaterialRequestCard = ({
               <Clock className="h-3 w-3 text-orange-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground">Time</p>
-              <p className="text-xs font-medium text-foreground">
-                {request.delivery_time}
-              </p>
-            </div>
-          </div>
-        </div>
+               <p className="text-xs text-muted-foreground">Time</p>
+               <p className="text-xs font-medium text-foreground">
+                 {request.delivery_time}
+               </p>
+             </div>
+           </div>
+
+           {/* Submitted Date */}
+           <div className="flex items-center gap-1.5 min-w-0">
+             <div className="bg-slate-100 p-1 rounded flex-shrink-0">
+               <Calendar className="h-3 w-3 text-slate-600" />
+             </div>
+             <div className="min-w-0 flex-1">
+               <p className="text-xs text-muted-foreground">Submitted</p>
+               <p className="text-xs font-medium text-foreground">
+                 {format(new Date(request.created_at), 'MMM dd')}
+               </p>
+             </div>
+           </div>
+         </div>
       </CardContent>
     </Card>
   );
