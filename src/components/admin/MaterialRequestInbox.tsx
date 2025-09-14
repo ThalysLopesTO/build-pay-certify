@@ -185,16 +185,31 @@ const MaterialRequestInbox = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
-        <div className="container max-w-7xl mx-auto py-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
+      {/* Professional Header */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-lg">
+        <div className="container max-w-7xl mx-auto py-6">
           <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-primary/10 p-3 rounded-xl">
+                <Inbox className="h-7 w-7 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  Material Request Inbox
+                </h1>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Manage and track all material requests
+                </p>
+              </div>
+            </div>
             <div className="flex items-center space-x-3">
-              <Inbox className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">Material Request Inbox</h2>
-              <Badge variant="secondary" className="bg-primary/10 text-primary">
-                {requests.length} {requests.length === 1 ? 'Request' : 'Requests'} Found
+              <Badge 
+                variant="secondary" 
+                className="bg-gradient-to-r from-primary/10 to-primary/5 text-primary border-primary/20 px-4 py-2 text-sm font-semibold"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                {requests.length} {requests.length === 1 ? 'Request' : 'Requests'}
               </Badge>
             </div>
           </div>
@@ -217,20 +232,25 @@ const MaterialRequestInbox = () => {
       />
 
       {/* Main Content */}
-      <div className="container max-w-4xl mx-auto py-6 px-4">
+      <div className="container max-w-5xl mx-auto py-8 px-4">
         {requests.length === 0 ? (
-          <Card className="shadow-sm border-0 bg-muted/30">
-            <CardContent className="text-center py-16">
-              <div className="flex flex-col items-center gap-4">
-                <div className="bg-muted p-6 rounded-full">
-                  <Inbox className="h-12 w-12 text-muted-foreground" />
+          <Card className="shadow-xl border-0 bg-gradient-to-br from-card via-card to-muted/30 backdrop-blur">
+            <CardContent className="text-center py-20">
+              <div className="flex flex-col items-center gap-6">
+                <div className="relative">
+                  <div className="bg-gradient-to-br from-primary/20 to-primary/10 p-8 rounded-2xl">
+                    <Inbox className="h-16 w-16 text-primary" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 bg-primary/20 p-2 rounded-full animate-pulse">
+                    <Package className="h-4 w-4 text-primary" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">No Material Requests Found</h3>
-                  <p className="text-muted-foreground max-w-md">
+                <div className="space-y-3 max-w-lg">
+                  <h3 className="text-2xl font-bold text-foreground">No Material Requests Found</h3>
+                  <p className="text-muted-foreground leading-relaxed">
                     {searchTerm || statusFilter !== 'all' || dateFrom || dateTo || jobsiteFilter !== 'all'
-                      ? 'No requests match your current filters. Try adjusting your search criteria.' 
-                      : 'No material requests have been submitted yet. Requests will appear here once foremen submit them.'
+                      ? 'No requests match your current filters. Try adjusting your search criteria to see more results.' 
+                      : 'No material requests have been submitted yet. New requests will appear here once submitted by foremen.'
                     }
                   </p>
                 </div>
@@ -238,21 +258,26 @@ const MaterialRequestInbox = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {requests.map((request) => (
-              <AccordionMaterialRequestCard
+          <div className="space-y-6">
+            {requests.map((request, index) => (
+              <div 
                 key={request.id}
-                request={request}
-                isExpanded={expandedCard === request.id}
-                onToggle={(isExpanded) => {
-                  setExpandedCard(isExpanded ? request.id : null);
-                }}
-                onStatusUpdate={handleStatusUpdate}
-                onViewDetails={handleViewDetails}
-                onExportPDF={handleExportPDF}
-                onDelete={handleDeleteClick}
-                isAdmin={isCompanyAdmin}
-              />
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <AccordionMaterialRequestCard
+                  request={request}
+                  isExpanded={expandedCard === request.id}
+                  onToggle={(isExpanded) => {
+                    setExpandedCard(isExpanded ? request.id : null);
+                  }}
+                  onStatusUpdate={handleStatusUpdate}
+                  onViewDetails={handleViewDetails}
+                  onExportPDF={handleExportPDF}
+                  onDelete={handleDeleteClick}
+                  isAdmin={isCompanyAdmin}
+                />
+              </div>
             ))}
           </div>
         )}

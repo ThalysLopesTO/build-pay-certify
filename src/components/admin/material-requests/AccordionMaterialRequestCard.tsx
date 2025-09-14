@@ -51,11 +51,11 @@ const AccordionMaterialRequestCard = ({
 
   const getStatusColor = (status: RequestStatus) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'ordered': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'delivered': return 'bg-green-100 text-green-800 border-green-200';
-      case 'archived': return 'bg-gray-100 text-gray-800 border-gray-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'pending': return 'bg-gradient-to-r from-yellow-50 to-yellow-100 text-yellow-700 border-yellow-200 shadow-sm';
+      case 'ordered': return 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200 shadow-sm';
+      case 'delivered': return 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border-green-200 shadow-sm';
+      case 'archived': return 'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 border-gray-200 shadow-sm';
+      default: return 'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 border-gray-200 shadow-sm';
     }
   };
 
@@ -89,82 +89,111 @@ const AccordionMaterialRequestCard = ({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
-      <Card className={`transition-all duration-200 hover:shadow-md border ${
-        isOverdue() ? 'border-red-200 bg-red-50/30' : 
-        isSameDay() ? 'border-yellow-200 bg-yellow-50/30' : 
-        'border-border hover:border-primary/20'
-      } ${isExpanded ? 'shadow-lg' : 'shadow-sm'}`}>
+      <Card className={`group transition-all duration-300 hover:shadow-xl border-0 ${
+        isOverdue() ? 'bg-gradient-to-r from-red-50/80 via-red-50/50 to-red-50/30 shadow-lg shadow-red-100/50 ring-1 ring-red-200' : 
+        isSameDay() ? 'bg-gradient-to-r from-yellow-50/80 via-yellow-50/50 to-yellow-50/30 shadow-lg shadow-yellow-100/50 ring-1 ring-yellow-200' : 
+        'bg-gradient-to-r from-card via-card to-muted/20 hover:from-primary/5 hover:via-card hover:to-primary/10 shadow-lg shadow-black/5'
+      } ${isExpanded ? 'shadow-2xl ring-1 ring-primary/20 scale-[1.02]' : 'hover:scale-[1.01]'} backdrop-blur rounded-xl`}>
         
-        {/* Collapsed Header - Always Visible */}
+        {/* Professional Header */}
         <CollapsibleTrigger asChild>
-          <div className="p-4 cursor-pointer hover:bg-muted/30 transition-colors">
+          <div className="p-6 cursor-pointer hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent transition-all duration-200 group">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-2">
-                  <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <h3 className="font-semibold text-foreground truncate">
-                    {request.jobsites?.name || 'Unknown Jobsite'}
-                  </h3>
-                  <Badge className={`${getStatusColor(request.status)} text-xs font-medium px-2 py-0.5`}>
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="bg-primary/10 p-2.5 rounded-lg group-hover:bg-primary/15 transition-colors">
+                    <Building2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-lg text-foreground truncate group-hover:text-primary transition-colors">
+                      {request.jobsites?.name || 'Unknown Jobsite'}
+                    </h3>
+                  </div>
+                  <Badge className={`${getStatusColor(request.status)} text-sm font-semibold px-3 py-1.5 rounded-lg`}>
                     {getStatusIcon(request.status)} {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                   </Badge>
                 </div>
                 
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <User className="h-3 w-3" />
-                    <span className="font-medium text-foreground">
-                      {formatUserDisplay(request.submitted_by, (request as any).submitted_by_name)}
-                    </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
+                    <div className="bg-blue-100 p-1.5 rounded-md">
+                      <User className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">Submitted by</p>
+                      <p className="font-semibold text-foreground">
+                        {formatUserDisplay(request.submitted_by, (request as any).submitted_by_name)}
+                      </p>
+                    </div>
                   </div>
+                  
                   {request.jobsites?.address && (
-                    <div className="flex items-center gap-1 truncate">
-                      <MapPin className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">{request.jobsites.address}</span>
+                    <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
+                      <div className="bg-green-100 p-1.5 rounded-md">
+                        <MapPin className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-muted-foreground font-medium">Address</p>
+                        <p className="font-semibold text-foreground truncate">{request.jobsites.address}</p>
+                      </div>
                     </div>
                   )}
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <Calendar className="h-3 w-3" />
-                    <span>{format(new Date(request.delivery_date), 'MMM dd, yyyy')}</span>
+                  
+                  <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
+                    <div className="bg-purple-100 p-1.5 rounded-md">
+                      <Calendar className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">Delivery Date</p>
+                      <p className="font-semibold text-foreground">{format(new Date(request.delivery_date), 'MMM dd, yyyy')}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <Clock className="h-3 w-3" />
-                    <span>{request.delivery_time}</span>
+                  
+                  <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
+                    <div className="bg-orange-100 p-1.5 rounded-md">
+                      <Clock className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">Time</p>
+                      <p className="font-semibold text-foreground">{request.delivery_time}</p>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2 ml-4">
+              <div className="flex items-center gap-3 ml-6">
                 {attachments.length > 0 && (
-                  <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-xs font-medium">
-                    <Image className="h-3 w-3" />
-                    <span>{attachments.length}</span>
+                  <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-semibold shadow-sm">
+                    <Image className="h-4 w-4" />
+                    <span>{attachments.length} {attachments.length === 1 ? 'file' : 'files'}</span>
                   </div>
                 )}
                 
                 {isOverdue() && (
-                  <Badge variant="destructive" className="text-xs">
-                    Overdue
+                  <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 text-sm font-semibold shadow-md">
+                    🚨 Overdue
                   </Badge>
                 )}
                 
                 {isSameDay() && !isOverdue() && (
-                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 text-xs">
-                    Today
+                  <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-3 py-1.5 text-sm font-semibold shadow-md">
+                    ⚡ Today
                   </Badge>
                 )}
                 
-                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
-                  isExpanded ? 'rotate-180' : ''
-                }`} />
+                <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/15 transition-colors">
+                  <ChevronDown className={`h-5 w-5 text-primary transition-transform duration-300 ${
+                    isExpanded ? 'rotate-180' : ''
+                  }`} />
+                </div>
               </div>
             </div>
           </div>
         </CollapsibleTrigger>
 
-        {/* Expanded Content */}
+        {/* Enhanced Expanded Content */}
         <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-          <div className="px-4 pb-4 space-y-4 border-t border-border/50">
+          <div className="px-6 pb-6 space-y-6 border-t border-gradient-to-r from-border/50 via-primary/20 to-border/50 bg-gradient-to-br from-muted/30 to-background/50">
             
             {/* Delivery Information */}
             <div className="bg-muted/30 rounded-lg p-4 space-y-3">
@@ -278,14 +307,14 @@ const AccordionMaterialRequestCard = ({
               </div>
             )}
 
-            {/* Actions */}
-            <div className="flex items-center justify-between pt-4 border-t border-border/50">
-              <div className="flex items-center gap-2">
+            {/* Professional Actions */}
+            <div className="flex items-center justify-between pt-6 border-t border-gradient-to-r from-border/50 via-primary/20 to-border/50">
+              <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => onViewDetails(request)}
-                  className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-blue-200 text-blue-700 font-semibold shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   <Eye className="h-4 w-4" />
                   View Details
@@ -295,7 +324,7 @@ const AccordionMaterialRequestCard = ({
                   variant="outline"
                   size="sm"
                   onClick={() => onExportPDF(request)}
-                  className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300 hover:text-green-700"
+                  className="flex items-center gap-2 bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-green-200 text-green-700 font-semibold shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   <Download className="h-4 w-4" />
                   Export PDF
@@ -310,7 +339,7 @@ const AccordionMaterialRequestCard = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex items-center gap-2 hover:bg-primary/10 hover:border-primary hover:text-primary"
+                          className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 border-primary/20 text-primary font-semibold shadow-sm hover:shadow-md transition-all duration-200"
                         >
                           <Edit className="h-4 w-4" />
                           Edit Request
@@ -321,7 +350,7 @@ const AccordionMaterialRequestCard = ({
                       variant="outline"
                       size="sm"
                       onClick={() => onDelete(request.id)}
-                      className="flex items-center gap-2 hover:bg-destructive/10 hover:border-destructive hover:text-destructive"
+                      className="flex items-center gap-2 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200 text-red-700 font-semibold shadow-sm hover:shadow-md transition-all duration-200"
                     >
                       <Trash2 className="h-4 w-4" />
                       Delete
@@ -330,20 +359,20 @@ const AccordionMaterialRequestCard = ({
                 )}
               </div>
               
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Status:</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-muted-foreground">Update Status:</span>
                 <Select
                   value={request.status}
                   onValueChange={(value: RequestStatus) => onStatusUpdate(request.id, value)}
                 >
-                  <SelectTrigger className="w-32 h-8 text-xs">
+                  <SelectTrigger className="w-40 h-10 text-sm font-semibold bg-gradient-to-r from-muted/50 to-background border-2 hover:border-primary/30 focus:border-primary shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">🟡 Pending</SelectItem>
-                    <SelectItem value="ordered">🔵 Ordered</SelectItem>
-                    <SelectItem value="delivered">🟢 Delivered</SelectItem>
-                    <SelectItem value="archived">⚫ Archived</SelectItem>
+                  <SelectContent className="bg-background/95 backdrop-blur border-2">
+                    <SelectItem value="pending" className="font-semibold">🟡 Pending</SelectItem>
+                    <SelectItem value="ordered" className="font-semibold">🔵 Ordered</SelectItem>
+                    <SelectItem value="delivered" className="font-semibold">🟢 Delivered</SelectItem>
+                    <SelectItem value="archived" className="font-semibold">⚫ Archived</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
