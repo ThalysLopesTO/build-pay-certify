@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OrderLineItem } from './MaterialOrderTable';
+import { useHierarchicalMaterialCategories } from '@/hooks/useHierarchicalMaterialCategories';
 
 interface MaterialOrderSummaryProps {
   lineItems: OrderLineItem[];
@@ -10,13 +11,17 @@ interface MaterialOrderSummaryProps {
 export const MaterialOrderSummary: React.FC<MaterialOrderSummaryProps> = ({
   lineItems,
 }) => {
+  const { getCategoryDisplay } = useHierarchicalMaterialCategories();
+  
   // Group by category
   const groupedByCategory = lineItems.reduce((acc, item) => {
-    const category = item.category || (item.isCustom ? 'Custom Items' : 'Other');
-    if (!acc[category]) {
-      acc[category] = [];
+    const categoryKey = item.category || (item.isCustom ? 'Custom Items' : 'Other');
+    const categoryDisplay = item.category ? getCategoryDisplay(item.category) : categoryKey;
+    
+    if (!acc[categoryDisplay]) {
+      acc[categoryDisplay] = [];
     }
-    acc[category].push(item);
+    acc[categoryDisplay].push(item);
     return acc;
   }, {} as Record<string, OrderLineItem[]>);
 
