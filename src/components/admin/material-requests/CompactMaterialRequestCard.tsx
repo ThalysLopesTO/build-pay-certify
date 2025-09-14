@@ -106,6 +106,7 @@ const CompactMaterialRequestCard = ({
           {/* Submitted by */}
           <div className="flex items-center gap-1.5 min-w-0">
             <EmployeeAvatar
+              photoUrl={(request as any).submitted_by_photo}
               firstName={(request as any).submitted_by_name?.split(' ')[0]}
               lastName={(request as any).submitted_by_name?.split(' ')[1]}
               size="sm"

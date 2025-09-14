@@ -78,7 +78,7 @@ export const useEnhancedMaterialRequestsAdmin = () => {
       const validUserIds = userIds.filter(id => id !== null);
       const { data: userProfiles, error: usersError } = validUserIds.length > 0 ? await supabase
         .from('user_profiles')
-        .select('user_id, first_name, last_name')
+        .select('user_id, first_name, last_name, photo_url')
         .in('user_id', validUserIds)
         .eq('company_id', user.companyId) : { data: [], error: null };
 
@@ -99,10 +99,11 @@ export const useEnhancedMaterialRequestsAdmin = () => {
         return {
           ...request,
           jobsites: jobsite || null,
-          // Keep submitted_by as user_id for compatibility, but add user name for display
+          // Keep submitted_by as user_id for compatibility, but add user name and photo for display
           submitted_by_name: !request.submitted_by ? 'Former Employee' : (userProfile 
             ? `${(userProfile as any).first_name || ''} ${(userProfile as any).last_name || ''}`.trim()
-            : 'Unknown User')
+            : 'Unknown User'),
+          submitted_by_photo: userProfile ? (userProfile as any).photo_url : null
         };
       });
 
