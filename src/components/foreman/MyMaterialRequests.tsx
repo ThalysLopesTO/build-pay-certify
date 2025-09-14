@@ -2,20 +2,18 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Inbox, Calendar, MapPin, Package, User, AlertCircle, RefreshCw, Filter } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Inbox, Calendar, MapPin, Package, User, AlertCircle, RefreshCw, Filter, Search, Clock, FileText } from 'lucide-react';
 import { useMaterialRequests, EnrichedMaterialRequest } from '@/hooks/useMaterialRequests';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { format, differenceInHours } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import EditMaterialRequestDialog from './EditMaterialRequestDialog';
-import MaterialRequestPhotosViewer from './MaterialRequestPhotosViewer';
 import MaterialRequestAttachmentsIndicator from './MaterialRequestAttachmentsIndicator';
 import { useCountdown } from '@/hooks/useCountdown';
 import MaterialRequestDetailsDrawer from './MaterialRequestDetailsDrawer';
 import { useMaterialRequestById } from '@/hooks/useMaterialRequestById';
-import { useNavigate } from 'react-router-dom';
 
 const EditWindowChip: React.FC<{ until?: string }> = ({ until }) => {
   const { totalMs, formatted } = useCountdown(until, 60000);
@@ -28,10 +26,10 @@ const EditWindowChip: React.FC<{ until?: string }> = ({ until }) => {
 interface MyMaterialRequestsProps { initialOpenRequestId?: string }
 
 const MyMaterialRequests: React.FC<MyMaterialRequestsProps> = ({ initialOpenRequestId }) => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: materialRequests = [], isLoading, error, refetch } = useMaterialRequests();
   const [selectedProject, setSelectedProject] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
 
@@ -49,12 +47,11 @@ const MyMaterialRequests: React.FC<MyMaterialRequestsProps> = ({ initialOpenRequ
   const openDetails = (id: string) => {
     setSelectedId(id);
     setDrawerOpen(true);
-    navigate(`/foreman/material-requests/${id}`);
   };
+  
   const closeDetails = () => {
     setDrawerOpen(false);
     setSelectedId(null);
-    try { navigate(-1); } catch {}
   };
 
   // Get unique projects from material requests
@@ -72,15 +69,29 @@ const MyMaterialRequests: React.FC<MyMaterialRequestsProps> = ({ initialOpenRequ
     return uniqueProjects;
   }, [materialRequests]);
 
-  // Filter material requests by selected project
+  // Filter material requests by selected project and search term
   const filteredRequests = useMemo(() => {
-    if (selectedProject === 'all') {
-      return materialRequests;
+    let filtered = materialRequests;
+    
+    // Filter by project
+    if (selectedProject !== 'all') {
+      filtered = filtered.filter(request => 
+        request.jobsites && request.jobsites.id === selectedProject
+      );
     }
-    return materialRequests.filter(request => 
-      request.jobsites && request.jobsites.id === selectedProject
-    );
-  }, [materialRequests, selectedProject]);
+    
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(request => 
+        request.material_list?.toLowerCase().includes(term) ||
+        request.jobsites?.name?.toLowerCase().includes(term) ||
+        request.status?.toLowerCase().includes(term)
+      );
+    }
+    
+    return filtered;
+  }, [materialRequests, selectedProject, searchTerm]);
 
   // Check if a request can be edited by the foreman
   const canEditRequest = (request: EnrichedMaterialRequest) => {
@@ -102,18 +113,18 @@ const MyMaterialRequests: React.FC<MyMaterialRequestsProps> = ({ initialOpenRequ
     return hoursSinceCreation < 24;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusVariant = (status: string) => {
+    switch (status.toLowerCase()) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'secondary' as const;
       case 'ordered':
-        return 'bg-blue-100 text-blue-800';
+        return 'default' as const;
       case 'delivered':
-        return 'bg-green-100 text-green-800';
+        return 'default' as const;
       case 'archived':
-        return 'bg-gray-100 text-gray-800';
+        return 'outline' as const;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'outline' as const;
     }
   };
 
@@ -151,163 +162,173 @@ const MyMaterialRequests: React.FC<MyMaterialRequestsProps> = ({ initialOpenRequ
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Inbox className="h-5 w-5" />
-          <span>My Material Requests</span>
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent>
-        {/* Filter Section */}
-        <div className="mb-6">
-          <div className="flex items-center space-x-2 mb-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">Filter by Project:</span>
-          </div>
-          <Select value={selectedProject} onValueChange={setSelectedProject}>
-            <SelectTrigger className="w-full max-w-xs">
-              <SelectValue placeholder="Select a project" />
-            </SelectTrigger>
-            <SelectContent className="bg-white z-50">
-              <SelectItem value="all">All Projects</SelectItem>
-              {projects.map((project) => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <div className="flex items-center space-x-3 mb-2">
+          <Inbox className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-semibold tracking-tight">My Material Requests</h1>
         </div>
+        <p className="text-muted-foreground">View and manage your submitted material requests</p>
+      </div>
 
-        {filteredRequests.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="h-16 w-16 mx-auto mb-4 text-slate-300" />
-            <h3 className="text-xl font-semibold mb-2">
-              {selectedProject === 'all' ? 'No Material Requests' : 'No Material Requests for Selected Project'}
-            </h3>
-            <p className="text-slate-600">
-              {selectedProject === 'all' 
-                ? "You haven't submitted any material requests yet." 
-                : "No material requests found for the selected project."
-              }
-            </p>
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search requests..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <div className="sm:w-64">
+              <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <SelectTrigger>
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Foreman</TableHead>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Delivery Date</TableHead>
-                  <TableHead>Order Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Materials</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRequests.map((request: EnrichedMaterialRequest) => (
-                  <TableRow
-                    key={request.id}
-                    role="button"
-                    tabIndex={0}
-                    className="cursor-pointer hover:bg-muted/50 focus:bg-muted/50"
-                    onClick={() => openDetails(request.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        openDetails(request.id);
-                      }
-                    }}
-                  >
-                    <TableCell>
+        </CardContent>
+      </Card>
+
+      {/* Content */}
+      {filteredRequests.length === 0 ? (
+        <Card>
+          <CardContent className="p-12">
+            <div className="text-center">
+              <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+              <h3 className="text-xl font-semibold mb-2">
+                {searchTerm ? 'No matching requests' : selectedProject === 'all' ? 'No Material Requests' : 'No requests for selected project'}
+              </h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                {searchTerm 
+                  ? `No material requests found matching "${searchTerm}". Try adjusting your search terms.`
+                  : selectedProject === 'all' 
+                    ? "You haven't submitted any material requests yet." 
+                    : "No material requests found for the selected project."
+                }
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {filteredRequests.map((request: EnrichedMaterialRequest) => (
+            <Card 
+              key={request.id} 
+              className="cursor-pointer hover:shadow-md transition-all duration-200 border hover:border-primary/20"
+              onClick={() => openDetails(request.id)}
+            >
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  {/* Left section */}
+                  <div className="flex-1 space-y-3">
+                    {/* Project and Status */}
+                    <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">
-                          {user?.firstName && user?.lastName 
-                            ? `${user.firstName} ${user.lastName}`
-                            : user?.email || 'Unknown'
-                          }
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                         <div>
-                          <div className="font-medium">{request.jobsites?.name || 'Unknown Project'}</div>
+                          <h3 className="font-semibold text-lg">{request.jobsites?.name || 'Unknown Project'}</h3>
                           {request.jobsites?.address && (
-                            <div className="text-sm text-gray-500">{request.jobsites.address}</div>
+                            <p className="text-sm text-muted-foreground">{request.jobsites.address}</p>
                           )}
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <div>{format(new Date(request.delivery_date + 'T00:00:00'), 'PPP')}</div>
-                          <div className="text-sm text-gray-500">
-                            {request.delivery_time && /^\d{2}:\d{2}$/.test(request.delivery_time)
-                              ? format(new Date(`2000-01-01T${request.delivery_time}`), 'h:mm a')
-                              : request.delivery_time
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(request.created_at), 'MMM dd, yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(request.status)}>
+                      <Badge variant={getStatusVariant(request.status)} className="ml-2">
                         {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-xs">
-                      <div className="truncate" title={request.material_list}>
-                        {request.material_list}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2 flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
-                        <EditMaterialRequestDialog
-                          request={request}
-                          canEdit={canEditRequest(request)}
-                        />
-                        {canEditRequest(request) && (
-                          <EditWindowChip until={request.editableUntil} />
-                        )}
-                        <MaterialRequestAttachmentsIndicator
-                          materialRequestId={request.id}
-                        />
-                        {!canEditRequest(request) && user?.role === 'foreman' && (
-                          <span className="text-xs text-gray-500" title="Edit period expired (24h after creation)">
-                            {differenceInHours(new Date(), new Date(request.created_at)) >= 24
-                              ? 'Edit period expired (24h)'
-                              : 'Cannot edit'
-                            }
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                    </div>
 
-        <MaterialRequestDetailsDrawer
-          request={selectedRequest as any}
-          isOpen={isDrawerOpen}
-          onClose={closeDetails}
-        />
-      </CardContent>
-    </Card>
+                    {/* Materials */}
+                    <div className="flex items-start space-x-2">
+                      <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-muted-foreground">Materials Requested</p>
+                        <p className="text-sm line-clamp-2">{request.material_list}</p>
+                      </div>
+                    </div>
+
+                    {/* Dates */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <span className="font-medium">Delivery: </span>
+                          <span>{format(new Date(request.delivery_date + 'T00:00:00'), 'MMM dd, yyyy')}</span>
+                          {request.delivery_time && (
+                            <span className="text-muted-foreground ml-1">
+                              at {/^\d{2}:\d{2}$/.test(request.delivery_time)
+                                ? format(new Date(`2000-01-01T${request.delivery_time}`), 'h:mm a')
+                                : request.delivery_time
+                              }
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <span className="font-medium">Submitted: </span>
+                          <span>{format(new Date(request.created_at), 'MMM dd, yyyy')}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right section - Actions */}
+                  <div className="flex items-center space-x-2 lg:flex-col lg:items-end lg:space-x-0 lg:space-y-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center space-x-2">
+                      <EditMaterialRequestDialog
+                        request={request}
+                        canEdit={canEditRequest(request)}
+                      />
+                      <MaterialRequestAttachmentsIndicator
+                        materialRequestId={request.id}
+                      />
+                    </div>
+                    
+                    {canEditRequest(request) && (
+                      <EditWindowChip until={request.editableUntil} />
+                    )}
+                    
+                    {!canEditRequest(request) && user?.role === 'foreman' && (
+                      <div className="text-xs text-muted-foreground">
+                        {differenceInHours(new Date(), new Date(request.created_at)) >= 24
+                          ? 'Edit period expired'
+                          : 'Cannot edit'
+                        }
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <MaterialRequestDetailsDrawer
+        request={selectedRequest as any}
+        isOpen={isDrawerOpen}
+        onClose={closeDetails}
+      />
+    </div>
   );
 };
 
