@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { 
   Calendar, 
   Clock, 
@@ -104,9 +105,12 @@ const CompactMaterialRequestCard = ({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {/* Submitted by */}
           <div className="flex items-center gap-1.5 min-w-0">
-            <div className="bg-blue-100 p-1 rounded flex-shrink-0">
-              <User className="h-3 w-3 text-blue-600" />
-            </div>
+            <EmployeeAvatar
+              firstName={(request as any).submitted_by_name?.split(' ')[0]}
+              lastName={(request as any).submitted_by_name?.split(' ')[1]}
+              size="sm"
+              className="flex-shrink-0"
+            />
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted-foreground">Submitted by</p>
               <p className="text-xs font-medium text-foreground truncate">
