@@ -42,7 +42,8 @@ export const useEnhancedMaterialRequestsAdmin = () => {
           created_at,
           submitted_by,
           company_id,
-          jobsite_id
+          jobsite_id,
+          has_line_items
         `)
         .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });

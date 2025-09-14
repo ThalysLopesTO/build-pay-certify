@@ -21,6 +21,8 @@ import {
 import { format } from 'date-fns';
 import { MaterialRequest, RequestStatus } from '../types/materialRequest';
 import { useMaterialRequestAttachments } from '@/hooks/useMaterialRequestAttachments';
+import { useMaterialRequestLineItems } from '@/hooks/useMaterialRequestLineItems';
+import { formatLineItemsForDisplay } from '@/utils/materialRequestFormatting';
 import AdminEditMaterialRequestDialog from './AdminEditMaterialRequestDialog';
 
 interface AccordionMaterialRequestCardProps {
@@ -45,6 +47,7 @@ const AccordionMaterialRequestCard = ({
   isAdmin
 }: AccordionMaterialRequestCardProps) => {
   const { data: attachments = [] } = useMaterialRequestAttachments(request.id);
+  const { data: lineItems = [] } = useMaterialRequestLineItems(request.id);
 
   const getStatusColor = (status: RequestStatus) => {
     switch (status) {
@@ -233,7 +236,10 @@ const AccordionMaterialRequestCard = ({
               <div className="bg-muted/30 border-l-4 border-l-orange-500 rounded-r-lg p-4">
                 <div className="max-h-32 overflow-y-auto">
                   <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                    {request.material_list}
+                    {(request as any).has_line_items && lineItems.length > 0 
+                      ? formatLineItemsForDisplay(lineItems)
+                      : request.material_list || 'No materials specified'
+                    }
                   </p>
                 </div>
               </div>

@@ -7,6 +7,8 @@ import { Calendar, MapPin, Package2, User, Download, X, Image, Edit } from 'luci
 import { format } from 'date-fns';
 import { MaterialRequest, RequestStatus } from '../types/materialRequest';
 import { useMaterialRequestAttachments } from '@/hooks/useMaterialRequestAttachments';
+import { useMaterialRequestLineItems } from '@/hooks/useMaterialRequestLineItems';
+import { formatLineItemsForDisplay } from '@/utils/materialRequestFormatting';
 import MaterialRequestPhotosViewer from '@/components/foreman/MaterialRequestPhotosViewer';
 import { supabase } from '@/integrations/supabase/client';
 import AdminEditMaterialRequestDialog from './AdminEditMaterialRequestDialog';
@@ -29,6 +31,7 @@ const MaterialRequestDetailsPanel = ({
   isAdmin = false
 }: MaterialRequestDetailsPanelProps) => {
   const { data: attachments = [] } = useMaterialRequestAttachments(request?.id);
+  const { data: lineItems = [] } = useMaterialRequestLineItems(request?.id);
 
   if (!request) return null;
 
@@ -163,7 +166,12 @@ const MaterialRequestDetailsPanel = ({
               Material List
             </h3>
             <div className="bg-muted/50 rounded-lg p-4">
-              <pre className="whitespace-pre-wrap text-sm font-mono">{request.material_list}</pre>
+              <pre className="whitespace-pre-wrap text-sm font-mono">
+                {(request as any).has_line_items && lineItems.length > 0 
+                  ? formatLineItemsForDisplay(lineItems)
+                  : request.material_list || 'No materials specified'
+                }
+              </pre>
             </div>
           </div>
 
