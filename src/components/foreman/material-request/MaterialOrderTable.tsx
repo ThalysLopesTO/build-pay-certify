@@ -21,6 +21,7 @@ export interface OrderLineItem {
   materialName: string;
   notes: string;
   isCustom: boolean;
+  showCustomInput?: boolean;
   catalogItemId?: string;
 }
 
@@ -109,23 +110,23 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
             value={item.materialName}
             selectedCategory={item.category}
             onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
-            onCustom={() => handleCustomMaterial(item.id, '')}
+            onCustom={() => handleCustomMaterial(item.id)}
             showCustomInput={item.isCustom && !item.materialName}
           />
-          {item.isCustom && !item.materialName && (
-            <div className="mt-2">
-              <Input
-                placeholder="Enter custom material name (e.g., Rockwool R22 16 In)"
-                value=""
-                onChange={(e) => updateLine(item.id, 'materialName', e.target.value)}
-                className="border-orange-200 focus:border-orange-400"
-                autoFocus
-              />
-              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                Enter the custom material name and add specifications in notes below
-              </p>
-            </div>
-          )}
+           {item.showCustomInput && (
+             <div className="mt-2">
+               <Input
+                 placeholder="Enter custom material name (e.g., Rockwool R22 16 In)"
+                 value={item.materialName}
+                 onChange={(e) => updateLine(item.id, 'materialName', e.target.value)}
+                 className="border-orange-200 focus:border-orange-400"
+                 autoFocus
+               />
+               <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                 Enter the custom material name and add specifications in notes below
+               </p>
+             </div>
+           )}
           <div className="flex gap-2 mt-2">
             {item.isCustom && item.materialName && (
               <Badge variant="outline" className="text-xs">
@@ -193,7 +194,8 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
       category: '',
       materialName: '',
       notes: '',
-      isCustom: true,
+      isCustom: false,
+      showCustomInput: false,
     };
     onChange([...lineItems, newLine]);
   };
@@ -242,22 +244,23 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
         materialName: catalogItem.name,
         unit: catalogItem.unit,
         category: catalogItem.category, // This should be the category ID
-        isCustom: false
+        isCustom: false,
+        showCustomInput: false
       } : item
     ));
   };
 
-  const handleCustomMaterial = (id: string, materialName: string) => {
-    console.log('Custom material entered:', materialName, 'for line:', id);
-    console.log('Current lineItems before update:', lineItems);
+  const handleCustomMaterial = (id: string) => {
+    console.log('Custom material option selected for line:', id);
     
-    // Update in a single state change to prevent race conditions
+    // Set the item to custom mode and show the input field
     onChange(lineItems.map(item => 
       item.id === id ? { 
         ...item,
-        materialName,
+        materialName: '',
         catalogItemId: undefined,
-        isCustom: true
+        isCustom: true,
+        showCustomInput: true
       } : item
     ));
   };
@@ -344,23 +347,23 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                          value={item.materialName}
                          selectedCategory={item.category}
                          onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
-                         onCustom={() => handleCustomMaterial(item.id, '')}
+                         onCustom={() => handleCustomMaterial(item.id)}
                          showCustomInput={item.isCustom && !item.materialName}
                        />
-                       {item.isCustom && !item.materialName && (
-                         <div className="mt-2">
-                           <Input
-                             placeholder="Enter custom material name (e.g., Rockwool R22 16 In)"
-                             value=""
-                             onChange={(e) => updateLine(item.id, 'materialName', e.target.value)}
-                             className="border-orange-200 focus:border-orange-400"
-                             autoFocus
-                           />
-                           <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                             Enter the custom material name and add specifications in notes
-                           </p>
-                         </div>
-                       )}
+                        {item.showCustomInput && (
+                          <div className="mt-2">
+                            <Input
+                              placeholder="Enter custom material name (e.g., Rockwool R22 16 In)"
+                              value={item.materialName}
+                              onChange={(e) => updateLine(item.id, 'materialName', e.target.value)}
+                              className="border-orange-200 focus:border-orange-400"
+                              autoFocus
+                            />
+                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                              Enter the custom material name and add specifications in notes
+                            </p>
+                          </div>
+                        )}
                        {item.isCustom && item.materialName && (
                          <Badge variant="outline" className="text-xs">
                            Custom: {item.materialName}
