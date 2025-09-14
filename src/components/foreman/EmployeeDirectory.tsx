@@ -5,8 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Users, Search, Phone, Mail, MapPin, Briefcase, User, Building, Calendar, Award } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Users, Search, Phone, Mail, MapPin, Briefcase, User, Building, Calendar, Award, Upload, Shield, AlertTriangle, CheckCircle, XCircle, Plus } from 'lucide-react';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
+import { useEmployeeCertificateStatus } from '@/hooks/useEmployeeCertificateStatus';
+import { useEmployeeCertificates } from '@/hooks/useEmployeeCertificates';
+import { getCertStatusIcon, getCertStatusText } from '@/components/admin/employee-management/employeeHelpers';
+import CertificateUploadModal from '@/components/admin/CertificateUploadModal';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -31,6 +37,7 @@ interface EmployeeDetailsProps {
 }
 
 const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({ employee, isOpen, onClose }) => {
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   // Fetch additional details for the selected employee
   const { data: employeeJobsites = [] } = useQuery({
     queryKey: ['employee-jobsites', employee?.user_id],
@@ -79,27 +86,9 @@ const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({ employee, isOpen, onC
     enabled: !!employee?.user_id && isOpen,
   });
 
-  // Fetch certificates for the employee (optional - can be shown to foremen)
-  const { data: employeeCertificates = [] } = useQuery({
-    queryKey: ['employee-certificates', employee?.user_id],
-    queryFn: async () => {
-      if (!employee?.user_id) return [];
-      
-      const { data, error } = await supabase
-        .from('employee_certificates')
-        .select('*')
-        .eq('employee_id', employee.user_id)
-        .order('expiry_date', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching employee certificates:', error);
-        return [];
-      }
-
-      return data;
-    },
-    enabled: !!employee?.user_id && isOpen,
-  });
+  // Use the enhanced certificate hooks
+  const { certificates: employeeCertificates, refreshCertificates } = useEmployeeCertificates(employee?.user_id);
+  const { data: certificateStatus } = useEmployeeCertificateStatus(employee?.user_id);
 
   if (!employee) return null;
 
@@ -235,10 +224,29 @@ const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({ employee, isOpen, onC
 
           {/* Certificates */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-base flex items-center gap-2">
-              <Award className="h-4 w-4 text-primary" />
-              Certificates
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-base flex items-center gap-2">
+                <Award className="h-4 w-4 text-primary" />
+                Safety Certificates
+                {certificateStatus && (
+                  <div className="flex items-center gap-1 ml-2">
+                    {getCertStatusIcon(certificateStatus)}
+                    <span className="text-sm text-muted-foreground">
+                      {getCertStatusText(certificateStatus)}
+                    </span>
+                  </div>
+                )}
+              </h3>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsUploadModalOpen(true)}
+                className="text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Add Certificate
+              </Button>
+            </div>
             <div className="pl-6">
               {employeeCertificates.length > 0 ? (
                 <div className="space-y-3">
@@ -250,6 +258,16 @@ const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({ employee, isOpen, onC
                           <div className="flex-1">
                             <div className="font-medium text-sm">{cert.certificate_name}</div>
                             <div className="text-xs text-muted-foreground mt-1">{cert.certificate_type}</div>
+                            {cert.file_url && (
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="text-xs p-0 h-auto mt-1"
+                                onClick={() => window.open(cert.file_url, '_blank')}
+                              >
+                                View Certificate
+                              </Button>
+                            )}
                           </div>
                           {expiryInfo && (
                             <div className="text-right">
@@ -275,36 +293,30 @@ const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({ employee, isOpen, onC
             </div>
           </div>
         </div>
+
+        {/* Certificate Upload Modal */}
+        <CertificateUploadModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
+          employee={employee ? {
+            id: employee.user_id,
+            user_id: employee.user_id,
+            first_name: employee.first_name,
+            last_name: employee.last_name
+          } : null}
+          onSuccess={() => {
+            refreshCertificates();
+            setIsUploadModalOpen(false);
+          }}
+         />
       </SheetContent>
     </Sheet>
   );
 };
 
-const EmployeeDirectory = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const { data: employees = [], isLoading, error } = useEmployeeDirectory();
-
-  const filteredEmployees = employees.filter((employee: Employee) => {
-    const fullName = `${employee.first_name || ''} ${employee.last_name || ''}`.toLowerCase();
-    const trade = (employee.trade || '').toLowerCase();
-    const position = (employee.position || '').toLowerCase();
-    
-    return fullName.includes(searchTerm.toLowerCase()) ||
-           trade.includes(searchTerm.toLowerCase()) ||
-           position.includes(searchTerm.toLowerCase());
-  });
-
-  const handleEmployeeClick = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    setIsDetailsOpen(true);
-  };
-
-  const handleCloseDetails = () => {
-    setIsDetailsOpen(false);
-    setSelectedEmployee(null);
-  };
+// Enhanced Employee Card Component
+const EmployeeCard: React.FC<{ employee: Employee; onClick: () => void }> = ({ employee, onClick }) => {
+  const { data: certificateStatus } = useEmployeeCertificateStatus(employee.user_id);
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
@@ -322,6 +334,113 @@ const EmployeeDirectory = () => {
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
+  };
+
+  return (
+    <div
+      onClick={onClick}
+      className="group border border-border rounded-lg p-4 hover:shadow-md hover:border-primary/20 transition-all duration-200 cursor-pointer bg-card hover:bg-muted/30"
+    >
+      <div className="flex items-center gap-4">
+        <div className="relative">
+          <Avatar className="h-12 w-12 border-2 border-primary/20 group-hover:border-primary/40 transition-colors">
+            <AvatarImage 
+              src={employee.photo_url} 
+              alt={`${employee.first_name} ${employee.last_name}`} 
+            />
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+              {getInitials(employee.first_name, employee.last_name)}
+            </AvatarFallback>
+          </Avatar>
+          {/* Certificate Status Indicator */}
+          {certificateStatus && (
+            <div className="absolute -top-1 -right-1 bg-background rounded-full p-1 border border-border">
+              {getCertStatusIcon(certificateStatus)}
+            </div>
+          )}
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+            {employee.first_name} {employee.last_name}
+          </h3>
+          
+          {/* Certificate Status Badge */}
+          {certificateStatus && (
+            <div className="flex items-center gap-2 mt-1">
+              <Badge 
+                variant={certificateStatus === 'all-valid' ? 'default' : 
+                        certificateStatus === 'expiring' ? 'secondary' : 'destructive'}
+                className="text-xs"
+              >
+                {getCertStatusText(certificateStatus)}
+              </Badge>
+            </div>
+          )}
+          
+          <div className="flex flex-wrap items-center gap-3 mt-2">
+            {employee.trade && (
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Briefcase className="h-3 w-3" />
+                <span className="truncate">{employee.trade}</span>
+              </div>
+            )}
+            
+            {employee.position && (
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <MapPin className="h-3 w-3" />
+                <span className="truncate">{employee.position}</span>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex flex-col items-end gap-2">
+          <Badge 
+            className={`text-xs font-medium ${getRoleColor(employee.role)}`}
+          >
+            {employee.role === 'super_admin' ? 'Super Admin' : 
+             employee.role.charAt(0).toUpperCase() + employee.role.slice(1)}
+          </Badge>
+          <Badge 
+            variant={employee.is_active ? 'outline' : 'secondary'} 
+            className="text-xs"
+          >
+            {employee.is_active ? 'Active' : 'Inactive'}
+          </Badge>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const EmployeeDirectory = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [certificateFilter, setCertificateFilter] = useState<string>('all');
+  const { data: employees = [], isLoading, error } = useEmployeeDirectory();
+
+  const filteredEmployees = employees.filter((employee: Employee) => {
+    const fullName = `${employee.first_name || ''} ${employee.last_name || ''}`.toLowerCase();
+    const trade = (employee.trade || '').toLowerCase();
+    const position = (employee.position || '').toLowerCase();
+    
+    const matchesSearch = fullName.includes(searchTerm.toLowerCase()) ||
+                         trade.includes(searchTerm.toLowerCase()) ||
+                         position.includes(searchTerm.toLowerCase());
+    
+    return matchesSearch;
+  });
+
+  const handleEmployeeClick = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsDetailsOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setIsDetailsOpen(false);
+    setSelectedEmployee(null);
   };
 
   if (isLoading) {
@@ -369,14 +488,28 @@ const EmployeeDirectory = () => {
               {filteredEmployees.length} {filteredEmployees.length === 1 ? 'Employee' : 'Employees'}
             </Badge>
           </CardTitle>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, trade, or position..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-border focus:ring-primary/20"
-            />
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, trade, or position..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 border-border focus:ring-primary/20"
+              />
+            </div>
+            <Select value={certificateFilter} onValueChange={setCertificateFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by certificates" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Employees</SelectItem>
+                <SelectItem value="all-valid">Valid Certificates</SelectItem>
+                <SelectItem value="expiring">Expiring Soon</SelectItem>
+                <SelectItem value="expired">Expired Certificates</SelectItem>
+                <SelectItem value="no-certificates">No Certificates</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         
@@ -394,61 +527,11 @@ const EmployeeDirectory = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
               {filteredEmployees.map((employee: Employee) => (
-                <div
+                <EmployeeCard
                   key={employee.id}
+                  employee={employee}
                   onClick={() => handleEmployeeClick(employee)}
-                  className="group border border-border rounded-lg p-4 hover:shadow-md hover:border-primary/20 transition-all duration-200 cursor-pointer bg-card hover:bg-muted/30"
-                >
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12 border-2 border-primary/20 group-hover:border-primary/40 transition-colors">
-                      <AvatarImage 
-                        src={employee.photo_url} 
-                        alt={`${employee.first_name} ${employee.last_name}`} 
-                      />
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {getInitials(employee.first_name, employee.last_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                        {employee.first_name} {employee.last_name}
-                      </h3>
-                      
-                      <div className="flex flex-wrap items-center gap-3 mt-2">
-                        {employee.trade && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Briefcase className="h-3 w-3" />
-                            <span className="truncate">{employee.trade}</span>
-                          </div>
-                        )}
-                        
-                        {employee.position && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <MapPin className="h-3 w-3" />
-                            <span className="truncate">{employee.position}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col items-end gap-2">
-                      <Badge 
-                        className={`text-xs font-medium ${getRoleColor(employee.role)}`}
-                      >
-                        {employee.role === 'super_admin' ? 'Super Admin' : 
-                         employee.role.charAt(0).toUpperCase() + employee.role.slice(1)}
-                      </Badge>
-                      
-                      <Badge 
-                        variant={employee.is_active ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {employee.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
+                />
               ))}
             </div>
           )}
