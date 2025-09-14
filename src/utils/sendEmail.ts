@@ -70,28 +70,54 @@ export const sendEmail = async ({
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`📧 Sending email via Supabase Edge Function (attempt ${attempt}/${maxRetries}):`, {
+      console.log(`📧 AGGRESSIVE DEBUG - Sending email via Supabase Edge Function (attempt ${attempt}/${maxRetries}):`, {
         to: payload.to,
         subject: payload.subject,
         hasAttachments: payload.attachments?.length > 0,
         companyName: payload.companyName,
         apiKeyConfigured: true,
         functionsUrl: 'https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/send-email',
-        timestamp: new Date().toISOString()
-      });
-
-      console.log('🔗 Invoking function with payload:', {
+        timestamp: new Date().toISOString(),
         payloadSize: JSON.stringify(payload).length,
-        hasAttachments: !!payload.attachments?.length,
-        attachmentCount: payload.attachments?.length || 0
+        payloadKeys: Object.keys(payload),
+        supabaseClient: !!supabase,
+        clientType: supabase.constructor.name,
+        hasAuth: !!supabase.auth
       });
 
-      // Create authenticated supabase client or use current client
-      console.log('🔑 Client authentication status check...');
-      
-      const { data, error } = await supabase.functions.invoke('send-email', {
-        body: payload
+      console.log('🔗 AGGRESSIVE DEBUG - Pre-invocation checks:', {
+        functionName: 'send-email',
+        payload: payload,
+        supabaseInstance: supabase.constructor.name,
+        hasAuth: !!supabase.auth,
+        authUser: await supabase.auth.getUser().then(r => r.data.user?.id || 'none').catch(() => 'error-getting-user')
       });
+
+      // AGGRESSIVE: Try to catch any pre-invocation errors
+      console.log('🚀 AGGRESSIVE DEBUG - About to invoke function...');
+      
+      let invokeResult;
+      try {
+        invokeResult = await supabase.functions.invoke('send-email', {
+          body: payload,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log('✅ AGGRESSIVE DEBUG - Function invoke returned:', invokeResult);
+      } catch (invokeError) {
+        console.error('❌ AGGRESSIVE DEBUG - Function invoke threw error:', {
+          error: invokeError,
+          errorMessage: invokeError?.message,
+          errorStack: invokeError?.stack,
+          errorName: invokeError?.name,
+          errorCause: invokeError?.cause,
+          errorToString: invokeError?.toString()
+        });
+        throw invokeError;
+      }
+
+      const { data, error } = invokeResult;
 
       if (error) {
         console.error(`❌ Supabase function invocation error (attempt ${attempt}):`, {
