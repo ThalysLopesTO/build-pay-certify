@@ -105,22 +105,12 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
 
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">Material</label>
-          {item.isCustom && !item.materialName ? (
-            <Input
-              value=""
-              placeholder="Enter custom material name..."
-              onChange={(e) => handleCustomMaterial(item.id, e.target.value)}
-              autoFocus
-              className="h-9"
-            />
-          ) : (
-            <MaterialDropdownSelector
-              value={item.materialName}
-              selectedCategory={item.category}
-              onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
-              onCustom={() => handleCustomMaterial(item.id, '')}
-            />
-          )}
+          <MaterialDropdownSelector
+            value={item.materialName}
+            selectedCategory={item.category}
+            onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
+            onCustom={() => handleCustomMaterial(item.id, '')}
+          />
           <div className="flex gap-2 mt-2">
             {item.isCustom && item.materialName && (
               <Badge variant="outline" className="text-xs">
@@ -309,22 +299,12 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="space-y-2">
-                      {item.isCustom && !item.materialName ? (
-                        <Input
-                          value=""
-                          placeholder="Enter custom material name..."
-                          onChange={(e) => handleCustomMaterial(item.id, e.target.value)}
-                          autoFocus
-                          className="w-full"
-                        />
-                      ) : (
-                        <MaterialDropdownSelector
-                          value={item.materialName}
-                          selectedCategory={item.category}
-                          onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
-                          onCustom={() => handleCustomMaterial(item.id, '')}
-                        />
-                      )}
+                      <MaterialDropdownSelector
+                        value={item.materialName}
+                        selectedCategory={item.category}
+                        onSelect={(catalogItem) => handleMaterialSelect(item.id, catalogItem)}
+                        onCustom={() => handleCustomMaterial(item.id, '')}
+                      />
                       {item.isCustom && item.materialName && (
                         <Badge variant="outline" className="text-xs">
                           Custom
