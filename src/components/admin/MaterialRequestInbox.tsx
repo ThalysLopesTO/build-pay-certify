@@ -187,8 +187,8 @@ const MaterialRequestInbox = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
       {/* Professional Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b shadow-sm">
-        <div className="container max-w-7xl mx-auto py-4">
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-lg">
+        <div className="container max-w-7xl mx-auto py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="bg-primary/10 p-3 rounded-xl">
