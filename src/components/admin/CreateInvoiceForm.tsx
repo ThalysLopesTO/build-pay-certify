@@ -574,7 +574,7 @@ const CreateInvoiceForm = () => {
         </Card>
 
         {/* Invoice Summary */}
-        <Card className="shadow-xl border-0 bg-white dark:bg-slate-900 overflow-hidden">
+        <Card className="shadow-xl border-0 bg-slate-50 dark:bg-slate-100 overflow-hidden">
           <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border-b border-emerald-200/50">
             <CardHeader className="pb-4">
               <div className="flex items-center space-x-3">
@@ -588,7 +588,7 @@ const CreateInvoiceForm = () => {
               </div>
             </CardHeader>
           </div>
-          <CardContent className="p-6 bg-white dark:bg-slate-900">
+          <CardContent className="p-6 bg-slate-50 dark:bg-slate-100">
             <div className="space-y-4">
               <div className="flex justify-between text-base">
                 <span>Subtotal:</span>
