@@ -192,17 +192,19 @@ export const MonthlyInvoiceAnalytics: React.FC<MonthlyInvoiceAnalyticsProps> = (
   }
 
   return (
-    <Card className="shadow-md rounded-2xl">
+    <Card className="invoice-summary-card rounded-xl border-0">
       <CardHeader className="pb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-xl">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-lg bg-primary/10">
               <BarChart3 className="h-5 w-5 text-primary" />
-              Monthly Invoices
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Paid vs Issued vs Pending vs Overdue
-            </p>
+            </div>
+            <div>
+              <CardTitle className="text-xl font-semibold">Monthly Analytics</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Track invoice trends and revenue patterns
+              </p>
+            </div>
           </div>
           
           {/* Series Toggle Controls */}
@@ -231,24 +233,28 @@ export const MonthlyInvoiceAnalytics: React.FC<MonthlyInvoiceAnalyticsProps> = (
       </CardHeader>
       
       <CardContent className="pt-0">
-        {/* Inline Legend */}
-        <div className="flex flex-wrap items-center gap-4 mb-6 pb-4 border-b border-border">
-          {Object.entries(chartConfig).map(([key, config]) => (
-            <button
-              key={key}
-              onClick={() => handleLegendClick(key)}
-              className={`flex items-center gap-2 text-sm transition-opacity ${
-                visibleSeries.includes(key) ? 'opacity-100' : 'opacity-50'
-              } hover:opacity-100`}
-              aria-label={`Toggle ${config.label} series`}
-            >
-              <div 
-                className="w-3 h-3 rounded-sm"
-                style={{ backgroundColor: config.color }}
-              />
-              <span className="font-medium">{config.label}</span>
-            </button>
-          ))}
+        {/* Enhanced Legend */}
+        <div className="bg-gradient-to-r from-muted/30 to-muted/10 rounded-lg p-4 mb-6">
+          <div className="flex flex-wrap items-center gap-6">
+            {Object.entries(chartConfig).map(([key, config]) => (
+              <button
+                key={key}
+                onClick={() => handleLegendClick(key)}
+                className={`flex items-center gap-3 text-sm transition-all duration-200 p-2 rounded-md ${
+                  visibleSeries.includes(key) 
+                    ? 'opacity-100 bg-background/50 shadow-sm' 
+                    : 'opacity-60 hover:opacity-90'
+                } hover:scale-105`}
+                aria-label={`Toggle ${config.label} series`}
+              >
+                <div 
+                  className="w-4 h-4 rounded-md shadow-sm"
+                  style={{ backgroundColor: config.color }}
+                />
+                <span className="font-semibold">{config.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         <ChartContainer config={chartConfig} className="min-h-80 h-80">

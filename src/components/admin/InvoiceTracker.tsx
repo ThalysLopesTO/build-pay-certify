@@ -41,12 +41,13 @@ const InvoiceTracker = () => {
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeClass = (status: string, isOverdue: boolean = false) => {
+    if (isOverdue) return 'invoice-status-overdue';
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200';
-      case 'paid': return 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200';
-      case 'expired': return 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200';
+      case 'pending': return 'invoice-status-pending';
+      case 'paid': return 'invoice-status-paid';
+      case 'expired': return 'invoice-status-overdue';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -205,51 +206,59 @@ const InvoiceTracker = () => {
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <FileText className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Invoices</p>
-                <p className="text-2xl font-bold">{filteredInvoices.length}</p>
+      {/* Enhanced Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="invoice-summary-card rounded-xl border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Total Invoices</p>
+                <p className="text-3xl font-bold text-foreground">{filteredInvoices.length}</p>
+              </div>
+              <div className="p-3 rounded-full bg-primary/10">
+                <FileText className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Paid</p>
-                <p className="text-2xl font-bold text-green-600">${summaryStats.paid.toFixed(0)}</p>
+        <Card className="invoice-summary-card rounded-xl border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Total Paid</p>
+                <p className="text-3xl font-bold text-emerald-600">${summaryStats.paid.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
+              </div>
+              <div className="p-3 rounded-full bg-emerald-100">
+                <DollarSign className="h-6 w-6 text-emerald-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-yellow-600" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                <p className="text-2xl font-bold text-yellow-600">${summaryStats.pending.toFixed(0)}</p>
+        <Card className="invoice-summary-card rounded-xl border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Pending</p>
+                <p className="text-3xl font-bold text-amber-600">${summaryStats.pending.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
+              </div>
+              <div className="p-3 rounded-full bg-amber-100">
+                <Clock className="h-6 w-6 text-amber-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Bell className="h-5 w-5 text-red-600" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold text-red-600">${summaryStats.overdue.toFixed(0)}</p>
+        <Card className="invoice-summary-card rounded-xl border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Overdue</p>
+                <p className="text-3xl font-bold text-red-600">${summaryStats.overdue.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
+              </div>
+              <div className="p-3 rounded-full bg-red-100">
+                <Bell className="h-6 w-6 text-red-600" />
               </div>
             </div>
           </CardContent>
@@ -264,98 +273,107 @@ const InvoiceTracker = () => {
         dateTo={dateTo}
       />
 
-      {/* Filters and Actions */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <SlidersHorizontal className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Invoice Tracker</CardTitle>
+      {/* Enhanced Filters and Actions */}
+      <Card className="invoice-filter-toolbar rounded-xl border-0">
+        <CardHeader className="pb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <SlidersHorizontal className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-semibold">Invoice Management</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">Track, filter, and manage all your invoices</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button onClick={exportToCSV} variant="outline" size="sm">
+            <div className="flex items-center space-x-3">
+              <Button onClick={exportToCSV} variant="outline" size="sm" className="invoice-action-button">
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
-              <Button onClick={clearFilters} variant="outline" size="sm">
+              <Button onClick={clearFilters} variant="outline" size="sm" className="invoice-action-button">
                 Clear Filters
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Advanced Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search invoices..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Professional Filter Bar */}
+          <div className="bg-gradient-to-r from-muted/30 to-muted/10 rounded-lg p-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search invoices..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 border-border/50 bg-background/60 backdrop-blur-sm"
+                />
+              </div>
+              
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="border-border/50 bg-background/60 backdrop-blur-sm">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <Select value={jobsiteFilter} onValueChange={setJobsiteFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Jobsites" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Jobsites</SelectItem>
-                {jobsites?.map((jobsite) => (
-                  <SelectItem key={jobsite.id} value={jobsite.id}>
-                    {jobsite.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={jobsiteFilter} onValueChange={setJobsiteFilter}>
+                <SelectTrigger className="border-border/50 bg-background/60 backdrop-blur-sm">
+                  <SelectValue placeholder="All Jobsites" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Jobsites</SelectItem>
+                  {jobsites?.map((jobsite) => (
+                    <SelectItem key={jobsite.id} value={jobsite.id}>
+                      {jobsite.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <Input
-                type="date"
-                placeholder="From date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
-            </div>
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  placeholder="From date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="border-border/50 bg-background/60 backdrop-blur-sm"
+                />
+              </div>
 
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <Input
-                type="date"
-                placeholder="To date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  placeholder="To date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="border-border/50 bg-background/60 backdrop-blur-sm"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Invoice Table */}
-          <div className="border rounded-lg bg-background overflow-hidden">
+          {/* Professional Invoice Table */}
+          <div className="rounded-xl border border-border/50 bg-card overflow-hidden shadow-lg">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Invoice #</TableHead>
-                  <TableHead className="font-semibold">Client</TableHead>
-                  <TableHead className="font-semibold">Jobsite</TableHead>
-                  <TableHead className="font-semibold">Amount</TableHead>
-                  <TableHead className="font-semibold">Due Date</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="font-semibold">Sent Date</TableHead>
-                  <TableHead className="font-semibold">Actions</TableHead>
+                <TableRow className="bg-gradient-to-r from-muted/60 to-muted/40 border-border/50">
+                  <TableHead className="font-semibold text-foreground py-4">Invoice #</TableHead>
+                  <TableHead className="font-semibold text-foreground py-4">Client</TableHead>
+                  <TableHead className="font-semibold text-foreground py-4">Jobsite</TableHead>
+                  <TableHead className="font-semibold text-foreground py-4">Amount</TableHead>
+                  <TableHead className="font-semibold text-foreground py-4">Due Date</TableHead>
+                  <TableHead className="font-semibold text-foreground py-4">Status</TableHead>
+                  <TableHead className="font-semibold text-foreground py-4">Sent Date</TableHead>
+                  <TableHead className="font-semibold text-foreground py-4">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -363,53 +381,58 @@ const InvoiceTracker = () => {
                   <TableRow 
                     key={invoice.id} 
                     className={`
-                      ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
-                      ${isOverdue(invoice.due_date, invoice.status) ? 'bg-red-50 border-l-4 border-l-red-500' : ''}
-                      hover:bg-muted/40 transition-colors
+                      invoice-table-row
+                      ${isOverdue(invoice.due_date, invoice.status) ? 'bg-red-50/50 border-l-4 border-l-red-500' : ''}
                     `}
                   >
-                    <TableCell className="font-medium">
-                      <div className="flex items-center space-x-2">
-                        <span>{invoice.invoice_number}</span>
+                    <TableCell className="py-4">
+                      <div className="flex items-center space-x-3">
+                        <span className="font-semibold text-base">{invoice.invoice_number}</span>
                         {isOverdue(invoice.due_date, invoice.status) && (
-                          <Badge variant="destructive" className="text-xs">OVERDUE</Badge>
+                          <Badge className="invoice-status-overdue text-xs font-medium px-2 py-1">OVERDUE</Badge>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{invoice.client_company}</div>
+                    <TableCell className="py-4">
+                      <div className="space-y-1">
+                        <div className="font-semibold text-foreground">{invoice.client_company}</div>
                         <div className="text-sm text-muted-foreground">{invoice.title}</div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Building className="h-4 w-4 text-muted-foreground" />
-                        <span>{invoice.jobsites?.name || 'No jobsite'}</span>
+                    <TableCell className="py-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="p-1 rounded-md bg-muted/50">
+                          <Building className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                        <span className="text-sm">{invoice.jobsites?.name || 'No jobsite'}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <span className="font-mono font-semibold">${invoice.total_amount.toFixed(2)}</span>
+                    <TableCell className="py-4">
+                      <span className="font-mono font-bold text-lg text-foreground">${invoice.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{format(new Date(invoice.due_date), 'MMM dd, yyyy')}</span>
+                    <TableCell className="py-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="p-1 rounded-md bg-muted/50">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                        <span className="text-sm font-medium">{format(new Date(invoice.due_date), 'MMM dd, yyyy')}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(invoice.status)}>
-                        {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                    <TableCell className="py-4">
+                      <Badge className={`${getStatusBadgeClass(invoice.status, isOverdue(invoice.due_date, invoice.status))} px-3 py-1`}>
+                        {isOverdue(invoice.due_date, invoice.status) ? 'OVERDUE' : invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{format(new Date(invoice.sent_date), 'MMM dd, yyyy')}</span>
+                    <TableCell className="py-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="p-1 rounded-md bg-muted/50">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                        <span className="text-sm font-medium">{format(new Date(invoice.sent_date), 'MMM dd, yyyy')}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
+                    <TableCell className="py-4">
+                      <div className="flex items-center space-x-2">
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button
@@ -417,6 +440,7 @@ const InvoiceTracker = () => {
                               variant="outline"
                               onClick={() => handleViewDetails(invoice)}
                               title="View Details"
+                              className="invoice-action-button h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -444,10 +468,10 @@ const InvoiceTracker = () => {
                                     <p className="text-sm font-semibold">${selectedInvoice.total_amount.toFixed(2)}</p>
                                   </div>
                                   <div>
-                                    <label className="text-sm font-medium">Status</label>
-                                    <Badge className={getStatusColor(selectedInvoice.status)}>
-                                      {selectedInvoice.status.charAt(0).toUpperCase() + selectedInvoice.status.slice(1)}
-                                    </Badge>
+                                     <label className="text-sm font-medium">Status</label>
+                                     <Badge className={getStatusBadgeClass(selectedInvoice.status, isOverdue(selectedInvoice.due_date, selectedInvoice.status))}>
+                                       {isOverdue(selectedInvoice.due_date, selectedInvoice.status) ? 'OVERDUE' : selectedInvoice.status.charAt(0).toUpperCase() + selectedInvoice.status.slice(1)}
+                                     </Badge>
                                   </div>
                                 </div>
                                 {selectedInvoice.notes && (
@@ -467,7 +491,7 @@ const InvoiceTracker = () => {
                             handleStatusUpdate(invoice.id, value)
                           }
                         >
-                          <SelectTrigger className="w-20 h-8">
+                          <SelectTrigger className="w-24 h-8 border-border/50 bg-background/80">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -483,6 +507,7 @@ const InvoiceTracker = () => {
                             variant="outline"
                             onClick={() => handleReceiptUpload(invoice.id)}
                             title="Upload Receipt"
+                            className="invoice-action-button h-8 w-8 p-0"
                           >
                             <Upload className="h-4 w-4" />
                           </Button>
@@ -490,9 +515,10 @@ const InvoiceTracker = () => {
                         
                         <Button 
                           size="sm" 
-                          variant="outline" 
+                          variant="default" 
                           onClick={() => handleSendEmail(invoice)}
                           title="Send Email"
+                          className="h-8 w-8 p-0 bg-primary hover:bg-primary/90"
                         >
                           <Mail className="h-4 w-4" />
                         </Button>
@@ -502,6 +528,7 @@ const InvoiceTracker = () => {
                           variant="outline"
                           onClick={() => handleDownloadPDF(invoice)}
                           title="Download PDF"
+                          className="invoice-action-button h-8 w-8 p-0"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
@@ -512,8 +539,9 @@ const InvoiceTracker = () => {
                             variant="outline"
                             onClick={() => handleDeleteInvoice(invoice)}
                             title="Delete Invoice"
+                            className="h-8 w-8 p-0 border-destructive/50 hover:bg-destructive hover:text-destructive-foreground"
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
@@ -525,13 +553,15 @@ const InvoiceTracker = () => {
           </div>
 
           {filteredInvoices.length === 0 && (
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No invoices found</h3>
-              <p className="text-muted-foreground">
+            <div className="text-center py-16">
+              <div className="p-4 rounded-full bg-muted/20 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                <FileText className="h-10 w-10 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">No invoices found</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
                 {searchTerm || statusFilter !== 'all' || jobsiteFilter !== 'all' || dateFrom || dateTo
                   ? 'Try adjusting your filters to see more results.'
-                  : 'Create your first invoice to get started.'
+                  : 'Create your first invoice to get started with tracking your billing.'
                 }
               </p>
             </div>
