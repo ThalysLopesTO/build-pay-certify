@@ -99,8 +99,13 @@ const MaterialRequestFormEnhanced = () => {
   };
 
   const onSubmit = (data: FormData) => {
+    console.log('=== SUBMISSION DEBUG ===');
+    console.log('Raw lineItems:', lineItems);
+    
     // Validate line items
     const validLineItems = lineItems.filter(item => item.materialName.trim());
+    console.log('Valid lineItems after filtering:', validLineItems);
+    
     if (validLineItems.length === 0) {
       toast.error('Please add at least one material item');
       return;
@@ -110,8 +115,20 @@ const MaterialRequestFormEnhanced = () => {
     const customItemsWithoutNotes = validLineItems.filter(item => 
       item.isCustom && (!item.notes || !item.notes.trim())
     );
+    console.log('Custom items without notes:', customItemsWithoutNotes);
+    
     if (customItemsWithoutNotes.length > 0) {
-      toast.error('Custom materials require detailed specifications in the notes field');
+      const itemNames = customItemsWithoutNotes.map(item => item.materialName).join(', ');
+      toast.error(`Custom materials require detailed specifications: ${itemNames}`);
+      return;
+    }
+
+    // Show confirmation before submission
+    const materialList = validLineItems.map(item => 
+      `${item.quantity} ${item.unit} - ${item.materialName}${item.notes ? ` (Notes: ${item.notes})` : ''}`
+    ).join('\n');
+    
+    if (!window.confirm(`Submit request with these materials?\n\n${materialList}`)) {
       return;
     }
 
@@ -144,6 +161,9 @@ const MaterialRequestFormEnhanced = () => {
       lineItems: transformedLineItems,
       hasLineItems: true,
     };
+
+    console.log('Final request data being submitted:', requestData);
+    console.log('TransformedLineItems:', transformedLineItems);
     
     submitMutation.mutate(requestData);
     form.reset();

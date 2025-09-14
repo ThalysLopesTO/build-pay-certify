@@ -218,6 +218,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
   };
 
   const handleMaterialSelect = (id: string, catalogItem: any) => {
+    console.log('Material selected:', catalogItem, 'for line:', id);
     // Batch all updates in a single state change
     onChange(lineItems.map(item => 
       item.id === id ? { 
@@ -232,9 +233,18 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
   };
 
   const handleCustomMaterial = (id: string, materialName: string) => {
-    updateLine(id, 'materialName', materialName);
-    updateLine(id, 'catalogItemId', undefined);
-    updateLine(id, 'isCustom', true);
+    console.log('Custom material entered:', materialName, 'for line:', id);
+    console.log('Current lineItems before update:', lineItems);
+    
+    // Update in a single state change to prevent race conditions
+    onChange(lineItems.map(item => 
+      item.id === id ? { 
+        ...item,
+        materialName,
+        catalogItemId: undefined,
+        isCustom: true
+      } : item
+    ));
   };
 
   const handleCellEdit = (rowId: string, field: string) => {
