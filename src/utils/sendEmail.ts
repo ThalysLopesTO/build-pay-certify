@@ -93,28 +93,57 @@ export const sendEmail = async ({
         authUser: await supabase.auth.getUser().then(r => r.data.user?.id || 'none').catch(() => 'error-getting-user')
       });
 
-      // AGGRESSIVE: Try to catch any pre-invocation errors
-      console.log('🚀 AGGRESSIVE DEBUG - About to invoke function...');
+      // METHOD 1: Try simplified Supabase client invocation
+      console.log('🚀 METHOD 1 - Simplified Supabase function invoke...');
       
       let invokeResult;
+      let invokeError = null;
+      
       try {
+        // Simplest possible invocation - no extra headers
         invokeResult = await supabase.functions.invoke('send-email', {
-          body: payload,
-          headers: {
-            'Content-Type': 'application/json'
+          body: payload
+        });
+        console.log('✅ METHOD 1 SUCCESS - Function invoke returned:', invokeResult);
+      } catch (error) {
+        invokeError = error;
+        console.error('❌ METHOD 1 FAILED - Function invoke error:', {
+          error,
+          errorMessage: error?.message,
+          errorStack: error?.stack,
+          errorName: error?.name
+        });
+      }
+
+      // METHOD 2: Fallback to direct HTTP if Supabase client fails
+      if (invokeError) {
+        console.log('🔄 METHOD 2 - Trying direct HTTP fallback...');
+        const functionUrl = 'https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/send-email';
+        
+        try {
+          const response = await fetch(functionUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzcWp3cGFqdmNtYWhvYW13d3d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5MDM4NDcsImV4cCI6MjA2NDQ3OTg0N30.bmtRnTF2Jf36ukaLkBnhxs2X6u5fZxqyOyqkeZYmlNA`,
+            },
+            body: JSON.stringify(payload)
+          });
+
+          console.log('📡 Direct HTTP response status:', response.status, response.statusText);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
-        });
-        console.log('✅ AGGRESSIVE DEBUG - Function invoke returned:', invokeResult);
-      } catch (invokeError) {
-        console.error('❌ AGGRESSIVE DEBUG - Function invoke threw error:', {
-          error: invokeError,
-          errorMessage: invokeError?.message,
-          errorStack: invokeError?.stack,
-          errorName: invokeError?.name,
-          errorCause: invokeError?.cause,
-          errorToString: invokeError?.toString()
-        });
-        throw invokeError;
+
+          const responseData = await response.json();
+          console.log('✅ METHOD 2 SUCCESS - Direct HTTP returned:', responseData);
+          
+          invokeResult = { data: responseData, error: null };
+        } catch (httpError) {
+          console.error('❌ METHOD 2 FAILED - Direct HTTP error:', httpError);
+          throw new Error(`Both Supabase client and direct HTTP failed. Supabase error: ${invokeError.message}, HTTP error: ${httpError.message}`);
+        }
       }
 
       const { data, error } = invokeResult;

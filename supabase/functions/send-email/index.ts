@@ -21,14 +21,16 @@ interface SendEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log('🚀 send-email function called:', {
+  console.log('🚀 send-email function called [REDEPLOYED v2]:', {
     method: req.method,
     url: req.url,
     timestamp: new Date().toISOString(),
     headers: {
       'content-type': req.headers.get('content-type'),
       'authorization': req.headers.get('authorization') ? 'present' : 'missing',
-      'user-agent': req.headers.get('user-agent')
+      'user-agent': req.headers.get('user-agent'),
+      'origin': req.headers.get('origin'),
+      'referer': req.headers.get('referer')
     }
   });
 
