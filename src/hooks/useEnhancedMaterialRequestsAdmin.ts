@@ -231,6 +231,7 @@ export const useEnhancedMaterialRequestsAdmin = () => {
     setSelectedRequest,
     handleStatusUpdate,
     handleDeleteRequest,
+    isDeleting: deleteMutation.isPending,
     clearFilters
   };
 };

@@ -44,6 +44,7 @@ const MaterialRequestInbox = () => {
     setSelectedRequest,
     handleStatusUpdate,
     handleDeleteRequest,
+    isDeleting,
     clearFilters
   } = useEnhancedMaterialRequestsAdmin();
 
@@ -276,6 +277,7 @@ const MaterialRequestInbox = () => {
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
         request={requestToDelete}
+        isDeleting={isDeleting}
       />
     </div>
   );

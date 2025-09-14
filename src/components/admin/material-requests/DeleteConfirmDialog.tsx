@@ -7,26 +7,29 @@ interface DeleteConfirmDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   request: MaterialRequest | null;
+  isDeleting?: boolean;
 }
 
 export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   open,
   onOpenChange,
   onConfirm,
-  request
+  request,
+  isDeleting = false
 }) => {
   if (!request) return null;
 
   return (
     <ConfirmDialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={isDeleting ? () => {} : onOpenChange}
       title="Delete Material Request"
       description={`Are you sure you want to permanently delete the material request for "${request.jobsites?.name || 'Unknown Jobsite'}"? This action cannot be undone.`}
-      confirmText="Delete Request"
+      confirmText={isDeleting ? "Deleting..." : "Delete Request"}
       cancelText="Cancel"
       onConfirm={onConfirm}
       variant="destructive"
+      isLoading={isDeleting}
     />
   );
 };
