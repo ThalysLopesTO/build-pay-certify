@@ -21,16 +21,36 @@ interface SendEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log('🚀 send-email function called:', {
+    method: req.method,
+    url: req.url,
+    timestamp: new Date().toISOString(),
+    headers: {
+      'content-type': req.headers.get('content-type'),
+      'authorization': req.headers.get('authorization') ? 'present' : 'missing',
+      'user-agent': req.headers.get('user-agent')
+    }
+  });
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log('✅ Handling CORS preflight request');
     return new Response(null, { 
       status: 200,
       headers: corsHeaders 
     });
   }
 
+  if (req.method !== "POST") {
+    console.log('❌ Invalid method:', req.method);
+    return new Response(
+      JSON.stringify({ success: false, error: 'Method not allowed' }),
+      { status: 405, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
   try {
-    console.log('📧 send-email function invoked at:', new Date().toISOString());
+    console.log('📧 Processing POST request for send-email function');
     
     // Check if RESEND_API_KEY is available and validate format
     const apiKey = Deno.env.get("RESEND_API_KEY");

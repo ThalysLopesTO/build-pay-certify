@@ -75,9 +75,20 @@ export const sendEmail = async ({
         subject: payload.subject,
         hasAttachments: payload.attachments?.length > 0,
         companyName: payload.companyName,
-        apiKeyConfigured: true
+        apiKeyConfigured: true,
+        functionsUrl: 'https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/send-email',
+        timestamp: new Date().toISOString()
       });
 
+      console.log('🔗 Invoking function with payload:', {
+        payloadSize: JSON.stringify(payload).length,
+        hasAttachments: !!payload.attachments?.length,
+        attachmentCount: payload.attachments?.length || 0
+      });
+
+      // Create authenticated supabase client or use current client
+      console.log('🔑 Client authentication status check...');
+      
       const { data, error } = await supabase.functions.invoke('send-email', {
         body: payload
       });

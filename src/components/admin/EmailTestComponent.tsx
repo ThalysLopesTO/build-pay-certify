@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { sendEmail } from '@/utils/sendEmail';
-import { Mail, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Mail, Send, CheckCircle, AlertCircle, TestTube } from 'lucide-react';
 
 const EmailTestComponent: React.FC = () => {
   const { toast } = useToast();
@@ -13,6 +14,7 @@ const EmailTestComponent: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [lastTestResult, setLastTestResult] = useState<'success' | 'error' | null>(null);
 
+  // Test via sendEmail utility (full flow)
   const handleTestEmail = async () => {
     if (!testEmail || !testEmail.includes('@')) {
       toast({
@@ -27,6 +29,8 @@ const EmailTestComponent: React.FC = () => {
     setLastTestResult(null);
 
     try {
+      console.log('🧪 Testing via sendEmail utility...');
+      
       const result = await sendEmail({
         to: testEmail,
         subject: 'StackBuild Email System Test',
@@ -60,6 +64,64 @@ const EmailTestComponent: React.FC = () => {
     }
   };
 
+  // Test directly via Supabase function (minimal test)
+  const handleDirectTest = async () => {
+    if (!testEmail || !testEmail.includes('@')) {
+      toast({
+        title: 'Invalid Email',
+        description: 'Please enter a valid email address',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setLastTestResult(null);
+
+    try {
+      console.log('🔧 Testing edge function directly...');
+      
+      const testPayload = {
+        to: testEmail,
+        subject: 'Direct Function Test - StackBuild',
+        html: '<h1>Direct Function Test</h1><p>This email was sent directly via the edge function to test basic functionality.</p><p><strong>Timestamp:</strong> ' + new Date().toISOString() + '</p>'
+      };
+
+      console.log('📤 Calling function directly:', testPayload);
+
+      const { data, error } = await supabase.functions.invoke('send-email', {
+        body: testPayload
+      });
+
+      console.log('📥 Direct function response:', { data, error });
+
+      if (error) {
+        throw new Error(`Function error: ${error.message}`);
+      }
+
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Function returned failure');
+      }
+
+      setLastTestResult('success');
+      toast({
+        title: 'Direct Test Successful!',
+        description: `Direct function call worked. Check ${testEmail}`,
+      });
+
+    } catch (error) {
+      setLastTestResult('error');
+      console.error('Direct test failed:', error);
+      toast({
+        title: 'Direct Test Failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
@@ -83,23 +145,45 @@ const EmailTestComponent: React.FC = () => {
           />
         </div>
 
-        <Button 
-          onClick={handleTestEmail}
-          disabled={isLoading || !testEmail}
-          className="w-full"
-        >
-          {isLoading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Sending Test Email...
-            </>
-          ) : (
-            <>
-              <Send className="h-4 w-4 mr-2" />
-              Send Test Email
-            </>
-          )}
-        </Button>
+        <div className="grid grid-cols-1 gap-2">
+          <Button 
+            onClick={handleTestEmail}
+            disabled={isLoading || !testEmail}
+            className="w-full"
+            variant="default"
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Testing via sendEmail...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4 mr-2" />
+                Test via sendEmail Utility
+              </>
+            )}
+          </Button>
+          
+          <Button 
+            onClick={handleDirectTest}
+            disabled={isLoading || !testEmail}
+            className="w-full"
+            variant="outline"
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                Testing direct function...
+              </>
+            ) : (
+              <>
+                <TestTube className="h-4 w-4 mr-2" />
+                Test Direct Function Call
+              </>
+            )}
+          </Button>
+        </div>
 
         {lastTestResult && (
           <div className={`flex items-center gap-2 text-sm p-2 rounded ${
@@ -119,8 +203,11 @@ const EmailTestComponent: React.FC = () => {
           </div>
         )}
 
-        <div className="text-xs text-muted-foreground">
-          <p><strong>Note:</strong> This test uses the Resend sandbox domain (onboarding@resend.dev) for reliable delivery.</p>
+        <div className="text-xs text-muted-foreground space-y-1">
+          <p><strong>sendEmail Utility:</strong> Tests the full email flow with branding</p>
+          <p><strong>Direct Function:</strong> Tests the edge function directly (minimal)</p>
+          <p><strong>Sender:</strong> no-reply@stackbuild.ca (verified domain)</p>
+          <p><strong>Debug:</strong> Check browser console for detailed logs</p>
         </div>
       </CardContent>
     </Card>
