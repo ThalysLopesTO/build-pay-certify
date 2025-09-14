@@ -270,8 +270,8 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
                       step="0.1"
                       value={item.quantity}
                       onChange={(e) => updateLine(item.id, 'quantity', parseFloat(e.target.value) || 1)}
-                      className="w-full"
-                      placeholder="Received quantity"
+                      className="w-16 text-center"
+                      placeholder="Qty"
                     />
                   </TableCell>
                   <TableCell>
