@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useNotifications } from '@/hooks/notifications/useNotifications';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import NotificationDropdown from './NotificationDropdown';
+import EnhancedNotificationDropdown from './EnhancedNotificationDropdown';
 
 const NotificationBell = () => {
   const { user } = useAuth();
@@ -46,7 +46,7 @@ const NotificationBell = () => {
         side="bottom"
         sideOffset={8}
       >
-        <NotificationDropdown 
+        <EnhancedNotificationDropdown 
           notifications={notifications}
           onClose={() => setIsOpen(false)}
         />

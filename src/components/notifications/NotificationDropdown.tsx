@@ -97,24 +97,24 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       return notification.redirect_to;
     }
 
-    // Fallback routing logic for existing notifications without redirect_to
+    // Fallback routing logic using URL parameters for dashboard tabs
     switch (notification.type) {
       case 'certificate':
-        return '/admin/employee-management';
+        return '/admin/dashboard?tab=employees';
       case 'jobsite':
-        return '/admin/jobsite-management';
+        return '/admin/dashboard?tab=jobsites';
       case 'material_request':
-        return '/admin/material-requests';
+        return '/admin/dashboard?tab=material-requests';
       case 'attention_report':
-        return '/admin/attention-reports';
+        return '/admin/dashboard?tab=attention-reports';
       case 'daily_report':
-        return '/admin/daily-reports';
+        return '/admin/dashboard?tab=daily-reports';
       case 'bill_due_soon':
       case 'bill_overdue':
-        return '/admin/bills-expenses';
+        return '/admin/dashboard?tab=bills-expenses';
       case 'invoice_due_soon':
       case 'invoice_overdue':
-        return '/admin/invoice-management';
+        return '/admin/dashboard?tab=invoices';
       default:
         return '/admin/dashboard';
     }

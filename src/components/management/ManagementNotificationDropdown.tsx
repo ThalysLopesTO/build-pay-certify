@@ -77,16 +77,22 @@ const ManagementNotificationDropdown: React.FC<ManagementNotificationDropdownPro
 
   // Get management-specific redirect URL
   const getManagementRedirectUrl = (notification: Notification): string => {
+    // Use the redirect_to field if available, otherwise fall back to default routing
+    if (notification.redirect_to) {
+      return notification.redirect_to;
+    }
+
+    // Fallback routing using URL parameters for dashboard tabs
     switch (notification.type) {
       case 'bill_due_soon':
       case 'bill_overdue':
-        return '/management/bills-expenses';
+        return '/management/dashboard?tab=bills-expenses';
       case 'certificate':
-        return '/management/employees';
+        return '/management/dashboard?tab=employees';
       case 'attention_report':
-        return '/management/reports';
+        return '/management/dashboard?tab=reports';
       default:
-        return notification.redirect_to || '/management/dashboard';
+        return '/management/dashboard';
     }
   };
 

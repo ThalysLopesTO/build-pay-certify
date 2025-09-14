@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import ManagementSidebar from '../components/management/ManagementSidebar';
 import EmployeeTimesheets from '../components/admin/EmployeeTimesheets';
@@ -22,6 +23,15 @@ import MyTimesheetHistory from '../components/common/MyTimesheetHistory';
 
 const ManagementDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchParams] = useSearchParams();
+
+  // Update activeTab based on URL parameters
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   const renderContent = () => {
     switch (activeTab) {

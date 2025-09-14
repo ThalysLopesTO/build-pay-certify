@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import Header from '../components/Header';
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -31,6 +31,15 @@ import TimeRequestsManagement from '@/components/admin/TimeRequestsManagement';
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const params = useParams();
+  const [searchParams] = useSearchParams();
+
+  // Update activeTab based on URL parameters
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   const renderContent = () => {
     // Handle dynamic routes first
