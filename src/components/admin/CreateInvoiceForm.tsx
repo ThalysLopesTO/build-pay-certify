@@ -111,29 +111,40 @@ const CreateInvoiceForm = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-7xl mx-auto p-6">
       {/* Client Details Section */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center space-x-2">
-            <User className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Client Details</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
+      <Card className="shadow-xl border-0 bg-gradient-to-r from-background to-muted/20 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-500/10 to-blue-600/10 border-b border-blue-200/30">
+          <CardHeader className="pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-500 rounded-lg">
+                <User className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-semibold text-foreground">Client Details</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">Enter your client's information for billing purposes</p>
+              </div>
+            </div>
+          </CardHeader>
+        </div>
+        <CardContent className="p-8">
           <Form {...form}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <FormField
                 control={form.control}
                 name="client_company"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Building className="h-4 w-4" />
+                    <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                      <Building className="h-4 w-4 text-blue-500" />
                       <span>Client Company</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter client company name" {...field} />
+                      <Input 
+                        placeholder="Enter client company name" 
+                        className="h-12 border-2 border-border/50 focus:border-blue-500 rounded-xl transition-all duration-200 bg-background/50" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -145,12 +156,17 @@ const CreateInvoiceForm = () => {
                 name="client_email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4" />
+                    <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                      <Mail className="h-4 w-4 text-blue-500" />
                       <span>Client Email</span>
                     </FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="client@company.com" {...field} />
+                      <Input 
+                        type="email" 
+                        placeholder="client@company.com" 
+                        className="h-12 border-2 border-border/50 focus:border-blue-500 rounded-xl transition-all duration-200 bg-background/50" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -162,12 +178,16 @@ const CreateInvoiceForm = () => {
                 name="client_phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4" />
+                    <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                      <Phone className="h-4 w-4 text-blue-500" />
                       <span>Client Phone</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="(555) 123-4567" {...field} />
+                      <Input 
+                        placeholder="(555) 123-4567" 
+                        className="h-12 border-2 border-border/50 focus:border-blue-500 rounded-xl transition-all duration-200 bg-background/50" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -179,12 +199,16 @@ const CreateInvoiceForm = () => {
                 name="client_address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <MapPin className="h-4 w-4" />
+                    <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                      <MapPin className="h-4 w-4 text-blue-500" />
                       <span>Client Address</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="123 Main Street, City, Province, Postal Code" {...field} />
+                      <Input 
+                        placeholder="123 Main Street, City, Province, Postal Code" 
+                        className="h-12 border-2 border-border/50 focus:border-blue-500 rounded-xl transition-all duration-200 bg-background/50" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -196,24 +220,35 @@ const CreateInvoiceForm = () => {
       </Card>
 
       {/* Invoice Metadata Section */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center space-x-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Invoice Metadata</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
+      <Card className="shadow-xl border-0 bg-gradient-to-r from-background to-muted/20 overflow-hidden">
+        <div className="bg-gradient-to-r from-green-500/10 to-green-600/10 border-b border-green-200/30">
+          <CardHeader className="pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-500 rounded-lg">
+                <FileText className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-semibold text-foreground">Invoice Metadata</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">Configure invoice details and project information</p>
+              </div>
+            </div>
+          </CardHeader>
+        </div>
+        <CardContent className="p-8">
           <Form {...form}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Invoice Title</FormLabel>
+                    <FormLabel className="text-sm font-medium text-foreground">Invoice Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter invoice title or project name" {...field} />
+                      <Input 
+                        placeholder="Enter invoice title or project name" 
+                        className="h-12 border-2 border-border/50 focus:border-green-500 rounded-xl transition-all duration-200 bg-background/50" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -225,13 +260,13 @@ const CreateInvoiceForm = () => {
                 name="jobsite_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <MapPin className="h-4 w-4" />
+                    <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                      <MapPin className="h-4 w-4 text-green-500" />
                       <span>Jobsite</span>
                     </FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-12 border-2 border-border/50 focus:border-green-500 rounded-xl transition-all duration-200 bg-background/50">
                           <SelectValue placeholder="Select a jobsite" />
                         </SelectTrigger>
                       </FormControl>
@@ -253,12 +288,16 @@ const CreateInvoiceForm = () => {
                 name="po_number"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Hash className="h-4 w-4" />
+                    <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                      <Hash className="h-4 w-4 text-green-500" />
                       <span>PO Number (Optional)</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Purchase order number" {...field} />
+                      <Input 
+                        placeholder="Purchase order number" 
+                        className="h-12 border-2 border-border/50 focus:border-green-500 rounded-xl transition-all duration-200 bg-background/50" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -270,17 +309,22 @@ const CreateInvoiceForm = () => {
                 name="due_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4" />
+                    <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                      <Calendar className="h-4 w-4 text-green-500" />
                       <span>Due Date</span>
                     </FormLabel>
                     <FormControl>
-                      <div className="flex space-x-2">
-                        <Input type="date" {...field} />
+                      <div className="flex space-x-3">
+                        <Input 
+                          type="date" 
+                          className="h-12 border-2 border-border/50 focus:border-green-500 rounded-xl transition-all duration-200 bg-background/50" 
+                          {...field} 
+                        />
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
+                          size="lg"
+                          className="h-12 px-4 border-2 border-border/50 hover:border-green-500 rounded-xl transition-all duration-200"
                           onClick={() => form.setValue('due_date', generateDueDate())}
                         >
                           +30 Days
@@ -297,47 +341,59 @@ const CreateInvoiceForm = () => {
       </Card>
 
       {/* Line Items Section */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Line Items</CardTitle>
+      <Card className="shadow-xl border-0 bg-gradient-to-r from-background to-muted/20 overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-500/10 to-purple-600/10 border-b border-purple-200/30">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-500 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold text-foreground">Line Items</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">Add products or services to invoice</p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="h-12 px-6 bg-white hover:bg-purple-50 border-2 border-purple-200 hover:border-purple-400 rounded-xl transition-all duration-200 shadow-md"
+                onClick={() => append({ name: '', description: '', quantity: 1, unit_price: 0 })}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Item
+              </Button>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => append({ name: '', description: '', quantity: 1, unit_price: 0 })}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Item
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
+          </CardHeader>
+        </div>
+        <CardContent className="p-8">
           <Form {...form}>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Table Header */}
-              <div className="hidden md:grid md:grid-cols-12 gap-4 pb-2 border-b text-sm font-medium text-muted-foreground">
+              <div className="hidden md:grid md:grid-cols-12 gap-6 pb-4 border-b-2 border-border/30 text-sm font-semibold text-foreground">
                 <div className="col-span-2">Item Name</div>
                 <div className="col-span-4">Description</div>
-                <div className="col-span-2">Qty</div>
+                <div className="col-span-2">Quantity</div>
                 <div className="col-span-2">Unit Price</div>
                 <div className="col-span-2">Total</div>
               </div>
 
               {fields.map((field, index) => (
-                <Card key={field.id} className="p-4 bg-muted/30">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                <Card key={field.id} className="p-6 bg-gradient-to-r from-background to-muted/10 border-2 border-border/20 shadow-lg rounded-xl hover:shadow-xl transition-all duration-200">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
                     <FormField
                       control={form.control}
                       name={`line_items.${index}.name`}
                       render={({ field }) => (
                         <FormItem className="md:col-span-2">
-                          <FormLabel className="md:hidden">Item Name</FormLabel>
+                          <FormLabel className="md:hidden text-sm font-medium">Item Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="Item name" {...field} />
+                            <Input 
+                              placeholder="Item name" 
+                              className="h-11 border-2 border-border/50 focus:border-purple-500 rounded-lg transition-all duration-200" 
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -349,9 +405,13 @@ const CreateInvoiceForm = () => {
                       name={`line_items.${index}.description`}
                       render={({ field }) => (
                         <FormItem className="md:col-span-4">
-                          <FormLabel className="md:hidden">Description</FormLabel>
+                          <FormLabel className="md:hidden text-sm font-medium">Description</FormLabel>
                           <FormControl>
-                            <Input placeholder="Detailed description" {...field} />
+                            <Input 
+                              placeholder="Detailed description" 
+                              className="h-11 border-2 border-border/50 focus:border-purple-500 rounded-lg transition-all duration-200" 
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -363,12 +423,13 @@ const CreateInvoiceForm = () => {
                       name={`line_items.${index}.quantity`}
                       render={({ field }) => (
                         <FormItem className="md:col-span-2">
-                          <FormLabel className="md:hidden">Quantity</FormLabel>
+                          <FormLabel className="md:hidden text-sm font-medium">Quantity</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               step="1"
                               placeholder="1"
+                              className="h-11 border-2 border-border/50 focus:border-purple-500 rounded-lg transition-all duration-200"
                               {...field}
                               onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                             />
@@ -383,12 +444,13 @@ const CreateInvoiceForm = () => {
                       name={`line_items.${index}.unit_price`}
                       render={({ field }) => (
                         <FormItem className="md:col-span-2">
-                          <FormLabel className="md:hidden">Unit Price ($)</FormLabel>
+                          <FormLabel className="md:hidden text-sm font-medium">Unit Price ($)</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               step="0.01"
                               placeholder="0.00"
+                              className="h-11 border-2 border-border/50 focus:border-purple-500 rounded-lg transition-all duration-200"
                               {...field}
                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             />
@@ -401,7 +463,7 @@ const CreateInvoiceForm = () => {
                     <div className="md:col-span-2 flex items-center justify-between">
                       <div className="text-sm">
                         <span className="font-medium md:hidden">Total: </span>
-                        <span className="font-semibold text-lg">
+                        <span className="font-bold text-xl text-purple-600 bg-purple-50 px-3 py-1 rounded-lg">
                           ${((form.watch(`line_items.${index}.quantity`) || 0) * (form.watch(`line_items.${index}.unit_price`) || 0)).toFixed(2)}
                         </span>
                       </div>
@@ -411,9 +473,9 @@ const CreateInvoiceForm = () => {
                         size="sm"
                         onClick={() => remove(index)}
                         disabled={fields.length === 1}
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive hover:bg-red-50 rounded-lg transition-all duration-200"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-5 w-5" />
                       </Button>
                     </div>
                   </div>
@@ -425,25 +487,36 @@ const CreateInvoiceForm = () => {
       </Card>
 
       {/* Notes and Summary Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Notes */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Additional Information</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card className="shadow-xl border-0 bg-gradient-to-br from-background to-muted/20 overflow-hidden">
+          <div className="bg-gradient-to-r from-amber-500/10 to-amber-600/10 border-b border-amber-200/30">
+            <CardHeader className="pb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-amber-500 rounded-lg">
+                  <FileText className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold text-foreground">Additional Information</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">Notes and adjustments</p>
+                </div>
+              </div>
+            </CardHeader>
+          </div>
+          <CardContent className="p-6">
             <Form {...form}>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <FormField
                   control={form.control}
                   name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Notes</FormLabel>
+                      <FormLabel className="text-sm font-medium text-foreground">Notes</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Payment terms, project details, or other relevant information..."
                           rows={4}
+                          className="border-2 border-border/50 focus:border-amber-500 rounded-xl transition-all duration-200 bg-background/50 resize-none"
                           {...field}
                         />
                       </FormControl>
@@ -452,18 +525,19 @@ const CreateInvoiceForm = () => {
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="discount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Discount (%)</FormLabel>
+                        <FormLabel className="text-sm font-medium text-foreground">Discount (%)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
                             step="0.01"
                             placeholder="0"
+                            className="h-11 border-2 border-border/50 focus:border-amber-500 rounded-xl transition-all duration-200 bg-background/50"
                             {...field}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           />
@@ -478,12 +552,13 @@ const CreateInvoiceForm = () => {
                     name="tax"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tax (%)</FormLabel>
+                        <FormLabel className="text-sm font-medium text-foreground">Tax (%)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
                             step="0.01"
                             placeholder="13"
+                            className="h-11 border-2 border-border/50 focus:border-amber-500 rounded-xl transition-all duration-200 bg-background/50"
                             {...field}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           />
@@ -499,12 +574,22 @@ const CreateInvoiceForm = () => {
         </Card>
 
         {/* Invoice Summary */}
-        <Card className="shadow-sm bg-muted/30">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Invoice Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+        <Card className="shadow-xl border-0 bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-900 dark:to-slate-800/50 overflow-hidden">
+          <div className="bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 border-b border-emerald-200/30">
+            <CardHeader className="pb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-emerald-500 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold text-foreground">Invoice Summary</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">Review totals and calculations</p>
+                </div>
+              </div>
+            </CardHeader>
+          </div>
+          <CardContent className="p-6 bg-gradient-to-br from-background/80 to-muted/20">
+            <div className="space-y-4">
               <div className="flex justify-between text-base">
                 <span>Subtotal:</span>
                 <span className="font-mono">${calculateSubtotal().toFixed(2)}</span>
@@ -529,49 +614,53 @@ const CreateInvoiceForm = () => {
       </div>
 
       {/* Action Buttons */}
-      <Card className="shadow-sm">
-        <CardContent className="pt-6">
+      <Card className="shadow-xl border-0 bg-gradient-to-r from-background to-muted/10 overflow-hidden">
+        <CardContent className="p-8">
           <Form {...form}>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleSaveAsDraft}
-                disabled={isCreating}
-                className="flex-1"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save as Draft
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-6">
+              {/* Secondary Actions */}
+              <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSaveAsDraft}
+                  disabled={isCreating}
+                  className="flex-1 h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
+                >
+                  <Save className="h-5 w-5 mr-3" />
+                  Save as Draft
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled
+                  className="flex-1 h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
+                >
+                  <Download className="h-5 w-5 mr-3" />
+                  Download PDF
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled
+                  className="flex-1 h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
+                >
+                  <Paperclip className="h-5 w-5 mr-3" />
+                  Attach Files
+                </Button>
+              </div>
               
+              {/* Primary Action */}
               <Button
                 type="button"
                 onClick={handleSendInvoice}
                 disabled={isCreating}
-                className="flex-1"
+                className="sm:flex-1 sm:max-w-xs h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               >
-                <Send className="h-4 w-4 mr-2" />
+                <Send className="h-5 w-5 mr-3" />
                 {isCreating ? 'Creating Invoice...' : 'Send Invoice'}
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                disabled
-                className="flex-1"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                disabled
-                className="flex-1"
-              >
-                <Paperclip className="h-4 w-4 mr-2" />
-                Attach Files
               </Button>
             </div>
           </Form>
