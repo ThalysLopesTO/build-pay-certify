@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { MaterialDropdownSelector } from './MaterialDropdownSelector';
-import { MaterialOrderSummary } from './MaterialOrderSummary';
+
 import { Plus, Trash2, Copy } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MATERIAL_UNITS } from '@/hooks/useMaterialCatalog';
@@ -377,7 +377,7 @@ export const MaterialOrderTable: React.FC<MaterialOrderTableProps> = ({
         </div>
       )}
 
-      {lineItems.length > 0 && <MaterialOrderSummary lineItems={lineItems} />}
+      
     </div>
   );
 };
