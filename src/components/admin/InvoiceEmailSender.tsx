@@ -70,6 +70,12 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
       return;
     }
 
+    console.log('🚀 Starting invoice email send process:', {
+      invoiceNumber: invoice.invoice_number,
+      recipient: invoice.client_email,
+      timestamp: new Date().toISOString()
+    });
+
     setIsLoading(true);
     try {
       const emailContent = generateEmailContent();

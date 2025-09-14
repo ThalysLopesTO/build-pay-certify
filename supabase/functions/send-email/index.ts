@@ -30,16 +30,16 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log('📧 send-email function invoked');
+    console.log('📧 send-email function invoked at:', new Date().toISOString());
     
-    // Check if RESEND_API_KEY is available
+    // Check if RESEND_API_KEY is available and validate format
     const apiKey = Deno.env.get("RESEND_API_KEY");
     if (!apiKey) {
-      console.error('❌ RESEND_API_KEY is not set');
+      console.error('❌ RESEND_API_KEY is not set in environment variables');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: "RESEND_API_KEY is not configured" 
+          error: "RESEND_API_KEY is not configured in Supabase secrets" 
         }),
         {
           status: 500,
@@ -47,6 +47,23 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+
+    // Validate API key format (Resend keys start with "re_")
+    if (!apiKey.startsWith('re_')) {
+      console.error('❌ RESEND_API_KEY format appears invalid (should start with "re_")');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "RESEND_API_KEY format is invalid" 
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log('✅ RESEND_API_KEY is available and format looks correct');
 
     const { to, subject, html, attachments }: SendEmailRequest = await req.json();
 
@@ -57,6 +74,22 @@ const handler = async (req: Request): Promise<Response> => {
         JSON.stringify({ 
           success: false, 
           error: "Missing required fields: to, subject, or html" 
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(to)) {
+      console.error('❌ Invalid email format:', to);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Invalid email address format" 
         }),
         {
           status: 400,
@@ -82,7 +115,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailData: any = {
-      from: "Contact@stackbuild.ca",
+      from: "StackBuild <onboarding@resend.dev>",
       to: [to],
       subject: subject,
       html: html,

@@ -64,50 +64,90 @@ export const sendEmail = async ({
     }));
   }
 
-  try {
-    // ✅ Send email via Supabase Edge Function using proper client invocation
-    console.log('📧 Sending email via Supabase Edge Function:', {
-      to: payload.to,
-      subject: payload.subject,
-      hasAttachments: payload.attachments?.length > 0,
-      companyName: payload.companyName
-    });
+  // Enhanced retry logic for better reliability
+  const maxRetries = 3;
+  let lastError: Error | null = null;
 
-    const { data, error } = await supabase.functions.invoke('send-email', {
-      body: payload
-    });
-
-    if (error) {
-      console.error('❌ Supabase function invocation error:', error);
-      throw new Error(`Email sending failed: ${error.message}`);
-    }
-
-    if (!data.success) {
-      console.error('❌ Email function returned error:', data.error);
-      throw new Error(data.error || 'Email sending failed');
-    }
-
-    console.log('✅ Email sent successfully:', {
-      id: data.id,
-      message: data.message
-    });
-    return {
-      success: true,
-      message: data.message || '✅ Email sent successfully'
-    };
-  } catch (error) {
-    console.error('❌ Error sending email:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      requestData: {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`📧 Sending email via Supabase Edge Function (attempt ${attempt}/${maxRetries}):`, {
         to: payload.to,
         subject: payload.subject,
-        hasAttachments: payload.attachments?.length > 0
+        hasAttachments: payload.attachments?.length > 0,
+        companyName: payload.companyName,
+        apiKeyConfigured: true
+      });
+
+      const { data, error } = await supabase.functions.invoke('send-email', {
+        body: payload
+      });
+
+      if (error) {
+        console.error(`❌ Supabase function invocation error (attempt ${attempt}):`, {
+          error: error.message,
+          context: error.context || 'No additional context',
+          details: error.details || 'No additional details'
+        });
+        throw new Error(`Edge function error: ${error.message}`);
       }
-    });
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    };
+
+      if (!data) {
+        throw new Error('No response data received from edge function');
+      }
+
+      if (!data.success) {
+        console.error(`❌ Email function returned error (attempt ${attempt}):`, {
+          error: data.error,
+          details: data
+        });
+        throw new Error(data.error || 'Email sending failed - no success flag');
+      }
+
+      console.log('✅ Email sent successfully:', {
+        attempt,
+        id: data.id,
+        message: data.message,
+        recipient: payload.to
+      });
+
+      return {
+        success: true,
+        message: data.message || '✅ Email sent successfully'
+      };
+
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown error occurred');
+      
+      console.error(`❌ Email send attempt ${attempt} failed:`, {
+        error: lastError.message,
+        stack: lastError.stack,
+        requestData: {
+          to: payload.to,
+          subject: payload.subject,
+          hasAttachments: payload.attachments?.length > 0,
+          companyName: payload.companyName
+        },
+        willRetry: attempt < maxRetries
+      });
+
+      // If this is not the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff, max 5s
+        console.log(`⏳ Waiting ${delayMs}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
   }
+
+  // All retries failed
+  console.error('❌ All email send attempts failed:', {
+    finalError: lastError?.message,
+    attempts: maxRetries,
+    recipient: payload.to
+  });
+
+  return {
+    success: false,
+    error: lastError?.message || 'Failed to send email after multiple attempts'
+  };
 };
