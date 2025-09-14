@@ -139,7 +139,7 @@ const generateInvoiceHTML = async (
       <div class="paper">
         <!-- Header -->
         <div class="header">
-          ${renderBrand(logoUrl, companySettings?.company_name ?? "Your Company")}
+          ${renderBrand(logoUrl, companySettings?.company_name ?? "Your Company", companySettings)}
           <div class="meta">
             <h1 class="title">INVOICE</h1>
             <div class="kv">Invoice #: <b>${invoice.invoice_number || invoice.id}</b></div>
@@ -157,11 +157,9 @@ const generateInvoiceHTML = async (
             ${invoice.client_email ? `<div class="muted">${sanitize(invoice.client_email)}</div>` : ""}
           </div>
           <div class="card">
-            <h4>From</h4>
-            <div><b>${sanitize(companySettings?.company_name) || "Your Company"}</b></div>
-            ${companySettings?.company_address ? `<div class="muted">${sanitize(companySettings.company_address)}</div>` : ""}
-            ${companySettings?.company_phone ? `<div class="muted">${sanitize(companySettings.company_phone)}</div>` : ""}
-            ${companySettings?.company_email ? `<div class="muted">${sanitize(companySettings.company_email)}</div>` : ""}
+            <h4>Invoice Details</h4>
+            <div class="muted">Reference: ${invoice.invoice_number || invoice.id}</div>
+            <div class="muted">Terms: Net 30</div>
           </div>
         </div>
 
@@ -255,7 +253,7 @@ const generateQuoteHTML = async (
       <div class="paper">
         <!-- Header -->
         <div class="header">
-          ${renderBrand(logoUrl, companySettings?.company_name ?? "Your Company")}
+          ${renderBrand(logoUrl, companySettings?.company_name ?? "Your Company", companySettings)}
           <div class="meta">
             <h1 class="title">QUOTE</h1>
             <div class="kv">Quote #: <b>${sanitize(quote.quote_number)}</b></div>
@@ -275,11 +273,9 @@ const generateQuoteHTML = async (
             ${quote.project_name ? `<div class="muted"><b>Project:</b> ${sanitize(quote.project_name)}</div>` : ""}
           </div>
           <div class="card">
-            <h4>From</h4>
-            <div><b>${sanitize(companySettings?.company_name) || "Your Company"}</b></div>
-            ${companySettings?.company_address ? `<div class="muted">${sanitize(companySettings.company_address)}</div>` : ""}
-            ${companySettings?.company_phone ? `<div class="muted">${sanitize(companySettings.company_phone)}</div>` : ""}
-            ${companySettings?.company_email ? `<div class="muted">${sanitize(companySettings.company_email)}</div>` : ""}
+            <h4>Quote Details</h4>
+            <div class="muted">Reference: ${quote.quote_number}</div>
+            <div class="muted">Valid Until: ${formatDate(quote.expiry_date)}</div>
           </div>
         </div>
 
@@ -355,8 +351,9 @@ const generateQuoteHTML = async (
    Helpers (layout, math, safety, PDF placement)
    =========================================================== */
 
-// A4 canvas width at 96DPI (html2canvas friendly) - increased for better content fit
-const A4_CANVAS_WIDTH = 850;
+// A4 canvas dimensions optimized for professional printing (210mm × 297mm at 96 DPI)
+const A4_CANVAS_WIDTH = 794;  // 210mm at 96 DPI
+const A4_CANVAS_HEIGHT = 1123; // 297mm at 96 DPI
 
 // Prepare an offscreen container for rendering HTML
 const prepareOffscreen = () => {
@@ -366,7 +363,7 @@ const prepareOffscreen = () => {
   el.style.top = "-9999px";
   el.style.width = `${A4_CANVAS_WIDTH}px`;
   el.style.background = "white";
-  el.style.padding = "60px";
+  el.style.padding = "40px";
   el.style.fontFamily = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans"';
   return el;
 };
@@ -407,14 +404,17 @@ const formatCurrency = (amount: number, currency = "USD") =>
 const formatDate = (date: string | Date) =>
   new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
-// Brand block + status styles used inside HTML templates
-const renderBrand = (logoUrl?: string | null, companyName?: string | null) => {
+// Brand block with complete company information in header
+const renderBrand = (logoUrl?: string | null, companyName?: string | null, companySettings?: any) => {
   if (logoUrl) {
     return `
       <div class="brand">
         <img class="brand-logo" src="${logoUrl}" alt="${sanitize(companyName) || "Company"} logo" />
         <div class="brand-text">
           <div class="brand-name">${sanitize(companyName) || ""}</div>
+          ${companySettings?.company_address ? `<div class="brand-address">${sanitize(companySettings.company_address)}</div>` : ""}
+          ${companySettings?.company_phone ? `<div class="brand-contact">${sanitize(companySettings.company_phone)}</div>` : ""}
+          ${companySettings?.company_email ? `<div class="brand-contact">${sanitize(companySettings.company_email)}</div>` : ""}
         </div>
       </div>`;
   }
@@ -423,7 +423,9 @@ const renderBrand = (logoUrl?: string | null, companyName?: string | null) => {
       <div class="brand-mark">◆</div>
       <div class="brand-text">
         <div class="brand-name">${sanitize(companyName) || ""}</div>
-        <div class="brand-tag muted">Invoice</div>
+        ${companySettings?.company_address ? `<div class="brand-address">${sanitize(companySettings.company_address)}</div>` : ""}
+        ${companySettings?.company_phone ? `<div class="brand-contact">${sanitize(companySettings.company_phone)}</div>` : ""}
+        ${companySettings?.company_email ? `<div class="brand-contact">${sanitize(companySettings.company_email)}</div>` : ""}
       </div>
     </div>`;
 };
@@ -460,7 +462,7 @@ const baseStyles = `
   }
   *{ box-sizing:border-box; }
   body{ margin:0; padding:0; color:var(--text); font:14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans"; }
-  .paper{ width:${A4_CANVAS_WIDTH}px; background:#fff; padding:60px; }
+  .paper{ width:${A4_CANVAS_WIDTH}px; background:#fff; padding:40px; }
 
   .row{ display:flex; gap:32px; }
   .space{ height:24px; }
@@ -469,8 +471,10 @@ const baseStyles = `
   .header{ display:flex; justify-content:space-between; align-items:flex-start; gap:40px; padding-bottom:32px; border-bottom:2px solid var(--border); margin-bottom:32px; }
   .brand{ display:flex; align-items:center; gap:18px; }
   .brand--textonly .brand-mark{ width:56px; height:56px; display:grid; place-items:center; background:var(--accent); color:#fff; border-radius:12px; font-weight:800; font-size:18px; }
-  .brand-logo{ width:140px; height:70px; object-fit:contain; }
-  .brand-name{ font-weight:800; font-size:22px; color:var(--ink); letter-spacing:.3px; line-height:1.2; }
+  .brand-logo{ width:120px; height:60px; object-fit:contain; }
+  .brand-name{ font-weight:800; font-size:20px; color:var(--ink); letter-spacing:.3px; line-height:1.2; margin-bottom:4px; }
+  .brand-address{ font-size:13px; color:var(--muted); line-height:1.3; margin-bottom:2px; }
+  .brand-contact{ font-size:13px; color:var(--muted); line-height:1.3; margin-bottom:2px; }
   .brand-tag{ font-size:12px; letter-spacing:.4px; text-transform:uppercase; margin-top:4px; }
 
   .meta{ text-align:right; min-width:280px; }
