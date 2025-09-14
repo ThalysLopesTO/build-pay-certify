@@ -13,7 +13,7 @@ import { generateMaterialRequestPDF } from '@/utils/materialRequestPDFGenerator'
 import { MaterialRequest } from './types/materialRequest';
 import { supabase } from '@/integrations/supabase/client';
 import EnhancedMaterialRequestFilters from './material-requests/EnhancedMaterialRequestFilters';
-import AccordionMaterialRequestCard from './material-requests/AccordionMaterialRequestCard';
+import CompactMaterialRequestCard from './material-requests/CompactMaterialRequestCard';
 import MaterialRequestDetailsPanel from './material-requests/MaterialRequestDetailsPanel';
 import { DeleteConfirmDialog } from './material-requests/DeleteConfirmDialog';
 import { useQueryClient } from '@tanstack/react-query';
@@ -48,7 +48,6 @@ const MaterialRequestInbox = () => {
   } = useEnhancedMaterialRequestsAdmin();
 
   const [detailsPanelOpen, setDetailsPanelOpen] = React.useState(false);
-  const [expandedCard, setExpandedCard] = React.useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [requestToDelete, setRequestToDelete] = React.useState<MaterialRequest | null>(null);
 
@@ -185,33 +184,21 @@ const MaterialRequestInbox = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
-      {/* Professional Header */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-lg">
-        <div className="container max-w-7xl mx-auto py-6">
+    <div className="min-h-screen bg-background">
+      {/* Non-sticky Header */}
+      <div className="border-b">
+        <div className="container max-w-7xl mx-auto py-6 px-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="bg-primary/10 p-3 rounded-xl">
-                <Inbox className="h-7 w-7 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  Material Request Inbox
-                </h1>
-                <p className="text-muted-foreground text-sm mt-1">
-                  Manage and track all material requests
-                </p>
-              </div>
-            </div>
             <div className="flex items-center space-x-3">
-              <Badge 
-                variant="secondary" 
-                className="bg-gradient-to-r from-primary/10 to-primary/5 text-primary border-primary/20 px-4 py-2 text-sm font-semibold"
-              >
-                <Package className="h-4 w-4 mr-2" />
-                {requests.length} {requests.length === 1 ? 'Request' : 'Requests'}
-              </Badge>
+              <Inbox className="h-6 w-6 text-muted-foreground" />
+              <div>
+                <h1 className="text-2xl font-semibold text-foreground">Material Request Inbox</h1>
+                <p className="text-sm text-muted-foreground">Manage and track all material requests</p>
+              </div>
             </div>
+            <Badge variant="secondary" className="px-3 py-1">
+              {requests.length} {requests.length === 1 ? 'Request' : 'Requests'}
+            </Badge>
           </div>
         </div>
       </div>
@@ -232,52 +219,42 @@ const MaterialRequestInbox = () => {
       />
 
       {/* Main Content */}
-      <div className="container max-w-5xl mx-auto py-8 px-4">
+      <div className="container max-w-7xl mx-auto py-6 px-4">
         {requests.length === 0 ? (
-          <Card className="shadow-xl border-0 bg-gradient-to-br from-card via-card to-muted/30 backdrop-blur">
-            <CardContent className="text-center py-20">
-              <div className="flex flex-col items-center gap-6">
-                <div className="relative">
-                  <div className="bg-gradient-to-br from-primary/20 to-primary/10 p-8 rounded-2xl">
-                    <Inbox className="h-16 w-16 text-primary" />
-                  </div>
-                  <div className="absolute -top-2 -right-2 bg-primary/20 p-2 rounded-full animate-pulse">
-                    <Package className="h-4 w-4 text-primary" />
-                  </div>
+          <Card className="border border-border">
+            <CardContent className="text-center py-12">
+              <div className="flex flex-col items-center gap-4">
+                <div className="bg-muted p-4 rounded-lg">
+                  <Inbox className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <div className="space-y-3 max-w-lg">
-                  <h3 className="text-2xl font-bold text-foreground">No Material Requests Found</h3>
-                  <p className="text-muted-foreground leading-relaxed">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">No Material Requests Found</h3>
+                  <p className="text-sm text-muted-foreground max-w-md">
                     {searchTerm || statusFilter !== 'all' || dateFrom || dateTo || jobsiteFilter !== 'all'
-                      ? 'No requests match your current filters. Try adjusting your search criteria to see more results.' 
-                      : 'No material requests have been submitted yet. New requests will appear here once submitted by foremen.'
+                      ? 'No requests match your current filters. Try adjusting your search criteria.' 
+                      : 'No material requests have been submitted yet.'
                     }
                   </p>
                 </div>
+                {(searchTerm || statusFilter !== 'all' || dateFrom || dateTo || jobsiteFilter !== 'all') && (
+                  <Button variant="outline" onClick={clearFilters} className="mt-2">
+                    Clear filters
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
-            {requests.map((request, index) => (
-              <div 
+          <div className="space-y-3">
+            {requests.map((request) => (
+              <CompactMaterialRequestCard
                 key={request.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <AccordionMaterialRequestCard
-                  request={request}
-                  isExpanded={expandedCard === request.id}
-                  onToggle={(isExpanded) => {
-                    setExpandedCard(isExpanded ? request.id : null);
-                  }}
-                  onStatusUpdate={handleStatusUpdate}
-                  onViewDetails={handleViewDetails}
-                  onExportPDF={handleExportPDF}
-                  onDelete={handleDeleteClick}
-                  isAdmin={isCompanyAdmin}
-                />
-              </div>
+                request={request}
+                onViewDetails={handleViewDetails}
+                onExportPDF={handleExportPDF}
+                onDelete={handleDeleteClick}
+                isAdmin={isCompanyAdmin}
+              />
             ))}
           </div>
         )}
