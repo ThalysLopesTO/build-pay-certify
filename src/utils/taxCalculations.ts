@@ -106,8 +106,11 @@ export const calculateTax = ({
   if (type === 'subcontractor') {
     if (tax_included) {
       calculatedTax = gross_pay * (tax_percentage / (100 + tax_percentage));
+      totalPay = gross_pay;
+    } else {
+      calculatedTax = gross_pay * (tax_percentage / 100);
+      totalPay = gross_pay + calculatedTax;
     }
-    totalPay = gross_pay + calculatedTax;
   } else {
     incomeTax = gross_pay * (income_tax_rate / 100);
     cpp = gross_pay * (cpp_rate / 100);

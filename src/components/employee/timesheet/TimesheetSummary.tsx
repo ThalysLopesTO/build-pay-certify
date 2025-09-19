@@ -26,7 +26,7 @@ const TimesheetSummary = ({ totalHours, hourlyRate, grossPay, form, disabled = f
   
   // Calculate tax breakdown and deductions based on worker type
   const payBeforeTax = totalHours * hourlyRate; // Base pay without expenses
-  const calculatedTax = taxIncluded ? (payBeforeTax * (taxPercentage / 100)) : 0;
+  const calculatedTax = taxIncluded ? (grossPay * (taxPercentage / 100)) : 0;
   
   // Employee deductions (only for payroll employees)
   const incomeTaxRate = 12.00; // Default rate, could come from user profile
