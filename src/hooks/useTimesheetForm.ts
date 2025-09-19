@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/SupabaseAuthContext';
 import { useTimesheetSubmission } from './useTimesheetSubmission';
 import { useCompanySettings } from './useCompanySettings';
 import { useWorkWeek } from './useWorkWeek';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from './use-toast';
 import { calculateTax } from '@/utils/taxCalculations';
@@ -68,20 +68,6 @@ export const useTimesheetForm = (selectedWeek?:any) => {
       tax_included: false,
     },
   });
-
-  // Update selected week when workWeeks loads
-  // React.useEffect(() => {
-  //   if (workWeeks?.currentWeek && !selectedWeek) {
-  //     setSelectedWeek(workWeeks.currentWeek);
-  //   }
-  // }, [workWeeks, selectedWeek]);
-
-  // const draftKey = React.useMemo(() => {
-  //   const start = selectedWeek?.weekStartDateString || 'unknown';
-  //   const freq = ((settings as any)?.timesheet_frequency === 'bi-weekly') ? 'bi' : 'wk';
-  //   const uid = user?.id || 'anon';
-  //   return `timesheet:${uid}:${start}:${freq}`;
-  // }, [user?.id, selectedWeek?.weekStartDateString, settings]);
 
   // Load existing timesheet data when available
   React.useEffect(() => {
@@ -194,27 +180,7 @@ export const useTimesheetForm = (selectedWeek?:any) => {
 
   const isWeekSubmitted = existingTimesheets;
 
-  // React.useEffect(() => {
-  //   const sub = form.watch((values) => {
-  //     try {
-  //       localStorage.setItem(draftKey, JSON.stringify(values));
-  //     } catch {
-  //       console.log('Failed to save draft');
-  //     }
-  //   });
-  //   return () => sub.unsubscribe();
-  // }, [form]);
-
-  // React.useEffect(() => {
-  //   if (submitMutation.isSuccess) {
-  //     try { localStorage.removeItem(draftKey); } catch {
-  //       console.log('Failed to remove draft');
-  //     }
-  //   }
-  // }, [submitMutation.isSuccess, draftKey]);
-
   const onSubmit = (data: FormData) => {
-    console.log('📋 Form submission started with data:', data);
     console.log('👤 Current user state:', {
       userId: user?.id,
       companyId: user?.companyId,
@@ -350,6 +316,7 @@ export const useTimesheetForm = (selectedWeek?:any) => {
       ei_rate: tax.eiRate,
     };
 
+    console.log({timesheetData});
     submitMutation.mutate(timesheetData);
   };
 

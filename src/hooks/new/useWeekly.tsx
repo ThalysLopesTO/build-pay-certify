@@ -17,6 +17,7 @@ export const useNearlyTimesheet = (availableWeeks: string[]) => {
             name
           )`)
         .eq('submitted_by', user.id)
+        .neq('status', 'rejected')
         .in('week_start_date', availableWeeks);
 
       if (error) {
