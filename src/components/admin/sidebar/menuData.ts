@@ -174,7 +174,6 @@ export const groupedMenuItems = {
   ],
   management: [
     menuData.find(item => item.id === 'jobsites')!,
-    menuData.find(item => item.id === 'completed-jobsites')!,
     menuData.find(item => item.id === 'material-takeoff')!,
     menuData.find(item => item.id === 'material-requests')!,
     menuData.find(item => item.id === 'safety-templates')!,

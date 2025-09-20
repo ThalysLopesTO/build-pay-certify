@@ -57,8 +57,6 @@ const AdminDashboard = () => {
         return <EmployeeRegistration />;
       case 'jobsites':
         return <JobsiteManagement />;
-      case 'completed-jobsites':
-        return <CompletedJobsites />;
       case 'safety-templates':
         return <SafetyTemplatesManagement />;
       case 'inventory':

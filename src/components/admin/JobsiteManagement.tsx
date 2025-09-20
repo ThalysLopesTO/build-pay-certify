@@ -3,7 +3,8 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Building, BarChart3, Package, Grid3X3, List, Smartphone } from 'lucide-react';
+import { Plus, Building, BarChart3, Package, Grid3X3, List, Smartphone, Archive } from 'lucide-react';
+import CompletedJobsites from './CompletedJobsites';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useIsMobile } from '@/hooks/use-mobile';
 import JobsiteForm from './jobsite/JobsiteForm';
@@ -130,7 +131,7 @@ const JobsiteManagement = () => {
           <Tabs defaultValue={isMobile ? "mobile" : "detailed"} className="w-full">
             <div className="border-b bg-muted/50 rounded-t-lg">
               <TabsList className="grid w-full bg-transparent h-auto p-2 gap-2" style={{
-                gridTemplateColumns: isMobile ? '1fr 1fr 1fr 1fr' : '1fr 1fr 1fr'
+                gridTemplateColumns: isMobile ? '1fr 1fr 1fr 1fr 1fr' : '1fr 1fr 1fr 1fr'
               }}>
                 {isMobile && (
                   <TabsTrigger 
@@ -164,6 +165,14 @@ const JobsiteManagement = () => {
                   <BarChart3 className="h-4 w-4" />
                   <span className="hidden sm:inline">Progress</span>
                   <span className="sm:hidden">Progress</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="completed" 
+                  className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-xs sm:text-sm font-medium transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  <Archive className="h-4 w-4" />
+                  <span className="hidden sm:inline">Completed</span>
+                  <span className="sm:hidden">Done</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -261,14 +270,19 @@ const JobsiteManagement = () => {
                       showProgress={true}
                     />
                   ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </Card>
-      </div>
-    </div>
-  );
-};
+                 </div>
+               )}
+             </TabsContent>
 
-export default JobsiteManagement;
+             {/* Completed View */}
+             <TabsContent value="completed" className="p-6">
+               <CompletedJobsites />
+             </TabsContent>
+           </Tabs>
+         </Card>
+       </div>
+     </div>
+   );
+ };
+ 
+ export default JobsiteManagement;

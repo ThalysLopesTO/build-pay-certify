@@ -4,13 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Search, Filter, Calendar, Building, Archive, ChevronDown, ChevronUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Search, Filter, Calendar, Building, Archive, ChevronDown, ChevronUp } from 'lucide-react';
 import { useCompletedJobsites } from '@/hooks/useJobsites';
 import JobsiteDetailedCard from './jobsite/JobsiteDetailedCard';
 
 const CompletedJobsites = () => {
-  const navigate = useNavigate();
   const { data: completedJobsites = [], isLoading, error } = useCompletedJobsites();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,33 +104,21 @@ const CompletedJobsites = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => navigate('/admin/jobsite-management')}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Active
-            </Button>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Completed Jobsites</h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1">
-                View and manage completed project records
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-sm">
-              {totalCount} Total
-            </Badge>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">Completed Jobsites</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            View and manage completed project records
+          </p>
         </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-sm">
+            {totalCount} Total
+          </Badge>
+        </div>
+      </div>
 
         {/* Filters and Search */}
         <Card className="shadow-sm">
@@ -240,7 +226,6 @@ const CompletedJobsites = () => {
             ))
           )}
         </div>
-      </div>
     </div>
   );
 };
