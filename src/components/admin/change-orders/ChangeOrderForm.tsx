@@ -13,7 +13,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useChangeOrders, ChangeOrder } from '@/hooks/useChangeOrders';
 import { useActiveJobsites } from '@/hooks/useJobsites';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, X, FileImage } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { toast } from 'sonner';
 
 interface ChangeOrderFormProps {
   isOpen: boolean;
@@ -26,6 +29,7 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
   const { createChangeOrder, updateChangeOrder, isCreating, isUpdating } = useChangeOrders();
   const { data: jobsites = [] } = useActiveJobsites();
   
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -35,6 +39,10 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
     end_date: '',
     status: type === 'admin' ? 'draft' : 'submitted',
   });
+  
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
 
   useEffect(() => {
     if (editingOrder) {
@@ -47,6 +55,7 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
         end_date: editingOrder.end_date || '',
         status: editingOrder.status,
       });
+      setUploadedUrls(editingOrder.attachments || []);
     } else {
       setFormData({
         title: '',
@@ -57,36 +66,99 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
         end_date: '',
         status: type === 'admin' ? 'draft' : 'submitted',
       });
+      setSelectedFiles([]);
+      setUploadedUrls([]);
     }
   }, [editingOrder, type]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
     
-    const submitData = {
-      title: formData.title,
-      description: formData.description,
-      project_id: formData.project_id,
-      type,
-      cost: formData.cost ? parseFloat(formData.cost) : undefined,
-      start_date: formData.start_date || undefined,
-      end_date: formData.end_date || undefined,
-      status: formData.status as any,
-    };
-
-    if (editingOrder) {
-      updateChangeOrder({
-        id: editingOrder.id,
-        data: submitData,
-      });
-    } else {
-      createChangeOrder(submitData);
+    if (imageFiles.length !== files.length) {
+      toast.error('Only image files are allowed');
     }
     
-    onClose();
+    setSelectedFiles(prev => [...prev, ...imageFiles].slice(0, 5)); // Max 5 images
   };
 
-  const isLoading = isCreating || isUpdating;
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeUploadedFile = (url: string) => {
+    setUploadedUrls(prev => prev.filter(u => u !== url));
+  };
+
+  const uploadFiles = async (): Promise<string[]> => {
+    if (selectedFiles.length === 0) return uploadedUrls;
+    
+    setUploading(true);
+    const uploadPromises = selectedFiles.map(async (file) => {
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}-${file.name}`;
+      const filePath = `${user?.companyId}/${fileName}`;
+      
+      const { error } = await supabase.storage
+        .from('change-orders')
+        .upload(filePath, file);
+      
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('change-orders')
+        .getPublicUrl(filePath);
+      
+      return publicUrl;
+    });
+    
+    try {
+      const urls = await Promise.all(uploadPromises);
+      setUploading(false);
+      return [...uploadedUrls, ...urls];
+    } catch (error) {
+      setUploading(false);
+      throw error;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const attachments = await uploadFiles();
+      
+      const submitData = {
+        title: formData.title,
+        description: formData.description,
+        project_id: formData.project_id,
+        type,
+        cost: formData.cost ? parseFloat(formData.cost) : undefined,
+        start_date: formData.start_date || undefined,
+        end_date: formData.end_date || undefined,
+        status: formData.status as any,
+        attachments,
+      };
+
+      if (editingOrder) {
+        updateChangeOrder({
+          id: editingOrder.id,
+          data: submitData,
+        });
+      } else {
+        createChangeOrder(submitData);
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error('Form submission error:', error);
+      toast.error('Failed to upload files');
+    }
+  };
+
+  const isLoading = isCreating || isUpdating || uploading;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -200,6 +272,105 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
                   />
                 </div>
               </>
+            )}
+            
+            {/* Start and End dates for foreman requests */}
+            {type === 'foreman_request' && (
+              <>
+                <div>
+                  <Label htmlFor="start_date">Start Date</Label>
+                  <Input
+                    id="start_date"
+                    type="date"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="end_date">End Date</Label>
+                  <Input
+                    id="end_date"
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
+            
+            {/* File upload for foreman requests */}
+            {type === 'foreman_request' && (
+              <div className="col-span-2">
+                <Label htmlFor="images">Upload Images</Label>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="images"
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={() => setSelectedFiles([])}>
+                      Clear
+                    </Button>
+                  </div>
+                  
+                  {/* Selected files preview */}
+                  {selectedFiles.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="w-full h-20 object-cover rounded border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeFile(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                          <p className="text-xs truncate mt-1">{file.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Uploaded files preview */}
+                  {uploadedUrls.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Current attachments:</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {uploadedUrls.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url}
+                              alt={`Attachment ${index + 1}`}
+                              className="w-full h-20 object-cover rounded border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removeUploadedFile(url)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
           

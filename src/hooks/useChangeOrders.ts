@@ -42,6 +42,7 @@ export interface CreateChangeOrderData {
   start_date?: string;
   end_date?: string;
   status?: 'draft' | 'submitted';
+  attachments?: string[];
 }
 
 export interface UpdateChangeOrderData {
@@ -55,6 +56,7 @@ export interface UpdateChangeOrderData {
   status?: 'draft' | 'submitted' | 'approved' | 'rejected' | 'completed';
   reviewed_by?: string;
   reviewed_at?: string;
+  attachments?: string[];
 }
 
 export const useChangeOrders = () => {
@@ -64,17 +66,22 @@ export const useChangeOrders = () => {
   const query = useQuery({
     queryKey: ["change-orders"],
     queryFn: async () => {
+      console.log("Fetching change orders...");
       const { data, error } = await supabase
         .from("change_orders")
         .select(`
           *,
-          creator:user_profiles!change_orders_created_by_fkey(first_name, last_name),
-          project:jobsites!change_orders_project_id_fkey(name),
-          reviewer:user_profiles!change_orders_reviewed_by_fkey(first_name, last_name)
+          creator:user_profiles!created_by(first_name, last_name),
+          project:jobsites!project_id(name),
+          reviewer:user_profiles!reviewed_by(first_name, last_name)
         `)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Change orders query error:", error);
+        throw error;
+      }
+      console.log("Fetched change orders:", data);
       return data as ChangeOrder[];
     },
     enabled: !!user,

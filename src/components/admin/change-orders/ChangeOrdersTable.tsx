@@ -154,14 +154,26 @@ const ChangeOrdersTable = ({
             ) : (
               filteredOrders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{order.title}</p>
-                      <p className="text-sm text-muted-foreground truncate max-w-[200px]">
-                        {order.description}
-                      </p>
-                    </div>
-                  </TableCell>
+                   <TableCell>
+                     <div>
+                       <p className="font-medium">{order.title}</p>
+                       <p className="text-sm text-muted-foreground truncate max-w-[200px]">
+                         {order.description}
+                       </p>
+                       {order.type === 'foreman_request' && (order.start_date || order.end_date) && (
+                         <p className="text-xs text-muted-foreground mt-1">
+                           {order.start_date && format(new Date(order.start_date), 'MMM d')}
+                           {order.start_date && order.end_date && ' - '}
+                           {order.end_date && format(new Date(order.end_date), 'MMM d, yyyy')}
+                         </p>
+                       )}
+                       {order.attachments && order.attachments.length > 0 && (
+                         <p className="text-xs text-blue-600 mt-1">
+                           📎 {order.attachments.length} attachment{order.attachments.length > 1 ? 's' : ''}
+                         </p>
+                       )}
+                     </div>
+                   </TableCell>
                   <TableCell>{order.project?.name || 'Unknown'}</TableCell>
                   <TableCell>
                     <Badge className={statusColors[order.status]}>

@@ -107,6 +107,28 @@ const ChangeOrderDetails = ({ isOpen, onClose, order }: ChangeOrderDetailsProps)
             </>
           )}
 
+          {/* Timeline for foreman requests */}
+          {order.type === 'foreman_request' && (order.start_date || order.end_date) && (
+            <>
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Timeline</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Start:</span>
+                    <span>{formatDate(order.start_date)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">End:</span>
+                    <span>{formatDate(order.end_date)}</span>
+                  </div>
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
+
           {/* Creator Information */}
           <div>
             <h3 className="text-lg font-semibold mb-3">Creator Information</h3>
@@ -162,10 +184,22 @@ const ChangeOrderDetails = ({ isOpen, onClose, order }: ChangeOrderDetailsProps)
           {order.attachments && order.attachments.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold mb-3">Attachments</h3>
-              <p className="text-sm text-muted-foreground">
-                {order.attachments.length} file(s) attached
-              </p>
-              {/* TODO: Implement file display/download functionality */}
+              <div className="grid grid-cols-2 gap-4">
+                {order.attachments.map((url, index) => (
+                  <div key={index} className="space-y-2">
+                    <img
+                      src={url}
+                      alt={`Attachment ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border"
+                      onClick={() => window.open(url, '_blank')}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <p className="text-xs text-muted-foreground text-center">
+                      Click to view full size
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
