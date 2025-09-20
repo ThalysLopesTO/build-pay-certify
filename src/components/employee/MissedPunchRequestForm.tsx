@@ -14,7 +14,7 @@ import { CalendarIcon, Clock, Upload, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useCreateMissedPunchRequest } from '@/hooks/useMissedPunchRequests';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -56,7 +56,7 @@ const MissedPunchRequestForm = ({ onSuccess }: MissedPunchRequestFormProps) => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   
-  const { data: jobsites = [] } = useJobsites('active');
+  const { data: jobsites = [] } = useActiveJobsites();
   const createRequest = useCreateMissedPunchRequest();
   
   const {

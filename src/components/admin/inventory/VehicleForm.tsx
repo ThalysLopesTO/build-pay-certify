@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useVehicles } from '@/hooks/useVehicles';
 import { Plus, Car } from 'lucide-react';
 import VehicleFormFields from './VehicleFormFields';
@@ -22,7 +22,7 @@ const VehicleForm = () => {
     notes: ''
   });
   
-  const { data: jobsites = [] } = useJobsites();
+  const { data: jobsites = [] } = useActiveJobsites();
   const { createVehicle, isCreating } = useVehicles();
 
   const handleInputChange = (field: string, value: string) => {

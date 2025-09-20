@@ -30,7 +30,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useVehicles, Vehicle, CreateVehicle } from '@/hooks/useVehicles';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { format } from 'date-fns';
@@ -68,7 +68,7 @@ import {
 const VehicleManagement = () => {
   const { user } = useAuth();
   const { vehicles, isLoading, createVehicle, updateVehicle, deleteVehicle, isCreating, isUpdating, isDeleting } = useVehicles();
-  const { data: jobsites = [] } = useJobsites();
+  const { data: jobsites = [] } = useActiveJobsites();
   
   const [formData, setFormData] = useState({
     vehicle_name: '',

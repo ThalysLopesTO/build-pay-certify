@@ -2,7 +2,7 @@
 import React from 'react';
 import { FormControl, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 
 interface JobsiteSelectProps {
   value: string;
@@ -10,7 +10,7 @@ interface JobsiteSelectProps {
 }
 
 const JobsiteSelect = ({ value, onValueChange }: JobsiteSelectProps) => {
-  const { data: jobsites = [], isLoading: jobsitesLoading, error: jobsitesError } = useJobsites();
+  const { data: jobsites = [], isLoading: jobsitesLoading, error: jobsitesError } = useActiveJobsites();
 
   // Debug logging
   console.log('Jobsites data:', jobsites);

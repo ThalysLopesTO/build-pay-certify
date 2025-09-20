@@ -32,7 +32,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 import { CreateInventoryItem, InventoryItem } from '@/hooks/useInventory';
 
 // Helper function to format dates in local timezone to avoid timezone shifts
@@ -63,7 +63,7 @@ interface InventoryFormProps {
 }
 
 const InventoryForm = ({ isOpen, onClose, onSubmit, initialData, isSubmitting }: InventoryFormProps) => {
-  const { data: jobsites = [] } = useJobsites();
+  const { data: jobsites = [] } = useActiveJobsites();
 
   const form = useForm<InventoryFormData>({
     resolver: zodResolver(inventorySchema),

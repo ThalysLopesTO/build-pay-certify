@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { X, Upload, FileImage } from 'lucide-react';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useDailyReportSubmission, DailyReportFormData } from '@/hooks/useDailyReports';
 import DatePickerField from '@/components/foreman/DatePickerField';
 import { DailyReportValidation } from '@/components/foreman/DailyReportValidation';
@@ -49,7 +49,7 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
   const [currentStep, setCurrentStep] = useState(0);
   const [submissionProgress, setSubmissionProgress] = useState(0);
   
-  const { data: jobsites = [], isLoading: jobsitesLoading } = useJobsites();
+  const { data: jobsites = [], isLoading: jobsitesLoading } = useActiveJobsites();
   const submitMutation = useDailyReportSubmission();
 
   // Monitor online status

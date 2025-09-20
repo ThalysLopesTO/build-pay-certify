@@ -32,13 +32,13 @@ import { Plus, Edit, Trash2, Search, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useInventory, InventoryItem } from '@/hooks/useInventory';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 import InventoryForm from './InventoryForm';
 
 const InventoryManagement = () => {
   const { user } = useAuth();
   const { inventory, isLoading, createItem, updateItem, deleteItem, isCreating, isUpdating, isDeleting } = useInventory();
-  const { data: jobsites = [] } = useJobsites();
+  const { data: jobsites = [] } = useActiveJobsites();
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);

@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { cn } from '@/lib/utils';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 
 interface DailyReportsFiltersProps {
   filters: {
@@ -30,7 +30,7 @@ const DailyReportsFilters: React.FC<DailyReportsFiltersProps> = ({
   onFiltersChange,
   onClearFilters,
 }) => {
-  const { data: jobsites = [] } = useJobsites();
+  const { data: jobsites = [] } = useActiveJobsites();
   const { settings: companySettings } = useCompanySettings();
   const timezone = companySettings?.timezone || 'America/Toronto';
   const [dateFrom, setDateFrom] = React.useState<Date | undefined>(

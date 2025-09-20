@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Filter, X } from 'lucide-react';
 import { useWorkWeek } from '@/hooks/useWorkWeek';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 
 interface TimesheetFiltersProps {
   filters: {
@@ -30,7 +30,7 @@ const TimesheetFilters: React.FC<TimesheetFiltersProps> = ({
   const workWeeks = useWorkWeek();
   
   // Get jobsites for the filter
-  const { data: jobsites = [] } = useJobsites();
+  const { data: jobsites = [] } = useActiveJobsites();
 
   const handleEmployeeChange = (value: string) => {
     onFiltersChange({

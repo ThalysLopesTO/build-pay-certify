@@ -13,7 +13,7 @@ import { CalendarIcon, Clock, Upload, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DailyReport, useDailyReportUpdate } from '@/hooks/useDailyReports';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 
 const formSchema = z.object({
   jobsite_id: z.string().min(1, 'Please select a jobsite'),
@@ -37,7 +37,7 @@ const DailyReportEditModal: React.FC<DailyReportEditModalProps> = ({
   const [files, setFiles] = useState<File[]>([]);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
   
-  const { data: jobsites = [] } = useJobsites();
+  const { data: jobsites = [] } = useActiveJobsites();
   const updateReport = useDailyReportUpdate();
 
   const form = useForm<FormData>({

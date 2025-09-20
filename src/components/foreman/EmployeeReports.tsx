@@ -12,7 +12,7 @@ import { Bell, Calendar as CalendarIcon, Filter, Search, Eye, AlertTriangle, Fil
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useForemanAttentionReports } from '@/hooks/useAttentionReports';
-import { useJobsites } from '@/hooks/useJobsites';
+import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { AttentionReport } from '@/hooks/useAttentionReports';
 
@@ -25,7 +25,7 @@ const EmployeeReports = () => {
   const [selectedReport, setSelectedReport] = useState<AttentionReport | null>(null);
 
   const { data: reports = [], isLoading, error, refetch } = useForemanAttentionReports();
-  const { data: jobsites = [] } = useJobsites();
+  const { data: jobsites = [] } = useActiveJobsites();
   const { data: employees = [] } = useEmployeeDirectory();
 
   console.log('Employee Reports - Reports:', reports);
