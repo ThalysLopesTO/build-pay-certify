@@ -347,23 +347,6 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
         <LiveActiveEmployees />
       </div>
 
-      {/* Email System Test - Temporary for debugging */}
-      <div className="mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-orange-600">⚠️ Email System Test (Temporary)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="max-w-md">
-              <EmailTestComponent />
-            </div>
-            <p className="text-sm text-muted-foreground mt-4">
-              <strong>Note:</strong> This test component is temporarily added to verify the email system is working. 
-              It will be removed once testing is complete.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };
