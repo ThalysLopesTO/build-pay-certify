@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DollarSign, Users, Search, Filter, RefreshCw, Download, ChevronDown, ChevronUp, Clock, FileText, Package } from 'lucide-react';
-import { useWeeklyTimesheets } from '@/hooks/useWeeklyTimesheets';
+import { useWeeklyTimesheets } from '@/hooks/new/useWeeklyTimesheets';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useWorkWeek } from '@/hooks/useWorkWeek';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
