@@ -342,6 +342,63 @@ export type Database = {
           },
         ]
       }
+      change_orders: {
+        Row: {
+          attachments: string[] | null
+          company_id: string
+          cost: number | null
+          created_at: string
+          created_by: string
+          description: string
+          end_date: string | null
+          id: string
+          project_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          start_date: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          attachments?: string[] | null
+          company_id: string
+          cost?: number | null
+          created_at?: string
+          created_by: string
+          description: string
+          end_date?: string | null
+          id?: string
+          project_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date?: string | null
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          attachments?: string[] | null
+          company_id?: string
+          cost?: number | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          end_date?: string | null
+          id?: string
+          project_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           company_rules_text: string | null

@@ -113,6 +113,11 @@ export const groupedForemanItems = {
       icon: Package,
       id: 'inventory',
     },
+    {
+      title: 'Change Orders',
+      icon: ClipboardList,
+      id: 'change-orders',
+    },
   ],
   team: [
     {

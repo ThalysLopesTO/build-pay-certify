@@ -66,6 +66,12 @@ export const menuData: MenuItem[] = [
     icon: Inbox,
   },
   {
+    id: 'change-orders',
+    title: 'Change Orders',
+    href: '/admin/change-orders',
+    icon: ClipboardList,
+  },
+  {
     id: 'safety-templates',
     title: 'Safety Templates',
     href: '/admin/safety-templates',
@@ -176,6 +182,7 @@ export const groupedMenuItems = {
     menuData.find(item => item.id === 'jobsites')!,
     menuData.find(item => item.id === 'material-takeoff')!,
     menuData.find(item => item.id === 'material-requests')!,
+    menuData.find(item => item.id === 'change-orders')!,
     menuData.find(item => item.id === 'safety-templates')!,
     menuData.find(item => item.id === 'inventory')!,
     menuData.find(item => item.id === 'suppliers')!,
