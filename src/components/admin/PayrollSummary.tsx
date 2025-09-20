@@ -104,17 +104,11 @@ const PayrollSummary = () => {
           netPay
         });
       } else {
-        // For subcontractors, use calculated tax if tax_included is true
-        if (timesheet.tax_included) {
-          estimatedTax = safeParseNumber(timesheet.calculated_tax) || 0;
-        } else {
-          // Otherwise calculate based on hourly pay (excluding expenses)
-          estimatedTax = hourlyPay * (taxPercentage / 100);
-        }
+        // For subcontractors, use the stored tax value directly
+        estimatedTax = safeParseNumber(timesheet.tax) || 0;
         
-        console.log('🔍 Subcontractor tax calculated:', {
-          tax_included: timesheet.tax_included,
-          calculated_tax: timesheet.calculated_tax,
+        console.log('🔍 Subcontractor tax from stored value:', {
+          stored_tax: timesheet.tax,
           estimatedTax
         });
       }
@@ -135,8 +129,8 @@ const PayrollSummary = () => {
         employeeName: timesheet.employee_name || 'Former Employee',
         trade: 'General', // Default since we're not looking up from user_profiles
         position: 'Worker', // Default since we're not looking up from user_profiles
-        jobSite: timesheet.jobsite_name,
-        project: timesheet.jobsite_name,
+        jobSite: timesheet.jobsite?.name || 'Unknown Jobsite',
+        project: timesheet.jobsite?.name || 'Unknown Jobsite',
         weekStartDate: properWeekStartDateString, // Use the calculated week start date for filtering
         weekEndDate: format(weekEndDate, 'MMM dd, yyyy'),
         monthYear: format(weekEndDate, 'yyyy-MM'), // Add month-year for filtering
