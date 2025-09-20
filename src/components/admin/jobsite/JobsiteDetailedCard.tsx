@@ -203,20 +203,23 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
       <CardContent className="pt-0">
         <div className="grid grid-cols-3 gap-4 mb-6">
           <Tabs defaultValue="materials" className="col-span-3">
-            <TabsList className="grid w-full grid-cols-2 bg-muted/30 rounded-xl h-auto p-1">
+            <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl h-auto p-1.5 shadow-inner">
               <TabsTrigger 
                 value="materials" 
-                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-all hover:bg-background data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/50"
               >
                 <Package className="h-4 w-4" />
-                Material Takeoff
+                <span className="font-semibold">Material Takeoff</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="tasks" 
-                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-all hover:bg-background data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/50"
               >
                 <ClipboardList className="h-4 w-4" />
-                Tasks ({totalTasks})
+                <span className="font-semibold">Tasks</span>
+                <span className="ml-1 px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-bold min-w-[20px] text-center">
+                  {totalTasks}
+                </span>
               </TabsTrigger>
             </TabsList>
 
