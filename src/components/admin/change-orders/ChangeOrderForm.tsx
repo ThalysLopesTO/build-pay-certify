@@ -11,9 +11,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { RadioCard } from '@/components/ui/radio-card';
+import { FileDropzone } from '@/components/ui/file-dropzone';
 import { useChangeOrders, ChangeOrder } from '@/hooks/useChangeOrders';
 import { useActiveJobsites } from '@/hooks/useJobsites';
-import { Loader2, Upload, X, FileImage } from 'lucide-react';
+import { 
+  Loader2, 
+  FileText, 
+  Plus, 
+  DollarSign, 
+  Calendar, 
+  Briefcase,
+  Building,
+  FileImage
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { toast } from 'sonner';
@@ -166,9 +178,10 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
             {editingOrder ? 'Edit' : 'Create'} Extras / Changes
           </DialogTitle>
           <DialogDescription>
@@ -181,229 +194,239 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
         
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
           <div className="flex-1 overflow-y-auto space-y-6 pr-2">
-            {/* Basic Information Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Order title"
-                    required
-                  />
-                </div>
+            
+            {/* Basic Information Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Briefcase className="h-5 w-5" />
+                  Basic Information
+                </CardTitle>
+                <CardDescription>
+                  Enter the essential details for this order
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="title" className="text-sm font-medium">Order Title</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        placeholder="Enter a descriptive title"
+                        className="mt-1"
+                        required
+                      />
+                    </div>
 
-                <div>
-                  <Label>Order Type</Label>
-                  <div className="flex gap-4 mt-2">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        value="change"
-                        checked={formData.order_type === 'change'}
-                        onChange={(e) => setFormData({ ...formData, order_type: e.target.value as 'change' | 'extra' })}
-                        className="text-primary"
-                      />
-                      <span>Change Order</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        value="extra"
-                        checked={formData.order_type === 'extra'}
-                        onChange={(e) => setFormData({ ...formData, order_type: e.target.value as 'change' | 'extra' })}
-                        className="text-primary"
-                      />
-                      <span>Extra Order</span>
-                    </label>
+                    <div>
+                      <Label htmlFor="project" className="text-sm font-medium">Project</Label>
+                      <Select 
+                        value={formData.project_id} 
+                        onValueChange={(value) => setFormData({ ...formData, project_id: value })}
+                        required
+                      >
+                        <SelectTrigger className="mt-1">
+                          <Building className="h-4 w-4 mr-2" />
+                          <SelectValue placeholder="Select project" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {jobsites.map((jobsite) => (
+                            <SelectItem key={jobsite.id} value={jobsite.id}>
+                              {jobsite.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Provide a detailed description of the work required"
+                      rows={5}
+                      className="mt-1 resize-none"
+                      required
+                    />
                   </div>
                 </div>
 
+                {/* Order Type Selection */}
                 <div>
-                  <Label htmlFor="project">Project</Label>
-                  <Select 
-                    value={formData.project_id} 
-                    onValueChange={(value) => setFormData({ ...formData, project_id: value })}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {jobsites.map((jobsite) => (
-                        <SelectItem key={jobsite.id} value={jobsite.id}>
-                          {jobsite.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-sm font-medium mb-3 block">Order Type</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <RadioCard
+                      value="change"
+                      checked={formData.order_type === 'change'}
+                      onChange={(e) => setFormData({ ...formData, order_type: e.target.value as 'change' | 'extra' })}
+                      icon={<FileText className="h-4 w-4" />}
+                      title="Change Order"
+                      description="Modify existing scope of work"
+                    />
+                    <RadioCard
+                      value="extra"
+                      checked={formData.order_type === 'extra'}
+                      onChange={(e) => setFormData({ ...formData, order_type: e.target.value as 'change' | 'extra' })}
+                      icon={<Plus className="h-4 w-4" />}
+                      title="Extra Order"
+                      description="Additional work outside original scope"
+                    />
+                  </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Detailed description of the order"
-                    rows={6}
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Admin Fields */}
+            {/* Cost & Timeline Card (Admin only) */}
             {type === 'admin' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="cost">Cost ($)</Label>
-                  <Input
-                    id="cost"
-                    type="number"
-                    step="0.01"
-                    value={formData.cost}
-                    onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select 
-                    value={formData.status} 
-                    onValueChange={(value) => setFormData({ ...formData, status: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="submitted">Submitted</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="start_date">Start Date</Label>
-                  <Input
-                    id="start_date"
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="end_date">End Date</Label>
-                  <Input
-                    id="end_date"
-                    type="date"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Foreman Request Fields */}
-            {type === 'foreman_request' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="start_date">Start Date</Label>
-                  <Input
-                    id="start_date"
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="end_date">End Date</Label>
-                  <Input
-                    id="end_date"
-                    type="date"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* File Upload Section */}
-            <div>
-              <Label>Attachments</Label>
-              <Input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="mt-2"
-              />
-              <p className="text-sm text-muted-foreground mt-1">
-                Maximum 5 images, up to 5MB each
-              </p>
-
-              {/* Combined Images Preview - More Compact */}
-              {(selectedFiles.length > 0 || uploadedUrls.length > 0) && (
-                <div className="mt-4">
-                  <h4 className="font-medium mb-2">Images:</h4>
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                    {/* Uploaded Files */}
-                    {uploadedUrls.map((url, index) => (
-                      <div key={`uploaded-${index}`} className="relative">
-                        <img
-                          src={url}
-                          alt={`Uploaded ${index}`}
-                          className="w-full h-20 object-cover rounded border"
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <DollarSign className="h-5 w-5" />
+                    Cost & Timeline
+                  </CardTitle>
+                  <CardDescription>
+                    Set pricing and schedule information
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="cost" className="text-sm font-medium">Cost ($)</Label>
+                      <div className="relative mt-1">
+                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="cost"
+                          type="number"
+                          step="0.01"
+                          value={formData.cost}
+                          onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                          placeholder="0.00"
+                          className="pl-9"
                         />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs"
-                          onClick={() => removeUploadedFile(url)}
-                        >
-                          ×
-                        </Button>
                       </div>
-                    ))}
-                    {/* Selected Files */}
-                    {selectedFiles.map((file, index) => (
-                      <div key={`selected-${index}`} className="relative">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`Preview ${index}`}
-                          className="w-full h-20 object-cover rounded border border-primary"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs"
-                          onClick={() => removeFile(index)}
-                        >
-                          ×
-                        </Button>
-                        <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-white text-xs p-1 rounded-b">
-                          New
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="status" className="text-sm font-medium">Status</Label>
+                      <Select 
+                        value={formData.status} 
+                        onValueChange={(value) => setFormData({ ...formData, status: value })}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="submitted">Submitted</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">Timeline</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        <div>
+                          <Input
+                            type="date"
+                            value={formData.start_date}
+                            onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                            placeholder="Start date"
+                          />
+                        </div>
+                        <div>
+                          <Input
+                            type="date"
+                            value={formData.end_date}
+                            onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                            placeholder="End date"
+                          />
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Timeline Card (Foreman Request) */}
+            {type === 'foreman_request' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Calendar className="h-5 w-5" />
+                    Proposed Timeline
+                  </CardTitle>
+                  <CardDescription>
+                    Suggest when this work should be scheduled
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="start_date" className="text-sm font-medium">Start Date</Label>
+                      <Input
+                        id="start_date"
+                        type="date"
+                        value={formData.start_date}
+                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="end_date" className="text-sm font-medium">End Date</Label>
+                      <Input
+                        id="end_date"
+                        type="date"
+                        value={formData.end_date}
+                        onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Attachments Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileImage className="h-5 w-5" />
+                  Attachments
+                </CardTitle>
+                <CardDescription>
+                  Upload images, drawings, or documents to support this order
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FileDropzone
+                  files={selectedFiles}
+                  uploadedUrls={uploadedUrls}
+                  onFilesChange={setSelectedFiles}
+                  onRemoveFile={removeFile}
+                  onRemoveUploaded={removeUploadedFile}
+                  maxFiles={5}
+                  maxSize={5}
+                  accept="image/*"
+                />
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="flex-shrink-0 flex justify-end space-x-2 pt-4 border-t bg-background">
-            <Button type="button" variant="outline" onClick={onClose}>
+          {/* Footer Actions */}
+          <div className="flex-shrink-0 flex justify-end space-x-3 pt-6 border-t bg-background">
+            <Button type="button" variant="outline" onClick={onClose} size="lg">
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} size="lg">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {editingOrder ? 'Update' : 'Create'} {formData.order_type === 'change' ? 'Change' : 'Extra'} Order
             </Button>
