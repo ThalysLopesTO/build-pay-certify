@@ -89,12 +89,7 @@ export const useChangeOrders = () => {
 
       const { data, error } = await supabase
         .from("change_orders")
-        .select(`
-          *,
-          creator:user_profiles!created_by(first_name, last_name),
-          project:jobsites!project_id(name),
-          reviewer:user_profiles!reviewed_by(first_name, last_name)
-        `)
+        .select("*")
         .eq('company_id', user.companyId)
         .order("created_at", { ascending: false });
 
@@ -125,12 +120,7 @@ export const useChangeOrders = () => {
           company_id: user.companyId,
           created_by: user.id,
         })
-        .select(`
-          *,
-          creator:user_profiles!created_by(first_name, last_name),
-          project:jobsites!project_id(name),
-          reviewer:user_profiles!reviewed_by(first_name, last_name)
-        `)
+        .select("*")
         .single();
 
       if (error) {
