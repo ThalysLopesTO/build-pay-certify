@@ -67,7 +67,7 @@ export const menuData: MenuItem[] = [
   },
   {
     id: 'change-orders',
-    title: 'Change Orders',
+    title: 'Extras / Changes',
     href: '/admin/change-orders',
     icon: ClipboardList,
   },
