@@ -178,8 +178,8 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] h-fit flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             {editingOrder ? 'Edit' : 'Create'} Extras / Changes
@@ -192,110 +192,103 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-          <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-4 px-1">
             
             {/* Basic Information Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Briefcase className="h-5 w-5" />
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Briefcase className="h-4 w-4" />
                   Basic Information
                 </CardTitle>
-                <CardDescription>
-                  Enter the essential details for this order
-                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="title" className="text-sm font-medium">Order Title</Label>
-                      <Input
-                        id="title"
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        placeholder="Enter a descriptive title"
-                        className="mt-1"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="project" className="text-sm font-medium">Project</Label>
-                      <Select 
-                        value={formData.project_id} 
-                        onValueChange={(value) => setFormData({ ...formData, project_id: value })}
-                        required
-                      >
-                        <SelectTrigger className="mt-1">
-                          <Building className="h-4 w-4 mr-2" />
-                          <SelectValue placeholder="Select project" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {jobsites.map((jobsite) => (
-                            <SelectItem key={jobsite.id} value={jobsite.id}>
-                              {jobsite.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Provide a detailed description of the work required"
-                      rows={5}
-                      className="mt-1 resize-none"
+                    <Label htmlFor="title" className="text-sm font-medium">Order Title</Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Enter a descriptive title"
+                      className="mt-1"
                       required
                     />
                   </div>
+
+                  <div>
+                    <Label htmlFor="project" className="text-sm font-medium">Project</Label>
+                    <Select 
+                      value={formData.project_id} 
+                      onValueChange={(value) => setFormData({ ...formData, project_id: value })}
+                      required
+                    >
+                      <SelectTrigger className="mt-1">
+                        <Building className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Select project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jobsites.map((jobsite) => (
+                          <SelectItem key={jobsite.id} value={jobsite.id}>
+                            {jobsite.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Order Type</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <RadioCard
+                        value="change"
+                        checked={formData.order_type === 'change'}
+                        onChange={(e) => setFormData({ ...formData, order_type: e.target.value as 'change' | 'extra' })}
+                        icon={<FileText className="h-3 w-3" />}
+                        title="Change"
+                        description="Modify scope"
+                        className="p-2"
+                      />
+                      <RadioCard
+                        value="extra"
+                        checked={formData.order_type === 'extra'}
+                        onChange={(e) => setFormData({ ...formData, order_type: e.target.value as 'change' | 'extra' })}
+                        icon={<Plus className="h-3 w-3" />}
+                        title="Extra"
+                        description="Additional work"
+                        className="p-2"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Order Type Selection */}
                 <div>
-                  <Label className="text-sm font-medium mb-3 block">Order Type</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <RadioCard
-                      value="change"
-                      checked={formData.order_type === 'change'}
-                      onChange={(e) => setFormData({ ...formData, order_type: e.target.value as 'change' | 'extra' })}
-                      icon={<FileText className="h-4 w-4" />}
-                      title="Change Order"
-                      description="Modify existing scope of work"
-                    />
-                    <RadioCard
-                      value="extra"
-                      checked={formData.order_type === 'extra'}
-                      onChange={(e) => setFormData({ ...formData, order_type: e.target.value as 'change' | 'extra' })}
-                      icon={<Plus className="h-4 w-4" />}
-                      title="Extra Order"
-                      description="Additional work outside original scope"
-                    />
-                  </div>
+                  <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Provide a detailed description of the work required"
+                    rows={3}
+                    className="mt-1 resize-none"
+                    required
+                  />
                 </div>
               </CardContent>
             </Card>
 
             {/* Cost & Timeline Card (Admin only) */}
             {type === 'admin' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <DollarSign className="h-5 w-5" />
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <DollarSign className="h-4 w-4" />
                     Cost & Timeline
                   </CardTitle>
-                  <CardDescription>
-                    Set pricing and schedule information
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <Label htmlFor="cost" className="text-sm font-medium">Cost ($)</Label>
                       <div className="relative mt-1">
@@ -331,25 +324,25 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
                     </div>
 
                     <div>
-                      <Label className="text-sm font-medium">Timeline</Label>
-                      <div className="grid grid-cols-2 gap-2 mt-1">
-                        <div>
-                          <Input
-                            type="date"
-                            value={formData.start_date}
-                            onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                            placeholder="Start date"
-                          />
-                        </div>
-                        <div>
-                          <Input
-                            type="date"
-                            value={formData.end_date}
-                            onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                            placeholder="End date"
-                          />
-                        </div>
-                      </div>
+                      <Label htmlFor="start_date" className="text-sm font-medium">Start Date</Label>
+                      <Input
+                        id="start_date"
+                        type="date"
+                        value={formData.start_date}
+                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="end_date" className="text-sm font-medium">End Date</Label>
+                      <Input
+                        id="end_date"
+                        type="date"
+                        value={formData.end_date}
+                        onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                        className="mt-1"
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -358,15 +351,12 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
 
             {/* Timeline Card (Foreman Request) */}
             {type === 'foreman_request' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Calendar className="h-5 w-5" />
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Calendar className="h-4 w-4" />
                     Proposed Timeline
                   </CardTitle>
-                  <CardDescription>
-                    Suggest when this work should be scheduled
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -396,15 +386,12 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
             )}
 
             {/* Attachments Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileImage className="h-5 w-5" />
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FileImage className="h-4 w-4" />
                   Attachments
                 </CardTitle>
-                <CardDescription>
-                  Upload images, drawings, or documents to support this order
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 <FileDropzone
@@ -422,13 +409,13 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
           </div>
 
           {/* Footer Actions */}
-          <div className="flex-shrink-0 flex justify-end space-x-3 pt-6 border-t bg-background">
-            <Button type="button" variant="outline" onClick={onClose} size="lg">
+          <div className="flex-shrink-0 flex justify-end space-x-3 pt-4 mt-4 border-t bg-background">
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading} size="lg">
+            <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editingOrder ? 'Update' : 'Create'} {formData.order_type === 'change' ? 'Change' : 'Extra'} Order
+              {editingOrder ? 'Update' : 'Create'} Order
             </Button>
           </div>
         </form>
