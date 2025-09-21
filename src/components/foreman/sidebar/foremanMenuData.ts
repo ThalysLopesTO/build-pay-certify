@@ -114,7 +114,7 @@ export const groupedForemanItems = {
       id: 'inventory',
     },
     {
-      title: 'Change Orders',
+      title: 'Extras / Changes',
       icon: ClipboardList,
       id: 'change-orders',
     },
