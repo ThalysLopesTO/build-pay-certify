@@ -14,8 +14,22 @@ import { ChangeOrder } from '@/hooks/useChangeOrders';
 
 const UnifiedChangeOrdersPage = () => {
   const { user } = useAuth();
-  const { changeOrders, updateChangeOrder, deleteChangeOrder } = useChangeOrders();
+  const { changeOrders, updateChangeOrder, deleteChangeOrder, isLoading, error } = useChangeOrders();
   const { data: jobsites = [] } = useJobsites('all');
+  
+  // Debug logging
+  console.log('UnifiedChangeOrdersPage - User context:', { 
+    userId: user?.id, 
+    companyId: user?.companyId, 
+    role: user?.role,
+    isAuthenticated: !!user 
+  });
+  console.log('Change orders data:', { 
+    count: changeOrders.length, 
+    isLoading, 
+    error: error?.message,
+    orders: changeOrders 
+  });
   
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ChangeOrder | null>(null);
@@ -152,21 +166,42 @@ const UnifiedChangeOrdersPage = () => {
             </div>
           </div>
 
+          {/* Loading and Error States */}
+          {isLoading && (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading change orders...
+            </div>
+          )}
+          
+          {error && (
+            <div className="text-center py-8 text-red-500">
+              Error loading change orders: {error.message}
+            </div>
+          )}
+          
+          {!isLoading && !error && changeOrders.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No change orders found. Create your first change order to get started.
+            </div>
+          )}
+
           {/* Table */}
-          <UnifiedChangeOrdersTable
-            orders={filteredOrders}
-            jobsites={jobsites}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            onComplete={handleComplete}
-            onViewDetails={handleViewDetails}
-            onEdit={handleEdit}
-            onDelete={(order) => deleteChangeOrder(order.id)}
-            canEdit={canEdit}
-            canDelete={canDelete}
-            canApprove={canApprove}
-            isAdmin={isAdmin}
-          />
+          {!isLoading && !error && (
+            <UnifiedChangeOrdersTable
+              orders={filteredOrders}
+              jobsites={jobsites}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              onComplete={handleComplete}
+              onViewDetails={handleViewDetails}
+              onEdit={handleEdit}
+              onDelete={(order) => deleteChangeOrder(order.id)}
+              canEdit={canEdit}
+              canDelete={canDelete}
+              canApprove={canApprove}
+              isAdmin={isAdmin}
+            />
+          )}
         </CardContent>
       </Card>
 

@@ -69,10 +69,24 @@ export const useChangeOrders = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Debug logging for user context
+  console.log("useChangeOrders hook - User context:", {
+    userId: user?.id,
+    companyId: user?.companyId,
+    role: user?.role,
+    queryEnabled: !!user?.companyId
+  });
+
   const query = useQuery({
     queryKey: queryKeys.changeOrder.list(user?.companyId || ''),
     queryFn: async () => {
-      console.log("Fetching change orders...");
+      console.log("Fetching change orders for company:", user?.companyId);
+      
+      if (!user?.companyId) {
+        console.error("No companyId available for query");
+        throw new Error("Company ID is required");
+      }
+
       const { data, error } = await supabase
         .from("change_orders")
         .select(`
@@ -81,14 +95,14 @@ export const useChangeOrders = () => {
           project:jobsites!project_id(name),
           reviewer:user_profiles!reviewed_by(first_name, last_name)
         `)
-        .eq('company_id', user?.companyId)
+        .eq('company_id', user.companyId)
         .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Change orders query error:", error);
         throw error;
       }
-      console.log("Fetched change orders:", data);
+      console.log("Successfully fetched change orders:", data?.length || 0, "orders");
       return data as ChangeOrder[];
     },
     enabled: !!user?.companyId,
@@ -97,22 +111,46 @@ export const useChangeOrders = () => {
 
   const createMutation = useSmartMutation({
     mutationFn: async (data: CreateChangeOrderData) => {
+      console.log("Creating change order with data:", data);
+      console.log("User context for creation:", { userId: user?.id, companyId: user?.companyId });
+
+      if (!user?.companyId || !user?.id) {
+        throw new Error("User context incomplete - missing company ID or user ID");
+      }
+
       const { data: result, error } = await supabase
         .from("change_orders")
         .insert({
           ...data,
-          company_id: user?.companyId,
-          created_by: user?.id,
+          company_id: user.companyId,
+          created_by: user.id,
         })
-        .select()
+        .select(`
+          *,
+          creator:user_profiles!created_by(first_name, last_name),
+          project:jobsites!project_id(name),
+          reviewer:user_profiles!reviewed_by(first_name, last_name)
+        `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Failed to create change order:", error);
+        throw error;
+      }
+      
+      console.log("Successfully created change order:", result);
       return result;
     },
     queryKey: queryKeys.changeOrder.list(user?.companyId || ''),
     successMessage: "Change order created successfully",
     errorMessage: "Failed to create change order",
+    onSuccessUpdate: async (data, queryClient) => {
+      // Force immediate refetch to ensure UI updates
+      console.log("Invalidating change orders cache after successful creation");
+      await queryClient.invalidateQueries({ 
+        queryKey: queryKeys.changeOrder.list(user?.companyId || '') 
+      });
+    },
   });
 
   const updateMutation = useSmartMutation({
