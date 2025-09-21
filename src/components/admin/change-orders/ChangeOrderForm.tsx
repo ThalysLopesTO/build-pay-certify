@@ -111,7 +111,7 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
     setUploading(true);
     const uploadPromises = selectedFiles.map(async (file) => {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}-${file.name}`;
-      const filePath = `${user?.companyId}/${fileName}`;
+      const filePath = `${user?.companyId}/${user?.id}/${fileName}`;
       
       const { error } = await supabase.storage
         .from('change-orders')
