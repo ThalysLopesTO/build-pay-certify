@@ -11,6 +11,7 @@ export interface ChangeOrder {
   title: string;
   description: string;
   type: 'admin' | 'foreman_request';
+  order_type: 'change' | 'extra';
   status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'completed';
   cost?: number;
   start_date?: string;
@@ -38,6 +39,7 @@ export interface CreateChangeOrderData {
   description: string;
   project_id: string;
   type: 'admin' | 'foreman_request';
+  order_type: 'change' | 'extra';
   cost?: number;
   start_date?: string;
   end_date?: string;
@@ -50,6 +52,7 @@ export interface UpdateChangeOrderData {
   description?: string;
   project_id?: string;
   type?: 'admin' | 'foreman_request';
+  order_type?: 'change' | 'extra';
   cost?: number;
   start_date?: string;
   end_date?: string;

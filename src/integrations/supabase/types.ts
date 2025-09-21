@@ -352,6 +352,7 @@ export type Database = {
           description: string
           end_date: string | null
           id: string
+          order_type: string
           project_id: string
           reviewed_at: string | null
           reviewed_by: string | null
@@ -370,6 +371,7 @@ export type Database = {
           description: string
           end_date?: string | null
           id?: string
+          order_type?: string
           project_id: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -388,6 +390,7 @@ export type Database = {
           description?: string
           end_date?: string | null
           id?: string
+          order_type?: string
           project_id?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
