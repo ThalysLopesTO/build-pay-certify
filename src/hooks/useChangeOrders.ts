@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/SupabaseAuthContext";
 import { toast } from "sonner";
+import { queryKeys } from "@/lib/queryKeyFactory";
+import { CACHE_STRATEGIES } from "@/lib/optimizedQueryClient";
+import { useSmartMutation } from "./useSmartMutation";
 
 export interface ChangeOrder {
   id: string;
@@ -67,7 +70,7 @@ export const useChangeOrders = () => {
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ["change-orders"],
+    queryKey: queryKeys.changeOrder.list(user?.companyId || ''),
     queryFn: async () => {
       console.log("Fetching change orders...");
       const { data, error } = await supabase
@@ -78,6 +81,7 @@ export const useChangeOrders = () => {
           project:jobsites!project_id(name),
           reviewer:user_profiles!reviewed_by(first_name, last_name)
         `)
+        .eq('company_id', user?.companyId)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -87,10 +91,11 @@ export const useChangeOrders = () => {
       console.log("Fetched change orders:", data);
       return data as ChangeOrder[];
     },
-    enabled: !!user,
+    enabled: !!user?.companyId,
+    ...CACHE_STRATEGIES.DYNAMIC,
   });
 
-  const createMutation = useMutation({
+  const createMutation = useSmartMutation({
     mutationFn: async (data: CreateChangeOrderData) => {
       const { data: result, error } = await supabase
         .from("change_orders")
@@ -105,17 +110,12 @@ export const useChangeOrders = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["change-orders"] });
-      toast.success("Change order created successfully");
-    },
-    onError: (error) => {
-      toast.error("Failed to create change order");
-      console.error("Create change order error:", error);
-    },
+    queryKey: queryKeys.changeOrder.list(user?.companyId || ''),
+    successMessage: "Change order created successfully",
+    errorMessage: "Failed to create change order",
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useSmartMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateChangeOrderData }) => {
       const updateData: any = { ...data };
       
@@ -135,17 +135,12 @@ export const useChangeOrders = () => {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["change-orders"] });
-      toast.success("Change order updated successfully");
-    },
-    onError: (error) => {
-      toast.error("Failed to update change order");
-      console.error("Update change order error:", error);
-    },
+    queryKey: queryKeys.changeOrder.list(user?.companyId || ''),
+    successMessage: "Change order updated successfully",
+    errorMessage: "Failed to update change order",
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useSmartMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("change_orders")
@@ -154,14 +149,9 @@ export const useChangeOrders = () => {
 
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["change-orders"] });
-      toast.success("Change order deleted successfully");
-    },
-    onError: (error) => {
-      toast.error("Failed to delete change order");
-      console.error("Delete change order error:", error);
-    },
+    queryKey: queryKeys.changeOrder.list(user?.companyId || ''),
+    successMessage: "Change order deleted successfully",
+    errorMessage: "Failed to delete change order",
   });
 
   return {

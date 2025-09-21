@@ -1,16 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { getSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-
-// Query key factories for consistent caching
-export const queryKeys = {
-  companySettings: (companyId: string) => ['company-settings', companyId],
-  userProfile: (userId: string) => ['user-profile', userId],
-  jobsites: (companyId: string) => ['jobsites', companyId],
-  timesheets: (userId: string, date: string) => ['timesheets', userId, date],
-  materialRequests: (companyId: string, filters?: any) => ['material-requests', companyId, filters],
-  notifications: (companyId: string) => ['notifications', companyId],
-};
+import { queryKeys } from '@/lib/queryKeyFactory';
+import { CACHE_STRATEGIES } from '@/lib/optimizedQueryClient';
 
 // Hot data with longer stale time
 export const useCompanySettings = () => {
@@ -18,7 +10,7 @@ export const useCompanySettings = () => {
   const supabase = getSupabase();
 
   return useQuery({
-    queryKey: queryKeys.companySettings(user?.companyId || ''),
+    queryKey: queryKeys.company.settings(user?.companyId || ''),
     queryFn: async () => {
       if (!user?.companyId) throw new Error('No company ID');
       
@@ -32,8 +24,7 @@ export const useCompanySettings = () => {
       return data;
     },
     enabled: !!user?.companyId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    ...CACHE_STRATEGIES.SEMI_STATIC,
   });
 };
 
@@ -42,7 +33,7 @@ export const useJobsites = () => {
   const supabase = getSupabase();
 
   return useQuery({
-    queryKey: queryKeys.jobsites(user?.companyId || ''),
+    queryKey: queryKeys.jobsite.list(user?.companyId || ''),
     queryFn: async () => {
       if (!user?.companyId) throw new Error('No company ID');
       
@@ -56,8 +47,7 @@ export const useJobsites = () => {
       return data;
     },
     enabled: !!user?.companyId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000,
+    ...CACHE_STRATEGIES.SEMI_STATIC,
   });
 };
 
@@ -67,7 +57,7 @@ export const useMaterialRequests = (filters?: any) => {
   const supabase = getSupabase();
 
   return useQuery({
-    queryKey: queryKeys.materialRequests(user?.companyId || '', filters),
+    queryKey: queryKeys.material.requests(user?.companyId || '', filters),
     queryFn: async () => {
       if (!user?.companyId) throw new Error('No company ID');
       
@@ -95,8 +85,7 @@ export const useMaterialRequests = (filters?: any) => {
       return data;
     },
     enabled: !!user?.companyId,
-    staleTime: 60 * 1000, // 1 minute
-    gcTime: 5 * 60 * 1000,
+    ...CACHE_STRATEGIES.DYNAMIC,
   });
 };
 
@@ -105,7 +94,7 @@ export const useNotifications = () => {
   const supabase = getSupabase();
 
   return useQuery({
-    queryKey: queryKeys.notifications(user?.companyId || ''),
+    queryKey: queryKeys.notification.list(user?.companyId || '', user?.role || ''),
     queryFn: async () => {
       if (!user?.companyId || !user?.role) throw new Error('No company ID or role');
       
@@ -122,7 +111,6 @@ export const useNotifications = () => {
       return data;
     },
     enabled: !!user?.companyId && !!user?.role,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000,
+    ...CACHE_STRATEGIES.REALTIME,
   });
 };

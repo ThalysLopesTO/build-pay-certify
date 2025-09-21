@@ -1,25 +1,25 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { queryKeys } from './useOptimizedQueries';
+import { queryKeys } from '@/lib/queryKeyFactory';
 
 // Route prefetch mappings - define which queries to prefetch for each route
 const ROUTE_PREFETCH_MAP = {
   'live-punch-monitor': (companyId: string) => [
-    queryKeys.jobsites(companyId),
-    ['employees', companyId],
+    queryKeys.jobsite.list(companyId),
+    queryKeys.user.profiles(companyId),
     ['live-punch-monitor', companyId, new Date(), 'all', 'all', 'all']
   ],
   'material-requests': (companyId: string) => [
-    queryKeys.materialRequests(companyId),
-    queryKeys.jobsites(companyId)
+    queryKeys.material.requests(companyId),
+    queryKeys.jobsite.list(companyId)
   ],
   'attention-reports': (companyId: string) => [
-    ['attention-reports', companyId],
-    queryKeys.jobsites(companyId)
+    queryKeys.report.attention(companyId),
+    queryKeys.jobsite.list(companyId)
   ],
   'timesheets': (companyId: string) => [
-    queryKeys.jobsites(companyId),
-    ['employees', companyId]
+    queryKeys.jobsite.list(companyId),
+    queryKeys.user.profiles(companyId)
   ]
 };
 
