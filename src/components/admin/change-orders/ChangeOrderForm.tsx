@@ -299,10 +299,9 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
               </>
             )}
             
-            {/* File upload for foreman requests */}
-            {type === 'foreman_request' && (
-              <div className="col-span-2">
-                <Label htmlFor="images">Upload Images</Label>
+            {/* File upload for both admin and foreman requests */}
+            <div className="col-span-2">
+              <Label htmlFor="images">Upload Images</Label>
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Input
@@ -371,7 +370,6 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
                   )}
                 </div>
               </div>
-            )}
           </div>
           
           <div className="flex justify-end gap-2 pt-4">
