@@ -2949,10 +2949,6 @@ export type Database = {
         Args: { quote_id_param: string }
         Returns: undefined
       }
-      can_access_user_profile: {
-        Args: { profile_user_id: string }
-        Returns: boolean
-      }
       can_add_employee: {
         Args: { company_id_param: string }
         Returns: boolean
