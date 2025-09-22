@@ -3104,6 +3104,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_profile_for_join: {
+        Args: { user_id_param: string }
+        Returns: {
+          first_name: string
+          last_name: string
+          photo_url: string
+        }[]
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
