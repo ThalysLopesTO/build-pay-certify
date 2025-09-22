@@ -88,21 +88,55 @@ export const useChangeOrders = () => {
         throw new Error("Company ID is required");
       }
 
-      const { data, error } = await supabase
+      // Fetch change orders without creator join
+      const { data: changeOrdersData, error: changeOrdersError } = await supabase
         .from("change_orders")
-        .select(`
-          *,
-          creator:user_profiles!change_orders_created_by_fkey(first_name, last_name, photo_url)
-        `)
+        .select("*")
         .eq('company_id', user.companyId)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Change orders query error:", error);
-        throw error;
+      if (changeOrdersError) {
+        console.error("Change orders query error:", changeOrdersError);
+        throw changeOrdersError;
       }
-      console.log("Successfully fetched change orders:", data?.length || 0, "orders");
-      return data as ChangeOrder[];
+
+      if (!changeOrdersData || changeOrdersData.length === 0) {
+        console.log("No change orders found");
+        return [];
+      }
+
+      // Get unique creator IDs
+      const creatorIds = [...new Set(changeOrdersData.map(order => order.created_by).filter(Boolean))];
+      
+      let creatorsData: any[] = [];
+      if (creatorIds.length > 0) {
+        // Fetch user profiles for creators
+        const { data: userProfilesData, error: userProfilesError } = await supabase
+          .from("user_profiles")
+          .select("user_id, first_name, last_name, photo_url")
+          .in("user_id", creatorIds);
+
+        if (userProfilesError) {
+          console.warn("User profiles query error:", userProfilesError);
+          // Continue without creator data rather than failing completely
+        } else {
+          creatorsData = userProfilesData || [];
+        }
+      }
+
+      // Create a map of creator data by user_id
+      const creatorsMap = new Map(
+        creatorsData.map(creator => [creator.user_id, creator])
+      );
+
+      // Merge change orders with creator data
+      const changeOrdersWithCreators = changeOrdersData.map(order => ({
+        ...order,
+        creator: order.created_by ? creatorsMap.get(order.created_by) || null : null
+      }));
+
+      console.log("Successfully fetched change orders:", changeOrdersWithCreators.length, "orders");
+      return changeOrdersWithCreators as ChangeOrder[];
     },
     enabled: !!user?.companyId,
     ...CACHE_STRATEGIES.DYNAMIC,
