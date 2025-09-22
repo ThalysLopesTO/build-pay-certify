@@ -3,13 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search, Filter, Grid, List } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useChangeOrders } from '@/hooks/useChangeOrders';
 import { useJobsites } from '@/hooks/useJobsites';
+import ChangeOrderSummaryCards from './ChangeOrderSummaryCards';
+import ChangeOrderCard from './ChangeOrderCard';
 import UnifiedChangeOrdersTable from './UnifiedChangeOrdersTable';
 import ChangeOrderForm from './ChangeOrderForm';
-import EnhancedChangeOrderDetails from './EnhancedChangeOrderDetails';
+import PrintableChangeOrderModal from './PrintableChangeOrderModal';
 import { ChangeOrder } from '@/hooks/useChangeOrders';
 
 const UnifiedChangeOrdersPage = () => {
@@ -35,6 +37,7 @@ const UnifiedChangeOrdersPage = () => {
   const [selectedOrder, setSelectedOrder] = useState<ChangeOrder | null>(null);
   const [editingOrder, setEditingOrder] = useState<ChangeOrder | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,6 +84,11 @@ const UnifiedChangeOrdersPage = () => {
     setShowDetails(true);
   };
 
+  const getJobsiteName = (projectId: string) => {
+    const jobsite = jobsites.find(j => j.id === projectId);
+    return jobsite?.name || 'Unknown Jobsite';
+  };
+
   const handleEdit = (order: ChangeOrder) => {
     setEditingOrder(order);
   };
@@ -117,51 +125,76 @@ const UnifiedChangeOrdersPage = () => {
         )}
       </div>
 
+      {/* Summary Cards */}
+      <ChangeOrderSummaryCards orders={changeOrders} />
+
       <Card>
         <CardHeader>
           <CardTitle>Change Orders Management</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Filters */}
+          {/* Filters and View Toggle */}
           <div className="flex flex-col gap-4 mb-6">
-            <div className="flex items-center gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search change orders..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 flex-1">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search change orders..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Select value={jobsiteFilter} onValueChange={setJobsiteFilter}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Filter by jobsite" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Jobsites</SelectItem>
+                      {jobsites.map((jobsite) => (
+                        <SelectItem key={jobsite.id} value={jobsite.id}>
+                          {jobsite.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="submitted">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Declined</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <Select value={jobsiteFilter} onValueChange={setJobsiteFilter}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filter by jobsite" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Jobsites</SelectItem>
-                    {jobsites.map((jobsite) => (
-                      <SelectItem key={jobsite.id} value={jobsite.id}>
-                        {jobsite.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="submitted">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Declined</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              {/* View Mode Toggle */}
+              <div className="flex items-center gap-1 border rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className="h-8"
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="h-8"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
@@ -185,22 +218,46 @@ const UnifiedChangeOrdersPage = () => {
             </div>
           )}
 
-          {/* Table */}
+          {/* Content */}
           {!isLoading && !error && (
-            <UnifiedChangeOrdersTable
-              orders={filteredOrders}
-              jobsites={jobsites}
-              onApprove={handleApprove}
-              onReject={handleReject}
-              onComplete={handleComplete}
-              onViewDetails={handleViewDetails}
-              onEdit={handleEdit}
-              onDelete={(order) => deleteChangeOrder(order.id)}
-              canEdit={canEdit}
-              canDelete={canDelete}
-              canApprove={canApprove}
-              isAdmin={isAdmin}
-            />
+            <>
+              {viewMode === 'cards' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredOrders.map((order) => (
+                    <ChangeOrderCard
+                      key={order.id}
+                      order={order}
+                      jobsiteName={getJobsiteName(order.project_id)}
+                      onViewDetails={handleViewDetails}
+                      onEdit={handleEdit}
+                      onDelete={(order) => deleteChangeOrder(order.id)}
+                      onApprove={handleApprove}
+                      onReject={handleReject}
+                      onComplete={handleComplete}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      canApprove={canApprove}
+                      isAdmin={isAdmin}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <UnifiedChangeOrdersTable
+                  orders={filteredOrders}
+                  jobsites={jobsites}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                  onComplete={handleComplete}
+                  onViewDetails={handleViewDetails}
+                  onEdit={handleEdit}
+                  onDelete={(order) => deleteChangeOrder(order.id)}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  canApprove={canApprove}
+                  isAdmin={isAdmin}
+                />
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -218,13 +275,13 @@ const UnifiedChangeOrdersPage = () => {
         />
       )}
 
-      {/* Enhanced Details View */}
+      {/* Printable Details Modal */}
       {selectedOrder && (
-        <EnhancedChangeOrderDetails
+        <PrintableChangeOrderModal
           isOpen={showDetails}
           onClose={() => setShowDetails(false)}
           order={selectedOrder}
-          jobsites={jobsites}
+          jobsiteName={getJobsiteName(selectedOrder.project_id)}
         />
       )}
     </div>
