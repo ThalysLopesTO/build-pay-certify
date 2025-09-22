@@ -92,7 +92,7 @@ export const useChangeOrders = () => {
         .from("change_orders")
         .select(`
           *,
-          creator:user_profiles!created_by(first_name, last_name, photo_url)
+          creator:user_profiles!change_orders_created_by_fkey(first_name, last_name, photo_url)
         `)
         .eq('company_id', user.companyId)
         .order("created_at", { ascending: false });
