@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, Edit, Trash2, Check, X, CheckCircle } from 'lucide-react';
 import { ChangeOrder } from '@/hooks/useChangeOrders';
+import EmployeeAvatar from '@/components/ui/employee-avatar';
 
 interface UnifiedChangeOrdersTableProps {
   orders: ChangeOrder[];
@@ -105,7 +106,17 @@ const UnifiedChangeOrdersTable = ({
                   {new Date(order.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
-                  {order.creator ? `${order.creator.first_name} ${order.creator.last_name}` : 'Unknown'}
+                  <div className="flex items-center gap-2">
+                    <EmployeeAvatar
+                      photoUrl={order.creator?.photo_url}
+                      firstName={order.creator?.first_name}
+                      lastName={order.creator?.last_name}
+                      size="sm"
+                    />
+                    <span>
+                      {order.creator ? `${order.creator.first_name} ${order.creator.last_name}` : 'Unknown'}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">

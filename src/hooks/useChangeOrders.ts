@@ -27,6 +27,7 @@ export interface ChangeOrder {
   creator?: {
     first_name: string;
     last_name: string;
+    photo_url?: string;
   };
   project?: {
     name: string;
@@ -89,7 +90,10 @@ export const useChangeOrders = () => {
 
       const { data, error } = await supabase
         .from("change_orders")
-        .select("*")
+        .select(`
+          *,
+          creator:user_profiles!created_by(first_name, last_name, photo_url)
+        `)
         .eq('company_id', user.companyId)
         .order("created_at", { ascending: false });
 
