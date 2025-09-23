@@ -49,6 +49,7 @@ const UnifiedChangeOrdersPage = () => {
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
   const isForeman = user?.role === 'foreman';
   const canCreateOrders = isAdmin || isForeman;
+  const canViewCost = isAdmin;
 
   // Filter orders based on active tab and other filters
   const filteredOrders = changeOrders.filter(order => {
@@ -255,10 +256,11 @@ const UnifiedChangeOrdersPage = () => {
                       onReject={handleReject}
                       onComplete={handleComplete}
                       canEdit={canEdit}
-                      canDelete={canDelete}
-                      canApprove={canApprove}
-                      isAdmin={isAdmin}
-                    />
+                          canDelete={canDelete}
+                          canApprove={canApprove}
+                          isAdmin={isAdmin}
+                          canViewCost={canViewCost}
+                        />
                   ))}
                 </div>
               ) : (
@@ -272,10 +274,11 @@ const UnifiedChangeOrdersPage = () => {
                   onEdit={handleEdit}
                   onDelete={(order) => deleteChangeOrder(order.id)}
                   canEdit={canEdit}
-                  canDelete={canDelete}
-                  canApprove={canApprove}
-                  isAdmin={isAdmin}
-                />
+                            canDelete={canDelete}
+                            canApprove={canApprove}
+                            isAdmin={isAdmin}
+                            canViewCost={canViewCost}
+                          />
               )}
             </>
           )}
@@ -391,10 +394,11 @@ const UnifiedChangeOrdersPage = () => {
                           onReject={handleReject}
                           onComplete={handleComplete}
                           canEdit={canEdit}
-                          canDelete={canDelete}
-                          canApprove={canApprove}
-                          isAdmin={isAdmin}
-                        />
+                            canDelete={canDelete}
+                            canApprove={canApprove}
+                            isAdmin={isAdmin}
+                            canViewCost={canViewCost}
+                          />
                       ))}
                     </div>
                   ) : (
@@ -408,10 +412,11 @@ const UnifiedChangeOrdersPage = () => {
                       onEdit={handleEdit}
                       onDelete={(order) => deleteChangeOrder(order.id)}
                       canEdit={canEdit}
-                      canDelete={canDelete}
-                      canApprove={canApprove}
-                      isAdmin={isAdmin}
-                    />
+                          canDelete={canDelete}
+                          canApprove={canApprove}
+                          isAdmin={isAdmin}
+                          canViewCost={canViewCost}
+                        />
                   )}
                 </>
               )}

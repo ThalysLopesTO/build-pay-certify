@@ -19,6 +19,7 @@ interface ChangeOrderCardProps {
   canDelete: (order: ChangeOrder) => boolean;
   canApprove: (order: ChangeOrder) => boolean;
   isAdmin: boolean;
+  canViewCost?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -58,6 +59,7 @@ const ChangeOrderCard: React.FC<ChangeOrderCardProps> = ({
   canDelete,
   canApprove,
   isAdmin,
+  canViewCost = true,
 }) => {
   return (
     <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary">
@@ -112,11 +114,13 @@ const ChangeOrderCard: React.FC<ChangeOrderCardProps> = ({
                 {order.creator ? `${order.creator.first_name} ${order.creator.last_name}` : 'Unknown'}
               </span>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-semibold text-foreground">
-                {formatCurrency(order.cost)}
-              </p>
-            </div>
+            {canViewCost && (
+              <div className="text-right">
+                <p className="text-lg font-semibold text-foreground">
+                  {formatCurrency(order.cost)}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Actions */}

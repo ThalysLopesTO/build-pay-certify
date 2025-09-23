@@ -19,6 +19,7 @@ interface UnifiedChangeOrdersTableProps {
   canDelete: (order: ChangeOrder) => boolean;
   canApprove: (order: ChangeOrder) => boolean;
   isAdmin: boolean;
+  canViewCost?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -58,6 +59,7 @@ const UnifiedChangeOrdersTable = ({
   canDelete,
   canApprove,
   isAdmin,
+  canViewCost = true,
 }: UnifiedChangeOrdersTableProps) => {
   const getJobsiteName = (projectId: string) => {
     const jobsite = jobsites.find(j => j.id === projectId);
@@ -73,7 +75,7 @@ const UnifiedChangeOrdersTable = ({
             <TableHead>Jobsite</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Cost</TableHead>
+            {canViewCost && <TableHead>Cost</TableHead>}
             <TableHead>Created</TableHead>
             <TableHead>Creator</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -101,7 +103,9 @@ const UnifiedChangeOrdersTable = ({
                     {statusLabels[order.status] || order.status}
                   </Badge>
                 </TableCell>
-                <TableCell>{formatCurrency(order.cost)}</TableCell>
+                {canViewCost && (
+                  <TableCell>{formatCurrency(order.cost)}</TableCell>
+                )}
                 <TableCell>
                   {new Date(order.created_at).toLocaleDateString()}
                 </TableCell>
