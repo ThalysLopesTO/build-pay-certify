@@ -49,7 +49,7 @@ const UnifiedChangeOrdersPage = () => {
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
   const isForeman = user?.role === 'foreman';
   const canCreateOrders = isAdmin || isForeman;
-  const canViewCost = isAdmin;
+  // Everyone can view costs now
 
   // Filter orders based on active tab and other filters
   const filteredOrders = changeOrders.filter(order => {
@@ -259,7 +259,6 @@ const UnifiedChangeOrdersPage = () => {
                           canDelete={canDelete}
                           canApprove={canApprove}
                           isAdmin={isAdmin}
-                          canViewCost={canViewCost}
                         />
                   ))}
                 </div>
@@ -277,7 +276,6 @@ const UnifiedChangeOrdersPage = () => {
                             canDelete={canDelete}
                             canApprove={canApprove}
                             isAdmin={isAdmin}
-                            canViewCost={canViewCost}
                           />
               )}
             </>
@@ -397,7 +395,6 @@ const UnifiedChangeOrdersPage = () => {
                             canDelete={canDelete}
                             canApprove={canApprove}
                             isAdmin={isAdmin}
-                            canViewCost={canViewCost}
                           />
                       ))}
                     </div>
@@ -415,7 +412,6 @@ const UnifiedChangeOrdersPage = () => {
                           canDelete={canDelete}
                           canApprove={canApprove}
                           isAdmin={isAdmin}
-                          canViewCost={canViewCost}
                         />
                   )}
                 </>

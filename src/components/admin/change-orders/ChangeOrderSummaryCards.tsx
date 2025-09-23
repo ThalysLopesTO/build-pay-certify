@@ -5,10 +5,9 @@ import { ChangeOrder } from '@/hooks/useChangeOrders';
 
 interface ChangeOrderSummaryCardsProps {
   orders: ChangeOrder[];
-  canViewCost?: boolean;
 }
 
-const ChangeOrderSummaryCards: React.FC<ChangeOrderSummaryCardsProps> = ({ orders, canViewCost = true }) => {
+const ChangeOrderSummaryCards: React.FC<ChangeOrderSummaryCardsProps> = ({ orders }) => {
   const stats = React.useMemo(() => {
     const totalOrders = orders.length;
     const pendingOrders = orders.filter(order => order.status === 'submitted').length;
@@ -56,13 +55,13 @@ const ChangeOrderSummaryCards: React.FC<ChangeOrderSummaryCardsProps> = ({ order
       color: 'text-green-600',
       bgColor: 'bg-green-100',
     },
-    ...(canViewCost ? [{
+    {
       title: 'Approved Value',
       value: formatCurrency(stats.totalValue),
       icon: DollarSign,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-    }] : []),
+      color: 'text-green-600',
+      bgColor: 'bg-green-100',
+    },
   ];
 
   return (
