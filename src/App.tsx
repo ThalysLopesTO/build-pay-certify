@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AppProviders } from "@/providers/AppProviders";
-import { EmployeeProvider } from "@/contexts/EmployeeContext";
 import { GlobalToasts } from "@/components/common/GlobalToasts";
 import IOSInstallTip from "@/components/common/IOSInstallTip";
 import RoleBasedRedirect from "@/components/auth/RoleBasedRedirect";
@@ -114,14 +113,12 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AppProviders>
-        <EmployeeProvider>
-          <AppInner />
-          <GlobalToasts />
-          <Toaster />
-          <SonnerToaster />
-          <IOSInstallTip />
-          <SpeedInsights />
-        </EmployeeProvider>
+        <AppInner />
+        <GlobalToasts />
+        <Toaster />
+        <SonnerToaster />
+        <IOSInstallTip />
+        <SpeedInsights />
       </AppProviders>
     </BrowserRouter>
   );
