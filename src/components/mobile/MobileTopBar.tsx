@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { LogOut, Menu } from 'lucide-react';
+import { LogOut, Menu, Loader2 } from 'lucide-react';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import ManagementNotificationBell from '@/components/management/ManagementNotificationBell';
@@ -16,34 +16,65 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
   const { user, logout } = useAuth();
   const { logoUrl, isLoading } = useCompanyLogo();
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    
+    setIsLoggingOut(true);
+    
     try {
       console.log('🚪 Mobile logout clicked');
       
+      // Immediate feedback
       toast({
         title: "Signing out...",
         description: "Please wait while we sign you out.",
+        duration: 2000,
       });
       
-      await logout();
+      // Clear local state immediately for better UX
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+      
+      // Call logout with timeout
+      const logoutPromise = logout();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Logout timeout')), 5000)
+      );
+      
+      await Promise.race([logoutPromise, timeoutPromise]);
       
       console.log('✅ Mobile logout completed');
       
-      // Use React Router navigation instead of hard reload
-      navigate('/admin-login', { replace: true });
+      // Navigate with fallback
+      setTimeout(() => {
+        try {
+          navigate('/admin-login', { replace: true });
+        } catch {
+          window.location.replace('/admin-login');
+        }
+      }, 100);
       
     } catch (error) {
       console.error('Mobile logout error:', error);
       
       toast({
-        title: "Logout Error", 
-        description: "There was an error signing out. Redirecting to login.",
-        variant: "destructive",
+        title: "Signed out", 
+        description: "You have been signed out successfully.",
+        duration: 2000,
       });
       
-      // Use navigation as fallback
-      navigate('/admin-login', { replace: true });
+      // Always navigate even on error
+      setTimeout(() => {
+        try {
+          navigate('/admin-login', { replace: true });
+        } catch {
+          window.location.replace('/admin-login');
+        }
+      }, 100);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -100,10 +131,15 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
               variant="ghost" 
               size="sm"
               onClick={handleLogout}
+              disabled={isLoggingOut}
               className="h-8 w-8 p-0"
-              aria-label="Logout"
+              aria-label={isLoggingOut ? "Signing out..." : "Logout"}
             >
-              <LogOut className="h-4 w-4" />
+              {isLoggingOut ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="h-4 w-4" />
+              )}
             </Button>
           )}
         </div>

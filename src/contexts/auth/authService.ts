@@ -153,29 +153,45 @@ export const logout = async () => {
     
     if (!session) {
       console.log('📝 No active session found, treating as successful logout');
+      // Clear any lingering storage
+      localStorage.removeItem('supabase.auth.token');
       return { error: null };
     }
     
-    // Sign out from Supabase
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      console.warn('⚠️ Supabase signOut error:', error);
-      // Don't throw error if it's just a session issue - user should still be logged out
-      if (error.message?.includes('session_not_found') || error.message?.includes('invalid_session')) {
-        console.log('📝 Session already expired, treating as successful logout');
-        return { error: null };
+    // Sign out from Supabase with timeout
+    try {
+      const { error } = await Promise.race([
+        supabase.auth.signOut(),
+        new Promise<{ error: Error }>((_, reject) => 
+          setTimeout(() => reject(new Error('Sign out timeout')), 3000)
+        )
+      ]);
+      
+      if (error) {
+        console.warn('⚠️ Supabase signOut error:', error);
+        // Don't throw error if it's just a session issue - user should still be logged out
+        if (error.message?.includes('session_not_found') || error.message?.includes('invalid_session')) {
+          console.log('📝 Session already expired, treating as successful logout');
+        } else {
+          console.warn('🔄 Continuing logout despite error');
+        }
       }
-      // For other errors, still return success but log the warning
-      console.warn('🔄 Continuing logout despite error');
+    } catch (timeoutError) {
+      console.warn('⏰ Logout timeout, continuing anyway:', timeoutError);
     }
+    
+    // Always clear storage regardless of Supabase response
+    localStorage.removeItem('supabase.auth.token');
+    sessionStorage.clear();
     
     console.log('✅ Logout completed successfully');
     return { error: null };
 
   } catch (error) {
     console.warn('💥 Logout error (continuing anyway):', error);
-    // Always return success for logout - user should not be stuck
+    // Always clear storage and return success - user should not be stuck
+    localStorage.removeItem('supabase.auth.token');
+    sessionStorage.clear();
     return { error: null };
   }
 };

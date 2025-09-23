@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { LogOut, Crown } from 'lucide-react';
+import { LogOut, Crown, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
@@ -16,35 +16,65 @@ const Header = () => {
   const { user, logout } = useAuth();
   const { logoUrl, isLoading } = useCompanyLogo();
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    
+    setIsLoggingOut(true);
+    
     try {
       console.log('🚪 Header logout clicked');
       
-      toast({
+      // Immediate feedback
+      const toastId = toast({
         title: "Signing out...",
         description: "Please wait while we sign you out.",
+        duration: 2000,
       });
       
-      // Call logout function
-      await logout();
+      // Clear local state immediately for better UX
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+      
+      // Call logout with timeout
+      const logoutPromise = logout();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Logout timeout')), 5000)
+      );
+      
+      await Promise.race([logoutPromise, timeoutPromise]);
       
       console.log('✅ Header logout completed, navigating to login...');
       
-      // Use React Router navigation instead of hard reload
-      navigate('/admin-login', { replace: true });
+      // Navigate with fallback
+      setTimeout(() => {
+        try {
+          navigate('/admin-login', { replace: true });
+        } catch {
+          window.location.replace('/admin-login');
+        }
+      }, 100);
       
     } catch (error) {
       console.error('Header logout error:', error);
       
       toast({
-        title: "Logout Error", 
-        description: "There was an error signing out. Redirecting to login.",
-        variant: "destructive",
+        title: "Signed out", 
+        description: "You have been signed out successfully.",
+        duration: 2000,
       });
       
-      // Use navigation as fallback
-      navigate('/admin-login', { replace: true });
+      // Always navigate even on error
+      setTimeout(() => {
+        try {
+          navigate('/admin-login', { replace: true });
+        } catch {
+          window.location.replace('/admin-login');
+        }
+      }, 100);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -112,10 +142,15 @@ const Header = () => {
                   variant="outline" 
                   size="sm" 
                   onClick={handleLogout}
+                  disabled={isLoggingOut}
                   className="flex items-center space-x-2 flex-shrink-0"
                 >
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
+                  {isLoggingOut ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <LogOut className="h-4 w-4" />
+                  )}
+                  <span>{isLoggingOut ? 'Signing out...' : 'Logout'}</span>
                 </Button>
               </div>
             )}
