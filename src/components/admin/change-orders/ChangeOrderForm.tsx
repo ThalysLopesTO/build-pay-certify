@@ -35,9 +35,10 @@ interface ChangeOrderFormProps {
   onClose: () => void;
   editingOrder?: ChangeOrder | null;
   type: 'admin' | 'foreman_request';
+  defaultOrderType?: 'change' | 'extra';
 }
 
-const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFormProps) => {
+const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type, defaultOrderType = 'change' }: ChangeOrderFormProps) => {
   const { createChangeOrder, updateChangeOrder, isCreating, isUpdating } = useChangeOrders();
   const { data: jobsites = [] } = useActiveJobsites();
   
@@ -75,7 +76,7 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
         title: '',
         description: '',
         project_id: '',
-        order_type: 'change',
+        order_type: defaultOrderType,
         cost: '',
         start_date: '',
         end_date: '',
@@ -84,7 +85,7 @@ const ChangeOrderForm = ({ isOpen, onClose, editingOrder, type }: ChangeOrderFor
       setSelectedFiles([]);
       setUploadedUrls([]);
     }
-  }, [editingOrder, type]);
+  }, [editingOrder, type, defaultOrderType]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);

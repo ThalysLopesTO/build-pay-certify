@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, Search, Filter, Grid, List } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useChangeOrders } from '@/hooks/useChangeOrders';
@@ -38,6 +39,7 @@ const UnifiedChangeOrdersPage = () => {
   const [editingOrder, setEditingOrder] = useState<ChangeOrder | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [activeTab, setActiveTab] = useState<'extras' | 'changes'>('extras');
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,15 +50,21 @@ const UnifiedChangeOrdersPage = () => {
   const isForeman = user?.role === 'foreman';
   const canCreateOrders = isAdmin || isForeman;
 
-  // Filter orders based on search and filters
+  // Filter orders based on active tab and other filters
   const filteredOrders = changeOrders.filter(order => {
+    const matchesTab = activeTab === 'extras' ? order.order_type === 'extra' : order.order_type === 'change';
     const matchesSearch = order.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     const matchesJobsite = jobsiteFilter === 'all' || order.project_id === jobsiteFilter;
     
-    return matchesSearch && matchesStatus && matchesJobsite;
+    return matchesTab && matchesSearch && matchesStatus && matchesJobsite;
   });
+
+  // Get orders for current tab for summary cards
+  const tabOrders = changeOrders.filter(order => 
+    activeTab === 'extras' ? order.order_type === 'extra' : order.order_type === 'change'
+  );
 
   const handleApprove = (order: ChangeOrder) => {
     updateChangeOrder({
@@ -126,13 +134,25 @@ const UnifiedChangeOrdersPage = () => {
       </div>
 
       {/* Summary Cards */}
-      <ChangeOrderSummaryCards orders={changeOrders} />
+      <ChangeOrderSummaryCards orders={tabOrders} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Change Orders Management</CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Tabs for Extras and Changes */}
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'extras' | 'changes')}>
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="extras" className="text-sm font-medium">
+            Extras
+          </TabsTrigger>
+          <TabsTrigger value="changes" className="text-sm font-medium">
+            Changes
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="extras" className="mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Extras Management</CardTitle>
+            </CardHeader>
+            <CardContent>
           {/* Filters and View Toggle */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex items-center justify-between">
@@ -259,8 +279,146 @@ const UnifiedChangeOrdersPage = () => {
               )}
             </>
           )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="changes" className="mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Changes Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Filters and View Toggle */}
+              <div className="flex flex-col gap-4 mb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        placeholder="Search change orders..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-muted-foreground" />
+                      <Select value={jobsiteFilter} onValueChange={setJobsiteFilter}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Filter by jobsite" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Jobsites</SelectItem>
+                          {jobsites.map((jobsite) => (
+                            <SelectItem key={jobsite.id} value={jobsite.id}>
+                              {jobsite.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="submitted">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Declined</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* View Mode Toggle */}
+                  <div className="flex items-center gap-1 border rounded-lg p-1">
+                    <Button
+                      variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('cards')}
+                      className="h-8"
+                    >
+                      <Grid className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('table')}
+                      className="h-8"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Loading and Error States */}
+              {isLoading && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading change orders...
+                </div>
+              )}
+              
+              {error && (
+                <div className="text-center py-8 text-red-500">
+                  Error loading change orders: {error.message}
+                </div>
+              )}
+              
+              {!isLoading && !error && changeOrders.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No change orders found. Create your first change order to get started.
+                </div>
+              )}
+
+              {/* Content */}
+              {!isLoading && !error && (
+                <>
+                  {viewMode === 'cards' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filteredOrders.map((order) => (
+                        <ChangeOrderCard
+                          key={order.id}
+                          order={order}
+                          jobsiteName={getJobsiteName(order.project_id)}
+                          onViewDetails={handleViewDetails}
+                          onEdit={handleEdit}
+                          onDelete={(order) => deleteChangeOrder(order.id)}
+                          onApprove={handleApprove}
+                          onReject={handleReject}
+                          onComplete={handleComplete}
+                          canEdit={canEdit}
+                          canDelete={canDelete}
+                          canApprove={canApprove}
+                          isAdmin={isAdmin}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <UnifiedChangeOrdersTable
+                      orders={filteredOrders}
+                      jobsites={jobsites}
+                      onApprove={handleApprove}
+                      onReject={handleReject}
+                      onComplete={handleComplete}
+                      onViewDetails={handleViewDetails}
+                      onEdit={handleEdit}
+                      onDelete={(order) => deleteChangeOrder(order.id)}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      canApprove={canApprove}
+                      isAdmin={isAdmin}
+                    />
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Create/Edit Form */}
       {(showCreateForm || editingOrder) && (
@@ -272,6 +430,7 @@ const UnifiedChangeOrdersPage = () => {
           }}
           editingOrder={editingOrder}
           type={isAdmin ? 'admin' : 'foreman_request'}
+          defaultOrderType={activeTab === 'extras' ? 'extra' : 'change'}
         />
       )}
 
