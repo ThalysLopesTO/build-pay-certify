@@ -6,11 +6,11 @@ import {
   Clock, 
   DollarSign, 
   Receipt, 
-  BarChart3, 
+  // BarChart3, 
   CalendarDays,
   Building,
   Eye,
-  ArrowRight,
+  // ArrowRight,
   Users,
   MapPin,
   FileText,
@@ -19,18 +19,19 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { useEnhancedDashboardStats } from '@/hooks/useEnhancedDashboardStats';
-import { useEmployees } from '@/contexts/EmployeeContext';
+// import { useEmployees } from '@/contexts/EmployeeContext';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import StatsCard from './StatsCard';
+// import { useQuery } from '@tanstack/react-query';
+// import { supabase } from '@/integrations/supabase/client';
+// import StatsCard from './StatsCard';
 import LicenseWarningBanner from '../../common/LicenseWarningBanner';
 import EmployeeLimitCard from './EmployeeLimitCard';
 import ProjectsProgressOverview from './ProjectsProgressOverview';
 import LiveActiveEmployees from './LiveActiveEmployees';
 import WeatherCard from './WeatherCard';
-import EmailTestComponent from '../EmailTestComponent';
+// import EmailTestComponent from '../EmailTestComponent';
+import { useEmployees, useUserProfile } from '@/hooks/new/useUsers';
 interface AdminDashboardContentProps {
   setActiveTab: (tab: string) => void;
 }
@@ -44,41 +45,24 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
   } = useEnhancedDashboardStats();
   
   // Get real-time employee count from context
-  const { activeEmployeeCount } = useEmployees();
+  const { data } = useEmployees();
+
+  const activeEmployeeCount =data?.archivedEmployeesCount;
 
   // Fetch user profile data
-  const { data: userProfile } = useQuery({
-    queryKey: ['user-profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return null;
-      }
-      
-      return data;
-    },
-    enabled: !!user?.id,
-  });
+  const { data: userProfile } = useUserProfile();
 
   // Handler for card clicks
   const navigateToSection = (section: string) => {
     setActiveTab(section);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-CA', {
-      style: 'currency',
-      currency: 'CAD',
-    }).format(amount);
-  };
+  // const formatCurrency = (amount: number) => {
+  //   return new Intl.NumberFormat('en-CA', {
+  //     style: 'currency',
+  //     currency: 'CAD',
+  //   }).format(amount);
+  // };
 
   const quickActions = [
     {
@@ -107,7 +91,7 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
     }
   ];
 
-  const userName = userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : user?.firstName || 'Admin';
+  // const userName = userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : user?.firstName || 'Admin';
   const firstName = userProfile?.first_name || user?.firstName || 'Admin';
 
   if (isLoading) {

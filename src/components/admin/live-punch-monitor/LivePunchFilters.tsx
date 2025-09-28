@@ -19,6 +19,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, Building, Users, Activity } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useEmployees } from '@/hooks/new/useUsers';
 
 interface LivePunchFiltersProps {
   selectedDate: Date | null;
@@ -30,7 +31,6 @@ interface LivePunchFiltersProps {
   statusFilter: string;
   setStatusFilter: (status: string) => void;
   jobsites?: Array<{ id: string; name: string }>;
-  employees?: Array<{ user_id: string; first_name: string; last_name: string }>;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
 }
@@ -45,10 +45,12 @@ const LivePunchFilters: React.FC<LivePunchFiltersProps> = ({
   statusFilter,
   setStatusFilter,
   jobsites,
-  employees,
   onClearFilters,
   hasActiveFilters
 }) => {
+  const { data } = useEmployees();
+  const employees = data?.activeEmployees ?? [];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

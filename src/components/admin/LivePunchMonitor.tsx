@@ -83,17 +83,48 @@ const LivePunchMonitor = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
+
     if (selectedDate) {
-      params.set('date', format(selectedDate, 'yyyy-MM-dd'));
+      params.set("date", format(selectedDate, "yyyy-MM-dd"));
     } else {
-      params.delete('date');
+      params.delete("date");
     }
-    selectedJobsite !== 'all' ? params.set('jobsite', selectedJobsite) : params.delete('jobsite');
-    selectedEmployee !== 'all' ? params.set('employee', selectedEmployee) : params.delete('employee');
-    statusFilter !== 'all' ? params.set('status', statusFilter) : params.delete('status');
-    noteFilter !== 'all' ? params.set('note', noteFilter) : params.delete('note');
+
+    if (selectedJobsite !== "all") {
+      params.set("jobsite", selectedJobsite);
+    } else {
+      params.delete("jobsite");
+    }
+
+    if (selectedEmployee !== "all") {
+      params.set("employee", selectedEmployee);
+    } else {
+      params.delete("employee");
+    }
+
+    if (statusFilter !== "all") {
+      params.set("status", statusFilter);
+    } else {
+      params.delete("status");
+    }
+
+    if (noteFilter !== "all") {
+      params.set("note", noteFilter);
+    } else {
+      params.delete("note");
+    }
+
     setSearchParams(params, { replace: true });
-  }, [selectedDate, selectedJobsite, selectedEmployee, statusFilter, noteFilter]);
+  }, [
+    searchParams,
+    selectedDate,
+    selectedJobsite,
+    selectedEmployee,
+    statusFilter,
+    noteFilter,
+    setSearchParams,
+  ]);
+
 
   // Fetch jobsites for filter
   const {
@@ -167,7 +198,7 @@ const LivePunchMonitor = () => {
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(selectedDate);
         endOfDay.setHours(23, 59, 59, 999);
-        
+
         // Handle overnight shifts: return entries where check_in <= endOfDay AND (check_out IS NULL OR check_out >= startOfDay)
         // This covers: 
         // 1. Normal same-day shifts (check_in and check_out both within the day)
@@ -262,7 +293,7 @@ const LivePunchMonitor = () => {
         },
         (payload) => {
           console.log('📡 Realtime timesheet update:', payload);
-          
+
           // Invalidate and refetch the current query
           queryClient.invalidateQueries({
             queryKey: ['live-punch-monitor', user?.companyId]
@@ -380,73 +411,73 @@ const LivePunchMonitor = () => {
   };
   if (isLoading) {
     return <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
-      </div>;
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+    </div>;
   }
   return <div className="space-y-8 p-6 max-w-7xl mx-auto">
-      <DashboardHeader 
-        title="Live Punch Monitor"
-        subtitle="Real-time tracking of employee punches at assigned jobsites"
-        live
-        isRefreshing={isLoading}
-        onRefresh={handleRefresh}
-        onExportCsv={handleExportCsv}
-      />
+    <DashboardHeader
+      title="Live Punch Monitor"
+      subtitle="Real-time tracking of employee punches at assigned jobsites"
+      live
+      isRefreshing={isLoading}
+      onRefresh={handleRefresh}
+      onExportCsv={handleExportCsv}
+    />
 
-      {/* KPI Cards */}
-      <LivePunchSummaryCards filteredEntries={filteredEntries} selectedDate={selectedDate} />
+    {/* KPI Cards */}
+    <LivePunchSummaryCards filteredEntries={filteredEntries} selectedDate={selectedDate} />
 
-      {/* Modern Filter Panel */}
-      <Card className="shadow-sm border-accent/20">
-        <CardContent className="p-6">
-          
-          <LivePunchFilters selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedJobsite={selectedJobsite} setSelectedJobsite={setSelectedJobsite} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee} statusFilter={statusFilter} setStatusFilter={setStatusFilter} jobsites={jobsites} employees={employees} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters()} />
-        </CardContent>
-      </Card>
+    {/* Modern Filter Panel */}
+    <Card className="shadow-sm border-accent/20">
+      <CardContent className="p-6">
 
-      {/* Results Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-semibold text-foreground">Punch Records</h2>
-            <Badge variant="secondary" className="px-3 py-1">
-              {filteredEntries.length} {filteredEntries.length === 1 ? 'record' : 'records'}
-            </Badge>
-          </div>
-          {selectedDate && <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>{format(selectedDate, 'EEEE, MMMM dd, yyyy')}</span>
-              {isToday(selectedDate) && <Badge variant="outline" className="ml-2 text-xs">Live</Badge>}
-            </div>}
-          {!selectedDate && hasActiveFilters() && <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>All Dates</span>
-            </div>}
+        <LivePunchFilters selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedJobsite={selectedJobsite} setSelectedJobsite={setSelectedJobsite} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee} statusFilter={statusFilter} setStatusFilter={setStatusFilter} jobsites={jobsites} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters()} />
+      </CardContent>
+    </Card>
+
+    {/* Results Section */}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-semibold text-foreground">Punch Records</h2>
+          <Badge variant="secondary" className="px-3 py-1">
+            {filteredEntries.length} {filteredEntries.length === 1 ? 'record' : 'records'}
+          </Badge>
         </div>
-
-      {/* Punch Entries Table */}
-        <Card className="shadow-sm">
-          <LivePunchTable 
-            filteredEntries={filteredEntries} 
-            selectedDate={selectedDate} 
-            flaggedEntries={flaggedEntries} 
-            onToggleFlag={toggleFlag} 
-            onViewLocation={handleViewLocation} 
-            onEdit={handleEdit} 
-            onDelete={handleDelete}
-            isLoading={isLoading}
-          />
-        </Card>
+        {selectedDate && <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Calendar className="h-4 w-4" />
+          <span>{format(selectedDate, 'EEEE, MMMM dd, yyyy')}</span>
+          {isToday(selectedDate) && <Badge variant="outline" className="ml-2 text-xs">Live</Badge>}
+        </div>}
+        {!selectedDate && hasActiveFilters() && <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Calendar className="h-4 w-4" />
+          <span>All Dates</span>
+        </div>}
       </div>
 
-      {/* Edit Punch Modal */}
-      {editingTimesheet && <EditPunchModal isOpen={!!editingTimesheet} onClose={() => setEditingTimesheet(null)} timesheet={editingTimesheet} onSuccess={() => refetch()} />}
+      {/* Punch Entries Table */}
+      <Card className="shadow-sm">
+        <LivePunchTable
+          filteredEntries={filteredEntries}
+          selectedDate={selectedDate}
+          flaggedEntries={flaggedEntries}
+          onToggleFlag={toggleFlag}
+          onViewLocation={handleViewLocation}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          isLoading={isLoading}
+        />
+      </Card>
+    </div>
 
-      {/* Location Map Modal */}
-      {selectedLocation && (() => {
+    {/* Edit Punch Modal */}
+    {editingTimesheet && <EditPunchModal isOpen={!!editingTimesheet} onClose={() => setEditingTimesheet(null)} timesheet={editingTimesheet} onSuccess={() => refetch()} />}
+
+    {/* Location Map Modal */}
+    {selectedLocation && (() => {
       const [lat, lng] = selectedLocation.punchLocation.split(',').map(Number);
       return <LocationMapModal latitude={lat} longitude={lng} employeeName={selectedLocation.employeeName} timestamp={selectedLocation.timestamp} onClose={() => setSelectedLocation(null)} />;
     })()}
-    </div>;
+  </div>;
 };
 export default LivePunchMonitor;

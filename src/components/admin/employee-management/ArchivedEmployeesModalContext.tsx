@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, UserCheck, Users } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
-import { useEmployees } from '@/contexts/EmployeeContext';
+import { useEmployees, useToggleEmployeeStatus } from '@/hooks/new/useUsers';
 
 interface ArchivedEmployeesModalProps {
   isOpen: boolean;
@@ -22,7 +22,9 @@ const ArchivedEmployeesModalContext: React.FC<ArchivedEmployeesModalProps> = ({
   onClose,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { archivedEmployees, loading, reactivateEmployee } = useEmployees();
+  const { data, isLoading: loading } = useEmployees();
+  const archivedEmployees = data?.archivedEmployees;
+  const toggleStatus = useToggleEmployeeStatus();
 
   const filteredEmployees = archivedEmployees.filter(employee =>
     `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -31,11 +33,7 @@ const ArchivedEmployeesModalContext: React.FC<ArchivedEmployeesModalProps> = ({
   );
 
   const handleReactivate = async (employeeUserId: string) => {
-    try {
-      await reactivateEmployee(employeeUserId);
-    } catch (error) {
-      console.error('Error reactivating employee:', error);
-    }
+    toggleStatus.mutate({ id: employeeUserId, isActive: true })
   };
 
   return (
@@ -113,6 +111,7 @@ const ArchivedEmployeesModalContext: React.FC<ArchivedEmployeesModalProps> = ({
                     onClick={() => handleReactivate(employee.user_id)}
                     size="sm"
                     className="bg-green-600 hover:bg-green-700"
+                    disabled={toggleStatus.isPending}
                   >
                     <UserCheck className="h-4 w-4 mr-1" />
                     Reactivate
