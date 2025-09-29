@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' && componentTagger(),
     VitePWA({
+      injectRegister: null, // Don't inject SW registration to avoid blocking
       registerType: 'autoUpdate',
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit

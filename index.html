@@ -14,19 +14,22 @@
     <link rel="preconnect" href="https://maps.googleapis.com" />
     <link rel="preconnect" href="https://maps.gstatic.com" crossorigin />
 
-    <!-- ✅ Google Maps Script with Places + Geometry - Async loading to break critical chain -->
+    <!-- ✅ Google Maps Script - Completely deferred until needed -->
     <script>
-      // Defer Google Maps loading until needed
+      // Defer Google Maps loading until actually needed by components
       window.initGoogleMaps = function() {
-        if (!window.google) {
+        if (!window.google && !window.googleMapsLoading) {
+          window.googleMapsLoading = true;
           const script = document.createElement('script');
           script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU&libraries=places,geometry&callback=window.mapsLoaded';
           script.async = true;
+          script.defer = true;
           document.head.appendChild(script);
         }
       };
       window.mapsLoaded = function() {
         window.googleMapsReady = true;
+        window.googleMapsLoading = false;
         window.dispatchEvent(new Event('google-maps-loaded'));
       };
     </script>
@@ -84,17 +87,31 @@
 
   <body>
     <div id="root"></div>
+    
+    <!-- Critical CSS inlined, main CSS loaded asynchronously -->
+    <script>
+      // Load CSS asynchronously to prevent render blocking
+      function loadCSS(href) {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        document.head.appendChild(link);
+      }
+      
+      // Load main CSS after critical path
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+          setTimeout(function() {
+            var cssLinks = document.querySelectorAll('link[rel="preload"][as="style"]');
+            cssLinks.forEach(function(link) {
+              link.rel = 'stylesheet';
+            });
+          }, 0);
+        });
+      }
+    </script>
+    
     <!-- Defer main script to avoid render blocking -->
     <script type="module" src="/src/main.tsx" defer></script>
-    
-    <!-- Defer Google Maps initialization until after critical path -->
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Google Maps after DOM is ready
-        if (window.initGoogleMaps) {
-          setTimeout(window.initGoogleMaps, 100);
-        }
-      });
-    </script>
   </body>
 </html>
