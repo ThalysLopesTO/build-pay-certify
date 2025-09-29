@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       injectRegister: null, // Don't inject SW registration to avoid blocking
       registerType: 'autoUpdate',
+      disable: false, // Ensure PWA is enabled
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
