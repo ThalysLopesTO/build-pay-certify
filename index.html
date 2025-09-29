@@ -84,6 +84,17 @@
 
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <!-- Defer main script to avoid render blocking -->
+    <script type="module" src="/src/main.tsx" defer></script>
+    
+    <!-- Defer Google Maps initialization until after critical path -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Google Maps after DOM is ready
+        if (window.initGoogleMaps) {
+          setTimeout(window.initGoogleMaps, 100);
+        }
+      });
+    </script>
   </body>
 </html>

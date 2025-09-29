@@ -17,5 +17,7 @@ root.render(
   </StrictMode>
 );
 
-// Register service worker for PWA functionality
-registerServiceWorker();
+// Defer service worker registration to avoid blocking initial render
+setTimeout(() => {
+  registerServiceWorker();
+}, 0);
