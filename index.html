@@ -15,7 +15,21 @@
     <link rel="preconnect" href="https://maps.gstatic.com" crossorigin />
 
     <!-- ✅ Google Maps Script with Places + Geometry - Async loading to break critical chain -->
-    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU&libraries=places,geometry"></script>
+    <script>
+      // Defer Google Maps loading until needed
+      window.initGoogleMaps = function() {
+        if (!window.google) {
+          const script = document.createElement('script');
+          script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU&libraries=places,geometry&callback=window.mapsLoaded';
+          script.async = true;
+          document.head.appendChild(script);
+        }
+      };
+      window.mapsLoaded = function() {
+        window.googleMapsReady = true;
+        window.dispatchEvent(new Event('google-maps-loaded'));
+      };
+    </script>
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />

@@ -118,13 +118,48 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'router-vendor': ['react-router-dom'],
-          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
-          'form-vendor': ['react-hook-form', '@hookform/resolvers'],
-          'query-vendor': ['@tanstack/react-query'],
-          'supabase-vendor': ['@supabase/supabase-js']
+        manualChunks: (id) => {
+          // Vendor chunk splitting for better caching
+          if (id.includes('node_modules')) {
+            // Core React libraries
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            // Router
+            if (id.includes('react-router')) {
+              return 'router-vendor';
+            }
+            // UI libraries
+            if (id.includes('@radix-ui') || id.includes('lucide-react')) {
+              return 'ui-vendor';
+            }
+            // Form libraries
+            if (id.includes('react-hook-form') || id.includes('@hookform')) {
+              return 'form-vendor';
+            }
+            // Query libraries
+            if (id.includes('@tanstack/react-query')) {
+              return 'query-vendor';
+            }
+            // Supabase
+            if (id.includes('@supabase')) {
+              return 'supabase-vendor';
+            }
+            // Charts and visualization
+            if (id.includes('recharts') || id.includes('framer-motion')) {
+              return 'charts-vendor';
+            }
+            // Utils and smaller libraries
+            if (id.includes('date-fns') || id.includes('zod') || id.includes('clsx')) {
+              return 'utils-vendor';
+            }
+            // PDF and file processing
+            if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('xlsx')) {
+              return 'pdf-vendor';
+            }
+            // All other vendor code
+            return 'vendor';
+          }
         },
         assetFileNames: (assetInfo) => {
           const name = assetInfo.name || 'asset';
@@ -142,8 +177,21 @@ export default defineConfig(({ mode }) => ({
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js'
+      },
+      treeshake: {
+        moduleSideEffects: false,
+        propertyReadSideEffects: false,
+        tryCatchDeoptimization: false
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
+      }
+    }
   }
 }));
