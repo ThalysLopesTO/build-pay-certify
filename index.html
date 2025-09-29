@@ -9,9 +9,13 @@
 
     <!-- Critical Resource Preloading for LCP -->
     <link rel="preload" href="/images/admin-login-bg.png" as="image" fetchpriority="high" />
+    
+    <!-- Preconnect hints for external resources -->
+    <link rel="preconnect" href="https://maps.googleapis.com" />
+    <link rel="preconnect" href="https://maps.gstatic.com" crossorigin />
 
-    <!-- ✅ Google Maps Script with Places + Geometry -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU&libraries=places,geometry"></script>
+    <!-- ✅ Google Maps Script with Places + Geometry - Async loading to break critical chain -->
+    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU&libraries=places,geometry"></script>
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
