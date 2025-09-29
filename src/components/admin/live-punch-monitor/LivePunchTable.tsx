@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { MapPin, Flag, Edit, Trash2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { MapPin, Flag, Edit, Trash2, AlertTriangle, CheckCircle, Clock, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import WorkNoteDisplay from './WorkNoteDisplay';
+import EmployeeAvatar from '@/components/ui/employee-avatar';
 
 // Global Google Maps type declaration
 declare global {
@@ -31,6 +32,7 @@ interface PunchEntry {
   user_profiles: {
     first_name: string;
     last_name: string;
+    photo_url: string | null;
   } | null;
   jobsites: {
     name: string;
@@ -89,9 +91,19 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
 
   const getStatusBadge = (entry: PunchEntry) => {
     if (!entry.check_out_time) {
-      return <Badge variant="default" className="bg-green-500">Clocked In</Badge>;
+      return (
+        <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold shadow-md">
+          <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
+          Active
+        </Badge>
+      );
     } else {
-      return <Badge variant="default" className="bg-green-600">Completed</Badge>;
+      return (
+        <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow-md">
+          <CheckCircle className="w-3 h-3 mr-1" />
+          Complete
+        </Badge>
+      );
     }
   };
 
@@ -111,99 +123,149 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
 
   return (
     <TooltipProvider>
-      <Card className="shadow-sm border-0 bg-white">
-        <CardHeader className="border-b border-gray-100 bg-gray-50/50">
-          <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            {isToday(selectedDate) ? "Today's Punch Records" : `Punch Records for ${format(selectedDate, 'MMM dd, yyyy')}`}
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-background to-background/95 backdrop-blur-sm">
+        <CardHeader className="border-b border-border/50 bg-gradient-to-r from-muted/50 to-muted/30 backdrop-blur-sm">
+          <CardTitle className="text-xl font-bold text-foreground flex items-center gap-3">
+            <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/70 rounded-full animate-pulse"></div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              {isToday(selectedDate) ? "Live Punch Monitor" : `Punch Records - ${format(selectedDate, 'MMM dd, yyyy')}`}
+            </div>
+            {isToday(selectedDate) && (
+              <Badge variant="outline" className="ml-auto bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border-green-200">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                Live
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50/80 hover:bg-gray-50/80 border-b border-gray-200">
-                  <TableHead className="font-semibold text-gray-700 py-4 px-6">Employee Name</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Jobsite</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Check-in Time</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Check-out Time</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Total Time</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Status</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Note</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Location</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Distance Flag {/* TODO: Will re-enable later */}</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Flag</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4 px-6">Actions</TableHead>
+                <TableRow className="bg-gradient-to-r from-muted/80 to-muted/50 hover:from-muted/90 hover:to-muted/60 border-b border-border/50">
+                  <TableHead className="font-bold text-foreground py-6 px-6">Employee</TableHead>
+                  <TableHead className="font-bold text-foreground py-6">Jobsite</TableHead>
+                  <TableHead className="font-bold text-foreground py-6">Check-in</TableHead>
+                  <TableHead className="font-bold text-foreground py-6">Check-out</TableHead>
+                  <TableHead className="font-bold text-foreground py-6">Duration</TableHead>
+                  <TableHead className="font-bold text-foreground py-6">Status</TableHead>
+                  <TableHead className="font-bold text-foreground py-6">Note</TableHead>
+                  <TableHead className="font-bold text-foreground py-6">Location</TableHead>
+                  <TableHead className="font-bold text-foreground py-6">Distance</TableHead>
+                  <TableHead className="font-bold text-foreground py-6">Flag</TableHead>
+                  <TableHead className="font-bold text-foreground py-6 px-6">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredEntries.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-12 text-muted-foreground bg-gray-50/30">
-                      <div className="flex flex-col items-center gap-2">
-                        <MapPin className="h-8 w-8 text-gray-300" />
-                        <p className="font-medium">No punch records found</p>
-                        <p className="text-sm">for {format(selectedDate, 'MMMM dd, yyyy')}</p>
+                    <TableCell colSpan={11} className="text-center py-16 bg-gradient-to-br from-muted/20 to-muted/10">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                          <Clock className="h-8 w-8 text-muted-foreground/60" />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="font-semibold text-lg text-foreground">No punch records found</p>
+                          <p className="text-sm text-muted-foreground">for {format(selectedDate, 'MMMM dd, yyyy')}</p>
+                        </div>
                       </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredEntries.map((entry, index) => {
                     const distanceStatus = getDistanceStatus(entry);
+                    const isEven = index % 2 === 0;
                     
                     return (
                       <TableRow 
                         key={entry.id}
                         className={cn(
-                          "border-b border-gray-100 hover:bg-gray-50/50 transition-colors",
-                          flaggedEntries.has(entry.id) && 'bg-red-50 border-l-4 border-l-red-500 hover:bg-red-50',
-                          index % 2 === 0 && !flaggedEntries.has(entry.id) && 'bg-white',
-                          index % 2 === 1 && !flaggedEntries.has(entry.id) && 'bg-gray-50/20'
+                          "border-b border-border/30 hover:bg-gradient-to-r hover:from-muted/30 hover:to-muted/10 transition-all duration-200 group",
+                          flaggedEntries.has(entry.id) && 'bg-gradient-to-r from-destructive/10 to-destructive/5 border-l-4 border-l-destructive hover:from-destructive/15 hover:to-destructive/8',
+                          !flaggedEntries.has(entry.id) && (isEven ? 'bg-background' : 'bg-muted/20')
                         )}
                       >
-                        <TableCell className="font-medium py-4 px-6 text-gray-900">
-                          <div className="flex flex-col">
-                            <span className="font-semibold">
-                              {entry.user_profiles ? 
-                                `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : 
-                                'Unknown Employee'
+                        <TableCell className="py-6 px-6">
+                          <div className="flex items-center gap-4">
+                            <EmployeeAvatar
+                              photoUrl={entry.user_profiles?.photo_url}
+                              firstName={entry.user_profiles?.first_name}
+                              lastName={entry.user_profiles?.last_name}
+                              size="md"
+                              className="shadow-sm border-2 border-background group-hover:scale-105 transition-transform duration-200"
+                            />
+                            <div className="flex flex-col space-y-1">
+                              <span className="font-bold text-lg text-foreground">
+                                {entry.user_profiles ? 
+                                  `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : 
+                                  'Unknown Employee'
+                                }
+                              </span>
+                              {entry.check_in_time && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Calendar className="h-3 w-3" />
+                                  {format(new Date(entry.check_in_time), 'EEE, MMM dd')}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-3 h-3 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full shadow-sm"></div>
+                            <span className="font-semibold text-foreground">
+                              {entry.jobsites?.name || 'Unknown Jobsite'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-6">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-mono text-sm font-bold text-foreground">
+                              {entry.check_in_time 
+                                ? format(new Date(entry.check_in_time), 'h:mm a')
+                                : 'N/A'
                               }
                             </span>
                             {entry.check_in_time && (
-                              <span className="text-xs text-gray-500 mt-1">
-                                {format(new Date(entry.check_in_time), 'EEE, MMM dd')}
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(entry.check_in_time), 'MMM dd')}
                               </span>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 text-gray-700">
+                        <TableCell className="py-6">
+                          {entry.check_out_time ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="font-mono text-sm font-bold text-foreground">
+                                {format(new Date(entry.check_out_time), 'h:mm a')}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(entry.check_out_time), 'MMM dd')}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                              <span className="text-green-600 font-bold text-sm">Active Now</span>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-6">
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                            {entry.jobsites?.name || 'Unknown Jobsite'}
+                            <Clock className="h-4 w-4 text-primary" />
+                            <span className="font-mono text-sm font-bold text-foreground">
+                              {calculateTotalTime(entry.check_in_time, entry.check_out_time)}
+                            </span>
                           </div>
                         </TableCell>
-                        <TableCell className="py-4 text-gray-700 font-mono text-sm">
-                          {entry.check_in_time 
-                            ? format(new Date(entry.check_in_time), 'h:mm a')
-                            : 'N/A'
-                          }
-                        </TableCell>
-                        <TableCell className="py-4 text-gray-700 font-mono text-sm">
-                          {entry.check_out_time 
-                            ? format(new Date(entry.check_out_time), 'h:mm a')
-                            : <span className="text-green-600 font-medium">Still active</span>
-                          }
-                        </TableCell>
-                        <TableCell className="py-4 text-gray-700 font-mono text-sm font-medium">
-                          {calculateTotalTime(entry.check_in_time, entry.check_out_time)}
-                        </TableCell>
-                        <TableCell className="py-4">
+                        <TableCell className="py-6">
                           {getStatusBadge(entry)}
                         </TableCell>
-                        <TableCell className="py-4 text-center">
+                        <TableCell className="py-6 text-center">
                           <WorkNoteDisplay note={entry.work_note} variant="icon" />
                         </TableCell>
-                        <TableCell className="py-4">
+                        <TableCell className="py-6">
                           {entry.check_in_location ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -211,9 +273,9 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => onViewLocation(entry)}
-                                  className="p-2 h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                  className="p-3 h-10 w-10 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 rounded-full hover:scale-105"
                                 >
-                                  <MapPin className="h-4 w-4 text-blue-500" />
+                                  <MapPin className="h-5 w-5 text-blue-500" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -221,16 +283,15 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                               </TooltipContent>
                             </Tooltip>
                           ) : (
-                            <span className="text-gray-400 text-sm">No data</span>
+                            <span className="text-muted-foreground text-sm font-medium">No location</span>
                           )}
                         </TableCell>
-                        <TableCell className="py-4">
-                          {/* TODO: Will re-add distance status display later */}
-                          <Badge variant="outline" className="text-xs text-gray-500 border-gray-300">
+                        <TableCell className="py-6">
+                          <Badge variant="outline" className="text-xs font-medium bg-muted/50 border-muted-foreground/30">
                             Disabled
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-4">
+                        <TableCell className="py-6">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -238,13 +299,13 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                                 size="sm"
                                 onClick={() => onToggleFlag(entry.id)}
                                 className={cn(
-                                  "p-2 h-8 w-8 transition-colors",
+                                  "p-3 h-10 w-10 transition-all duration-200 rounded-full hover:scale-105",
                                   flaggedEntries.has(entry.id) 
-                                    ? "text-red-600 hover:text-red-700 hover:bg-red-50" 
-                                    : "text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                    ? "text-red-600 hover:text-red-700 hover:bg-red-50 bg-red-50/50" 
+                                    : "text-muted-foreground hover:text-red-500 hover:bg-red-50"
                                 )}
                               >
-                                <Flag className="h-4 w-4" />
+                                <Flag className="h-5 w-5" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -252,8 +313,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                             </TooltipContent>
                           </Tooltip>
                         </TableCell>
-                        <TableCell className="py-4 px-6">
-                          <div className="flex items-center gap-1">
+                        <TableCell className="py-6 px-6">
+                          <div className="flex items-center gap-2">
                             {onEdit && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -261,9 +322,9 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => onEdit(entry)}
-                                    className="p-2 h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                    className="p-3 h-10 w-10 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 rounded-full hover:scale-105"
                                   >
-                                    <Edit className="h-4 w-4 text-blue-500" />
+                                    <Edit className="h-5 w-5 text-blue-500" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -279,9 +340,9 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="p-2 h-8 w-8 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                        className="p-3 h-10 w-10 hover:bg-red-50 hover:text-red-600 transition-all duration-200 rounded-full hover:scale-105"
                                       >
-                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                        <Trash2 className="h-5 w-5 text-red-500" />
                                       </Button>
                                     </AlertDialogTrigger>
                                   </TooltipTrigger>

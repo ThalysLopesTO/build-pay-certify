@@ -64,30 +64,33 @@ const LivePunchSummaryCards: React.FC<LivePunchSummaryCardsProps> = ({
       {stats.map((stat, index) => {
         const IconComponent = stat.icon;
         return (
-          <Card key={index} className="hover:shadow-md transition-shadow duration-200 border-accent/20">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+          <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-background to-background/95 shadow-lg hover:scale-[1.02] backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
                 {stat.title}
               </CardTitle>
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <IconComponent className={`h-4 w-4 ${stat.color}`} />
+              <div className={`p-3 rounded-xl ${stat.bgColor} shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                <IconComponent className={`h-5 w-5 ${stat.color}`} />
               </div>
             </CardHeader>
-            <CardContent className="pb-4">
-              <div className="flex items-baseline justify-between">
-                <div className="text-3xl font-bold text-foreground">{stat.value}</div>
+            <CardContent className="pb-6">
+              <div className="flex items-baseline justify-between mb-3">
+                <div className="text-4xl font-black text-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+                  {stat.value}
+                </div>
                 {stat.trend && (
-                  <div className="flex items-center gap-1 text-sm text-emerald-600">
+                  <div className="flex items-center gap-1 text-sm font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
                     <TrendingUp className="h-3 w-3" />
                     {stat.trend}
                   </div>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground font-medium">
                 {stat.description}
               </p>
               {isToday(selectedDate) && (
-                <Badge variant="outline" className="mt-2 text-xs">
+                <Badge className="mt-3 text-xs font-semibold bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md">
+                  <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
                   Live Updates
                 </Badge>
               )}

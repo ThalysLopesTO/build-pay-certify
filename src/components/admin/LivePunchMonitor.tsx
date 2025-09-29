@@ -31,6 +31,7 @@ interface PunchEntry {
   user_profiles: {
     first_name: string;
     last_name: string;
+    photo_url: string | null;
   } | null;
   jobsites: {
     name: string;
@@ -231,7 +232,7 @@ const LivePunchMonitor = () => {
       const {
         data: userProfiles,
         error: profilesError
-      } = await supabase.from('user_profiles').select('user_id, first_name, last_name').in('user_id', userIds);
+      } = await supabase.from('user_profiles').select('user_id, first_name, last_name, photo_url').in('user_id', userIds);
       if (profilesError) {
         console.error('Error fetching user profiles:', profilesError);
         throw profilesError;
@@ -256,7 +257,8 @@ const LivePunchMonitor = () => {
           ...timesheet,
           user_profiles: userProfile ? {
             first_name: userProfile.first_name || '',
-            last_name: userProfile.last_name || ''
+            last_name: userProfile.last_name || '',
+            photo_url: userProfile.photo_url || null
           } : null,
           jobsites: jobsite ? {
             name: jobsite.name,
