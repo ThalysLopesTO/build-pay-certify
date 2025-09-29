@@ -6,16 +6,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useEmployeeLimit } from '@/hooks/useEmployeeLimit';
-import { useEmployees } from '@/contexts/EmployeeContext';
+// import { useEmployees } from '@/contexts/EmployeeContext';
 import { employeeSchema, EmployeeFormData } from './schemas';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const useEmployeeRegistrationForm = () => {
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string>('');
   const { user } = useAuth();
   const { data: employeeLimit } = useEmployeeLimit();
-  const { createEmployee, refreshEmployees } = useEmployees();
+  // const { createEmployee, refreshEmployees } = useEmployees();
   const abortControllerRef = useRef<AbortController | null>(null);
+  const queryClient = useQueryClient();
 
   // Cleanup function to reset loading state and abort any ongoing requests
   const resetLoadingState = () => {
@@ -252,6 +254,7 @@ export const useEmployeeRegistrationForm = () => {
       }
 
       console.log('🎉 Employee registered successfully in edge function!');
+      queryClient.invalidateQueries({ queryKey: ["employees"], exact: false });
 
       // Fetch the actual employee profile and add to context
       if (result.user) {
@@ -259,40 +262,40 @@ export const useEmployeeRegistrationForm = () => {
         console.log('👤 Fetching employee profile for user:', result.user.id);
         
         // Add a longer delay to ensure database consistency (especially for foremen on slower connections)
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // await new Promise(resolve => setTimeout(resolve, 1000));
         
-        try {
-          const { data: employeeProfile, error: fetchError } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('user_id', result.user.id)
-            .maybeSingle();
+        // try {
+        //   const { data: employeeProfile, error: fetchError } = await supabase
+        //     .from('user_profiles')
+        //     .select('*')
+        //     .eq('user_id', result.user.id)
+        //     .maybeSingle();
 
-          if (!fetchError && employeeProfile) {
-            console.log('✅ Successfully fetched employee profile:', {
-              id: employeeProfile.id,
-              email: employeeProfile.user_id,
-              name: `${employeeProfile.first_name} ${employeeProfile.last_name}`,
-              role: employeeProfile.role
-            });
+        //   if (!fetchError && employeeProfile) {
+        //     console.log('✅ Successfully fetched employee profile:', {
+        //       id: employeeProfile.id,
+        //       email: employeeProfile.user_id,
+        //       name: `${employeeProfile.first_name} ${employeeProfile.last_name}`,
+        //       role: employeeProfile.role
+        //     });
             
-            // Add the real employee data to context
-            await createEmployee(employeeProfile);
-            console.log('✅ Employee added to context successfully');
-          } else {
-            console.error('⚠️ Error fetching employee profile:', fetchError);
-            console.log('🔄 Falling back to refreshing entire employee list...');
-            // Refresh the employee list as fallback
-            await refreshEmployees();
-          }
-        } catch (profileError) {
-          console.error('❌ Critical error in profile fetch:', profileError);
-          console.log('🔄 Falling back to refreshing entire employee list...');
-          await refreshEmployees();
-        }
+        //     // Add the real employee data to context
+        //     // await createEmployee(employeeProfile);
+        //     console.log('✅ Employee added to context successfully');
+        //   } else {
+        //     console.error('⚠️ Error fetching employee profile:', fetchError);
+        //     console.log('🔄 Falling back to refreshing entire employee list...');
+        //     // Refresh the employee list as fallback
+        //     // await refreshEmployees();
+        //   }
+        // } catch (profileError) {
+        //   console.error('❌ Critical error in profile fetch:', profileError);
+        //   console.log('🔄 Falling back to refreshing entire employee list...');
+        //   // await refreshEmployees();
+        // }
       } else {
         console.warn('⚠️ No user data in successful result - refreshing employee list');
-        await refreshEmployees();
+        // await refreshEmployees();
       }
 
       console.log('🎊 Registration process completed successfully!');

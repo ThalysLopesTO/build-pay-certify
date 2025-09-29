@@ -10,8 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Mail, Phone, MapPin, User, Briefcase, DollarSign } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import PhotoUploadField from './employee-registration/PhotoUploadField';
-import { useEmployees } from '@/contexts/EmployeeContext';
 import { editEmployeeSchema, EditEmployeeFormData } from '@/components/admin/employee-edit-modal-schema';
+import { useUpdateEmployee } from '@/hooks/new/useUsers';
 
 interface Employee {
   id: string;
@@ -42,8 +42,6 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   employee,
   onSuccess
 }) => {
-  const { updateEmployee } = useEmployees();
-  
   const form = useForm<EditEmployeeFormData>({
     resolver: zodResolver(editEmployeeSchema),
     defaultValues: {
@@ -59,8 +57,6 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
       worker_type: 'employee',
     },
   });
-
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Reset form when employee changes
   React.useEffect(() => {
@@ -80,35 +76,25 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
     }
   }, [employee, form]);
 
-  const handleSubmit = async (data: EditEmployeeFormData) => {
+  const mutation = useUpdateEmployee();
+  const isSubmitting = mutation.isPending;
+
+  const handleSubmit = (data: EditEmployeeFormData) => {
     if (!employee) return;
-    
-    console.log('🚀 Starting employee update process...', { employeeId: employee.id, hasPhoto: !!data.photo });
-    setIsSubmitting(true);
-    
-    // Safety timeout to reset loading state
-    const safetyTimeout = setTimeout(() => {
-      console.warn('⚠️ Update operation timed out, resetting UI state');
-      setIsSubmitting(false);
-    }, 30000); // 30 second safety timeout for photo uploads
-    
-    try {
-      console.log('📝 Preparing update data...');
-      
-      // Extract photo file from form data
-      const photoFile = data.photo instanceof File ? data.photo : undefined;
-      
-      console.log('📋 Update payload:', {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email || undefined,
-        hasPhoto: !!photoFile,
-        photoName: photoFile?.name
-      });
-      
-      await updateEmployee(
-        employee.id, 
-        {
+
+    console.log("🚀 Starting employee update process...", {
+      employeeId: employee.id,
+      hasPhoto: !!data.photo,
+    });
+
+    // Extract photo file
+    const photoFile = data.photo instanceof File ? data.photo : undefined;
+
+    // Trigger mutation
+    mutation.mutate(
+      {
+        id: employee.id,
+        updates: {
           first_name: data.first_name,
           last_name: data.last_name,
           email: data.email || undefined,
@@ -120,20 +106,20 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
           hourly_rate: data.hourly_rate || undefined,
           worker_type: data.worker_type,
         },
-        photoFile // Pass the photo file as the third parameter
-      );
-      
-      console.log('✅ Employee update completed successfully');
-      clearTimeout(safetyTimeout);
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error('❌ Error updating employee:', error);
-      clearTimeout(safetyTimeout);
-      // Don't throw the error to prevent unhandled promise rejection
-    } finally {
-      setIsSubmitting(false);
-    }
+        newPhoto: photoFile,
+        isEmailChanged: (employee?.email ?? "") !== (data?.email ?? ""),
+      },
+      {
+        onSuccess: () => {
+          console.log("✅ Employee update completed successfully");
+          onSuccess();
+          onClose();
+        },
+        onError: (error) => {
+          console.error("❌ Error updating employee:", error);
+        },
+      }
+    );
   };
 
   if (!employee) return null;
@@ -149,13 +135,13 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             {/* Employee Photo and Basic Info */}
             <div className="flex flex-col items-center space-y-4 border-b border-border pb-6">
-              <EmployeeAvatar 
+              <EmployeeAvatar
                 photoUrl={employee.photo_url}
                 firstName={employee.first_name}
                 lastName={employee.last_name}
                 size="lg"
               />
-              <PhotoUploadField 
+              <PhotoUploadField
                 form={form as any}
               />
             </div>
@@ -166,7 +152,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
                 <User className="h-4 w-4" />
                 Personal Information
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -204,7 +190,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
                 <Mail className="h-4 w-4" />
                 Contact Information
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -213,10 +199,10 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
                     <FormItem>
                       <FormLabel>Email Address</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="Enter email address" 
-                          {...field} 
+                        <Input
+                          type="email"
+                          placeholder="Enter email address"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -231,10 +217,10 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="tel" 
-                          placeholder="Enter phone number" 
-                          {...field} 
+                        <Input
+                          type="tel"
+                          placeholder="Enter phone number"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -250,10 +236,10 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Enter full address" 
+                      <Textarea
+                        placeholder="Enter full address"
                         className="min-h-[80px]"
-                        {...field} 
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -268,7 +254,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
                 <Briefcase className="h-4 w-4" />
                 Work Information
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -355,11 +341,11 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
                       Hourly Rate
                     </FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
+                      <Input
+                        type="number"
                         step="0.01"
                         min="0"
-                        placeholder="0.00" 
+                        placeholder="0.00"
                         {...field}
                         value={field.value || ''}
                         onChange={(e) => {
@@ -376,16 +362,16 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
 
             {/* Action Buttons */}
             <div className="flex justify-end space-x-3 pt-6 border-t border-border">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={onClose}
                 disabled={isSubmitting}
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Updating...' : 'Update Employee'}

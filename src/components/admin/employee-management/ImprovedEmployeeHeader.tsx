@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Archive, Users, TrendingUp } from 'lucide-react';
+import { UserPlus, Archive, Users } from 'lucide-react';
 
 interface ImprovedEmployeeHeaderProps {
   canAddEmployee: boolean;
