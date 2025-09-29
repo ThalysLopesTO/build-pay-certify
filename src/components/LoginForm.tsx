@@ -196,7 +196,7 @@ const LoginForm = () => {
                 </div>
                 
                 <Button type="submit" className="w-full h-12 text-white font-semibold shadow-lg transition-all duration-200 hover:shadow-xl" style={{
-                  backgroundColor: '#F26522'
+                  backgroundColor: '#D97316'
                 }} disabled={loading}>
                   {loading ? <div className="flex items-center space-x-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

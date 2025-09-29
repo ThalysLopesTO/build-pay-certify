@@ -138,7 +138,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
             <Button
               type="submit"
               className="w-full h-12 text-white font-semibold shadow-lg transition-all duration-200 hover:shadow-xl"
-              style={{ backgroundColor: '#F26522' }}
+              style={{ backgroundColor: '#D97316' }}
               disabled={loading}
             >
               {loading ? (
