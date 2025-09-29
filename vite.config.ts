@@ -118,6 +118,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    sourcemap: true, // Generate source maps for debugging and SEO tools
     rollupOptions: {
       output: {
         manualChunks: (id) => {
