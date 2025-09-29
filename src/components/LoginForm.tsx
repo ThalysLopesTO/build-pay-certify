@@ -152,7 +152,7 @@ const LoginForm = () => {
         <div className="w-full max-w-md">
           {/* StackBuild Logo */}
           <div className="text-center mb-8">
-            <img src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png" alt="StackBuild Logo" className="h-16 w-auto mx-auto mb-8" />
+            <img src="/images/stackbuild-logo-small.svg" alt="StackBuild Logo" className="h-16 w-auto mx-auto mb-8" width="206" height="64" />
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Company Login</h1>
             <p className="text-slate-600">Welcome back to StackBuild</p>
             
