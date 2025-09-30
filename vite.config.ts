@@ -124,7 +124,15 @@ export default defineConfig(({ mode }) => ({
     sourcemap: true, // Generate source maps for debugging and SEO tools
     cssCodeSplit: true, // Split CSS per route for faster loading
     modulePreload: {
-      polyfill: false // Skip polyfill for modern browsers
+      polyfill: false, // Skip polyfill for modern browsers
+      resolveDependencies: (filename, deps, { hostId, hostType }) => {
+        // Preload critical dependencies for faster LCP
+        return deps.filter(dep => 
+          dep.includes('react') || 
+          dep.includes('router') || 
+          dep.includes('index')
+        );
+      }
     },
     rollupOptions: {
       output: {
