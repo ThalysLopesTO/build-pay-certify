@@ -155,16 +155,16 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
         <CardContent className="p-0">
           {isMobile ? (
             // Mobile Card Layout
-            <div className="p-4 space-y-4">
+            <div className="p-3 space-y-3">
               {filteredEntries.length === 0 ? (
-                <div className="text-center py-16 bg-gradient-to-br from-muted/20 to-muted/10 rounded-lg">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-                      <Clock className="h-8 w-8 text-muted-foreground/60" />
+                <div className="text-center py-12 bg-gradient-to-br from-muted/20 to-muted/10 rounded-lg mx-2">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                      <Clock className="h-7 w-7 text-muted-foreground/60" />
                     </div>
-                    <div className="space-y-2">
-                      <p className="font-semibold text-lg text-foreground">No punch records found</p>
-                      <p className="text-sm text-muted-foreground">for {format(selectedDate, 'MMMM dd, yyyy')}</p>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-base text-foreground">No punch records found</p>
+                      <p className="text-xs text-muted-foreground">for {format(selectedDate, 'MMMM dd, yyyy')}</p>
                     </div>
                   </div>
                 </div>
@@ -173,146 +173,169 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                   <Card 
                     key={entry.id}
                     className={cn(
-                      "overflow-hidden transition-all duration-200 hover:shadow-lg border",
+                      "overflow-hidden transition-all duration-200 hover:shadow-md border",
                       flaggedEntries.has(entry.id) 
                         ? 'border-l-4 border-l-destructive bg-gradient-to-r from-destructive/10 to-destructive/5' 
-                        : 'border-border/50 hover:border-primary/30'
+                        : 'border-border/50'
                     )}
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 space-y-3">
                       {/* Employee Header */}
-                      <div className="flex items-start gap-4 mb-4">
+                      <div className="flex items-start gap-3">
                         <EmployeeAvatar
                           photoUrl={entry.user_profiles?.photo_url}
                           firstName={entry.user_profiles?.first_name}
                           lastName={entry.user_profiles?.last_name}
-                          size="lg"
-                          className="shadow-md border-2 border-background"
+                          size="md"
+                          className="shadow-sm border border-border/50 flex-shrink-0"
                         />
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-lg text-foreground leading-tight">
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <h3 className="font-bold text-sm text-foreground leading-tight truncate">
                             {entry.user_profiles ? 
                               `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : 
                               'Unknown Employee'
                             }
                           </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="w-2 h-2 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full"></div>
-                            <span className="text-sm font-medium text-muted-foreground">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full flex-shrink-0"></div>
+                            <span className="text-xs font-medium text-muted-foreground truncate">
                               {entry.jobsites?.name || 'Unknown Jobsite'}
                             </span>
                           </div>
                           {entry.check_in_time && (
-                            <div className="flex items-center gap-2 mt-1">
-                              <Calendar className="h-3 w-3 text-muted-foreground/60" />
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
                               <span className="text-xs text-muted-foreground">
                                 {format(new Date(entry.check_in_time), 'EEE, MMM dd')}
                               </span>
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-col items-end gap-2">
-                          {getStatusBadge(entry)}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onToggleFlag(entry.id)}
-                            className={cn(
-                              "p-2 h-8 w-8 transition-all duration-200",
-                              flaggedEntries.has(entry.id) 
-                                ? "text-red-600 hover:text-red-700 hover:bg-red-50 bg-red-50/50" 
-                                : "text-muted-foreground hover:text-red-500 hover:bg-red-50"
-                            )}
-                          >
-                            <Flag className="h-4 w-4" />
-                          </Button>
-                        </div>
                       </div>
 
-                      {/* Time Information */}
-                      <div className="grid grid-cols-3 gap-4 p-3 bg-muted/30 rounded-lg mb-4">
-                        <div className="text-center">
-                          <p className="text-xs text-muted-foreground font-medium mb-1">Check In</p>
-                          <p className="font-mono text-sm font-bold text-foreground">
+                      {/* Status and Flag Row */}
+                      <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/30">
+                        {getStatusBadge(entry)}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onToggleFlag(entry.id)}
+                          className={cn(
+                            "p-1.5 h-7 w-7 transition-all duration-200 flex-shrink-0",
+                            flaggedEntries.has(entry.id) 
+                              ? "text-red-600 hover:text-red-700 hover:bg-red-50 bg-red-50/50" 
+                              : "text-muted-foreground hover:text-red-500 hover:bg-red-50"
+                          )}
+                        >
+                          <Flag className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+
+                      {/* Time Information Grid */}
+                      <div className="grid grid-cols-3 gap-2 p-2.5 bg-muted/30 rounded-md">
+                        <div className="text-center space-y-1">
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">In</p>
+                          <p className="font-mono text-xs font-bold text-foreground leading-tight">
                             {entry.check_in_time 
                               ? format(new Date(entry.check_in_time), 'h:mm a')
                               : 'N/A'
                             }
                           </p>
                         </div>
-                        <div className="text-center">
-                          <p className="text-xs text-muted-foreground font-medium mb-1">Check Out</p>
+                        <div className="text-center space-y-1 border-x border-border/30">
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Out</p>
                           {entry.check_out_time ? (
-                            <p className="font-mono text-sm font-bold text-foreground">
+                            <p className="font-mono text-xs font-bold text-foreground leading-tight">
                               {format(new Date(entry.check_out_time), 'h:mm a')}
                             </p>
                           ) : (
                             <div className="flex items-center justify-center gap-1">
                               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                              <span className="text-green-600 font-bold text-xs">Active</span>
+                              <span className="text-green-600 font-bold text-[10px] uppercase">Live</span>
                             </div>
                           )}
                         </div>
-                        <div className="text-center">
-                          <p className="text-xs text-muted-foreground font-medium mb-1">Duration</p>
-                          <div className="flex items-center justify-center gap-1">
-                            <Clock className="h-3 w-3 text-primary" />
-                            <span className="font-mono text-sm font-bold text-foreground">
+                        <div className="text-center space-y-1">
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Time</p>
+                          <div className="flex items-center justify-center gap-0.5">
+                            <Clock className="h-2.5 w-2.5 text-primary flex-shrink-0" />
+                            <span className="font-mono text-xs font-bold text-foreground leading-tight">
                               {calculateTotalTime(entry.check_in_time, entry.check_out_time)}
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Additional Information */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      {/* Action Buttons Row */}
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/30">
+                        <div className="flex items-center gap-2">
                           <WorkNoteDisplay note={entry.work_note} variant="icon" />
                           {entry.check_in_location ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onViewLocation(entry)}
-                              className="p-2 h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
-                            >
-                              <MapPin className="h-4 w-4 text-blue-500" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => onViewLocation(entry)}
+                                  className="p-2 h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
+                                >
+                                  <MapPin className="h-4 w-4 text-blue-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">View Location</p>
+                              </TooltipContent>
+                            </Tooltip>
                           ) : (
-                            <div className="p-2 h-8 flex items-center">
-                              <span className="text-xs text-muted-foreground">No location</span>
+                            <div className="p-2 h-8 w-8 flex items-center justify-center">
+                              <MapPin className="h-4 w-4 text-muted-foreground/30" />
                             </div>
                           )}
                         </div>
                         
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2">
+                        {/* Edit and Delete Actions */}
+                        <div className="flex items-center gap-1">
                           {onEdit && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onEdit(entry)}
-                              className="p-2 h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
-                            >
-                              <Edit className="h-4 w-4 text-blue-500" />
-                            </Button>
-                          )}
-                          {onDelete && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="p-2 h-8 w-8 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+                                  onClick={() => onEdit(entry)}
+                                  className="p-2 h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                  <Edit className="h-4 w-4 text-blue-500" />
                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">Edit Record</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          {onDelete && (
+                            <AlertDialog>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="p-2 h-8 w-8 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">Delete Record</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Punch Record</AlertDialogTitle>
-                                  <AlertDialogDescription>
+                                  <AlertDialogTitle className="text-base">Delete Punch Record</AlertDialogTitle>
+                                  <AlertDialogDescription className="text-sm">
                                     Are you sure you want to delete this punch record for{' '}
-                                    <strong>
+                                    <strong className="text-foreground">
                                       {entry.user_profiles 
                                         ? `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` 
                                         : 'Unknown Employee'
@@ -321,11 +344,11 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                                     ? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                                  <AlertDialogCancel className="m-0">Cancel</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => onDelete(entry)}
-                                    className="bg-red-600 hover:bg-red-700"
+                                    className="bg-red-600 hover:bg-red-700 m-0"
                                   >
                                     Delete
                                   </AlertDialogAction>
@@ -591,104 +614,116 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
           
           {/* Pagination */}
           {(totalPages > 1 || totalItems > itemsPerPage) && onPageChange && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-gradient-to-r from-muted/20 to-muted/10">
-              <div className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-border/50 bg-gradient-to-r from-muted/20 to-muted/10">
+              <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
                 Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{' '}
                 {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} records
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => onPageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="hover:bg-primary/10 hover:text-primary"
+                  className="hover:bg-primary/10 hover:text-primary h-8 px-2 sm:px-3 text-xs"
                 >
-                  Previous
+                  Prev
                 </Button>
-                <div className="flex items-center gap-1">
-                  {totalPages <= 7 ? (
-                    // Show all pages if 7 or fewer
-                    Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => onPageChange(page)}
-                        className={cn(
-                          "min-w-[32px] h-8",
-                          currentPage === page 
-                            ? "bg-primary text-primary-foreground shadow-sm" 
-                            : "hover:bg-primary/10 hover:text-primary"
-                        )}
-                      >
-                        {page}
-                      </Button>
-                    ))
-                  ) : (
-                    // Show condensed pagination for more than 7 pages
-                    <>
-                      {currentPage > 3 && (
-                        <>
+                <div className="flex items-center gap-0.5 sm:gap-1">
+                  {(() => {
+                    const maxVisible = isMobile ? 3 : 7;
+                    
+                    if (totalPages <= maxVisible) {
+                      // Show all pages if within limit
+                      return Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => onPageChange(page)}
+                          className={cn(
+                            "min-w-[28px] sm:min-w-[32px] h-8 p-0 text-xs",
+                            currentPage === page 
+                              ? "bg-primary text-primary-foreground shadow-sm" 
+                              : "hover:bg-primary/10 hover:text-primary"
+                          )}
+                        >
+                          {page}
+                        </Button>
+                      ));
+                    } else {
+                      // Show condensed pagination
+                      const pages = [];
+                      const showFirst = currentPage > 2;
+                      const showLast = currentPage < totalPages - 1;
+                      
+                      if (showFirst) {
+                        pages.push(
                           <Button
+                            key={1}
                             variant="ghost"
                             size="sm"
                             onClick={() => onPageChange(1)}
-                            className="min-w-[32px] h-8 hover:bg-primary/10 hover:text-primary"
+                            className="min-w-[28px] sm:min-w-[32px] h-8 p-0 text-xs hover:bg-primary/10 hover:text-primary"
                           >
                             1
                           </Button>
-                          {currentPage > 4 && (
-                            <span className="px-2 text-muted-foreground">...</span>
-                          )}
-                        </>
-                      )}
+                        );
+                        if (currentPage > 3) {
+                          pages.push(<span key="dots1" className="px-1 text-muted-foreground text-xs">...</span>);
+                        }
+                      }
                       
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const page = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4 + i));
-                        if (page < 1 || page > totalPages) return null;
-                        return (
+                      // Show current page and neighbors
+                      const start = Math.max(1, currentPage - 1);
+                      const end = Math.min(totalPages, currentPage + 1);
+                      
+                      for (let i = start; i <= end; i++) {
+                        pages.push(
                           <Button
-                            key={page}
-                            variant={currentPage === page ? "default" : "ghost"}
+                            key={i}
+                            variant={currentPage === i ? "default" : "ghost"}
                             size="sm"
-                            onClick={() => onPageChange(page)}
+                            onClick={() => onPageChange(i)}
                             className={cn(
-                              "min-w-[32px] h-8",
-                              currentPage === page 
+                              "min-w-[28px] sm:min-w-[32px] h-8 p-0 text-xs",
+                              currentPage === i 
                                 ? "bg-primary text-primary-foreground shadow-sm" 
                                 : "hover:bg-primary/10 hover:text-primary"
                             )}
                           >
-                            {page}
+                            {i}
                           </Button>
                         );
-                      })}
+                      }
                       
-                      {currentPage < totalPages - 2 && (
-                        <>
-                          {currentPage < totalPages - 3 && (
-                            <span className="px-2 text-muted-foreground">...</span>
-                          )}
+                      if (showLast) {
+                        if (currentPage < totalPages - 2) {
+                          pages.push(<span key="dots2" className="px-1 text-muted-foreground text-xs">...</span>);
+                        }
+                        pages.push(
                           <Button
+                            key={totalPages}
                             variant="ghost"
                             size="sm"
                             onClick={() => onPageChange(totalPages)}
-                            className="min-w-[32px] h-8 hover:bg-primary/10 hover:text-primary"
+                            className="min-w-[28px] sm:min-w-[32px] h-8 p-0 text-xs hover:bg-primary/10 hover:text-primary"
                           >
                             {totalPages}
                           </Button>
-                        </>
-                      )}
-                    </>
-                  )}
+                        );
+                      }
+                      
+                      return pages;
+                    }
+                  })()}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => onPageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="hover:bg-primary/10 hover:text-primary"
+                  className="hover:bg-primary/10 hover:text-primary h-8 px-2 sm:px-3 text-xs"
                 >
                   Next
                 </Button>
