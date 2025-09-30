@@ -146,55 +146,12 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Optimized chunk splitting for better Speed Index
+          // Simplified chunk splitting - safer approach
           if (id.includes('node_modules')) {
-            // Critical path - keep small for faster initial load
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react-vendor';
             }
-            // Router - essential for navigation
-            if (id.includes('react-router')) {
-              return 'router-vendor';
-            }
-            // UI libraries - split by usage frequency
-            if (id.includes('@radix-ui')) {
-              return 'radix-vendor';
-            }
-            if (id.includes('lucide-react')) {
-              return 'icons-vendor';
-            }
-            // Form libraries - defer loading
-            if (id.includes('react-hook-form') || id.includes('@hookform')) {
-              return 'form-vendor';
-            }
-            // Query libraries - essential for data fetching
-            if (id.includes('@tanstack/react-query')) {
-              return 'query-vendor';
-            }
-            // Supabase - critical for auth/data
-            if (id.includes('@supabase')) {
-              return 'supabase-vendor';
-            }
-            // Heavy libraries - defer loading
-            if (id.includes('recharts') || id.includes('framer-motion')) {
-              return 'charts-vendor';
-            }
-            if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('xlsx')) {
-              return 'heavy-vendor';
-            }
-            // Utils - lightweight, can be grouped
-            if (id.includes('date-fns') || id.includes('zod') || id.includes('clsx') || id.includes('tailwind')) {
-              return 'utils-vendor';
-            }
-            // All other vendor code
             return 'vendor';
-          }
-          // Split app code by routes for better lazy loading
-          if (id.includes('/pages/') || id.includes('/routes/')) {
-            return 'pages';
-          }
-          if (id.includes('/components/admin/')) {
-            return 'admin';
           }
         },
         assetFileNames: (assetInfo) => {
@@ -215,13 +172,8 @@ export default defineConfig(({ mode }) => ({
         entryFileNames: 'assets/js/[name]-[hash].js'
       },
       treeshake: {
-        moduleSideEffects: false,
-        propertyReadSideEffects: false,
-        tryCatchDeoptimization: false,
-        unknownGlobalSideEffects: false,
-        preset: 'smallest'
-      },
-      experimentalMinChunkSize: 20000 // Merge small chunks to reduce overhead
+        moduleSideEffects: false
+      }
     },
     chunkSizeWarningLimit: 1000,
     minify: 'terser',
@@ -229,17 +181,7 @@ export default defineConfig(({ mode }) => ({
       compress: {
         drop_console: true,
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
-        passes: 2,
-        unsafe: true,
-        unsafe_comps: true,
-        unsafe_Function: true,
-        unsafe_math: true,
-        unsafe_symbols: true,
-        unsafe_methods: true,
-        unsafe_proto: true,
-        unsafe_regexp: true,
-        unsafe_undefined: true
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
       },
       mangle: {
         safari10: true
