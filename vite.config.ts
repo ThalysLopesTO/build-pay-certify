@@ -129,46 +129,55 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Vendor chunk splitting for better caching
+          // Optimized chunk splitting for better Speed Index
           if (id.includes('node_modules')) {
-            // Core React libraries
+            // Critical path - keep small for faster initial load
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react-vendor';
             }
-            // Router
+            // Router - essential for navigation
             if (id.includes('react-router')) {
               return 'router-vendor';
             }
-            // UI libraries
-            if (id.includes('@radix-ui') || id.includes('lucide-react')) {
-              return 'ui-vendor';
+            // UI libraries - split by usage frequency
+            if (id.includes('@radix-ui')) {
+              return 'radix-vendor';
             }
-            // Form libraries
+            if (id.includes('lucide-react')) {
+              return 'icons-vendor';
+            }
+            // Form libraries - defer loading
             if (id.includes('react-hook-form') || id.includes('@hookform')) {
               return 'form-vendor';
             }
-            // Query libraries
+            // Query libraries - essential for data fetching
             if (id.includes('@tanstack/react-query')) {
               return 'query-vendor';
             }
-            // Supabase
+            // Supabase - critical for auth/data
             if (id.includes('@supabase')) {
               return 'supabase-vendor';
             }
-            // Charts and visualization
+            // Heavy libraries - defer loading
             if (id.includes('recharts') || id.includes('framer-motion')) {
               return 'charts-vendor';
             }
-            // Utils and smaller libraries
-            if (id.includes('date-fns') || id.includes('zod') || id.includes('clsx')) {
-              return 'utils-vendor';
-            }
-            // PDF and file processing
             if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('xlsx')) {
-              return 'pdf-vendor';
+              return 'heavy-vendor';
+            }
+            // Utils - lightweight, can be grouped
+            if (id.includes('date-fns') || id.includes('zod') || id.includes('clsx') || id.includes('tailwind')) {
+              return 'utils-vendor';
             }
             // All other vendor code
             return 'vendor';
+          }
+          // Split app code by routes for better lazy loading
+          if (id.includes('/pages/') || id.includes('/routes/')) {
+            return 'pages';
+          }
+          if (id.includes('/components/admin/')) {
+            return 'admin';
           }
         },
         assetFileNames: (assetInfo) => {
