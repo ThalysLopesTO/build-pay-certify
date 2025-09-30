@@ -152,7 +152,7 @@ const LoginForm = () => {
         <div className="w-full max-w-md">
           {/* StackBuild Logo */}
           <div className="text-center mb-8">
-            <img src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png" alt="StackBuild Logo" className="h-16 w-auto mx-auto mb-8" />
+            <img src="/images/stackbuild-logo.webp" alt="StackBuild Logo" className="h-16 w-auto mx-auto mb-8" />
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Company Login</h1>
             <p className="text-slate-600">Welcome back to StackBuild</p>
             
@@ -229,7 +229,7 @@ const LoginForm = () => {
        */}
       <div className="flex-1 lg:block hidden relative">
         <div className="w-full h-full bg-cover bg-center bg-no-repeat" style={{
-          backgroundImage: `url('/images/admin-login-bg.png')`
+          backgroundImage: `url('/images/admin-login-bg.webp')`
         }}>
           {/* Subtle overlay for depth */}
           <div className="absolute inset-0 bg-gradient-to-l from-slate-900/20 to-transparent"></div>
@@ -239,7 +239,7 @@ const LoginForm = () => {
       {/* Mobile: Image on top for small screens */}
       <div className="lg:hidden h-64 relative">
         <div className="w-full h-full bg-cover bg-center bg-no-repeat" style={{
-          backgroundImage: `url('/images/admin-login-bg.png')`
+          backgroundImage: `url('/images/admin-login-bg.webp')`
         }}>
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 to-transparent"></div>
         </div>

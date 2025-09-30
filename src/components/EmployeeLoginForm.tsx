@@ -157,7 +157,7 @@ const EmployeeLoginForm = () => {
           {/* StackBuild Logo */}
           <div className="text-center mb-8">
             <img 
-              src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png" 
+              src="/images/stackbuild-logo.webp" 
               alt="StackBuild Logo" 
               className="h-16 w-auto mx-auto mb-8"
             />
