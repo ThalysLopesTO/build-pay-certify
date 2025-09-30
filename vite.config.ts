@@ -122,6 +122,10 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     sourcemap: true, // Generate source maps for debugging and SEO tools
+    cssCodeSplit: true, // Split CSS per route for faster loading
+    modulePreload: {
+      polyfill: false // Skip polyfill for modern browsers
+    },
     rollupOptions: {
       output: {
         manualChunks: (id) => {
