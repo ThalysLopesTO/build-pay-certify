@@ -152,7 +152,7 @@ const LoginForm = () => {
         <div className="w-full max-w-md">
           {/* StackBuild Logo */}
           <div className="text-center mb-8">
-            <img src="/images/stackbuild-logo-small.svg" alt="StackBuild Logo" className="h-16 w-auto mx-auto mb-8" width="206" height="64" />
+            <img src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png" alt="StackBuild Logo" className="h-16 w-auto mx-auto mb-8" />
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Company Login</h1>
             <p className="text-slate-600">Welcome back to StackBuild</p>
             
@@ -196,7 +196,7 @@ const LoginForm = () => {
                 </div>
                 
                 <Button type="submit" className="w-full h-12 text-white font-semibold shadow-lg transition-all duration-200 hover:shadow-xl" style={{
-                  backgroundColor: '#D97316'
+                  backgroundColor: '#F26522'
                 }} disabled={loading}>
                   {loading ? <div className="flex items-center space-x-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

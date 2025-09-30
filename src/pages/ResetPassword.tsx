@@ -95,11 +95,9 @@ const ResetPassword = () => {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <img 
-              src="/images/stackbuild-logo-small.svg" 
+              src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png" 
               alt="StackBuild Logo" 
               className="h-16 w-auto mx-auto mb-8"
-              width="206" 
-              height="64"
             />
           </div>
           
@@ -115,7 +113,7 @@ const ResetPassword = () => {
               <Button
                 onClick={() => navigate('/admin/login')}
                 className="w-full h-12 text-white font-semibold"
-                style={{ backgroundColor: '#D97316' }}
+                style={{ backgroundColor: '#F26522' }}
               >
                 Back to Login
               </Button>
@@ -132,11 +130,9 @@ const ResetPassword = () => {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <img 
-              src="/images/stackbuild-logo-small.svg" 
+              src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png" 
               alt="StackBuild Logo" 
               className="h-16 w-auto mx-auto mb-8"
-              width="206" 
-              height="64"
             />
           </div>
           
@@ -154,7 +150,7 @@ const ResetPassword = () => {
               <Button
                 onClick={() => navigate('/admin/login')}
                 className="w-full h-12 text-white font-semibold"
-                style={{ backgroundColor: '#D97316' }}
+                style={{ backgroundColor: '#F26522' }}
               >
                 Go to Login
               </Button>
@@ -170,11 +166,9 @@ const ResetPassword = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img 
-            src="/images/stackbuild-logo-small.svg" 
+            src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png" 
             alt="StackBuild Logo" 
             className="h-16 w-auto mx-auto mb-8"
-            width="206" 
-            height="64"
           />
           <h1 className="text-3xl font-bold text-slate-800 mb-2">Reset Your Password</h1>
           <p className="text-slate-600">Enter your new password below</p>
@@ -224,7 +218,7 @@ const ResetPassword = () => {
               <Button
                 type="submit"
                 className="w-full h-12 text-white font-semibold shadow-lg transition-all duration-200 hover:shadow-xl"
-                style={{ backgroundColor: '#D97316' }}
+                style={{ backgroundColor: '#F26522' }}
                 disabled={loading}
               >
                 {loading ? (

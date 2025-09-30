@@ -10,25 +10,11 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  esbuild: {
-    target: 'es2020', // Target modern browsers to avoid unnecessary transpilation
-    legalComments: 'none', // Remove comments to reduce bundle size
-  },
-  css: {
-    devSourcemap: true,
-    preprocessorOptions: {
-      css: {
-        charset: false // Reduce CSS processing overhead
-      }
-    }
-  },
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
     VitePWA({
-      injectRegister: null, // Don't inject SW registration to avoid blocking
       registerType: 'autoUpdate',
-      disable: false, // Ensure PWA is enabled
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
@@ -130,29 +116,15 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    sourcemap: true, // Generate source maps for debugging and SEO tools
-    cssCodeSplit: true, // Split CSS per route for faster loading
-    modulePreload: {
-      polyfill: false, // Skip polyfill for modern browsers
-      resolveDependencies: (filename, deps, { hostId, hostType }) => {
-        // Preload critical dependencies for faster LCP
-        return deps.filter(dep => 
-          dep.includes('react') || 
-          dep.includes('router') || 
-          dep.includes('index')
-        );
-      }
-    },
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Simplified chunk splitting - safer approach
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'react-vendor';
-            }
-            return 'vendor';
-          }
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'router-vendor': ['react-router-dom'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          'form-vendor': ['react-hook-form', '@hookform/resolvers'],
+          'query-vendor': ['@tanstack/react-query'],
+          'supabase-vendor': ['@supabase/supabase-js']
         },
         assetFileNames: (assetInfo) => {
           const name = assetInfo.name || 'asset';
@@ -170,24 +142,8 @@ export default defineConfig(({ mode }) => ({
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js'
-      },
-      treeshake: {
-        moduleSideEffects: false
       }
     },
-    chunkSizeWarningLimit: 1000,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
-      },
-      mangle: {
-        safari10: true
-      }
-    },
-    target: 'es2020',
-    assetsInlineLimit: 4096 // Inline small assets to reduce requests
+    chunkSizeWarningLimit: 1000
   }
 }));

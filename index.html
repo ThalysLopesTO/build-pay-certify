@@ -7,32 +7,8 @@
     <meta name="description" content="Professional construction payroll and safety certification management system">
     <meta name="author" content="StackBuild" />
 
-    <!-- Critical Resource Preloading for LCP -->
-    <link rel="preload" href="/images/admin-login-bg.png" as="image" fetchpriority="high" />
-    
-    <!-- Preconnect hints for external resources -->
-    <link rel="preconnect" href="https://maps.googleapis.com" />
-    <link rel="preconnect" href="https://maps.gstatic.com" crossorigin />
-
-    <!-- ✅ Google Maps Script - Completely deferred until needed -->
-    <script>
-      // Defer Google Maps loading until actually needed by components
-      window.initGoogleMaps = function() {
-        if (!window.google && !window.googleMapsLoading) {
-          window.googleMapsLoading = true;
-          const script = document.createElement('script');
-          script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU&libraries=places,geometry&callback=window.mapsLoaded';
-          script.async = true;
-          script.defer = true;
-          document.head.appendChild(script);
-        }
-      };
-      window.mapsLoaded = function() {
-        window.googleMapsReady = true;
-        window.googleMapsLoading = false;
-        window.dispatchEvent(new Event('google-maps-loaded'));
-      };
-    </script>
+    <!-- ✅ Google Maps Script with Places + Geometry -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU&libraries=places,geometry"></script>
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -87,31 +63,6 @@
 
   <body>
     <div id="root"></div>
-    
-    <!-- Critical CSS inlined, main CSS loaded asynchronously -->
-    <script>
-      // Load CSS asynchronously to prevent render blocking
-      function loadCSS(href) {
-        var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = href;
-        document.head.appendChild(link);
-      }
-      
-      // Load main CSS after critical path
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-          setTimeout(function() {
-            var cssLinks = document.querySelectorAll('link[rel="preload"][as="style"]');
-            cssLinks.forEach(function(link) {
-              link.rel = 'stylesheet';
-            });
-          }, 0);
-        });
-      }
-    </script>
-    
-    <!-- Defer main script to avoid render blocking -->
-    <script type="module" src="/src/main.tsx" defer></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
