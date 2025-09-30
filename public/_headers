@@ -1,4 +1,4 @@
-# All static assets - comprehensive caching
+# Static assets - long cache lifetime
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
@@ -15,8 +15,15 @@
 /lovable-uploads/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Images in any location
+# Images directory
 /images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Root level assets (fallback)
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.css
   Cache-Control: public, max-age=31536000, immutable
 
 # File extension based caching (fallback)
