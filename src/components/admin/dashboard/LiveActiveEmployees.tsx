@@ -370,33 +370,50 @@ const LiveActiveEmployees = () => {
             
             {/* Pagination */}
             {activities.length > itemsPerPage && (
-              <div className="flex items-center justify-between pt-4 border-t border-border">
-                <div className="text-xs text-muted-foreground">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border">
+                <div className="text-xs text-muted-foreground text-center sm:text-left">
                   Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, activities.length)} of {activities.length} activities
                 </div>
                 <Pagination>
-                  <PaginationContent>
+                  <PaginationContent className="flex-wrap justify-center gap-1">
                     <PaginationItem>
                       <PaginationPrevious 
                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        className={`${currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} h-8 px-2 text-xs`}
                       />
                     </PaginationItem>
-                    {Array.from({ length: Math.ceil(activities.length / itemsPerPage) }, (_, i) => i + 1).map((page) => (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          onClick={() => setCurrentPage(page)}
-                          isActive={currentPage === page}
-                          className="cursor-pointer"
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
+                    {(() => {
+                      const totalPages = Math.ceil(activities.length / itemsPerPage);
+                      const maxVisible = 3; // Show max 3 page numbers on mobile
+                      let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                      let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+                      
+                      // Adjust if we're near the end
+                      if (endPage - startPage < maxVisible - 1) {
+                        startPage = Math.max(1, endPage - maxVisible + 1);
+                      }
+                      
+                      const pages = [];
+                      for (let i = startPage; i <= endPage; i++) {
+                        pages.push(i);
+                      }
+                      
+                      return pages.map((page) => (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(page)}
+                            isActive={currentPage === page}
+                            className="cursor-pointer h-8 w-8 p-0 text-xs"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ));
+                    })()}
                     <PaginationItem>
                       <PaginationNext 
                         onClick={() => setCurrentPage(prev => Math.min(Math.ceil(activities.length / itemsPerPage), prev + 1))}
-                        className={currentPage === Math.ceil(activities.length / itemsPerPage) ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        className={`${currentPage === Math.ceil(activities.length / itemsPerPage) ? 'pointer-events-none opacity-50' : 'cursor-pointer'} h-8 px-2 text-xs`}
                       />
                     </PaginationItem>
                   </PaginationContent>
