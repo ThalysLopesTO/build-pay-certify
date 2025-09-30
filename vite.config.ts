@@ -200,8 +200,11 @@ export default defineConfig(({ mode }) => ({
       treeshake: {
         moduleSideEffects: false,
         propertyReadSideEffects: false,
-        tryCatchDeoptimization: false
-      }
+        tryCatchDeoptimization: false,
+        unknownGlobalSideEffects: false,
+        preset: 'smallest'
+      },
+      experimentalMinChunkSize: 20000 // Merge small chunks to reduce overhead
     },
     chunkSizeWarningLimit: 1000,
     minify: 'terser',
@@ -209,8 +212,23 @@ export default defineConfig(({ mode }) => ({
       compress: {
         drop_console: true,
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
+        passes: 2,
+        unsafe: true,
+        unsafe_comps: true,
+        unsafe_Function: true,
+        unsafe_math: true,
+        unsafe_symbols: true,
+        unsafe_methods: true,
+        unsafe_proto: true,
+        unsafe_regexp: true,
+        unsafe_undefined: true
+      },
+      mangle: {
+        safari10: true
       }
-    }
+    },
+    target: 'es2020',
+    assetsInlineLimit: 4096 // Inline small assets to reduce requests
   }
 }));
