@@ -12,6 +12,15 @@ export default defineConfig(({ mode }) => ({
   },
   esbuild: {
     target: 'es2020', // Target modern browsers to avoid unnecessary transpilation
+    legalComments: 'none', // Remove comments to reduce bundle size
+  },
+  css: {
+    devSourcemap: true,
+    preprocessorOptions: {
+      css: {
+        charset: false // Reduce CSS processing overhead
+      }
+    }
   },
   plugins: [
     react(),
