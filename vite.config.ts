@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  esbuild: {
+    target: 'es2020', // Target modern browsers to avoid unnecessary transpilation
+  },
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
