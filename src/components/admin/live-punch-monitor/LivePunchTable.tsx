@@ -51,6 +51,11 @@ interface LivePunchTableProps {
   onEdit?: (entry: PunchEntry) => void;
   onDelete?: (entry: PunchEntry) => void;
   isLoading?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  totalItems?: number;
+  itemsPerPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const LivePunchTable: React.FC<LivePunchTableProps> = ({
@@ -61,7 +66,12 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
   onViewLocation,
   onEdit,
   onDelete,
-  isLoading = false
+  isLoading = false,
+  currentPage = 1,
+  totalPages = 1,
+  totalItems = 0,
+  itemsPerPage = 10,
+  onPageChange
 }) => {
   const isMobile = useIsMobile();
   
@@ -574,8 +584,115 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                       );
                     })
                   )}
-                </TableBody>
+                 </TableBody>
               </Table>
+            </div>
+          )}
+          
+          {/* Pagination */}
+          {(totalPages > 1 || totalItems > itemsPerPage) && onPageChange && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-gradient-to-r from-muted/20 to-muted/10">
+              <div className="text-sm text-muted-foreground">
+                Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{' '}
+                {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} records
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="hover:bg-primary/10 hover:text-primary"
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {totalPages <= 7 ? (
+                    // Show all pages if 7 or fewer
+                    Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => onPageChange(page)}
+                        className={cn(
+                          "min-w-[32px] h-8",
+                          currentPage === page 
+                            ? "bg-primary text-primary-foreground shadow-sm" 
+                            : "hover:bg-primary/10 hover:text-primary"
+                        )}
+                      >
+                        {page}
+                      </Button>
+                    ))
+                  ) : (
+                    // Show condensed pagination for more than 7 pages
+                    <>
+                      {currentPage > 3 && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onPageChange(1)}
+                            className="min-w-[32px] h-8 hover:bg-primary/10 hover:text-primary"
+                          >
+                            1
+                          </Button>
+                          {currentPage > 4 && (
+                            <span className="px-2 text-muted-foreground">...</span>
+                          )}
+                        </>
+                      )}
+                      
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const page = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4 + i));
+                        if (page < 1 || page > totalPages) return null;
+                        return (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => onPageChange(page)}
+                            className={cn(
+                              "min-w-[32px] h-8",
+                              currentPage === page 
+                                ? "bg-primary text-primary-foreground shadow-sm" 
+                                : "hover:bg-primary/10 hover:text-primary"
+                            )}
+                          >
+                            {page}
+                          </Button>
+                        );
+                      })}
+                      
+                      {currentPage < totalPages - 2 && (
+                        <>
+                          {currentPage < totalPages - 3 && (
+                            <span className="px-2 text-muted-foreground">...</span>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onPageChange(totalPages)}
+                            className="min-w-[32px] h-8 hover:bg-primary/10 hover:text-primary"
+                          >
+                            {totalPages}
+                          </Button>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="hover:bg-primary/10 hover:text-primary"
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
