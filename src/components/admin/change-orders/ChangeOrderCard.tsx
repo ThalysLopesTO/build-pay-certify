@@ -120,18 +120,18 @@ const ChangeOrderCard: React.FC<ChangeOrderCardProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-between pt-2 border-t border-border">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-between gap-2 pt-2 border-t border-border">
             <Button
               variant="outline"
               size="sm"
               onClick={() => onViewDetails(order)}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               <Eye className="h-4 w-4" />
               View Details
             </Button>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center flex-wrap gap-1 justify-start sm:justify-end w-full sm:w-auto">
               {canEdit(order) && (
                 <Button
                   variant="ghost"
