@@ -120,24 +120,25 @@ const ChangeOrderCard: React.FC<ChangeOrderCardProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-between gap-2 pt-2 border-t border-border">
+          <div className="flex flex-col gap-2 pt-2 border-t border-border">
             <Button
               variant="outline"
               size="sm"
               onClick={() => onViewDetails(order)}
-              className="gap-2 w-full sm:w-auto"
+              className="gap-2 w-full"
             >
               <Eye className="h-4 w-4" />
               View Details
             </Button>
 
-            <div className="flex items-center flex-wrap gap-1 justify-start sm:justify-end w-full sm:w-auto">
+            <div className="flex items-center gap-1.5 flex-wrap justify-center sm:justify-end">
               {canEdit(order) && (
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => onEdit(order)}
                   title="Edit change order"
+                  className="h-8 w-8"
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -147,18 +148,18 @@ const ChangeOrderCard: React.FC<ChangeOrderCardProps> = ({
                 <>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={() => onApprove(order)}
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                     title="Approve change order"
                   >
                     <Check className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={() => onReject(order)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                     title="Reject change order"
                   >
                     <X className="h-4 w-4" />
@@ -169,9 +170,9 @@ const ChangeOrderCard: React.FC<ChangeOrderCardProps> = ({
               {isAdmin && order.status === 'approved' && (
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => onComplete(order)}
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                   title="Mark as completed"
                 >
                   <CheckCircle className="h-4 w-4" />
@@ -181,9 +182,9 @@ const ChangeOrderCard: React.FC<ChangeOrderCardProps> = ({
               {canDelete(order) && (
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => onDelete(order)}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                   title="Delete change order"
                 >
                   <Trash2 className="h-4 w-4" />
