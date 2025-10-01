@@ -28,6 +28,7 @@ import UserSettings from '@/components/common/UserSettings';
 import SystemSettings from '@/components/admin/SystemSettings';
 import IncomeExpensesManagement from '@/components/admin/IncomeExpensesManagement';
 import TimeRequestsManagement from '@/components/admin/TimeRequestsManagement';
+import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -66,6 +67,8 @@ const AdminDashboard = () => {
         return <SuppliersManagement />;
       case 'live-punch-monitor':
         return <LivePunchMonitor />;
+      case 'time-summary':
+        return <TimeSummaryPage />;
       case 'timesheets':
         return <EmployeeTimesheets />;
       case 'payroll-summary':
