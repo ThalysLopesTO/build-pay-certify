@@ -109,10 +109,10 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
   return (
     <Card className="shadow-md bg-background rounded-2xl border hover:shadow-lg transition-shadow">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-3">
-              <CardTitle className="text-xl font-semibold">{jobsite.name}</CardTitle>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <CardTitle className="text-lg sm:text-xl font-semibold">{jobsite.name}</CardTitle>
               <Badge 
                 variant={status.variant}
                 className="text-xs px-2 py-1"
@@ -123,47 +123,47 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
                 ID: {jobsite.id.slice(0, 8)}
               </Badge>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
               <p className="flex items-center">
-                <MapPin className="h-4 w-4 mr-2 text-primary" />
-                {jobsite.address}
+                <MapPin className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+                <span className="truncate">{jobsite.address}</span>
               </p>
               {jobsite.starting_date && (
                 <p className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-primary" />
+                  <Calendar className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                   Started: {formatDate(jobsite.starting_date)}
                 </p>
               )}
               {jobsite.due_date && (
                 <p className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-primary" />
+                  <Calendar className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                   Due: {formatDate(jobsite.due_date)}
                 </p>
               )}
               {jobsite.completion_date && (
                 <p className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-primary" />
+                  <Calendar className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                   Completed: {formatDate(jobsite.completion_date)}
                 </p>
               )}
               <p className="flex items-center">
-                <BarChart3 className="h-4 w-4 mr-2 text-primary" />
+                <BarChart3 className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
                 Progress: {progressPercentage.toFixed(0)}% ({completedTasks}/{totalTasks} tasks)
               </p>
               {jobsite.latitude !== undefined && jobsite.longitude !== undefined && (
                 <p className="flex items-center">
-                  <Globe className="h-4 w-4 mr-2 text-primary" />
-                  Coordinates: {formatCoordinates(jobsite.latitude, jobsite.longitude)}
+                  <Globe className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
+                  <span className="truncate">Coordinates: {formatCoordinates(jobsite.latitude, jobsite.longitude)}</span>
                 </p>
               )}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 sm:flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowEditDialog(true)}
-              className="text-gray-600 hover:bg-gray-50 hover:text-gray-700 p-2 rounded-full"
+              className="text-gray-600 hover:bg-gray-50 hover:text-gray-700 h-9 w-9 p-0 rounded-full"
             >
               <Edit className="h-4 w-4" />
             </Button>
@@ -173,7 +173,7 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
                 size="sm"
                 onClick={() => setShowReactivateDialog(true)}
                 disabled={reactivateJobsite.isPending}
-                className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 p-2 rounded-full"
+                className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 h-9 w-9 p-0 rounded-full"
               >
                 <RotateCcw className="h-4 w-4" />
               </Button>
@@ -183,7 +183,7 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
                 size="sm"
                 onClick={() => setShowCompleteDialog(true)}
                 disabled={markJobsiteCompleted.isPending}
-                className="text-green-600 hover:bg-green-50 hover:text-green-700 p-2 rounded-full"
+                className="text-green-600 hover:bg-green-50 hover:text-green-700 h-9 w-9 p-0 rounded-full"
               >
                 <CheckCircle className="h-4 w-4" />
               </Button>
@@ -193,7 +193,7 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
               size="sm"
               onClick={() => setShowDeleteDialog(true)}
               disabled={deleteJobsite.isPending || archiveJobsite.isPending || cascadeDeleteJobsite.isPending}
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive p-2 rounded-full"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9 p-0 rounded-full"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
