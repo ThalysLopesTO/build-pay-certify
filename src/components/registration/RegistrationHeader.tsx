@@ -9,7 +9,7 @@ const RegistrationHeader: React.FC = () => {
         <img 
           src="/lovable-uploads/04cf020d-b64e-49b8-ae51-022a05b6cad8.png" 
           alt="StackBuild Logo" 
-          className="h-16 w-auto"
+          className="h-24 w-auto"
         />
       </div>
       
