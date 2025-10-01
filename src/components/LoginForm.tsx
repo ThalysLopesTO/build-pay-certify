@@ -162,14 +162,30 @@ const LoginForm = () => {
             </div>
           </div>
 
-          {/* Info Alert for Company Login */}
-          <Alert className="mb-6 border-orange-200 bg-orange-50/80">
-            <Building className="h-4 w-4 text-orange-600" />
-            <AlertDescription className="text-orange-700">
-              This login page is for company administrators and management. If you're an employee, please use the 
-              <Link to="/employee-login" className="font-medium underline ml-1">Employee Login</Link> page.
-            </AlertDescription>
-          </Alert>
+          {/* Employee Login Navigation */}
+          <div className="mb-6 p-4 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-full bg-blue-100">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Are you an Employee?</p>
+                  <p className="text-xs text-slate-600">Use the employee login portal</p>
+                </div>
+              </div>
+              <Link to="/employee-login">
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600 hover:border-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  Employee Login
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </div>
 
           {/* Login Form Card with Light Background */}
           {showForgotPassword ? <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} /> : <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
