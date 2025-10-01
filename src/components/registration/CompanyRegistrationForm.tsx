@@ -31,19 +31,19 @@ const CompanyRegistrationForm: React.FC<CompanyRegistrationFormProps> = ({
   onSubmit
 }) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Company Registration</CardTitle>
-        <CardDescription>
-          Fill out the form below to request access for your construction company
+    <Card className="border-2 shadow-2xl">
+      <CardHeader className="space-y-3 pb-8">
+        <CardTitle className="text-2xl">Company Registration Form</CardTitle>
+        <CardDescription className="text-base">
+          Please provide accurate information to set up your company account
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="space-y-6">
+        <form onSubmit={onSubmit} className="space-y-8">
           {/* Company Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center">
-              <Building className="h-5 w-5 mr-2" />
+          <div className="space-y-5 p-6 bg-gradient-to-br from-primary/5 to-transparent rounded-lg border border-primary/10">
+            <h3 className="text-xl font-semibold flex items-center text-primary">
+              <Building className="h-6 w-6 mr-2" />
               Company Information
             </h3>
             
@@ -97,9 +97,9 @@ const CompanyRegistrationForm: React.FC<CompanyRegistrationFormProps> = ({
           </div>
 
           {/* Admin User Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center">
-              <User className="h-5 w-5 mr-2" />
+          <div className="space-y-5 p-6 bg-gradient-to-br from-primary/5 to-transparent rounded-lg border border-primary/10">
+            <h3 className="text-xl font-semibold flex items-center text-primary">
+              <User className="h-6 w-6 mr-2" />
               Administrator Account
             </h3>
             
@@ -152,16 +152,17 @@ const CompanyRegistrationForm: React.FC<CompanyRegistrationFormProps> = ({
             </div>
           </div>
 
-          <div className="flex space-x-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button
               type="submit"
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 h-12 text-base font-semibold"
+              size="lg"
             >
-              {isLoading ? 'Submitting...' : 'Submit Registration'}
+              {isLoading ? 'Submitting...' : 'Complete Registration'}
             </Button>
-            <Link to="/admin-login">
-              <Button variant="outline" type="button">
+            <Link to="/admin-login" className="sm:w-auto">
+              <Button variant="outline" type="button" className="w-full h-12" size="lg">
                 Back to Login
               </Button>
             </Link>
