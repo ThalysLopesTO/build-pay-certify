@@ -1,18 +1,33 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, AlertTriangle, MapPin, Clock } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertTriangle, Clock, Briefcase, Calendar } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { EmployeeSummary } from '@/hooks/useTimeSummaryData';
+import { useTimeSummaryDetails } from '@/hooks/useTimeSummaryDetails';
 import { cn } from '@/lib/utils';
 import { RoleBadge } from './RoleBadge';
 
 interface EmployeeTimeSummaryRowProps {
   employee: EmployeeSummary;
+  startDate: Date;
+  endDate: Date;
 }
 
-export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({ employee }) => {
+export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({ 
+  employee,
+  startDate,
+  endDate 
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Fetch daily details when row is expanded
+  const { data: dailyPunches, isLoading } = useTimeSummaryDetails({
+    employeeId: employee.employee_id,
+    startDate,
+    endDate,
+    enabled: isExpanded,
+  });
 
   // Get first and last name for avatar
   const nameParts = employee.employee_name.split(' ');
@@ -89,90 +104,75 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({ 
 
       {/* Expanded Daily Breakdown */}
       {isExpanded && (
-        <div className="mt-2 ml-11 border-l-2 border-border pl-4 space-y-2">
-          <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-            Daily Breakdown
-          </h4>
-          <div className="space-y-2">
-            {employee.daily_punches.map((punch) => (
-              <div
-                key={punch.id}
-                className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-3 flex-1">
-                  {/* Date */}
-                  <div className="min-w-[90px]">
-                    <p className="font-medium text-xs">
-                      {punch.date ? format(new Date(punch.date), 'MMM dd, yyyy') : 'N/A'}
-                    </p>
+        <div className="mt-2 px-4 py-4 bg-muted/30 border-t rounded-b-lg">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Calendar className="h-4 w-4" />
+            DAILY BREAKDOWN
+          </div>
+
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading details...
+            </div>
+          ) : !dailyPunches || dailyPunches.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No punch records found
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {/* Table Header */}
+              <div className="grid grid-cols-[120px_1fr_100px_100px_100px] gap-3 px-3 py-2 bg-background/50 rounded-md text-xs font-medium text-muted-foreground border">
+                <div>Date</div>
+                <div>Project</div>
+                <div>Time In</div>
+                <div>Time Out</div>
+                <div className="text-right">Hours</div>
+              </div>
+
+              {/* Table Rows */}
+              {dailyPunches.map((punch, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="grid grid-cols-[120px_1fr_100px_100px_100px] gap-3 px-3 py-3 bg-background rounded-md border hover:bg-accent/50 transition-colors">
+                    <div className="text-sm font-medium">
+                      {format(new Date(punch.date), "MMM dd, yyyy")}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="truncate">{punch.jobsite_name}</span>
+                    </div>
+                    <div className="text-sm flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5 text-green-600" />
+                      {punch.check_in_time
+                        ? format(new Date(punch.check_in_time), "HH:mm")
+                        : "—"}
+                    </div>
+                    <div className="text-sm flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5 text-red-600" />
+                      {punch.check_out_time
+                        ? format(new Date(punch.check_out_time), "HH:mm")
+                        : punch.status === "active" ? (
+                          <Badge variant="secondary" className="text-xs">
+                            Active
+                          </Badge>
+                        ) : (
+                          "—"
+                        )}
+                    </div>
+                    <div className="text-sm font-semibold text-right">
+                      {punch.hours_worked.toFixed(2)} hrs
+                    </div>
                   </div>
 
-                  {/* Time In/Out */}
-                  <div className="flex items-center gap-2 flex-1">
-                    <div className="flex items-center gap-1 text-xs">
-                      <Clock className="h-3 w-3 text-green-600" />
-                      <span className="text-muted-foreground">In:</span>
-                      <span className="font-medium">
-                        {punch.check_in_time ? format(new Date(punch.check_in_time), 'HH:mm') : '--:--'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs">
-                      <Clock className="h-3 w-3 text-red-600" />
-                      <span className="text-muted-foreground">Out:</span>
-                      <span className="font-medium">
-                        {punch.check_out_time ? format(new Date(punch.check_out_time), 'HH:mm') : '--:--'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Status Badge */}
-                  <Badge
-                    variant={punch.status === 'complete' ? 'default' : 'secondary'}
-                    className={cn(
-                      'text-xs',
-                      punch.status === 'active' && 'bg-green-100 text-green-800 hover:bg-green-200'
-                    )}
-                  >
-                    {punch.status === 'active' ? 'Live' : 'Complete'}
-                  </Badge>
-
-                  {/* Location Info */}
-                  {(punch.check_in_location || punch.location_distance) && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      {punch.location_distance && (
-                        <span>{punch.location_distance.toFixed(0)}m</span>
-                      )}
+                  {/* Notes section */}
+                  {punch.notes && (
+                    <div className="ml-3 pl-3 border-l-2 border-muted">
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium">Note:</span> {punch.notes}
+                      </p>
                     </div>
                   )}
                 </div>
-
-                {/* Hours */}
-                <div className="text-right ml-3 min-w-[60px]">
-                  <p className="text-sm font-bold text-foreground">
-                    {punch.hours_worked.toFixed(2)}h
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Notes Section */}
-          {employee.daily_punches.some(p => p.notes) && (
-            <div className="mt-3 pt-3 border-t border-border">
-              <h5 className="text-xs font-semibold text-muted-foreground mb-2">Notes</h5>
-              <div className="space-y-1">
-                {employee.daily_punches
-                  .filter(p => p.notes)
-                  .map((punch) => (
-                    <div key={punch.id} className="text-xs">
-                      <span className="text-muted-foreground">
-                        {punch.date ? format(new Date(punch.date), 'MMM dd') : 'N/A'}:
-                      </span>
-                      <span className="ml-2 text-foreground">{punch.notes}</span>
-                    </div>
-                  ))}
-              </div>
+              ))}
             </div>
           )}
         </div>

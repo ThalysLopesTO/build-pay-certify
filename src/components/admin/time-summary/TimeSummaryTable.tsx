@@ -7,9 +7,16 @@ import { JobsiteSummary } from '@/hooks/useTimeSummaryData';
 interface TimeSummaryTableProps {
   data: JobsiteSummary[];
   isLoading: boolean;
+  startDate: Date;
+  endDate: Date;
 }
 
-export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({ data, isLoading }) => {
+export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({ 
+  data, 
+  isLoading,
+  startDate,
+  endDate 
+}) => {
   if (isLoading) {
     return (
       <Card className="p-8">
@@ -90,7 +97,12 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({ data, isLoad
             {/* Employee Rows */}
             <div className="p-4">
               {jobsite.employees.map((employee) => (
-                <EmployeeTimeSummaryRow key={employee.employee_id} employee={employee} />
+                <EmployeeTimeSummaryRow 
+                  key={employee.employee_id} 
+                  employee={employee}
+                  startDate={startDate}
+                  endDate={endDate}
+                />
               ))}
             </div>
           </Card>

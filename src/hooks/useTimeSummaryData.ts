@@ -25,16 +25,13 @@ export interface TimeSummaryFilters {
 }
 
 export interface DailyPunch {
-  id: string;
   date: string;
   check_in_time: string | null;
   check_out_time: string | null;
   hours_worked: number;
-  status: string;
+  jobsite_name: string;
+  status: string | null;
   notes: string | null;
-  check_in_location: string | null;
-  check_out_location: string | null;
-  location_distance?: number | null;
 }
 
 export interface EmployeeSummary {

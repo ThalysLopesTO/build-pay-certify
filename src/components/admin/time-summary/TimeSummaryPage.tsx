@@ -70,7 +70,12 @@ export const TimeSummaryPage: React.FC = () => {
       <TimeSummaryFilters filters={filters} onFiltersChange={setFilters} />
 
       {/* Summary Table */}
-      <TimeSummaryTable data={data || []} isLoading={isLoading} />
+      <TimeSummaryTable 
+        data={data || []} 
+        isLoading={isLoading}
+        startDate={filters.dateRange.start}
+        endDate={filters.dateRange.end}
+      />
     </div>
   );
 };

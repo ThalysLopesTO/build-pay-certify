@@ -3153,24 +3153,30 @@ export type Database = {
         Returns: Json
       }
       rpc_time_summary_details: {
-        Args: {
-          p_company_id: string
-          p_employee_id: string
-          p_end_date: string
-          p_jobsite_id: string
-          p_start_date: string
-          p_tz: string
-        }
+        Args:
+          | {
+              p_company_id: string
+              p_employee_id: string
+              p_end_date: string
+              p_jobsite_id: string
+              p_start_date: string
+              p_tz: string
+            }
+          | {
+              p_company_id: string
+              p_employee_id: string
+              p_end_date: string
+              p_start_date: string
+              p_timezone?: string
+            }
         Returns: {
-          check_in_location: string
           check_in_time: string
-          check_out_location: string
           check_out_time: string
-          date: string
           hours_worked: number
-          id: string
-          location_distance: number
+          jobsite_id: string
+          jobsite_name: string
           notes: string
+          punch_date: string
           status: string
         }[]
       }
