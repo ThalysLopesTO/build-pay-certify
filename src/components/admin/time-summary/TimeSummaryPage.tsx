@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, RefreshCw } from 'lucide-react';
 import { TimeSummaryFilters } from './TimeSummaryFilters';
 import { TimeSummaryTable } from './TimeSummaryTable';
 import { TimeSummaryExport } from './TimeSummaryExport';
+import { Button } from '@/components/ui/button';
 import { useTimeSummaryData, TimeSummaryFilters as Filters } from '@/hooks/useTimeSummaryData';
 import { startOfWeek, endOfWeek } from 'date-fns';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -48,6 +49,8 @@ export const TimeSummaryPage: React.FC = () => {
   useEffect(() => {
     if (!user?.companyId) return;
 
+    console.log('[Time Summary] Setting up real-time subscription for company:', user.companyId);
+    
     const unsubscribe = subscribe(
       'time-summary-realtime',
       {
@@ -56,19 +59,45 @@ export const TimeSummaryPage: React.FC = () => {
         table: 'timesheets',
         filter: `company_id=eq.${user.companyId}`,
       },
-      () => {
-        console.log('Timesheet changed, invalidating time summary queries');
-        // Invalidate both summary and details queries
-        queryClient.invalidateQueries({ queryKey: ['time-summary'] });
-        queryClient.invalidateQueries({ queryKey: ['timeSummaryDetails'] });
+      (payload) => {
+        console.log('[Time Summary] Real-time event received:', {
+          eventType: payload.eventType,
+          timestamp: new Date().toISOString(),
+          oldData: payload.old,
+          newData: payload.new
+        });
+        
+        // Force refetch with aggressive invalidation
+        queryClient.invalidateQueries({ 
+          queryKey: ['time-summary'],
+          refetchType: 'all'
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: ['timeSummaryDetails'],
+          refetchType: 'all'
+        });
+        
+        // Also force an immediate refetch
+        queryClient.refetchQueries({ 
+          queryKey: ['time-summary'],
+          type: 'all'
+        });
       },
       { companyId: user.companyId }
     );
 
     return () => {
+      console.log('[Time Summary] Cleaning up real-time subscription');
       unsubscribe.then(unsub => unsub?.());
     };
   }, [user?.companyId, subscribe, queryClient]);
+
+  const handleManualRefresh = () => {
+    console.log('[Time Summary] Manual refresh triggered');
+    queryClient.invalidateQueries({ queryKey: ['time-summary'] });
+    queryClient.invalidateQueries({ queryKey: ['timeSummaryDetails'] });
+    queryClient.refetchQueries({ queryKey: ['time-summary'] });
+  };
 
   return (
     <div className="space-y-6">
@@ -85,14 +114,25 @@ export const TimeSummaryPage: React.FC = () => {
             </p>
           </div>
         </div>
-        {data && data.length > 0 && (
-          <TimeSummaryExport
-            data={data}
-            dateRange={filters.dateRange}
-            companyName={companySettings?.company_name}
-            companyLogo={companySettings?.company_logo_url || undefined}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          {data && data.length > 0 && (
+            <TimeSummaryExport
+              data={data}
+              dateRange={filters.dateRange}
+              companyName={companySettings?.company_name}
+              companyLogo={companySettings?.company_logo_url || undefined}
+            />
+          )}
+        </div>
       </div>
 
       {/* Filters */}

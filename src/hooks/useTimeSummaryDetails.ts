@@ -63,8 +63,9 @@ export const useTimeSummaryDetails = ({
       return dailyPunches;
     },
     enabled: enabled && !!user?.companyId && !!employeeId,
-    staleTime: 30000, // 30 seconds
+    staleTime: 10000, // 10 seconds - more aggressive for real-time updates
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds as fallback
   });
 };
