@@ -50,6 +50,7 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
       const { dateRange, jobsiteIds, employeeIds, status } = filters;
 
       // Build query for timesheets within date range
+      // Use OR condition to capture timesheets with check_in, check_out, or created_at in range
       let query = supabase
         .from('timesheets')
         .select(`
@@ -63,11 +64,12 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
           check_in_location,
           check_out_location,
           location_distance,
-          work_note
+          work_note,
+          created_at
         `)
         .eq('company_id', user.companyId)
-        .gte('check_in_time', startOfDay(dateRange.start).toISOString())
-        .lte('check_in_time', endOfDay(dateRange.end).toISOString())
+        .or(`check_in_time.gte.${startOfDay(dateRange.start).toISOString()},check_out_time.gte.${startOfDay(dateRange.start).toISOString()},created_at.gte.${startOfDay(dateRange.start).toISOString()}`)
+        .or(`check_in_time.lte.${endOfDay(dateRange.end).toISOString()},check_out_time.lte.${endOfDay(dateRange.end).toISOString()},created_at.lte.${endOfDay(dateRange.end).toISOString()}`)
         .order('check_in_time', { ascending: false });
 
       // Apply jobsite filter
