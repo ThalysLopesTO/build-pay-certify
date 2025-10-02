@@ -152,7 +152,7 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
     },
     enabled: !!user?.companyId,
     refetchOnMount: true,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     staleTime: 30000,
     gcTime: 300000,
   });

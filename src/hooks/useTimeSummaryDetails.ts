@@ -63,6 +63,8 @@ export const useTimeSummaryDetails = ({
       return dailyPunches;
     },
     enabled: enabled && !!user?.companyId && !!employeeId,
-    staleTime: 60000, // 1 minute
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };

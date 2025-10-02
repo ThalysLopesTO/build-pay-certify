@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { TimeSummaryFilters } from './TimeSummaryFilters';
 import { TimeSummaryTable } from './TimeSummaryTable';
@@ -6,11 +6,14 @@ import { TimeSummaryExport } from './TimeSummaryExport';
 import { useTimeSummaryData, TimeSummaryFilters as Filters } from '@/hooks/useTimeSummaryData';
 import { startOfWeek, endOfWeek } from 'date-fns';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtime } from '@/contexts/RealtimeProvider';
 
 export const TimeSummaryPage: React.FC = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { subscribe } = useRealtime();
   const now = new Date();
 
   const [filters, setFilters] = useState<Filters>({
@@ -40,6 +43,32 @@ export const TimeSummaryPage: React.FC = () => {
   });
 
   const { data, isLoading } = useTimeSummaryData(filters);
+
+  // Set up real-time subscription for timesheet changes
+  useEffect(() => {
+    if (!user?.companyId) return;
+
+    const unsubscribe = subscribe(
+      'time-summary-realtime',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'timesheets',
+        filter: `company_id=eq.${user.companyId}`,
+      },
+      () => {
+        console.log('Timesheet changed, invalidating time summary queries');
+        // Invalidate both summary and details queries
+        queryClient.invalidateQueries({ queryKey: ['time-summary'] });
+        queryClient.invalidateQueries({ queryKey: ['timeSummaryDetails'] });
+      },
+      { companyId: user.companyId }
+    );
+
+    return () => {
+      unsubscribe.then(unsub => unsub?.());
+    };
+  }, [user?.companyId, subscribe, queryClient]);
 
   return (
     <div className="space-y-6">
