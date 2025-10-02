@@ -142,21 +142,19 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                     </div>
                     <div className="text-sm flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5 text-green-600" />
-                      {punch.check_in_time
-                        ? format(new Date(punch.check_in_time), "HH:mm")
-                        : "—"}
+                      {punch.check_in_time || "—"}
                     </div>
                     <div className="text-sm flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5 text-red-600" />
-                      {punch.check_out_time
-                        ? format(new Date(punch.check_out_time), "HH:mm")
-                        : punch.status === "active" ? (
-                          <Badge variant="secondary" className="text-xs">
-                            Active
-                          </Badge>
-                        ) : (
-                          "—"
-                        )}
+                      {punch.check_out_time ? (
+                        punch.check_out_time
+                      ) : punch.status === "active" ? (
+                        <Badge variant="secondary" className="text-xs">
+                          Active
+                        </Badge>
+                      ) : (
+                        "—"
+                      )}
                     </div>
                     <div className="text-sm font-semibold text-right">
                       {punch.hours_worked.toFixed(2)} hrs
