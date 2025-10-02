@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { isWithinInterval } from 'date-fns';
 
 export interface TimeSummaryFilters {
   dateRange: { start: Date; end: Date };
@@ -49,6 +49,19 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
 
       const { dateRange, jobsiteIds, employeeIds, status } = filters;
 
+      // Use the same local time boundary logic as Live Punch Monitor
+      const startOfDay = new Date(dateRange.start);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(dateRange.end);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      console.log('Time Summary Date Range:', {
+        start: startOfDay.toISOString(),
+        end: endOfDay.toISOString(),
+        originalStart: dateRange.start,
+        originalEnd: dateRange.end
+      });
+
       // Build query for timesheets within date range
       // Use OR condition to capture timesheets with check_in, check_out, or created_at in range
       let query = supabase
@@ -69,9 +82,9 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
         `)
         .eq('company_id', user.companyId)
         .or(
-          `and(check_in_time.gte.${startOfDay(dateRange.start).toISOString()},check_in_time.lte.${endOfDay(dateRange.end).toISOString()}),` +
-          `and(check_out_time.gte.${startOfDay(dateRange.start).toISOString()},check_out_time.lte.${endOfDay(dateRange.end).toISOString()}),` +
-          `and(created_at.gte.${startOfDay(dateRange.start).toISOString()},created_at.lte.${endOfDay(dateRange.end).toISOString()})`
+          `and(check_in_time.gte.${startOfDay.toISOString()},check_in_time.lte.${endOfDay.toISOString()}),` +
+          `and(check_out_time.gte.${startOfDay.toISOString()},check_out_time.lte.${endOfDay.toISOString()}),` +
+          `and(created_at.gte.${startOfDay.toISOString()},created_at.lte.${endOfDay.toISOString()})`
         )
         .order('check_in_time', { ascending: false });
 
