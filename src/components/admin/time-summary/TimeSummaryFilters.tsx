@@ -236,21 +236,27 @@ export const TimeSummaryFilters: React.FC<TimeSummaryFiltersProps> = ({
             </PopoverTrigger>
             <PopoverContent className="w-64 p-3" align="start">
               <div className="max-h-64 overflow-y-auto space-y-2">
-                {jobsites.map((jobsite) => (
-                  <div key={jobsite.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`jobsite-${jobsite.id}`}
-                      checked={filters.jobsiteIds.includes(jobsite.id)}
-                      onCheckedChange={() => handleJobsiteToggle(jobsite.id)}
-                    />
-                    <label
-                      htmlFor={`jobsite-${jobsite.id}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                    >
-                      {jobsite.name}
-                    </label>
+                {Array.isArray(jobsites) && jobsites.length > 0 ? (
+                  jobsites.map((jobsite) => (
+                    <div key={jobsite.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`jobsite-${jobsite.id}`}
+                        checked={filters.jobsiteIds.includes(jobsite.id)}
+                        onCheckedChange={() => handleJobsiteToggle(jobsite.id)}
+                      />
+                      <label
+                        htmlFor={`jobsite-${jobsite.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {jobsite.name}
+                      </label>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-4">
+                    No jobsites found
                   </div>
-                ))}
+                )}
               </div>
             </PopoverContent>
           </Popover>
@@ -267,21 +273,27 @@ export const TimeSummaryFilters: React.FC<TimeSummaryFiltersProps> = ({
             </PopoverTrigger>
             <PopoverContent className="w-64 p-3" align="start">
               <div className="max-h-64 overflow-y-auto space-y-2">
-                {employees.map((employee) => (
-                  <div key={employee.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`employee-${employee.id}`}
-                      checked={filters.employeeIds.includes(employee.id)}
-                      onCheckedChange={() => handleEmployeeToggle(employee.id)}
-                    />
-                    <label
-                      htmlFor={`employee-${employee.id}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                    >
-                      {employee.name}
-                    </label>
+                {Array.isArray(employees) && employees.length > 0 ? (
+                  employees.map((employee) => (
+                    <div key={employee.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`employee-${employee.id}`}
+                        checked={filters.employeeIds.includes(employee.id)}
+                        onCheckedChange={() => handleEmployeeToggle(employee.id)}
+                      />
+                      <label
+                        htmlFor={`employee-${employee.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {employee.name}
+                      </label>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-4">
+                    No employees found
                   </div>
-                ))}
+                )}
               </div>
             </PopoverContent>
           </Popover>
