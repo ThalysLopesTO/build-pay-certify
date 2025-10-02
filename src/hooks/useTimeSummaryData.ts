@@ -68,8 +68,11 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
           created_at
         `)
         .eq('company_id', user.companyId)
-        .or(`check_in_time.gte.${startOfDay(dateRange.start).toISOString()},check_out_time.gte.${startOfDay(dateRange.start).toISOString()},created_at.gte.${startOfDay(dateRange.start).toISOString()}`)
-        .or(`check_in_time.lte.${endOfDay(dateRange.end).toISOString()},check_out_time.lte.${endOfDay(dateRange.end).toISOString()},created_at.lte.${endOfDay(dateRange.end).toISOString()}`)
+        .or(
+          `and(check_in_time.gte.${startOfDay(dateRange.start).toISOString()},check_in_time.lte.${endOfDay(dateRange.end).toISOString()}),` +
+          `and(check_out_time.gte.${startOfDay(dateRange.start).toISOString()},check_out_time.lte.${endOfDay(dateRange.end).toISOString()}),` +
+          `and(created_at.gte.${startOfDay(dateRange.start).toISOString()},created_at.lte.${endOfDay(dateRange.end).toISOString()})`
+        )
         .order('check_in_time', { ascending: false });
 
       // Apply jobsite filter
