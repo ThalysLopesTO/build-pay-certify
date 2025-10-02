@@ -3022,6 +3022,10 @@ export type Database = {
           timesheet_id: string
         }[]
       }
+      fn_clip_minutes: {
+        Args: { ts: string; tz: string }
+        Returns: string
+      }
       generate_biweekly_json: {
         Args: {
           fri_h?: number
@@ -3147,6 +3151,48 @@ export type Database = {
       reactivate_employee: {
         Args: { employee_user_id: string }
         Returns: Json
+      }
+      rpc_time_summary_details: {
+        Args: {
+          p_company_id: string
+          p_employee_id: string
+          p_end_date: string
+          p_jobsite_id: string
+          p_start_date: string
+          p_tz: string
+        }
+        Returns: {
+          check_in_location: string
+          check_in_time: string
+          check_out_location: string
+          check_out_time: string
+          date: string
+          hours_worked: number
+          id: string
+          location_distance: number
+          notes: string
+          status: string
+        }[]
+      }
+      rpc_time_summary_headers: {
+        Args: {
+          p_company_id: string
+          p_employee_ids: string[]
+          p_end_date: string
+          p_jobsite_ids: string[]
+          p_start_date: string
+          p_status: string
+          p_tz: string
+        }
+        Returns: {
+          employee_id: string
+          employee_name: string
+          has_flags: boolean
+          jobsite_id: string
+          jobsite_name: string
+          total_minutes: number
+          total_punches: number
+        }[]
       }
       run_daily_notification_checks: {
         Args: Record<PropertyKey, never>

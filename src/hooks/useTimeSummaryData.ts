@@ -3,6 +3,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { format } from 'date-fns';
 
+// Helper: turn UI values (objects/strings) into array of UUID strings or null
+function toIdArray(raw: any): string[] | null {
+  if (!raw) return null;
+  const arr = Array.isArray(raw) ? raw : [raw];
+  const ids = arr
+    .map((x) => {
+      if (!x) return null;
+      if (typeof x === 'string') return x;        // already an id
+      return x.id ?? x.value ?? null;             // common Select shapes
+    })
+    .filter(Boolean);
+  return ids.length ? (ids as string[]) : null;   // null means ALL
+}
+
 export interface TimeSummaryFilters {
   dateRange: { start: Date; end: Date };
   jobsiteIds: string[];
@@ -56,9 +70,9 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
       // Get browser timezone
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      // Treat empty filters as null (meaning ALL)
-      const jobsiteFilter = jobsiteIds.length > 0 ? jobsiteIds : null;
-      const employeeFilter = employeeIds.length > 0 ? employeeIds : null;
+      // Normalize filter values to uuid[] or null (ALL)
+      const jobsiteFilter = toIdArray(jobsiteIds.length > 0 ? jobsiteIds : null);
+      const employeeFilter = toIdArray(employeeIds.length > 0 ? employeeIds : null);
       const statusFilter = status === 'all' ? null : status;
 
       console.log('Time Summary RPC Call:', {
