@@ -3187,6 +3187,10 @@ export type Database = {
         Returns: {
           employee_id: string
           employee_name: string
+          employee_photo: string
+          employee_position: string
+          employee_role: string
+          employee_trade: string
           has_flags: boolean
           jobsite_id: string
           jobsite_name: string

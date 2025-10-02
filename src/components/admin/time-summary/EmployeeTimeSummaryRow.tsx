@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { EmployeeSummary } from '@/hooks/useTimeSummaryData';
 import { cn } from '@/lib/utils';
+import { RoleBadge } from './RoleBadge';
 
 interface EmployeeTimeSummaryRowProps {
   employee: EmployeeSummary;
@@ -16,7 +17,13 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({ 
   // Get first and last name for avatar
   const nameParts = employee.employee_name.split(' ');
   const firstName = nameParts[0] || '';
-  const lastName = nameParts[1] || '';
+  const lastName = nameParts[nameParts.length - 1] || '';
+
+  // Determine subtitle
+  const subtitle = [
+    employee.employee_position || employee.employee_trade || employee.employee_role,
+    `${employee.total_punches} ${employee.total_punches === 1 ? 'punch' : 'punches'}`
+  ].filter(Boolean).join(' · ');
 
   return (
     <div className="mb-2">
@@ -31,19 +38,28 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({ 
             photoUrl={employee.employee_photo}
             firstName={firstName}
             lastName={lastName}
-            size="sm"
+            size="md"
           />
         </div>
 
         {/* Main Content */}
         <div className="flex-1 min-w-0 flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-foreground truncate">
-              {employee.employee_name}
-            </h3>
-            <p className="text-xs text-muted-foreground truncate">
-              {employee.total_punches} {employee.total_punches === 1 ? 'punch' : 'punches'}
-            </p>
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h3 className="text-sm font-semibold text-foreground truncate">
+                {employee.employee_name}
+              </h3>
+              <RoleBadge 
+                role={employee.employee_role}
+                position={employee.employee_position}
+                trade={employee.employee_trade}
+              />
+            </div>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground truncate">
+                {subtitle}
+              </p>
+            )}
           </div>
 
           {/* Right Side: Hours and Issues Badge */}

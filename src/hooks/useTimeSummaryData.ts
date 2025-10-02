@@ -41,6 +41,9 @@ export interface EmployeeSummary {
   employee_id: string;
   employee_name: string;
   employee_photo: string | null;
+  employee_role: string | null;
+  employee_position: string | null;
+  employee_trade: string | null;
   total_hours: number;
   total_punches: number;
   has_flags: boolean;
@@ -121,7 +124,10 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
         jobsiteMap.get(row.jobsite_id)!.push({
           employee_id: row.employee_id,
           employee_name: row.employee_name,
-          employee_photo: null, // Not included in RPC for performance
+          employee_photo: row.employee_photo,
+          employee_role: row.employee_role,
+          employee_position: row.employee_position,
+          employee_trade: row.employee_trade,
           total_hours: Number((row.total_minutes / 60).toFixed(2)), // Convert minutes to hours
           total_punches: row.total_punches,
           has_flags: row.has_flags,
