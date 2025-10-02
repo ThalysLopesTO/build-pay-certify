@@ -30,8 +30,8 @@ export interface DailyPunch {
   check_out_time: string | null;
   hours_worked: number;
   jobsite_name: string;
-  status: string | null;
-  notes: string | null;
+  location: string | null;
+  status: string;
 }
 
 export interface EmployeeSummary {

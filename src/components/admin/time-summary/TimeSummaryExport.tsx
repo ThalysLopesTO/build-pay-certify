@@ -25,7 +25,7 @@ export const TimeSummaryExport: React.FC<TimeSummaryExportProps> = ({
   const exportToCSV = () => {
     try {
       // Create CSV header
-      const headers = ['Jobsite', 'Employee', 'Date', 'Check-In', 'Check-Out', 'Hours', 'Status', 'Notes'];
+      const headers = ['Jobsite', 'Employee', 'Date', 'Check-In', 'Check-Out', 'Hours', 'Status'];
       const rows: string[][] = [headers];
 
       // Add data rows
@@ -40,7 +40,6 @@ export const TimeSummaryExport: React.FC<TimeSummaryExportProps> = ({
               punch.check_out_time ? format(new Date(punch.check_out_time), 'HH:mm') : '--:--',
               punch.hours_worked.toFixed(2),
               punch.status,
-              punch.notes || ''
             ]);
           });
         });

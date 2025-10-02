@@ -162,15 +162,6 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                       {punch.hours_worked.toFixed(2)} hrs
                     </div>
                   </div>
-
-                  {/* Notes section */}
-                  {punch.notes && (
-                    <div className="ml-3 pl-3 border-l-2 border-muted">
-                      <p className="text-xs text-muted-foreground">
-                        <span className="font-medium">Note:</span> {punch.notes}
-                      </p>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

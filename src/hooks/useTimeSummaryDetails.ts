@@ -58,7 +58,6 @@ export const useTimeSummaryDetails = ({
         jobsite_name: row.jobsite_name || "Unknown Project",
         location: null,
         status: row.status,
-        notes: row.notes,
       }));
 
       return dailyPunches;
