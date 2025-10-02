@@ -3170,15 +3170,12 @@ export type Database = {
               p_timezone?: string
             }
         Returns: {
-          check_in_location: string
           check_in_time: string
-          check_out_location: string
           check_out_time: string
-          date: string
           hours_worked: number
-          id: string
-          location_distance: number
-          notes: string
+          jobsite_id: string
+          jobsite_name: string
+          punch_date: string
           status: string
         }[]
       }
