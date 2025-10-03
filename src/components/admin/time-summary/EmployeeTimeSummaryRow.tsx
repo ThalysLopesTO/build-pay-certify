@@ -10,12 +10,14 @@ import { RoleBadge } from './RoleBadge';
 
 interface EmployeeTimeSummaryRowProps {
   employee: EmployeeSummary;
+  jobsiteId: string;
   startDate: Date;
   endDate: Date;
 }
 
 export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({ 
   employee,
+  jobsiteId,
   startDate,
   endDate 
 }) => {
@@ -24,6 +26,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
   // Fetch daily details when row is expanded
   const { data: dailyPunches, isLoading } = useTimeSummaryDetails({
     employeeId: employee.employee_id,
+    jobsiteId,
     startDate,
     endDate,
     enabled: isExpanded,

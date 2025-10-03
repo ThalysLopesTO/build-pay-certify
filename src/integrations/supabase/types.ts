@@ -3166,6 +3166,14 @@ export type Database = {
               p_company_id: string
               p_employee_id: string
               p_end_date: string
+              p_jobsite_id?: string
+              p_start_date: string
+              p_timezone: string
+            }
+          | {
+              p_company_id: string
+              p_employee_id: string
+              p_end_date: string
               p_start_date: string
               p_timezone?: string
             }

@@ -100,6 +100,7 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
                 <EmployeeTimeSummaryRow 
                   key={employee.employee_id} 
                   employee={employee}
+                  jobsiteId={jobsite.jobsite_id}
                   startDate={startDate}
                   endDate={endDate}
                 />

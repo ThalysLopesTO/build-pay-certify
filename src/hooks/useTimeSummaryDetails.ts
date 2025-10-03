@@ -6,6 +6,7 @@ import { format } from "date-fns";
 
 interface TimeSummaryDetailsParams {
   employeeId: string;
+  jobsiteId: string;
   startDate: Date;
   endDate: Date;
   enabled?: boolean;
@@ -13,6 +14,7 @@ interface TimeSummaryDetailsParams {
 
 export const useTimeSummaryDetails = ({
   employeeId,
+  jobsiteId,
   startDate,
   endDate,
   enabled = true,
@@ -20,7 +22,7 @@ export const useTimeSummaryDetails = ({
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["timeSummaryDetails", employeeId, startDate, endDate],
+    queryKey: ["timeSummaryDetails", employeeId, jobsiteId, startDate, endDate],
     queryFn: async () => {
       if (!user?.companyId) throw new Error("No company ID");
 
@@ -42,6 +44,7 @@ export const useTimeSummaryDetails = ({
         p_start_date: startDateStr,
         p_end_date: endDateStr,
         p_timezone: timezone,
+        p_jobsite_id: jobsiteId,
       });
 
       if (error) {
