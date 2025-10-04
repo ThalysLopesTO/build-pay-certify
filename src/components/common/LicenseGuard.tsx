@@ -23,10 +23,18 @@ const LicenseGuard: React.FC<LicenseGuardProps> = ({ children }) => {
     );
   }
 
+  // Check for trial or grace period access
+  const isInTrial = licenseStatus?.subscriptionStatus?.isInTrial || false;
+  const isInGracePeriod = licenseStatus?.subscriptionStatus?.isInGracePeriod || false;
+
   // For employees (non-admin users), only block if company subscription is completely inactive
   if (!isCompanyAdmin) {
-    // Employees get access as long as company has any form of active subscription
-    const hasAnyActiveSubscription = licenseStatus?.subscriptionStatus?.subscribed || licenseStatus?.isActive;
+    // Employees get access as long as company has any form of active subscription (including trial/grace)
+    const hasAnyActiveSubscription = 
+      licenseStatus?.subscriptionStatus?.subscribed || 
+      licenseStatus?.isActive ||
+      isInTrial ||
+      isInGracePeriod;
     
     if (!hasAnyActiveSubscription) {
       return <Navigate to="/license-expired" replace />;
@@ -35,13 +43,16 @@ const LicenseGuard: React.FC<LicenseGuardProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  // For admins, check both Stripe subscription status and legacy license
+  // For admins, check Stripe subscription status, trial, grace period, and legacy license
   if (isCompanyAdmin && licenseStatus) {
-    // Check if company has active Stripe subscription
-    const hasActiveStripeSubscription = licenseStatus.subscriptionStatus?.subscribed;
+    // Allow access if: has active subscription, in trial, in grace period, or has active legacy license
+    const hasAccess = 
+      licenseStatus.subscriptionStatus?.subscribed ||
+      licenseStatus.isActive ||
+      isInTrial ||
+      isInGracePeriod;
     
-    // If no active Stripe subscription, check legacy license
-    if (!hasActiveStripeSubscription && !licenseStatus.isActive) {
+    if (!hasAccess) {
       return <Navigate to="/license-expired" replace />;
     }
   }

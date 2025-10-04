@@ -78,6 +78,9 @@ serve(async (req) => {
       case 'checkout.session.completed':
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session, supabaseClient, stripe);
         break;
+      case 'customer.subscription.trial_will_end':
+        await handleTrialWillEnd(event.data.object as Stripe.Subscription, supabaseClient);
+        break;
       case 'invoice.payment_succeeded':
         await handlePaymentSucceeded(event.data.object as Stripe.Invoice, supabaseClient);
         break;
@@ -132,27 +135,25 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, supabas
 }
 
 async function handleSubscriptionChange(subscription: Stripe.Subscription, supabaseClient: any, stripe: Stripe) {
-  logStep("Handling subscription change", { subscriptionId: subscription.id, status: subscription.status });
+  logStep("Handling subscription change", { 
+    subscriptionId: subscription.id, 
+    status: subscription.status 
+  });
   
   const customerId = subscription.customer as string;
-  const priceId = subscription.items.data[0].price.id;
+  const status = subscription.status;
+  const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
   const amount = subscription.items.data[0].price.unit_amount || 0;
   
-  let plan = 'free';
-  if (amount <= 999) {
-    plan = "basic";
-  } else if (amount <= 2999) {
-    plan = "standard";
-  } else {
-    plan = "pro";
-  }
+  // Determine plan (single plan now)
+  let plan = amount >= 29700 ? 'pro' : 'free';
   
   const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString().split('T')[0];
   
   // Update company record if it exists
   const { data: existingCompany } = await supabaseClient
     .from('companies')
-    .select('id')
+    .select('id, name')
     .eq('stripe_customer_id', customerId)
     .single();
 
@@ -163,13 +164,26 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
       .update({
         stripe_subscription_id: subscription.id,
         plan: plan,
+        subscription_status: status,
+        trial_end_date: trialEnd?.toISOString(),
         expiration_date: subscriptionEnd,
-        status: subscription.status === 'active' ? 'active' : 'inactive',
-        stripe_verified: true
+        status: (status === 'active' || status === 'trialing') ? 'active' : 'inactive',
+        stripe_verified: true,
+        grace_period_end_date: null
       })
       .eq('stripe_customer_id', customerId);
       
-    logStep("Updated existing company", { customerId, plan, expiration: subscriptionEnd });
+    logStep("Updated existing company", { 
+      customerId, 
+      plan, 
+      status, 
+      trialEnd: trialEnd?.toISOString() 
+    });
+    
+    // Send trial start email if trialing
+    if (status === 'trialing' && trialEnd) {
+      await sendTrialStartEmail(existingCompany, trialEnd, supabaseClient);
+    }
   } else {
     // Update registration request status
     await supabaseClient
@@ -203,12 +217,106 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, supa
   logStep("Company updated for subscription deletion", { customerId });
 }
 
+async function handleTrialWillEnd(subscription: Stripe.Subscription, supabaseClient: any) {
+  logStep("Handling trial will end", { subscriptionId: subscription.id });
+  
+  const customerId = subscription.customer as string;
+  const trialEnd = new Date(subscription.trial_end! * 1000);
+  
+  const { data: company } = await supabaseClient
+    .from('companies')
+    .select('id, name, stripe_customer_id')
+    .eq('stripe_customer_id', customerId)
+    .single();
+    
+  if (company) {
+    await sendTrialEndingEmail(company, trialEnd, supabaseClient);
+    logStep("Trial ending email sent", { companyId: company.id, trialEnd: trialEnd.toISOString() });
+  }
+}
+
 async function handlePaymentSucceeded(invoice: Stripe.Invoice, supabaseClient: any) {
   logStep("Handling payment succeeded", { invoiceId: invoice.id });
   // Additional logic for successful payments if needed
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice, supabaseClient: any) {
-  logStep("Handling payment failed", { invoiceId: invoice.id });
-  // Additional logic for failed payments if needed
+  logStep("Handling payment failed", { invoiceId: invoice.id, customerId: invoice.customer });
+  
+  const customerId = invoice.customer as string;
+  
+  if (invoice.subscription) {
+    const gracePeriodEnd = new Date();
+    gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 5);
+    
+    const { data: company } = await supabaseClient
+      .from('companies')
+      .update({
+        subscription_status: 'past_due',
+        grace_period_end_date: gracePeriodEnd.toISOString()
+      })
+      .eq('stripe_customer_id', customerId)
+      .select('id, name')
+      .single();
+      
+    if (company) {
+      logStep("Grace period set for failed payment", { 
+        companyId: company.id,
+        gracePeriodEnd: gracePeriodEnd.toISOString() 
+      });
+      
+      await sendPaymentFailedEmail(company, gracePeriodEnd, supabaseClient);
+    }
+  }
+}
+
+async function sendTrialStartEmail(company: any, trialEnd: Date, supabaseClient: any) {
+  logStep("Sending trial start email", { companyId: company.id });
+  
+  try {
+    await supabaseClient.functions.invoke('send-trial-emails', {
+      body: {
+        email_type: 'trial_started',
+        company_id: company.id,
+        company_name: company.name,
+        trial_end_date: trialEnd.toISOString()
+      }
+    });
+  } catch (error: any) {
+    logStep("Error sending trial start email", { error: error.message });
+  }
+}
+
+async function sendTrialEndingEmail(company: any, trialEnd: Date, supabaseClient: any) {
+  logStep("Sending trial ending email", { companyId: company.id });
+  
+  try {
+    await supabaseClient.functions.invoke('send-trial-emails', {
+      body: {
+        email_type: 'trial_ending',
+        company_id: company.id,
+        company_name: company.name,
+        trial_end_date: trialEnd.toISOString()
+      }
+    });
+  } catch (error: any) {
+    logStep("Error sending trial ending email", { error: error.message });
+  }
+}
+
+async function sendPaymentFailedEmail(company: any, gracePeriodEnd: Date, supabaseClient: any) {
+  logStep("Sending payment failed email", { companyId: company.id });
+  
+  try {
+    await supabaseClient.functions.invoke('send-trial-emails', {
+      body: {
+        email_type: 'payment_failed',
+        company_id: company.id,
+        company_name: company.name,
+        grace_period_end: gracePeriodEnd.toISOString()
+      }
+    });
+  } catch (error: any) {
+    logStep("Error sending payment failed email", { error: error.message });
+  }
 }
