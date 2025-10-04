@@ -408,6 +408,7 @@ export type Database = {
           created_at: string
           employee_limit: number | null
           expiration_date: string | null
+          grace_period_end_date: string | null
           id: string
           license_expires_at: string | null
           license_key: string
@@ -424,6 +425,7 @@ export type Database = {
           subscription_end_date: string | null
           subscription_override: boolean | null
           subscription_status: string | null
+          trial_end_date: string | null
           updated_at: string
         }
         Insert: {
@@ -431,6 +433,7 @@ export type Database = {
           created_at?: string
           employee_limit?: number | null
           expiration_date?: string | null
+          grace_period_end_date?: string | null
           id?: string
           license_expires_at?: string | null
           license_key?: string
@@ -447,6 +450,7 @@ export type Database = {
           subscription_end_date?: string | null
           subscription_override?: boolean | null
           subscription_status?: string | null
+          trial_end_date?: string | null
           updated_at?: string
         }
         Update: {
@@ -454,6 +458,7 @@ export type Database = {
           created_at?: string
           employee_limit?: number | null
           expiration_date?: string | null
+          grace_period_end_date?: string | null
           id?: string
           license_expires_at?: string | null
           license_key?: string
@@ -470,6 +475,7 @@ export type Database = {
           subscription_end_date?: string | null
           subscription_override?: boolean | null
           subscription_status?: string | null
+          trial_end_date?: string | null
           updated_at?: string
         }
         Relationships: []
