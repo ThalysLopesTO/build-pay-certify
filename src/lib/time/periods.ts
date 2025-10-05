@@ -1,4 +1,4 @@
-import { addDays, startOfDay, endOfDay, format, getDay } from 'date-fns';
+import { addDays, startOfDay, endOfDay, format, getDay, isAfter } from 'date-fns';
 
 export type TimesheetFrequency = 'weekly' | 'bi-weekly';
 
@@ -70,37 +70,43 @@ export const getCurrentPeriod = ({
 };
 
 export const getPreviousPeriods = ({
-  today = new Date(),
+  startDate = new Date(),
   frequency,
-  weekEndingIdx,
-  count,
 }: {
-  today?: Date;
+  startDate?: Date;
   frequency: TimesheetFrequency;
-  weekEndingIdx: number;
-  count: number;
+  // weekEndingIdx: number;
+  // count: number;
 }): Array<{ start: Date; end: Date }> => {
   const periodLength = frequency === "bi-weekly" ? 14 : 7;
   const periods: Array<{ start: Date; end: Date }> = [];
 
-  // Align today to the last Thursday (week ends on Thursday)
-  const dayOfWeek = getDay(today); // 0 = Sun … 4 = Thu, 5 = Fri
-  const offsetToThursday = (4 - dayOfWeek + 7) % 7;
-  const currentEnd = startOfDay(addDays(today, offsetToThursday)); // most recent Thursday
+  const today = startOfDay(new Date());
+  const start = startOfDay(startDate);
 
-  // First period
-  let end = currentEnd;
-  let start = addDays(end, -(periodLength - 1));
-  periods.push({ start: startOfDay(start), end: startOfDay(end) });
+  // Align to the FRIDAY inside the same week as startDate
+  // getDay() → 0=Sun, 5=Fri
+  const dayOfWeek = getDay(start);
+  const offsetToFriday = (5 - dayOfWeek + 7) % 7;
+  const firstFriday = addDays(start, offsetToFriday); // Friday in that week
+  const firstEnd = addDays(firstFriday, periodLength - 1); // Thursday after that Friday
 
-  // Remaining periods: chain backwards
-  for (let i = 1; i < count; i++) {
-    end = addDays(start, -1); // one day before previous start
-    start = addDays(end, -(periodLength - 1));
-    periods.push({ start: startOfDay(start), end: startOfDay(end) });
+  let currentStart = firstFriday;
+  let currentEnd = firstEnd;
+
+  // Generate periods up to today
+  while (!isAfter(currentStart, today)) {
+    periods.push({
+      start: startOfDay(currentStart),
+      end: startOfDay(currentEnd),
+    });
+
+    currentStart = addDays(currentEnd, 1);
+    currentEnd = addDays(currentStart, periodLength - 1);
   }
 
-  return periods;
+  // Return the last 3 periods (most recent first)
+  return periods.reverse().slice(0,3);
 };
 
 export const isSubmissionOpen = (end: Date): boolean => {

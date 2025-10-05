@@ -43,7 +43,7 @@ export const CompanySettingsTab = () => {
       enable_quote_reminders: settings?.enable_quote_reminders ?? true,
       quote_reminder_days: settings?.quote_reminder_days ?? 14,
       timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
-      start_date: settings.start_date || "",
+      start_date: settings?.start_date || "",
     }
   });
 

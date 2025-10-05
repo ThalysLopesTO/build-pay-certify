@@ -27,8 +27,9 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
           jobsite:jobsite_id (
             id,
             name
-          )`);
-        console.log({filters});
+          )`)
+        .order('created_at', { ascending: false });
+
       if (filters.employeeName) {
         query = query.eq('employee_name', filters.employeeName);
       }
