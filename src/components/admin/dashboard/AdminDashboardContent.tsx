@@ -2,15 +2,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Clock, 
-  DollarSign, 
-  Receipt, 
-  // BarChart3, 
+import {
+  Clock,
+  DollarSign,
+  Receipt,
   CalendarDays,
   Building,
   Eye,
-  // ArrowRight,
   Users,
   MapPin,
   FileText,
@@ -19,18 +17,13 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { useEnhancedDashboardStats } from '@/hooks/useEnhancedDashboardStats';
-// import { useEmployees } from '@/contexts/EmployeeContext';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
-// import { useQuery } from '@tanstack/react-query';
-// import { supabase } from '@/integrations/supabase/client';
-// import StatsCard from './StatsCard';
 import LicenseWarningBanner from '../../common/LicenseWarningBanner';
 import EmployeeLimitCard from './EmployeeLimitCard';
 import ProjectsProgressOverview from './ProjectsProgressOverview';
 import LiveActiveEmployees from './LiveActiveEmployees';
 import WeatherCard from './WeatherCard';
-// import EmailTestComponent from '../EmailTestComponent';
 import { useEmployees, useUserProfile } from '@/hooks/new/useUsers';
 interface AdminDashboardContentProps {
   setActiveTab: (tab: string) => void;
@@ -38,31 +31,20 @@ interface AdminDashboardContentProps {
 const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
   setActiveTab
 }) => {
-  const { user } = useAuth();
   const {
     data: stats,
     isLoading
   } = useEnhancedDashboardStats();
-  
+
   // Get real-time employee count from context
   const { data } = useEmployees();
 
-  const activeEmployeeCount =data?.archivedEmployeesCount;
-
-  // Fetch user profile data
-  const { data: userProfile } = useUserProfile();
+  const activeEmployeeCount = data?.archivedEmployeesCount;
 
   // Handler for card clicks
   const navigateToSection = (section: string) => {
     setActiveTab(section);
   };
-
-  // const formatCurrency = (amount: number) => {
-  //   return new Intl.NumberFormat('en-CA', {
-  //     style: 'currency',
-  //     currency: 'CAD',
-  //   }).format(amount);
-  // };
 
   const quickActions = [
     {
@@ -91,95 +73,17 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
     }
   ];
 
-  // const userName = userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : user?.firstName || 'Admin';
-  const firstName = userProfile?.first_name || user?.firstName || 'Admin';
-
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-8 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card className="h-48 animate-pulse">
-              <CardContent className="p-6 h-full bg-gray-100 rounded-2xl" />
-            </Card>
-          </div>
-          <div>
-            <Card className="h-48 animate-pulse">
-              <CardContent className="p-6 h-full bg-gray-100 rounded-2xl" />
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto animate-fade-in">
-      {/* Hero + Overview row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-stretch">
-        {/* Hero Card (left) */}
-        <div className="lg:col-span-2 h-full flex flex-col">
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-orange-50 rounded-2xl h-full">
-            <CardContent className="p-6 h-full">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 h-full">
-                <div className="flex-shrink-0">
-                  <EmployeeAvatar 
-                    photoUrl={userProfile?.photo_url || undefined}
-                    firstName={userProfile?.first_name || user?.firstName || undefined}
-                    lastName={userProfile?.last_name || user?.lastName || undefined}
-                    size="lg"
-                    className="shadow-lg"
-                  />
-                </div>
-
-                <div className="flex-1 space-y-3">
-                  <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
-                      Welcome back, {firstName} 👋
-                    </h1>
-                    <p className="text-slate-600 text-base">
-                      A great day to get a clear view of your company.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">
-                      <span className="w-2 h-2 rounded-full mr-2 animate-pulse bg-orange-500"></span>
-                      {user?.role || 'Admin'}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center space-x-2 text-sm text-slate-600">
-                    <Building className="h-4 w-4" />
-                    <span>{user?.companyName || 'Not Assigned'}</span>
-                  </div>
-
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setActiveTab('settings')}
-                    className="w-fit"
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    View My Profile
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Weather Today Card (right) */}
-        <WeatherCard />
-      </div>
+      <HeroCard onClick={() => setActiveTab('settings')}/>
 
       {/* Quick Actions Grid */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-slate-900">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {quickActions.map((action, index) => (
-            <Card 
-              key={index} 
+            <Card
+              key={index}
               className="hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer border border-orange-100 hover:border-orange-200 bg-gradient-to-br from-white to-orange-50 rounded-2xl"
               onClick={() => setActiveTab(action.id)}
             >
@@ -335,3 +239,68 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
   );
 };
 export default AdminDashboardContent;
+
+function HeroCard({ onClick }:{ onClick: () => void }) {
+  const { data: userProfile, isLoading } = useUserProfile();
+  const { user } = useAuth();
+  const firstName = userProfile?.first_name || user?.firstName || 'Admin';
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-stretch" >
+      {/* Hero Card (left) */}
+      <div className="lg:col-span-2 h-full flex flex-col" >
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-orange-50 rounded-2xl h-full">
+          <CardContent className="p-6 h-full">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 h-full">
+              <div className="flex-shrink-0">
+                <EmployeeAvatar
+                  photoUrl={userProfile?.photo_url || undefined}
+                  firstName={userProfile?.first_name || user?.firstName || undefined}
+                  lastName={userProfile?.last_name || user?.lastName || undefined}
+                  size="lg"
+                  className="shadow-lg"
+                />
+              </div>
+
+              <div className="flex-1 space-y-3">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+                    Welcome back, {firstName} 👋
+                  </h1>
+                  <p className="text-slate-600 text-base">
+                    A great day to get a clear view of your company.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">
+                    <span className="w-2 h-2 rounded-full mr-2 animate-pulse bg-orange-500"></span>
+                    {user?.role || 'Admin'}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center space-x-2 text-sm text-slate-600">
+                  <Building className="h-4 w-4" />
+                  <span>{user?.companyName || 'Not Assigned'}</span>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onClick}
+                  className="w-fit"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View My Profile
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Weather Today Card (right) */}
+      <WeatherCard />
+    </div >
+  )
+}
