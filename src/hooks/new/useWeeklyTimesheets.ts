@@ -22,7 +22,7 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
 
       // Get weekly timesheets - these are employee submissions
       let query = supabase
-        .from('weekly_timesheets_2')
+        .from('weekly_timesheets')
         .select(`*,
           jobsite:jobsite_id (
             id,

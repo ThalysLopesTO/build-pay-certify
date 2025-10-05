@@ -70,7 +70,7 @@ export const useTimesheetSubmission = () => {
       };
 
       const { data: result, error } = await supabase
-        .from('weekly_timesheets_2')
+        .from('weekly_timesheets')
         .insert([timesheetPayload])
         .select('*')
         .single();

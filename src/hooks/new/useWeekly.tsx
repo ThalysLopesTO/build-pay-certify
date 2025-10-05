@@ -10,7 +10,7 @@ export const useNearlyTimesheet = (availableWeeks: string[]) => {
     queryFn: async () => {
       if (availableWeeks.length === 0) return [];
       const { data, error } = await supabase
-        .from('weekly_timesheets_2')
+        .from('weekly_timesheets')
         .select(`*,
           jobsite:jobsite_id (
             id,
