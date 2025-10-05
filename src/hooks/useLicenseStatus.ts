@@ -12,6 +12,9 @@ export interface LicenseStatus {
     subscribed: boolean;
     plan: string;
     subscription_end: string | null;
+    status?: string;
+    isInTrial?: boolean;
+    isInGracePeriod?: boolean;
   };
 }
 
@@ -30,10 +33,10 @@ export const useLicenseStatus = () => {
         };
       }
 
-      // Get company details including Stripe status
+      // Get company details including Stripe status and trial info
       const { data: company, error } = await supabase
         .from('companies')
-        .select('license_expires_at, stripe_verified, stripe_subscription_id, plan, expiration_date')
+        .select('license_expires_at, stripe_verified, stripe_subscription_id, plan, expiration_date, subscription_status, trial_end_date, grace_period_end_date')
         .eq('id', user.companyId)
         .single();
 
@@ -49,6 +52,67 @@ export const useLicenseStatus = () => {
 
       const now = new Date();
       
+      // Check if in trial period
+      const isInTrial = company.subscription_status === 'trialing' && 
+                        company.trial_end_date && 
+                        new Date(company.trial_end_date) > now;
+
+      // Check if in grace period
+      const isInGracePeriod = company.subscription_status === 'past_due' &&
+                              company.grace_period_end_date &&
+                              new Date(company.grace_period_end_date) > now;
+
+      // Active access if: active subscription, trialing, or in grace period
+      const hasActiveAccess = 
+        company.subscription_status === 'active' ||
+        isInTrial ||
+        isInGracePeriod;
+
+      // Determine expiration date (trial end, grace period end, or subscription end)
+      if (isInTrial && company.trial_end_date) {
+        const expiresAt = new Date(company.trial_end_date);
+        const timeDiff = expiresAt.getTime() - now.getTime();
+        const daysUntilExpiry = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        const isExpiringSoon = daysUntilExpiry <= 3 && daysUntilExpiry > 0;
+
+        return {
+          isActive: hasActiveAccess,
+          expiresAt: company.trial_end_date,
+          daysUntilExpiry,
+          isExpiringSoon,
+          subscriptionStatus: {
+            subscribed: true,
+            plan: company.plan || 'pro',
+            subscription_end: company.trial_end_date,
+            status: 'trialing',
+            isInTrial: true,
+            isInGracePeriod: false
+          }
+        };
+      }
+
+      if (isInGracePeriod && company.grace_period_end_date) {
+        const expiresAt = new Date(company.grace_period_end_date);
+        const timeDiff = expiresAt.getTime() - now.getTime();
+        const daysUntilExpiry = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        const isExpiringSoon = true; // Grace period is always "expiring soon"
+
+        return {
+          isActive: hasActiveAccess,
+          expiresAt: company.grace_period_end_date,
+          daysUntilExpiry,
+          isExpiringSoon,
+          subscriptionStatus: {
+            subscribed: true,
+            plan: company.plan || 'pro',
+            subscription_end: company.grace_period_end_date,
+            status: 'past_due',
+            isInTrial: false,
+            isInGracePeriod: true
+          }
+        };
+      }
+
       // Check if company has active Stripe subscription
       const hasActiveStripeSubscription = company.stripe_verified && 
         company.stripe_subscription_id && 
@@ -71,6 +135,9 @@ export const useLicenseStatus = () => {
             subscribed: true,
             plan: company.plan || 'pro',
             subscription_end: company.expiration_date,
+            status: company.subscription_status || 'active',
+            isInTrial: false,
+            isInGracePeriod: false
           },
         };
       }
@@ -89,6 +156,9 @@ export const useLicenseStatus = () => {
             subscribed: hasActiveStripeSubscription,
             plan: company.plan || 'free',
             subscription_end: company.expiration_date,
+            status: 'inactive',
+            isInTrial: false,
+            isInGracePeriod: false
           },
         };
       }
@@ -107,6 +177,9 @@ export const useLicenseStatus = () => {
           subscribed: hasActiveStripeSubscription,
           plan: company.plan || 'free',
           subscription_end: company.expiration_date || company.license_expires_at,
+          status: company.subscription_status || 'inactive',
+          isInTrial: false,
+          isInGracePeriod: false
         },
       };
     },

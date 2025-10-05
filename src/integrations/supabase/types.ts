@@ -408,6 +408,7 @@ export type Database = {
           created_at: string
           employee_limit: number | null
           expiration_date: string | null
+          grace_period_end_date: string | null
           id: string
           license_expires_at: string | null
           license_key: string
@@ -424,6 +425,7 @@ export type Database = {
           subscription_end_date: string | null
           subscription_override: boolean | null
           subscription_status: string | null
+          trial_end_date: string | null
           updated_at: string
         }
         Insert: {
@@ -431,6 +433,7 @@ export type Database = {
           created_at?: string
           employee_limit?: number | null
           expiration_date?: string | null
+          grace_period_end_date?: string | null
           id?: string
           license_expires_at?: string | null
           license_key?: string
@@ -447,6 +450,7 @@ export type Database = {
           subscription_end_date?: string | null
           subscription_override?: boolean | null
           subscription_status?: string | null
+          trial_end_date?: string | null
           updated_at?: string
         }
         Update: {
@@ -454,6 +458,7 @@ export type Database = {
           created_at?: string
           employee_limit?: number | null
           expiration_date?: string | null
+          grace_period_end_date?: string | null
           id?: string
           license_expires_at?: string | null
           license_key?: string
@@ -470,6 +475,7 @@ export type Database = {
           subscription_end_date?: string | null
           subscription_override?: boolean | null
           subscription_status?: string | null
+          trial_end_date?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -3022,6 +3028,10 @@ export type Database = {
           timesheet_id: string
         }[]
       }
+      fn_clip_minutes: {
+        Args: { ts: string; tz: string }
+        Returns: string
+      }
       generate_biweekly_json: {
         Args: {
           fri_h?: number
@@ -3147,6 +3157,65 @@ export type Database = {
       reactivate_employee: {
         Args: { employee_user_id: string }
         Returns: Json
+      }
+      rpc_time_summary_details: {
+        Args:
+          | {
+              p_company_id: string
+              p_employee_id: string
+              p_end_date: string
+              p_jobsite_id: string
+              p_start_date: string
+              p_tz: string
+            }
+          | {
+              p_company_id: string
+              p_employee_id: string
+              p_end_date: string
+              p_jobsite_id?: string
+              p_start_date: string
+              p_timezone: string
+            }
+          | {
+              p_company_id: string
+              p_employee_id: string
+              p_end_date: string
+              p_start_date: string
+              p_timezone?: string
+            }
+        Returns: {
+          check_in_time: string
+          check_out_time: string
+          hours_worked: number
+          jobsite_id: string
+          jobsite_name: string
+          punch_date: string
+          status: string
+        }[]
+      }
+      rpc_time_summary_headers: {
+        Args: {
+          p_company_id: string
+          p_employee_ids: string[]
+          p_end_date: string
+          p_jobsite_ids: string[]
+          p_start_date: string
+          p_status: string
+          p_tz: string
+        }
+        Returns: {
+          employee_id: string
+          employee_name: string
+          employee_photo: string
+          employee_position: string
+          employee_role: string
+          employee_trade: string
+          has_flags: boolean
+          jobsite_id: string
+          jobsite_name: string
+          total_minutes: number
+          total_punches: number
+        }[]
       }
       run_daily_notification_checks: {
         Args: Record<PropertyKey, never>

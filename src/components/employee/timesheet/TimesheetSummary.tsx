@@ -26,6 +26,9 @@ const TimesheetSummary = ({ totalHours, hourlyRate, grossPay, form, disabled = f
   
   // Calculate tax breakdown and deductions based on worker type
   const payBeforeTax = totalHours * hourlyRate; // Base pay without expenses
+  
+  // For subcontractors: when taxIncluded is true, tax is ADDED ON TOP of gross pay
+  // Example: $2,800 gross + 13% ($364) = $3,164 total
   const calculatedTax = taxIncluded ? (grossPay * (taxPercentage / 100)) : 0;
   
   // Employee deductions (only for payroll employees)
@@ -38,6 +41,8 @@ const TimesheetSummary = ({ totalHours, hourlyRate, grossPay, form, disabled = f
   const eiDeduction = workerType === 'employee' ? (grossPay * (eiRate / 100)) : 0;
   const totalDeductions = incomeTax + cppDeduction + eiDeduction;
   
+  // For employees: deduct taxes from gross pay
+  // For subcontractors: add tax on top when taxIncluded is true
   const finalTotalPay = workerType === 'employee' ? (grossPay - totalDeductions) : (grossPay + calculatedTax);
 
   useEffect(() => {

@@ -31,6 +31,7 @@ interface PunchEntry {
   user_profiles: {
     first_name: string;
     last_name: string;
+    photo_url: string | null;
   } | null;
   jobsites: {
     name: string;
@@ -60,6 +61,10 @@ const LivePunchMonitor = () => {
     // TODO: Will re-add jobsite prop later for distance calculations
   } | null>(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage] = useState<number>(10);
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -69,6 +74,7 @@ const LivePunchMonitor = () => {
     const employeeParam = searchParams.get('employee');
     const statusParam = searchParams.get('status');
     const noteParam = searchParams.get('note');
+    const pageParam = searchParams.get('page');
 
     if (dateParam) {
       const parsed = new Date(dateParam);
@@ -78,6 +84,10 @@ const LivePunchMonitor = () => {
     if (employeeParam) setSelectedEmployee(employeeParam);
     if (statusParam) setStatusFilter(statusParam);
     if (noteParam) setNoteFilter(noteParam);
+    if (pageParam) {
+      const page = parseInt(pageParam, 10);
+      if (!isNaN(page) && page > 0) setCurrentPage(page);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -114,6 +124,12 @@ const LivePunchMonitor = () => {
       params.delete("note");
     }
 
+    if (currentPage > 1) {
+      params.set("page", currentPage.toString());
+    } else {
+      params.delete("page");
+    }
+
     setSearchParams(params, { replace: true });
   }, [
     searchParams,
@@ -122,6 +138,7 @@ const LivePunchMonitor = () => {
     selectedEmployee,
     statusFilter,
     noteFilter,
+    currentPage,
     setSearchParams,
   ]);
 
@@ -231,7 +248,7 @@ const LivePunchMonitor = () => {
       const {
         data: userProfiles,
         error: profilesError
-      } = await supabase.from('user_profiles').select('user_id, first_name, last_name').in('user_id', userIds);
+      } = await supabase.from('user_profiles').select('user_id, first_name, last_name, photo_url').in('user_id', userIds);
       if (profilesError) {
         console.error('Error fetching user profiles:', profilesError);
         throw profilesError;
@@ -256,7 +273,8 @@ const LivePunchMonitor = () => {
           ...timesheet,
           user_profiles: userProfile ? {
             first_name: userProfile.first_name || '',
-            last_name: userProfile.last_name || ''
+            last_name: userProfile.last_name || '',
+            photo_url: userProfile.photo_url || null
           } : null,
           jobsites: jobsite ? {
             name: jobsite.name,
@@ -346,6 +364,23 @@ const LivePunchMonitor = () => {
     }
     return true;
   }) || [];
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedEntries = filteredEntries.slice(startIndex, endIndex);
+
+  // Handle page changes and reset to page 1 when filters change
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
   const handleRefresh = () => {
     refetch();
     toast({
@@ -395,6 +430,7 @@ const LivePunchMonitor = () => {
     setSelectedJobsite('all');
     setSelectedEmployee('all');
     setStatusFilter('all');
+    setCurrentPage(1); // Reset to first page when clearing filters
   };
   const hasActiveFilters = () => {
     const today = new Date().toDateString();
@@ -458,7 +494,7 @@ const LivePunchMonitor = () => {
       {/* Punch Entries Table */}
       <Card className="shadow-sm">
         <LivePunchTable
-          filteredEntries={filteredEntries}
+          filteredEntries={paginatedEntries}
           selectedDate={selectedDate}
           flaggedEntries={flaggedEntries}
           onToggleFlag={toggleFlag}
@@ -466,6 +502,11 @@ const LivePunchMonitor = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           isLoading={isLoading}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredEntries.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
         />
       </Card>
     </div>

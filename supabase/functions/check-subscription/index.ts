@@ -36,11 +36,18 @@ serve(async (req)=>{
       userId: user.id,
       email: user.email
     });
-    // Get user's company
+    // Get user's company with trial info
     const { data: profile } = await supabaseClient.from('user_profiles').select('company_id').eq('user_id', user.id).single();
     if (!profile?.company_id) {
       throw new Error("User not associated with a company");
     }
+    
+    // Get company subscription details including trial info
+    const { data: company } = await supabaseClient
+      .from('companies')
+      .select('stripe_customer_id, subscription_status, trial_end_date, grace_period_end_date')
+      .eq('id', profile.company_id)
+      .single();
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16"
     });
@@ -118,9 +125,13 @@ serve(async (req)=>{
       plan
     });
     return new Response(JSON.stringify({
-      subscribed: hasActiveSub,
+      subscribed: hasActiveSub || company?.subscription_status === 'trialing',
       plan: plan,
-      subscription_end: subscriptionEnd
+      subscription_end: subscriptionEnd,
+      status: company?.subscription_status || (hasActiveSub ? 'active' : 'inactive'),
+      trial_end: company?.trial_end_date,
+      is_trialing: company?.subscription_status === 'trialing',
+      is_in_grace_period: company?.subscription_status === 'past_due' && company?.grace_period_end_date
     }), {
       headers: {
         ...corsHeaders,

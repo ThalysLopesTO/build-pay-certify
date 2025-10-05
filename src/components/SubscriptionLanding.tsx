@@ -26,8 +26,11 @@ const SubscriptionLanding = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="text-center">
-              <div className="text-4xl font-bold text-orange-600 mb-2">$197 CAD</div>
+              <div className="text-4xl font-bold text-orange-600 mb-2">$297 CAD</div>
               <div className="text-sm text-slate-600">per month</div>
+              <div className="mt-2 inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">
+                🎉 7-Day Free Trial
+              </div>
             </div>
             
             <div className="space-y-2">
@@ -54,8 +57,12 @@ const SubscriptionLanding = () => {
               className="w-full bg-orange-600 hover:bg-orange-700 py-3"
             >
               <CreditCard className="h-4 w-4 mr-2" />
-              {isCreatingCheckout ? 'Processing...' : 'Subscribe to Start'}
+              {isCreatingCheckout ? 'Processing...' : 'Start 7-Day Free Trial'}
             </Button>
+            
+            <p className="text-xs text-center text-slate-500 mt-2">
+              No charge for 7 days. Cancel anytime during trial.
+            </p>
             
             <div className="text-center">
               <p className="text-xs text-slate-500 mb-2">

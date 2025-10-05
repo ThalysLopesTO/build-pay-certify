@@ -19,15 +19,18 @@ const CompanyRegistration = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-12 px-4">
+      <div className="max-w-3xl mx-auto">
         <RegistrationHeader />
-        <CompanyRegistrationForm
-          formData={formData}
-          isLoading={isLoading}
-          onInputChange={handleInputChange}
-          onSubmit={handleSubmit}
-        />
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5 blur-3xl -z-10 rounded-full" />
+          <CompanyRegistrationForm
+            formData={formData}
+            isLoading={isLoading}
+            onInputChange={handleInputChange}
+            onSubmit={handleSubmit}
+          />
+        </div>
       </div>
     </div>
   );

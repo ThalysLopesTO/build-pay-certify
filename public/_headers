@@ -1,0 +1,72 @@
+# Static assets - long cache lifetime
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/css/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# User uploads
+/lovable-uploads/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Images directory
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Root level assets (fallback)
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# File extension based caching (fallback)
+*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+*.png
+  Cache-Control: public, max-age=31536000, immutable
+
+*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+*.jpeg
+  Cache-Control: public, max-age=31536000, immutable
+
+*.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+*.ico
+  Cache-Control: public, max-age=31536000, immutable
+
+*.woff
+  Cache-Control: public, max-age=31536000, immutable
+
+*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+*.ttf
+  Cache-Control: public, max-age=31536000, immutable
+
+# PWA files - shorter cache for updates
+/sw.js
+  Cache-Control: public, max-age=3600
+
+/registerSW.js
+  Cache-Control: public, max-age=3600
+
+/manifest.json
+  Cache-Control: public, max-age=86400
+
+# HTML files - no cache for navigation
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate

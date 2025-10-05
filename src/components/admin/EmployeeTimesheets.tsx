@@ -13,12 +13,14 @@ import { useTimesheetPDF } from '@/hooks/useTimesheetPDF';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Calendar, Plus, Download, RefreshCw } from 'lucide-react';
+import { Calendar, Plus, Download, RefreshCw, Trash2 } from 'lucide-react';
 import TimesheetEditModal from '@/components/admin/timesheets/TimesheetEditModal';
 import CreateManualTimesheetModal from '@/components/admin/timesheets/CreateManualTimesheetModal';
 import { TimesheetDeleteConfirmDialog } from '@/components/admin/timesheets/TimesheetDeleteConfirmDialog';
+import { BulkTimesheetDeleteConfirmDialog } from '@/components/admin/timesheets/BulkTimesheetDeleteConfirmDialog';
 import TimesheetFilters from '@/components/admin/timesheets/TimesheetFilters';
 import TimesheetTable from '@/components/admin/timesheets/TimesheetTable';
+import TimesheetPagination from '@/components/admin/timesheets/TimesheetPagination';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { format } from 'date-fns';
@@ -43,12 +45,29 @@ const EmployeeTimesheets = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [deletingTimesheet, setDeletingTimesheet] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [selectedTimesheets, setSelectedTimesheets] = useState<Set<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<'pdf' | 'xlsx' | ''>('');
+  const [bulkAction, setBulkAction] = useState<'pdf' | 'xlsx' | 'delete' | ''>('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const { data: timesheets = [], isLoading, error } = useWeeklyTimesheets(filters);
   const { data: employees = [] } = useEmployeeDirectory();
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(timesheets.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTimesheets = timesheets.slice(startIndex, endIndex);
+  
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.employeeName, filters.weekEndingDate, filters.status, filters.jobsiteId]);
 
   // Only admins, management, and super_admins can access Employee Timesheets (not foremen for payroll)
   const isAuthorized = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
@@ -104,12 +123,16 @@ const EmployeeTimesheets = () => {
     setDeletingTimesheet(null);
   };
 
-  // Handle select all
+  // Handle select all (for current page only)
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedTimesheets(new Set(timesheets.map(timesheet => timesheet.id)));
+      const newSelection = new Set(selectedTimesheets);
+      paginatedTimesheets.forEach(timesheet => newSelection.add(timesheet.id));
+      setSelectedTimesheets(newSelection);
     } else {
-      setSelectedTimesheets(new Set());
+      const newSelection = new Set(selectedTimesheets);
+      paginatedTimesheets.forEach(timesheet => newSelection.delete(timesheet.id));
+      setSelectedTimesheets(newSelection);
     }
   };
 
@@ -126,6 +149,12 @@ const EmployeeTimesheets = () => {
 
   // Get selected timesheets
   const selectedTimesheetsData = timesheets.filter(timesheet => selectedTimesheets.has(timesheet.id));
+  
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Download selected as Excel
   const downloadSelectedAsExcel = () => {
@@ -263,12 +292,63 @@ const EmployeeTimesheets = () => {
     }
   };
 
+  // Handle bulk delete
+  const handleBulkDelete = () => {
+    setShowBulkDeleteDialog(true);
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    if (selectedTimesheetsData.length === 0) return;
+
+    setIsBulkDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const timesheet of selectedTimesheetsData) {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          deleteTimesheet(timesheet.id, {
+            onSuccess: () => {
+              successCount++;
+              resolve();
+            },
+            onError: () => {
+              failCount++;
+              reject();
+            }
+          });
+        });
+        // Small delay between deletions
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (error) {
+        // Error already counted in failCount
+      }
+    }
+
+    setIsBulkDeleting(false);
+    setShowBulkDeleteDialog(false);
+    
+    // Clear selection on success
+    if (successCount > 0) {
+      setSelectedTimesheets(new Set());
+    }
+
+    // Show summary toast
+    if (failCount === 0) {
+      alert(`Successfully deleted ${successCount} timesheet${successCount !== 1 ? 's' : ''}`);
+    } else {
+      alert(`Deleted ${successCount} timesheet${successCount !== 1 ? 's' : ''}. Failed to delete ${failCount}.`);
+    }
+  };
+
   // Handle bulk actions
   const handleBulkAction = () => {
     if (bulkAction === 'pdf') {
       downloadSelectedAsPDF();
     } else if (bulkAction === 'xlsx') {
       downloadSelectedAsExcel();
+    } else if (bulkAction === 'delete') {
+      handleBulkDelete();
     }
   };
 
@@ -330,28 +410,40 @@ const EmployeeTimesheets = () => {
                 <span className="text-sm font-medium text-blue-900">
                   {selectedTimesheets.size} timesheet{selectedTimesheets.size !== 1 ? 's' : ''} selected
                 </span>
-                <Select value={bulkAction} onValueChange={(value: 'pdf' | 'xlsx' | '') => setBulkAction(value)}>
+                <Select value={bulkAction} onValueChange={(value: 'pdf' | 'xlsx' | 'delete' | '') => setBulkAction(value)}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Choose action..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pdf">Download as PDF</SelectItem>
                     <SelectItem value="xlsx">Download as Excel</SelectItem>
+                    {isAuthorized && (
+                      <SelectItem value="delete" className="text-destructive focus:text-destructive">
+                        <div className="flex items-center gap-2">
+                          <Trash2 className="h-4 w-4" />
+                          Delete Selected
+                        </div>
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 <Button
                   onClick={handleBulkAction}
-                  disabled={!bulkAction || isProcessing}
-                  variant="outline"
+                  disabled={!bulkAction || isProcessing || isBulkDeleting}
+                  variant={bulkAction === 'delete' ? 'destructive' : 'outline'}
                 >
-                  {isProcessing ? (
+                  {isProcessing || isBulkDeleting ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Processing...
+                      {isBulkDeleting ? 'Deleting...' : 'Processing...'}
                     </>
                   ) : (
                     <>
-                      <Download className="h-4 w-4 mr-2" />
+                      {bulkAction === 'delete' ? (
+                        <Trash2 className="h-4 w-4 mr-2" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-2" />
+                      )}
                       Apply ({selectedTimesheets.size})
                     </>
                   )}
@@ -389,7 +481,7 @@ const EmployeeTimesheets = () => {
         </CardHeader>
         <CardContent className="p-0">
           <TimesheetTable
-            timesheets={timesheets}
+            timesheets={paginatedTimesheets}
             isLoading={isLoading}
             onEdit={handleEdit}
             onApprove={handleApprove}
@@ -402,6 +494,15 @@ const EmployeeTimesheets = () => {
             onSelectAll={handleSelectAll}
             onSelectTimesheet={handleSelectTimesheet}
           />
+          {!isLoading && timesheets.length > 0 && (
+            <TimesheetPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              totalItems={timesheets.length}
+              itemsPerPage={itemsPerPage}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -430,6 +531,15 @@ const EmployeeTimesheets = () => {
         onConfirm={handleConfirmDelete}
         timesheet={deletingTimesheet}
         isDeleting={isDeleting}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkTimesheetDeleteConfirmDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        onConfirm={handleConfirmBulkDelete}
+        timesheets={selectedTimesheetsData}
+        isDeleting={isBulkDeleting}
       />
     </div>
   );

@@ -1,17 +1,20 @@
-
 import React from 'react';
-import { Building } from 'lucide-react';
-
+import { CheckCircle } from 'lucide-react';
 const RegistrationHeader: React.FC = () => {
-  return (
-    <div className="text-center mb-8">
-      <Building className="h-12 w-12 text-orange-600 mx-auto mb-4" />
-      <h1 className="text-3xl font-bold text-slate-900">Register Your Company</h1>
-      <p className="text-slate-600 mt-2">
-        Request access to the Construction Payroll Management System
-      </p>
-    </div>
-  );
+  return <div className="text-center mb-10">
+      <div className="flex justify-center mb-6">
+        <img src="/lovable-uploads/04cf020d-b64e-49b8-ae51-022a05b6cad8.png" alt="StackBuild Logo" className="h-40 w-auto" />
+      </div>
+      
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <CheckCircle className="h-6 w-6 text-green-600" />
+        <span className="text-green-600 font-semibold">Payment Successful</span>
+      </div>
+      
+      <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-3">
+        Complete Your Company Registration
+      </h1>
+      
+    </div>;
 };
-
 export default RegistrationHeader;

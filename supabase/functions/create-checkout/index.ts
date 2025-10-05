@@ -27,23 +27,10 @@ serve(async (req)=>{
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16"
     });
-    const { planName = "Basic", customerEmail } = await req.json();
-    const priceMap = {
-      Basic: "price_1ReO4rEuB2J4BS43srM8QwHw",
-      Premium: "price_1ReO5dEuB2J4BS43BF3XvNDA"
-    };
-    const priceId = priceMap[planName];
-    if (!priceId) {
-      return new Response(JSON.stringify({
-        error: "Invalid plan selected"
-      }), {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        },
-        status: 400
-      });
-    }
+    const { customerEmail } = await req.json();
+    
+    // Single plan: StackBuild Pro - $297/month with 7-day trial
+    const priceId = "price_1SDwZqEuB2J4BS43UulwfZ68";
     const origin = req.headers.get("origin") ?? "http://localhost:3000";
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -53,11 +40,27 @@ serve(async (req)=>{
           quantity: 1
         }
       ],
+      subscription_data: {
+        trial_period_days: 7,
+        trial_settings: {
+          end_behavior: {
+            missing_payment_method: 'cancel'
+          }
+        },
+        metadata: {
+          trial_enabled: 'true',
+          plan_name: 'StackBuild Pro',
+          source: 'stackbuild_app',
+          flow: 'pre_registration'
+        }
+      },
       billing_address_collection: "required",
+      payment_method_collection: 'always',
+      allow_promotion_codes: true,
       success_url: `${origin}/company/registration?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/subscription-plan?payment=cancelled`,
       metadata: {
-        plan_name: planName,
+        plan_name: 'StackBuild Pro',
         source: "stackbuild_app",
         flow: "pre_registration"
       },

@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { MapPin, Flag, Edit, Trash2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { MapPin, Flag, Edit, Trash2, AlertTriangle, CheckCircle, Clock, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import WorkNoteDisplay from './WorkNoteDisplay';
+import EmployeeAvatar from '@/components/ui/employee-avatar';
 
 // Global Google Maps type declaration
 declare global {
@@ -31,6 +33,7 @@ interface PunchEntry {
   user_profiles: {
     first_name: string;
     last_name: string;
+    photo_url: string | null;
   } | null;
   jobsites: {
     name: string;
@@ -48,6 +51,11 @@ interface LivePunchTableProps {
   onEdit?: (entry: PunchEntry) => void;
   onDelete?: (entry: PunchEntry) => void;
   isLoading?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  totalItems?: number;
+  itemsPerPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const LivePunchTable: React.FC<LivePunchTableProps> = ({
@@ -58,8 +66,15 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
   onViewLocation,
   onEdit,
   onDelete,
-  isLoading = false
+  isLoading = false,
+  currentPage = 1,
+  totalPages = 1,
+  totalItems = 0,
+  itemsPerPage = 10,
+  onPageChange
 }) => {
+  const isMobile = useIsMobile();
+  
   // TODO: Will re-add distance calculation functions later for jobsite comparison
   
   const getDistanceStatus = (entry: PunchEntry) => {
@@ -89,9 +104,19 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
 
   const getStatusBadge = (entry: PunchEntry) => {
     if (!entry.check_out_time) {
-      return <Badge variant="default" className="bg-green-500">Clocked In</Badge>;
+      return (
+        <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold shadow-md">
+          <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
+          Active
+        </Badge>
+      );
     } else {
-      return <Badge variant="default" className="bg-green-600">Completed</Badge>;
+      return (
+        <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow-md">
+          <CheckCircle className="w-3 h-3 mr-1" />
+          Complete
+        </Badge>
+      );
     }
   };
 
@@ -111,99 +136,140 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
 
   return (
     <TooltipProvider>
-      <Card className="shadow-sm border-0 bg-white">
-        <CardHeader className="border-b border-gray-100 bg-gray-50/50">
-          <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            {isToday(selectedDate) ? "Today's Punch Records" : `Punch Records for ${format(selectedDate, 'MMM dd, yyyy')}`}
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-background to-background/95 backdrop-blur-sm">
+        <CardHeader className="border-b border-border/50 bg-gradient-to-r from-muted/50 to-muted/30 backdrop-blur-sm">
+          <CardTitle className="text-xl font-bold text-foreground flex items-center gap-3">
+            <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/70 rounded-full animate-pulse"></div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              {isToday(selectedDate) ? "Live Punch Monitor" : `Punch Records - ${format(selectedDate, 'MMM dd, yyyy')}`}
+            </div>
+            {isToday(selectedDate) && (
+              <Badge variant="outline" className="ml-auto bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border-green-200">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                Live
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50/80 hover:bg-gray-50/80 border-b border-gray-200">
-                  <TableHead className="font-semibold text-gray-700 py-4 px-6">Employee Name</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Jobsite</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Check-in Time</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Check-out Time</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Total Time</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Status</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Note</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Location</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Distance Flag {/* TODO: Will re-enable later */}</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Flag</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4 px-6">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEntries.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={11} className="text-center py-12 text-muted-foreground bg-gray-50/30">
-                      <div className="flex flex-col items-center gap-2">
-                        <MapPin className="h-8 w-8 text-gray-300" />
-                        <p className="font-medium">No punch records found</p>
-                        <p className="text-sm">for {format(selectedDate, 'MMMM dd, yyyy')}</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredEntries.map((entry, index) => {
-                    const distanceStatus = getDistanceStatus(entry);
-                    
-                    return (
-                      <TableRow 
-                        key={entry.id}
-                        className={cn(
-                          "border-b border-gray-100 hover:bg-gray-50/50 transition-colors",
-                          flaggedEntries.has(entry.id) && 'bg-red-50 border-l-4 border-l-red-500 hover:bg-red-50',
-                          index % 2 === 0 && !flaggedEntries.has(entry.id) && 'bg-white',
-                          index % 2 === 1 && !flaggedEntries.has(entry.id) && 'bg-gray-50/20'
-                        )}
-                      >
-                        <TableCell className="font-medium py-4 px-6 text-gray-900">
-                          <div className="flex flex-col">
-                            <span className="font-semibold">
-                              {entry.user_profiles ? 
-                                `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : 
-                                'Unknown Employee'
-                              }
+          {isMobile ? (
+            // Mobile Card Layout
+            <div className="p-3 space-y-3">
+              {filteredEntries.length === 0 ? (
+                <div className="text-center py-12 bg-gradient-to-br from-muted/20 to-muted/10 rounded-lg mx-2">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                      <Clock className="h-7 w-7 text-muted-foreground/60" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-semibold text-base text-foreground">No punch records found</p>
+                      <p className="text-xs text-muted-foreground">for {format(selectedDate, 'MMMM dd, yyyy')}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                filteredEntries.map((entry, index) => (
+                  <Card 
+                    key={entry.id}
+                    className={cn(
+                      "overflow-hidden transition-all duration-200 hover:shadow-md border",
+                      flaggedEntries.has(entry.id) 
+                        ? 'border-l-4 border-l-destructive bg-gradient-to-r from-destructive/10 to-destructive/5' 
+                        : 'border-border/50'
+                    )}
+                  >
+                    <CardContent className="p-3 space-y-3">
+                      {/* Employee Header */}
+                      <div className="flex items-start gap-3">
+                        <EmployeeAvatar
+                          photoUrl={entry.user_profiles?.photo_url}
+                          firstName={entry.user_profiles?.first_name}
+                          lastName={entry.user_profiles?.last_name}
+                          size="md"
+                          className="shadow-sm border border-border/50 flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <h3 className="font-bold text-sm text-foreground leading-tight truncate">
+                            {entry.user_profiles ? 
+                              `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : 
+                              'Unknown Employee'
+                            }
+                          </h3>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full flex-shrink-0"></div>
+                            <span className="text-xs font-medium text-muted-foreground truncate">
+                              {entry.jobsites?.name || 'Unknown Jobsite'}
                             </span>
-                            {entry.check_in_time && (
-                              <span className="text-xs text-gray-500 mt-1">
+                          </div>
+                          {entry.check_in_time && (
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+                              <span className="text-xs text-muted-foreground">
                                 {format(new Date(entry.check_in_time), 'EEE, MMM dd')}
                               </span>
-                            )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status and Flag Row */}
+                      <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/30">
+                        {getStatusBadge(entry)}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onToggleFlag(entry.id)}
+                          className={cn(
+                            "p-1.5 h-7 w-7 transition-all duration-200 flex-shrink-0",
+                            flaggedEntries.has(entry.id) 
+                              ? "text-red-600 hover:text-red-700 hover:bg-red-50 bg-red-50/50" 
+                              : "text-muted-foreground hover:text-red-500 hover:bg-red-50"
+                          )}
+                        >
+                          <Flag className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+
+                      {/* Time Information Grid */}
+                      <div className="grid grid-cols-3 gap-2 p-2.5 bg-muted/30 rounded-md">
+                        <div className="text-center space-y-1">
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">In</p>
+                          <p className="font-mono text-xs font-bold text-foreground leading-tight">
+                            {entry.check_in_time 
+                              ? format(new Date(entry.check_in_time), 'h:mm a')
+                              : 'N/A'
+                            }
+                          </p>
+                        </div>
+                        <div className="text-center space-y-1 border-x border-border/30">
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Out</p>
+                          {entry.check_out_time ? (
+                            <p className="font-mono text-xs font-bold text-foreground leading-tight">
+                              {format(new Date(entry.check_out_time), 'h:mm a')}
+                            </p>
+                          ) : (
+                            <div className="flex items-center justify-center gap-1">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                              <span className="text-green-600 font-bold text-[10px] uppercase">Live</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center space-y-1">
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Time</p>
+                          <div className="flex items-center justify-center gap-0.5">
+                            <Clock className="h-2.5 w-2.5 text-primary flex-shrink-0" />
+                            <span className="font-mono text-xs font-bold text-foreground leading-tight">
+                              {calculateTotalTime(entry.check_in_time, entry.check_out_time)}
+                            </span>
                           </div>
-                        </TableCell>
-                        <TableCell className="py-4 text-gray-700">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                            {entry.jobsites?.name || 'Unknown Jobsite'}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4 text-gray-700 font-mono text-sm">
-                          {entry.check_in_time 
-                            ? format(new Date(entry.check_in_time), 'h:mm a')
-                            : 'N/A'
-                          }
-                        </TableCell>
-                        <TableCell className="py-4 text-gray-700 font-mono text-sm">
-                          {entry.check_out_time 
-                            ? format(new Date(entry.check_out_time), 'h:mm a')
-                            : <span className="text-green-600 font-medium">Still active</span>
-                          }
-                        </TableCell>
-                        <TableCell className="py-4 text-gray-700 font-mono text-sm font-medium">
-                          {calculateTotalTime(entry.check_in_time, entry.check_out_time)}
-                        </TableCell>
-                        <TableCell className="py-4">
-                          {getStatusBadge(entry)}
-                        </TableCell>
-                        <TableCell className="py-4 text-center">
+                        </div>
+                      </div>
+
+                      {/* Action Buttons Row */}
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/30">
+                        <div className="flex items-center gap-2">
                           <WorkNoteDisplay note={entry.work_note} variant="icon" />
-                        </TableCell>
-                        <TableCell className="py-4">
                           {entry.check_in_location ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -211,119 +277,459 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => onViewLocation(entry)}
-                                  className="p-2 h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                  className="p-2 h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
                                 >
                                   <MapPin className="h-4 w-4 text-blue-500" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>View punch-in location</p>
+                                <p className="text-xs">View Location</p>
                               </TooltipContent>
                             </Tooltip>
                           ) : (
-                            <span className="text-gray-400 text-sm">No data</span>
+                            <div className="p-2 h-8 w-8 flex items-center justify-center">
+                              <MapPin className="h-4 w-4 text-muted-foreground/30" />
+                            </div>
                           )}
-                        </TableCell>
-                        <TableCell className="py-4">
-                          {/* TODO: Will re-add distance status display later */}
-                          <Badge variant="outline" className="text-xs text-gray-500 border-gray-300">
-                            Disabled
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onToggleFlag(entry.id)}
-                                className={cn(
-                                  "p-2 h-8 w-8 transition-colors",
-                                  flaggedEntries.has(entry.id) 
-                                    ? "text-red-600 hover:text-red-700 hover:bg-red-50" 
-                                    : "text-gray-400 hover:text-red-500 hover:bg-red-50"
+                        </div>
+                        
+                        {/* Edit and Delete Actions */}
+                        <div className="flex items-center gap-1">
+                          {onEdit && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => onEdit(entry)}
+                                  className="p-2 h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
+                                >
+                                  <Edit className="h-4 w-4 text-blue-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">Edit Record</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          {onDelete && (
+                            <AlertDialog>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="p-2 h-8 w-8 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">Delete Record</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-base">Delete Punch Record</AlertDialogTitle>
+                                  <AlertDialogDescription className="text-sm">
+                                    Are you sure you want to delete this punch record for{' '}
+                                    <strong className="text-foreground">
+                                      {entry.user_profiles 
+                                        ? `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` 
+                                        : 'Unknown Employee'
+                                      }
+                                    </strong>
+                                    ? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                                  <AlertDialogCancel className="m-0">Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => onDelete(entry)}
+                                    className="bg-red-600 hover:bg-red-700 m-0"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          ) : (
+            // Desktop Table Layout
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gradient-to-r from-muted/80 to-muted/50 hover:from-muted/90 hover:to-muted/60 border-b border-border/50">
+                    <TableHead className="font-bold text-foreground py-6 px-6">Employee</TableHead>
+                    <TableHead className="font-bold text-foreground py-6">Jobsite</TableHead>
+                    <TableHead className="font-bold text-foreground py-6">Check-in</TableHead>
+                    <TableHead className="font-bold text-foreground py-6">Check-out</TableHead>
+                    <TableHead className="font-bold text-foreground py-6">Duration</TableHead>
+                    <TableHead className="font-bold text-foreground py-6">Status</TableHead>
+                    <TableHead className="font-bold text-foreground py-6">Note</TableHead>
+                    <TableHead className="font-bold text-foreground py-6">Location</TableHead>
+                    <TableHead className="font-bold text-foreground py-6">Distance</TableHead>
+                    <TableHead className="font-bold text-foreground py-6">Flag</TableHead>
+                    <TableHead className="font-bold text-foreground py-6 px-6">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredEntries.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={11} className="text-center py-16 bg-gradient-to-br from-muted/20 to-muted/10">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                            <Clock className="h-8 w-8 text-muted-foreground/60" />
+                          </div>
+                          <div className="space-y-2">
+                            <p className="font-semibold text-lg text-foreground">No punch records found</p>
+                            <p className="text-sm text-muted-foreground">for {format(selectedDate, 'MMMM dd, yyyy')}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredEntries.map((entry, index) => {
+                      const distanceStatus = getDistanceStatus(entry);
+                      const isEven = index % 2 === 0;
+                      
+                      return (
+                        <TableRow 
+                          key={entry.id}
+                          className={cn(
+                            "border-b border-border/30 hover:bg-gradient-to-r hover:from-muted/30 hover:to-muted/10 transition-all duration-200 group",
+                            flaggedEntries.has(entry.id) && 'bg-gradient-to-r from-destructive/10 to-destructive/5 border-l-4 border-l-destructive hover:from-destructive/15 hover:to-destructive/8',
+                            !flaggedEntries.has(entry.id) && (isEven ? 'bg-background' : 'bg-muted/20')
+                          )}
+                        >
+                          <TableCell className="py-6 px-6">
+                            <div className="flex items-center gap-4">
+                              <EmployeeAvatar
+                                photoUrl={entry.user_profiles?.photo_url}
+                                firstName={entry.user_profiles?.first_name}
+                                lastName={entry.user_profiles?.last_name}
+                                size="md"
+                                className="shadow-sm border-2 border-background group-hover:scale-105 transition-transform duration-200"
+                              />
+                              <div className="flex flex-col space-y-1">
+                                <span className="font-bold text-lg text-foreground">
+                                  {entry.user_profiles ? 
+                                    `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : 
+                                    'Unknown Employee'
+                                  }
+                                </span>
+                                {entry.check_in_time && (
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Calendar className="h-3 w-3" />
+                                    {format(new Date(entry.check_in_time), 'EEE, MMM dd')}
+                                  </div>
                                 )}
-                              >
-                                <Flag className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{flaggedEntries.has(entry.id) ? 'Remove flag' : 'Flag this record'}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell className="py-4 px-6">
-                          <div className="flex items-center gap-1">
-                            {onEdit && (
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-3 h-3 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full shadow-sm"></div>
+                              <span className="font-semibold text-foreground">
+                                {entry.jobsites?.name || 'Unknown Jobsite'}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-6">
+                            <div className="flex flex-col gap-1">
+                              <span className="font-mono text-sm font-bold text-foreground">
+                                {entry.check_in_time 
+                                  ? format(new Date(entry.check_in_time), 'h:mm a')
+                                  : 'N/A'
+                                }
+                              </span>
+                              {entry.check_in_time && (
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(entry.check_in_time), 'MMM dd')}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-6">
+                            {entry.check_out_time ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="font-mono text-sm font-bold text-foreground">
+                                  {format(new Date(entry.check_out_time), 'h:mm a')}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(entry.check_out_time), 'MMM dd')}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                <span className="text-green-600 font-bold text-sm">Active Now</span>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="py-6">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-primary" />
+                              <span className="font-mono text-sm font-bold text-foreground">
+                                {calculateTotalTime(entry.check_in_time, entry.check_out_time)}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-6">
+                            {getStatusBadge(entry)}
+                          </TableCell>
+                          <TableCell className="py-6 text-center">
+                            <WorkNoteDisplay note={entry.work_note} variant="icon" />
+                          </TableCell>
+                          <TableCell className="py-6">
+                            {entry.check_in_location ? (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => onEdit(entry)}
-                                    className="p-2 h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                    onClick={() => onViewLocation(entry)}
+                                    className="p-3 h-10 w-10 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 rounded-full hover:scale-105"
                                   >
-                                    <Edit className="h-4 w-4 text-blue-500" />
+                                    <MapPin className="h-5 w-5 text-blue-500" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>Edit punch record</p>
+                                  <p>View punch-in location</p>
                                 </TooltipContent>
                               </Tooltip>
+                            ) : (
+                              <span className="text-muted-foreground text-sm font-medium">No location</span>
                             )}
-                            {onDelete && (
-                              <AlertDialog>
+                          </TableCell>
+                          <TableCell className="py-6">
+                            <Badge variant="outline" className="text-xs font-medium bg-muted/50 border-muted-foreground/30">
+                              Disabled
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-6">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => onToggleFlag(entry.id)}
+                                  className={cn(
+                                    "p-3 h-10 w-10 transition-all duration-200 rounded-full hover:scale-105",
+                                    flaggedEntries.has(entry.id) 
+                                      ? "text-red-600 hover:text-red-700 hover:bg-red-50 bg-red-50/50" 
+                                      : "text-muted-foreground hover:text-red-500 hover:bg-red-50"
+                                  )}
+                                >
+                                  <Flag className="h-5 w-5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{flaggedEntries.has(entry.id) ? 'Remove flag' : 'Flag this record'}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableCell>
+                          <TableCell className="py-6 px-6">
+                            <div className="flex items-center gap-2">
+                              {onEdit && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <AlertDialogTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="p-2 h-8 w-8 hover:bg-red-50 hover:text-red-600 transition-colors"
-                                      >
-                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                      </Button>
-                                    </AlertDialogTrigger>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => onEdit(entry)}
+                                      className="p-3 h-10 w-10 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 rounded-full hover:scale-105"
+                                    >
+                                      <Edit className="h-5 w-5 text-blue-500" />
+                                    </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>Delete punch record</p>
+                                    <p>Edit punch record</p>
                                   </TooltipContent>
                                 </Tooltip>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Punch Record</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete this punch record for{' '}
-                                      <strong>
-                                        {entry.user_profiles 
-                                          ? `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` 
-                                          : 'Unknown Employee'
-                                        }
-                                      </strong>
-                                      ? This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => onDelete(entry)}
-                                      className="bg-red-600 hover:bg-red-700"
-                                    >
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              )}
+                              {onDelete && (
+                                <AlertDialog>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="p-3 h-10 w-10 hover:bg-red-50 hover:text-red-600 transition-all duration-200 rounded-full hover:scale-105"
+                                        >
+                                          <Trash2 className="h-5 w-5 text-red-500" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Delete punch record</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Punch Record</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete this punch record for{' '}
+                                        <strong>
+                                          {entry.user_profiles 
+                                            ? `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` 
+                                            : 'Unknown Employee'
+                                          }
+                                        </strong>
+                                        ? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => onDelete(entry)}
+                                        className="bg-red-600 hover:bg-red-700"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                 </TableBody>
+              </Table>
+            </div>
+          )}
+          
+          {/* Pagination */}
+          {(totalPages > 1 || totalItems > itemsPerPage) && onPageChange && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-border/50 bg-gradient-to-r from-muted/20 to-muted/10">
+              <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
+                Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{' '}
+                {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} records
+              </div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="hover:bg-primary/10 hover:text-primary h-8 px-2 sm:px-3 text-xs"
+                >
+                  Prev
+                </Button>
+                <div className="flex items-center gap-0.5 sm:gap-1">
+                  {(() => {
+                    const maxVisible = isMobile ? 3 : 7;
+                    
+                    if (totalPages <= maxVisible) {
+                      // Show all pages if within limit
+                      return Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => onPageChange(page)}
+                          className={cn(
+                            "min-w-[28px] sm:min-w-[32px] h-8 p-0 text-xs",
+                            currentPage === page 
+                              ? "bg-primary text-primary-foreground shadow-sm" 
+                              : "hover:bg-primary/10 hover:text-primary"
+                          )}
+                        >
+                          {page}
+                        </Button>
+                      ));
+                    } else {
+                      // Show condensed pagination
+                      const pages = [];
+                      const showFirst = currentPage > 2;
+                      const showLast = currentPage < totalPages - 1;
+                      
+                      if (showFirst) {
+                        pages.push(
+                          <Button
+                            key={1}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onPageChange(1)}
+                            className="min-w-[28px] sm:min-w-[32px] h-8 p-0 text-xs hover:bg-primary/10 hover:text-primary"
+                          >
+                            1
+                          </Button>
+                        );
+                        if (currentPage > 3) {
+                          pages.push(<span key="dots1" className="px-1 text-muted-foreground text-xs">...</span>);
+                        }
+                      }
+                      
+                      // Show current page and neighbors
+                      const start = Math.max(1, currentPage - 1);
+                      const end = Math.min(totalPages, currentPage + 1);
+                      
+                      for (let i = start; i <= end; i++) {
+                        pages.push(
+                          <Button
+                            key={i}
+                            variant={currentPage === i ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => onPageChange(i)}
+                            className={cn(
+                              "min-w-[28px] sm:min-w-[32px] h-8 p-0 text-xs",
+                              currentPage === i 
+                                ? "bg-primary text-primary-foreground shadow-sm" 
+                                : "hover:bg-primary/10 hover:text-primary"
                             )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                          >
+                            {i}
+                          </Button>
+                        );
+                      }
+                      
+                      if (showLast) {
+                        if (currentPage < totalPages - 2) {
+                          pages.push(<span key="dots2" className="px-1 text-muted-foreground text-xs">...</span>);
+                        }
+                        pages.push(
+                          <Button
+                            key={totalPages}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onPageChange(totalPages)}
+                            className="min-w-[28px] sm:min-w-[32px] h-8 p-0 text-xs hover:bg-primary/10 hover:text-primary"
+                          >
+                            {totalPages}
+                          </Button>
+                        );
+                      }
+                      
+                      return pages;
+                    }
+                  })()}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="hover:bg-primary/10 hover:text-primary h-8 px-2 sm:px-3 text-xs"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </TooltipProvider>
