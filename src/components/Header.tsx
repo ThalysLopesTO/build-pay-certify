@@ -89,12 +89,11 @@ const Header = () => {
           {/* Left: Company Logo */}
           <div className="flex items-center min-w-0">
             {!isLoading && logoUrl && (
-              <div className="bg-card border border-border rounded-lg shadow-sm p-4">
+              <div className="">
                 <img
                   src={logoUrl}
                   alt="Company Logo"
-                  className="max-w-[400px] max-h-[70px] w-auto h-auto object-contain"
-                  style={{ maxWidth: '400px', maxHeight: '70px' }}
+                  className="h-[60px] w-auto object-contain"
                 />
               </div>
             )}
