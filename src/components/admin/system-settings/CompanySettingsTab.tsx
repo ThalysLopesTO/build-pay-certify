@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useCompanySettings, type CompanySettings as CompanySettingsType } from '@/hooks/useCompanySettings';
+import { useCompanySettings, useUpdateSettingsMutation, type CompanySettings as CompanySettingsType } from '@/hooks/useCompanySettings';
 import CompanyBrandingSection from '../CompanyBrandingSection';
 import { CompanyInformationForm } from './CompanyInformationForm';
 import { WeekEndingDaySelector } from './WeekEndingDaySelector';
@@ -23,8 +23,9 @@ import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 
 export const CompanySettingsTab = () => {
-  const { settings, isLoading, updateSettings, isUpdating } = useCompanySettings();
+  const { settings, isLoading } = useCompanySettings();
   const [selectedDate, setSelectedDate] = useState<Date>()
+  const updateSettings = useUpdateSettingsMutation()
 
   const form = useForm<Partial<CompanySettingsType>>({
     defaultValues: {
@@ -43,7 +44,7 @@ export const CompanySettingsTab = () => {
       enable_quote_reminders: settings?.enable_quote_reminders ?? true,
       quote_reminder_days: settings?.quote_reminder_days ?? 14,
       timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
-      start_date: settings.start_date || "",
+      start_date: settings?.start_date || "",
     }
   });
 
@@ -76,7 +77,7 @@ export const CompanySettingsTab = () => {
   }, [settings, form]);
 
   const onSubmit = (data: Partial<CompanySettingsType>) => {
-    updateSettings(data);
+    updateSettings.mutate({id: settings.id, ...data});
   };
 
   function handleDateSelect(e: Date) {
@@ -128,7 +129,7 @@ export const CompanySettingsTab = () => {
             <CompanyInformationForm
               form={form}
               onSubmit={onSubmit}
-              isUpdating={isUpdating}
+              isUpdating={updateSettings.isPending}
             />
 
             {/* Company Rules & Policies */}
@@ -167,8 +168,6 @@ export const CompanySettingsTab = () => {
                         value={(field.value as string) || 'weekly'}
                         onValueChange={(val) => {
                           field.onChange(val);
-                          // Persist immediately
-                          updateSettings({ timesheet_frequency: val as any });
                         }}
                       >
                         <SelectTrigger className="bg-background border-border text-foreground min-h-11">
@@ -234,11 +233,7 @@ export const CompanySettingsTab = () => {
                       <FormLabel>Company Timezone</FormLabel>
                       <Select
                         value={field.value || 'America/Toronto'}
-                        onValueChange={(val) => {
-                          field.onChange(val);
-                          // Persist immediately
-                          updateSettings({ timezone: val });
-                        }}
+                        onValueChange={(val) => field.onChange(val)}
                       >
                         <SelectTrigger className="bg-background border-border text-foreground min-h-11">
                           <SelectValue placeholder="Select timezone" />
@@ -430,11 +425,11 @@ export const CompanySettingsTab = () => {
               <div className="max-w-5xl mx-auto">
                 <Button
                   type="submit"
-                  disabled={isUpdating}
+                  disabled={updateSettings.isPending}
                   size="lg"
                   className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all duration-200 hover:shadow-xl"
                 >
-                  {isUpdating ? (
+                  {updateSettings.isPending ? (
                     <div className="flex items-center gap-3">
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-foreground border-t-transparent"></div>
                       <span>Saving Changes...</span>

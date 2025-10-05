@@ -31,8 +31,6 @@ export interface CompanySettings {
 }
 
 export const useCompanySettings = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
 
   // Fetch company settings with company isolation
@@ -40,12 +38,12 @@ export const useCompanySettings = () => {
     queryKey: ['company-settings', user?.companyId],
     queryFn: async () => {
       console.log('Fetching company settings for company:', user?.companyId);
-      
+
       if (!user?.companyId) {
         console.log('No company ID available');
         return null;
       }
-      
+
       const { data, error } = await supabase
         .from('company_settings')
         .select('*')
@@ -70,77 +68,11 @@ export const useCompanySettings = () => {
   });
 
   // Update company settings
-  const updateSettingsMutation = useMutation({
-    mutationFn: async (updatedSettings: Partial<CompanySettings>) => {
-      console.log('Updating company settings:', updatedSettings);
-      
-      if (!user?.companyId) {
-        throw new Error('Company ID is required to update settings');
-      }
-      
-      if (settings?.id) {
-        // Update existing settings
-        const { data, error } = await supabase
-          .from('company_settings')
-          .update({
-            ...updatedSettings,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', settings.id)
-          .eq('company_id', user.companyId)
-          .select()
-          .single();
 
-        if (error) {
-          console.error('Error updating company settings:', error);
-          throw error;
-        }
-
-        return data;
-      } else {
-        // Create new settings
-        const { data, error } = await supabase
-          .from('company_settings')
-          .insert({
-            ...updatedSettings,
-            company_id: user.companyId,
-            company_name: updatedSettings.company_name || user.companyName || 'Unnamed Company',
-            week_ending_day: updatedSettings.week_ending_day ?? 0, // Default to Sunday
-            timesheet_frequency: (updatedSettings as any).timesheet_frequency ?? 'weekly'
-          })
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating company settings:', error);
-          throw error;
-        }
-
-        return data;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['company-settings', user?.companyId] });
-      toast({
-        title: 'Settings Updated',
-        description: 'Company settings have been updated successfully.',
-      });
-      updateSettingsMutation.reset();
-    },
-    onError: (error) => {
-      console.error('Error updating company settings:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update company settings. Please try again.',
-        variant: 'destructive',
-      });
-      updateSettingsMutation.reset();
-    },
-  });
 
   const isSettingsComplete = () => {
     if (!settings) return false;
-    
+
     return !!(
       settings.company_name &&
       settings.company_address &&
@@ -153,8 +85,83 @@ export const useCompanySettings = () => {
     settings,
     isLoading,
     error,
-    updateSettings: updateSettingsMutation.mutate,
-    isUpdating: updateSettingsMutation.isPending,
     isSettingsComplete,
   };
 };
+
+
+export const useUpdateSettingsMutation = () => {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (updatedSettings: Partial<CompanySettings>) => {
+      console.log("Updating company settings:", updatedSettings);
+
+      if (!user?.companyId) {
+        throw new Error("Company ID is required to update settings");
+      }
+
+      // if id exists, use update; otherwise upsert (insert)
+      if (updatedSettings.id) {
+        const { data, error } = await supabase
+          .from("company_settings")
+          .update({
+            ...updatedSettings,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", updatedSettings.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error updating company settings by id:", error);
+          throw error;
+        }
+
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from("company_settings")
+          .upsert(
+            {
+              company_id: user.companyId,
+              company_name: updatedSettings.company_name || user.companyName || "Unnamed Company",
+              week_ending_day: updatedSettings.week_ending_day ?? 0,
+              timesheet_frequency: (updatedSettings as any)?.timesheet_frequency ?? "weekly",
+              updated_at: new Date().toISOString(),
+              ...updatedSettings,
+            },
+            { onConflict: "company_id" }
+          )
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error upserting company settings:", error);
+          throw error;
+        }
+
+        return data;
+      }
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["company-settings"], exact: false });
+      toast({
+        title: "Settings Updated",
+        description: "Company settings have been updated successfully.",
+      });
+    },
+
+    onError: (error) => {
+      console.error("Error updating company settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update company settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+} 

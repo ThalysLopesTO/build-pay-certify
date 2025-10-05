@@ -30,45 +30,38 @@ export const useDeleteWeeklyTimesheet = () => {
       }
 
       // Get the timesheet data before deletion for audit logging
-      const { data: timesheetData, error: fetchError } = await supabase
-        .from('weekly_timesheets')
-        .select('*')
-        .eq('id', timesheetId)
-        .eq('company_id', user.companyId)
-        .single();
+      // const { data: timesheetData, error: fetchError } = await supabase
+      //   .from('weekly_timesheets')
+      //   .select('*')
+      //   .eq('id', timesheetId)
+      //   .single();
 
-      if (fetchError || !timesheetData) {
-        throw new Error('Timesheet not found or access denied');
-      }
+      // if (fetchError || !timesheetData) {
+        // throw new Error('Timesheet not found or access denied');
+      // }
 
       // Log the deletion to audit table
-      const { error: auditError } = await supabase
-        .from('weekly_timesheet_audit_logs')
-        .insert({
-          timesheet_id: timesheetId,
-          action: 'DELETE',
-          original_data: timesheetData,
-          changes: { deleted: true, deleted_at: new Date().toISOString() },
-          edited_by: user.id,
-          company_id: user.companyId,
-          notes: `Timesheet deleted by ${userProfile.role}`
-        });
+      // const { error: auditError } = await supabase
+      //   .from('weekly_timesheet_audit_logs')
+      //   .insert({
+      //     timesheet_id: timesheetId,
+      //     action: 'DELETE',
+      //     original_data: timesheetData,
+      //     changes: { deleted: true, deleted_at: new Date().toISOString() },
+      //     edited_by: user.id,
+      //     company_id: user.companyId,
+      //     notes: `Timesheet deleted by ${userProfile.role}`
+      //   });
 
-      if (auditError) {
-        console.error('Failed to log audit entry:', auditError);
+      // if (auditError) {
+        // console.error('Failed to log audit entry:', auditError);
         // Continue with deletion even if audit logging fails
-      }
+      // }
 
       // Delete the timesheet record
-      const { error } = await supabase
-        .from('weekly_timesheets')
-        .delete()
-        .eq('id', timesheetId)
-        .eq('company_id', user.companyId);
+      const { error } = await supabase.from('weekly_timesheets').delete().eq('id', timesheetId);
 
-      if (error) {
-        throw error;
-      }
+      if (error)throw error;
 
       return { success: true };
     },

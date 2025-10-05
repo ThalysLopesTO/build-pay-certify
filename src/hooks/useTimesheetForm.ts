@@ -71,7 +71,6 @@ export const useTimesheetForm = (selectedWeek?:any) => {
 
   // Load existing timesheet data when available
   React.useEffect(() => {
-    console.log({existingTimesheets})
     if (existingTimesheets) {
       const formData: FormData = {
         jobsiteId: existingTimesheets.jobsite_id || '',
@@ -328,8 +327,6 @@ export const useTimesheetForm = (selectedWeek?:any) => {
     onSubmit,
     submitMutation,
     workWeeks,
-    // selectedWeek,
-    // setSelectedWeek,
     existingTimesheets,
     isWeekSubmitted,
     user,

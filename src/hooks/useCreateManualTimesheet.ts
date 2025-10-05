@@ -40,7 +40,7 @@ export const useCreateManualTimesheet = () => {
       console.log('Data being inserted into database:', dataToInsert);
 
       const { data, error } = await supabase
-        .from('weekly_timesheets_2')
+        .from('weekly_timesheets')
         .insert(dataToInsert)
         .select()
         .single();
