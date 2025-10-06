@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,17 +27,22 @@ const passwordResetSchema = z.object({
 type PasswordResetFormData = z.infer<typeof passwordResetSchema>;
 
 interface PasswordResetModalProps {
-  isOpen: boolean;
   onClose: () => void;
   employee: Employee | null;
 }
 
 const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
-  isOpen,
   onClose,
   employee
 }) => {
+  const [open, setOpen] = useState(false)
   const resetPassword = useResetUserPassword();
+
+  useEffect(() => {
+    console.log({employee})
+    if (employee) setOpen(true)
+    else setOpen(false)
+  },[employee])
 
   const form = useForm<PasswordResetFormData>({
     resolver: zodResolver(passwordResetSchema),
@@ -71,7 +76,7 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
   if (!employee) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
@@ -140,6 +145,7 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
             </form>
           </Form>
         </div>
+
       </DialogContent>
     </Dialog>
   );

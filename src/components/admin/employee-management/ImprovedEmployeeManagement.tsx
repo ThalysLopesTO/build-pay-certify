@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import EmployeeEditModal from '../EmployeeEditModal';
 import EmployeeCertificatesModal from '../EmployeeCertificatesModal';
 import EmployeeDeleteDialog from '../EmployeeDeleteDialog';
@@ -11,6 +11,8 @@ import EmployeeEmptyState from './EmployeeEmptyState';
 import EmployeeLoadingState from './EmployeeLoadingState';
 import EmployeeErrorState from './EmployeeErrorState';
 import { Employee, IsCanAddEmployee, useDeleteEmployee, useEmployees, useIsAdmin } from '@/hooks/new/useUsers';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateToRegistration?: () => void }) => {
   const [resettingPasswordEmployee, setResettingPasswordEmployee] = useState<Employee | null>(null);
@@ -39,15 +41,8 @@ const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateTo
 
   const handleDeleteEmployee = (e: Employee) => setDeletingEmployee(e)
 
-  const deleteEmployee = useDeleteEmployee()
 
-  const confirmDeleteEmployee = () => {
-    if (!deletingEmployee) return;
-
-    deleteEmployee.mutate(deletingEmployee.user_id, {
-      onSettled: () => setDeletingEmployee(null)
-    });
-  };
+  
 
   const handleResetPassword = (employee: Employee) => setResettingPasswordEmployee(employee);
 
@@ -90,32 +85,24 @@ const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateTo
 
         {/* Modals */}
         <EmployeeEditModal
-          isOpen={!!editingEmployee}
           onClose={() => setEditingEmployee(null)}
           employee={editingEmployee as any}
-          onSuccess={() => {
-            setEditingEmployee(null);
-          }}
+          onSuccess={() => setEditingEmployee(null)}
         />
 
         <EmployeeCertificatesModal
-          isOpen={!!viewingCertificates}
           onClose={() => setViewingCertificates(null)}
           employee={viewingCertificates}
         />
 
         <PasswordResetModal
-          isOpen={!!resettingPasswordEmployee}
           onClose={() => setResettingPasswordEmployee(null)}
           employee={resettingPasswordEmployee}
         />
 
         <EmployeeDeleteDialog
-          isOpen={!!deletingEmployee}
           onClose={() => setDeletingEmployee(null)}
-          onConfirm={confirmDeleteEmployee}
-          employeeName={deletingEmployee ? `${deletingEmployee.first_name} ${deletingEmployee.last_name}` : ''}
-          isDeleting={false}
+          employee={deletingEmployee}
         />
 
         <ArchivedEmployeesModalContext

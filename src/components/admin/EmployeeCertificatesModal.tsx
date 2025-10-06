@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,16 +16,15 @@ interface Employee {
 }
 
 interface EmployeeCertificatesModalProps {
-  isOpen: boolean;
   onClose: () => void;
   employee: Employee | null;
 }
 
 const EmployeeCertificatesModal: React.FC<EmployeeCertificatesModalProps> = ({
-  isOpen,
   onClose,
   employee
 }) => {
+  const [open, setOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const { 
     certificates, 
@@ -35,6 +34,11 @@ const EmployeeCertificatesModal: React.FC<EmployeeCertificatesModalProps> = ({
     refreshCertificates,
     isDeletingCertificate 
   } = useEmployeeCertificates(employee?.user_id);
+
+  useEffect(() => {
+    if (employee) setOpen(true)
+    else setOpen(false)
+  },[employee])
 
   const getCertStatusIcon = (status: string) => {
     switch (status) {
@@ -94,7 +98,7 @@ const EmployeeCertificatesModal: React.FC<EmployeeCertificatesModalProps> = ({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,18 +30,18 @@ interface Employee {
 }
 
 interface EmployeeEditModalProps {
-  isOpen: boolean;
   onClose: () => void;
   employee: Employee | null;
   onSuccess: () => void;
 }
 
 const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
-  isOpen,
   onClose,
   employee,
   onSuccess
 }) => {
+  const [open, setOpen] = useState(false);
+
   const form = useForm<EditEmployeeFormData>({
     resolver: zodResolver(editEmployeeSchema),
     defaultValues: {
@@ -57,6 +57,11 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
       worker_type: 'employee',
     },
   });
+
+  useEffect(() => {
+    if (employee) setOpen(true)
+    else setOpen(false)
+  },[employee])
 
   // Reset form when employee changes
   React.useEffect(() => {
@@ -125,7 +130,7 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   if (!employee) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Employee Details</DialogTitle>
