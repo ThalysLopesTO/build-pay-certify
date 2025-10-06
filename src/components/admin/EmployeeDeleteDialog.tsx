@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,24 +10,39 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
+import { Employee, useDeleteEmployee } from '@/hooks/new/useUsers';
 interface EmployeeDeleteDialogProps {
-  isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
-  employeeName: string;
-  isDeleting: boolean;
+  employee?: Employee
 }
 
 const EmployeeDeleteDialog = ({
-  isOpen,
   onClose,
-  onConfirm,
-  employeeName,
-  isDeleting
+  employee,
 }: EmployeeDeleteDialogProps) => {
+  const [open, setOpen] = useState(false);
+  
+  const deleteEmployee = useDeleteEmployee()
+  
+  useEffect(() => {
+    if (employee) setOpen(true)
+    else setOpen(false)
+  },[employee])
+
+  const confirmDeleteEmployee = () => {
+    if (!employee) return;
+
+    deleteEmployee.mutate(employee.user_id, {
+      onSettled: () => onClose
+    });
+  };
+
+  const employeeName = employee ? `${employee.first_name} ${employee.last_name}` : '';
+
+  const isDeleting = false;
+  
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
+    <AlertDialog open={open} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Archive Employee</AlertDialogTitle>
@@ -39,7 +54,7 @@ const EmployeeDeleteDialog = ({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={confirmDeleteEmployee}
             disabled={isDeleting}
             className="bg-destructive hover:bg-destructive/90"
           >
