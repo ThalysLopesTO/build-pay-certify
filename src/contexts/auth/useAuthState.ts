@@ -10,15 +10,14 @@ export const useAuthState = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [companyError, setCompanyError] = useState<string | null>(null);
-  
   // Get stable Supabase instance
   const supabase = getSupabase();
 
-  console.log('🔍 Auth State Debug:', { 
-    user: user ? { id: user.id, email: user.email, companyId: user.companyId } : null, 
-    hasSession: !!session, 
-    loading, 
-    companyError 
+  console.log('🔍 Auth State Debug:', {
+    user: user ? { id: user.id, email: user.email, companyId: user.companyId } : null,
+    hasSession: !!session,
+    loading,
+    companyError
   });
 
   // Handle window focus to refresh session
@@ -47,13 +46,13 @@ export const useAuthState = () => {
         if (isMounted && loading) setLoading(false);
         return;
       }
-      
-      console.log('🔄 Auth state changed:', event, { 
-        sessionExists: !!session, 
+
+      console.log('🔄 Auth state changed:', event, {
+        sessionExists: !!session,
         userEmail: session?.user?.email,
-        userId: session?.user?.id 
+        userId: session?.user?.id
       });
-      
+
       setSession(session);
 
       const hasUser = !!session?.user;
@@ -66,12 +65,12 @@ export const useAuthState = () => {
 
         if (shouldFetch) {
           console.log('👤 Fetching user profile for:', session!.user!.id);
-          
+
           try {
             const { profile, company, error } = await fetchUserProfile(session!.user!.id);
-            
+
             if (!isMounted) return;
-            
+
             if (error) {
               console.warn('⚠️ Profile fetch error:', error);
               setUser(null);
@@ -90,12 +89,12 @@ export const useAuthState = () => {
                 pendingApproval: profile.pending_approval || false,
                 workerType: (profile.worker_type as 'employee' | 'subcontractor') || 'subcontractor'
               };
-              
-              console.log('✅ Setting auth user:', { 
-                id: authUser.id, 
-                email: authUser.email, 
-                role: authUser.role, 
-                companyId: authUser.companyId 
+
+              console.log('✅ Setting auth user:', {
+                id: authUser.id,
+                email: authUser.email,
+                role: authUser.role,
+                companyId: authUser.companyId
               });
               setUser(authUser);
               setCompanyError(null);
@@ -117,7 +116,7 @@ export const useAuthState = () => {
         setUser(null);
         setCompanyError(null);
       }
-      
+
       if (isMounted) {
         console.log('🏁 Setting loading to false');
         setLoading(false);
@@ -128,10 +127,10 @@ export const useAuthState = () => {
     const initializeAuth = async () => {
       try {
         console.log('🚀 Initializing auth...');
-        
+
         // Get current session without making any user table queries
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (error) {
           console.error('❌ Error getting session:', error);
           if (isMounted) {
@@ -139,15 +138,21 @@ export const useAuthState = () => {
           }
           return;
         }
-        
+
         console.log('📋 Initial session check:', session?.user?.email || 'No session');
-        
+
         // Set up listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
-        
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          if (session?.user) {
+            setTimeout(async () => {
+              await handleAuthStateChange(event, session);
+            }, 0)
+          }
+        });
+
         // Handle initial session
         await handleAuthStateChange('INITIAL_SESSION', session);
-        
+
         return () => {
           subscription.unsubscribe();
         };
