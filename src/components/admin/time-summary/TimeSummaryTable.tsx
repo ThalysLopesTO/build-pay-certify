@@ -98,7 +98,7 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
             <div className="p-4">
               {jobsite.employees.map((employee) => (
                 <EmployeeTimeSummaryRow 
-                  key={employee.employee_id} 
+                  key={`${employee.employee_id}-${startDate.toISOString()}-${endDate.toISOString()}`}
                   employee={employee}
                   jobsiteId={jobsite.jobsite_id}
                   startDate={startDate}

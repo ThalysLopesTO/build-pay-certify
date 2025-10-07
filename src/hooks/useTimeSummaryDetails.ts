@@ -72,7 +72,7 @@ export const useTimeSummaryDetails = ({
       return dailyPunches;
     },
     enabled: enabled && !!user?.companyId && !!employeeId,
-    staleTime: 10000, // 10 seconds - more aggressive for real-time updates
+    staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     refetchInterval: 30000, // Auto-refresh every 30 seconds as fallback

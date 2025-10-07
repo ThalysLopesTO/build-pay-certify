@@ -45,6 +45,11 @@ export const TimeSummaryPage: React.FC = () => {
 
   const { data, isLoading } = useTimeSummaryData(filters);
 
+  // Invalidate detail caches when date filters change
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['timeSummaryDetails'] });
+  }, [filters.dateRange.start, filters.dateRange.end, queryClient]);
+
   // Set up real-time subscription for timesheet changes
   useEffect(() => {
     if (!user?.companyId) return;
