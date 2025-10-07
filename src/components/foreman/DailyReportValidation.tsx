@@ -1,11 +1,10 @@
 import React from 'react';
-import { AlertCircle, CheckCircle, Wifi, WifiOff } from 'lucide-react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface DailyReportValidationProps {
-  isOnline: boolean;
   hasJobsite: boolean;
   hasSummary: boolean;
   summaryLength: number;
@@ -14,7 +13,6 @@ interface DailyReportValidationProps {
 }
 
 export const DailyReportValidation: React.FC<DailyReportValidationProps> = ({
-  isOnline,
   hasJobsite,
   hasSummary,
   summaryLength,
@@ -24,13 +22,6 @@ export const DailyReportValidation: React.FC<DailyReportValidationProps> = ({
   const { user } = useAuth();
   
   const validations = [
-    {
-      key: 'connection',
-      label: 'Internet Connection',
-      valid: isOnline,
-      message: isOnline ? 'Connected' : 'No internet connection - reports cannot be submitted',
-      critical: true
-    },
     {
       key: 'auth',
       label: 'Authentication',
@@ -106,13 +97,7 @@ export const DailyReportValidation: React.FC<DailyReportValidationProps> = ({
         {validations.map((validation) => (
           <div key={validation.key} className="flex items-center justify-between py-2 px-3 rounded-lg border">
             <div className="flex items-center gap-3">
-              {validation.key === 'connection' ? (
-                validation.valid ? (
-                  <Wifi className="h-4 w-4 text-green-600" />
-                ) : (
-                  <WifiOff className="h-4 w-4 text-red-600" />
-                )
-              ) : validation.valid ? (
+              {validation.valid ? (
                 <CheckCircle className="h-4 w-4 text-green-600" />
               ) : (
                 <AlertCircle className="h-4 w-4 text-red-600" />

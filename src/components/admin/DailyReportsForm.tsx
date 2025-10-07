@@ -39,7 +39,6 @@ interface SubmissionStep {
 
 const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [submissionSteps, setSubmissionSteps] = useState<SubmissionStep[]>([
     { key: 'validation', label: 'Validating form data', status: 'pending' },
     { key: 'photos', label: 'Uploading photos', status: 'pending' },
@@ -51,20 +50,6 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
   
   const { data: jobsites = [], isLoading: jobsitesLoading } = useActiveJobsites();
   const submitMutation = useDailyReportSubmission();
-
-  // Monitor online status
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -91,11 +76,6 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
   };
 
   const onSubmit = async (data: FormData) => {
-    if (!isOnline) {
-      console.error('Cannot submit report while offline');
-      return;
-    }
-
     // Reset submission state
     setSubmissionSteps(steps => steps.map(step => ({ ...step, status: 'pending' as SubmissionStep['status'], errorMessage: undefined })));
     setCurrentStep(0);
@@ -155,7 +135,7 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
   const hasSummary = !!watchedValues.summary;
   const summaryLength = watchedValues.summary?.length || 0;
   const hasValidDate = !!watchedValues.report_date;
-  const canSubmit = hasJobsite && hasSummary && summaryLength >= 10 && hasValidDate && isOnline;
+  const canSubmit = hasJobsite && hasSummary && summaryLength >= 10 && hasValidDate;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -344,7 +324,6 @@ const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange 
 
                 {/* Validation Status */}
                 <DailyReportValidation
-                  isOnline={isOnline}
                   hasJobsite={hasJobsite}
                   hasSummary={hasSummary}
                   summaryLength={summaryLength}
