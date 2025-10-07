@@ -23,27 +23,9 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
     setEmailError('');
 
     try {
-      // First, check if the email exists in user_profiles
-      const { data: profiles, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('id, email, role')
-        .eq('email', email.toLowerCase())
-        .in('role', ['admin', 'super_admin', 'management']);
-
-      if (profileError) {
-        console.error('Error checking user profile:', profileError);
-        setEmailError('An error occurred. Please try again.');
-        return;
-      }
-
-      if (!profiles || profiles.length === 0) {
-        setEmailError('Email not found. Please double-check your entry or contact support.');
-        return;
-      }
-
-      // Email exists, proceed with password reset
+      // Call the edge function to handle password reset
       const { error } = await supabase.functions.invoke('send-password-reset', {
-        body: { email }
+        body: { email: email.toLowerCase() }
       });
 
       if (error) {
@@ -54,7 +36,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
 
       toast({
         title: "Reset Link Sent",
-        description: "A password reset link has been sent to your email address.",
+        description: "If an account exists with that email, a password reset link has been sent.",
       });
       
       setSubmitted(true);
