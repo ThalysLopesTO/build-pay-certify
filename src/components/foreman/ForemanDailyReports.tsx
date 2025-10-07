@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ClipboardList, Wifi, WifiOff } from 'lucide-react';
+import { PlusCircle, ClipboardList } from 'lucide-react';
 import { useDailyReports } from '@/hooks/useDailyReports';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import DailyReportsForm from '@/components/admin/DailyReportsForm';
@@ -12,7 +12,6 @@ const ForemanDailyReports = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [filters, setFilters] = useState<{
     jobsite_id?: string;
     date_from?: string;
@@ -24,33 +23,6 @@ const ForemanDailyReports = () => {
     submitted_by: user?.id || undefined,
   });
 
-  // Connection status monitoring
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      toast({
-        title: "Connection restored",
-        description: "You're back online. Your data will sync automatically.",
-      });
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-      toast({
-        title: "Connection lost",
-        description: "You're offline. Your work will be saved when connection is restored.",
-        variant: "destructive",
-      });
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [toast]);
 
   // Use debounced filters to prevent too many queries
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
@@ -124,17 +96,7 @@ const ForemanDailyReports = () => {
         <div className="flex flex-col space-y-2">
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold tracking-tight">Daily Reports</h1>
-                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                  isOnline 
-                    ? 'bg-green-100 text-green-700 border border-green-200' 
-                    : 'bg-red-100 text-red-700 border border-red-200'
-                }`}>
-                  {isOnline ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-                  {isOnline ? 'Online' : 'Offline'}
-                </div>
-              </div>
+              <h1 className="text-3xl font-bold tracking-tight mb-2">Daily Reports</h1>
               <p className="text-muted-foreground">
                 Submit and manage your daily progress reports
               </p>
@@ -142,7 +104,6 @@ const ForemanDailyReports = () => {
             <Button 
               onClick={() => setIsFormOpen(true)} 
               size="lg"
-              disabled={!isOnline} // Disable when offline
               className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-3"
             >
               <PlusCircle className="h-5 w-5 mr-2" />
@@ -150,21 +111,6 @@ const ForemanDailyReports = () => {
             </Button>
           </div>
         </div>
-
-        {/* Connection Warning */}
-        {!isOnline && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <WifiOff className="h-5 w-5 text-amber-600 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-amber-800 mb-1">You're currently offline</h3>
-                <p className="text-sm text-amber-700">
-                  You can view existing reports, but you'll need an internet connection to submit new ones.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Filters Section */}
         <DailyReportsFilters
