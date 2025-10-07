@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import ManagementSidebar from '../components/management/ManagementSidebar';
 import EmployeeTimesheets from '../components/admin/EmployeeTimesheets';
+import TimeTracker from '../components/employee/TimeTracker';
 import PayrollSummary from '../components/admin/PayrollSummary';
 import IncomeExpensesManagement from '../components/admin/IncomeExpensesManagement';
 import AttentionReportsInbox from '../components/admin/AttentionReportsInbox';
@@ -37,6 +38,8 @@ const ManagementDashboard = () => {
     switch (activeTab) {
       case 'dashboard':
         return <ManagementDashboardHome setActiveTab={setActiveTab} />;
+      case 'time-tracker':
+        return <TimeTracker />;
       case 'live-punch-monitor':
         return <LivePunchMonitor />;
       case 'my-timesheet':

@@ -34,6 +34,11 @@ export const managementMenuItems = {
   ],
   operations: [
     {
+      title: 'Time Clock (Punch In/Out)',
+      icon: Clock,
+      id: 'time-tracker',
+    },
+    {
       title: 'Live Punch Monitor',
       icon: Clock,
       id: 'live-punch-monitor',

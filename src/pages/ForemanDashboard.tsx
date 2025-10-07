@@ -5,6 +5,7 @@ import ForemanSidebar from '../components/foreman/ForemanSidebar';
 import ForemanDashboardHome from '../components/foreman/dashboard/ForemanDashboardHome';
 import ForemanTimesheetForm from '../components/foreman/ForemanTimesheetForm';
 import MaterialRequestForm from '../components/foreman/MaterialRequestForm';
+import TimeTracker from '../components/employee/TimeTracker';
 import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
 import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
 import EmployeeReports from '../components/foreman/EmployeeReports';
@@ -30,6 +31,8 @@ const ForemanDashboard = () => {
     switch (activeTab) {
       case 'dashboard':
         return <ForemanDashboardHome setActiveTab={setActiveTab} />;
+      case 'time-tracker':
+        return <TimeTracker />;
       case 'timesheet':
         return <ForemanTimesheetForm />;
       case 'material-request':

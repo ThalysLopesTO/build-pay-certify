@@ -92,6 +92,11 @@ export const groupedForemanItems = {
   ],
   timesheet: [
     {
+      title: 'Time Clock (Punch In/Out)',
+      icon: Clock,
+      id: 'time-tracker',
+    },
+    {
       title: 'Timesheet',
       icon: Clock,
       id: 'timesheet',
