@@ -9,29 +9,29 @@ import { Lock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const ResetPassword = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
-  
-  const token = searchParams.get('token');
+  const [validSession, setValidSession] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setError('Invalid or missing reset token');
-    }
-  }, [token]);
+    // Check if we have a valid recovery session
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError('Invalid or expired reset link. Please request a new password reset.');
+      } else {
+        setValidSession(true);
+      }
+    };
+    checkSession();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!token) {
-      setError('Invalid reset token');
-      return;
-    }
 
     if (password !== confirmPassword) {
       toast({
@@ -54,21 +54,14 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      // Call our edge function to reset the password with the token
-      const { error } = await supabase.functions.invoke('reset-password', {
-        body: { 
-          token,
-          newPassword: password 
-        }
+      // Use Supabase's native password update
+      const { error } = await supabase.auth.updateUser({
+        password: password
       });
 
       if (error) {
         console.error('Password reset error:', error);
-        if (error.message.includes('expired') || error.message.includes('invalid')) {
-          setError('This reset link has expired or is invalid. Please request a new one.');
-        } else {
-          setError('Failed to reset password. Please try again.');
-        }
+        setError('Failed to reset password. Please try again.');
       } else {
         setSuccess(true);
         toast({
