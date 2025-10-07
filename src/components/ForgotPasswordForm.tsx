@@ -23,14 +23,24 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
     setEmailError('');
 
     try {
+      console.log('Attempting to send password reset for email:', email.toLowerCase());
+      
       // Call the edge function to handle password reset
-      const { error } = await supabase.functions.invoke('send-password-reset', {
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
         body: { email: email.toLowerCase() }
       });
 
+      console.log('Password reset response:', { data, error });
+
       if (error) {
-        console.error('Password reset error:', error);
-        setEmailError('Failed to send reset email. Please try again.');
+        console.error('Password reset error details:', {
+          message: error.message,
+          context: error.context,
+          status: error.status,
+          name: error.name,
+          fullError: error
+        });
+        setEmailError(`Failed to send reset email: ${error.message || 'Please try again.'}`);
         return;
       }
 
@@ -40,9 +50,9 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
       });
       
       setSubmitted(true);
-    } catch (error) {
-      console.error('Password reset error:', error);
-      setEmailError('An error occurred. Please try again.');
+    } catch (error: any) {
+      console.error('Password reset exception:', error);
+      setEmailError(`An error occurred: ${error.message || 'Please try again.'}`);
     } finally {
       setLoading(false);
     }
