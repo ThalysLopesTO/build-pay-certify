@@ -27,9 +27,6 @@ const LoginForm = () => {
   // Handle navigation after successful login
   useEffect(() => {
     if (isAuthenticated && user) {
-      console.log('🎯 Company login successful, navigating to dashboard for role:', user.role);
-      console.log('📊 Full user object:', user);
-
       // Stop loading state before navigation
       setLoading(false);
 
@@ -37,52 +34,32 @@ const LoginForm = () => {
       switch (user.role) {
         case 'admin':
         case 'super_admin':
-          console.log('🔐 Admin user detected, redirecting to admin dashboard');
-          navigate('/admin/dashboard', {
-            replace: true
-          });
+          navigate('/admin/dashboard', { replace: true });
           break;
         case 'management':
-          console.log('📊 Management user detected, redirecting to management dashboard');
-          navigate('/management/dashboard', {
-            replace: true
-          });
+          navigate('/management/dashboard', { replace: true });
           break;
         case 'foreman':
-          console.log('👷 Foreman user detected, redirecting to foreman dashboard');
-          navigate('/foreman/dashboard', {
-            replace: true
-          });
+          navigate('/foreman/dashboard', { replace: true });
           break;
         case 'employee':
-          console.log('👤 Employee user detected, redirecting to employee dashboard');
-          navigate('/employee/dashboard', {
-            replace: true
-          });
+          navigate('/employee/dashboard', { replace: true });
           break;
         default:
-          console.warn('⚠️ Unknown role detected:', user.role, 'redirecting to home');
-          // Fallback to home page if role is undefined
-          navigate('/', {
-            replace: true
-          });
+          navigate('/', { replace: true });
       }
     } else if (isAuthenticated && !user) {
       console.log('🔄 User authenticated but profile not loaded yet...');
     }
   }, [isAuthenticated, user, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      console.log('🔑 Attempting email login for:', email);
-      console.log('🔍 Pre-login auth state:', {
-        isAuthenticated,
-        user: user?.email
-      });
-      const {
-        error
-      } = await login(email, password, 'admin');
+      const { error } = await login(email, password, 'admin');
+      console.log("ERROR LOGIN: ", error)
+      
       if (error) {
         console.error('❌ Login error:', error);
         toast({
@@ -92,47 +69,47 @@ const LoginForm = () => {
         });
         setLoading(false);
       } else {
-        console.log('✅ Login successful, waiting for auth state update...');
-        console.log('🔍 Post-login auth state:', {
-          isAuthenticated,
-          user: user?.email
-        });
-        toast({
-          title: "Welcome Back",
-          description: "Successfully logged into StackBuild"
-        });
+        // console.log('✅ Login successful, waiting for auth state update...');
+        // console.log('🔍 Post-login auth state:', {
+        //   isAuthenticated,
+        //   user: user?.email
+        // });
+        // toast({
+        //   title: "Welcome Back",
+        //   description: "Successfully logged into StackBuild"
+        // });
 
-        // Wait for auth state to update before timing out
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds with 100ms intervals
+        // // Wait for auth state to update before timing out
+        // let attempts = 0;
+        // const maxAttempts = 50; // 5 seconds with 100ms intervals
 
-        const checkAuthUpdate = () => {
-          attempts++;
-          console.log(`🔄 Auth check attempt ${attempts}/50:`, {
-            isAuthenticated,
-            userRole: user?.role,
-            userEmail: user?.email
-          });
-          if (isAuthenticated && user?.role) {
-            console.log('✅ Auth state updated successfully, user role:', user.role);
-            setLoading(false);
-            // Don't manually navigate - let useEffect handle it
-            return;
-          }
-          if (attempts >= maxAttempts) {
-            console.warn('⚠️ Auth state update timeout after 5 seconds, forcing redirect...');
-            setLoading(false);
-            // Force redirect as fallback
-            window.location.href = '/admin/dashboard';
-            return;
-          }
+        // const checkAuthUpdate = () => {
+        //   attempts++;
+        //   console.log(`🔄 Auth check attempt ${attempts}/50:`, {
+        //     isAuthenticated,
+        //     userRole: user?.role,
+        //     userEmail: user?.email
+        //   });
+        //   if (isAuthenticated && user?.role) {
+        //     console.log('✅ Auth state updated successfully, user role:', user.role);
+        //     setLoading(false);
+        //     // Don't manually navigate - let useEffect handle it
+        //     return;
+        //   }
+        //   if (attempts >= maxAttempts) {
+        //     console.warn('⚠️ Auth state update timeout after 5 seconds, forcing redirect...');
+        //     setLoading(false);
+        //     // Force redirect as fallback
+        //     window.location.href = '/admin/dashboard';
+        //     return;
+        //   }
 
-          // Continue checking
-          setTimeout(checkAuthUpdate, 100);
-        };
+        //   // Continue checking
+        //   setTimeout(checkAuthUpdate, 100);
+        // };
 
-        // Start checking for auth state update
-        setTimeout(checkAuthUpdate, 100);
+        // // Start checking for auth state update
+        // setTimeout(checkAuthUpdate, 100);
       }
     } catch (error) {
       console.error('💥 Login error:', error);

@@ -20,59 +20,49 @@ const Header = () => {
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
-    
     setIsLoggingOut(true);
-    
+
     try {
-      console.log('🚪 Header logout clicked');
-      
-      // Immediate feedback
-      const toastId = toast({
-        title: "Signing out...",
-        description: "Please wait while we sign you out.",
+      console.log('🚪 Logging out...');
+
+      toast({
+        title: 'Signing out...',
+        description: 'Please wait while we sign you out.',
         duration: 2000,
       });
-      
-      // Clear local state immediately for better UX
+
+      // Call your Supabase logout function
+      await Promise.race([
+        logout(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Logout timeout')), 5000)
+        ),
+      ]);
+
+      // Clean local/session storage safely
       localStorage.removeItem('supabase.auth.token');
       sessionStorage.clear();
-      
-      // Call logout with timeout
-      const logoutPromise = logout();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Logout timeout')), 5000)
-      );
-      
-      await Promise.race([logoutPromise, timeoutPromise]);
-      
-      console.log('✅ Header logout completed, navigating to login...');
-      
-      // Navigate with fallback
-      setTimeout(() => {
-        try {
-          navigate('/admin-login', { replace: true });
-        } catch {
-          window.location.replace('/admin-login');
-        }
-      }, 100);
-      
-    } catch (error) {
-      console.error('Header logout error:', error);
-      
+
+      console.log('✅ Logout successful — redirecting to login');
+
       toast({
-        title: "Signed out", 
-        description: "You have been signed out successfully.",
+        title: 'Signed out',
+        description: 'You have been signed out successfully.',
         duration: 2000,
       });
-      
-      // Always navigate even on error
-      setTimeout(() => {
-        try {
-          navigate('/admin-login', { replace: true });
-        } catch {
-          window.location.replace('/admin-login');
-        }
-      }, 100);
+
+      window.location.replace('/admin-login');
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+
+      toast({
+        title: 'Session ended',
+        description: 'You have been signed out.',
+        duration: 2000,
+      });
+
+      // Always redirect to login even if logout fails
+      window.location.replace('/admin-login');
     } finally {
       setIsLoggingOut(false);
     }
