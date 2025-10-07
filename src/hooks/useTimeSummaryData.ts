@@ -57,7 +57,15 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['time-summary', user?.companyId, filters],
+    queryKey: [
+      'time-summary',
+      user?.companyId,
+      format(filters.dateRange.start, 'yyyy-MM-dd'),
+      format(filters.dateRange.end, 'yyyy-MM-dd'),
+      filters.jobsiteIds,
+      filters.employeeIds,
+      filters.status
+    ],
     queryFn: async () => {
       if (!user?.companyId) return [];
 
