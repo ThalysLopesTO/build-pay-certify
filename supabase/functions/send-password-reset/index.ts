@@ -31,11 +31,26 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Check if user exists and is an admin/manager
+    // First, get user from auth.users by email
+    const { data: authUserData, error: authError } = await supabaseClient.auth.admin.getUserByEmail(email);
+    
+    if (authError || !authUserData?.user) {
+      console.log('User not found in auth.users:', email);
+      // Return success regardless to prevent account enumeration
+      return new Response(
+        JSON.stringify({ success: true, message: "If an account exists, a reset link has been sent" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Then verify they have admin/super_admin/management role in user_profiles
     const { data: userProfile, error: profileError } = await supabaseClient
       .from('user_profiles')
-      .select('user_id, first_name, last_name, role')
-      .eq('email', email)
+      .select('user_id, first_name, last_name, role, company_id')
+      .eq('user_id', authUserData.user.id)
       .in('role', ['admin', 'super_admin', 'management'])
       .single();
 
