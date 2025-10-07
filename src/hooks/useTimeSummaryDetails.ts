@@ -22,7 +22,13 @@ export const useTimeSummaryDetails = ({
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["timeSummaryDetails", employeeId, jobsiteId, startDate, endDate],
+    queryKey: [
+      "timeSummaryDetails", 
+      employeeId, 
+      jobsiteId, 
+      format(startDate, "yyyy-MM-dd"),
+      format(endDate, "yyyy-MM-dd")
+    ],
     queryFn: async () => {
       if (!user?.companyId) throw new Error("No company ID");
 
