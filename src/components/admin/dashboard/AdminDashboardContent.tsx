@@ -241,7 +241,7 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
 export default AdminDashboardContent;
 
 function HeroCard({ onClick }:{ onClick: () => void }) {
-  const { data: userProfile, isLoading } = useUserProfile();
+  const { data: userProfile } = useUserProfile();
   const { user } = useAuth();
   const firstName = userProfile?.first_name || user?.firstName || 'Admin';
 

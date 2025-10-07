@@ -81,7 +81,9 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (ch) {
         try {
           supabase.removeChannel(ch);
-        } catch {}
+        } catch(err) {
+          console.error("Error Remove Channel: ", err)
+        }
         channelRegistry.delete(channelKey);
       }
     };
@@ -93,12 +95,15 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     mountedOnce.current = true;
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event) => {
+      console.log("EVENT: ", event)
       if (event === 'SIGNED_OUT') {
         // Leave all channels on logout to avoid cross-tenant/session leakage
         for (const ch of channelRegistry.values()) {
           try {
             await ch.unsubscribe();
-          } catch {}
+          } catch(err) {
+            console.log("Error Unsubscribe: ", err)
+          }
         }
         channelRegistry.clear();
       }
