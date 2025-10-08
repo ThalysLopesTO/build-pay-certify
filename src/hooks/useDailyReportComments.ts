@@ -33,7 +33,7 @@ export const useDailyReportComments = (reportId: string | null) => {
         .from('daily_report_comments')
         .select(`
           *,
-          user_profiles!daily_report_comments_user_id_fkey (
+          user_profiles:user_id (
             first_name,
             last_name,
             photo_url,
