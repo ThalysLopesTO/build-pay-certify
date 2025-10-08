@@ -716,6 +716,13 @@ export type Database = {
             referencedRelation: "daily_reports"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "daily_report_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       daily_reports: {
