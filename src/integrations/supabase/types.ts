@@ -673,6 +673,51 @@ export type Database = {
           },
         ]
       }
+      daily_report_comments: {
+        Row: {
+          comment_text: string
+          company_id: string
+          created_at: string
+          daily_report_id: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_text: string
+          company_id: string
+          created_at?: string
+          daily_report_id: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_text?: string
+          company_id?: string
+          created_at?: string
+          daily_report_id?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_report_comments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_report_comments_daily_report_id_fkey"
+            columns: ["daily_report_id"]
+            isOneToOne: false
+            referencedRelation: "daily_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_reports: {
         Row: {
           company_id: string
@@ -2524,136 +2569,12 @@ export type Database = {
             foreignKeyName: "weekly_timesheet_audit_logs_timesheet_id_fkey"
             columns: ["timesheet_id"]
             isOneToOne: false
-            referencedRelation: "weekly_timesheets"
+            referencedRelation: "weekly_timesheets_old"
             referencedColumns: ["id"]
           },
         ]
       }
       weekly_timesheets: {
-        Row: {
-          additional_expense: number | null
-          calculated_tax: number | null
-          company_id: string | null
-          cpp_rate: number | null
-          created_at: string
-          ei_rate: number | null
-          employee_name: string | null
-          friday_hours: number | null
-          gross_pay: number | null
-          hourly_rate: number
-          id: string
-          income_tax_rate: number | null
-          is_manual_entry: boolean | null
-          jobsite_id: string
-          manual_entry_name: string | null
-          monday_hours: number | null
-          notes: string | null
-          periods: Json[] | null
-          saturday_hours: number | null
-          status: string
-          submitted_by: string | null
-          sunday_hours: number | null
-          tax_included: boolean | null
-          thursday_hours: number | null
-          total_hours: number | null
-          tuesday_hours: number | null
-          updated_at: string
-          updated_by: string | null
-          wednesday_hours: number | null
-          week_start_date: string
-          worker_type: string | null
-        }
-        Insert: {
-          additional_expense?: number | null
-          calculated_tax?: number | null
-          company_id?: string | null
-          cpp_rate?: number | null
-          created_at?: string
-          ei_rate?: number | null
-          employee_name?: string | null
-          friday_hours?: number | null
-          gross_pay?: number | null
-          hourly_rate: number
-          id?: string
-          income_tax_rate?: number | null
-          is_manual_entry?: boolean | null
-          jobsite_id: string
-          manual_entry_name?: string | null
-          monday_hours?: number | null
-          notes?: string | null
-          periods?: Json[] | null
-          saturday_hours?: number | null
-          status?: string
-          submitted_by?: string | null
-          sunday_hours?: number | null
-          tax_included?: boolean | null
-          thursday_hours?: number | null
-          total_hours?: number | null
-          tuesday_hours?: number | null
-          updated_at?: string
-          updated_by?: string | null
-          wednesday_hours?: number | null
-          week_start_date: string
-          worker_type?: string | null
-        }
-        Update: {
-          additional_expense?: number | null
-          calculated_tax?: number | null
-          company_id?: string | null
-          cpp_rate?: number | null
-          created_at?: string
-          ei_rate?: number | null
-          employee_name?: string | null
-          friday_hours?: number | null
-          gross_pay?: number | null
-          hourly_rate?: number
-          id?: string
-          income_tax_rate?: number | null
-          is_manual_entry?: boolean | null
-          jobsite_id?: string
-          manual_entry_name?: string | null
-          monday_hours?: number | null
-          notes?: string | null
-          periods?: Json[] | null
-          saturday_hours?: number | null
-          status?: string
-          submitted_by?: string | null
-          sunday_hours?: number | null
-          tax_included?: boolean | null
-          thursday_hours?: number | null
-          total_hours?: number | null
-          tuesday_hours?: number | null
-          updated_at?: string
-          updated_by?: string | null
-          wednesday_hours?: number | null
-          week_start_date?: string
-          worker_type?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "weekly_timesheets_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "weekly_timesheets_jobsite_id_fkey"
-            columns: ["jobsite_id"]
-            isOneToOne: false
-            referencedRelation: "jobsites"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "weekly_timesheets_submitted_by_fkey"
-            columns: ["submitted_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      weekly_timesheets_2: {
         Row: {
           additional_expense: number | null
           company_id: string | null
@@ -2771,20 +2692,20 @@ export type Database = {
           },
         ]
       }
-      weekly_timesheets_2_duplicate: {
+      weekly_timesheets_old: {
         Row: {
           additional_expense: number | null
+          calculated_tax: number | null
           company_id: string | null
-          cpp: number | null
+          cpp_rate: number | null
           created_at: string
-          ei: number | null
+          ei_rate: number | null
           employee_name: string | null
           friday_hours: number | null
           gross_pay: number | null
           hourly_rate: number
-          hours_pay: number
           id: string
-          income_tax: number | null
+          income_tax_rate: number | null
           is_manual_entry: boolean | null
           jobsite_id: string
           manual_entry_name: string | null
@@ -2795,11 +2716,9 @@ export type Database = {
           status: string
           submitted_by: string | null
           sunday_hours: number | null
-          tax: number | null
           tax_included: boolean | null
           thursday_hours: number | null
           total_hours: number | null
-          total_pay: number
           tuesday_hours: number | null
           updated_at: string
           updated_by: string | null
@@ -2809,17 +2728,17 @@ export type Database = {
         }
         Insert: {
           additional_expense?: number | null
+          calculated_tax?: number | null
           company_id?: string | null
-          cpp?: number | null
+          cpp_rate?: number | null
           created_at?: string
-          ei?: number | null
+          ei_rate?: number | null
           employee_name?: string | null
           friday_hours?: number | null
           gross_pay?: number | null
           hourly_rate: number
-          hours_pay?: number
           id?: string
-          income_tax?: number | null
+          income_tax_rate?: number | null
           is_manual_entry?: boolean | null
           jobsite_id: string
           manual_entry_name?: string | null
@@ -2830,11 +2749,9 @@ export type Database = {
           status?: string
           submitted_by?: string | null
           sunday_hours?: number | null
-          tax?: number | null
           tax_included?: boolean | null
           thursday_hours?: number | null
           total_hours?: number | null
-          total_pay?: number
           tuesday_hours?: number | null
           updated_at?: string
           updated_by?: string | null
@@ -2844,17 +2761,17 @@ export type Database = {
         }
         Update: {
           additional_expense?: number | null
+          calculated_tax?: number | null
           company_id?: string | null
-          cpp?: number | null
+          cpp_rate?: number | null
           created_at?: string
-          ei?: number | null
+          ei_rate?: number | null
           employee_name?: string | null
           friday_hours?: number | null
           gross_pay?: number | null
           hourly_rate?: number
-          hours_pay?: number
           id?: string
-          income_tax?: number | null
+          income_tax_rate?: number | null
           is_manual_entry?: boolean | null
           jobsite_id?: string
           manual_entry_name?: string | null
@@ -2865,11 +2782,9 @@ export type Database = {
           status?: string
           submitted_by?: string | null
           sunday_hours?: number | null
-          tax?: number | null
           tax_included?: boolean | null
           thursday_hours?: number | null
           total_hours?: number | null
-          total_pay?: number
           tuesday_hours?: number | null
           updated_at?: string
           updated_by?: string | null
@@ -2879,21 +2794,21 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "weekly_timesheets_2_duplicate_company_id_fkey"
+            foreignKeyName: "weekly_timesheets_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "weekly_timesheets_2_duplicate_jobsite_id_fkey"
+            foreignKeyName: "weekly_timesheets_jobsite_id_fkey"
             columns: ["jobsite_id"]
             isOneToOne: false
             referencedRelation: "jobsites"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "weekly_timesheets_2_duplicate_submitted_by_fkey"
+            foreignKeyName: "weekly_timesheets_submitted_by_fkey"
             columns: ["submitted_by"]
             isOneToOne: false
             referencedRelation: "user_profiles"

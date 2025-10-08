@@ -11,6 +11,7 @@ import { useDailyReportPDF } from '@/hooks/useDailyReportPDF';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useToast } from '@/hooks/use-toast';
+import DailyReportCommentSection from '@/components/daily-reports/DailyReportCommentSection';
 
 interface DailyReportDetailsModalProps {
   report: DailyReport | null;
@@ -174,6 +175,9 @@ const DailyReportDetailsModal: React.FC<DailyReportDetailsModalProps> = ({
                 </div>
               </>
             )}
+
+            {/* Comment Section */}
+            <DailyReportCommentSection reportId={report.id} />
           </div>
         </DialogContent>
       </Dialog>
