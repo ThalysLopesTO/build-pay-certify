@@ -3088,15 +3088,15 @@ export type Database = {
               p_end_date: string
               p_jobsite_id: string
               p_start_date: string
-              p_tz: string
+              p_timezone: string
             }
           | {
               p_company_id: string
               p_employee_id: string
               p_end_date: string
-              p_jobsite_id?: string
+              p_jobsite_id: string
               p_start_date: string
-              p_timezone: string
+              p_tz: string
             }
           | {
               p_company_id: string
@@ -3106,12 +3106,15 @@ export type Database = {
               p_timezone?: string
             }
         Returns: {
+          check_in_location: string
           check_in_time: string
+          check_out_location: string
           check_out_time: string
+          date: string
           hours_worked: number
-          jobsite_id: string
-          jobsite_name: string
-          punch_date: string
+          id: string
+          location_distance: number
+          notes: string
           status: string
         }[]
       }
