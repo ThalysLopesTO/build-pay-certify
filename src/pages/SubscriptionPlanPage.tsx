@@ -13,10 +13,11 @@ const SubscriptionPlanPage = () => {
   const { createCheckout, isCreatingCheckout } = useStripeSubscription();
   const navigate = useNavigate();
 
+  // Track subscription state & prevent double auto-start
   const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
   const autoStartedRef = useRef(false);
 
-  // ✅ Redirect authenticated users with active subscription
+  // Redirect authenticated users with active subscription to dashboard
   useEffect(() => {
     if (isAuthenticated && user) {
       const checkSubscription = async () => {
@@ -24,15 +25,19 @@ const SubscriptionPlanPage = () => {
           const { data, error } = await supabase.functions.invoke("check-subscription");
           if (error) throw error;
 
-          setIsSubscribed(!!data?.subscribed);
-          if (data?.subscribed) {
+          const subscribed = !!data?.subscribed;
+          setIsSubscribed(subscribed);
+
+          if (subscribed) {
             navigate("/admin/dashboard");
           }
         } catch (error) {
           console.error("Error checking subscription:", error);
+          // If uncertain, allow auto-start to proceed
           setIsSubscribed(false);
         }
       };
+
       checkSubscription();
     } else {
       // Not logged in → allow auto-start
@@ -40,7 +45,6 @@ const SubscriptionPlanPage = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
-  // ✅ Regular button handler (used on page)
   const handleStartSubscription = async () => {
     try {
       await createCheckout({ planName: "StackBuild Pro" });
@@ -50,7 +54,7 @@ const SubscriptionPlanPage = () => {
     }
   };
 
-  // ✅ Auto-start Stripe checkout if URL contains ?start=1
+  // Auto-start Stripe Checkout when arriving with ?start=1
   useEffect(() => {
     if (autoStartedRef.current || isSubscribed === true) return;
 
@@ -59,14 +63,17 @@ const SubscriptionPlanPage = () => {
 
     if (shouldStart && !isCreatingCheckout) {
       autoStartedRef.current = true;
-      handleStartSubscription();
+      // Avoid Strict Mode double-invoke
+      const t = setTimeout(() => {
+        handleStartSubscription();
+      }, 0);
+      return () => clearTimeout(t);
     }
   }, [isCreatingCheckout, isSubscribed]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900 p-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mb-6">
             <Building className="h-12 w-12 text-orange-500 mr-4" />
@@ -78,7 +85,6 @@ const SubscriptionPlanPage = () => {
           </p>
         </div>
 
-        {/* Pricing Card */}
         <div className="flex justify-center mb-12">
           <Card className="border-2 border-orange-500 bg-gradient-to-b from-orange-500/10 to-slate-800/50 backdrop-blur-sm relative w-full max-w-md">
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -112,7 +118,6 @@ const SubscriptionPlanPage = () => {
                   </li>
                 ))}
               </ul>
-
               <Button
                 onClick={handleStartSubscription}
                 disabled={isCreatingCheckout}
@@ -121,9 +126,7 @@ const SubscriptionPlanPage = () => {
                 <CreditCard className="h-5 w-5 mr-2" />
                 {isCreatingCheckout ? "Processing..." : "Start 7-Day Free Trial"}
               </Button>
-
               <p className="text-center text-sm text-slate-400">No charge for 7 days. Cancel anytime.</p>
-
               {isAuthenticated && (
                 <div className="mt-4 text-center">
                   <Link to="/admin-login" className="text-orange-400 hover:text-orange-300 text-sm">
@@ -135,7 +138,6 @@ const SubscriptionPlanPage = () => {
           </Card>
         </div>
 
-        {/* Footer */}
         <div className="text-center">
           <p className="text-slate-400 mb-4">Already have an account?</p>
           <div className="space-x-4">
