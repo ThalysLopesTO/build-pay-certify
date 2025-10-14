@@ -74,7 +74,7 @@ const SubscriptionPlanPage = () => {
             <img 
               src="/lovable-uploads/04cf020d-b64e-49b8-ae51-022a05b6cad8.png" 
               alt="StackBuild Logo" 
-              className="h-24 w-auto"
+              className="h-36 w-auto"
             />
           </div>
           <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">Complete Construction Management Platform</h1>
