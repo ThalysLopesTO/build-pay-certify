@@ -45,9 +45,9 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
 
   return (
     <div className="mb-2">
-      {/* Main Row - Matching Live Punch Monitor Style */}
+      {/* Main Row */}
       <div
-        className="flex items-center gap-3 p-2 bg-gradient-to-r from-card to-card/50 rounded-lg border border-border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+        className="flex items-center gap-2 md:gap-3 p-3 md:p-4 bg-gradient-to-r from-card to-card/50 rounded-lg border border-border shadow-sm hover:shadow-md active:scale-[0.99] transition-all duration-200 cursor-pointer min-h-[60px]"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {/* Avatar */}
@@ -61,10 +61,10 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 min-w-0 flex items-center justify-between">
+        <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h3 className="text-sm font-semibold text-foreground truncate">
+              <h3 className="text-sm md:text-base font-semibold text-foreground truncate">
                 {employee.employee_name}
               </h3>
               <RoleBadge 
@@ -81,15 +81,18 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
           </div>
 
           {/* Right Side: Hours and Issues Badge */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-foreground">
-              {employee.total_hours.toFixed(2)} hrs
-            </span>
+          <div className="flex items-center gap-2 justify-between sm:justify-end">
+            <div className="flex items-center gap-1">
+              <span className="text-base md:text-lg font-bold text-foreground">
+                {employee.total_hours.toFixed(2)}
+              </span>
+              <span className="text-xs text-muted-foreground">hrs</span>
+            </div>
             
             {employee.has_flags && (
-              <Badge variant="destructive" className="flex items-center gap-1">
+              <Badge variant="destructive" className="flex items-center gap-1 text-xs">
                 <AlertTriangle className="h-3 w-3" />
-                Issues
+                <span className="hidden sm:inline">Issues</span>
               </Badge>
             )}
 
@@ -107,14 +110,15 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
 
       {/* Expanded Daily Breakdown */}
       {isExpanded && (
-        <div className="mt-2 px-4 py-4 bg-muted/30 border-t rounded-b-lg">
+        <div className="mt-2 px-3 md:px-4 py-4 bg-muted/30 border rounded-lg shadow-inner">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Calendar className="h-4 w-4" />
+            <Calendar className="h-4 w-4 text-primary" />
             DAILY BREAKDOWN
           </div>
 
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
               Loading details...
             </div>
           ) : !dailyPunches || dailyPunches.length === 0 ? (
@@ -123,8 +127,8 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
             </div>
           ) : (
             <div className="space-y-2">
-              {/* Table Header */}
-              <div className="grid grid-cols-[120px_1fr_100px_100px_100px] gap-3 px-3 py-2 bg-background/50 rounded-md text-xs font-medium text-muted-foreground border">
+              {/* Table Header - Hidden on mobile */}
+              <div className="hidden md:grid grid-cols-[120px_1fr_100px_100px_100px] gap-3 px-3 py-2 bg-background/50 rounded-md text-xs font-medium text-muted-foreground border">
                 <div>Date</div>
                 <div>Project</div>
                 <div>Time In</div>
@@ -134,8 +138,9 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
 
               {/* Table Rows */}
               {dailyPunches.map((punch, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="grid grid-cols-[120px_1fr_100px_100px_100px] gap-3 px-3 py-3 bg-background rounded-md border hover:bg-accent/50 transition-colors">
+                <div key={index}>
+                  {/* Desktop View */}
+                  <div className="hidden md:grid grid-cols-[120px_1fr_100px_100px_100px] gap-3 px-3 py-3 bg-background rounded-md border hover:bg-accent/50 transition-colors">
                     <div className="text-sm font-medium">
                       {format(new Date(punch.date), "MMM dd, yyyy")}
                     </div>
@@ -159,11 +164,39 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                         "—"
                       )}
                     </div>
-                    <div className="text-sm font-semibold text-right">
-                      {punch.hours_worked.toFixed(2)} hrs
+                      <div className="text-sm font-semibold text-right">
+                        {punch.hours_worked.toFixed(2)} hrs
+                      </div>
+                    </div>
+                    
+                    {/* Mobile View */}
+                    <div className="md:hidden bg-background rounded-lg border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold">{format(new Date(punch.date), "MMM dd, yyyy")}</span>
+                        <span className="text-sm font-bold text-primary">{punch.hours_worked.toFixed(2)} hrs</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Briefcase className="h-3.5 w-3.5" />
+                        <span className="truncate">{punch.jobsite_name}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 text-green-600" />
+                          <span>{punch.check_in_time || "—"}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 text-red-600" />
+                          {punch.check_out_time ? (
+                            <span>{punch.check_out_time}</span>
+                          ) : punch.status === "active" ? (
+                            <Badge variant="secondary" className="text-xs">Active</Badge>
+                          ) : (
+                            <span>—</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
               ))}
             </div>
           )}

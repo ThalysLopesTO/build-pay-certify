@@ -50,20 +50,44 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
   const grandTotalEmployees = data.reduce((sum, jobsite) => sum + jobsite.employees.length, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground mb-1">Total Jobsites</p>
-          <p className="text-3xl font-bold text-primary">{data.length}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+        <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
+          <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent p-4 md:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <MapPin className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Jobsites</div>
+            </div>
+            <p className="text-3xl md:text-4xl font-bold text-foreground">{data.length}</p>
+            <p className="text-xs text-muted-foreground mt-1">Active locations</p>
+          </div>
         </Card>
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground mb-1">Total Employees</p>
-          <p className="text-3xl font-bold text-primary">{grandTotalEmployees}</p>
+        <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
+          <div className="bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent p-4 md:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <Users className="h-5 w-5 text-green-600" />
+              </div>
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Employees</div>
+            </div>
+            <p className="text-3xl md:text-4xl font-bold text-foreground">{grandTotalEmployees}</p>
+            <p className="text-xs text-muted-foreground mt-1">Team members</p>
+          </div>
         </Card>
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground mb-1">Total Hours</p>
-          <p className="text-3xl font-bold text-primary">{grandTotalHours.toFixed(2)}</p>
+        <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
+          <div className="bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent p-4 md:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-purple-500/10">
+                <MapPin className="h-5 w-5 text-purple-600" />
+              </div>
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Hours</div>
+            </div>
+            <p className="text-3xl md:text-4xl font-bold text-foreground">{grandTotalHours.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Hours worked</p>
+          </div>
         </Card>
       </div>
 
@@ -72,30 +96,36 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
         const jobsiteTotalHours = jobsite.employees.reduce((sum, emp) => sum + emp.total_hours, 0);
 
         return (
-          <Card key={jobsite.jobsite_id} className="overflow-hidden">
+          <Card key={jobsite.jobsite_id} className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-200">
             {/* Jobsite Header */}
-            <div className="bg-primary/5 p-4 border-b">
-              <div className="flex items-center justify-between">
+            <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 md:p-5 border-b">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
+                  <div className="p-2.5 rounded-xl bg-primary/15 shadow-sm">
                     <MapPin className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-foreground">{jobsite.jobsite_name}</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="text-lg md:text-xl font-bold text-foreground">{jobsite.jobsite_name}</h3>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <Users className="h-3.5 w-3.5" />
                       {jobsite.employees.length} {jobsite.employees.length === 1 ? 'employee' : 'employees'}
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground mb-1">Jobsite Total</p>
-                  <p className="text-2xl font-bold text-primary">{jobsiteTotalHours.toFixed(2)} hrs</p>
+                <div className="flex items-center gap-2 md:text-right">
+                  <div className="p-2 rounded-lg bg-primary/10 md:hidden">
+                    <MapPin className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Jobsite Total</p>
+                    <p className="text-2xl md:text-3xl font-bold text-primary mt-0.5">{jobsiteTotalHours.toFixed(2)} <span className="text-sm font-normal text-muted-foreground">hrs</span></p>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Employee Rows */}
-            <div className="p-4">
+            <div className="p-3 md:p-4 space-y-2">
               {jobsite.employees.map((employee) => (
                 <EmployeeTimeSummaryRow 
                   key={`${employee.employee_id}-${startDate.toISOString()}-${endDate.toISOString()}`}

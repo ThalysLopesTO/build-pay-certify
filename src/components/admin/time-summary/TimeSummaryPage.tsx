@@ -105,16 +105,16 @@ export const TimeSummaryPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 pb-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-sm">
             <BarChart3 className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Time Summary</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Time Summary</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
               View aggregated timesheet data for payroll processing
             </p>
           </div>
@@ -125,9 +125,10 @@ export const TimeSummaryPage: React.FC = () => {
             size="sm"
             onClick={handleManualRefresh}
             disabled={isLoading}
+            className="min-h-[44px]"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''} md:mr-2`} />
+            <span className="hidden md:inline">Refresh</span>
           </Button>
           {data && data.length > 0 && (
             <TimeSummaryExport
