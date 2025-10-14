@@ -43,24 +43,42 @@ export const TimeSummaryFilters: React.FC<TimeSummaryFiltersProps> = ({
     enabled: !!user?.companyId,
   });
 
-  // Fetch employees
-  const { data: employees = [] } = useQuery({
-    queryKey: ['employees', user?.companyId],
+  // Fetch employees - using consistent query key with useEmployeeDirectory
+  const { data: employees = [], isLoading: isLoadingEmployees, error: employeesError } = useQuery({
+    queryKey: ['employee-directory', user?.companyId],
     queryFn: async () => {
-      if (!user?.companyId) return [];
+      console.log('[TimeSummaryFilters] Fetching employees for company:', user?.companyId);
+      
+      if (!user?.companyId) {
+        console.log('[TimeSummaryFilters] No company ID available');
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('user_id, first_name, last_name')
         .eq('company_id', user.companyId)
         .eq('is_active', true)
+        .in('role', ['employee', 'foreman', 'admin', 'management'])
         .order('first_name');
-      if (error) throw error;
-      return data?.map(e => ({
+      
+      if (error) {
+        console.error('[TimeSummaryFilters] Error fetching employees:', error);
+        throw error;
+      }
+      
+      const formattedData = data?.map(e => ({
         id: e.user_id,
         name: `${e.first_name} ${e.last_name}`
       })) || [];
+      
+      console.log('[TimeSummaryFilters] Employees loaded:', formattedData.length, 'employees');
+      return formattedData;
     },
     enabled: !!user?.companyId,
+    staleTime: 1 * 60 * 1000, // 1 minute
+    refetchOnWindowFocus: true,
+    retry: 3,
   });
 
   const handleDateRangePreset = (preset: string) => {
@@ -273,7 +291,15 @@ export const TimeSummaryFilters: React.FC<TimeSummaryFiltersProps> = ({
             </PopoverTrigger>
             <PopoverContent className="w-64 p-3" align="start">
               <div className="max-h-64 overflow-y-auto space-y-2">
-                {Array.isArray(employees) && employees.length > 0 ? (
+                {isLoadingEmployees ? (
+                  <div className="text-sm text-muted-foreground text-center py-4">
+                    Loading employees...
+                  </div>
+                ) : employeesError ? (
+                  <div className="text-sm text-destructive text-center py-4">
+                    Error loading employees
+                  </div>
+                ) : Array.isArray(employees) && employees.length > 0 ? (
                   employees.map((employee) => (
                     <div key={employee.id} className="flex items-center space-x-2">
                       <Checkbox
