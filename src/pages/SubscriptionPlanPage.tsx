@@ -13,34 +13,29 @@ const SubscriptionPlanPage = () => {
   const { createCheckout, isCreatingCheckout } = useStripeSubscription();
   const navigate = useNavigate();
 
-  // Track subscription state & prevent double auto-start
   const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null);
   const autoStartedRef = useRef(false);
 
-  // Redirect authenticated users with active subscription to dashboard
+  // ✅ Check subscription and redirect if already subscribed
   useEffect(() => {
-    if (isAuthenticated && user) {
-      const checkSubscription = async () => {
-        try {
-          const { data, error } = await supabase.functions.invoke("check-subscription");
-          if (error) throw error;
+    const checkSubscription = async () => {
+      if (!user) return;
+      try {
+        const { data, error } = await supabase.functions.invoke("check-subscription");
+        if (error) throw error;
 
-          const subscribed = !!data?.subscribed;
-          setIsSubscribed(subscribed);
+        const subscribed = !!data?.subscribed;
+        setIsSubscribed(subscribed);
+        if (subscribed) navigate("/admin/dashboard");
+      } catch (error) {
+        console.error("Error checking subscription:", error);
+        setIsSubscribed(false);
+      }
+    };
 
-          if (subscribed) {
-            navigate("/admin/dashboard");
-          }
-        } catch (error) {
-          console.error("Error checking subscription:", error);
-          // If uncertain, allow auto-start to proceed
-          setIsSubscribed(false);
-        }
-      };
-
+    if (isAuthenticated) {
       checkSubscription();
     } else {
-      // Not logged in → allow auto-start
       setIsSubscribed(false);
     }
   }, [isAuthenticated, user, navigate]);
@@ -54,26 +49,26 @@ const SubscriptionPlanPage = () => {
     }
   };
 
-  // Auto-start Stripe Checkout when arriving with ?start=1
+  // ✅ Auto-start checkout when ?start=1 is in URL
   useEffect(() => {
+    // Wait until auth + subscription check are resolved
+    if (isSubscribed === null) return;
     if (autoStartedRef.current || isSubscribed === true) return;
 
     const params = new URLSearchParams(window.location.search);
     const shouldStart = params.get("start") === "1";
 
-    if (shouldStart && !isCreatingCheckout) {
+    if (shouldStart) {
       autoStartedRef.current = true;
-      // Avoid Strict Mode double-invoke
-      const t = setTimeout(() => {
-        handleStartSubscription();
-      }, 0);
-      return () => clearTimeout(t);
+      // slight delay to ensure hooks & Stripe are ready
+      setTimeout(() => handleStartSubscription(), 600);
     }
-  }, [isCreatingCheckout, isSubscribed]);
+  }, [isSubscribed]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-orange-900 p-8">
       <div className="max-w-6xl mx-auto">
+        {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mb-6">
             <Building className="h-12 w-12 text-orange-500 mr-4" />
@@ -85,6 +80,7 @@ const SubscriptionPlanPage = () => {
           </p>
         </div>
 
+        {/* Pricing Card */}
         <div className="flex justify-center mb-12">
           <Card className="border-2 border-orange-500 bg-gradient-to-b from-orange-500/10 to-slate-800/50 backdrop-blur-sm relative w-full max-w-md">
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -138,6 +134,7 @@ const SubscriptionPlanPage = () => {
           </Card>
         </div>
 
+        {/* Footer */}
         <div className="text-center">
           <p className="text-slate-400 mb-4">Already have an account?</p>
           <div className="space-x-4">
