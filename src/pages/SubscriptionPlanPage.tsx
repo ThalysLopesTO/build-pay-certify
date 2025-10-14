@@ -100,7 +100,7 @@ const SubscriptionPlanPage = () => {
             <CardContent>
               <ul className="space-y-4 mb-8">
                 {[
-                  "Unlimited employees",
+                  "50 Employees account",
                   "Payroll & Invoice System",
                   "Certificate & Safety Tracking",
                   "Multi-role Access: Admin, Foreman, Worker",
