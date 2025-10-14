@@ -41,16 +41,14 @@ const SubscriptionPlanPage = () => {
   }, [isAuthenticated, user, navigate]);
 
   // ✅ Regular button handler (used on page)
-  const handleStartSubscriptionWithSource = async (source?: string) => {
+  const handleStartSubscription = async () => {
     try {
-      await createCheckout({ planName: "StackBuild Pro", source });
+      await createCheckout({ planName: "StackBuild Pro" });
     } catch (error: any) {
       console.error("Error creating checkout:", error);
       toast.error("Failed to start checkout process");
     }
   };
-
-  const handleStartSubscription = () => handleStartSubscriptionWithSource("on-page");
 
   // ✅ Auto-start Stripe checkout if URL contains ?start=1
   useEffect(() => {
@@ -61,8 +59,7 @@ const SubscriptionPlanPage = () => {
 
     if (shouldStart && !isCreatingCheckout) {
       autoStartedRef.current = true;
-      const source = params.get("src") || "unknown";
-      handleStartSubscriptionWithSource(source);
+      handleStartSubscription();
     }
   }, [isCreatingCheckout, isSubscribed]);
 
