@@ -6,12 +6,15 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import DailyReportsForm from '@/components/admin/DailyReportsForm';
 import DailyReportsTable from '@/components/admin/DailyReportsTable';
 import DailyReportsFilters from '@/components/admin/DailyReportsFilters';
+import { DailyReportsPagination } from '@/components/admin/daily-reports/DailyReportsPagination';
 import { useToast } from '@/hooks/use-toast';
 
 const ForemanDailyReports = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
   const [filters, setFilters] = useState<{
     jobsite_id?: string;
     date_from?: string;
@@ -22,7 +25,6 @@ const ForemanDailyReports = () => {
     // Default to current user's reports for foremen
     submitted_by: user?.id || undefined,
   });
-
 
   // Use debounced filters to prevent too many queries
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
@@ -35,16 +37,21 @@ const ForemanDailyReports = () => {
     return () => clearTimeout(timer);
   }, [filters]);
 
-  const { data: reports = [], isLoading, error, refetch } = useDailyReports(debouncedFilters);
+  const { data, isLoading, error, refetch } = useDailyReports(debouncedFilters, { page: currentPage, pageSize });
+  const reports = data?.data || [];
+  const totalCount = data?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   const handleFiltersChange = useCallback((newFilters: typeof filters) => {
     setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
   }, []);
 
   const handleClearFilters = useCallback(() => {
     setFilters({
       submitted_by: user?.id || undefined, // Keep user filter for foremen
     });
+    setCurrentPage(1);
   }, [user?.id]);
 
   // Manual refresh for when connection is restored
@@ -121,6 +128,17 @@ const ForemanDailyReports = () => {
 
         {/* Reports Table */}
         <DailyReportsTable reports={filteredReports} isLoading={isLoading} />
+
+        {/* Pagination */}
+        {!isLoading && totalCount > 0 && (
+          <DailyReportsPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            itemsPerPage={pageSize}
+            onPageChange={setCurrentPage}
+          />
+        )}
 
         {/* Form Modal */}
         <DailyReportsForm

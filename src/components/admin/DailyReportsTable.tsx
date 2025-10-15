@@ -11,17 +11,20 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent } from '@/components/ui/card';
-import { Eye, Camera, Download, FileText, MapPin, Clock, User, Edit, Lock, Trash2 } from 'lucide-react';
+import { Eye, Camera, Download, FileText, MapPin, Clock, User, Edit, Lock, Trash2, Package, X } from 'lucide-react';
 import { DailyReport } from '@/hooks/useDailyReports';
 import { useDailyReportPDF } from '@/hooks/useDailyReportPDF';
+import { useBulkDailyReportPDF } from '@/hooks/useBulkDailyReportPDF';
 import { useDailyReportDelete } from '@/hooks/useDailyReportDelete';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { generateZipFileName } from '@/utils/fileNaming';
 import DailyReportDetailsModal from './DailyReportDetailsModal';
 import DailyReportEditModal from './DailyReportEditModal';
 import { DailyReportDeleteConfirmDialog } from './DailyReportDeleteConfirmDialog';
@@ -35,8 +38,11 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [editingReport, setEditingReport] = useState<DailyReport | null>(null);
   const [deletingReport, setDeletingReport] = useState<DailyReport | null>(null);
+  const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set());
+  const [isGeneratingZip, setIsGeneratingZip] = useState(false);
   
   const { generateDailyReportPDF } = useDailyReportPDF();
+  const { generateBulkPDFs, downloadZipFile } = useBulkDailyReportPDF();
   const { mutate: deleteReport, isPending: isDeleting } = useDailyReportDelete();
   const { settings: companySettings } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
@@ -46,6 +52,38 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
   // Check if user is admin
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
+  // Multi-select handlers
+  const handleSelectAll = () => {
+    if (isAllSelected()) {
+      setSelectedReportIds(new Set());
+    } else {
+      const allIds = new Set(reports.map(r => r.id));
+      setSelectedReportIds(allIds);
+    }
+  };
+
+  const handleSelectOne = (reportId: string) => {
+    const newSet = new Set(selectedReportIds);
+    if (newSet.has(reportId)) {
+      newSet.delete(reportId);
+    } else {
+      newSet.add(reportId);
+    }
+    setSelectedReportIds(newSet);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedReportIds(new Set());
+  };
+
+  const isAllSelected = () => {
+    return reports.length > 0 && reports.every(r => selectedReportIds.has(r.id));
+  };
+
+  const isSomeSelected = () => {
+    return selectedReportIds.size > 0 && !isAllSelected();
+  };
+
   const handleDeleteReport = (report: DailyReport) => {
     setDeletingReport(report);
   };
@@ -54,6 +92,66 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
     if (deletingReport) {
       deleteReport(deletingReport.id);
       setDeletingReport(null);
+    }
+  };
+
+  const handleDownloadSelectedPDFs = async () => {
+    if (selectedReportIds.size === 0) return;
+
+    setIsGeneratingZip(true);
+
+    try {
+      const selectedReports = reports.filter(r => selectedReportIds.has(r.id));
+
+      toast({
+        title: "Generating PDFs",
+        description: `Creating ${selectedReports.length} PDF report${selectedReports.length !== 1 ? 's' : ''}...`,
+      });
+
+      const zipBlob = await generateBulkPDFs({
+        reports: selectedReports,
+        companySettings: {
+          company_name: companySettings?.company_name,
+          company_address: companySettings?.company_address,
+          company_phone: companySettings?.company_phone,
+          company_email: companySettings?.company_email,
+          timezone: companySettings?.timezone,
+        },
+        logoUrl,
+        onProgress: (current, total) => {
+          if (current % 5 === 0 || current === total) {
+            toast({
+              title: "Generating PDFs",
+              description: `Progress: ${current}/${total} PDFs created`,
+            });
+          }
+        }
+      });
+
+      const zipFileName = generateZipFileName(
+        selectedReports, 
+        companySettings?.company_name
+      );
+      
+      downloadZipFile(zipBlob, zipFileName);
+
+      toast({
+        title: "Success",
+        description: `✅ Downloaded ${selectedReports.length} report${selectedReports.length !== 1 ? 's' : ''} as ZIP file`,
+      });
+
+      // Clear selection after successful download
+      setSelectedReportIds(new Set());
+
+    } catch (error) {
+      console.error('Error generating ZIP:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF bundle. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingZip(false);
     }
   };
 
@@ -152,12 +250,62 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
 
   return (
     <>
+      {/* Selection indicator bar */}
+      {selectedReportIds.size > 0 && (
+        <div className="sticky top-0 z-10 bg-primary text-primary-foreground px-6 py-3 rounded-t-lg shadow-md mb-2">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-sm">
+              {selectedReportIds.size} report{selectedReportIds.size !== 1 ? 's' : ''} selected
+            </span>
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleDownloadSelectedPDFs}
+                disabled={isGeneratingZip}
+                size="sm"
+                variant="secondary"
+                className="h-8"
+              >
+                {isGeneratingZip ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-2"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Package className="h-4 w-4 mr-1" />
+                    Download as ZIP
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleClearSelection}
+                className="h-8 hover:bg-primary-foreground/20"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Clear
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Card className="bg-background border shadow-sm">
         <CardContent className="p-0">
           <div className="overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="border-b bg-muted/30">
+                  <TableHead className="font-semibold text-xs uppercase tracking-wide py-4 px-6 w-12">
+                    <Checkbox
+                      checked={isAllSelected()}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all reports"
+                      className="data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground"
+                      {...(isSomeSelected() && !isAllSelected() ? { 'data-state': 'indeterminate' as any } : {})}
+                    />
+                  </TableHead>
                   <TableHead className="font-semibold text-xs uppercase tracking-wide py-4 px-6">
                     Jobsite
                   </TableHead>
@@ -179,12 +327,24 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reports.map((report, index) => (
-                  <TableRow 
-                    key={report.id} 
-                    className="hover:bg-muted/40 transition-colors duration-150 group border-b last:border-b-0"
-                  >
-                    <TableCell className="py-4 px-6">
+                {reports.map((report, index) => {
+                  const isSelected = selectedReportIds.has(report.id);
+                  return (
+                    <TableRow 
+                      key={report.id} 
+                      className={`hover:bg-muted/40 transition-colors duration-150 group border-b last:border-b-0 ${
+                        isSelected ? 'bg-primary/5 hover:bg-primary/10' : ''
+                      }`}
+                    >
+                      <TableCell className="py-4 px-6">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => handleSelectOne(report.id)}
+                          aria-label={`Select report from ${report.jobsites?.name || 'Unknown'}`}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </TableCell>
+                      <TableCell className="py-4 px-6">
                       <div>
                         <div className="font-medium text-sm">
                           {report.jobsites?.name || 'Unknown Jobsite'}
@@ -315,7 +475,8 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

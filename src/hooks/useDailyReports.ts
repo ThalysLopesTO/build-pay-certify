@@ -32,21 +32,54 @@ export interface DailyReportFormData {
   report_date: Date;
 }
 
-// Optimized hook with debouncing and better performance
-export const useDailyReports = (filters?: {
-  jobsite_id?: string;
-  date_from?: string;
-  date_to?: string;
-  submitted_by?: string;
-}) => {
+// Optimized hook with pagination support
+export const useDailyReports = (
+  filters?: {
+    jobsite_id?: string;
+    date_from?: string;
+    date_to?: string;
+    submitted_by?: string;
+  },
+  pagination?: {
+    page: number;
+    pageSize: number;
+  }
+) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['daily-reports', user?.companyId, filters],
+    queryKey: ['daily-reports', user?.companyId, filters, pagination],
     queryFn: async () => {
-      if (!user?.companyId) return [];
+      if (!user?.companyId) return { data: [], totalCount: 0 };
 
-      // Optimize query by limiting JOINs and using more efficient select
+      // First, get the total count
+      let countQuery = supabase
+        .from('daily_reports')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', user.companyId);
+
+      // Apply filters to count query
+      if (filters?.jobsite_id) {
+        countQuery = countQuery.eq('jobsite_id', filters.jobsite_id);
+      }
+      if (filters?.date_from) {
+        countQuery = countQuery.gte('report_date', filters.date_from);
+      }
+      if (filters?.date_to) {
+        countQuery = countQuery.lte('report_date', filters.date_to);
+      }
+      if (filters?.submitted_by) {
+        countQuery = countQuery.eq('submitted_by', filters.submitted_by);
+      }
+
+      const { count: totalCount, error: countError } = await countQuery;
+
+      if (countError) {
+        console.error('Daily reports count error:', countError);
+        throw countError;
+      }
+
+      // Now get the paginated data
       let query = supabase
         .from('daily_reports')
         .select(`
@@ -62,24 +95,28 @@ export const useDailyReports = (filters?: {
           )
         `)
         .eq('company_id', user.companyId)
-        .order('created_at', { ascending: false })
-        .limit(50); // Limit initial load for better performance
+        .order('created_at', { ascending: false });
 
-      // Apply filters efficiently
+      // Apply filters to data query
       if (filters?.jobsite_id) {
         query = query.eq('jobsite_id', filters.jobsite_id);
       }
-
       if (filters?.date_from) {
         query = query.gte('report_date', filters.date_from);
       }
-
       if (filters?.date_to) {
         query = query.lte('report_date', filters.date_to);
       }
-
       if (filters?.submitted_by) {
         query = query.eq('submitted_by', filters.submitted_by);
+      }
+
+      // Apply pagination
+      if (pagination) {
+        const { page, pageSize } = pagination;
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
+        query = query.range(from, to);
       }
 
       const { data, error } = await query;
@@ -102,7 +139,7 @@ export const useDailyReports = (filters?: {
         };
       });
       
-      return reportsWithCanEdit;
+      return { data: reportsWithCanEdit, totalCount: totalCount || 0 };
     },
     enabled: !!user?.companyId,
     staleTime: 2 * 60 * 1000, // 2 minutes for daily reports

@@ -342,7 +342,12 @@ function photosSection(doc: ExtendedJsPDF, photos: PhotoItem[]) {
 
 // ---------- Public API ----------
 export const useDailyReportPDF = () => {
-  const generateDailyReportPDF = async ({ report, companySettings, logoUrl }: GenerateArgs) => {
+  const generateDailyReportPDF = async ({ 
+    report, 
+    companySettings, 
+    logoUrl,
+    returnBlob = false 
+  }: GenerateArgs & { returnBlob?: boolean }) => {
     const doc = new jsPDF("p", "pt", "a4") as ExtendedJsPDF;
 
     // Header on first page
@@ -369,10 +374,15 @@ export const useDailyReportPDF = () => {
     // Footer/page numbers
     drawFooter(doc, companySettings?.timezone);
 
-    // Save
-    const safeJobsite = (report.jobsite || "Jobsite").replace(/[^\w\d\-_. ]+/g, "");
-    const safeDate = (report.reportDate || "").replace(/[^\w\d\-_. ]+/g, "");
-    doc.save(`Daily_Report_${safeJobsite}_${safeDate}.pdf`);
+    // Return blob or save based on parameter
+    if (returnBlob) {
+      return doc.output('blob');
+    } else {
+      // Save
+      const safeJobsite = (report.jobsite || "Jobsite").replace(/[^\w\d\-_. ]+/g, "");
+      const safeDate = (report.reportDate || "").replace(/[^\w\d\-_. ]+/g, "");
+      doc.save(`Daily_Report_${safeJobsite}_${safeDate}.pdf`);
+    }
   };
 
   return { generateDailyReportPDF };

@@ -6,10 +6,13 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import DailyReportsForm from './DailyReportsForm';
 import DailyReportsTable from './DailyReportsTable';
 import DailyReportsFilters from './DailyReportsFilters';
+import { DailyReportsPagination } from './daily-reports/DailyReportsPagination';
 
 const DailyReportsManagement = () => {
   const { user } = useAuth();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
   const [filters, setFilters] = useState<{
     jobsite_id?: string;
     date_from?: string;
@@ -18,7 +21,10 @@ const DailyReportsManagement = () => {
     search?: string;
   }>({});
 
-  const { data: reports = [], isLoading, error } = useDailyReports(filters);
+  const { data, isLoading, error } = useDailyReports(filters, { page: currentPage, pageSize });
+  const reports = data?.data || [];
+  const totalCount = data?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   // Early return if there's an error
   if (error) {
@@ -63,6 +69,12 @@ const DailyReportsManagement = () => {
 
   const handleClearFilters = () => {
     setFilters({});
+    setCurrentPage(1);
+  };
+
+  const handleFiltersChange = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
   const canCreateReports = user?.role && ['foreman', 'admin', 'super_admin'].includes(user.role);
@@ -95,12 +107,23 @@ const DailyReportsManagement = () => {
         {/* Filters Section */}
         <DailyReportsFilters
           filters={filters}
-          onFiltersChange={setFilters}
+          onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
         />
 
         {/* Reports Table */}
         <DailyReportsTable reports={filteredReports} isLoading={isLoading} />
+
+        {/* Pagination */}
+        {!isLoading && totalCount > 0 && (
+          <DailyReportsPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            itemsPerPage={pageSize}
+            onPageChange={setCurrentPage}
+          />
+        )}
 
         {canCreateReports && (
           <DailyReportsForm
