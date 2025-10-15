@@ -5,6 +5,12 @@ import { DailyReport } from './useDailyReports';
 import { generatePDFFileName, generateZipFileName } from '@/utils/fileNaming';
 import { getReportDisplayDate, getSubmissionDisplayTime } from '@/utils/timezone';
 
+// Helper function to yield control back to the browser
+const yieldToMainThread = () => new Promise(resolve => setTimeout(resolve, 0));
+
+// Process PDFs in batches to prevent browser freezing
+const BATCH_SIZE = 3;
+
 interface BulkPDFOptions {
   reports: DailyReport[];
   companySettings?: {
@@ -76,6 +82,11 @@ export const useBulkDailyReportPDF = () => {
         // Update progress
         if (onProgress) {
           onProgress(i + 1, reports.length);
+        }
+
+        // Yield to browser every BATCH_SIZE reports to keep UI responsive
+        if ((i + 1) % BATCH_SIZE === 0) {
+          await yieldToMainThread();
         }
       } catch (error) {
         console.error(`Error generating PDF for report ${report.id}:`, error);

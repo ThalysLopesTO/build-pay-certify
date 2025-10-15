@@ -40,6 +40,7 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
   const [deletingReport, setDeletingReport] = useState<DailyReport | null>(null);
   const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set());
   const [isGeneratingZip, setIsGeneratingZip] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0 });
   
   const { generateDailyReportPDF } = useDailyReportPDF();
   const { generateBulkPDFs, downloadZipFile } = useBulkDailyReportPDF();
@@ -99,14 +100,10 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
     if (selectedReportIds.size === 0) return;
 
     setIsGeneratingZip(true);
+    setGenerationProgress({ current: 0, total: selectedReportIds.size });
 
     try {
       const selectedReports = reports.filter(r => selectedReportIds.has(r.id));
-
-      toast({
-        title: "Generating PDFs",
-        description: `Creating ${selectedReports.length} PDF report${selectedReports.length !== 1 ? 's' : ''}...`,
-      });
 
       const zipBlob = await generateBulkPDFs({
         reports: selectedReports,
@@ -119,12 +116,7 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
         },
         logoUrl,
         onProgress: (current, total) => {
-          if (current % 5 === 0 || current === total) {
-            toast({
-              title: "Generating PDFs",
-              description: `Progress: ${current}/${total} PDFs created`,
-            });
-          }
+          setGenerationProgress({ current, total });
         }
       });
 
@@ -152,6 +144,7 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
       });
     } finally {
       setIsGeneratingZip(false);
+      setGenerationProgress({ current: 0, total: 0 });
     }
   };
 
@@ -268,7 +261,7 @@ const DailyReportsTable: React.FC<DailyReportsTableProps> = ({ reports, isLoadin
                 {isGeneratingZip ? (
                   <>
                     <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-2"></div>
-                    Generating...
+                    {generationProgress.current}/{generationProgress.total}
                   </>
                 ) : (
                   <>
