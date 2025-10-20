@@ -59,6 +59,11 @@ export const managementMenuItems = {
       id: 'payroll-summary',
     },
     {
+      title: 'Daily Reports',
+      icon: FileText,
+      id: 'daily-reports',
+    },
+    {
       title: 'Bills & Expenses',
       icon: Receipt,
       id: 'bills-expenses',

@@ -21,6 +21,7 @@ import ManagementDashboardHome from '../components/management/ManagementDashboar
 import ManagementNotifications from '../components/management/ManagementNotifications';
 import ManagementTimesheetView from '../components/management/ManagementTimesheetView';
 import MyTimesheetHistory from '../components/common/MyTimesheetHistory';
+import DailyReportsManagement from '../components/admin/DailyReportsManagement';
 
 const ManagementDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -50,6 +51,8 @@ const ManagementDashboard = () => {
         return <PayrollSummary />;
       case 'bills-expenses':
         return <IncomeExpensesManagement />;
+      case 'daily-reports':
+        return <DailyReportsManagement />;
       case 'employees':
         return <EmployeeManagement onNavigateToRegistration={() => setActiveTab('employee-registration')} />;
       case 'employee-registration':

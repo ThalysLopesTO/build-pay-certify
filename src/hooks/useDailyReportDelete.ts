@@ -25,7 +25,7 @@ export const useDailyReportDelete = () => {
         throw new Error('Failed to verify user permissions');
       }
 
-      if (!userProfile || !['admin', 'super_admin'].includes(userProfile.role)) {
+      if (!userProfile || !['admin', 'super_admin', 'management'].includes(userProfile.role)) {
         throw new Error('Insufficient permissions to delete daily reports');
       }
 
