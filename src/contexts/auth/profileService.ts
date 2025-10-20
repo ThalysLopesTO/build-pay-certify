@@ -39,6 +39,16 @@ export const fetchUserProfile = async (userId: string) => {
     console.log('📊 Profile loaded:', profile);
     console.log('🏢 Company loaded:', company);
 
+    // Check if user account is active
+    if (profile.is_active === false) {
+      console.warn('⚠️ User account is archived/inactive');
+      return { 
+        profile: null, 
+        company: null, 
+        error: 'Your account has been deactivated. Please contact your administrator for assistance.' 
+      };
+    }
+
     // For paid users (Stripe verified), skip approval check
     if (profile.stripe_verified) {
       console.log('💳 User is Stripe verified - bypassing approval check');

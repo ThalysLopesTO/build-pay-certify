@@ -18,7 +18,7 @@ export const login = async (email: string, password: string, expectedRole?: 'emp
       
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
-        .select('role, company_id')
+        .select('role, company_id, is_active')
         .eq('user_id', data.user.id)
         .single();
 
@@ -47,6 +47,17 @@ export const login = async (email: string, password: string, expectedRole?: 'emp
       }
 
       console.log('✅ User profile found:', profile);
+
+      // Check if account is active
+      if (profile.is_active === false) {
+        console.error('❌ Account is archived/inactive');
+        await supabase.auth.signOut();
+        return { 
+          error: { 
+            message: "Your account has been deactivated. Please contact your administrator for assistance." 
+          } 
+        };
+      }
 
       // Check role compatibility
       if (expectedRole === 'employee' && profile.role !== 'employee') {

@@ -129,7 +129,7 @@ serve(async (req) => {
     if (loginData.expectedRole) {
       const { data: profile, error: profileError } = await supabaseAdmin
         .from('user_profiles')
-        .select('role')
+        .select('role, is_active')
         .eq('user_id', user.id)
         .single()
 
@@ -139,6 +139,21 @@ serve(async (req) => {
           JSON.stringify({ 
             success: false,
             error: 'Unable to verify user role. Please contact your administrator.' 
+          }),
+          {
+            headers: corsHeaders,
+            status: 403,
+          },
+        )
+      }
+
+      // Check if account is active
+      if (profile.is_active === false) {
+        console.log('Account is archived/inactive for user:', user.id)
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Your account has been deactivated. Please contact your administrator for assistance.' 
           }),
           {
             headers: corsHeaders,
