@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { formatDateFromDB, formatDateForDB, parseLocalDate } from '@/utils/dateUtils';
 import { HierarchicalCategorySelector } from './bills-expenses/HierarchicalCategorySelector';
 import { HierarchicalCategoryManager } from './bills-expenses/HierarchicalCategoryManager';
 import { useHierarchicalCategories, TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
@@ -122,7 +123,7 @@ const IncomeExpensesManagement = () => {
         expense_title: formData.expense_title,
         category_id: formData.category_id || null,
         vendor_payee: formData.vendor_payee,
-        expense_date: format(formData.expense_date, 'yyyy-MM-dd'),
+        expense_date: formatDateForDB(formData.expense_date),
         amount: parseFloat(formData.amount),
         payment_status: formData.payment_status,
         payment_method: formData.payment_method || null,
@@ -215,7 +216,7 @@ const IncomeExpensesManagement = () => {
       expense_title: transaction.expense_title,
       category_id: transaction.category_id,
       vendor_payee: transaction.vendor_payee,
-      expense_date: new Date(transaction.expense_date),
+      expense_date: parseLocalDate(transaction.expense_date),
       amount: transaction.amount.toString(),
       payment_status: transaction.payment_status === 'scheduled' ? 'pending' : transaction.payment_status as 'paid' | 'unpaid' | 'pending',
       payment_method: transaction.payment_method || '',
@@ -303,7 +304,7 @@ const IncomeExpensesManagement = () => {
     try {
       // Prepare data for export
       const exportData = filteredTransactions.map(transaction => ({
-        'Date': format(new Date(transaction.expense_date), 'yyyy-MM-dd'),
+        'Date': transaction.expense_date,
         'Type': transaction.transaction_type === 'income' ? 'Income' : 'Expense',
         'Title': transaction.expense_title,
         'Category': getCategoryDisplay(transaction.category_id) || 'Uncategorized',
@@ -869,7 +870,7 @@ const IncomeExpensesManagement = () => {
                   paginatedTransactions.map((transaction) => (
                     <TableRow key={transaction.id} className="border-b border-slate-100 hover:bg-slate-50/30">
                       <TableCell className="font-medium text-slate-700 py-3">
-                        {format(new Date(transaction.expense_date), 'MMM dd, yyyy')}
+                        {formatDateFromDB(transaction.expense_date, 'MMM dd, yyyy')}
                       </TableCell>
                       <TableCell className="py-3">
                         {getTransactionTypeBadge(transaction.transaction_type)}
