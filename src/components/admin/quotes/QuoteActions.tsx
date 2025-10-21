@@ -51,7 +51,11 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this quote?')) {
+    const message = quote.status === 'invoiced' 
+      ? 'This quote has been converted to an invoice. Are you sure you want to delete it? This will not delete the invoice.'
+      : 'Are you sure you want to delete this quote?';
+      
+    if (window.confirm(message)) {
       try {
         await deleteQuote.mutateAsync(quote.id);
         onRefresh();
@@ -111,6 +115,15 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
+          {quote.status === 'invoiced' && quote.invoice_id && (
+            <DropdownMenuItem onClick={() => {
+              window.location.href = `/admin?tab=invoices&invoice=${quote.invoice_id}`;
+            }}>
+              <FileText className="mr-2 h-4 w-4" />
+              View Invoice
+            </DropdownMenuItem>
+          )}
+          
           {quote.status !== 'invoiced' && (
             <DropdownMenuItem onClick={() => onEdit(quote)}>
               <Edit className="mr-2 h-4 w-4" />
@@ -182,12 +195,12 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
             </>
           )}
           
-          {quote.status !== 'accepted' && quote.status !== 'invoiced' && (
+          {quote.status !== 'accepted' && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete Quote
+                Delete Quote{quote.status === 'invoiced' && ' (Already Invoiced)'}
               </DropdownMenuItem>
             </>
           )}
