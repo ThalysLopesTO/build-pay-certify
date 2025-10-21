@@ -22,8 +22,7 @@ const ForemanDailyReports = () => {
     submitted_by?: string;
     search?: string;
   }>({
-    // Default to current user's reports for foremen
-    submitted_by: user?.id || undefined,
+    // Show all company reports by default
   });
 
   // Use debounced filters to prevent too many queries
@@ -48,11 +47,9 @@ const ForemanDailyReports = () => {
   }, []);
 
   const handleClearFilters = useCallback(() => {
-    setFilters({
-      submitted_by: user?.id || undefined, // Keep user filter for foremen
-    });
+    setFilters({});
     setCurrentPage(1);
-  }, [user?.id]);
+  }, []);
 
   // Manual refresh for when connection is restored
   const handleRefresh = useCallback(() => {
