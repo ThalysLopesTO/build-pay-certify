@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Bell, DollarSign, AlertTriangle, Award, FileText, Check, MoreHorizontal } from 'lucide-react';
+import { Bell, DollarSign, AlertTriangle, Award, FileText, Check, MoreHorizontal, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface ManagementNotificationDropdownProps {
   notifications: Notification[];
@@ -24,7 +25,8 @@ const ManagementNotificationDropdown: React.FC<ManagementNotificationDropdownPro
   onClose
 }) => {
   const navigate = useNavigate();
-  const { markAsRead, markAsUnread, dismiss, markAllAsRead, isLoading } = useNotificationActions();
+  const { markAsRead, markAsUnread, dismiss, markAllAsRead, clearAllNotifications, isLoading } = useNotificationActions();
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -288,7 +290,7 @@ const ManagementNotificationDropdown: React.FC<ManagementNotificationDropdownPro
       </ScrollArea>
 
       {/* Footer */}
-      <div className="p-3 border-t border-border bg-muted/50">
+      <div className="p-3 border-t border-border bg-muted/50 space-y-2">
         <Button
           variant="ghost"
           size="sm"
@@ -300,7 +302,35 @@ const ManagementNotificationDropdown: React.FC<ManagementNotificationDropdownPro
         >
           View all notifications
         </Button>
+        
+        {notifications.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={() => setShowClearConfirm(true)}
+            disabled={isLoading}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear all notifications
+          </Button>
+        )}
       </div>
+
+      <ConfirmDialog
+        open={showClearConfirm}
+        onOpenChange={setShowClearConfirm}
+        title="Clear all notifications?"
+        description="This will remove all notifications from your list. This action cannot be undone."
+        confirmText="Clear all"
+        cancelText="Cancel"
+        variant="destructive"
+        isLoading={isLoading}
+        onConfirm={() => {
+          clearAllNotifications();
+          setShowClearConfirm(false);
+        }}
+      />
     </div>
   );
 };

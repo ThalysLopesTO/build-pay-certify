@@ -104,12 +104,42 @@ export const useNotificationActions = () => {
     },
   });
 
+  const clearAllNotificationsMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.companyId) throw new Error('No company ID');
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_dismissed: true, updated_at: new Date().toISOString() })
+        .eq('company_id', user.companyId)
+        .eq('is_dismissed', false);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({
+        title: "All notifications cleared",
+        description: "All your notifications have been dismissed",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to clear notifications",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     markAsRead: markAsReadMutation.mutate,
     markAsUnread: markAsUnreadMutation.mutate,
     dismiss: dismissMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,
+    clearAllNotifications: clearAllNotificationsMutation.mutate,
     isLoading: markAsReadMutation.isPending || markAsUnreadMutation.isPending || 
-               dismissMutation.isPending || markAllAsReadMutation.isPending,
+               dismissMutation.isPending || markAllAsReadMutation.isPending ||
+               clearAllNotificationsMutation.isPending,
   };
 };

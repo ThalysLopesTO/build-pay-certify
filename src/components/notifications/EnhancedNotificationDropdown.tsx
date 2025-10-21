@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { 
   AlertCircle, 
@@ -19,7 +19,8 @@ import {
   CheckCircle2,
   User,
   Building2,
-  Wrench
+  Wrench,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ import {
 import { Notification } from '@/hooks/notifications/types';
 import { useNotificationActions } from '@/hooks/notifications/useNotificationActions';
 import { useNavigate } from 'react-router-dom';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface EnhancedNotificationDropdownProps {
   notifications: Notification[];
@@ -44,8 +46,9 @@ const EnhancedNotificationDropdown: React.FC<EnhancedNotificationDropdownProps> 
   notifications, 
   onClose 
 }) => {
-  const { markAsRead, markAsUnread, dismiss, markAllAsRead } = useNotificationActions();
+  const { markAsRead, markAsUnread, dismiss, markAllAsRead, clearAllNotifications, isLoading } = useNotificationActions();
   const navigate = useNavigate();
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const getNotificationIcon = (type: string) => {
     const iconClass = "h-6 w-6";
@@ -447,7 +450,7 @@ const EnhancedNotificationDropdown: React.FC<EnhancedNotificationDropdownProps> 
 
       {/* Enhanced Footer */}
       {notifications.length > 0 && (
-        <div className="p-4 border-t border-gray-100 bg-white">
+        <div className="p-4 border-t border-gray-100 bg-white space-y-2">
           <Button
             variant="ghost"
             size="sm"
@@ -460,8 +463,34 @@ const EnhancedNotificationDropdown: React.FC<EnhancedNotificationDropdownProps> 
             View all notifications
             <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-sm bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 transition-colors rounded-lg py-3 font-medium"
+            onClick={() => setShowClearConfirm(true)}
+            disabled={isLoading}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear all notifications
+          </Button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showClearConfirm}
+        onOpenChange={setShowClearConfirm}
+        title="Clear all notifications?"
+        description="This will remove all notifications from your list. This action cannot be undone."
+        confirmText="Clear all"
+        cancelText="Cancel"
+        variant="destructive"
+        isLoading={isLoading}
+        onConfirm={() => {
+          clearAllNotifications();
+          setShowClearConfirm(false);
+        }}
+      />
     </div>
   );
 };
