@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MoreHorizontal, Edit, Send, FileText, Trash2, CheckCircle, XCircle, Download } from 'lucide-react';
 import { Quote, useUpdateQuote, useDeleteQuote, useConvertQuoteToInvoice } from '@/hooks/quotes';
 import { useToast } from '@/hooks/use-toast';
@@ -141,26 +140,34 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
             </>
           )}
 
-          {/* Status Change Section */}
+          {/* Individual status change options */}
           {quote.status !== 'invoiced' && (
             <>
               <DropdownMenuSeparator />
-              <div className="px-2 py-1 text-xs font-medium text-muted-foreground">Change Status</div>
-              <Select
-                value={quote.status}
-                onValueChange={(value) => handleStatusChange(value as 'draft' | 'sent' | 'accepted' | 'declined')}
-                disabled={updateQuote.isPending}
-              >
-                <SelectTrigger className="mx-2 my-1 h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="sent">Sent</SelectItem>
-                  <SelectItem value="accepted">Approved</SelectItem>
-                  <SelectItem value="declined">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
+              {quote.status !== 'draft' && (
+                <DropdownMenuItem onClick={() => handleStatusChange('draft')}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Change to Draft
+                </DropdownMenuItem>
+              )}
+              {quote.status !== 'sent' && (
+                <DropdownMenuItem onClick={() => handleStatusChange('sent')}>
+                  <Send className="mr-2 h-4 w-4" />
+                  Change to Sent
+                </DropdownMenuItem>
+              )}
+              {quote.status !== 'accepted' && (
+                <DropdownMenuItem onClick={() => handleStatusChange('accepted')}>
+                  <CheckCircle className="mr-2 h-4 w-4 text-emerald-600" />
+                  Change to Approved
+                </DropdownMenuItem>
+              )}
+              {quote.status !== 'declined' && (
+                <DropdownMenuItem onClick={() => handleStatusChange('declined')}>
+                  <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                  Change to Rejected
+                </DropdownMenuItem>
+              )}
             </>
           )}
 
