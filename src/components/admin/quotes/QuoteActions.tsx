@@ -66,15 +66,23 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
     setIsEmailModalOpen(true);
   };
 
-  const handleEmailSent = () => {
+  const handleEmailSent = async () => {
     setIsEmailModalOpen(false);
-    handleStatusChange('sent');
-    onRefresh();
+    await handleStatusChange('sent');
   };
 
   const handleConvertToInvoice = async () => {
     if (window.confirm('Convert this quote to an invoice? This action cannot be undone.')) {
-      await convertToInvoice.mutateAsync(quote.id);
+      try {
+        await convertToInvoice.mutateAsync(quote.id);
+      } catch (error) {
+        console.error('Failed to convert quote to invoice:', error);
+        toast({
+          title: "Error",
+          description: "Failed to convert quote to invoice",
+          variant: "destructive",
+        });
+      }
     }
   };
 
