@@ -14,7 +14,11 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Building2, Eye, Bell, Clock, CalendarIcon } from 'lucide-react';
+import { Building2, Eye, Bell, Clock, CalendarIcon, Webhook, Key, Link2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { TIMEZONE_OPTIONS } from '@/utils/timezone';
 import { Popover } from '@radix-ui/react-popover';
 import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -26,6 +30,8 @@ export const CompanySettingsTab = () => {
   const { settings, isLoading } = useCompanySettings();
   const [selectedDate, setSelectedDate] = useState<Date>()
   const updateSettings = useUpdateSettingsMutation()
+  const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<Partial<CompanySettingsType>>({
     defaultValues: {
@@ -45,6 +51,9 @@ export const CompanySettingsTab = () => {
       quote_reminder_days: settings?.quote_reminder_days ?? 14,
       timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
       start_date: settings?.start_date || "",
+      webhook_url: settings?.webhook_url || '',
+      webhook_secret: settings?.webhook_secret || '',
+      webhook_enabled: settings?.webhook_enabled ?? false,
     }
   });
 
@@ -72,6 +81,9 @@ export const CompanySettingsTab = () => {
         quote_reminder_days: settings.quote_reminder_days ?? 14,
         timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
         start_date: settings.start_date || "",
+        webhook_url: settings.webhook_url || '',
+        webhook_secret: settings.webhook_secret || '',
+        webhook_enabled: settings.webhook_enabled ?? false,
       });
     }
   }, [settings, form]);
@@ -84,6 +96,51 @@ export const CompanySettingsTab = () => {
     form.setValue("start_date", e.toISOString());
     setSelectedDate(e);
   }
+
+  const handleTestWebhook = async () => {
+    const webhookUrl = form.getValues('webhook_url');
+    const webhookSecret = form.getValues('webhook_secret');
+    
+    if (!webhookUrl) {
+      toast({
+        title: "Webhook URL Required",
+        description: "Please enter a webhook URL before testing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Testing Webhook",
+        description: "Sending test payload to your webhook URL...",
+      });
+
+      const { data, error } = await supabase.functions.invoke('send-daily-webhook', {
+        body: { 
+          companyId: user?.companyId,
+          date: new Date().toISOString().split('T')[0],
+          webhookUrl,
+          webhookSecret,
+          isTest: true
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Webhook Test Successful",
+        description: "Test payload delivered successfully. Check your webhook logs for details.",
+      });
+    } catch (error) {
+      console.error('Webhook test failed:', error);
+      toast({
+        title: "Webhook Test Failed",
+        description: error instanceof Error ? error.message : "Failed to send test webhook",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -414,6 +471,126 @@ export const CompanySettingsTab = () => {
                     />
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Webhook Integration */}
+            <Card className="shadow-sm border-border">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Webhook className="h-5 w-5 text-primary" />
+                  </div>
+                  Webhook Integration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                {/* Enable Webhook */}
+                <FormField
+                  control={form.control}
+                  name="webhook_enabled"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start justify-between rounded-lg border border-border p-4 bg-muted/30">
+                      <div className="space-y-1 flex-1">
+                        <FormLabel className="text-base font-medium">
+                          Enable Daily Webhook
+                        </FormLabel>
+                        <FormDescription className="text-sm text-muted-foreground">
+                          Automatically send daily summary data to your webhook endpoint at 11:59 PM UTC
+                        </FormDescription>
+                      </div>
+                      <FormControl className="ml-6">
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Webhook URL */}
+                <FormField
+                  control={form.control}
+                  name="webhook_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center space-x-2">
+                        <Link2 className="h-4 w-4 text-muted-foreground" />
+                        <span>Webhook URL</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://your-domain.com/webhook"
+                          {...field}
+                          disabled={!form.watch('webhook_enabled')}
+                          className="bg-background border-border"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        The endpoint where daily summary data will be sent
+                      </FormDescription>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Webhook Secret */}
+                <FormField
+                  control={form.control}
+                  name="webhook_secret"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center space-x-2">
+                        <Key className="h-4 w-4 text-muted-foreground" />
+                        <span>Webhook Secret (Optional)</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Your secret key for signature verification"
+                          {...field}
+                          disabled={!form.watch('webhook_enabled')}
+                          className="bg-background border-border"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Used to generate HMAC-SHA256 signature in the X-Webhook-Signature header
+                      </FormDescription>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Test Webhook Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleTestWebhook}
+                  disabled={!form.watch('webhook_url') || !form.watch('webhook_enabled')}
+                  className="w-full"
+                >
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Test Webhook
+                </Button>
+
+                {/* Payload Example */}
+                <Alert className="bg-muted/50">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    <strong>Expected Payload Structure:</strong>
+                    <pre className="mt-2 text-xs overflow-x-auto bg-background p-2 rounded">
+{`{
+  "date": "2025-10-22",
+  "company_id": "uuid",
+  "summary": {
+    "total_timesheets": 10,
+    "total_hours": 80,
+    "total_jobs": 5,
+    "total_employees": 8
+  }
+}`}
+                    </pre>
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
 
