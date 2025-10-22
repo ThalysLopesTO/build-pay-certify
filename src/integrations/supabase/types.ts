@@ -427,6 +427,10 @@ export type Database = {
           subscription_status: string | null
           trial_end_date: string | null
           updated_at: string
+          webhook_enabled: boolean | null
+          webhook_events: string[] | null
+          webhook_secret: string | null
+          webhook_url: string | null
         }
         Insert: {
           company_rules_text?: string | null
@@ -452,6 +456,10 @@ export type Database = {
           subscription_status?: string | null
           trial_end_date?: string | null
           updated_at?: string
+          webhook_enabled?: boolean | null
+          webhook_events?: string[] | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
         }
         Update: {
           company_rules_text?: string | null
@@ -477,6 +485,10 @@ export type Database = {
           subscription_status?: string | null
           trial_end_date?: string | null
           updated_at?: string
+          webhook_enabled?: boolean | null
+          webhook_events?: string[] | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
         }
         Relationships: []
       }
@@ -1998,7 +2010,7 @@ export type Database = {
           action: string
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           request_id: string | null
           user_agent: string | null
         }
@@ -2008,7 +2020,7 @@ export type Database = {
           action: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           request_id?: string | null
           user_agent?: string | null
         }
@@ -2018,7 +2030,7 @@ export type Database = {
           action?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           request_id?: string | null
           user_agent?: string | null
         }
@@ -2029,7 +2041,7 @@ export type Database = {
           action: string
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           performed_at: string | null
           performed_by: string | null
           request_id: string | null
@@ -2038,7 +2050,7 @@ export type Database = {
           action: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           performed_at?: string | null
           performed_by?: string | null
           request_id?: string | null
@@ -2047,7 +2059,7 @@ export type Database = {
           action?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           performed_at?: string | null
           performed_by?: string | null
           request_id?: string | null
@@ -2533,6 +2545,59 @@ export type Database = {
           },
         ]
       }
+      webhook_logs: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          error_message: string | null
+          event_type: string
+          http_status_code: number | null
+          id: string
+          payload: Json
+          response_body: string | null
+          retry_count: number | null
+          sent_at: string | null
+          status: string
+          webhook_url: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          error_message?: string | null
+          event_type: string
+          http_status_code?: number | null
+          id?: string
+          payload: Json
+          response_body?: string | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status: string
+          webhook_url: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string
+          http_status_code?: number | null
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: string
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_timesheet_audit_logs: {
         Row: {
           changes: Json
@@ -2863,12 +2928,9 @@ export type Database = {
       }
     }
     Functions: {
-      approve_missed_punch_request: {
-        Args:
-          | { approver_id: string; request_id: string }
-          | { request_id: string }
-        Returns: Json
-      }
+      approve_missed_punch_request:
+        | { Args: { request_id: string }; Returns: Json }
+        | { Args: { approver_id: string; request_id: string }; Returns: Json }
       calculate_invoice_totals: {
         Args: { invoice_id_param: string }
         Returns: undefined
@@ -2877,10 +2939,7 @@ export type Database = {
         Args: { quote_id_param: string }
         Returns: undefined
       }
-      can_add_employee: {
-        Args: { company_id_param: string }
-        Returns: boolean
-      }
+      can_add_employee: { Args: { company_id_param: string }; Returns: boolean }
       can_add_employee_with_subscription: {
         Args: { company_id_param: string }
         Returns: boolean
@@ -2901,48 +2960,21 @@ export type Database = {
         }
         Returns: boolean
       }
-      check_bills_due_soon: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      check_bills_overdue: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      check_expiring_certificates: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      check_invoices_due_soon: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      check_invoices_overdue: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      check_overdue_jobsites: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_password_reset_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_notifications: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      check_bills_due_soon: { Args: never; Returns: undefined }
+      check_bills_overdue: { Args: never; Returns: undefined }
+      check_expiring_certificates: { Args: never; Returns: undefined }
+      check_invoices_due_soon: { Args: never; Returns: undefined }
+      check_invoices_overdue: { Args: never; Returns: undefined }
+      check_overdue_jobsites: { Args: never; Returns: undefined }
+      cleanup_expired_password_reset_tokens: { Args: never; Returns: undefined }
+      cleanup_old_notifications: { Args: never; Returns: undefined }
       convert_quote_to_invoice: {
         Args: { quote_id_param: string }
         Returns: string
       }
-      delete_employee: {
-        Args: { employee_user_id: string }
-        Returns: Json
-      }
+      delete_employee: { Args: { employee_user_id: string }; Returns: Json }
       fix_biweekly_timesheet_totals: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           hours_fixed: boolean
           new_total_hours: number
@@ -2950,10 +2982,7 @@ export type Database = {
           timesheet_id: string
         }[]
       }
-      fn_clip_minutes: {
-        Args: { ts: string; tz: string }
-        Returns: string
-      }
+      fn_clip_minutes: { Args: { ts: string; tz: string }; Returns: string }
       generate_biweekly_json: {
         Args: {
           fri_h?: number
@@ -2967,20 +2996,11 @@ export type Database = {
         }
         Returns: string
       }
-      generate_invoice_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_quote_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_recurring_bills: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      generate_invoice_number: { Args: never; Returns: string }
+      generate_quote_number: { Args: never; Returns: string }
+      generate_recurring_bills: { Args: never; Returns: undefined }
       get_companies_with_status: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           days_until_expiry: number
@@ -3009,14 +3029,8 @@ export type Database = {
           subscription_status: string
         }[]
       }
-      get_current_user_company_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_company_id: { Args: never; Returns: string }
+      get_current_user_role: { Args: never; Returns: string }
       get_material_takeoff_notes: {
         Args: { p_company_id: string }
         Returns: {
@@ -3032,10 +3046,7 @@ export type Database = {
           updated_by: string
         }[]
       }
-      get_user_company_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_user_company_id: { Args: never; Returns: string }
       get_user_profile_for_join: {
         Args: { user_id_param: string }
         Returns: {
@@ -3044,53 +3055,24 @@ export type Database = {
           photo_url: string
         }[]
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_company_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_company_license_active: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
+      is_company_admin: { Args: never; Returns: boolean }
+      is_company_license_active: { Args: never; Returns: boolean }
       is_company_license_expired: {
         Args: { company_id_param: string }
         Returns: boolean
       }
-      is_super_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_user_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_super_admin: { Args: never; Returns: boolean }
+      is_user_admin: { Args: never; Returns: boolean }
       is_user_admin_for_company: {
         Args: { target_company_id: string }
         Returns: boolean
       }
-      is_user_super_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      reactivate_employee: {
-        Args: { employee_user_id: string }
-        Returns: Json
-      }
-      rpc_time_summary_details: {
-        Args:
-          | {
-              p_company_id: string
-              p_employee_id: string
-              p_end_date: string
-              p_jobsite_id: string
-              p_start_date: string
-              p_timezone: string
-            }
-          | {
+      is_user_super_admin: { Args: never; Returns: boolean }
+      reactivate_employee: { Args: { employee_user_id: string }; Returns: Json }
+      rpc_time_summary_details:
+        | {
+            Args: {
               p_company_id: string
               p_employee_id: string
               p_end_date: string
@@ -3098,26 +3080,55 @@ export type Database = {
               p_start_date: string
               p_tz: string
             }
-          | {
+            Returns: {
+              check_in_location: string
+              check_in_time: string
+              check_out_location: string
+              check_out_time: string
+              date: string
+              hours_worked: number
+              id: string
+              location_distance: number
+              notes: string
+              status: string
+            }[]
+          }
+        | {
+            Args: {
               p_company_id: string
               p_employee_id: string
               p_end_date: string
               p_start_date: string
               p_timezone?: string
             }
-        Returns: {
-          check_in_location: string
-          check_in_time: string
-          check_out_location: string
-          check_out_time: string
-          date: string
-          hours_worked: number
-          id: string
-          location_distance: number
-          notes: string
-          status: string
-        }[]
-      }
+            Returns: {
+              check_in_time: string
+              check_out_time: string
+              hours_worked: number
+              jobsite_id: string
+              jobsite_name: string
+              punch_date: string
+              status: string
+            }[]
+          }
+        | {
+            Args: {
+              p_company_id: string
+              p_employee_id: string
+              p_end_date: string
+              p_jobsite_id: string
+              p_start_date: string
+              p_timezone: string
+            }
+            Returns: {
+              check_in_time: string
+              check_out_time: string
+              hours_worked: number
+              jobsite_name: string
+              punch_date: string
+              status: string
+            }[]
+          }
       rpc_time_summary_headers: {
         Args: {
           p_company_id: string
@@ -3142,10 +3153,7 @@ export type Database = {
           total_punches: number
         }[]
       }
-      run_daily_notification_checks: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      run_daily_notification_checks: { Args: never; Returns: undefined }
     }
     Enums: {
       punch_type: "in" | "out" | "both"

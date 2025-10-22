@@ -56,3 +56,9 @@ verify_jwt = false
 
 [functions.send-trial-emails]
 verify_jwt = false
+
+[functions.send-daily-webhook]
+verify_jwt = false
+
+[functions.trigger-all-daily-webhooks]
+verify_jwt = false

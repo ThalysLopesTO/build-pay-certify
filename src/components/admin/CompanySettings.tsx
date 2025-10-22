@@ -8,12 +8,20 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useCompanySettings, useUpdateSettingsMutation, type CompanySettings } from '@/hooks/useCompanySettings';
 import CompanyBrandingSection from './CompanyBrandingSection';
-import { Building2, Mail, Phone, MapPin, FileText, Calendar } from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, FileText, Calendar, Webhook, Key, Link2, AlertCircle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { format } from 'date-fns';
 
 const CompanySettings = () => {
   const { settings, isLoading } = useCompanySettings();
-  const updateSettings = useUpdateSettingsMutation()
+  const updateSettings = useUpdateSettingsMutation();
+  const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<Partial<CompanySettings>>({
     defaultValues: {
@@ -24,6 +32,9 @@ const CompanySettings = () => {
       hst_number: settings?.hst_number || '',
       tax_percentage: settings?.tax_percentage || 13,
       timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
+      webhook_url: settings?.webhook_url || '',
+      webhook_secret: settings?.webhook_secret || '',
+      webhook_enabled: settings?.webhook_enabled || false,
     },
   });
 
@@ -37,12 +48,57 @@ const CompanySettings = () => {
         hst_number: settings.hst_number || '',
         tax_percentage: settings.tax_percentage || 13,
         timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
+        webhook_url: settings.webhook_url || '',
+        webhook_secret: settings.webhook_secret || '',
+        webhook_enabled: settings.webhook_enabled || false,
       });
     }
   }, [settings, form]);
 
   const onSubmit = (data: Partial<CompanySettings>) => {
     updateSettings.mutate(data);
+  };
+
+  const handleTestWebhook = async () => {
+    try {
+      const webhookUrl = form.getValues('webhook_url');
+      const webhookEnabled = form.getValues('webhook_enabled');
+
+      if (!webhookEnabled || !webhookUrl) {
+        toast({
+          title: "Webhook Test Failed",
+          description: "Please enable webhooks and configure a URL first",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-daily-webhook', {
+        body: {
+          company_id: user?.companyId,
+          date: format(new Date(), 'yyyy-MM-dd'),
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Webhook Test Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Webhook Test Successful",
+          description: "Check your endpoint for the test payload",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Webhook Test Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -278,6 +334,143 @@ const CompanySettings = () => {
                   />
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+
+          {/* Webhook Integration */}
+          <Card className="border-border">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-foreground">
+                <Webhook className="h-5 w-5 text-primary" />
+                <span>Webhook Integration</span>
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Configure webhooks to send daily punch summaries to external automation systems like n8n, Zapier, or Make.
+              </CardDescription>
+              <div className="h-px bg-border mt-4"></div>
+            </CardHeader>
+            <CardContent className="pt-2 space-y-6">
+              
+              {/* Webhook Enabled Toggle */}
+              <FormField
+                control={form.control}
+                name="webhook_enabled"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-4 bg-muted/50">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base font-medium">Enable Webhooks</FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Automatically send daily punch summaries to your webhook endpoint
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* Webhook URL */}
+              <FormField
+                control={form.control}
+                name="webhook_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center space-x-2">
+                      <Link2 className="h-4 w-4 text-muted-foreground" />
+                      <span>Webhook URL</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        placeholder="https://your-n8n-instance.com/webhook/daily-summary"
+                        className="bg-background border-border text-foreground font-mono text-sm"
+                        disabled={!form.watch('webhook_enabled')}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground">
+                      The endpoint URL where daily summaries will be sent via POST request
+                    </p>
+                  </FormItem>
+                )}
+              />
+
+              {/* Webhook Secret */}
+              <FormField
+                control={form.control}
+                name="webhook_secret"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center space-x-2">
+                      <Key className="h-4 w-4 text-muted-foreground" />
+                      <span>Webhook Secret (Optional)</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Enter a secret key for signature verification"
+                        className="bg-background border-border text-foreground font-mono text-sm"
+                        disabled={!form.watch('webhook_enabled')}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground">
+                      Used to generate HMAC-SHA256 signatures for request verification
+                    </p>
+                  </FormItem>
+                )}
+              />
+
+              {/* Test Webhook Button */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleTestWebhook}
+                disabled={!form.watch('webhook_enabled') || !form.watch('webhook_url')}
+                className="w-full"
+              >
+                <Webhook className="h-4 w-4 mr-2" />
+                Test Webhook
+              </Button>
+
+              {/* Information Alert */}
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Webhook Payload Structure:</strong>
+                  <pre className="mt-2 p-3 bg-muted rounded text-xs overflow-x-auto">
+{`{
+  "company_id": "uuid",
+  "date": "2025-10-22",
+  "generatedAt": "2025-10-22T23:59:00Z",
+  "totals": {
+    "employees": 15,
+    "punchRecords": 45,
+    "hours": 360.5
+  },
+  "employees": [
+    {
+      "name": "John Doe",
+      "hours": 8.5,
+      "jobsite": "Main Site"
+    }
+  ],
+  "jobsites": [
+    {
+      "jobsiteName": "Main Site",
+      "hours": 120.5
+    }
+  ]
+}`}
+                  </pre>
+                </AlertDescription>
+              </Alert>
             </CardContent>
           </Card>
 

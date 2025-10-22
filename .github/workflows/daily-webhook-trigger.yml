@@ -1,0 +1,18 @@
+name: Daily Webhook Trigger
+
+on:
+  schedule:
+    # Run at 11:59 PM UTC daily
+    - cron: '59 23 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  trigger-webhooks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger all daily webhooks
+        run: |
+          curl -X POST \
+            https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/trigger-all-daily-webhooks \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json"
