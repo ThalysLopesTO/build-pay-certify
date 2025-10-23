@@ -7,23 +7,27 @@ const corsHeaders = {
 };
 
 interface DailySummaryPayload {
+  event: string;
   company_id: string;
   date: string;
-  generatedAt: string;
-  totals: {
-    employees: number;
-    punchRecords: number;
-    hours: number;
+  timestamp: string;
+  summary: {
+    total_employees: number;
+    total_punch_records: number;
+    total_hours: number;
   };
-  employees: Array<{
-    name: string;
-    hours: number;
-    jobsite: string;
+  by_jobsite: Array<{
+    jobsite_id: string;
+    jobsite_name: string;
+    total_hours: number;
+    employees: Array<{
+      user_id: string;
+      name: string;
+      hours: number;
+      records: number;
+    }>;
   }>;
-  jobsites: Array<{
-    jobsiteName: string;
-    hours: number;
-  }>;
+  text_summary: string;
 }
 
 // Generate HMAC-SHA256 signature
@@ -86,7 +90,17 @@ async function fetchDailySummaryData(
 ): Promise<DailySummaryPayload> {
   console.log(`Fetching daily summary for company ${companyId} on ${date}`);
 
-  // Fetch punch data for the day
+  // Fetch company timezone setting
+  const { data: companySettings } = await supabase
+    .from('company_settings')
+    .select('timezone')
+    .eq('company_id', companyId)
+    .single();
+  
+  const timezone = companySettings?.timezone || 'America/Toronto';
+  console.log(`Using timezone: ${timezone}`);
+
+  // Fetch punch data for the day (only completed punches with both check-in and check-out)
   const { data: punches, error: punchesError } = await supabase
     .from('timesheets')
     .select(`
@@ -101,13 +115,15 @@ async function fetchDailySummaryData(
         last_name
       ),
       jobsites:jobsite_id (
+        id,
         name
       )
     `)
     .eq('company_id', companyId)
     .gte('check_in_time', `${date}T00:00:00`)
-    .lt('check_in_time', `${date}T23:59:59`)
-    .not('check_in_time', 'is', null);
+    .lte('check_in_time', `${date}T23:59:59`)
+    .not('check_in_time', 'is', null)
+    .not('check_out_time', 'is', null);
 
   if (punchesError) {
     console.error('Error fetching punches:', punchesError);
@@ -117,81 +133,121 @@ async function fetchDailySummaryData(
   if (!punches || punches.length === 0) {
     console.log('No punches found for the day');
     return {
+      event: 'daily_punch_summary',
       company_id: companyId,
       date: date,
-      generatedAt: new Date().toISOString(),
-      totals: {
-        employees: 0,
-        punchRecords: 0,
-        hours: 0,
+      timestamp: new Date().toISOString(),
+      summary: {
+        total_employees: 0,
+        total_punch_records: 0,
+        total_hours: 0,
       },
-      employees: [],
-      jobsites: [],
+      by_jobsite: [],
+      text_summary: '',
     };
   }
 
-  // Calculate hours and aggregate data
-  const employeeMap = new Map<string, { name: string; hours: number; jobsite: string }>();
-  const jobsiteMap = new Map<string, { jobsiteName: string; hours: number }>();
+  // Build nested structure: jobsite → employees
+  const jobsiteMap = new Map<string, {
+    jobsite_id: string;
+    jobsite_name: string;
+    total_hours: number;
+    employees: Map<string, {
+      user_id: string;
+      name: string;
+      hours: number;
+      records: number;
+    }>;
+  }>();
+  
   let totalHours = 0;
+  const totalEmployees = new Set<string>();
 
   punches.forEach((punch: any) => {
-    if (!punch.check_out_time) return; // Skip incomplete punches
-
     const checkIn = new Date(punch.check_in_time);
     const checkOut = new Date(punch.check_out_time);
     const hours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
-
+    
+    const userId = punch.user_id;
     const employeeName = punch.user_profiles
       ? `${punch.user_profiles.first_name} ${punch.user_profiles.last_name}`
       : 'Unknown Employee';
+    const jobsiteId = punch.jobsite_id || 'unknown';
     const jobsiteName = punch.jobsites?.name || 'Unknown Jobsite';
-
-    // Aggregate by employee
-    if (!employeeMap.has(employeeName)) {
-      employeeMap.set(employeeName, {
+    
+    totalEmployees.add(userId);
+    totalHours += hours;
+    
+    // Ensure jobsite exists in map
+    if (!jobsiteMap.has(jobsiteId)) {
+      jobsiteMap.set(jobsiteId, {
+        jobsite_id: jobsiteId,
+        jobsite_name: jobsiteName,
+        total_hours: 0,
+        employees: new Map(),
+      });
+    }
+    
+    const jobsite = jobsiteMap.get(jobsiteId)!;
+    jobsite.total_hours += hours;
+    
+    // Ensure employee exists in jobsite
+    if (!jobsite.employees.has(userId)) {
+      jobsite.employees.set(userId, {
+        user_id: userId,
         name: employeeName,
         hours: 0,
-        jobsite: jobsiteName,
+        records: 0,
       });
     }
-    const empData = employeeMap.get(employeeName)!;
-    empData.hours += hours;
-
-    // Aggregate by jobsite
-    if (!jobsiteMap.has(jobsiteName)) {
-      jobsiteMap.set(jobsiteName, {
-        jobsiteName: jobsiteName,
-        hours: 0,
-      });
-    }
-    const jobData = jobsiteMap.get(jobsiteName)!;
-    jobData.hours += hours;
-
-    totalHours += hours;
+    
+    const employee = jobsite.employees.get(userId)!;
+    employee.hours += hours;
+    employee.records += 1;
   });
 
+  // Convert maps to arrays and sort
+  const byJobsite = Array.from(jobsiteMap.values())
+    .map(jobsite => ({
+      jobsite_id: jobsite.jobsite_id,
+      jobsite_name: jobsite.jobsite_name,
+      total_hours: Math.round(jobsite.total_hours * 100) / 100,
+      employees: Array.from(jobsite.employees.values())
+        .map(emp => ({
+          user_id: emp.user_id,
+          name: emp.name,
+          hours: Math.round(emp.hours * 100) / 100,
+          records: emp.records,
+        }))
+        .sort((a, b) => b.hours - a.hours), // Sort by hours DESC
+    }))
+    .sort((a, b) => a.jobsite_name.localeCompare(b.jobsite_name)); // Sort by name ASC
+
+  // Generate text summary
+  const textSummary = byJobsite
+    .map(jobsite => {
+      const employeeLines = jobsite.employees
+        .map(emp => `- ${emp.name} — ${emp.hours}h`)
+        .join('\n');
+      return `${jobsite.jobsite_name}\n${employeeLines}`;
+    })
+    .join('\n\n');
+
   const payload: DailySummaryPayload = {
+    event: 'daily_punch_summary',
     company_id: companyId,
     date: date,
-    generatedAt: new Date().toISOString(),
-    totals: {
-      employees: employeeMap.size,
-      punchRecords: punches.length,
-      hours: Math.round(totalHours * 100) / 100,
+    timestamp: new Date().toISOString(),
+    summary: {
+      total_employees: totalEmployees.size,
+      total_punch_records: punches.length,
+      total_hours: Math.round(totalHours * 100) / 100,
     },
-    employees: Array.from(employeeMap.values()).map((emp) => ({
-      name: emp.name,
-      hours: Math.round(emp.hours * 100) / 100,
-      jobsite: emp.jobsite,
-    })),
-    jobsites: Array.from(jobsiteMap.values()).map((job) => ({
-      jobsiteName: job.jobsiteName,
-      hours: Math.round(job.hours * 100) / 100,
-    })),
+    by_jobsite: byJobsite,
+    text_summary: textSummary,
   };
 
-  console.log(`Summary generated: ${payload.totals.employees} employees, ${payload.totals.punchRecords} punches, ${payload.totals.hours} hours`);
+  console.log(`Summary generated: ${payload.summary.total_employees} employees, ${payload.summary.total_punch_records} punches, ${payload.summary.total_hours} hours across ${byJobsite.length} jobsites`);
 
   return payload;
 }
@@ -207,7 +263,7 @@ async function sendWebhook(
     const payloadString = JSON.stringify(payload);
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'X-Webhook-Event': 'daily_summary',
+      'X-Webhook-Event': 'daily_punch_summary',
       'X-Webhook-Timestamp': new Date().toISOString(),
       'X-Company-ID': payload.company_id,
     };
@@ -284,7 +340,7 @@ Deno.serve(async (req) => {
     // Fetch company webhook settings
     const { data: companySettings, error: companyError } = await supabase
       .from('company_settings')
-      .select('webhook_url, webhook_secret, webhook_enabled, company_id')
+      .select('webhook_url, webhook_secret, webhook_enabled, company_id, timezone')
       .eq('company_id', company_id)
       .single();
 
@@ -320,7 +376,7 @@ Deno.serve(async (req) => {
     await logWebhookDelivery(
       supabase,
       company_id,
-      'daily_summary',
+      'daily_punch_summary',
       companySettings.webhook_url,
       payload,
       result.success ? 'success' : 'failed',
