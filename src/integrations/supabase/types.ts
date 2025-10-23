@@ -625,6 +625,9 @@ export type Database = {
           timesheet_frequency: string
           timezone: string
           updated_at: string
+          webhook_enabled: boolean | null
+          webhook_secret: string | null
+          webhook_url: string | null
           week_ending_day: number | null
         }
         Insert: {
@@ -649,6 +652,9 @@ export type Database = {
           timesheet_frequency?: string
           timezone?: string
           updated_at?: string
+          webhook_enabled?: boolean | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
           week_ending_day?: number | null
         }
         Update: {
@@ -673,6 +679,9 @@ export type Database = {
           timesheet_frequency?: string
           timezone?: string
           updated_at?: string
+          webhook_enabled?: boolean | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
           week_ending_day?: number | null
         }
         Relationships: [
