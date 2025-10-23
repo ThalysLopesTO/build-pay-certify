@@ -118,20 +118,36 @@ export const CompanySettingsTab = () => {
 
       const { data, error } = await supabase.functions.invoke('send-daily-webhook', {
         body: { 
-          companyId: user?.companyId,
-          date: new Date().toISOString().split('T')[0],
+          company_id: user?.companyId,
+          date: format(new Date(), 'yyyy-MM-dd'),
           webhookUrl,
           webhookSecret,
           isTest: true
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.message);
+      }
 
-      toast({
-        title: "Webhook Test Successful",
-        description: "Test payload delivered successfully. Check your webhook logs for details.",
-      });
+      // Check if webhook delivery succeeded
+      if (data.success) {
+        toast({
+          title: "Webhook Test Successful",
+          description: `Test payload delivered successfully (HTTP ${data.statusCode}). Check your webhook endpoint for the received data.`,
+        });
+      } else {
+        // Webhook delivery failed - show detailed error
+        const errorMsg = data.statusCode 
+          ? `HTTP ${data.statusCode}: ${data.error || 'Unknown error'}`
+          : data.error || 'Failed to reach webhook endpoint';
+          
+        toast({
+          title: "Webhook Delivery Failed",
+          description: errorMsg,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Webhook test failed:', error);
       toast({

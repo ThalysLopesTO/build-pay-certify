@@ -259,29 +259,34 @@ async function sendWebhook(
   secret: string | null,
   retryCount: number = 0
 ): Promise<{ success: boolean; statusCode: number | null; response: string | null; error: string | null }> {
+  const payloadString = JSON.stringify(payload);
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Webhook-Event': 'daily_punch_summary',
+    'X-Webhook-Timestamp': new Date().toISOString(),
+    'X-Company-ID': payload.company_id,
+  };
+
+  // Add signature if secret is provided
+  if (secret) {
+    const signature = await generateSignature(payloadString, secret);
+    headers['X-Webhook-Signature'] = signature;
+  }
+
+  console.log(`Sending webhook to ${webhookUrl} (attempt ${retryCount + 1})`);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
   try {
-    const payloadString = JSON.stringify(payload);
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'X-Webhook-Event': 'daily_punch_summary',
-      'X-Webhook-Timestamp': new Date().toISOString(),
-      'X-Company-ID': payload.company_id,
-    };
-
-    // Add signature if secret is provided
-    if (secret) {
-      const signature = await generateSignature(payloadString, secret);
-      headers['X-Webhook-Signature'] = signature;
-    }
-
-    console.log(`Sending webhook to ${webhookUrl} (attempt ${retryCount + 1})`);
-
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: headers,
       body: payloadString,
+      signal: controller.signal,
     });
-
+    
+    clearTimeout(timeoutId);
     const responseText = await response.text();
 
     if (response.ok) {
@@ -298,16 +303,30 @@ async function sendWebhook(
         success: false,
         statusCode: response.status,
         response: responseText,
-        error: `HTTP ${response.status}: ${responseText}`,
+        error: `HTTP ${response.status}: ${responseText.substring(0, 200)}`,
       };
     }
   } catch (error: any) {
+    clearTimeout(timeoutId);
+    
+    // Handle timeout specifically
+    if (error.name === 'AbortError') {
+      console.error(`❌ Webhook timeout after 10 seconds`);
+      return {
+        success: false,
+        statusCode: null,
+        response: null,
+        error: 'Request timeout: The webhook endpoint did not respond within 10 seconds',
+      };
+    }
+    
+    // Handle network errors
     console.error(`❌ Webhook error (attempt ${retryCount + 1}):`, error.message);
     return {
       success: false,
       statusCode: null,
       response: null,
-      error: error.message,
+      error: `Network error: ${error.message}`,
     };
   }
 }
@@ -324,7 +343,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse request body
-    const { company_id, date } = await req.json();
+    const { company_id, date, webhookUrl, webhookSecret, isTest } = await req.json();
 
     if (!company_id) {
       return new Response(
@@ -337,54 +356,84 @@ Deno.serve(async (req) => {
 
     console.log(`Processing daily webhook for company ${company_id} on ${targetDate}`);
 
-    // Fetch company webhook settings
-    const { data: companySettings, error: companyError } = await supabase
-      .from('company_settings')
-      .select('webhook_url, webhook_secret, webhook_enabled, company_id, timezone')
-      .eq('company_id', company_id)
-      .single();
+    let finalWebhookUrl: string;
+    let finalWebhookSecret: string | null;
 
-    if (companyError) {
-      console.error('Error fetching company settings:', companyError);
-      return new Response(
-        JSON.stringify({ error: 'Company settings not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    if (isTest) {
+      // Test mode: use provided URL and secret
+      if (!webhookUrl) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'webhook_url is required for test mode' 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      finalWebhookUrl = webhookUrl;
+      finalWebhookSecret = webhookSecret || null;
+      console.log('🧪 Test mode: using provided webhook URL');
+    } else {
+      // Normal mode: fetch from database
+      const { data: companySettings, error: companyError } = await supabase
+        .from('company_settings')
+        .select('webhook_url, webhook_secret, webhook_enabled, company_id, timezone')
+        .eq('company_id', company_id)
+        .single();
 
-    if (!companySettings.webhook_enabled || !companySettings.webhook_url) {
-      console.log('Webhooks are disabled or URL not configured');
-      return new Response(
-        JSON.stringify({ message: 'Webhooks not enabled for this company' }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      if (companyError) {
+        console.error('Error fetching company settings:', companyError);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Company settings not found' 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!companySettings.webhook_enabled || !companySettings.webhook_url) {
+        console.log('Webhooks are disabled or URL not configured');
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            message: 'Webhooks not enabled for this company' 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      finalWebhookUrl = companySettings.webhook_url;
+      finalWebhookSecret = companySettings.webhook_secret;
     }
 
     // Fetch and prepare payload
     const payload = await fetchDailySummaryData(supabase, company_id, targetDate);
 
     // Attempt to send webhook (with one retry)
-    let result = await sendWebhook(companySettings.webhook_url, payload, companySettings.webhook_secret, 0);
+    let result = await sendWebhook(finalWebhookUrl, payload, finalWebhookSecret, 0);
 
     if (!result.success) {
       console.log('First attempt failed, retrying...');
       await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
-      result = await sendWebhook(companySettings.webhook_url, payload, companySettings.webhook_secret, 1);
+      result = await sendWebhook(finalWebhookUrl, payload, finalWebhookSecret, 1);
     }
 
-    // Log the delivery attempt
-    await logWebhookDelivery(
-      supabase,
-      company_id,
-      'daily_punch_summary',
-      companySettings.webhook_url,
-      payload,
-      result.success ? 'success' : 'failed',
-      result.statusCode,
-      result.response,
-      result.error,
-      result.success ? 0 : 1
-    );
+    // Log the delivery attempt (skip in test mode)
+    if (!isTest) {
+      await logWebhookDelivery(
+        supabase,
+        company_id,
+        'daily_punch_summary',
+        finalWebhookUrl,
+        payload,
+        result.success ? 'success' : 'failed',
+        result.statusCode,
+        result.response,
+        result.error,
+        result.success ? 0 : 1
+      );
+    }
 
     if (result.success) {
       return new Response(
@@ -392,6 +441,7 @@ Deno.serve(async (req) => {
           success: true,
           message: 'Webhook sent successfully',
           statusCode: result.statusCode,
+          response: result.response,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -401,8 +451,10 @@ Deno.serve(async (req) => {
           success: false,
           message: 'Webhook delivery failed after retry',
           error: result.error,
+          statusCode: result.statusCode,
+          response: result.response,
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
   } catch (error: any) {
