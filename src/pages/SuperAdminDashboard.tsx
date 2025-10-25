@@ -13,6 +13,7 @@ import { useSuperAdminData } from '@/hooks/useSuperAdminData';
 import { useSuperAdminMutations } from '@/hooks/useSuperAdminMutations';
 import { useCompanyMutations } from '@/hooks/useCompanyMutations';
 import CompanyRequestTable from '@/components/admin/CompanyRequestTable';
+import { CreateTrialCompanyDialog } from '@/components/admin/trial-companies/CreateTrialCompanyDialog';
 
 interface RegistrationRequest {
   id: string;
@@ -143,7 +144,12 @@ const SuperAdminDashboard = () => {
       <Header />
       <div className="p-6">
         <div className="max-w-7xl mx-auto space-y-6">
-          <SuperAdminHeader pendingCount={pendingCount} />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <SuperAdminHeader pendingCount={pendingCount} />
+            </div>
+            <CreateTrialCompanyDialog />
+          </div>
 
           <CompanyManagementTable
             companies={companies}
