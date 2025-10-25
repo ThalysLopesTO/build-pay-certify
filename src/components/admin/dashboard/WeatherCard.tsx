@@ -118,9 +118,6 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
       setLocationDialogOpen(false);
       setCustomLocation('');
       toast.success('Location updated successfully');
-      
-      // Fetch new weather data
-      fetchWeather();
     } catch (error) {
       toast.error('Could not find that location. Please try again.');
     }
@@ -130,7 +127,6 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
     setSavedCustomLocation(null);
     setLocationDialogOpen(false);
     toast.success('Reset to jobsite location');
-    fetchWeather();
   };
 
   const fetchWeather = async () => {
