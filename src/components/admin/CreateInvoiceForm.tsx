@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useJobsites } from '@/hooks/useJobsites';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { CreateInvoiceData } from './types/invoice';
 import { Plus, X, Calendar, MapPin, User, Building, Mail, Phone, Hash, FileText, DollarSign, Save, Send, Download, Paperclip } from 'lucide-react';
 
@@ -36,6 +37,7 @@ interface InvoiceFormData {
 const CreateInvoiceForm = () => {
   const { createInvoice, isCreating } = useInvoices();
   const { data: jobsites } = useJobsites();
+  const { settings } = useCompanySettings();
   const [isDraft, setIsDraft] = useState(false);
   
   const form = useForm<InvoiceFormData>({
@@ -48,12 +50,19 @@ const CreateInvoiceForm = () => {
       jobsite_id: '',
       po_number: '',
       discount: 0,
-      tax: 13,
+      tax: settings?.tax_percentage || 13,
       due_date: '',
       notes: '',
       line_items: [{ name: '', description: '', quantity: 1, unit_price: 0 }],
     },
   });
+
+  // Update tax when company settings load
+  useEffect(() => {
+    if (settings?.tax_percentage !== undefined) {
+      form.setValue('tax', settings.tax_percentage);
+    }
+  }, [settings?.tax_percentage, form]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,

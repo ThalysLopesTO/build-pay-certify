@@ -12,6 +12,7 @@ import {
   useUpdateQuoteLineItem, 
   useDeleteQuoteLineItem 
 } from '@/hooks/quotes';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 import QuoteClientSection from './sections/QuoteClientSection';
 import QuoteDetailsSection from './sections/QuoteDetailsSection';
 import QuoteLineItemsSection from './sections/QuoteLineItemsSection';
@@ -25,6 +26,8 @@ interface QuoteFormModalProps {
 }
 
 const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose }) => {
+  const { settings } = useCompanySettings();
+  
   const [formData, setFormData] = useState({
     client_name: '',
     client_company: '',
@@ -34,7 +37,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
     project_name: '',
     quote_date: new Date().toISOString().split('T')[0],
     expiry_date: '',
-    tax: 0,
+    tax: settings?.tax_percentage || 0,
     discount: 0,
     notes: '',
     template: 'classic',
@@ -78,7 +81,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
           setLineItems(existingLineItems);
         }
       } else {
-        // Reset form for new quote
+        // Reset form for new quote - use company default tax
         setFormData({
           client_name: '',
           client_company: '',
@@ -88,7 +91,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
           project_name: '',
           quote_date: new Date().toISOString().split('T')[0],
           expiry_date: '',
-          tax: 0,
+          tax: settings?.tax_percentage || 0,
           discount: 0,
           notes: '',
           template: 'classic',
