@@ -62,7 +62,7 @@ const SuperAdminCreator = () => {
         setSuccessThalys(true);
         toast({
           title: "Thalys Admin Created!",
-          description: "thalyslopesdev@gmail.com can now log in with password: Admin@1234",
+          description: "thalysadmin@gmail.com can now log in with password: Admin@1234",
         });
       }
     } catch (error) {
@@ -90,7 +90,7 @@ const SuperAdminCreator = () => {
         <CardContent>
           <div className="space-y-4">
             <div className="text-sm text-slate-600">
-              <p><strong>Email:</strong> thalyslopesdev@gmail.com</p>
+              <p><strong>Email:</strong> thalysadmin@gmail.com</p>
               <p><strong>Password:</strong> Admin@1234</p>
               <p><strong>Role:</strong> super_admin</p>
               <p><strong>Name:</strong> Thalys Lopes</p>

@@ -2405,7 +2405,7 @@ export type Database = {
       user_profiles: {
         Row: {
           address: string | null
-          company_id: string
+          company_id: string | null
           cpp_rate: number | null
           created_at: string
           ei_rate: number | null
@@ -2430,7 +2430,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
-          company_id: string
+          company_id?: string | null
           cpp_rate?: number | null
           created_at?: string
           ei_rate?: number | null
@@ -2455,7 +2455,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
-          company_id?: string
+          company_id?: string | null
           cpp_rate?: number | null
           created_at?: string
           ei_rate?: number | null
