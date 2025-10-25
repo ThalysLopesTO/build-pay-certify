@@ -50,7 +50,7 @@ export const CompanySettingsTab = () => {
       enable_quote_reminders: settings?.enable_quote_reminders ?? true,
       quote_reminder_days: settings?.quote_reminder_days ?? 14,
       timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
-      start_date: settings?.start_date || "",
+      start_date: settings?.start_date || null,
       webhook_url: settings?.webhook_url || '',
       webhook_secret: settings?.webhook_secret || '',
       webhook_enabled: settings?.webhook_enabled ?? false,
@@ -80,7 +80,7 @@ export const CompanySettingsTab = () => {
         enable_quote_reminders: settings.enable_quote_reminders ?? true,
         quote_reminder_days: settings.quote_reminder_days ?? 14,
         timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
-        start_date: settings.start_date || "",
+        start_date: settings.start_date || null,
         webhook_url: settings.webhook_url || '',
         webhook_secret: settings.webhook_secret || '',
         webhook_enabled: settings.webhook_enabled ?? false,
@@ -89,7 +89,12 @@ export const CompanySettingsTab = () => {
   }, [settings, form]);
 
   const onSubmit = (data: Partial<CompanySettingsType>) => {
-    updateSettings.mutate({id: settings.id, ...data});
+    // Filter out empty strings and convert them to null for timestamp fields
+    const cleanedData = {
+      ...data,
+      start_date: data.start_date === "" ? null : data.start_date
+    };
+    updateSettings.mutate({id: settings.id, ...cleanedData});
   };
 
   function handleDateSelect(e: Date) {

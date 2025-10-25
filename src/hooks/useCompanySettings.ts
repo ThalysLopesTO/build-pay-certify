@@ -106,15 +106,21 @@ export const useUpdateSettingsMutation = () => {
         throw new Error("Company ID is required to update settings");
       }
 
+      // Clean up empty strings for timestamp fields
+      const cleanedSettings = {
+        ...updatedSettings,
+        start_date: updatedSettings.start_date === "" ? null : updatedSettings.start_date,
+      };
+
       // if id exists, use update; otherwise upsert (insert)
-      if (updatedSettings.id) {
+      if (cleanedSettings.id) {
         const { data, error } = await supabase
           .from("company_settings")
           .update({
-            ...updatedSettings,
+            ...cleanedSettings,
             updated_at: new Date().toISOString(),
           })
-          .eq("id", updatedSettings.id)
+          .eq("id", cleanedSettings.id)
           .select()
           .single();
 
@@ -130,11 +136,11 @@ export const useUpdateSettingsMutation = () => {
           .upsert(
             {
               company_id: user.companyId,
-              company_name: updatedSettings.company_name || user.companyName || "Unnamed Company",
-              week_ending_day: updatedSettings.week_ending_day ?? 0,
-              timesheet_frequency: (updatedSettings as any)?.timesheet_frequency ?? "weekly",
+              company_name: cleanedSettings.company_name || user.companyName || "Unnamed Company",
+              week_ending_day: cleanedSettings.week_ending_day ?? 0,
+              timesheet_frequency: (cleanedSettings as any)?.timesheet_frequency ?? "weekly",
               updated_at: new Date().toISOString(),
-              ...updatedSettings,
+              ...cleanedSettings,
             },
             { onConflict: "company_id" }
           )
