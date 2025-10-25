@@ -16,6 +16,18 @@ const SuperAdminLogin = () => {
   const [accessDenied, setAccessDenied] = useState(false);
   const { login, user, isAuthenticated } = useAuth();
 
+  // Check if user logged in but is not super admin (MUST be before any returns)
+  React.useEffect(() => {
+    if (isAuthenticated && user && user.role !== 'super_admin') {
+      setAccessDenied(true);
+      toast({
+        title: "Access Denied",
+        description: "You are not a Super Admin",
+        variant: "destructive",
+      });
+    }
+  }, [isAuthenticated, user]);
+
   // If already authenticated and is super admin, redirect
   if (isAuthenticated && user?.role === 'super_admin') {
     return <Navigate to="/super-admin" replace />;
@@ -52,18 +64,6 @@ const SuperAdminLogin = () => {
       setLoading(false);
     }
   };
-
-  // Check if user logged in but is not super admin
-  React.useEffect(() => {
-    if (isAuthenticated && user && user.role !== 'super_admin') {
-      setAccessDenied(true);
-      toast({
-        title: "Access Denied",
-        description: "You are not a Super Admin",
-        variant: "destructive",
-      });
-    }
-  }, [isAuthenticated, user]);
 
   if (accessDenied) {
     return (
