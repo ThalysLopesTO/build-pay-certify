@@ -20,6 +20,7 @@ import ForemanDashboard from "@/pages/ForemanDashboard";
 import ManagementDashboard from "@/pages/ManagementDashboard";
 import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
 import SuperAdminLogin from "@/pages/SuperAdminLogin";
+import SuperAdminSetup from "@/pages/setup/SuperAdminSetup";
 import CompanyRegistration from "@/pages/CompanyRegistration";
 import CompanyHandbook from "@/pages/CompanyHandbook";
 import ResetPassword from "@/pages/ResetPassword";
@@ -75,6 +76,7 @@ const AppInner: React.FC = () => {
 
         <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
         <Route path="/super-admin/login" element={<SuperAdminLogin />} />
+        <Route path="/setup/super-admin" element={<SuperAdminSetup />} />
 
         <Route path="/company/registration" element={<CompanyRegistration />} />
         <Route path="/company/handbook" element={<CompanyHandbook />} />
