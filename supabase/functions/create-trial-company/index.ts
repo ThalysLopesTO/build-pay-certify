@@ -101,6 +101,32 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Check if email already exists in auth system
+    const { data: existingUsers, error: checkEmailError } = await supabaseAdmin.auth.admin.listUsers();
+
+    if (checkEmailError) {
+      console.error('Error checking existing users:', checkEmailError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify email availability' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const emailExists = existingUsers.users.some(user => user.email === body.adminEmail);
+
+    if (emailExists) {
+      console.error('Email already exists:', body.adminEmail);
+      return new Response(
+        JSON.stringify({ 
+          error: 'This email address is already registered. Please use a different email address.',
+          field: 'adminEmail'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Email availability verified');
+
     const trialDays = body.trialDays || 30;
     // Since you only have one plan at $297 with 50 employees, we'll use that
     const employeeLimit = 50;
@@ -158,11 +184,26 @@ const handler = async (req: Request): Promise<Response> => {
     if (authError) {
       console.error('Error creating user:', authError);
       
-      // Rollback: Delete company if user creation fails
-      await supabaseAdmin.from('companies').delete().eq('id', company.id);
+      // Rollback: Delete company (user was not created successfully)
+      const { error: deleteCompanyError } = await supabaseAdmin
+        .from('companies')
+        .delete()
+        .eq('id', company.id);
+      
+      if (deleteCompanyError) {
+        console.error('Failed to rollback company deletion:', deleteCompanyError);
+      } else {
+        console.log('Company rolled back successfully');
+      }
       
       return new Response(
-        JSON.stringify({ error: 'Failed to create admin user', details: authError.message }),
+        JSON.stringify({ 
+          error: 'Failed to create admin user', 
+          details: authError.message,
+          hint: authError.message.includes('already been registered') 
+            ? 'This email is already in use. Please use a different email.' 
+            : authError.message
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -183,8 +224,19 @@ const handler = async (req: Request): Promise<Response> => {
       console.error('Error updating user profile:', profileUpdateError);
       
       // Rollback: Delete user and company
-      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
-      await supabaseAdmin.from('companies').delete().eq('id', company.id);
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
+        console.log('User rolled back successfully');
+      } catch (deleteUserError) {
+        console.error('Failed to rollback user deletion:', deleteUserError);
+      }
+      
+      try {
+        await supabaseAdmin.from('companies').delete().eq('id', company.id);
+        console.log('Company rolled back successfully');
+      } catch (deleteCompanyError) {
+        console.error('Failed to rollback company deletion:', deleteCompanyError);
+      }
       
       return new Response(
         JSON.stringify({ error: 'Failed to activate user profile', details: profileUpdateError.message }),
