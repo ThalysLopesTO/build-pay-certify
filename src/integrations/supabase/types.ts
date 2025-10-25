@@ -625,6 +625,9 @@ export type Database = {
           timesheet_frequency: string
           timezone: string
           updated_at: string
+          weather_latitude: number | null
+          weather_location_name: string | null
+          weather_longitude: number | null
           webhook_enabled: boolean | null
           webhook_secret: string | null
           webhook_url: string | null
@@ -652,6 +655,9 @@ export type Database = {
           timesheet_frequency?: string
           timezone?: string
           updated_at?: string
+          weather_latitude?: number | null
+          weather_location_name?: string | null
+          weather_longitude?: number | null
           webhook_enabled?: boolean | null
           webhook_secret?: string | null
           webhook_url?: string | null
@@ -679,6 +685,9 @@ export type Database = {
           timesheet_frequency?: string
           timezone?: string
           updated_at?: string
+          weather_latitude?: number | null
+          weather_location_name?: string | null
+          weather_longitude?: number | null
           webhook_enabled?: boolean | null
           webhook_secret?: string | null
           webhook_url?: string | null

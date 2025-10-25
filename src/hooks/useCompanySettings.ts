@@ -28,6 +28,9 @@ export interface CompanySettings {
   webhook_url: string | null; // Webhook endpoint URL for daily summaries
   webhook_secret: string | null; // Secret key for webhook signature verification
   webhook_enabled: boolean; // Whether webhooks are enabled
+  weather_latitude: number | null; // Latitude for company weather location
+  weather_longitude: number | null; // Longitude for company weather location
+  weather_location_name: string | null; // Human-readable weather location name
   start_date?: string;
   created_at: string;
   updated_at: string;

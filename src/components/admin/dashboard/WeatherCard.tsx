@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Cloud, Sun, CloudRain, CloudSnow, Zap, Eye, Settings, MapPin } from 'lucide-react';
-import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useCompanySettings, useUpdateSettingsMutation } from '@/hooks/useCompanySettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { toast } from 'sonner';
@@ -34,9 +34,9 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [customLocation, setCustomLocation] = useState('');
-  const [savedCustomLocation, setSavedCustomLocation] = useState<{lat: number, lng: number, label: string} | null>(null);
   const { settings } = useCompanySettings();
   const { user } = useAuth();
+  const updateSettingsMutation = useUpdateSettingsMutation();
 
   const getWeatherIcon = (iconKey: string) => {
     switch (iconKey) {
@@ -50,12 +50,16 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
   };
 
   const getLocationData = async () => {
-    // If user has set a custom location, use that first
-    if (savedCustomLocation) {
-      return savedCustomLocation;
+    // Priority 1: Use company settings weather location if available
+    if (settings?.weather_latitude && settings?.weather_longitude) {
+      return {
+        lat: settings.weather_latitude,
+        lng: settings.weather_longitude,
+        label: settings.weather_location_name || 'Custom Location'
+      };
     }
 
-    // Try to get jobsite location for both strategies
+    // Priority 2: Try to get jobsite location
     try {
       const { data: jobsites } = await supabase
         .from('jobsites')
@@ -114,19 +118,38 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
 
     try {
       const location = await geocodeLocation(customLocation);
-      setSavedCustomLocation(location);
+      
+      await updateSettingsMutation.mutateAsync({
+        id: settings?.id,
+        company_id: user?.companyId,
+        weather_latitude: location.lat,
+        weather_longitude: location.lng,
+        weather_location_name: location.label,
+      });
+      
       setLocationDialogOpen(false);
       setCustomLocation('');
-      toast.success('Location updated successfully');
+      toast.success('Weather location updated for all company users');
     } catch (error) {
       toast.error('Could not find that location. Please try again.');
     }
   };
 
-  const resetToJobsiteLocation = () => {
-    setSavedCustomLocation(null);
-    setLocationDialogOpen(false);
-    toast.success('Reset to jobsite location');
+  const resetToJobsiteLocation = async () => {
+    try {
+      await updateSettingsMutation.mutateAsync({
+        id: settings?.id,
+        company_id: user?.companyId,
+        weather_latitude: null,
+        weather_longitude: null,
+        weather_location_name: null,
+      });
+      
+      setLocationDialogOpen(false);
+      toast.success('Reset to jobsite location for all company users');
+    } catch (error) {
+      toast.error('Failed to reset location');
+    }
   };
 
   const fetchWeather = async () => {
@@ -162,7 +185,7 @@ const WeatherCard: React.FC<WeatherCardProps> = ({
 
   useEffect(() => {
     fetchWeather();
-  }, [settings, user?.companyId, savedCustomLocation]);
+  }, [settings?.weather_latitude, settings?.weather_longitude, user?.companyId]);
 
   const formatTimeAgo = (timestamp: string) => {
     const date = new Date(timestamp);
