@@ -23,26 +23,15 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Building2, Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   companyName: z.string().min(2, 'Company name must be at least 2 characters'),
-  companyEmail: z.string().email('Invalid email').optional().or(z.literal('')),
-  companyPhone: z.string().optional(),
-  companyAddress: z.string().optional(),
   adminFirstName: z.string().min(2, 'First name must be at least 2 characters'),
   adminLastName: z.string().min(2, 'Last name must be at least 2 characters'),
   adminEmail: z.string().email('Invalid email'),
   adminPassword: z.string().min(6, 'Password must be at least 6 characters'),
   trialDays: z.number().min(1).max(365).default(30),
-  planType: z.enum(['basic', 'pro']).default('basic'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -56,15 +45,11 @@ export function CreateTrialCompanyDialog() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       companyName: '',
-      companyEmail: '',
-      companyPhone: '',
-      companyAddress: '',
       adminFirstName: '',
       adminLastName: '',
       adminEmail: '',
       adminPassword: '',
       trialDays: 30,
-      planType: 'basic',
     },
   });
 
@@ -90,7 +75,7 @@ export function CreateTrialCompanyDialog() {
 
       toast({
         title: 'Success!',
-        description: `Trial company "${values.companyName}" created successfully. Welcome email sent to ${values.adminEmail}.`,
+        description: `FREE trial company "${values.companyName}" created successfully. Welcome email sent to ${values.adminEmail}.`,
       });
 
       form.reset();
@@ -117,9 +102,9 @@ export function CreateTrialCompanyDialog() {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Trial Company</DialogTitle>
+          <DialogTitle>Create FREE Trial Company</DialogTitle>
           <DialogDescription>
-            Manually create a new company account with a free trial period. The admin will receive a welcome email with login credentials.
+            Create a completely FREE trial account for a company to test the system. No payment required. The account will have 50 employee slots and full system access for the trial period.
           </DialogDescription>
         </DialogHeader>
 
@@ -142,50 +127,6 @@ export function CreateTrialCompanyDialog() {
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="companyEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="info@company.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="companyPhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="(555) 123-4567" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="companyAddress"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="123 Main St, City, State" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
             </div>
 
             {/* Admin User Information */}
@@ -261,52 +202,28 @@ export function CreateTrialCompanyDialog() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Trial Configuration</h3>
               
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="planType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Plan Type *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select plan" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="basic">Basic (5 employees)</SelectItem>
-                          <SelectItem value="pro">Pro (Unlimited)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="trialDays"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Trial Days *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          max="365"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Number of trial days (1-365)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="trialDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trial Period (Days) *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="1" 
+                        max="365"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Set how many days this FREE trial will last (1-365 days). Account will have 50 employee slots and full access.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <div className="flex justify-end gap-3">

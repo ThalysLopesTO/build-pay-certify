@@ -102,10 +102,10 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const trialDays = body.trialDays || 30;
-    const planType = body.planType || 'basic';
-    const employeeLimit = planType === 'pro' ? null : 5; // null = unlimited for pro
+    // Since you only have one plan at $297 with 50 employees, we'll use that
+    const employeeLimit = 50;
 
-    console.log('Creating trial company:', { companyName: body.companyName, adminEmail: body.adminEmail, trialDays, planType });
+    console.log('Creating trial company:', { companyName: body.companyName, adminEmail: body.adminEmail, trialDays });
 
     // Calculate trial dates
     const now = new Date();
@@ -115,21 +115,19 @@ const handler = async (req: Request): Promise<Response> => {
     const gracePeriodEndDate = new Date(trialEndDate);
     gracePeriodEndDate.setDate(gracePeriodEndDate.getDate() + 7);
 
-    // Create company
+    // Create company - this is a FREE trial account that won't require payment
     const { data: company, error: companyError } = await supabaseAdmin
       .from('companies')
       .insert({
         name: body.companyName,
-        email: body.companyEmail || body.adminEmail,
-        phone: body.companyPhone,
-        address: body.companyAddress,
         trial_end_date: trialEndDate.toISOString(),
         grace_period_end_date: gracePeriodEndDate.toISOString(),
-        subscription_status: 'trialing',
+        subscription_status: 'active', // Set as active so they can use the system
         stripe_verified: false,
-        subscription_override: true,
+        subscription_override: true, // Critical: bypasses all subscription checks
         employee_limit: employeeLimit,
-        plan_type: planType
+        plan_type: 'enterprise', // Set as enterprise for the full plan
+        status: 'active'
       })
       .select()
       .single();
@@ -209,7 +207,7 @@ const handler = async (req: Request): Promise<Response> => {
         admin_first_name: body.adminFirstName,
         admin_last_name: body.adminLastName,
         status: 'approved',
-        notes: `Manual trial company creation by super admin. Trial: ${trialDays} days, Plan: ${planType}`,
+        notes: `FREE trial company created by super admin. Trial: ${trialDays} days. No payment required.`,
         stripe_session_id: null,
         payment_verified: false
       });
@@ -219,27 +217,26 @@ const handler = async (req: Request): Promise<Response> => {
       await supabaseAdmin.functions.invoke('send-email', {
         body: {
           to: body.adminEmail,
-          subject: `Welcome to StackBuild - ${trialDays} Day Trial Started!`,
+          subject: `Welcome to StackBuild - ${trialDays} Day FREE Trial!`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #333;">Welcome to StackBuild, ${body.adminFirstName}!</h2>
-              <p>Your trial account has been created for <strong>${body.companyName}</strong>.</p>
+              <p>Your <strong>FREE trial account</strong> has been created for <strong>${body.companyName}</strong>.</p>
               
-              <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h3 style="margin-top: 0; color: #333;">Trial Details:</h3>
+              <div style="background: #28a745; color: white; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">✨ FREE Trial Details:</h3>
                 <ul style="list-style: none; padding: 0;">
-                  <li><strong>Plan:</strong> ${planType.toUpperCase()}</li>
                   <li><strong>Trial Period:</strong> ${trialDays} days</li>
                   <li><strong>Trial Ends:</strong> ${trialEndDate.toLocaleDateString()}</li>
-                  <li><strong>Grace Period Ends:</strong> ${gracePeriodEndDate.toLocaleDateString()}</li>
-                  ${employeeLimit ? `<li><strong>Employee Limit:</strong> ${employeeLimit}</li>` : '<li><strong>Employees:</strong> Unlimited</li>'}
+                  <li><strong>Employee Limit:</strong> ${employeeLimit} employees</li>
+                  <li><strong>Payment Required:</strong> NO - This is a free trial!</li>
                 </ul>
               </div>
 
               <div style="background: #007bff; color: white; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
                 <h3 style="margin-top: 0;">Login Credentials</h3>
                 <p style="margin: 5px 0;"><strong>Email:</strong> ${body.adminEmail}</p>
-                <p style="margin: 5px 0;"><strong>Password:</strong> (as provided)</p>
+                <p style="margin: 5px 0;"><strong>Password:</strong> (as provided during setup)</p>
                 <a href="${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app') || 'https://stackbuild.lovable.app'}" 
                    style="display: inline-block; margin-top: 15px; padding: 10px 30px; background: white; color: #007bff; text-decoration: none; border-radius: 5px; font-weight: bold;">
                   Login Now
@@ -248,11 +245,13 @@ const handler = async (req: Request): Promise<Response> => {
 
               <h3 style="color: #333;">Getting Started:</h3>
               <ol>
-                <li>Log in to your account</li>
+                <li>Log in to your account using the credentials above</li>
                 <li>Set up your company profile</li>
                 <li>Add employees and jobsites</li>
                 <li>Start tracking time and managing projects</li>
               </ol>
+
+              <p><strong>Note:</strong> This is a completely free trial account. You will not be charged or asked to subscribe during the trial period.</p>
 
               <p>If you have any questions, please don't hesitate to reach out to our support team.</p>
               
@@ -273,7 +272,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Trial company created successfully',
+        message: 'FREE trial company created successfully',
         data: {
           companyId: company.id,
           companyName: company.name,
@@ -281,8 +280,8 @@ const handler = async (req: Request): Promise<Response> => {
           adminUserId: authUser.user.id,
           trialEndDate: trialEndDate.toISOString(),
           gracePeriodEndDate: gracePeriodEndDate.toISOString(),
-          planType,
-          employeeLimit
+          employeeLimit,
+          isFree: true
         }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
