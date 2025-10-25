@@ -43,7 +43,7 @@ export const createSuperAdminUser = async (params: CreateSuperAdminParams = {
 // Specific function for creating Thalys's account
 export const createThalysAdminUser = async () => {
   return createSuperAdminUser({
-    email: 'thalyslopesdev@gmail.com',
+    email: 'thalysadmin@gmail.com',
     password: 'Admin@1234',
     firstName: 'Thalys',
     lastName: 'Lopes'

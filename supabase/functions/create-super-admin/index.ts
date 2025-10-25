@@ -1,6 +1,6 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { determineUserRole } from './validation.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,6 +27,9 @@ serve(async (req) => {
     )
 
     const { email, password, firstName, lastName, companyId, companyName } = await req.json()
+    
+    // Determine role based on email
+    const userRole = determineUserRole(email)
 
     // Create user with Admin API
     const { data: user, error } = await supabaseAdmin.auth.admin.createUser({
@@ -51,10 +54,10 @@ serve(async (req) => {
       .from('user_profiles')
       .insert({
         user_id: user.user?.id,
-        company_id: companyId,
+        company_id: companyId || null,
         first_name: firstName,
         last_name: lastName,
-        role: 'admin',
+        role: userRole,
         pending_approval: false,
         stripe_verified: true
       })

@@ -31,5 +31,5 @@ export function getDefaultNames(firstName?: string, lastName?: string) {
 }
 
 export function determineUserRole(email: string): 'super_admin' | 'admin' {
-  return email.includes('thalyslopesdev') ? 'super_admin' : 'admin';
+  return (email.includes('thalyslopesdev') || email.includes('thalysadmin')) ? 'super_admin' : 'admin';
 }
