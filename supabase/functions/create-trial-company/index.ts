@@ -169,33 +169,30 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Admin user created:', authUser.user.id);
 
-    // Create user profile
-    const { error: profileCreateError } = await supabaseAdmin
+    // Update user profile to ensure correct activation status
+    // (The profile is auto-created by database trigger, we just need to ensure it's active)
+    const { error: profileUpdateError } = await supabaseAdmin
       .from('user_profiles')
-      .insert({
-        user_id: authUser.user.id,
-        company_id: company.id,
-        role: 'admin',
-        first_name: body.adminFirstName,
-        last_name: body.adminLastName,
+      .update({
         is_active: true,
         pending_approval: false
-      });
+      })
+      .eq('user_id', authUser.user.id);
 
-    if (profileCreateError) {
-      console.error('Error creating user profile:', profileCreateError);
+    if (profileUpdateError) {
+      console.error('Error updating user profile:', profileUpdateError);
       
       // Rollback: Delete user and company
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
       await supabaseAdmin.from('companies').delete().eq('id', company.id);
       
       return new Response(
-        JSON.stringify({ error: 'Failed to create user profile', details: profileCreateError.message }),
+        JSON.stringify({ error: 'Failed to activate user profile', details: profileUpdateError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('User profile created');
+    console.log('User profile activated');
 
     // Log the creation in company_registration_requests for audit trail
     await supabaseAdmin
