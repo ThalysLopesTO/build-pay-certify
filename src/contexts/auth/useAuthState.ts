@@ -75,12 +75,12 @@ export const useAuthState = () => {
               console.warn('⚠️ Profile fetch error:', error);
               setUser(null);
               setCompanyError(error);
-            } else if (profile && company) {
-              const authUser: AuthUser = {
-                ...session!.user!,
-                role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'management' | 'employee',
-                companyId: profile.company_id,
-                companyName: company.name,
+          } else if (profile) {
+            const authUser: AuthUser = {
+              ...session!.user!,
+              role: profile.role as 'super_admin' | 'admin' | 'foreman' | 'management' | 'employee',
+              companyId: profile.company_id,
+              companyName: company?.name || null,
                 hourlyRate: profile.hourly_rate || 25,
                 trade: profile.trade || 'General',
                 position: profile.position || 'Worker',
