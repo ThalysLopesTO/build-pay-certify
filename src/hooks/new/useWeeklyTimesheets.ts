@@ -28,6 +28,7 @@ export const useWeeklyTimesheets = (filters: TimesheetFilters = {}) => {
             id,
             name
           )`)
+        .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });
 
       if (filters.employeeName) {
