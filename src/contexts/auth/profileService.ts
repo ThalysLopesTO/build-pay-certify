@@ -58,6 +58,13 @@ export const fetchUserProfile = async (userId: string) => {
       return { profile: null, company: null, error: 'Your company account is pending approval. You will receive an email notification once approved.' };
     }
 
+    // Super admins don't need a company
+    if (profile.role === 'super_admin') {
+      console.log('👑 Super admin detected - bypassing company checks');
+      return { profile, company: null, error: null };
+    }
+
+    // Regular users must have a company
     if (!profile.company_id) {
       console.warn('⚠️ User not assigned to company');
       return { profile: null, company: null, error: 'You are not linked to any company. Please contact your administrator.' };
