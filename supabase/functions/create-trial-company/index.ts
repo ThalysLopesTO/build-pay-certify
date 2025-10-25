@@ -135,8 +135,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Calculate trial dates
     const now = new Date();
+    const registrationDate = now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
     const trialEndDate = new Date(now);
     trialEndDate.setDate(trialEndDate.getDate() + trialDays);
+    const expirationDate = trialEndDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
     
     const gracePeriodEndDate = new Date(trialEndDate);
     gracePeriodEndDate.setDate(gracePeriodEndDate.getDate() + 7);
@@ -146,6 +148,8 @@ const handler = async (req: Request): Promise<Response> => {
       .from('companies')
       .insert({
         name: body.companyName,
+        registration_date: registrationDate,        // Starting date
+        expiration_date: expirationDate,            // Expiring date
         trial_end_date: trialEndDate.toISOString(),
         grace_period_end_date: gracePeriodEndDate.toISOString(),
         subscription_status: 'active', // Set as active so they can use the system
