@@ -30,7 +30,7 @@ const SuperAdminLogin = () => {
 
   // If already authenticated and is super admin, redirect
   if (isAuthenticated && user?.role === 'super_admin') {
-    return <Navigate to="/super-admin" replace />;
+    return <Navigate to="/super-admin/dashboard" replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {

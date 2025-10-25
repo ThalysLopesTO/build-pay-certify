@@ -37,7 +37,26 @@ serve(async (req)=>{
       email: user.email
     });
     // Get user's company with trial info
-    const { data: profile } = await supabaseClient.from('user_profiles').select('company_id').eq('user_id', user.id).single();
+    const { data: profile } = await supabaseClient.from('user_profiles').select('company_id, role').eq('user_id', user.id).single();
+    
+    // Super admins don't need subscription checks
+    if (profile?.role === 'super_admin') {
+      logStep("Super admin detected - bypassing subscription check");
+      return new Response(JSON.stringify({
+        subscribed: true,
+        plan: 'enterprise',
+        subscription_end: null,
+        status: 'active',
+        is_super_admin: true
+      }), {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        },
+        status: 200
+      });
+    }
+    
     if (!profile?.company_id) {
       throw new Error("User not associated with a company");
     }
