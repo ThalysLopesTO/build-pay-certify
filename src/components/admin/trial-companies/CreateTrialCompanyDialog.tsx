@@ -95,12 +95,13 @@ export function CreateTrialCompanyDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
+        <Button className="gap-2 w-full sm:w-auto touch-target">
           <Building2 className="h-4 w-4" />
-          Create Trial Company
+          <span className="hidden sm:inline">Create Trial Company</span>
+          <span className="sm:hidden">New Trial</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto sm:rounded-lg w-[calc(100vw-2rem)] sm:w-full">
         <DialogHeader>
           <DialogTitle>Create FREE Trial Company</DialogTitle>
           <DialogDescription>

@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Header from '@/components/Header';
 import SuperAdminHeader from '@/components/admin/SuperAdminHeader';
 import SuperAdminLoading from '@/components/admin/SuperAdminLoading';
@@ -14,6 +14,10 @@ import { useSuperAdminMutations } from '@/hooks/useSuperAdminMutations';
 import { useCompanyMutations } from '@/hooks/useCompanyMutations';
 import CompanyRequestTable from '@/components/admin/CompanyRequestTable';
 import { CreateTrialCompanyDialog } from '@/components/admin/trial-companies/CreateTrialCompanyDialog';
+import { StatsCards } from '@/components/admin/super-admin/StatsCards';
+import { MobileCompanyCard } from '@/components/admin/super-admin/MobileCompanyCard';
+import { MobileRequestCard } from '@/components/admin/super-admin/MobileRequestCard';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface RegistrationRequest {
   id: string;
@@ -49,11 +53,23 @@ const SuperAdminDashboard = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('companies');
   
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const { requests, companies, isLoading, pendingCount } = useSuperAdminData();
   const { approveRequestMutation, rejectRequestMutation } = useSuperAdminMutations();
   const { editCompanyMutation, revokeCompanyMutation } = useCompanyMutations();
+
+  // Calculate stats
+  const totalCompanies = companies.filter(c => c.status === 'active').length;
+  const trialCompanies = companies.filter(c => c.status === 'active' && c.days_until_expiry !== null).length;
+  const expiringSoon = companies.filter(c => 
+    c.status === 'active' && 
+    c.days_until_expiry !== null && 
+    c.days_until_expiry <= 7 && 
+    c.days_until_expiry > 0
+  ).length;
 
   const handleApprove = (request: RegistrationRequest) => {
     setSelectedRequest(request);
@@ -140,36 +156,101 @@ const SuperAdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50">
       <Header />
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
+      <div className="p-4 md:p-6">
+        <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
+          {/* Header with Create Button */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1 w-full">
               <SuperAdminHeader pendingCount={pendingCount} />
             </div>
-            <CreateTrialCompanyDialog />
+            <div className="w-full sm:w-auto">
+              <CreateTrialCompanyDialog />
+            </div>
           </div>
 
-          <CompanyManagementTable
-            companies={companies}
-            requests={requests}
-            onApproveRequest={handleApprove}
-            onRejectRequest={handleReject}
-            onEditCompany={handleEditCompany}
-            onRevokeCompany={handleRevokeCompany}
-            isProcessing={processingId}
+          {/* Stats Cards */}
+          <StatsCards
+            totalCompanies={totalCompanies}
+            pendingApprovals={pendingCount}
+            trialCompanies={trialCompanies}
+            expiringSoon={expiringSoon}
           />
 
-          <CompanyRequestTable
-            requests={requests}
-            onApproveRequest={handleApprove}
-            onRejectRequest={handleReject}
-            isProcessing={processingId}
-          />
+          {/* Mobile: Tabs View */}
+          {isMobile ? (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="companies" className="touch-target">
+                  Companies ({totalCompanies})
+                </TabsTrigger>
+                <TabsTrigger value="requests" className="touch-target">
+                  Requests ({pendingCount})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="companies" className="space-y-3 mt-0">
+                {companies.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No companies yet
+                  </div>
+                ) : (
+                  companies.map((company) => (
+                    <MobileCompanyCard
+                      key={company.id}
+                      company={company}
+                      onEdit={handleEditCompany}
+                      onRevoke={handleRevokeCompany}
+                      isProcessing={processingId === company.id}
+                    />
+                  ))
+                )}
+              </TabsContent>
+
+              <TabsContent value="requests" className="space-y-3 mt-0">
+                {requests.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No pending requests
+                  </div>
+                ) : (
+                  requests.map((request) => (
+                    <MobileRequestCard
+                      key={request.id}
+                      request={request}
+                      onApprove={handleApprove}
+                      onReject={handleReject}
+                      isProcessing={processingId === request.id}
+                    />
+                  ))
+                )}
+              </TabsContent>
+            </Tabs>
+          ) : (
+            /* Desktop: Table View */
+            <>
+              <CompanyManagementTable
+                companies={companies}
+                requests={requests}
+                onApproveRequest={handleApprove}
+                onRejectRequest={handleReject}
+                onEditCompany={handleEditCompany}
+                onRevokeCompany={handleRevokeCompany}
+                isProcessing={processingId}
+              />
+
+              <CompanyRequestTable
+                requests={requests}
+                onApproveRequest={handleApprove}
+                onRejectRequest={handleReject}
+                isProcessing={processingId}
+              />
+            </>
+          )}
         </div>
       </div>
 
+      {/* Dialogs */}
       <LicenseApprovalDialog
         open={showApprovalDialog}
         onOpenChange={setShowApprovalDialog}

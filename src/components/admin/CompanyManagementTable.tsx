@@ -78,7 +78,7 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 hidden md:block">
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
