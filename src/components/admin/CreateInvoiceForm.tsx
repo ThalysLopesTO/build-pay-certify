@@ -11,7 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useInvoices } from '@/hooks/useInvoices';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
-import { CreateInvoiceData } from './types/invoice';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import { CreateInvoiceData, Invoice } from './types/invoice';
+import { autoSendInvoiceEmail } from '@/utils/autoSendInvoiceEmail';
+import { useToast } from '@/hooks/use-toast';
 import { Plus, X, Calendar, MapPin, User, Building, Mail, Phone, Hash, FileText, DollarSign, Save, Send, Download, Paperclip } from 'lucide-react';
 
 interface InvoiceFormData {
@@ -35,10 +38,13 @@ interface InvoiceFormData {
 }
 
 const CreateInvoiceForm = () => {
-  const { createInvoice, isCreating } = useInvoices();
+  const { createInvoiceMutation, isCreating } = useInvoices();
   const { data: jobsites } = useJobsites();
   const { settings } = useCompanySettings();
+  const { logoUrl } = useCompanyLogo();
+  const { toast } = useToast();
   const [isDraft, setIsDraft] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   
   const form = useForm<InvoiceFormData>({
     defaultValues: {
@@ -69,8 +75,8 @@ const CreateInvoiceForm = () => {
     name: 'line_items',
   });
 
-  const onSubmit = (data: InvoiceFormData, saveAsDraft = false) => {
-    const invoiceData: CreateInvoiceData = {
+  const onSubmit = async (data: InvoiceFormData, saveAsDraft = false, sendEmailFlag = false) => {
+    const invoiceData: CreateInvoiceData & { sendEmail?: boolean } = {
       ...data,
       notes: data.notes || null,
       line_items: data.line_items.filter(item => item.description && item.quantity > 0 && item.unit_price > 0).map(item => ({
@@ -79,9 +85,44 @@ const CreateInvoiceForm = () => {
         unit_price: item.unit_price,
         amount: item.quantity * item.unit_price
       })),
+      sendEmail: sendEmailFlag,
     };
     
-    createInvoice(invoiceData);
+    createInvoiceMutation.mutate(invoiceData as any, {
+      onSuccess: async (createdInvoice: any) => {
+        // If this was a "Send Invoice" action, auto-send email
+        if (sendEmailFlag && createdInvoice._shouldSendEmail) {
+          setIsSendingEmail(true);
+          
+          toast({
+            title: 'Invoice Created',
+            description: `Sending email to ${data.client_email}...`,
+          });
+
+          const emailResult = await autoSendInvoiceEmail(
+            createdInvoice as Invoice,
+            settings,
+            logoUrl
+          );
+
+          setIsSendingEmail(false);
+
+          if (emailResult.success) {
+            toast({
+              title: 'Invoice Sent Successfully',
+              description: `Invoice #${createdInvoice.invoice_number} has been created and emailed to ${data.client_email}`,
+            });
+          } else {
+            toast({
+              title: 'Invoice Created',
+              description: `Invoice #${createdInvoice.invoice_number} created but email failed: ${emailResult.error}. You can resend from Invoice Tracker.`,
+              variant: 'default',
+            });
+          }
+        }
+      }
+    });
+    
     if (!saveAsDraft) {
       form.reset();
     }
@@ -89,12 +130,12 @@ const CreateInvoiceForm = () => {
 
   const handleSaveAsDraft = () => {
     setIsDraft(true);
-    form.handleSubmit((data) => onSubmit(data, true))();
+    form.handleSubmit((data) => onSubmit(data, true, false))();
   };
 
   const handleSendInvoice = () => {
     setIsDraft(false);
-    form.handleSubmit((data) => onSubmit(data, false))();
+    form.handleSubmit((data) => onSubmit(data, false, true))();
   };
 
   const calculateSubtotal = () => {
@@ -665,11 +706,11 @@ const CreateInvoiceForm = () => {
               <Button
                 type="button"
                 onClick={handleSendInvoice}
-                disabled={isCreating}
+                disabled={isCreating || isSendingEmail}
                 className="sm:flex-1 sm:max-w-xs h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               >
                 <Send className="h-5 w-5 mr-3" />
-                {isCreating ? 'Creating Invoice...' : 'Send Invoice'}
+                {isCreating ? 'Creating Invoice...' : isSendingEmail ? 'Sending Email...' : 'Send Invoice'}
               </Button>
             </div>
           </Form>

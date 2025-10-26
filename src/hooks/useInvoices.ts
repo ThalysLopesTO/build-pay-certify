@@ -66,7 +66,7 @@ export const useInvoices = () => {
 
   // Create invoice
   const createInvoiceMutation = useMutation({
-    mutationFn: async (invoiceData: CreateInvoiceData) => {
+    mutationFn: async (invoiceData: CreateInvoiceData & { sendEmail?: boolean }) => {
       console.log('Creating invoice:', invoiceData);
       
       if (!user?.companyId) {
@@ -116,6 +116,26 @@ export const useInvoices = () => {
           console.error('Error creating line items:', lineItemsError);
           throw lineItemsError;
         }
+      }
+
+      // If sendEmail flag is set, fetch complete invoice data with line items
+      if (invoiceData.sendEmail) {
+        const { data: completeInvoice, error: fetchError } = await supabase
+          .from('invoices')
+          .select(`
+            *,
+            jobsites(name, address),
+            invoice_line_items(*)
+          `)
+          .eq('id', invoice.id)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching complete invoice:', fetchError);
+          return invoice;
+        }
+
+        return { ...completeInvoice, _shouldSendEmail: true };
       }
 
       return invoice;
@@ -219,6 +239,7 @@ export const useInvoices = () => {
     error,
     companyLogoUrl,
     createInvoice: createInvoiceMutation.mutate,
+    createInvoiceMutation, // Export full mutation for custom onSuccess
     isCreating: createInvoiceMutation.isPending,
     updateInvoiceStatus: updateInvoiceStatusMutation.mutate,
     isUpdating: updateInvoiceStatusMutation.isPending,
