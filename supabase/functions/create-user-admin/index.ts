@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { sendUserWelcomeEmail } from './email-service.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,7 +27,13 @@ serve(async (req) => {
       }
     )
 
-    const { email, password } = await req.json()
+    const { 
+      email, 
+      password, 
+      firstName = 'User',
+      lastName = '',
+      companyName = 'Your Company'
+    } = await req.json()
 
     // Create user with Admin API
     const { data: user, error } = await supabaseAdmin.auth.admin.createUser({
@@ -47,6 +54,26 @@ serve(async (req) => {
     }
 
     console.log('User created successfully:', user.user?.email)
+
+    // Send welcome email (non-blocking - don't fail if email fails)
+    try {
+      const emailResult = await sendUserWelcomeEmail({
+        email,
+        firstName,
+        lastName,
+        companyName,
+        password,
+      });
+      
+      if (emailResult.success) {
+        console.log('Welcome email sent successfully to:', email);
+      } else {
+        console.warn('Failed to send welcome email:', emailResult.error);
+      }
+    } catch (emailError) {
+      console.error('Error sending welcome email (non-blocking):', emailError);
+      // Continue execution - don't fail user creation due to email issues
+    }
 
     return new Response(
       JSON.stringify({ 

@@ -1,10 +1,22 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export const createUserWithAdmin = async (email: string, password: string) => {
+export const createUserWithAdmin = async (
+  email: string, 
+  password: string,
+  firstName?: string,
+  lastName?: string,
+  companyName?: string
+) => {
   try {
     const { data, error } = await supabase.functions.invoke('create-user-admin', {
-      body: { email, password }
+      body: { 
+        email, 
+        password, 
+        firstName, 
+        lastName, 
+        companyName 
+      }
     });
 
     if (error) {
