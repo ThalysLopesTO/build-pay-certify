@@ -2134,6 +2134,44 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_visible: boolean
+          menu_item_id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          menu_item_id: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          menu_item_id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       safety_templates: {
         Row: {
           company_id: string
@@ -3172,6 +3210,10 @@ export type Database = {
         }[]
       }
       run_daily_notification_checks: { Args: never; Returns: undefined }
+      seed_default_role_permissions: {
+        Args: { company_uuid: string }
+        Returns: undefined
+      }
     }
     Enums: {
       punch_type: "in" | "out" | "both"
