@@ -181,16 +181,26 @@ export const processPaidRegistration = async (
     console.warn('⚠️ Failed to insert registration request log:', requestError);
   }
 
-    // Send welcome email
-    const userName = formData.adminFirstName && formData.adminLastName 
-      ? `${formData.adminFirstName} ${formData.adminLastName}` 
-      : undefined;
-    
-    await sendWelcomeEmail({
-      to: formData.adminEmail,
-      name: userName
-    });
-    console.log('✅ Welcome email sent successfully');
+    // Send StackBuild welcome email with login credentials
+    try {
+      const { error: emailError } = await supabase.functions.invoke('send-email', {
+        body: {
+          to: formData.adminEmail,
+          firstName: formData.adminFirstName || 'User',
+          lastName: formData.adminLastName || '',
+          companyName: formData.companyName,
+          password: formData.password
+        }
+      });
+      
+      if (emailError) {
+        console.warn('⚠️ Welcome email failed (non-blocking):', emailError);
+      } else {
+        console.log('✅ StackBuild welcome email with credentials sent successfully');
+      }
+    } catch (emailError) {
+      console.warn('⚠️ Welcome email error (non-blocking):', emailError);
+    }
 
     console.log('🎉 Registration completed successfully for new company:', company.id);
 
