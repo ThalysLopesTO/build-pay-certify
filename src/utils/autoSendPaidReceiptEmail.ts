@@ -117,11 +117,19 @@ export const autoSendPaidReceiptEmail = async (
     `;
 
     // Generate PDF with professional PAID badge
+    console.log('📄 Generating PDF for receipt email...');
     const { blob, filename } = await generateBrandedInvoicePDFBlob(
       invoice,
       settings,
       logoUrl
     );
+
+    const pdfSizeMB = blob.size / (1024 * 1024);
+    console.log(`📊 PDF generated: ${filename}, Size: ${pdfSizeMB.toFixed(2)}MB`);
+    
+    if (pdfSizeMB > 10) {
+      console.warn(`⚠️ Large PDF size: ${pdfSizeMB.toFixed(2)}MB - may fail to send`);
+    }
 
     // Convert PDF to base64
     const base64PDF = await blobToBase64(blob);

@@ -113,8 +113,12 @@ export const generateBrandedInvoicePDF = async (
 
   document.body.appendChild(container);
 
-  // Render HTML to canvas then to PDF
-  const canvas = await html2canvas(container, { scale: 2 });
+  // Render HTML to canvas then to PDF (reduced scale for smaller file size)
+  const canvas = await html2canvas(container, { 
+    scale: 1.5,
+    logging: false,
+    useCORS: true
+  });
   const imgData = canvas.toDataURL('image/png');
 
   const pdf = new jsPDF('p', 'pt', 'a4');
@@ -153,8 +157,12 @@ export const generateBrandedInvoicePDFBlob = async (
 
   document.body.appendChild(container);
 
-  // Render HTML to canvas then to PDF
-  const canvas = await html2canvas(container, { scale: 2 });
+  // Render HTML to canvas then to PDF (reduced scale for smaller file size)
+  const canvas = await html2canvas(container, { 
+    scale: 1.5,
+    logging: false,
+    useCORS: true
+  });
   const imgData = canvas.toDataURL('image/png');
 
   const pdf = new jsPDF('p', 'pt', 'a4');

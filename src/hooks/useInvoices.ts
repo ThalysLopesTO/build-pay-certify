@@ -219,7 +219,7 @@ export const useInvoices = () => {
 
             const receiptResult = await autoSendPaidReceiptEmail(
               completeInvoice,
-              companyData?.data || null,
+              companyData || null,
               companyLogoUrl
             );
 
