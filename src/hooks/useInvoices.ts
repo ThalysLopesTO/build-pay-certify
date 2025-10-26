@@ -174,20 +174,82 @@ export const useInvoices = () => {
         updateData.receipt_file_url = receipt_file_url;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('invoices')
         .update(updateData)
         .eq('id', id)
-        .eq('company_id', user?.companyId); // Ensure company isolation
+        .eq('company_id', user?.companyId)
+        .select()
+        .single();
 
       if (error) throw error;
+      return { data, status };
     },
-    onSuccess: () => {
+    onSuccess: async (result) => {
+      const { status, data: updatedInvoice } = result;
+      
       queryClient.invalidateQueries({ queryKey: ['invoices', user?.companyId] });
-      toast({
-        title: 'Invoice Updated',
-        description: 'Invoice status has been updated successfully.',
-      });
+      
+      // Auto-send receipt email if status changed to 'paid'
+      if (status === 'paid') {
+        try {
+          // Fetch complete invoice with line items
+          const { data: completeInvoice, error } = await supabase
+            .from('invoices')
+            .select(`
+              *,
+              invoice_line_items (*),
+              jobsites (name, address)
+            `)
+            .eq('id', updatedInvoice.id)
+            .single();
+
+          if (error) throw error;
+
+          if (completeInvoice) {
+            // Dynamic import to avoid circular dependencies
+            const { autoSendPaidReceiptEmail } = await import('@/utils/autoSendPaidReceiptEmail');
+            
+            // Get company settings
+            const { data: companyData } = await supabase
+              .from('companies')
+              .select('*')
+              .eq('id', user?.companyId)
+              .single();
+
+            const receiptResult = await autoSendPaidReceiptEmail(
+              completeInvoice,
+              companyData?.data || null,
+              companyLogoUrl
+            );
+
+            if (receiptResult.success) {
+              toast({
+                title: '✅ Payment Receipt Sent',
+                description: `Receipt emailed to ${completeInvoice.client_email}`,
+              });
+            } else {
+              console.warn('Receipt email failed:', receiptResult.error);
+              toast({
+                title: 'Invoice Marked as PAID',
+                description: 'Receipt email failed to send. You can resend manually.',
+                variant: 'default',
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error sending receipt email:', error);
+          // Don't show error toast - invoice was still updated successfully
+        }
+      }
+      
+      // Show success toast for status update
+      if (status !== 'paid') {
+        toast({
+          title: 'Invoice Updated',
+          description: 'Invoice status has been updated successfully.',
+        });
+      }
     },
     onError: (error) => {
       console.error('Error updating invoice:', error);

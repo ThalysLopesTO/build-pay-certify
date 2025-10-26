@@ -37,9 +37,11 @@ export const generateInvoicePDFBlob = async (
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     addCanvasToPdf(canvas, pdf);
 
-    // Optional watermark for non-paid invoices
-    if ((invoice.status ?? "").toLowerCase() !== "paid") {
-      addWatermark(pdf, (invoice.status ?? "DRAFT").toUpperCase());
+    // Add watermark based on status
+    if ((invoice.status ?? "").toLowerCase() === "paid") {
+      addPaidWatermark(pdf);
+    } else {
+      addWatermark(pdf, (invoice.status ?? "PENDING").toUpperCase());
     }
 
     const blob = pdf.output("blob");
@@ -381,13 +383,28 @@ const addCanvasToPdf = (canvas: HTMLCanvasElement, pdf: jsPDF) => {
   pdf.addImage(imgData, "PNG", x, y, w, h);
 };
 
-// Watermark helper (diagonal center)
+// Watermark helper (diagonal center for pending/draft)
 const addWatermark = (pdf: jsPDF, text: string) => {
   const pdfW = pdf.internal.pageSize.getWidth();
   const pdfH = pdf.internal.pageSize.getHeight();
   pdf.setFontSize(50);
-  pdf.setTextColor(200, 200, 200);
+  pdf.setTextColor(220, 220, 220); // Very light gray
   pdf.text(text, pdfW / 2, pdfH / 2, { align: "center", angle: 45 });
+};
+
+// Professional PAID stamp (top-right corner)
+const addPaidWatermark = (pdf: jsPDF) => {
+  const pdfW = pdf.internal.pageSize.getWidth();
+  pdf.setFontSize(42);
+  pdf.setFont(undefined, "bold");
+  pdf.setTextColor(22, 163, 74); // Green
+  pdf.text("PAID", pdfW - 40, 30, { align: "right" });
+  
+  // Add date paid beneath
+  const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  pdf.setFontSize(10);
+  pdf.setTextColor(100, 100, 100);
+  pdf.text(today, pdfW - 40, 38, { align: "right" });
 };
 
 // Simple sanitizer for injected content (keeps it light for known fields)
@@ -462,16 +479,16 @@ const baseStyles = `
   }
   *{ box-sizing:border-box; }
   body{ margin:0; padding:0; color:var(--text); font:14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans"; }
-  .paper{ width:${A4_CANVAS_WIDTH}px; background:#fff; padding:40px; }
+  .paper{ width:${A4_CANVAS_WIDTH}px; background:#fff; padding:48px; margin:0 auto; }
 
   .row{ display:flex; gap:32px; }
   .space{ height:24px; }
 
-  /* Header - Improved spacing and layout */
-  .header{ display:flex; justify-content:space-between; align-items:flex-start; gap:40px; padding-bottom:32px; border-bottom:2px solid var(--border); margin-bottom:32px; }
+  /* Header - Professional spacing and layout */
+  .header{ display:flex; justify-content:space-between; align-items:flex-start; gap:48px; padding-bottom:36px; border-bottom:3px solid var(--accent); margin-bottom:40px; }
   .brand{ display:flex; align-items:center; gap:18px; }
   .brand--textonly .brand-mark{ width:56px; height:56px; display:grid; place-items:center; background:var(--accent); color:#fff; border-radius:12px; font-weight:800; font-size:18px; }
-  .brand-logo{ width:120px; height:60px; object-fit:contain; }
+  .brand-logo{ width:180px; height:90px; object-fit:contain; }
   .brand-name{ font-weight:800; font-size:20px; color:var(--ink); letter-spacing:.3px; line-height:1.2; margin-bottom:4px; }
   .brand-address{ font-size:13px; color:var(--muted); line-height:1.3; margin-bottom:2px; }
   .brand-contact{ font-size:13px; color:var(--muted); line-height:1.3; margin-bottom:2px; }
