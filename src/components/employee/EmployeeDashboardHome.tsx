@@ -10,6 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTimesheets } from '@/hooks/useTimesheets';
 import DashboardHero from '@/components/dashboard/DashboardHero';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { isMenuItemVisible } from '@/utils/menuPermissions';
 
 interface EmployeeDashboardHomeProps {
   onNavigateToTab: (tab: string) => void;
@@ -18,6 +20,7 @@ interface EmployeeDashboardHomeProps {
 const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigateToTab }) => {
   const { user } = useAuth();
   const { totalWeeklyHours, isLoading: hoursLoading } = useTimesheets();
+  const { data: permissions } = useRolePermissions();
 
   // Fetch full user profile with photo
   const { data: userProfile } = useQuery({
@@ -39,8 +42,9 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
   const targetHours = 40;
   const progressPercentage = Math.min((totalWeeklyHours / targetHours) * 100, 100);
 
-  const quickActions = [
+  const allQuickActions = [
     {
+      id: 'time-tracker',
       title: 'Clock In/Out',
       icon: Timer,
       onClick: () => onNavigateToTab('time-tracker'),
@@ -48,6 +52,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       description: 'Track time'
     },
     {
+      id: 'attention-report',
       title: 'Report Issue',
       icon: AlertTriangle,
       onClick: () => onNavigateToTab('attention-report'),
@@ -55,6 +60,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       description: 'Submit report'
     },
     {
+      id: 'timesheet',
       title: 'Timesheet',
       icon: FileText,
       onClick: () => onNavigateToTab('timesheet'),
@@ -62,6 +68,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       description: 'Submit hours'
     },
     {
+      id: 'missed-punch-requests',
       title: 'Missed Punch',
       icon: AlertCircle,
       onClick: () => onNavigateToTab('missed-punch-requests'),
@@ -69,6 +76,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       description: 'Report missed punch'
     },
     {
+      id: 'certificates',
       title: 'Certificates',
       icon: Award,
       onClick: () => onNavigateToTab('certificates'),
@@ -76,6 +84,10 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       description: 'View certs'
     }
   ];
+
+  const quickActions = allQuickActions.filter(action => 
+    isMenuItemVisible(action.id, permissions, user?.role || 'employee')
+  );
 
   return (
     <div className="space-y-6 animate-fade-in p-4 max-w-6xl mx-auto">
@@ -158,11 +170,13 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       {/* Additional Actions Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { title: 'My Reports', icon: FileText, tab: 'my-reports' },
-          { title: 'Company Rules', icon: Building, tab: 'company-rules' },
-          { title: 'Settings', icon: Settings, tab: 'settings' },
-          { title: 'Time Tracker', icon: Timer, tab: 'time-tracker' }
-        ].map((item, index) => {
+          { id: 'my-reports', title: 'My Reports', icon: FileText, tab: 'my-reports' },
+          { id: 'company-rules', title: 'Company Rules', icon: Building, tab: 'company-rules' },
+          { id: 'settings', title: 'Settings', icon: Settings, tab: 'settings' },
+          { id: 'time-tracker', title: 'Time Tracker', icon: Timer, tab: 'time-tracker' }
+        ].filter(item => 
+          isMenuItemVisible(item.id, permissions, user?.role || 'employee')
+        ).map((item, index) => {
           const Icon = item.icon;
           return (
             <Button

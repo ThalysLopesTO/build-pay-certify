@@ -1,6 +1,9 @@
 
 import React from 'react';
 import { Clock, FileText, AlertTriangle, Settings, Home, AlertCircle } from 'lucide-react';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { filterMenuByPermissions } from '@/utils/menuPermissions';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface EmployeeBottomNavProps {
   activeTab: string;
@@ -8,43 +11,57 @@ interface EmployeeBottomNavProps {
 }
 
 const EmployeeBottomNav: React.FC<EmployeeBottomNavProps> = ({ activeTab, onTabChange }) => {
+  const { data: permissions } = useRolePermissions();
+  const { user } = useAuth();
+
   const navItems = [
     {
       id: 'dashboard',
+      title: 'Home',
       label: 'Home',
       icon: Home,
       color: 'text-slate-600'
     },
     {
       id: 'timesheet',
+      title: 'Timesheet',
       label: 'Timesheet',
       icon: Clock,
       color: 'text-blue-600'
     },
     {
       id: 'missed-punch-requests',
+      title: 'Missed Punch',
       label: 'Missed Punch',
       icon: AlertCircle,
       color: 'text-red-600'
     },
     {
       id: 'attention-report',
+      title: 'Report',
       label: 'Report',
       icon: AlertTriangle,
       color: 'text-orange-600'
     },
     {
       id: 'settings',
+      title: 'Settings',
       label: 'Settings',
       icon: Settings,
       color: 'text-slate-600'
     }
   ];
 
+  const filteredNavItems = filterMenuByPermissions(
+    navItems,
+    permissions,
+    user?.role || 'employee'
+  );
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1 safe-area-pb shadow-lg">
       <div className="flex justify-around items-center max-w-lg mx-auto">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           

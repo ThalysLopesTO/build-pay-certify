@@ -69,9 +69,13 @@ const roleMenuItems = {
   ],
   employee: [
     { id: 'dashboard', label: 'Home' },
+    { id: 'time-tracker', label: 'Time Clock' },
     { id: 'timesheet', label: 'Timesheet' },
     { id: 'missed-punch-requests', label: 'Missed Punch' },
-    { id: 'attention-report', label: 'Report' },
+    { id: 'attention-report', label: 'Report Issue' },
+    { id: 'my-reports', label: 'My Reports' },
+    { id: 'certificates', label: 'Certificates' },
+    { id: 'company-rules', label: 'Company Rules' },
     { id: 'settings', label: 'Settings' },
   ],
 };
