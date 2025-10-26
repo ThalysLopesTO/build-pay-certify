@@ -2,6 +2,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Quote, QuoteLineItem } from '@/hooks/quotes';
 import { CompanySettings } from '@/hooks/useCompanySettings';
+import { fetchLogoAsBase64 } from '@/utils/logoUtils';
 
 export const generateQuotePDF = async (
   quote: Quote,
@@ -10,6 +11,12 @@ export const generateQuotePDF = async (
   logoUrl?: string | null
 ) => {
   try {
+    // Convert logo to base64 to avoid CORS issues with html2canvas
+    let logoBase64 = '';
+    if (logoUrl) {
+      logoBase64 = await fetchLogoAsBase64(logoUrl);
+    }
+
     // Create a temporary div to render the quote HTML
     const tempDiv = document.createElement('div');
     tempDiv.style.position = 'absolute';
@@ -21,7 +28,7 @@ export const generateQuotePDF = async (
     tempDiv.style.fontFamily = 'Arial, sans-serif';
     
     // Generate HTML content
-    tempDiv.innerHTML = await generateQuoteHTML(quote, lineItems, companySettings, logoUrl);
+    tempDiv.innerHTML = await generateQuoteHTML(quote, lineItems, companySettings, logoBase64);
     
     document.body.appendChild(tempDiv);
 
@@ -100,7 +107,7 @@ const generateQuoteHTML = async (
   quote: Quote,
   lineItems: QuoteLineItem[],
   companySettings?: CompanySettings | null,
-  logoUrl?: string | null
+  logoBase64?: string | null
 ): Promise<string> => {
   const formatCurrency = (amount: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
@@ -125,12 +132,11 @@ const generateQuoteHTML = async (
       <!-- Header -->
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid #e5e7eb;">
         <div style="flex: 1;">
-          ${logoUrl ? `
+          ${logoBase64 ? `
             <img 
-              src="${logoUrl}" 
+              src="${logoBase64}" 
               alt="Company Logo" 
-              style="max-height: 80px; max-width: 200px; margin-bottom: 20px;" 
-              crossorigin="anonymous"
+              style="max-height: 80px; max-width: 200px; margin-bottom: 20px; object-fit: contain;" 
             />
           ` : ''}
           <div style="color: #6b7280; font-size: 14px; line-height: 1.6;">
@@ -274,6 +280,12 @@ export const generateQuotePDFBlob = async (
   logoUrl?: string | null
 ): Promise<{ blob: Blob; filename: string }> => {
   try {
+    // Convert logo to base64 to avoid CORS issues with html2canvas
+    let logoBase64 = '';
+    if (logoUrl) {
+      logoBase64 = await fetchLogoAsBase64(logoUrl);
+    }
+
     // Create a temporary div to render the quote HTML
     const tempDiv = document.createElement('div');
     tempDiv.style.position = 'absolute';
@@ -285,7 +297,7 @@ export const generateQuotePDFBlob = async (
     tempDiv.style.fontFamily = 'Arial, sans-serif';
     
     // Generate HTML content
-    tempDiv.innerHTML = await generateQuoteHTML(quote, lineItems, companySettings, logoUrl);
+    tempDiv.innerHTML = await generateQuoteHTML(quote, lineItems, companySettings, logoBase64);
     
     document.body.appendChild(tempDiv);
 

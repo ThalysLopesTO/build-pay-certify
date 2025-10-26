@@ -3,18 +3,19 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Invoice } from './types/invoice';
 import { CompanySettings } from '@/hooks/useCompanySettings';
+import { fetchLogoAsBase64 } from '@/utils/logoUtils';
 
 // Helper function to generate the invoice HTML
 const generateInvoiceHTML = (
   invoice: Invoice,
   companySettings: CompanySettings,
-  logoUrl?: string | null
+  logoBase64?: string | null
 ): string => {
   return `
     <div style="font-family: sans-serif; padding: 32px; max-width: 750px; margin: auto; border: 1px solid #ddd;">
       <div style="display: flex; justify-content: space-between; margin-bottom: 32px;">
         <div>
-          ${logoUrl ? `<img src="${logoUrl}" style="max-height: 60px; margin-bottom: 8px;" />` : ''}
+          ${logoBase64 ? `<img src="${logoBase64}" style="max-height: 60px; margin-bottom: 8px; object-fit: contain;" />` : ''}
           <div style="font-size: 20px; font-weight: bold;">${companySettings.company_name}</div>
           <div style="color: #666; font-size: 12px;">
             ${companySettings.company_address || ''}<br/>
@@ -96,13 +97,19 @@ export const generateBrandedInvoicePDF = async (
   companySettings: CompanySettings,
   logoUrl?: string | null
 ) => {
+  // Convert logo to base64 to avoid CORS issues with html2canvas
+  let logoBase64 = '';
+  if (logoUrl) {
+    logoBase64 = await fetchLogoAsBase64(logoUrl);
+  }
+
   // Create a hidden div to render the invoice content as HTML
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.top = '-9999px';
   container.style.left = '-9999px';
   container.style.width = '794px'; // A4 width in pixels at 96dpi
-  container.innerHTML = generateInvoiceHTML(invoice, companySettings, logoUrl);
+  container.innerHTML = generateInvoiceHTML(invoice, companySettings, logoBase64);
 
   document.body.appendChild(container);
 
@@ -130,13 +137,19 @@ export const generateBrandedInvoicePDFBlob = async (
   companySettings: CompanySettings,
   logoUrl?: string | null
 ): Promise<{ blob: Blob; filename: string }> => {
+  // Convert logo to base64 to avoid CORS issues with html2canvas
+  let logoBase64 = '';
+  if (logoUrl) {
+    logoBase64 = await fetchLogoAsBase64(logoUrl);
+  }
+
   // Create a hidden div to render the invoice content as HTML
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.top = '-9999px';
   container.style.left = '-9999px';
   container.style.width = '794px'; // A4 width in pixels at 96dpi
-  container.innerHTML = generateInvoiceHTML(invoice, companySettings, logoUrl);
+  container.innerHTML = generateInvoiceHTML(invoice, companySettings, logoBase64);
 
   document.body.appendChild(container);
 
