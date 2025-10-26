@@ -1,11 +1,140 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { Resend } from 'npm:resend@2.0.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Content-Type': 'application/json',
+}
+
+// Helper function to create company-branded welcome email HTML
+const createCompanyBrandedWelcomeEmail = (
+  employeeName: string,
+  employeeEmail: string,
+  temporaryPassword: string,
+  companyName: string,
+  companyLogoUrl: string | null,
+  companyEmail: string | null
+) => {
+  return `
+  <div style="background-color:#f8f9fb;font-family:'Helvetica Neue',Arial,sans-serif;color:#333;margin:0;padding:0;">
+    <div style="max-width:600px;margin:40px auto;background-color:#fff;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.08);overflow:hidden;">
+      
+      <!-- Header with Company Logo -->
+      <div style="text-align:center;padding:30px 20px 10px 20px;">
+        ${companyLogoUrl 
+          ? `<img src="${companyLogoUrl}" alt="${companyName} Logo" style="max-width:140px;border-radius:8px;" />`
+          : `<h2 style="margin:0;color:#10b981;font-size:24px;">${companyName}</h2>`
+        }
+      </div>
+      
+      <div style="padding:30px 40px;text-align:left;line-height:1.6;">
+        <h1 style="font-size:22px;color:#0f172a;">Welcome to ${companyName} 🎉</h1>
+        
+        <p>Hi <strong>${employeeName}</strong>,</p>
+        
+        <p>
+          You've just been added to the <strong>${companyName}</strong> account on
+          <strong>StackBuild</strong> — our construction management platform designed to simplify timesheets, jobsite communication, and project tracking.
+        </p>
+
+        <p>Here are your login details to get started:</p>
+
+        <div style="background-color:#f3f4f6;border-radius:8px;padding:15px;margin:20px 0;font-family:monospace;">
+          📧 <strong>Email:</strong> ${employeeEmail}<br />
+          🔑 <strong>Temporary Password:</strong> ${temporaryPassword}
+        </div>
+
+        <p>
+          👉 To access your account, visit
+          <a href="https://app.stackbuild.ca" target="_blank" style="color:#10b981;font-weight:bold;">app.stackbuild.ca</a>,
+          log in using the credentials above, and then go to
+          <strong>Settings → Profile → Change Password</strong> to update your password for security.
+        </p>
+
+        <div style="text-align:center;margin:25px 0;">
+          <a href="https://app.stackbuild.ca" target="_blank" style="display:inline-block;background-color:#10b981;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:600;">
+            Access Your Account
+          </a>
+        </div>
+
+        <p>
+          Once logged in, you'll be able to:
+        </p>
+        <ul style="margin:10px 0 20px 20px;">
+          <li>View your assigned jobs and sites 🏗️</li>
+          <li>Submit and track your daily hours ⏱️</li>
+          <li>Access company rules and handbooks 📋</li>
+          <li>Receive notifications and updates in real time 📲</li>
+        </ul>
+
+        <p>
+          If you have any questions or need help accessing your account, please contact your company administrator${companyEmail ? ` or reach out to <a href="mailto:${companyEmail}" style="color:#10b981;text-decoration:none;">${companyEmail}</a>` : ''}.
+        </p>
+
+        <p>Welcome aboard — let's build smarter together! 🧱</p>
+
+        <p><strong>— The ${companyName} Team</strong></p>
+      </div>
+
+      <div style="text-align:center;font-size:12px;color:#777;padding:25px;background-color:#f8f9fb;">
+        © ${new Date().getFullYear()} ${companyName}<br />
+        <span style="font-size:11px;color:#999;">This email was sent via StackBuild</span>
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+// Helper function to send welcome email
+const sendEmployeeWelcomeEmail = async (params: {
+  email: string
+  firstName: string
+  lastName: string
+  password: string
+  companyName: string
+  companyLogoUrl: string | null
+  companyEmail: string | null
+}) => {
+  const resendApiKey = Deno.env.get('RESEND_API_KEY')
+  
+  if (!resendApiKey) {
+    console.warn('⚠️ RESEND_API_KEY not configured, skipping welcome email')
+    return
+  }
+
+  const resend = new Resend(resendApiKey)
+  const employeeName = `${params.firstName} ${params.lastName}`.trim() || 'there'
+  
+  const html = createCompanyBrandedWelcomeEmail(
+    employeeName,
+    params.email,
+    params.password,
+    params.companyName,
+    params.companyLogoUrl,
+    params.companyEmail
+  )
+
+  try {
+    const { error } = await resend.emails.send({
+      from: 'StackBuild <onboarding@resend.dev>',
+      to: [params.email],
+      subject: `Welcome to ${params.companyName} - Your StackBuild Account is Ready! 🎉`,
+      html,
+    })
+
+    if (error) {
+      console.error('❌ Failed to send welcome email:', error)
+      throw error
+    }
+
+    console.log('✅ Welcome email sent successfully to:', params.email)
+  } catch (error) {
+    console.error('❌ Error sending welcome email (non-blocking):', error)
+    // Don't throw - this is non-blocking
+  }
 }
 
 serve(async (req) => {
@@ -435,6 +564,35 @@ serve(async (req) => {
     }
 
     console.log('🎉 Employee creation completed successfully!')
+    
+    // Fetch company settings for branded email
+    try {
+      const { data: companySettings } = await supabaseAdmin
+        .from('company_settings')
+        .select('company_name, company_logo_url, company_email')
+        .eq('company_id', employeeData.companyId)
+        .single()
+
+      const companyName = companySettings?.company_name || 'Your Company'
+      const companyLogoUrl = companySettings?.company_logo_url || null
+      const companyEmail = companySettings?.company_email || null
+
+      console.log('📧 Sending welcome email to:', employeeData.email)
+      
+      // Send welcome email (non-blocking)
+      await sendEmployeeWelcomeEmail({
+        email: employeeData.email,
+        firstName: employeeData.firstName,
+        lastName: employeeData.lastName,
+        password: employeeData.password,
+        companyName,
+        companyLogoUrl,
+        companyEmail,
+      })
+    } catch (emailError) {
+      console.error('⚠️ Failed to send welcome email (non-blocking):', emailError)
+      // Don't fail employee creation if email fails
+    }
     
     return new Response(
       JSON.stringify({ 
