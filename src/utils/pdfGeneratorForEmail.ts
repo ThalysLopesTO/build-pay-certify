@@ -107,7 +107,7 @@ const generateInvoiceHTML = async (
   companySettings?: CompanySettings | null,
   logoUrl?: string | null,
 ): Promise<string> => {
-  const currency = companySettings?.default_currency || companySettings?.currency || "CAD";
+  const currency = "CAD"; // Default currency
 
   const lineItems = (invoice.invoice_line_items ?? []) as Array<{
     description?: string;
@@ -121,7 +121,7 @@ const generateInvoiceHTML = async (
   const taxAmount = subtotal * (taxPct / 100);
   const total = invoice.total_amount ?? subtotal + taxAmount;
 
-  const issued = invoice.issue_date || (invoice as any).created_at || new Date();
+  const issued = invoice.created_at || new Date();
 
   return `
   <html>
@@ -147,15 +147,14 @@ const generateInvoiceHTML = async (
         <section class="grid-2">
           <div class="card">
             <h4>Bill To</h4>
-            <div><b>${sanitize(invoice.client_company || (invoice as any).client_name || "Client")}</b></div>
+            <div><b>${sanitize(invoice.client_company || "Client")}</b></div>
             ${invoice.client_email ? `<div class="muted">${sanitize(invoice.client_email)}</div>` : ""}
-            ${invoice.project_name ? `<div class="muted"><b>Project:</b> ${sanitize(invoice.project_name)}</div>` : ""}
+            ${invoice.jobsites?.name ? `<div class="muted"><b>Project:</b> ${sanitize(invoice.jobsites.name)}</div>` : ""}
           </div>
           <div class="card">
             <h4>Invoice Details</h4>
             <div class="muted">Reference: ${sanitize(invoice.invoice_number || invoice.id)}</div>
-            <div class="muted">Terms: ${sanitize(companySettings?.default_terms ?? "Net 30")}</div>
-            ${invoice.reference ? `<div class="muted">PO/Ref: ${sanitize(invoice.reference)}</div>` : ""}
+            <div class="muted">Terms: Net 30</div>
           </div>
         </section>
 
@@ -235,7 +234,7 @@ const generateQuoteHTML = async (
   companySettings?: CompanySettings | null,
   logoUrl?: string | null,
 ): Promise<string> => {
-  const currency = companySettings?.default_currency || companySettings?.currency || "CAD";
+  const currency = "CAD"; // Default currency
 
   const subtotal = quote.subtotal ?? lineItems.reduce((sum, it) => sum + (Number(it.amount) || 0), 0);
 
