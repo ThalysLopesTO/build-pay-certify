@@ -4,18 +4,13 @@ import html2canvas from 'html2canvas';
 import { Invoice } from './types/invoice';
 import { CompanySettings } from '@/hooks/useCompanySettings';
 
-export const generateBrandedInvoicePDF = async (
+// Helper function to generate the invoice HTML
+const generateInvoiceHTML = (
   invoice: Invoice,
   companySettings: CompanySettings,
   logoUrl?: string | null
-) => {
-  // Create a hidden div to render the invoice content as HTML
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.top = '-9999px';
-  container.style.left = '-9999px';
-  container.style.width = '794px'; // A4 width in pixels at 96dpi
-  container.innerHTML = `
+): string => {
+  return `
     <div style="font-family: sans-serif; padding: 32px; max-width: 750px; margin: auto; border: 1px solid #ddd;">
       <div style="display: flex; justify-content: space-between; margin-bottom: 32px;">
         <div>
@@ -28,11 +23,16 @@ export const generateBrandedInvoicePDF = async (
             ${companySettings.hst_number ? 'HST: ' + companySettings.hst_number : ''}
           </div>
         </div>
-        <div style="text-align: right;">
+        <div style="text-align: right; position: relative;">
           <div style="font-size: 28px; font-weight: 800;">INVOICE</div>
           <div style="color: #888; font-size: 13px;">#${invoice.invoice_number}</div>
           <div style="font-size: 13px;">Date: ${format(new Date(invoice.created_at), 'MMM dd, yyyy')}</div>
           <div style="font-size: 13px;">Due: ${format(new Date(invoice.due_date), 'MMM dd, yyyy')}</div>
+          ${
+            invoice.status === 'paid'
+              ? `<div style="margin-top: 8px; display: inline-block; background: #10b981; color: white; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 700;">✓ PAID</div>`
+              : ''
+          }
         </div>
       </div>
 
@@ -86,14 +86,23 @@ export const generateBrandedInvoicePDF = async (
         <strong>Thank you for your business!</strong><br/>
         ${companySettings.company_email || ''} | ${companySettings.company_phone || ''}
       </div>
-
-      ${
-        invoice.status === 'paid'
-          ? `<div style="position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; color: rgba(0,0,0,0.1); font-weight: bold; z-index: 999;">PAID</div>`
-          : ''
-      }
     </div>
   `;
+};
+
+// Download PDF function
+export const generateBrandedInvoicePDF = async (
+  invoice: Invoice,
+  companySettings: CompanySettings,
+  logoUrl?: string | null
+) => {
+  // Create a hidden div to render the invoice content as HTML
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '-9999px';
+  container.style.left = '-9999px';
+  container.style.width = '794px'; // A4 width in pixels at 96dpi
+  container.innerHTML = generateInvoiceHTML(invoice, companySettings, logoUrl);
 
   document.body.appendChild(container);
 
@@ -113,4 +122,57 @@ export const generateBrandedInvoicePDF = async (
   pdf.save(`Invoice-${invoice.invoice_number}.pdf`);
 
   document.body.removeChild(container);
+};
+
+// Generate PDF as Blob for email attachments
+export const generateBrandedInvoicePDFBlob = async (
+  invoice: Invoice,
+  companySettings: CompanySettings,
+  logoUrl?: string | null
+): Promise<{ blob: Blob; filename: string }> => {
+  // Create a hidden div to render the invoice content as HTML
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '-9999px';
+  container.style.left = '-9999px';
+  container.style.width = '794px'; // A4 width in pixels at 96dpi
+  container.innerHTML = generateInvoiceHTML(invoice, companySettings, logoUrl);
+
+  document.body.appendChild(container);
+
+  // Render HTML to canvas then to PDF
+  const canvas = await html2canvas(container, { scale: 2 });
+  const imgData = canvas.toDataURL('image/png');
+
+  const pdf = new jsPDF('p', 'pt', 'a4');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
+  const imgWidth = canvas.width * ratio;
+  const imgHeight = canvas.height * ratio;
+
+  pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+  
+  const blob = pdf.output('blob');
+  const filename = `Invoice-${invoice.invoice_number}.pdf`;
+
+  document.body.removeChild(container);
+
+  return { blob, filename };
+};
+
+// Helper function to convert Blob to Base64
+export const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+      const base64Content = base64.split(',')[1];
+      resolve(base64Content);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 };

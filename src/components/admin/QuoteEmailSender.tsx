@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useEmailTemplate, getDefaultTemplate, replacePlaceholders } from '@/hooks/useEmailTemplates';
 import { sendEmail } from '@/utils/sendEmail';
-import { generateQuotePDFBlob, blobToBase64 } from '@/utils/pdfGeneratorForEmail';
+import { generateQuotePDFBlob, blobToBase64 } from '@/utils/quotePDFGenerator';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useQuoteLineItems } from '@/hooks/quotes';
 import { Quote } from '@/hooks/quotes/types';

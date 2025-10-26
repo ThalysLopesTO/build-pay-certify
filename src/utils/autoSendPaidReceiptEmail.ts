@@ -1,6 +1,6 @@
 import { Invoice } from '@/components/admin/types/invoice';
 import { CompanySettings } from '@/hooks/useCompanySettings';
-import { generateInvoicePDFBlob, blobToBase64 } from './pdfGeneratorForEmail';
+import { generateBrandedInvoicePDFBlob, blobToBase64 } from '@/components/admin/BrandedInvoicePDF';
 import { sendEmail } from './sendEmail';
 import { format } from 'date-fns';
 
@@ -116,8 +116,8 @@ export const autoSendPaidReceiptEmail = async (
       </div>
     `;
 
-    // Generate PDF with PAID watermark
-    const { blob, filename } = await generateInvoicePDFBlob(
+    // Generate PDF with professional PAID badge
+    const { blob, filename } = await generateBrandedInvoicePDFBlob(
       invoice,
       settings,
       logoUrl

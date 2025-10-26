@@ -265,3 +265,113 @@ const getStatusText = (status: string): string => {
     default: return 'DRAFT';
   }
 };
+
+// Generate Quote PDF as Blob for email attachments
+export const generateQuotePDFBlob = async (
+  quote: Quote,
+  lineItems: QuoteLineItem[],
+  companySettings?: CompanySettings | null,
+  logoUrl?: string | null
+): Promise<{ blob: Blob; filename: string }> => {
+  try {
+    // Create a temporary div to render the quote HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '-9999px';
+    tempDiv.style.width = '794px'; // A4 width at 96 DPI
+    tempDiv.style.background = 'white';
+    tempDiv.style.padding = '40px';
+    tempDiv.style.fontFamily = 'Arial, sans-serif';
+    
+    // Generate HTML content
+    tempDiv.innerHTML = await generateQuoteHTML(quote, lineItems, companySettings, logoUrl);
+    
+    document.body.appendChild(tempDiv);
+
+    // Wait for images to load
+    const images = tempDiv.querySelectorAll('img');
+    await Promise.all(
+      Array.from(images).map((img) => {
+        return new Promise((resolve) => {
+          if (img.complete) {
+            resolve(void 0);
+          } else {
+            img.onload = () => resolve(void 0);
+            img.onerror = () => resolve(void 0);
+          }
+        });
+      })
+    );
+
+    // Generate canvas from HTML
+    const canvas = await html2canvas(tempDiv, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      width: 794,
+      height: tempDiv.scrollHeight,
+    });
+
+    // Remove temporary div
+    document.body.removeChild(tempDiv);
+
+    // Create PDF
+    const pdf = new jsPDF('p', 'pt', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    
+    // Calculate scaling to fit content
+    const scale = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
+    const scaledWidth = canvasWidth * scale;
+    const scaledHeight = canvasHeight * scale;
+    
+    // Center the content
+    const x = (pdfWidth - scaledWidth) / 2;
+    const y = 0;
+
+    // Add the canvas image to PDF
+    const imgData = canvas.toDataURL('image/png');
+    pdf.addImage(imgData, 'PNG', x, y, scaledWidth, scaledHeight);
+
+    // Add watermark if needed
+    if (quote.status === 'draft' || quote.status === 'accepted') {
+      pdf.setTextColor(0, 0, 0, 0.1);
+      pdf.setFontSize(60);
+      pdf.text(
+        quote.status.toUpperCase(),
+        pdfWidth / 2,
+        pdfHeight / 2,
+        { align: 'center', angle: 45 }
+      );
+    }
+
+    // Generate blob and filename
+    const blob = pdf.output('blob');
+    const filename = `Quote-${quote.quote_number}-${quote.client_name.replace(/\s+/g, '')}.pdf`;
+
+    return { blob, filename };
+  } catch (error) {
+    console.error('Error generating quote PDF blob:', error);
+    throw error;
+  }
+};
+
+// Helper function to convert Blob to Base64
+export const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+      const base64Content = base64.split(',')[1];
+      resolve(base64Content);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};

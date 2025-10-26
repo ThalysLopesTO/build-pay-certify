@@ -1,7 +1,7 @@
 import { Invoice } from '@/components/admin/types/invoice';
 import { CompanySettings } from '@/hooks/useCompanySettings';
 import { sendEmail } from '@/utils/sendEmail';
-import { generateInvoicePDFBlob, blobToBase64 } from '@/utils/pdfGeneratorForEmail';
+import { generateBrandedInvoicePDFBlob, blobToBase64 } from '@/components/admin/BrandedInvoicePDF';
 import { format } from 'date-fns';
 
 interface AutoSendEmailResult {
@@ -68,8 +68,8 @@ Best regards,
 ${settings.company_name}
     `.trim();
 
-    // Generate PDF attachment
-    const { blob, filename } = await generateInvoicePDFBlob(invoice, settings, logoUrl);
+    // Generate PDF attachment using professional template
+    const { blob, filename } = await generateBrandedInvoicePDFBlob(invoice, settings, logoUrl);
     const base64Content = await blobToBase64(blob);
 
     // Send email with PDF attachment

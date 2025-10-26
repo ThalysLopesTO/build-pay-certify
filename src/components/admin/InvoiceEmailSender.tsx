@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useEmailTemplate, getDefaultTemplate, replacePlaceholders } from '@/hooks/useEmailTemplates';
 import { sendEmail } from '@/utils/sendEmail';
-import { generateInvoicePDFBlob, blobToBase64 } from '@/utils/pdfGeneratorForEmail';
+import { generateBrandedInvoicePDFBlob, blobToBase64 } from './BrandedInvoicePDF';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
@@ -80,8 +80,8 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
     try {
       const emailContent = generateEmailContent();
 
-      // ✅ Generate PDF attachment
-      const { blob, filename } = await generateInvoicePDFBlob(invoice, settings, logoUrl);
+      // ✅ Generate PDF attachment using professional template
+      const { blob, filename } = await generateBrandedInvoicePDFBlob(invoice, settings, logoUrl);
       const base64Content = await blobToBase64(blob);
 
       // ✅ Send email with branding + PDF
