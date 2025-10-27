@@ -1,9 +1,8 @@
-
-import React, { useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CheckCircle, CreditCard, Building } from 'lucide-react';
+import React, { useEffect } from "react";
+import { useSearchParams, Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, CreditCard, Building } from "lucide-react";
 
 declare global {
   interface Window {
@@ -13,13 +12,13 @@ declare global {
 
 const RegistrationSuccess = () => {
   const [searchParams] = useSearchParams();
-  const paymentSuccess = searchParams.get('payment') === 'success';
+  const paymentSuccess = searchParams.get("payment") === "success";
 
   // Fire Meta Pixel conversion event for paid registrations
   useEffect(() => {
-    if (paymentSuccess && typeof window !== 'undefined' && window.fbq) {
-      console.log('🎯 Firing Meta Pixel Subscribe conversion event');
-      window.fbq('track', 'Subscribe');
+    if (paymentSuccess && typeof window !== "undefined" && window.fbq) {
+      console.log("🎯 Firing Meta Pixel Subscribe conversion event");
+      window.fbq("track", "StartTrial");
     }
   }, [paymentSuccess]);
 
@@ -32,7 +31,7 @@ const RegistrationSuccess = () => {
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
             <CardTitle className="text-2xl font-bold text-green-600">
-              {paymentSuccess ? 'Registration Complete!' : 'Registration Submitted!'}
+              {paymentSuccess ? "Registration Complete!" : "Registration Submitted!"}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
@@ -43,8 +42,8 @@ const RegistrationSuccess = () => {
                   <span className="font-semibold">Payment Confirmed</span>
                 </div>
                 <p className="text-slate-600 mb-6">
-                  Your payment has been processed and your StackBuild account is now active. 
-                  You can sign in immediately and start using all features.
+                  Your payment has been processed and your StackBuild account is now active. You can sign in immediately
+                  and start using all features.
                 </p>
                 <div className="space-y-3">
                   <div className="text-sm text-slate-500 space-y-1">
@@ -61,8 +60,8 @@ const RegistrationSuccess = () => {
                   <span className="font-semibold">Awaiting Approval</span>
                 </div>
                 <p className="text-slate-600 mb-6">
-                  Thank you for submitting your company registration. Your request is being reviewed 
-                  and you will receive an email notification once your account has been approved.
+                  Thank you for submitting your company registration. Your request is being reviewed and you will
+                  receive an email notification once your account has been approved.
                 </p>
                 <div className="text-sm text-slate-500 space-y-1">
                   <p>📧 Check your email for updates</p>
@@ -71,20 +70,18 @@ const RegistrationSuccess = () => {
                 </div>
               </>
             )}
-            
+
             <div className="pt-4 border-t">
               <Link to={paymentSuccess ? "/admin-login" : "/"}>
                 <Button className="w-full bg-orange-600 hover:bg-orange-700">
-                  {paymentSuccess ? 'Sign In Now' : 'Return to Home'}
+                  {paymentSuccess ? "Sign In Now" : "Return to Home"}
                 </Button>
               </Link>
             </div>
-            
+
             {!paymentSuccess && (
               <div className="text-center">
-                <p className="text-xs text-slate-500 mb-2">
-                  Want to get started immediately?
-                </p>
+                <p className="text-xs text-slate-500 mb-2">Want to get started immediately?</p>
                 <Link to="/">
                   <Button variant="outline" size="sm">
                     Subscribe to StackBuild
