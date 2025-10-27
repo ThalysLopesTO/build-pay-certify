@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
 import { AppProviders } from "@/providers/AppProviders";
 import { GlobalToasts } from "@/components/common/GlobalToasts";
 import IOSInstallTip from "@/components/common/IOSInstallTip";
@@ -121,6 +122,7 @@ const App: React.FC = () => {
         <SonnerToaster />
         <IOSInstallTip />
         <SpeedInsights />
+        <Analytics />
       </AppProviders>
     </BrowserRouter>
   );
