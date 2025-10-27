@@ -1,13 +1,27 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, CreditCard, Building } from 'lucide-react';
 
+declare global {
+  interface Window {
+    fbq?: (action: string, eventName: string, params?: object) => void;
+  }
+}
+
 const RegistrationSuccess = () => {
   const [searchParams] = useSearchParams();
   const paymentSuccess = searchParams.get('payment') === 'success';
+
+  // Fire Meta Pixel conversion event for paid registrations
+  useEffect(() => {
+    if (paymentSuccess && typeof window !== 'undefined' && window.fbq) {
+      console.log('🎯 Firing Meta Pixel Subscribe conversion event');
+      window.fbq('track', 'Subscribe');
+    }
+  }, [paymentSuccess]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
