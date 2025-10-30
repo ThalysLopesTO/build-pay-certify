@@ -523,6 +523,7 @@ serve(async (req) => {
     const profileData = {
       user_id: authData.user.id,
       company_id: employeeData.companyId,
+      email: employeeData.email,
       first_name: employeeData.firstName,
       last_name: employeeData.lastName,
       role: employeeData.role,
