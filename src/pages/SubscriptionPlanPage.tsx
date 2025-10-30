@@ -7,6 +7,7 @@ import { Building, CheckCircle, CreditCard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 
 const SubscriptionPlanPage = () => {
   const { isAuthenticated, user } = useAuth();
@@ -40,9 +41,13 @@ const SubscriptionPlanPage = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
-  const handleStartSubscription = async () => {
+  const handleStartSubscription = async (planId: string) => {
     try {
-      await createCheckout({ planName: "StackBuild Pro" });
+      const plan = SUBSCRIPTION_PLANS[planId];
+      await createCheckout({ 
+        planName: plan.displayName,
+        planId: planId 
+      });
     } catch (error: any) {
       console.error("Error creating checkout:", error);
       toast.error("Failed to start checkout process");
@@ -61,7 +66,7 @@ const SubscriptionPlanPage = () => {
     if (shouldStart) {
       autoStartedRef.current = true;
       // slight delay to ensure hooks & Stripe are ready
-      setTimeout(() => handleStartSubscription(), 600);
+      setTimeout(() => handleStartSubscription('builder'), 600);
     }
   }, [isSubscribed]);
 
@@ -83,58 +88,68 @@ const SubscriptionPlanPage = () => {
           </p>
         </div>
 
-        {/* Pricing Card */}
-        <div className="flex justify-center mb-12">
-          <Card className="border-t-4 border-orange-500 bg-white shadow-2xl rounded-2xl relative w-full max-w-md">
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <span className="bg-orange-500 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
-                🎉 7-Day Free Trial
-              </span>
-            </div>
-            <CardHeader className="text-center pb-6 pt-10">
-              <CardTitle className="text-3xl font-bold text-slate-900 mb-4">StackBuild Pro</CardTitle>
-              <div className="text-5xl font-bold text-orange-600 mb-1">$297 CAD</div>
-              <div className="text-lg text-slate-500 mb-4">/month</div>
-              <p className="text-slate-600 text-base">Complete Construction Management Solution</p>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-4 mb-8">
-                {[
-                  "50 Employees account",
-                  "Payroll & Invoice System",
-                  "Certificate & Safety Tracking",
-                  "Multi-role Access: Admin, Foreman, Worker",
-                  "Project & Jobsite Control",
-                  "Time Tracking & Timesheets",
-                  "Material Request Management",
-                  "Daily Reports & Analytics",
-                  "Quote Generation",
-                  "Mobile App Access",
-                ].map((feature, index) => (
-                  <li key={index} className="flex items-center text-slate-700">
-                    <CheckCircle className="h-5 w-5 text-orange-500 mr-3 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Button
-                onClick={handleStartSubscription}
-                disabled={isCreatingCheckout}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-4 text-lg mb-3 shadow-lg"
-              >
-                <CreditCard className="h-5 w-5 mr-2" />
-                {isCreatingCheckout ? "Processing..." : "Start 7-Day Free Trial"}
-              </Button>
-              <p className="text-center text-sm text-slate-500">No charge for 7 days. Cancel anytime.</p>
-              {isAuthenticated && (
-                <div className="mt-4 text-center">
-                  <Link to="/admin-login" className="text-orange-400 hover:text-orange-300 text-sm">
-                    Already have an account? Sign in
-                  </Link>
+        {/* Pricing Cards - Three Plans */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-12">
+          {Object.values(SUBSCRIPTION_PLANS).map((plan) => (
+            <Card 
+              key={plan.id}
+              className={`relative border-2 ${
+                plan.popular 
+                  ? 'border-orange-500 shadow-2xl transform md:scale-105' 
+                  : 'border-slate-200'
+              } bg-white rounded-xl transition-all hover:shadow-xl`}
+            >
+              {plan.badge && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                  <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-1 rounded-full text-xs font-bold shadow-md">
+                    {plan.badge}
+                  </span>
                 </div>
               )}
-            </CardContent>
-          </Card>
+              
+              <CardHeader className="text-center pb-4 pt-8">
+                <CardTitle className="text-2xl font-bold text-slate-900 mb-3">
+                  {plan.name}
+                </CardTitle>
+                <div className="mb-4">
+                  <div className="text-4xl font-bold text-orange-600">
+                    {plan.priceDisplay}
+                  </div>
+                  <div className="text-sm text-slate-500 mt-1">/month</div>
+                </div>
+                <div className="inline-block bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
+                  🎉 7-Day Free Trial
+                </div>
+              </CardHeader>
+              
+              <CardContent className="px-6 pb-6">
+                <ul className="space-y-3 mb-6 min-h-[280px]">
+                  {plan.featureList.map((feature, index) => (
+                    <li key={index} className="flex items-start text-sm text-slate-700">
+                      <CheckCircle className="h-5 w-5 text-orange-500 mr-2 flex-shrink-0 mt-0.5" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                
+                <Button
+                  onClick={() => handleStartSubscription(plan.id)}
+                  disabled={isCreatingCheckout}
+                  className={`w-full ${
+                    plan.popular
+                      ? 'bg-orange-600 hover:bg-orange-700'
+                      : 'bg-slate-700 hover:bg-slate-800'
+                  } text-white font-semibold py-3 text-base`}
+                >
+                  {isCreatingCheckout ? 'Processing...' : 'Start Free Trial'}
+                </Button>
+                
+                <p className="text-xs text-center text-slate-500 mt-3">
+                  No charge for 7 days
+                </p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* Footer */}

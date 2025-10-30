@@ -48,13 +48,16 @@ export const useStripeSubscription = () => {
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 
-  // Create checkout session - now supports guest checkout
+  // Create checkout session - now supports guest checkout and plan selection
   const createCheckoutMutation = useMutation({
-    mutationFn: async ({ planName, customerEmail }: { planName: string; customerEmail?: string }) => {
-      console.log('Creating checkout session with params:', { planName, customerEmail });
+    mutationFn: async ({ planName, planId, customerEmail }: { planName?: string; planId?: string; customerEmail?: string }) => {
+      console.log('Creating checkout session with params:', { planName, planId, customerEmail });
       
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { planName, customerEmail },
+        body: { 
+          customerEmail,
+          planId: planId || 'builder' // Default to builder if not specified
+        },
       });
 
       if (error) {

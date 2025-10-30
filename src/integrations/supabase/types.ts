@@ -415,6 +415,7 @@ export type Database = {
           logo_url: string | null
           name: string
           plan: string | null
+          plan_features: Json | null
           plan_type: string | null
           registration_date: string | null
           rules_updated_at: string | null
@@ -444,6 +445,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           plan?: string | null
+          plan_features?: Json | null
           plan_type?: string | null
           registration_date?: string | null
           rules_updated_at?: string | null
@@ -473,6 +475,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           plan?: string | null
+          plan_features?: Json | null
           plan_type?: string | null
           registration_date?: string | null
           rules_updated_at?: string | null

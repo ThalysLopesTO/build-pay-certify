@@ -114,18 +114,25 @@ serve(async (req)=>{
       // Determine plan from price
       const priceId = subscription.items.data[0].price.id;
       const price = await stripe.prices.retrieve(priceId);
-      console.log({
-        price
-      });
       const amount = price.unit_amount || 0;
-      if (amount == 4990) {
-        plan = "starter";
-      } else if (amount == 8990) {
-        plan = "pro";
+      
+      // Map amounts (in cents) to plan IDs
+      if (amount === 4990) {
+        plan = "start";
+      } else if (amount === 8990) {
+        plan = "builder";
+      } else if (amount === 12990) {
+        plan = "builder_pro";
+      } else if (amount >= 29700) {
+        // Legacy $297 plan - map to builder_pro
+        plan = "builder_pro";
       }
+      
       logStep("Active subscription found", {
         subscriptionId,
         plan,
+        priceId,
+        amount,
         endDate: subscriptionEnd
       });
     } else {

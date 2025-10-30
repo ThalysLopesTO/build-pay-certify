@@ -143,10 +143,66 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
   const customerId = subscription.customer as string;
   const status = subscription.status;
   const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
+  
+  // Get price details
+  const priceId = subscription.items.data[0].price.id;
   const amount = subscription.items.data[0].price.unit_amount || 0;
   
-  // Determine plan (single plan now)
-  let plan = amount >= 29700 ? 'pro' : 'free';
+  // Determine plan, employee limit, and features based on amount
+  let plan = 'free';
+  let employeeLimit = 5;
+  let planFeatures = {
+    billsExpenses: false,
+    materialRequests: false,
+    personalSupport: false,
+    customSupport: false
+  };
+  
+  if (amount === 4990) {
+    plan = 'start';
+    employeeLimit = 5;
+    planFeatures = {
+      billsExpenses: false,
+      materialRequests: false,
+      personalSupport: false,
+      customSupport: false
+    };
+  } else if (amount === 8990) {
+    plan = 'builder';
+    employeeLimit = 10;
+    planFeatures = {
+      billsExpenses: true,
+      materialRequests: true,
+      personalSupport: true,
+      customSupport: false
+    };
+  } else if (amount === 12990) {
+    plan = 'builder_pro';
+    employeeLimit = 50;
+    planFeatures = {
+      billsExpenses: true,
+      materialRequests: true,
+      personalSupport: true,
+      customSupport: true
+    };
+  } else if (amount >= 29700) {
+    // Legacy $297 plan - treat as Builder Pro
+    plan = 'builder_pro';
+    employeeLimit = 50;
+    planFeatures = {
+      billsExpenses: true,
+      materialRequests: true,
+      personalSupport: true,
+      customSupport: true
+    };
+  }
+  
+  logStep("Plan determined from subscription", {
+    priceId,
+    amount,
+    plan,
+    employeeLimit
+  });
   
   const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString().split('T')[0];
   
@@ -158,12 +214,14 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
     .single();
 
   if (existingCompany) {
-    // Update existing company
+    // Update existing company with plan features
     await supabaseClient
       .from('companies')
       .update({
         stripe_subscription_id: subscription.id,
         plan: plan,
+        employee_limit: employeeLimit,
+        plan_features: planFeatures,
         subscription_status: status,
         trial_end_date: trialEnd?.toISOString(),
         expiration_date: subscriptionEnd,
@@ -175,7 +233,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
       
     logStep("Updated existing company", { 
       customerId, 
-      plan, 
+      plan,
+      employeeLimit,
       status, 
       trialEnd: trialEnd?.toISOString() 
     });

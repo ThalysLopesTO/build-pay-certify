@@ -26,8 +26,6 @@ export const processPaidRegistration = async (
       throw new Error('Payment session not found or invalid');
     }
 
-    let plan = "starter";
-    let employeeLimit = 10;
     const customerEmail = result?.customer_details?.email;
 
     if (!customerEmail) {
@@ -37,16 +35,53 @@ export const processPaidRegistration = async (
     if (formData.adminEmail.toLowerCase() !== customerEmail.toLowerCase()) {
       throw new Error(`Email mismatch: Registration email (${formData.adminEmail}) must match payment email (${customerEmail})`);
     }
-   
-    const planStripe = result.metadata?.plan_name || 'StackBuild';
+    
+    // Determine plan from subscription amount
+    let plan = 'builder'; // default
+    let employeeLimit = 10;
+    let planFeatures = {
+      billsExpenses: true,
+      materialRequests: true,
+      personalSupport: true,
+      customSupport: false
+    };
 
-    if (planStripe === "Premium") {
-      employeeLimit = 50;
-      plan = "pro";
+    if (result?.subscription) {
+      const amount = result.subscription.items?.data?.[0]?.price?.unit_amount || 0;
+      
+      if (amount === 4990) {
+        plan = 'start';
+        employeeLimit = 5;
+        planFeatures = {
+          billsExpenses: false,
+          materialRequests: false,
+          personalSupport: false,
+          customSupport: false
+        };
+      } else if (amount === 8990) {
+        plan = 'builder';
+        employeeLimit = 10;
+        planFeatures = {
+          billsExpenses: true,
+          materialRequests: true,
+          personalSupport: true,
+          customSupport: false
+        };
+      } else if (amount === 12990) {
+        plan = 'builder_pro';
+        employeeLimit = 50;
+        planFeatures = {
+          billsExpenses: true,
+          materialRequests: true,
+          personalSupport: true,
+          customSupport: true
+        };
+      }
     }
 
     console.log('✅ Payment validated successfully', { 
-      plan: planStripe, 
+      plan, 
+      employeeLimit,
       email: customerEmail,
       sessionId: sessionId.substring(0, 20) + '...' 
     });
@@ -91,9 +126,10 @@ export const processPaidRegistration = async (
       name: formData.companyName,
       status: 'active',
       registration_date: new Date().toISOString().split('T')[0],
-      stripe_verified: true,  // Mark as Stripe verified
-      plan: plan,  // Default to starter plan for paid registrations
-      employee_limit: employeeLimit,  // Default starter limit
+      stripe_verified: true,
+      plan: plan,
+      employee_limit: employeeLimit,
+      plan_features: planFeatures,
       subscription_status: "active"
     })
     .select()

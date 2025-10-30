@@ -27,10 +27,34 @@ serve(async (req)=>{
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16"
     });
-    const { customerEmail } = await req.json();
+    const { customerEmail, planId } = await req.json();
     
-    // Single plan: StackBuild Pro - $297/month with 7-day trial
-    const priceId = "price_1SDwZqEuB2J4BS43UulwfZ68";
+    // Map plan IDs to Stripe Price IDs
+    const PLAN_PRICE_IDS: Record<string, string> = {
+      'start': 'price_1SO2mKEuB2J4BS43soKlnGl1',
+      'builder': 'price_1SO2nyEuB2J4BS43c9eFgZKj',
+      'builder_pro': 'price_1SO2ocEuB2J4BS43BYcRT2Zs',
+    };
+
+    const PLAN_NAMES: Record<string, string> = {
+      'start': 'StackBuild Start',
+      'builder': 'StackBuild Builder',
+      'builder_pro': 'StackBuild Builder Pro',
+    };
+
+    const selectedPlanId = planId || 'builder';
+    const priceId = PLAN_PRICE_IDS[selectedPlanId];
+    const planName = PLAN_NAMES[selectedPlanId];
+
+    if (!priceId) {
+      return new Response(JSON.stringify({ error: `Invalid plan ID: ${selectedPlanId}` }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400
+      });
+    }
+
+    console.log(`[CHECKOUT] Creating session for plan: ${planName} (${selectedPlanId})`);
+    
     const origin = req.headers.get("origin") ?? "http://localhost:3000";
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -49,7 +73,8 @@ serve(async (req)=>{
         },
         metadata: {
           trial_enabled: 'true',
-          plan_name: 'StackBuild Pro',
+          plan_name: planName,
+          plan_id: selectedPlanId,
           source: 'stackbuild_app',
           flow: 'pre_registration'
         }
@@ -60,7 +85,8 @@ serve(async (req)=>{
       success_url: `${origin}/company/registration?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/subscription-plan?payment=cancelled`,
       metadata: {
-        plan_name: 'StackBuild Pro',
+        plan_name: planName,
+        plan_id: selectedPlanId,
         source: "stackbuild_app",
         flow: "pre_registration"
       },
