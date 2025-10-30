@@ -7,11 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Mail, Phone, MapPin, User, Briefcase, DollarSign } from 'lucide-react';
+import { Mail, Phone, MapPin, User, Briefcase, DollarSign, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import PhotoUploadField from './employee-registration/PhotoUploadField';
 import { editEmployeeSchema, EditEmployeeFormData } from '@/components/admin/employee-edit-modal-schema';
 import { useUpdateEmployee } from '@/hooks/new/useUsers';
+import { useSyncAuthEmail } from '@/hooks/new/useSyncAuthEmail';
+import { toast } from 'sonner';
 
 interface Employee {
   id: string;
@@ -82,7 +84,22 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
   }, [employee, form]);
 
   const mutation = useUpdateEmployee();
+  const syncMutation = useSyncAuthEmail();
   const isSubmitting = mutation.isPending;
+
+  const handleSyncEmail = () => {
+    if (!employee?.user_id || !employee?.email) {
+      toast.error('Sync Failed', {
+        description: 'Missing user ID or email address.',
+      });
+      return;
+    }
+
+    syncMutation.mutate({
+      userId: employee.user_id,
+      email: employee.email,
+    });
+  };
 
   const handleSubmit = (data: EditEmployeeFormData) => {
     if (!employee) return;
@@ -194,6 +211,39 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground border-b border-border pb-2">
                 <Mail className="h-4 w-4" />
                 Contact Information
+              </div>
+
+              {/* Email sync warning - always show with manual trigger */}
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
+                    Sync Login Email
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                    If this employee cannot log in, their authentication email may be out of sync. Click below to synchronize their login email with the profile email shown here.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="mt-2 border-amber-600 dark:border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                    onClick={handleSyncEmail}
+                    disabled={syncMutation.isPending}
+                  >
+                    {syncMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-3 w-3 mr-2" />
+                        Sync Login Email
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
