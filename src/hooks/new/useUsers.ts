@@ -183,7 +183,7 @@ export function useUpdateEmployee() {
       if (isEmailChanged) {
         const { data: emailData, error: emailError } = await supabase.functions.invoke(
           "update-user-email",
-          { body: { userId: id, newEmail: updates.email } }
+          { body: { userId: finalEmployee.user_id, newEmail: updates.email } }
         );
 
         if (emailError || !emailData?.success) {
