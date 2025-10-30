@@ -250,7 +250,18 @@ export const useEmployeeRegistrationForm = () => {
       // Check if the result contains an error (from the edge function)
       if (!result.success) {
         console.error('❌ Employee registration error from edge function:', result.error);
-        throw new Error(result.error || 'Employee registration failed');
+        console.log('Error code:', result.errorCode);
+        
+        // Handle specific error codes with appropriate UI feedback
+        if (result.errorCode === 'ORPHANED_AUTH_USER') {
+          throw new Error(`🔐 Login Account Already Exists\n\n${result.error}\n\nThis requires administrator intervention to fix the data inconsistency.`);
+        } else if (result.errorCode === 'ARCHIVED_EMPLOYEE_EXISTS') {
+          throw new Error(`📦 Archived Employee Found\n\n${result.error}\n\nEmployee: ${result.employeeName || 'Unknown'}\n\nPlease reactivate the existing employee instead.`);
+        } else if (result.errorCode === 'ACTIVE_EMPLOYEE_EXISTS') {
+          throw new Error(`✓ Employee Already Active\n\n${result.error}\n\nEmployee: ${result.employeeName || 'Unknown'}`);
+        } else {
+          throw new Error(result.error || 'Employee registration failed');
+        }
       }
 
       console.log('🎉 Employee registered successfully in edge function!');

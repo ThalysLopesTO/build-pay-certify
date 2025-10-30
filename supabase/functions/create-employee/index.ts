@@ -428,6 +428,75 @@ serve(async (req) => {
 
     if (userCreationError) {
       console.error('Error creating user:', userCreationError)
+      
+      // Check if error is due to email already existing
+      if (userCreationError.message?.includes('already been registered') || 
+          userCreationError.message?.includes('email address has already been registered') ||
+          userCreationError.status === 422) {
+        
+        console.log('Email already exists in auth, checking profile status...')
+        
+        // Check if this is an orphaned auth user (exists in auth but not in user_profiles)
+        const { data: existingProfile, error: profileCheckError } = await supabase
+          .from('user_profiles')
+          .select('user_id, is_active, email, first_name, last_name')
+          .eq('email', employeeData.email)
+          .maybeSingle()
+        
+        if (profileCheckError) {
+          console.error('Error checking profile:', profileCheckError)
+        }
+        
+        if (!existingProfile) {
+          // Orphaned auth user - exists in auth.users but not in user_profiles
+          console.warn('⚠️ ORPHANED AUTH USER detected:', employeeData.email)
+          return new Response(
+            JSON.stringify({ 
+              success: false,
+              error: `This email (${employeeData.email}) has an existing login account but no employee profile. This is a data inconsistency issue. Please contact your system administrator to resolve this, or use a different email address.`,
+              errorCode: 'ORPHANED_AUTH_USER',
+              email: employeeData.email
+            }),
+            {
+              headers: corsHeaders,
+              status: 400,
+            },
+          )
+        } else if (!existingProfile.is_active) {
+          // Profile exists but is archived - suggest reactivation
+          console.log('📦 Archived employee found:', existingProfile.email)
+          return new Response(
+            JSON.stringify({ 
+              success: false,
+              error: `An employee with email ${employeeData.email} (${existingProfile.first_name} ${existingProfile.last_name}) already exists but is archived. Please go to Employee Management and reactivate this employee instead of creating a new one.`,
+              errorCode: 'ARCHIVED_EMPLOYEE_EXISTS',
+              existingUserId: existingProfile.user_id,
+              employeeName: `${existingProfile.first_name} ${existingProfile.last_name}`
+            }),
+            {
+              headers: corsHeaders,
+              status: 400,
+            },
+          )
+        } else {
+          // Profile exists and is active
+          console.log('✅ Active employee already exists:', existingProfile.email)
+          return new Response(
+            JSON.stringify({ 
+              success: false,
+              error: `An active employee with email ${employeeData.email} (${existingProfile.first_name} ${existingProfile.last_name}) already exists in the system. Please use a different email address.`,
+              errorCode: 'ACTIVE_EMPLOYEE_EXISTS',
+              employeeName: `${existingProfile.first_name} ${existingProfile.last_name}`
+            }),
+            {
+              headers: corsHeaders,
+              status: 400,
+            },
+          )
+        }
+      }
+      
+      // Generic error for other cases
       return new Response(
         JSON.stringify({ 
           success: false,
