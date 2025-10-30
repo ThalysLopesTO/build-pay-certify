@@ -24,6 +24,10 @@ interface Company {
   created_at: string;
   is_expired: boolean;
   days_until_expiry: number | null;
+  admin_user_id?: string;
+  admin_first_name?: string;
+  admin_last_name?: string;
+  admin_email?: string;
 }
 
 export const useSuperAdminData = () => {
@@ -53,12 +57,14 @@ export const useSuperAdminData = () => {
       // For each company, get the admin user details
       const companiesWithAdmins = await Promise.all(
         (companiesData || []).map(async (company) => {
-          const { data: adminProfile } = await supabase
-            .from('user_profiles')
-            .select('user_id, first_name, last_name, email')
-            .eq('company_id', company.id)
-            .eq('role', 'admin')
-            .single();
+        const { data: adminProfile } = await supabase
+          .from('user_profiles')
+          .select('user_id, first_name, last_name, email')
+          .eq('company_id', company.id)
+          .eq('role', 'admin')
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
 
           return {
             ...company,
