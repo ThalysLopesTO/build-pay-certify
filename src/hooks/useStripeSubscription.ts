@@ -29,10 +29,22 @@ export const useStripeSubscription = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // If authentication error, the session is invalid - disable further checks
+        if (error.message?.includes('Authentication error') || error.message?.includes('Session')) {
+          console.error('Invalid session detected, please log in again');
+          throw new Error('SESSION_INVALID');
+        }
+        throw error;
+      }
       return data as SubscriptionStatus;
     },
     enabled: !!session && !!user,
+    retry: (failureCount, error: any) => {
+      // Don't retry on authentication errors
+      if (error?.message === 'SESSION_INVALID') return false;
+      return failureCount < 2;
+    },
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 
