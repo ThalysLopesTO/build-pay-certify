@@ -17,12 +17,17 @@ interface UpdateOwnPasswordData {
 
 // Permission logic based on user roles
 export const canResetPassword = (adminRole: string, targetRole: string): boolean => {
-  // Admins can reset passwords for Employee, Foreman, Manager (but not Admin)
-  if (adminRole === 'admin' || adminRole === 'super_admin') {
+  // Super Admins can reset ANYONE's password except other Super Admins
+  if (adminRole === 'super_admin') {
+    return targetRole !== 'super_admin';
+  }
+  
+  // Company Admins can reset passwords for Employee, Foreman, Manager (but not Admin)
+  if (adminRole === 'admin') {
     return targetRole !== 'admin' && targetRole !== 'super_admin';
   }
   
-  // Managers can reset passwords for Employee and Foreman (but not Manager or Admin)
+  // Managers can reset passwords for Employee and Foreman only
   if (adminRole === 'management') {
     return targetRole === 'employee' || targetRole === 'foreman';
   }

@@ -9,9 +9,11 @@ import LicenseApprovalDialog from '@/components/admin/LicenseApprovalDialog';
 import RejectionConfirmationDialog from '@/components/admin/RejectionConfirmationDialog';
 import EditCompanyDialog from '@/components/admin/EditCompanyDialog';
 import RevokeCompanyDialog from '@/components/admin/RevokeCompanyDialog';
+import { ResetAdminPasswordDialog } from '@/components/admin/ResetAdminPasswordDialog';
 import { useSuperAdminData } from '@/hooks/useSuperAdminData';
 import { useSuperAdminMutations } from '@/hooks/useSuperAdminMutations';
 import { useCompanyMutations } from '@/hooks/useCompanyMutations';
+import { useResetUserPassword } from '@/hooks/usePasswordManagement';
 import CompanyRequestTable from '@/components/admin/CompanyRequestTable';
 import { CreateTrialCompanyDialog } from '@/components/admin/trial-companies/CreateTrialCompanyDialog';
 import { StatsCards } from '@/components/admin/super-admin/StatsCards';
@@ -43,6 +45,9 @@ interface Company {
   days_until_expiry: number | null;
   admin_email?: string;
   admin_phone?: string;
+  admin_user_id?: string;
+  admin_first_name?: string;
+  admin_last_name?: string;
 }
 
 const SuperAdminDashboard = () => {
@@ -52,6 +57,7 @@ const SuperAdminDashboard = () => {
   const [showRejectionDialog, setShowRejectionDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('companies');
   
@@ -60,6 +66,7 @@ const SuperAdminDashboard = () => {
   const { requests, companies, isLoading, pendingCount } = useSuperAdminData();
   const { approveRequestMutation, rejectRequestMutation } = useSuperAdminMutations();
   const { editCompanyMutation, revokeCompanyMutation } = useCompanyMutations();
+  const resetPasswordMutation = useResetUserPassword();
 
   // Calculate stats
   const totalCompanies = companies.filter(c => c.status === 'active').length;
@@ -151,6 +158,32 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  const handleResetPassword = (company: Company) => {
+    setSelectedCompany(company);
+    setShowResetPasswordDialog(true);
+  };
+
+  const confirmResetPassword = (userId: string, password: string, email: string, name: string) => {
+    if (selectedCompany) {
+      setProcessingId(selectedCompany.id);
+      resetPasswordMutation.mutate(
+        {
+          targetUserId: userId,
+          newPassword: password,
+          targetUserEmail: email,
+          targetUserName: name
+        },
+        {
+          onSettled: () => {
+            setProcessingId(null);
+            setShowResetPasswordDialog(false);
+            setSelectedCompany(null);
+          }
+        }
+      );
+    }
+  };
+
   if (isLoading) {
     return <SuperAdminLoading />;
   }
@@ -202,6 +235,7 @@ const SuperAdminDashboard = () => {
                       company={company}
                       onEdit={handleEditCompany}
                       onRevoke={handleRevokeCompany}
+                      onResetPassword={handleResetPassword}
                       isProcessing={processingId === company.id}
                     />
                   ))
@@ -236,6 +270,7 @@ const SuperAdminDashboard = () => {
                 onRejectRequest={handleReject}
                 onEditCompany={handleEditCompany}
                 onRevokeCompany={handleRevokeCompany}
+                onResetPassword={handleResetPassword}
                 isProcessing={processingId}
               />
 
@@ -280,6 +315,14 @@ const SuperAdminDashboard = () => {
         onOpenChange={setShowRevokeDialog}
         company={selectedCompany}
         onConfirm={confirmRevoke}
+        isProcessing={processingId === selectedCompany?.id}
+      />
+
+      <ResetAdminPasswordDialog
+        open={showResetPasswordDialog}
+        onOpenChange={setShowResetPasswordDialog}
+        company={selectedCompany}
+        onConfirm={confirmResetPassword}
         isProcessing={processingId === selectedCompany?.id}
       />
     </div>

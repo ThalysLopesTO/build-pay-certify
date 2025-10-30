@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Calendar, Edit, Trash2, ChevronDown, ChevronUp, Mail, Phone } from 'lucide-react';
+import { Building2, Calendar, Edit, Trash2, Key, ChevronDown, ChevronUp, Mail, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 import CompanyStatusBadge from '../CompanyStatusBadge';
 
@@ -16,12 +16,16 @@ interface Company {
   days_until_expiry: number | null;
   admin_email?: string;
   admin_phone?: string;
+  admin_user_id?: string;
+  admin_first_name?: string;
+  admin_last_name?: string;
 }
 
 interface MobileCompanyCardProps {
   company: Company;
   onEdit: (company: Company) => void;
   onRevoke: (company: Company) => void;
+  onResetPassword: (company: Company) => void;
   isProcessing: boolean;
 }
 
@@ -29,6 +33,7 @@ export const MobileCompanyCard: React.FC<MobileCompanyCardProps> = ({
   company,
   onEdit,
   onRevoke,
+  onResetPassword,
   isProcessing,
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -115,27 +120,39 @@ export const MobileCompanyCard: React.FC<MobileCompanyCardProps> = ({
 
         {/* Actions */}
         {company.status === 'active' && (
-          <div className="flex gap-2 mt-4 pt-3 border-t">
+          <div className="space-y-2 mt-4 pt-3 border-t">
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 touch-target"
-              onClick={() => onEdit(company)}
-              disabled={isProcessing}
+              className="w-full touch-target"
+              onClick={() => onResetPassword(company)}
+              disabled={isProcessing || !company.admin_user_id}
             >
-              <Edit className="h-3.5 w-3.5 mr-1.5" />
-              Edit
+              <Key className="h-3.5 w-3.5 mr-1.5" />
+              Reset Admin Password
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              className="flex-1 touch-target"
-              onClick={() => onRevoke(company)}
-              disabled={isProcessing}
-            >
-              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              Revoke
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 touch-target"
+                onClick={() => onEdit(company)}
+                disabled={isProcessing}
+              >
+                <Edit className="h-3.5 w-3.5 mr-1.5" />
+                Edit
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="flex-1 touch-target"
+                onClick={() => onRevoke(company)}
+                disabled={isProcessing}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Revoke
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>

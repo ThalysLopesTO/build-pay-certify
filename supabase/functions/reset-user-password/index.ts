@@ -67,34 +67,49 @@ serve(async (req) => {
       )
     }
 
-    // Check if admin and target are from the same company
-    if (adminProfile.company_id !== targetProfile.company_id) {
-      return new Response(
-        JSON.stringify({ error: 'Cannot reset password for users from different companies' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
-      )
-    }
+    // Check if the requesting user is a super_admin
+    const isSuperAdmin = adminProfile.role === 'super_admin';
 
-    // Check permissions based on roles
-    const canReset = (adminRole: string, targetRole: string): boolean => {
-      // Admins can reset passwords for Employee, Foreman, Manager (but not Admin)
-      if (adminRole === 'admin' || adminRole === 'super_admin') {
-        return targetRole !== 'admin' && targetRole !== 'super_admin'
+    // Super admins can reset ANY user's password (including other admins, but not other super_admins)
+    if (isSuperAdmin) {
+      // Super admins cannot reset other super admin passwords
+      if (targetProfile.role === 'super_admin') {
+        return new Response(
+          JSON.stringify({ error: 'Cannot reset password for other Super Admins' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        )
       }
-      
-      // Managers can reset passwords for Employee and Foreman (but not Manager or Admin)
-      if (adminRole === 'management') {
-        return targetRole === 'employee' || targetRole === 'foreman'
+      // Super admin can proceed - skip company and role checks
+    } else {
+      // For regular admins: enforce same-company restriction
+      if (adminProfile.company_id !== targetProfile.company_id) {
+        return new Response(
+          JSON.stringify({ error: 'Cannot reset password for users from different companies' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        )
       }
-      
-      return false
-    }
 
-    if (!canReset(adminProfile.role, targetProfile.role)) {
-      return new Response(
-        JSON.stringify({ error: 'Insufficient permissions to reset this user\'s password' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
-      )
+      // Check permissions based on roles for non-super admins
+      const canReset = (adminRole: string, targetRole: string): boolean => {
+        // Company Admins can reset passwords for Employee, Foreman, Manager (but not Admin)
+        if (adminRole === 'admin') {
+          return targetRole !== 'admin' && targetRole !== 'super_admin'
+        }
+        
+        // Managers can reset passwords for Employee and Foreman (but not Manager or Admin)
+        if (adminRole === 'management') {
+          return targetRole === 'employee' || targetRole === 'foreman'
+        }
+        
+        return false
+      }
+
+      if (!canReset(adminProfile.role, targetProfile.role)) {
+        return new Response(
+          JSON.stringify({ error: 'Insufficient permissions to reset this user\'s password' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        )
+      }
     }
 
     // Update the user's password using admin API

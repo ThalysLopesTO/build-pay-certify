@@ -41,15 +41,36 @@ export const useSuperAdminData = () => {
     }
   });
 
-  // Fetch companies with status
+  // Fetch companies with status and admin user details
   const { data: companies, isLoading: companiesLoading } = useQuery({
     queryKey: ['super-admin-companies'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: companiesData, error } = await supabase
         .rpc('get_companies_with_status');
 
       if (error) throw error;
-      return data as Company[];
+
+      // For each company, get the admin user details
+      const companiesWithAdmins = await Promise.all(
+        (companiesData || []).map(async (company) => {
+          const { data: adminProfile } = await supabase
+            .from('user_profiles')
+            .select('user_id, first_name, last_name, email')
+            .eq('company_id', company.id)
+            .eq('role', 'admin')
+            .single();
+
+          return {
+            ...company,
+            admin_user_id: adminProfile?.user_id,
+            admin_first_name: adminProfile?.first_name,
+            admin_last_name: adminProfile?.last_name,
+            admin_email: adminProfile?.email,
+          };
+        })
+      );
+
+      return companiesWithAdmins as Company[];
     }
   });
 

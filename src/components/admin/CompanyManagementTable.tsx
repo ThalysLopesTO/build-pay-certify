@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Building, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Building, Edit, Trash2, Key } from 'lucide-react';
 import { format } from 'date-fns';
 import CompanyStatusBadge from './CompanyStatusBadge';
 
@@ -20,6 +20,9 @@ interface Company {
   days_until_expiry: number | null;
   admin_email?: string;
   admin_phone?: string;
+  admin_user_id?: string;
+  admin_first_name?: string;
+  admin_last_name?: string;
 }
 
 interface RegistrationRequest {
@@ -41,6 +44,7 @@ interface CompanyManagementTableProps {
   onRejectRequest: (request: RegistrationRequest) => void;
   onEditCompany: (company: Company) => void;
   onRevokeCompany: (company: Company) => void;
+  onResetPassword: (company: Company) => void;
   isProcessing: string | null;
 }
 
@@ -48,6 +52,7 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
   companies,
   onEditCompany,
   onRevokeCompany,
+  onResetPassword,
   isProcessing
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -163,6 +168,16 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                         <div className="flex space-x-2">
                           {item.type === 'company' && item.status === 'active' && (
                             <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => onResetPassword(item.original as Company)}
+                                disabled={isProcessing === item.id || !(item.original as Company).admin_user_id}
+                                title="Reset Company Admin Password"
+                              >
+                                <Key className="h-3 w-3 mr-1" />
+                                Reset Password
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
