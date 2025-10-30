@@ -214,20 +214,20 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
               </div>
 
               {/* Email sync warning - always show with manual trigger */}
-              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md p-3 flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
+                  <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold">
                     Sync Login Email
                   </p>
-                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                     If this employee cannot log in, their authentication email may be out of sync. Click below to synchronize their login email with the profile email shown here.
                   </p>
                   <Button
                     type="button"
                     size="sm"
-                    variant="outline"
-                    className="mt-2 border-amber-600 dark:border-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                    variant="default"
+                    className="mt-3 bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={handleSyncEmail}
                     disabled={syncMutation.isPending}
                   >
