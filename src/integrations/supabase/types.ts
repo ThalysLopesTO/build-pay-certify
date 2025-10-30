@@ -3185,30 +3185,50 @@ export type Database = {
               status: string
             }[]
           }
-      rpc_time_summary_headers: {
-        Args: {
-          p_company_id: string
-          p_employee_ids: string[]
-          p_end_date: string
-          p_jobsite_ids: string[]
-          p_start_date: string
-          p_status: string
-          p_tz: string
-        }
-        Returns: {
-          employee_id: string
-          employee_name: string
-          employee_photo: string
-          employee_position: string
-          employee_role: string
-          employee_trade: string
-          has_flags: boolean
-          jobsite_id: string
-          jobsite_name: string
-          total_minutes: number
-          total_punches: number
-        }[]
-      }
+      rpc_time_summary_headers:
+        | {
+            Args: {
+              p_company_id: string
+              p_employee_ids: string[]
+              p_end_date: string
+              p_jobsite_ids: string[]
+              p_start_date: string
+              p_status: string
+              p_tz: string
+            }
+            Returns: {
+              employee_id: string
+              employee_name: string
+              employee_photo: string
+              employee_position: string
+              employee_role: string
+              employee_trade: string
+              has_flags: boolean
+              jobsite_id: string
+              jobsite_name: string
+              total_minutes: number
+              total_punches: number
+            }[]
+          }
+        | {
+            Args: {
+              p_company_id: string
+              p_employee_ids?: string[]
+              p_end_date: string
+              p_jobsite_ids?: string[]
+              p_start_date: string
+              p_statuses?: string[]
+              p_tz?: string
+            }
+            Returns: {
+              employee_id: string
+              employee_name: string
+              jobsite_id: string
+              jobsite_name: string
+              punch_count: number
+              total_hours: number
+            }[]
+          }
       run_daily_notification_checks: { Args: never; Returns: undefined }
       seed_default_role_permissions: {
         Args: { company_uuid: string }
