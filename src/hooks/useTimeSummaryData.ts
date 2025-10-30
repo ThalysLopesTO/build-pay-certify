@@ -81,7 +81,7 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
       // Normalize filter values to uuid[] or null (ALL)
       const jobsiteFilter = toIdArray(jobsiteIds.length > 0 ? jobsiteIds : null);
       const employeeFilter = toIdArray(employeeIds.length > 0 ? employeeIds : null);
-      const statusFilter = status === 'all' ? null : status;
+      const statusFilter = status === 'all' ? null : [status];
 
       console.log('Time Summary RPC Call:', {
         companyId: user.companyId,
@@ -100,7 +100,7 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
         p_end_date: endDate,
         p_jobsite_ids: jobsiteFilter,
         p_employee_ids: employeeFilter,
-        p_status: statusFilter,
+        p_statuses: statusFilter,
         p_tz: timezone,
       });
 
