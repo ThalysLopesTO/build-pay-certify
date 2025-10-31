@@ -57,33 +57,33 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
       {stats.map((stat, index) => (
         <Card
           key={index}
-          className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${
-            stat.highlight ? 'ring-2 ring-amber-400 ring-offset-2' : ''
+          className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-border shadow-md ${
+            stat.highlight ? 'ring-2 ring-amber-400 ring-offset-2 animate-pulse' : ''
           }`}
         >
-          <CardContent className="p-6">
+          <CardContent className="p-5 md:p-6">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground mb-1">
+                <p className="text-xs md:text-sm font-medium text-muted-foreground mb-2">
                   {stat.title}
                 </p>
-                <p className="text-3xl font-bold text-foreground">
+                <p className="text-2xl md:text-3xl font-bold text-foreground">
                   {stat.value}
                 </p>
               </div>
-              <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
+              <div className={`p-2.5 md:p-3 rounded-xl ${stat.bgColor} transition-transform duration-300 hover:scale-110`}>
+                <stat.icon className={`h-5 w-5 md:h-6 md:w-6 ${stat.iconColor}`} />
               </div>
             </div>
             {stat.highlight && (
-              <div className="mt-3 flex items-center text-xs text-amber-600 font-medium">
+              <div className="mt-3 flex items-center text-xs text-amber-700 font-medium bg-amber-50 px-2 py-1 rounded-md">
                 <AlertCircle className="h-3 w-3 mr-1" />
                 Requires attention
               </div>
             )}
           </CardContent>
           <div
-            className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.gradient}`}
+            className={`absolute bottom-0 left-0 right-0 h-1.5 bg-gradient-to-r ${stat.gradient} opacity-80`}
           />
         </Card>
       ))}

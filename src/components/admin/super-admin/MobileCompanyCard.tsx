@@ -46,7 +46,7 @@ export const MobileCompanyCard: React.FC<MobileCompanyCardProps> = ({
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <Card className={`overflow-hidden transition-all duration-200 ${
+    <Card className={`overflow-hidden transition-all duration-300 hover:shadow-lg border-border shadow-md ${
       company.is_expired ? 'border-red-300 bg-red-50/50' : ''
     }`}>
       <CardContent className="p-4">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Header from '@/components/Header';
+import SuperAdminNavigation from '@/components/admin/SuperAdminNavigation';
 import SuperAdminHeader from '@/components/admin/SuperAdminHeader';
 import SuperAdminLoading from '@/components/admin/SuperAdminLoading';
 import CompanyManagementTable from '@/components/admin/CompanyManagementTable';
@@ -196,10 +197,12 @@ const SuperAdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       <Header />
-      <div className="p-4 md:p-6">
-        <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
+      <SuperAdminNavigation />
+      
+      <div className="p-4 md:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
           {/* Header with Create Button */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex-1 w-full">

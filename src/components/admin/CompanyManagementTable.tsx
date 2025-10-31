@@ -125,41 +125,47 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
       </div>
 
       {/* Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Building className="h-5 w-5 mr-2" />
-            Company Management
+      <Card className="shadow-md border-border">
+        <CardHeader className="bg-muted/30 border-b">
+          <CardTitle className="flex items-center text-foreground">
+            <Building className="h-5 w-5 mr-2 text-primary" />
+            Active Companies
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-muted-foreground">
             Manage company registrations, licenses, and access
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Company Name</TableHead>
-                  <TableHead>Subscription Status</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Registration Date</TableHead>
-                  <TableHead>Next Billing / Expiry</TableHead>
-                  <TableHead>Actions</TableHead>
+                <TableRow className="bg-muted/20 hover:bg-muted/20">
+                  <TableHead className="font-semibold">Company Name</TableHead>
+                  <TableHead className="font-semibold">Subscription Status</TableHead>
+                  <TableHead className="font-semibold">Plan</TableHead>
+                  <TableHead className="font-semibold">Registration Date</TableHead>
+                  <TableHead className="font-semibold">Next Billing / Expiry</TableHead>
+                  <TableHead className="font-semibold text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredItems.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-slate-500">
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                       No companies found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredItems.map((item) => (
-                    <TableRow key={item.id} className={item.is_expired ? 'bg-red-50' : ''}>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>
+                  filteredItems.map((item, idx) => (
+                    <TableRow 
+                      key={item.id} 
+                      className={`transition-colors ${
+                        item.is_expired ? 'bg-red-50/50 hover:bg-red-50' : 
+                        idx % 2 === 0 ? 'bg-background hover:bg-muted/30' : 'bg-muted/10 hover:bg-muted/30'
+                      }`}
+                    >
+                      <TableCell className="font-medium py-4">{item.name}</TableCell>
+                      <TableCell className="py-4">
                         <SubscriptionStatusBadge
                           subscriptionStatus={item.subscription_status}
                           plan={item.plan}
@@ -169,30 +175,32 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                           isSuperAdminCompany={item.created_by_super_admin}
                         />
                       </TableCell>
-                      <TableCell>
-                        <span className="font-medium capitalize">
+                      <TableCell className="py-4">
+                        <span className="font-medium capitalize text-foreground">
                           {item.plan === 'start' ? 'Start' : 
                            item.plan === 'builder' ? 'Builder' : 
                            item.plan === 'builder_pro' ? 'Builder Pro' : 
                            item.plan === 'free' ? 'Free' : item.plan}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-4 text-muted-foreground">
                         {item.registration_date ? format(new Date(item.registration_date), 'MMM dd, yyyy') : '--'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-4">
                         {item.trial_end_date && item.subscription_status === 'active' && item.trial_days_remaining && item.trial_days_remaining > 0 ? (
-                          <span className="text-blue-700">
+                          <span className="text-blue-700 font-medium">
                             Trial ends: {format(new Date(item.trial_end_date), 'MMM dd, yyyy')}
                           </span>
                         ) : item.expiration_date ? (
-                          format(new Date(item.expiration_date), 'MMM dd, yyyy')
+                          <span className="text-muted-foreground">
+                            {format(new Date(item.expiration_date), 'MMM dd, yyyy')}
+                          </span>
                         ) : (
-                          '--'
+                          <span className="text-muted-foreground">--</span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
+                      <TableCell className="py-4">
+                        <div className="flex justify-end gap-2">
                           {item.type === 'company' && item.status === 'active' && (
                             <>
                               <Button
@@ -201,8 +209,9 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                                 onClick={() => onResetPassword(item.original as Company)}
                                 disabled={isProcessing === item.id || !(item.original as Company).admin_user_id}
                                 title="Reset Company Admin Password"
+                                className="shadow-sm hover:shadow transition-shadow"
                               >
-                                <Key className="h-3 w-3 mr-1" />
+                                <Key className="h-3.5 w-3.5 mr-1.5" />
                                 Reset Password
                               </Button>
                               <Button
@@ -210,8 +219,9 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                                 variant="outline"
                                 onClick={() => onEditCompany(item.original as Company)}
                                 disabled={isProcessing === item.id}
+                                className="shadow-sm hover:shadow transition-shadow"
                               >
-                                <Edit className="h-3 w-3 mr-1" />
+                                <Edit className="h-3.5 w-3.5 mr-1.5" />
                                 Edit
                               </Button>
                               <Button
@@ -219,8 +229,9 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                                 variant="destructive"
                                 onClick={() => onRevokeCompany(item.original as Company)}
                                 disabled={isProcessing === item.id}
+                                className="shadow-sm hover:shadow transition-shadow"
                               >
-                                <Trash2 className="h-3 w-3 mr-1" />
+                                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                                 Revoke
                               </Button>
                             </>
