@@ -1,7 +1,7 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { SUBSCRIPTION_PLANS } from '@/config/subscriptionPlans';
 
 export const useEmployeeLimit = () => {
   const { user } = useAuth();
@@ -15,16 +15,28 @@ export const useEmployeeLimit = () => {
 
       console.log('🔍 Checking employee limit for company:', user.companyId);
 
-      // Get company details with plan and employee_limit
+      // Get company details with plan, employee_limit, and created_at
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('plan, employee_limit')
+        .select('plan, employee_limit, created_at')
         .eq('id', user.companyId)
         .single();
 
       if (companyError) {
         console.error('Error fetching company:', companyError);
         throw companyError;
+      }
+
+      // Check for legacy trial (free plan created within 7 days)
+      const now = new Date();
+      const createdAt = company.created_at ? new Date(company.created_at) : now;
+      const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 3600 * 24));
+      const isLegacyTrial = company.plan === 'free' && daysSinceCreation <= 7;
+
+      // Determine effective employee limit
+      let effectiveEmployeeLimit = company.employee_limit;
+      if (isLegacyTrial) {
+        effectiveEmployeeLimit = SUBSCRIPTION_PLANS.start.employeeLimit; // Use Start plan's 5 employee limit
       }
 
       // Get current employee count using the database function
@@ -47,10 +59,10 @@ export const useEmployeeLimit = () => {
 
       const result = {
         plan: company.plan,
-        employeeLimit: company.employee_limit,
+        employeeLimit: effectiveEmployeeLimit,
         currentCount: currentCount || 0,
         canAddEmployee: canAdd || false,
-        remainingSlots: Math.max(0, (company.employee_limit || 0) - (currentCount || 0))
+        remainingSlots: Math.max(0, (effectiveEmployeeLimit || 0) - (currentCount || 0))
       };
 
       console.log('✅ Employee limit data:', result);
