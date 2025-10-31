@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building2, Calendar, Edit, Trash2, Key, ChevronDown, ChevronUp, Mail, Phone } from 'lucide-react';
 import { format } from 'date-fns';
-import CompanyStatusBadge from '../CompanyStatusBadge';
+import { SubscriptionStatusBadge } from './SubscriptionStatusBadge';
 
 interface Company {
   id: string;
@@ -19,6 +19,13 @@ interface Company {
   admin_user_id?: string;
   admin_first_name?: string;
   admin_last_name?: string;
+  plan: string;
+  subscription_status: string;
+  trial_end_date: string | null;
+  grace_period_end_date: string | null;
+  created_by_super_admin: boolean;
+  trial_days_remaining: number | null;
+  subscription_days_remaining: number | null;
 }
 
 interface MobileCompanyCardProps {
@@ -52,11 +59,24 @@ export const MobileCompanyCard: React.FC<MobileCompanyCardProps> = ({
                 {company.name}
               </h3>
             </div>
-            <CompanyStatusBadge
-              status={company.status}
-              isExpired={company.is_expired}
-              daysUntilExpiry={company.days_until_expiry}
-            />
+            <div className="space-y-2">
+              <SubscriptionStatusBadge
+                subscriptionStatus={company.subscription_status}
+                plan={company.plan}
+                trialDaysRemaining={company.trial_days_remaining}
+                subscriptionDaysRemaining={company.subscription_days_remaining}
+                isExpired={company.is_expired}
+                isSuperAdminCompany={company.created_by_super_admin}
+              />
+              <div className="text-xs text-muted-foreground">
+                Plan: <span className="font-medium capitalize">
+                  {company.plan === 'start' ? 'Start' : 
+                   company.plan === 'builder' ? 'Builder' : 
+                   company.plan === 'builder_pro' ? 'Builder Pro' : 
+                   company.plan === 'free' ? 'Free' : company.plan}
+                </span>
+              </div>
+            </div>
           </div>
           <Button
             variant="ghost"
@@ -85,11 +105,18 @@ export const MobileCompanyCard: React.FC<MobileCompanyCardProps> = ({
           </div>
           <div className="flex items-center text-sm">
             <Calendar className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-            <span className="text-muted-foreground mr-2">Expires:</span>
+            <span className="text-muted-foreground mr-2">
+              {company.trial_end_date && company.subscription_status === 'trialing' 
+                ? 'Trial Ends:' 
+                : 'Next Billing / Expiry:'}
+            </span>
             <span className={`font-medium ${
-              company.is_expired ? 'text-red-600' : ''
+              company.is_expired ? 'text-red-600' : 
+              company.trial_days_remaining !== null && company.trial_days_remaining <= 2 ? 'text-orange-600' : ''
             }`}>
-              {company.expiration_date
+              {company.trial_end_date && company.subscription_status === 'trialing'
+                ? format(new Date(company.trial_end_date), 'MMM dd, yyyy')
+                : company.expiration_date
                 ? format(new Date(company.expiration_date), 'MMM dd, yyyy')
                 : '--'}
             </span>

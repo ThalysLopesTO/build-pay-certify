@@ -48,6 +48,13 @@ interface Company {
   admin_user_id?: string;
   admin_first_name?: string;
   admin_last_name?: string;
+  plan: string;
+  subscription_status: string;
+  trial_end_date: string | null;
+  grace_period_end_date: string | null;
+  created_by_super_admin: boolean;
+  trial_days_remaining: number | null;
+  subscription_days_remaining: number | null;
 }
 
 const SuperAdminDashboard = () => {
@@ -70,12 +77,12 @@ const SuperAdminDashboard = () => {
 
   // Calculate stats
   const totalCompanies = companies.filter(c => c.status === 'active').length;
-  const trialCompanies = companies.filter(c => c.status === 'active' && c.days_until_expiry !== null).length;
+  const trialCompanies = companies.filter(c => 
+    c.subscription_status === 'trialing' && c.trial_days_remaining !== null
+  ).length;
   const expiringSoon = companies.filter(c => 
-    c.status === 'active' && 
-    c.days_until_expiry !== null && 
-    c.days_until_expiry <= 7 && 
-    c.days_until_expiry > 0
+    (c.status === 'active' && c.subscription_days_remaining !== null && c.subscription_days_remaining <= 7 && c.subscription_days_remaining > 0) ||
+    (c.subscription_status === 'trialing' && c.trial_days_remaining !== null && c.trial_days_remaining <= 7 && c.trial_days_remaining > 0)
   ).length;
 
   const handleApprove = (request: RegistrationRequest) => {

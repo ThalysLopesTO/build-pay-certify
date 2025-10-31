@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Building, Edit, Trash2, Key } from 'lucide-react';
 import { format } from 'date-fns';
-import CompanyStatusBadge from './CompanyStatusBadge';
+import { SubscriptionStatusBadge } from './super-admin/SubscriptionStatusBadge';
 
 interface Company {
   id: string;
@@ -23,6 +23,13 @@ interface Company {
   admin_user_id?: string;
   admin_first_name?: string;
   admin_last_name?: string;
+  plan: string;
+  subscription_status: string;
+  trial_end_date: string | null;
+  grace_period_end_date: string | null;
+  created_by_super_admin: boolean;
+  trial_days_remaining: number | null;
+  subscription_days_remaining: number | null;
 }
 
 interface RegistrationRequest {
@@ -134,16 +141,17 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
               <TableHeader>
                 <TableRow>
                   <TableHead>Company Name</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Subscription Status</TableHead>
+                  <TableHead>Plan</TableHead>
                   <TableHead>Registration Date</TableHead>
-                  <TableHead>Expiration Date</TableHead>
+                  <TableHead>Next Billing / Expiry</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredItems.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-slate-500">
                       No companies found
                     </TableCell>
                   </TableRow>
@@ -152,17 +160,36 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                     <TableRow key={item.id} className={item.is_expired ? 'bg-red-50' : ''}>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>
-                        <CompanyStatusBadge 
-                          status={item.status} 
+                        <SubscriptionStatusBadge
+                          subscriptionStatus={item.subscription_status}
+                          plan={item.plan}
+                          trialDaysRemaining={item.trial_days_remaining}
+                          subscriptionDaysRemaining={item.subscription_days_remaining}
                           isExpired={item.is_expired}
-                          daysUntilExpiry={item.days_until_expiry}
+                          isSuperAdminCompany={item.created_by_super_admin}
                         />
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium capitalize">
+                          {item.plan === 'start' ? 'Start' : 
+                           item.plan === 'builder' ? 'Builder' : 
+                           item.plan === 'builder_pro' ? 'Builder Pro' : 
+                           item.plan === 'free' ? 'Free' : item.plan}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {item.registration_date ? format(new Date(item.registration_date), 'MMM dd, yyyy') : '--'}
                       </TableCell>
                       <TableCell>
-                        {item.expiration_date ? format(new Date(item.expiration_date), 'MMM dd, yyyy') : '--'}
+                        {item.trial_end_date && item.subscription_status === 'trialing' ? (
+                          <span className="text-blue-700">
+                            Trial ends: {format(new Date(item.trial_end_date), 'MMM dd, yyyy')}
+                          </span>
+                        ) : item.expiration_date ? (
+                          format(new Date(item.expiration_date), 'MMM dd, yyyy')
+                        ) : (
+                          '--'
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">

@@ -28,6 +28,13 @@ interface Company {
   admin_first_name?: string;
   admin_last_name?: string;
   admin_email?: string;
+  plan: string;
+  subscription_status: string;
+  trial_end_date: string | null;
+  grace_period_end_date: string | null;
+  created_by_super_admin: boolean;
+  trial_days_remaining: number | null;
+  subscription_days_remaining: number | null;
 }
 
 export const useSuperAdminData = () => {
@@ -57,22 +64,41 @@ export const useSuperAdminData = () => {
           status,
           registration_date,
           expiration_date,
-          created_at
+          created_at,
+          plan,
+          subscription_status,
+          trial_end_date,
+          grace_period_end_date,
+          created_by_super_admin
         `)
         .order('created_at', { ascending: false });
 
       if (companiesError) throw companiesError;
 
-      // Calculate is_expired and days_until_expiry manually
-      const companiesWithStatus = (companiesData || []).map(company => ({
-        ...company,
-        is_expired: company.expiration_date 
-          ? new Date(company.expiration_date) < new Date() 
-          : false,
-        days_until_expiry: company.expiration_date
-          ? Math.floor((new Date(company.expiration_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-          : null
-      }));
+      const now = new Date();
+
+      // Calculate subscription metrics
+      const companiesWithStatus = (companiesData || []).map(company => {
+        const expirationDate = company.expiration_date ? new Date(company.expiration_date) : null;
+        const trialEndDate = company.trial_end_date ? new Date(company.trial_end_date) : null;
+        const gracePeriodEndDate = company.grace_period_end_date ? new Date(company.grace_period_end_date) : null;
+
+        return {
+          ...company,
+          is_expired: expirationDate ? expirationDate < now : false,
+          days_until_expiry: expirationDate
+            ? Math.floor((expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+            : null,
+          trial_days_remaining: trialEndDate && trialEndDate > now
+            ? Math.floor((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+            : null,
+          subscription_days_remaining: gracePeriodEndDate && gracePeriodEndDate > now
+            ? Math.floor((gracePeriodEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+            : expirationDate && expirationDate > now
+            ? Math.floor((expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+            : null,
+        };
+      });
 
       // For each company, get the admin user details
       const companiesWithAdmins = await Promise.all(
