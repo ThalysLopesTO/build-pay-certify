@@ -56,13 +56,15 @@ export const useCompanyPlan = () => {
       const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 3600 * 24));
       const isLegacyTrial = company.plan === 'free' && daysSinceCreation <= 7;
 
-      // Determine effective plan
+      // Determine effective plan and limits
       let effectivePlan = company.plan;
       let effectiveTrialEndDate = company.trial_end_date;
+      let effectiveEmployeeLimit = company.employee_limit;
       
       if (isLegacyTrial) {
         effectivePlan = 'start'; // Default to start plan for trials
         effectiveTrialEndDate = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        effectiveEmployeeLimit = SUBSCRIPTION_PLANS.start.employeeLimit; // Use Start plan's 5 employee limit
       }
 
       // Map company plan to subscription plan config
@@ -107,9 +109,9 @@ export const useCompanyPlan = () => {
       return {
         currentPlan,
         subscriptionStatus: isLegacyTrial ? 'trialing' : (company.subscription_status || 'inactive'),
-        employeeLimit: company.employee_limit || (currentPlan?.employeeLimit || 0),
+        employeeLimit: effectiveEmployeeLimit || (currentPlan?.employeeLimit || 0),
         currentEmployeeCount: currentCount,
-        remainingSlots: Math.max(0, (company.employee_limit || currentPlan?.employeeLimit || 0) - currentCount),
+        remainingSlots: Math.max(0, (effectiveEmployeeLimit || currentPlan?.employeeLimit || 0) - currentCount),
         trialEndDate: effectiveTrialEndDate,
         gracePeriodEndDate: company.grace_period_end_date,
         subscriptionEndDate: company.expiration_date,
