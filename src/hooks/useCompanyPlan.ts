@@ -31,7 +31,7 @@ export const useCompanyPlan = () => {
       // Fetch company details
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('plan, subscription_status, employee_limit, trial_end_date, grace_period_end_date, expiration_date')
+        .select('plan, subscription_status, employee_limit, trial_end_date, grace_period_end_date, expiration_date, created_at')
         .eq('id', user.companyId)
         .single();
 
@@ -50,9 +50,24 @@ export const useCompanyPlan = () => {
 
       const currentCount = employeeCount || 0;
 
+      // Handle legacy trial cases: companies with plan='free' within 7 days of creation
+      const now = new Date();
+      const createdAt = company.created_at ? new Date(company.created_at) : now;
+      const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 3600 * 24));
+      const isLegacyTrial = company.plan === 'free' && daysSinceCreation <= 7;
+
+      // Determine effective plan
+      let effectivePlan = company.plan;
+      let effectiveTrialEndDate = company.trial_end_date;
+      
+      if (isLegacyTrial) {
+        effectivePlan = 'start'; // Default to start plan for trials
+        effectiveTrialEndDate = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      }
+
       // Map company plan to subscription plan config
-      const currentPlan = company.plan && company.plan !== 'free' 
-        ? SUBSCRIPTION_PLANS[company.plan as keyof typeof SUBSCRIPTION_PLANS] || null
+      const currentPlan = effectivePlan && effectivePlan !== 'free' 
+        ? SUBSCRIPTION_PLANS[effectivePlan as keyof typeof SUBSCRIPTION_PLANS] || null
         : null;
 
       // Calculate available upgrades
@@ -68,18 +83,18 @@ export const useCompanyPlan = () => {
       }
 
       // Calculate trial/expiry info
-      const now = new Date();
-      const isInTrial = company.subscription_status === 'trialing' && 
+      const isInTrial = (company.subscription_status === 'trialing' && 
                         company.trial_end_date && 
-                        new Date(company.trial_end_date) > now;
+                        new Date(company.trial_end_date) > now) ||
+                        isLegacyTrial;
 
       const isInGracePeriod = company.subscription_status === 'past_due' &&
                               company.grace_period_end_date &&
                               new Date(company.grace_period_end_date) > now;
 
       let daysUntilExpiry: number | null = null;
-      if (isInTrial && company.trial_end_date) {
-        const timeDiff = new Date(company.trial_end_date).getTime() - now.getTime();
+      if (isInTrial && effectiveTrialEndDate) {
+        const timeDiff = new Date(effectiveTrialEndDate).getTime() - now.getTime();
         daysUntilExpiry = Math.ceil(timeDiff / (1000 * 3600 * 24));
       } else if (isInGracePeriod && company.grace_period_end_date) {
         const timeDiff = new Date(company.grace_period_end_date).getTime() - now.getTime();
@@ -91,11 +106,11 @@ export const useCompanyPlan = () => {
 
       return {
         currentPlan,
-        subscriptionStatus: company.subscription_status || 'inactive',
-        employeeLimit: company.employee_limit || 0,
+        subscriptionStatus: isLegacyTrial ? 'trialing' : (company.subscription_status || 'inactive'),
+        employeeLimit: company.employee_limit || (currentPlan?.employeeLimit || 0),
         currentEmployeeCount: currentCount,
-        remainingSlots: Math.max(0, (company.employee_limit || 0) - currentCount),
-        trialEndDate: company.trial_end_date,
+        remainingSlots: Math.max(0, (company.employee_limit || currentPlan?.employeeLimit || 0) - currentCount),
+        trialEndDate: effectiveTrialEndDate,
         gracePeriodEndDate: company.grace_period_end_date,
         subscriptionEndDate: company.expiration_date,
         availableUpgrades,
