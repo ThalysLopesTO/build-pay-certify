@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Building, Edit, Trash2, Key } from 'lucide-react';
+import { Search, Building } from 'lucide-react';
 import { format } from 'date-fns';
 import { SubscriptionStatusBadge } from './super-admin/SubscriptionStatusBadge';
+import { CompanyActionsMenu } from './super-admin/CompanyActionsMenu';
 
 interface Company {
   id: string;
@@ -200,41 +201,15 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                         )}
                       </TableCell>
                       <TableCell className="py-4">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end">
                           {item.type === 'company' && item.status === 'active' && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => onResetPassword(item.original as Company)}
-                                disabled={isProcessing === item.id || !(item.original as Company).admin_user_id}
-                                title="Reset Company Admin Password"
-                                className="shadow-sm hover:shadow transition-shadow"
-                              >
-                                <Key className="h-3.5 w-3.5 mr-1.5" />
-                                Reset Password
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => onEditCompany(item.original as Company)}
-                                disabled={isProcessing === item.id}
-                                className="shadow-sm hover:shadow transition-shadow"
-                              >
-                                <Edit className="h-3.5 w-3.5 mr-1.5" />
-                                Edit
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => onRevokeCompany(item.original as Company)}
-                                disabled={isProcessing === item.id}
-                                className="shadow-sm hover:shadow transition-shadow"
-                              >
-                                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                                Revoke
-                              </Button>
-                            </>
+                            <CompanyActionsMenu
+                              company={item.original as Company}
+                              onEdit={onEditCompany}
+                              onRevoke={onRevokeCompany}
+                              onResetPassword={onResetPassword}
+                              isProcessing={isProcessing === item.id}
+                            />
                           )}
                         </div>
                       </TableCell>

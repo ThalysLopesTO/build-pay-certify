@@ -9,7 +9,7 @@ const SuperAdminNavigation: React.FC = () => {
           <img 
             src="/lovable-uploads/04cf020d-b64e-49b8-ae51-022a05b6cad8.png" 
             alt="StackBuild Logo" 
-            className="h-10 w-auto md:h-12 object-contain"
+            className="h-14 w-auto md:h-16 lg:h-20 object-contain"
           />
           
           {/* Divider */}

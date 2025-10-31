@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Calendar, Edit, Trash2, Key, ChevronDown, ChevronUp, Mail, Phone } from 'lucide-react';
+import { Building2, Calendar, ChevronDown, ChevronUp, Mail, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 import { SubscriptionStatusBadge } from './SubscriptionStatusBadge';
+import { CompanyActionsMenu } from './CompanyActionsMenu';
 
 interface Company {
   id: string;
@@ -147,39 +148,14 @@ export const MobileCompanyCard: React.FC<MobileCompanyCardProps> = ({
 
         {/* Actions */}
         {company.status === 'active' && (
-          <div className="space-y-2 mt-4 pt-3 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full touch-target"
-              onClick={() => onResetPassword(company)}
-              disabled={isProcessing || !company.admin_user_id}
-            >
-              <Key className="h-3.5 w-3.5 mr-1.5" />
-              Reset Admin Password
-            </Button>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 touch-target"
-                onClick={() => onEdit(company)}
-                disabled={isProcessing}
-              >
-                <Edit className="h-3.5 w-3.5 mr-1.5" />
-                Edit
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                className="flex-1 touch-target"
-                onClick={() => onRevoke(company)}
-                disabled={isProcessing}
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                Revoke
-              </Button>
-            </div>
+          <div className="mt-4 pt-3 border-t flex justify-end">
+            <CompanyActionsMenu
+              company={company}
+              onEdit={onEdit}
+              onRevoke={onRevoke}
+              onResetPassword={onResetPassword}
+              isProcessing={isProcessing}
+            />
           </div>
         )}
       </CardContent>
