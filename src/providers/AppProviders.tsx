@@ -56,7 +56,10 @@ export function AppProviders({ children }: PropsWithChildren) {
 
 
 function ConditionalEmployeeProvider({ children }: PropsWithChildren) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  // While auth is loading, just render children without provider
+  if (loading) return <>{children}</>;
 
   // Only wrap children with EmployeeProvider if role is 'employee'
   if (user?.role !== "employee") return <>{children}</>;
