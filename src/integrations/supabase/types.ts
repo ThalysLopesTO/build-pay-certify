@@ -406,6 +406,7 @@ export type Database = {
         Row: {
           company_rules_text: string | null
           created_at: string
+          created_by_super_admin: boolean | null
           employee_limit: number | null
           expiration_date: string | null
           grace_period_end_date: string | null
@@ -436,6 +437,7 @@ export type Database = {
         Insert: {
           company_rules_text?: string | null
           created_at?: string
+          created_by_super_admin?: boolean | null
           employee_limit?: number | null
           expiration_date?: string | null
           grace_period_end_date?: string | null
@@ -466,6 +468,7 @@ export type Database = {
         Update: {
           company_rules_text?: string | null
           created_at?: string
+          created_by_super_admin?: boolean | null
           employee_limit?: number | null
           expiration_date?: string | null
           grace_period_end_date?: string | null

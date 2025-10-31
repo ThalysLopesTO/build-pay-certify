@@ -61,10 +61,10 @@ serve(async (req)=>{
       throw new Error("User not associated with a company");
     }
     
-    // Get company subscription details including trial info
+    // Get company subscription details including trial info and super admin flag
     const { data: company } = await supabaseClient
       .from('companies')
-      .select('stripe_customer_id, subscription_status, trial_end_date, grace_period_end_date')
+      .select('stripe_customer_id, subscription_status, trial_end_date, grace_period_end_date, created_by_super_admin, plan')
       .eq('id', profile.company_id)
       .single();
     const stripe = new Stripe(stripeKey, {
@@ -150,14 +150,21 @@ serve(async (req)=>{
       subscribed: hasActiveSub,
       plan
     });
+    // Check if this is a super admin created company (exempt from subscription)
+    const isSuperAdminCompany = company?.created_by_super_admin === true;
+    const isTrialing = company?.subscription_status === 'trialing';
+    const isGracePeriod = company?.subscription_status === 'past_due' && company?.grace_period_end_date;
+    
     return new Response(JSON.stringify({
-      subscribed: hasActiveSub || company?.subscription_status === 'trialing',
-      plan: plan,
+      subscribed: hasActiveSub || isTrialing || isSuperAdminCompany,
+      plan: plan || company?.plan || 'free',
       subscription_end: subscriptionEnd,
       status: company?.subscription_status || (hasActiveSub ? 'active' : 'inactive'),
       trial_end: company?.trial_end_date,
-      is_trialing: company?.subscription_status === 'trialing',
-      is_in_grace_period: company?.subscription_status === 'past_due' && company?.grace_period_end_date
+      isTrialing: isTrialing,
+      isGracePeriod: isGracePeriod,
+      isSuperAdminCompany: isSuperAdminCompany,
+      subscriptionStatus: company?.subscription_status
     }), {
       headers: {
         ...corsHeaders,

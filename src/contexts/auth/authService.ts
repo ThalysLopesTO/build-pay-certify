@@ -131,6 +131,19 @@ export const loginWithUsername = async (username: string, password: string, expe
       console.log('✅ Session setup completed');
     }
 
+    // Validate subscription status for username login
+    if (data.session?.user) {
+      const subscriptionCheck = await validateSubscriptionAtLogin(data.session.user.id, data.role);
+      if (!subscriptionCheck.valid) {
+        await supabase.auth.signOut();
+        return {
+          error: {
+            message: subscriptionCheck.message || "Subscription expired. Please renew to continue."
+          }
+        };
+      }
+    }
+
     return { error: null };
   } catch (err) {
     console.error('Username login error:', err);
@@ -228,5 +241,53 @@ export const checkSubscriptionStatus = async () => {
   } catch (error) {
     console.error('Error checking subscription status:', error);
     return null;
+  }
+};
+
+// Validate subscription at login time
+const validateSubscriptionAtLogin = async (userId: string, userRole?: string) => {
+  // Super admins always have access
+  if (userRole === 'super_admin') {
+    return { valid: true };
+  }
+
+  try {
+    const subscriptionData = await checkSubscriptionStatus();
+    
+    if (!subscriptionData) {
+      console.warn('⚠️ Could not verify subscription status');
+      return { valid: true }; // Allow access if check fails to avoid blocking users
+    }
+
+    const { 
+      subscribed, 
+      isTrialing, 
+      isGracePeriod, 
+      isSuperAdminCompany,
+      subscriptionStatus 
+    } = subscriptionData;
+
+    // Allow access for super admin created companies
+    if (isSuperAdminCompany) {
+      console.log('✅ Super admin created company - access granted');
+      return { valid: true };
+    }
+
+    // Allow access if subscription is active, trialing, or in grace period
+    if (subscribed || isTrialing || isGracePeriod) {
+      console.log('✅ Valid subscription status:', { subscribed, isTrialing, isGracePeriod });
+      return { valid: true };
+    }
+
+    // Block access for invalid subscriptions
+    console.error('❌ Invalid subscription:', subscriptionStatus);
+    return { 
+      valid: false, 
+      message: 'Your subscription has expired. Please renew your subscription to continue using the service.' 
+    };
+
+  } catch (error) {
+    console.error('Error validating subscription:', error);
+    return { valid: true }; // Allow access on error to avoid blocking users
   }
 };
