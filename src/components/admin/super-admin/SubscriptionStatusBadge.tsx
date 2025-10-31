@@ -29,8 +29,8 @@ export const SubscriptionStatusBadge: React.FC<SubscriptionStatusBadgeProps> = (
     );
   }
 
-  // Trialing
-  if (subscriptionStatus === 'trialing' && trialDaysRemaining !== null) {
+  // Trialing - active subscription with trial_end_date in future
+  if (subscriptionStatus === 'active' && trialDaysRemaining !== null && trialDaysRemaining > 0) {
     const variant = trialDaysRemaining <= 2 ? 'destructive' : 'default';
     return (
       <Badge variant={variant} className="gap-1.5 bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200">

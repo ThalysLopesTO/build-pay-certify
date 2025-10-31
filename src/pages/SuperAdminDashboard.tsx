@@ -78,11 +78,11 @@ const SuperAdminDashboard = () => {
   // Calculate stats
   const totalCompanies = companies.filter(c => c.status === 'active').length;
   const trialCompanies = companies.filter(c => 
-    c.subscription_status === 'trialing' && c.trial_days_remaining !== null
+    c.subscription_status === 'active' && c.trial_days_remaining !== null && c.trial_days_remaining > 0
   ).length;
   const expiringSoon = companies.filter(c => 
     (c.status === 'active' && c.subscription_days_remaining !== null && c.subscription_days_remaining <= 7 && c.subscription_days_remaining > 0) ||
-    (c.subscription_status === 'trialing' && c.trial_days_remaining !== null && c.trial_days_remaining <= 7 && c.trial_days_remaining > 0)
+    (c.subscription_status === 'active' && c.trial_days_remaining !== null && c.trial_days_remaining <= 7 && c.trial_days_remaining > 0)
   ).length;
 
   const handleApprove = (request: RegistrationRequest) => {

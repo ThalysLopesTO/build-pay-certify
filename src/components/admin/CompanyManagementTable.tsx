@@ -181,7 +181,7 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                         {item.registration_date ? format(new Date(item.registration_date), 'MMM dd, yyyy') : '--'}
                       </TableCell>
                       <TableCell>
-                        {item.trial_end_date && item.subscription_status === 'trialing' ? (
+                        {item.trial_end_date && item.subscription_status === 'active' && item.trial_days_remaining && item.trial_days_remaining > 0 ? (
                           <span className="text-blue-700">
                             Trial ends: {format(new Date(item.trial_end_date), 'MMM dd, yyyy')}
                           </span>

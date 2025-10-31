@@ -106,7 +106,7 @@ export const MobileCompanyCard: React.FC<MobileCompanyCardProps> = ({
           <div className="flex items-center text-sm">
             <Calendar className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
             <span className="text-muted-foreground mr-2">
-              {company.trial_end_date && company.subscription_status === 'trialing' 
+              {company.trial_end_date && company.subscription_status === 'active' && company.trial_days_remaining && company.trial_days_remaining > 0
                 ? 'Trial Ends:' 
                 : 'Next Billing / Expiry:'}
             </span>
@@ -114,7 +114,7 @@ export const MobileCompanyCard: React.FC<MobileCompanyCardProps> = ({
               company.is_expired ? 'text-red-600' : 
               company.trial_days_remaining !== null && company.trial_days_remaining <= 2 ? 'text-orange-600' : ''
             }`}>
-              {company.trial_end_date && company.subscription_status === 'trialing'
+              {company.trial_end_date && company.subscription_status === 'active' && company.trial_days_remaining && company.trial_days_remaining > 0
                 ? format(new Date(company.trial_end_date), 'MMM dd, yyyy')
                 : company.expiration_date
                 ? format(new Date(company.expiration_date), 'MMM dd, yyyy')
