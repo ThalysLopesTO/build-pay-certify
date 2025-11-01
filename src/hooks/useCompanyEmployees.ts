@@ -1,0 +1,32 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+
+export interface CompanyEmployee {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  photo_url?: string;
+  role?: string;
+}
+
+export const useCompanyEmployees = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['company-employees', user?.companyId],
+    queryFn: async () => {
+      if (!user?.companyId) return [];
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('user_id, first_name, last_name, photo_url, role')
+        .eq('company_id', user.companyId)
+        .order('first_name', { ascending: true });
+
+      if (error) throw error;
+      return data as CompanyEmployee[];
+    },
+    enabled: !!user?.companyId,
+  });
+};

@@ -35,6 +35,17 @@ export interface DailyTaskItem {
   created_at: string;
   updated_at: string;
   children?: DailyTaskItem[];
+  assignees?: Array<{
+    user_id: string;
+    user: {
+      id: string;
+      raw_user_meta_data: {
+        firstName?: string;
+        lastName?: string;
+        photoUrl?: string;
+      }
+    }
+  }>;
 }
 
 export interface DailyTaskItemAssignee {

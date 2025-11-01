@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TaskQuickAdd } from './TaskQuickAdd';
+import { TaskAssigneeList } from './TaskAssigneeList';
 import { format } from 'date-fns';
 
 interface TaskTreeItemProps {
@@ -43,50 +44,57 @@ export const TaskTreeItem = ({ item, listId, level }: TaskTreeItemProps) => {
 
   return (
     <div className="group">
-      <div className="flex items-center gap-2 py-2 px-3 rounded hover:bg-accent transition-colors">
-        <Checkbox
-          checked={item.is_done}
-          onCheckedChange={handleToggle}
-          className="flex-shrink-0"
-        />
-        <span className={`flex-1 ${item.is_done ? 'line-through text-muted-foreground' : ''}`}>
-          {item.title}
-        </span>
+      <div className="py-2 px-3 rounded hover:bg-accent transition-colors">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={item.is_done}
+            onCheckedChange={handleToggle}
+            className="flex-shrink-0"
+          />
+          <span className={`flex-1 ${item.is_done ? 'line-through text-muted-foreground' : ''}`}>
+            {item.title}
+          </span>
 
-        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          {item.priority !== 'medium' && (
-            <Badge variant="secondary" className={priorityColors[item.priority]}>
-              {item.priority}
-            </Badge>
-          )}
-          {item.due_date && (
-            <span className="text-xs text-muted-foreground">
-              {format(new Date(item.due_date), 'MMM dd')}
-            </span>
-          )}
+          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {item.priority !== 'medium' && (
+              <Badge variant="secondary" className={priorityColors[item.priority]}>
+                {item.priority}
+              </Badge>
+            )}
+            {item.due_date && (
+              <span className="text-xs text-muted-foreground">
+                {format(new Date(item.due_date), 'MMM dd')}
+              </span>
+            )}
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setShowSubtaskAdd(true)}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowSubtaskAdd(true)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* Assignee labels below task title */}
+        <div className="ml-6">
+          <TaskAssigneeList item={item} listId={listId} />
         </div>
       </div>
 
