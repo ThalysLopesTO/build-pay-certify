@@ -58,6 +58,7 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
       progress: item.progress / 100,
       type: item.task_type,
       parent: item.parent_id ? (idMap.get(item.parent_id) || 0) : 0,
+      open: true, // Expand parent tasks by default
     }));
   }, [scheduleItems, idMap]);
 
@@ -279,11 +280,11 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
   return (
     <div className="flex flex-col h-full">
       {/* Compact header */}
-      <div className="flex items-center gap-3 p-3 border-b bg-background">
+      <div className="flex items-center gap-3 p-3 border-b bg-background shrink-0">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-lg font-semibold">{jobsite.name}</h1>
           {jobsite.address && (
             <p className="text-xs text-muted-foreground">{jobsite.address}</p>
@@ -293,30 +294,53 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
 
       {/* SVAR Toolbar */}
       {api && (
-        <div className="border-b bg-background">
+        <div className="border-b bg-background shrink-0">
           <Toolbar items={toolbarItems} api={api} />
         </div>
       )}
 
       {/* Full-width Gantt chart */}
-      <div className="flex-1">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <Willow>
-          <Gantt
-            init={initApi}
-            tasks={ganttTasks}
-            links={links}
-            scales={[
-              { unit: 'month', step: 1, format: 'MMMM yyyy' },
-              { unit: 'day', step: 1, format: 'd' }
-            ]}
-            columns={[
-              { name: 'text', label: 'Task name', width: 250 },
-              { name: 'start', label: 'Start date', width: 100 },
-              { name: 'duration', label: 'Duration', width: 80 },
-            ]}
-            onTaskUpdate={handleTaskUpdate}
-            onTaskDelete={handleTaskDelete}
-          />
+          <div style={{ height: '100%', width: '100%' }}>
+            <Gantt
+              init={initApi}
+              tasks={ganttTasks}
+              links={links}
+              cellWidth={40}
+              cellHeight={40}
+              zoom={true}
+              scales={[
+                { unit: 'month', step: 1, format: 'MMMM yyyy' },
+                { unit: 'day', step: 1, format: 'd' }
+              ]}
+              columns={[
+                { 
+                  name: 'text', 
+                  label: 'Task name', 
+                  width: 250,
+                  tree: true,
+                  resize: true
+                },
+                { 
+                  name: 'start', 
+                  label: 'Start date', 
+                  width: 120,
+                  align: 'center',
+                  resize: true
+                },
+                { 
+                  name: 'duration', 
+                  label: 'Duration', 
+                  width: 80,
+                  align: 'center',
+                  resize: true
+                },
+              ]}
+              onTaskUpdate={handleTaskUpdate}
+              onTaskDelete={handleTaskDelete}
+            />
+          </div>
         </Willow>
       </div>
 
