@@ -56,9 +56,12 @@ export const useDailyTaskItems = (listId?: string) => {
           *,
           daily_task_item_assignees (
             user_id,
-            user:user_id (
-              id,
-              raw_user_meta_data
+            assigned_by,
+            user_profiles!daily_task_item_assignees_user_id_fkey (
+              user_id,
+              first_name,
+              last_name,
+              photo_url
             )
           )
         `)

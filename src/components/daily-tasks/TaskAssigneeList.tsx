@@ -19,9 +19,9 @@ export const TaskAssigneeList = ({ item, listId }: TaskAssigneeListProps) => {
         <TaskAssigneeLabel
           key={assignee.user_id}
           userId={assignee.user_id}
-          firstName={assignee.user?.raw_user_meta_data?.firstName}
-          lastName={assignee.user?.raw_user_meta_data?.lastName}
-          photoUrl={assignee.user?.raw_user_meta_data?.photoUrl}
+          firstName={assignee.user_profiles?.first_name}
+          lastName={assignee.user_profiles?.last_name}
+          photoUrl={assignee.user_profiles?.photo_url}
         />
       ))}
       

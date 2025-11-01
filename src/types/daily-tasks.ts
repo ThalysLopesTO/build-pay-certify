@@ -37,14 +37,13 @@ export interface DailyTaskItem {
   children?: DailyTaskItem[];
   assignees?: Array<{
     user_id: string;
-    user: {
-      id: string;
-      raw_user_meta_data: {
-        firstName?: string;
-        lastName?: string;
-        photoUrl?: string;
-      }
-    }
+    assigned_by?: string;
+    user_profiles: {
+      user_id: string;
+      first_name: string;
+      last_name: string;
+      photo_url?: string;
+    } | null;
   }>;
 }
 
