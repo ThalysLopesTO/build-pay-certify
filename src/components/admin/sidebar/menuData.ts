@@ -49,12 +49,6 @@ export const menuData: MenuItem[] = [
     icon: MapPin,
   },
   {
-    id: 'schedule',
-    title: 'Schedule',
-    href: '/admin?tab=schedule',
-    icon: CalendarDays,
-  },
-  {
     id: 'completed-jobsites',
     title: 'Completed Jobs',
     href: '/admin/completed-jobsites',
@@ -193,7 +187,6 @@ export const groupedMenuItems = {
   ],
   management: [
     menuData.find(item => item.id === 'jobsites')!,
-    menuData.find(item => item.id === 'schedule')!,
     menuData.find(item => item.id === 'material-takeoff')!,
     menuData.find(item => item.id === 'material-requests')!,
     menuData.find(item => item.id === 'change-orders')!,
