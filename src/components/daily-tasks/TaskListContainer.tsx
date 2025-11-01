@@ -29,12 +29,25 @@ export const TaskListContainer: React.FC<TaskListContainerProps> = ({ list }) =>
   };
 
   return (
-    <Card className="flex flex-col h-full">
+    <Card className="flex flex-col h-full shadow-md hover:shadow-lg transition-shadow">
       <TaskListHeader
         list={list}
         totalTasks={tasks.length}
         completedTasks={completedTasks}
       />
+      
+      {/* Progress bar */}
+      {tasks.length > 0 && (
+        <div className="px-4">
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-300"
+              style={{ width: `${(completedTasks / tasks.length) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-auto p-4 space-y-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
@@ -60,7 +73,7 @@ export const TaskListContainer: React.FC<TaskListContainerProps> = ({ list }) =>
         )}
       </div>
       {canEdit && (
-        <div className="p-4 border-t">
+        <div className="p-4 border-t bg-muted/30">
           <TaskQuickAdd
             onAdd={handleAddTask}
             disabled={createTask.isPending}
