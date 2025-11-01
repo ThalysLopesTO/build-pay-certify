@@ -8,9 +8,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, UserCheck, Users } from 'lucide-react';
+import { Search, UserCheck, Users, Trash2 } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { useEmployees, useToggleEmployeeStatus } from '@/hooks/new/useUsers';
+import { usePermanentlyDeleteEmployee } from '@/hooks/usePermanentlyDeleteEmployee';
+import { PermanentDeleteEmployeeDialog } from '@/components/admin/PermanentDeleteEmployeeDialog';
 
 interface ArchivedEmployeesModalProps {
   isOpen: boolean;
@@ -22,9 +24,12 @@ const ArchivedEmployeesModalContext: React.FC<ArchivedEmployeesModalProps> = ({
   onClose,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [employeeToDelete, setEmployeeToDelete] = useState<any>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { data, isLoading: loading } = useEmployees();
   const archivedEmployees = data?.archivedEmployees;
   const toggleStatus = useToggleEmployeeStatus();
+  const permanentlyDelete = usePermanentlyDeleteEmployee();
 
   const filteredEmployees = archivedEmployees.filter(employee =>
     `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -34,6 +39,22 @@ const ArchivedEmployeesModalContext: React.FC<ArchivedEmployeesModalProps> = ({
 
   const handleReactivate = async (employeeUserId: string) => {
     toggleStatus.mutate({ id: employeeUserId, isActive: true })
+  };
+
+  const handlePermanentDeleteClick = (employee: any) => {
+    setEmployeeToDelete(employee);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmPermanentDelete = () => {
+    if (employeeToDelete) {
+      permanentlyDelete.mutate(employeeToDelete.user_id, {
+        onSuccess: () => {
+          setShowDeleteDialog(false);
+          setEmployeeToDelete(null);
+        }
+      });
+    }
   };
 
   return (
@@ -107,21 +128,40 @@ const ArchivedEmployeesModalContext: React.FC<ArchivedEmployeesModalProps> = ({
                     </div>
                   </div>
 
-                  <Button
-                    onClick={() => handleReactivate(employee.user_id)}
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700"
-                    disabled={toggleStatus.isPending}
-                  >
-                    <UserCheck className="h-4 w-4 mr-1" />
-                    Reactivate
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleReactivate(employee.user_id)}
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                      disabled={toggleStatus.isPending}
+                    >
+                      <UserCheck className="h-4 w-4 mr-1" />
+                      Reactivate
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handlePermanentDeleteClick(employee)}
+                      disabled={permanentlyDelete.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete Forever
+                    </Button>
+                  </div>
                 </div>
               ))
             )}
           </div>
         </div>
       </DialogContent>
+
+      <PermanentDeleteEmployeeDialog
+        employee={employeeToDelete}
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleConfirmPermanentDelete}
+        isLoading={permanentlyDelete.isPending}
+      />
     </Dialog>
   );
 };

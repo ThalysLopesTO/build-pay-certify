@@ -3131,6 +3131,10 @@ export type Database = {
         Returns: boolean
       }
       is_user_super_admin: { Args: never; Returns: boolean }
+      permanently_delete_employee: {
+        Args: { employee_user_id: string }
+        Returns: Json
+      }
       reactivate_employee: { Args: { employee_user_id: string }; Returns: Json }
       rpc_time_summary_details:
         | {
