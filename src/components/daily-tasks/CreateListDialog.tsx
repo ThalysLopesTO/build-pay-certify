@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useListMutations } from '@/hooks/daily-tasks/useListMutations';
-import { format } from 'date-fns';
+import { formatDateForDB } from '@/utils/dateUtils';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -40,7 +40,7 @@ export const CreateListDialog = ({ jobsiteId, open, onOpenChange }: CreateListDi
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      for_date: format(new Date(), 'yyyy-MM-dd'),
+      for_date: formatDateForDB(new Date()),
     },
   });
 

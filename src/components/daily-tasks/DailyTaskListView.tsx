@@ -7,7 +7,7 @@ import { useDailyTaskLists } from '@/hooks/daily-tasks/useDailyTaskLists';
 import { useDailyTaskItems } from '@/hooks/daily-tasks/useDailyTaskItems';
 import { useTaskProgress } from '@/hooks/daily-tasks/useTaskProgress';
 import { ArrowLeft, Plus } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDateFromDB } from '@/utils/dateUtils';
 import { TaskTree } from './TaskTree';
 import { TaskQuickAdd } from './TaskQuickAdd';
 
@@ -50,7 +50,7 @@ export const DailyTaskListView = ({ jobsiteId, listId }: DailyTaskListViewProps)
           <div>
             <h1 className="text-3xl font-bold">{currentList.title}</h1>
             <p className="text-muted-foreground mt-1">
-              {format(new Date(currentList.for_date), 'MMMM dd, yyyy')}
+              {formatDateFromDB(currentList.for_date, 'MMMM dd, yyyy')}
             </p>
           </div>
         </div>

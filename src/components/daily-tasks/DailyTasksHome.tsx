@@ -8,7 +8,7 @@ import { useDailyTaskLists } from '@/hooks/daily-tasks/useDailyTaskLists';
 import { useDailyTaskItems } from '@/hooks/daily-tasks/useDailyTaskItems';
 import { useTaskProgress } from '@/hooks/daily-tasks/useTaskProgress';
 import { CheckCircle2, ListChecks, MapPin } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDateForDB } from '@/utils/dateUtils';
 
 export const DailyTasksHome = () => {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export const DailyTasksHome = () => {
   const jobsitesSummary = useMemo(() => {
     if (!jobsites || !allLists) return [];
 
-    const today = format(new Date(), 'yyyy-MM-dd');
+    const today = formatDateForDB(new Date());
 
     return jobsites
       .filter(j => j.status === 'active')

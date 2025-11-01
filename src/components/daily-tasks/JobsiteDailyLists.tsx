@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useDailyTaskLists } from '@/hooks/daily-tasks/useDailyTaskLists';
 import { useListMutations } from '@/hooks/daily-tasks/useListMutations';
 import { ArrowLeft, Plus, Calendar, ListChecks } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDateFromDB, parseLocalDate } from '@/utils/dateUtils';
 import { CreateListDialog } from './CreateListDialog';
 
 interface JobsiteDailyListsProps {
@@ -25,8 +25,8 @@ export const JobsiteDailyLists = ({ jobsiteId }: JobsiteDailyListsProps) => {
   const sortedLists = React.useMemo(() => {
     if (!lists) return [];
     const sorted = [...lists].sort((a, b) => {
-      const dateA = new Date(a.for_date).getTime();
-      const dateB = new Date(b.for_date).getTime();
+      const dateA = parseLocalDate(a.for_date).getTime();
+      const dateB = parseLocalDate(b.for_date).getTime();
       return sortAscending ? dateA - dateB : dateB - dateA;
     });
     return sorted;
@@ -94,7 +94,7 @@ export const JobsiteDailyLists = ({ jobsiteId }: JobsiteDailyListsProps) => {
                     <div className="flex items-center gap-2 mb-1">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
-                        {format(new Date(list.for_date), 'MMM dd, yyyy')}
+                        {formatDateFromDB(list.for_date, 'MMM dd, yyyy')}
                       </span>
                     </div>
                     <CardTitle>{list.title}</CardTitle>
