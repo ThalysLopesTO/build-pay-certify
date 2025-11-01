@@ -29,18 +29,11 @@ import SystemSettings from '@/components/admin/SystemSettings';
 import IncomeExpensesManagement from '@/components/admin/IncomeExpensesManagement';
 import TimeRequestsManagement from '@/components/admin/TimeRequestsManagement';
 import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
-import { DailyTasksHome } from '@/components/daily-tasks/DailyTasksHome';
-import { JobsiteDailyLists } from '@/components/daily-tasks/JobsiteDailyLists';
-import { DailyTaskListView } from '@/components/daily-tasks/DailyTaskListView';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const params = useParams();
   const [searchParams] = useSearchParams();
-  
-  // Get Daily Tasks sub-navigation parameters
-  const jobsiteId = searchParams.get('jobsiteId');
-  const listId = searchParams.get('listId');
 
   // Update activeTab based on URL parameters
   useEffect(() => {
@@ -98,14 +91,6 @@ const AdminDashboard = () => {
         return <IncomeExpensesManagement />;
       case 'time-requests':
         return <TimeRequestsManagement />;
-      case 'daily-tasks':
-        // Handle nested Daily Tasks views
-        if (jobsiteId && listId) {
-          return <DailyTaskListView jobsiteId={jobsiteId} listId={listId} />;
-        } else if (jobsiteId) {
-          return <JobsiteDailyLists jobsiteId={jobsiteId} />;
-        }
-        return <DailyTasksHome />;
       case 'company-settings':
         return <SystemSettings />;
       case 'settings':
