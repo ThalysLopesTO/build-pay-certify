@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,34 @@ export const DailyTaskListView = ({ jobsiteId, listId }: DailyTaskListViewProps)
   const { data: lists } = useDailyTaskLists({ jobsiteId });
   const { data: items, isLoading: itemsLoading } = useDailyTaskItems(listId);
   const progress = useTaskProgress(items || []);
+
+  const stats = useMemo(() => {
+    const countLeafTasks = (items: any[]) => {
+      let total = 0;
+      let completed = 0;
+      let pending = 0;
+      
+      const traverse = (tasks: any[]) => {
+        tasks.forEach(task => {
+          if (!task.children || task.children.length === 0) {
+            total++;
+            if (task.is_done) {
+              completed++;
+            } else {
+              pending++;
+            }
+          } else {
+            traverse(task.children);
+          }
+        });
+      };
+      
+      traverse(items);
+      return { total, completed, pending };
+    };
+    
+    return countLeafTasks(items || []);
+  }, [items]);
 
   const currentList = lists?.find(l => l.id === listId);
 
@@ -58,6 +86,41 @@ export const DailyTaskListView = ({ jobsiteId, listId }: DailyTaskListViewProps)
           <Plus className="h-4 w-4 mr-2" />
           Add Task
         </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Tasks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{stats.total}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Pending Tasks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-600">{stats.pending}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Completed Tasks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">{stats.completed}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
