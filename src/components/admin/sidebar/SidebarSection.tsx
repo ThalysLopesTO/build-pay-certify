@@ -43,14 +43,9 @@ const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectio
           {filteredItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === (item.id || item.title.toLowerCase().replace(/\s+/g, '-'));
-            const isExternalRoute = item.href && !item.href.includes('?tab=') && item.href !== '/admin';
             
             const handleClick = () => {
-              if (isExternalRoute) {
-                navigate(item.href!);
-              } else {
-                setActiveTab(item.id || item.title.toLowerCase().replace(/\s+/g, '-'));
-              }
+              setActiveTab(item.id || item.title.toLowerCase().replace(/\s+/g, '-'));
             };
             
             return (
