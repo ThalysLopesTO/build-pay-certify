@@ -48,14 +48,20 @@ export const useAllJobsiteTasks = (jobsiteId: string | null) => {
           )
         `)
         .in('list_id', listIds)
-        .is('parent_item_id', null)
-        .order('list_id', { ascending: true })
-        .order('order_index', { ascending: true });
+        .is('parent_item_id', null);
 
       if (tasksError) throw tasksError;
 
+      // Sort tasks in JavaScript: by list_id first, then by order_index
+      const sortedTasks = (tasks || []).sort((a, b) => {
+        if (a.list_id !== b.list_id) {
+          return a.list_id.localeCompare(b.list_id);
+        }
+        return (a.order_index || 0) - (b.order_index || 0);
+      });
+
       // Combine tasks with their list information
-      const tasksWithList: TaskWithList[] = (tasks || []).map((task) => {
+      const tasksWithList: TaskWithList[] = sortedTasks.map((task) => {
         const list = lists.find((l) => l.id === task.list_id);
         return {
           ...task,
