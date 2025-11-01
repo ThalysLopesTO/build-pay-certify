@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { CreditCard, CheckCircle, Building } from 'lucide-react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -104,8 +104,7 @@ const HomePage = () => {
 
   // If user is authenticated, redirect them to their dashboard
   if (isAuthenticated) {
-    window.location.href = '/admin/dashboard';
-    return null;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return (
