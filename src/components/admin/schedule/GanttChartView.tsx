@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Gantt } from '@svar-ui/react-gantt';
-import '@svar-ui/react-gantt/dist/gantt.css';
+import '@svar-ui/react-gantt/all.css';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useJobsiteSchedule } from '@/hooks/useJobsiteSchedule';
