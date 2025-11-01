@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -48,7 +48,7 @@ export const JobsiteDailyLists = ({ jobsiteId }: JobsiteDailyListsProps) => {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/daily-tasks')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/dashboard?tab=daily-tasks')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -106,10 +106,11 @@ export const JobsiteDailyLists = ({ jobsiteId }: JobsiteDailyListsProps) => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <Button asChild variant="outline">
-                    <Link to={`/daily-tasks/${jobsiteId}/lists/${list.id}`}>
-                      View Tasks
-                    </Link>
+                  <Button 
+                    variant="outline"
+                    onClick={() => navigate(`/admin/dashboard?tab=daily-tasks&jobsiteId=${jobsiteId}&listId=${list.id}`)}
+                  >
+                    View Tasks
                   </Button>
                 </div>
               </CardContent>

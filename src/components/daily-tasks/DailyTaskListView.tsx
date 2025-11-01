@@ -43,7 +43,7 @@ export const DailyTaskListView = ({ jobsiteId, listId }: DailyTaskListViewProps)
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(`/daily-tasks/${jobsiteId}`)}
+            onClick={() => navigate(`/admin/dashboard?tab=daily-tasks&jobsiteId=${jobsiteId}`)}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>

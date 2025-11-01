@@ -57,7 +57,7 @@ export const menuData: MenuItem[] = [
   {
     id: 'daily-tasks',
     title: 'Daily Tasks',
-    href: '/daily-tasks',
+    href: '/admin?tab=daily-tasks',
     icon: ListChecks,
   },
   {

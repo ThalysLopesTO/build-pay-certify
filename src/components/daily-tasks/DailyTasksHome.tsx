@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -11,6 +11,7 @@ import { CheckCircle2, ListChecks, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const DailyTasksHome = () => {
+  const navigate = useNavigate();
   const { data: jobsites, isLoading: jobsitesLoading } = useJobsites();
   const { data: allLists, isLoading: listsLoading } = useDailyTaskLists();
 
@@ -71,39 +72,41 @@ export const DailyTasksHome = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {jobsitesSummary.map(({ jobsite, openListsCount, todayListsCount }) => (
-            <Link key={jobsite.id} to={`/daily-tasks/${jobsite.id}`}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-start justify-between">
-                    <span className="flex-1">{jobsite.name}</span>
-                    {todayListsCount > 0 && (
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 ml-2" />
-                    )}
-                  </CardTitle>
-                  {jobsite.address && (
-                    <CardDescription className="flex items-center gap-1 text-sm">
-                      <MapPin className="h-3 w-3" />
-                      {jobsite.address}
-                    </CardDescription>
+            <Card 
+              key={jobsite.id} 
+              className="hover:shadow-lg transition-shadow cursor-pointer h-full"
+              onClick={() => navigate(`/admin/dashboard?tab=daily-tasks&jobsiteId=${jobsite.id}`)}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-start justify-between">
+                  <span className="flex-1">{jobsite.name}</span>
+                  {todayListsCount > 0 && (
+                    <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 ml-2" />
                   )}
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Open Lists</span>
-                      <span className="font-semibold">{openListsCount}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Today's Lists</span>
-                      <span className="font-semibold">{todayListsCount}</span>
-                    </div>
+                </CardTitle>
+                {jobsite.address && (
+                  <CardDescription className="flex items-center gap-1 text-sm">
+                    <MapPin className="h-3 w-3" />
+                    {jobsite.address}
+                  </CardDescription>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Open Lists</span>
+                    <span className="font-semibold">{openListsCount}</span>
                   </div>
-                  <Button className="w-full" variant="outline">
-                    View Lists
-                  </Button>
-                </CardContent>
-              </Card>
-            </Link>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Today's Lists</span>
+                    <span className="font-semibold">{todayListsCount}</span>
+                  </div>
+                </div>
+                <Button className="w-full" variant="outline">
+                  View Lists
+                </Button>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
