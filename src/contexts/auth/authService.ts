@@ -223,8 +223,13 @@ export const logout = async () => {
 // New function to check subscription status after login
 export const checkSubscriptionStatus = async () => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return null;
+    // Refresh session to ensure we have a valid token
+    const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+    
+    if (sessionError || !session) {
+      console.warn('Session refresh failed:', sessionError);
+      return null;
+    }
 
     const { data, error } = await supabase.functions.invoke('check-subscription', {
       headers: {

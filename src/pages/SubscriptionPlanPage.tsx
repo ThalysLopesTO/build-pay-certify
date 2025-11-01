@@ -22,7 +22,21 @@ const SubscriptionPlanPage = () => {
     const checkSubscription = async () => {
       if (!user) return;
       try {
-        const { data, error } = await supabase.functions.invoke("check-subscription");
+        // Refresh session to ensure we have a valid token
+        const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+        
+        if (sessionError || !session) {
+          console.warn('Session refresh failed:', sessionError);
+          setIsSubscribed(false);
+          return;
+        }
+
+        const { data, error } = await supabase.functions.invoke("check-subscription", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+        
         if (error) throw error;
 
         const subscribed = !!data?.subscribed;

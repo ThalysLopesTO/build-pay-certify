@@ -21,11 +21,16 @@ export const useStripeSubscription = () => {
   const { data: subscriptionStatus, isLoading: isLoadingStatus } = useQuery({
     queryKey: ['subscription-status', user?.id],
     queryFn: async () => {
-      if (!session) throw new Error('No session');
+      // Refresh session to ensure we have a valid token
+      const { data: { session: freshSession }, error: sessionError } = await supabase.auth.refreshSession();
+      
+      if (sessionError || !freshSession) {
+        throw new Error('Session refresh failed');
+      }
 
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${freshSession.access_token}`,
         },
       });
 
