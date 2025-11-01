@@ -1,6 +1,7 @@
 import React from 'react';
 import { JobsiteContextHeader } from './JobsiteContextHeader';
-import { JobsiteTaskOverview } from './JobsiteTaskOverview';
+import { DailyTaskCalendarView } from './DailyTaskCalendarView';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface TaskListsViewProps {
   jobsite: {
@@ -13,10 +14,13 @@ interface TaskListsViewProps {
 }
 
 export const TaskListsView: React.FC<TaskListsViewProps> = ({ jobsite, jobsiteId }) => {
+  const { user } = useAuth();
+  const companyId = user?.companyId || '';
+
   return (
     <div className="space-y-6">
       <JobsiteContextHeader jobsite={jobsite} />
-      <JobsiteTaskOverview jobsiteId={jobsiteId} />
+      <DailyTaskCalendarView jobsiteId={jobsiteId} companyId={companyId} />
     </div>
   );
 };
