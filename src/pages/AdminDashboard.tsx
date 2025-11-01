@@ -29,6 +29,7 @@ import SystemSettings from '@/components/admin/SystemSettings';
 import IncomeExpensesManagement from '@/components/admin/IncomeExpensesManagement';
 import TimeRequestsManagement from '@/components/admin/TimeRequestsManagement';
 import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
+import ScheduleManagement from '@/components/admin/schedule/ScheduleManagement';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -59,6 +60,8 @@ const AdminDashboard = () => {
         return <EmployeeRegistration />;
       case 'jobsites':
         return <JobsiteManagement />;
+      case 'schedule':
+        return <ScheduleManagement />;
       case 'safety-templates':
         return <SafetyTemplatesManagement />;
       case 'inventory':

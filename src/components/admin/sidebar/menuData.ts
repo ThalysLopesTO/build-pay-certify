@@ -3,6 +3,7 @@ import {
   BarChart3,
   Building2,
   Calendar,
+  CalendarDays,
   CreditCard,
   FileText,
   Inbox,
@@ -46,6 +47,12 @@ export const menuData: MenuItem[] = [
     title: 'Jobsite Management',
     href: '/admin/jobsites',
     icon: MapPin,
+  },
+  {
+    id: 'schedule',
+    title: 'Schedule',
+    href: '/admin?tab=schedule',
+    icon: CalendarDays,
   },
   {
     id: 'completed-jobsites',
@@ -186,6 +193,7 @@ export const groupedMenuItems = {
   ],
   management: [
     menuData.find(item => item.id === 'jobsites')!,
+    menuData.find(item => item.id === 'schedule')!,
     menuData.find(item => item.id === 'material-takeoff')!,
     menuData.find(item => item.id === 'material-requests')!,
     menuData.find(item => item.id === 'change-orders')!,

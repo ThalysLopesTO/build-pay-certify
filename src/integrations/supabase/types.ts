@@ -1202,6 +1202,79 @@ export type Database = {
           },
         ]
       }
+      jobsite_schedule_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          duration: number | null
+          end_date: string
+          id: string
+          jobsite_id: string
+          parent_id: string | null
+          progress: number
+          sort_order: number
+          start_date: string
+          task_text: string
+          task_type: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          duration?: number | null
+          end_date: string
+          id?: string
+          jobsite_id: string
+          parent_id?: string | null
+          progress?: number
+          sort_order?: number
+          start_date: string
+          task_text: string
+          task_type?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          duration?: number | null
+          end_date?: string
+          id?: string
+          jobsite_id?: string
+          parent_id?: string | null
+          progress?: number
+          sort_order?: number
+          start_date?: string
+          task_text?: string
+          task_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobsite_schedule_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobsite_schedule_items_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobsite_schedule_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "jobsite_schedule_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobsite_tasks: {
         Row: {
           company_id: string
