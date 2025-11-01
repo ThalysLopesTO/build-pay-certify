@@ -2,8 +2,10 @@ import React from 'react';
 import { TaskListView } from './TaskListView';
 import { useAllJobsiteTasks } from '@/hooks/daily-tasks/useAllJobsiteTasks';
 import { useTaskMutations } from '@/hooks/daily-tasks/useTaskMutations';
-import { Loader2, Inbox } from 'lucide-react';
+import { Loader2, Inbox, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface JobsiteTaskOverviewProps {
   jobsiteId: string;
@@ -14,6 +16,7 @@ export const JobsiteTaskOverview: React.FC<JobsiteTaskOverviewProps> = ({
 }) => {
   const { data: tasks = [], isLoading } = useAllJobsiteTasks(jobsiteId);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Use the first list's ID for mutations (or create a global mutation hook)
   const firstListId = tasks.length > 0 ? tasks[0].list_id : '';
@@ -43,14 +46,18 @@ export const JobsiteTaskOverview: React.FC<JobsiteTaskOverviewProps> = ({
     );
   }
 
-  if (tasks.length === 0) {
+  if (tasks.length === 0 && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Inbox className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold text-foreground mb-2">No Tasks</h3>
-        <p className="text-sm text-muted-foreground max-w-md">
-          No tasks have been created for this jobsite yet. Create a task list to get started!
+        <h3 className="text-lg font-semibold text-foreground mb-2">No Task Lists Found</h3>
+        <p className="text-sm text-muted-foreground max-w-md mb-6">
+          Create your first task list to start organizing work for this jobsite.
         </p>
+        <Button onClick={() => navigate(`/daily-tasks?jobsite=${jobsiteId}`)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Task List
+        </Button>
       </div>
     );
   }

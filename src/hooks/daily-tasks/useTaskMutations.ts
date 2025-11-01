@@ -18,7 +18,8 @@ export const useTaskMutations = (listId: string) => {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['daily-task-items', listId] });
+      queryClient.invalidateQueries({ queryKey: ['jobsite', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['daily-task-items'] });
       toast({ title: 'Task created successfully' });
     },
     onError: () => {
@@ -36,7 +37,8 @@ export const useTaskMutations = (listId: string) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['daily-task-items', listId] });
+      queryClient.invalidateQueries({ queryKey: ['jobsite', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['daily-task-items'] });
     },
     onError: () => {
       toast({ title: 'Failed to update task', variant: 'destructive' });
@@ -57,7 +59,8 @@ export const useTaskMutations = (listId: string) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['daily-task-items', listId] });
+      queryClient.invalidateQueries({ queryKey: ['jobsite', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['daily-task-items'] });
     },
     onError: () => {
       toast({ title: 'Failed to update task', variant: 'destructive' });
@@ -74,7 +77,8 @@ export const useTaskMutations = (listId: string) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['daily-task-items', listId] });
+      queryClient.invalidateQueries({ queryKey: ['jobsite', 'tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['daily-task-items'] });
       toast({ title: 'Task deleted successfully' });
     },
     onError: () => {
