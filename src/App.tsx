@@ -29,6 +29,9 @@ import LicenseExpired from "@/pages/LicenseExpired";
 import InvoicePreview from "@/pages/InvoicePreview";
 import MaterialTakeoffPage from "@/pages/admin/MaterialTakeoffPage";
 import InventoryIndex from "@/pages/admin/inventory/Index";
+import DailyTasksPage from "@/pages/DailyTasksPage";
+import JobsiteListsPage from "@/pages/JobsiteListsPage";
+import DailyTaskListPage from "@/pages/DailyTaskListPage";
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 
@@ -99,6 +102,31 @@ const AppInner: React.FC = () => {
           element={
             <ProtectedRoute requireSubscription>
               <InventoryIndex />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/daily-tasks"
+          element={
+            <ProtectedRoute requireSubscription>
+              <DailyTasksPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/daily-tasks/:jobsiteId"
+          element={
+            <ProtectedRoute requireSubscription>
+              <JobsiteListsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/daily-tasks/:jobsiteId/lists/:listId"
+          element={
+            <ProtectedRoute requireSubscription>
+              <DailyTaskListPage />
             </ProtectedRoute>
           }
         />

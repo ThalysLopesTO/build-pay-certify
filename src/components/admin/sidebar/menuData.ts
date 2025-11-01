@@ -55,6 +55,12 @@ export const menuData: MenuItem[] = [
     icon: Archive,
   },
   {
+    id: 'daily-tasks',
+    title: 'Daily Tasks',
+    href: '/daily-tasks',
+    icon: ListChecks,
+  },
+  {
     id: 'material-takeoff',
     title: 'Material Takeoffs',
     href: '/takeoffs',
@@ -187,6 +193,7 @@ export const groupedMenuItems = {
   ],
   management: [
     menuData.find(item => item.id === 'jobsites')!,
+    menuData.find(item => item.id === 'daily-tasks')!,
     menuData.find(item => item.id === 'material-takeoff')!,
     menuData.find(item => item.id === 'material-requests')!,
     menuData.find(item => item.id === 'change-orders')!,
