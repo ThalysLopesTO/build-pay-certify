@@ -22,7 +22,7 @@ export const JobsiteContextHeader: React.FC<JobsiteContextHeaderProps> = ({ jobs
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => navigate('/daily-tasks')}
+        onClick={() => navigate('/admin/dashboard?tab=daily-tasks')}
         className="gap-2"
       >
         <ChevronLeft className="h-4 w-4" />

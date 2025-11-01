@@ -30,7 +30,7 @@ export const JobsiteSelectionGrid: React.FC<JobsiteSelectionGridProps> = ({
   );
 
   const handleJobsiteClick = (jobsiteId: string) => {
-    navigate(`/daily-tasks?jobsiteId=${jobsiteId}`);
+    navigate(`/admin/dashboard?tab=daily-tasks&jobsiteId=${jobsiteId}`);
   };
 
   if (isLoading) {
