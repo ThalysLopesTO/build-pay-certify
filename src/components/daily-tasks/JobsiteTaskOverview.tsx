@@ -1,7 +1,9 @@
 import React from 'react';
-import { TaskListContainer } from './TaskListContainer';
-import { useDailyTaskLists } from '@/hooks/daily-tasks/useDailyTaskLists';
+import { TaskListView } from './TaskListView';
+import { useAllJobsiteTasks } from '@/hooks/daily-tasks/useAllJobsiteTasks';
+import { useTaskMutations } from '@/hooks/daily-tasks/useTaskMutations';
 import { Loader2, Inbox } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface JobsiteTaskOverviewProps {
   jobsiteId: string;
@@ -10,7 +12,28 @@ interface JobsiteTaskOverviewProps {
 export const JobsiteTaskOverview: React.FC<JobsiteTaskOverviewProps> = ({
   jobsiteId,
 }) => {
-  const { data: lists = [], isLoading } = useDailyTaskLists(jobsiteId);
+  const { data: tasks = [], isLoading } = useAllJobsiteTasks(jobsiteId);
+  const { toast } = useToast();
+
+  // Use the first list's ID for mutations (or create a global mutation hook)
+  const firstListId = tasks.length > 0 ? tasks[0].list_id : '';
+  const { toggleComplete, updateTask, deleteTask, createTask } = useTaskMutations(firstListId);
+
+  const handleToggle = (id: string, isDone: boolean) => {
+    toggleComplete.mutate({ id, is_done: isDone });
+  };
+
+  const handleUpdate = (id: string, updates: { title: string }) => {
+    updateTask.mutate({ id, updates });
+  };
+
+  const handleDelete = (id: string) => {
+    deleteTask.mutate(id);
+  };
+
+  const handleAdd = (title: string, listId: string) => {
+    createTask.mutate({ title, list_id: listId });
+  };
 
   if (isLoading) {
     return (
@@ -20,23 +43,26 @@ export const JobsiteTaskOverview: React.FC<JobsiteTaskOverviewProps> = ({
     );
   }
 
-  if (lists.length === 0) {
+  if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Inbox className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold text-foreground mb-2">No Task Lists</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-2">No Tasks</h3>
         <p className="text-sm text-muted-foreground max-w-md">
-          No daily task lists have been created for this jobsite yet. Create one to get started!
+          No tasks have been created for this jobsite yet. Create a task list to get started!
         </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-      {lists.map((list) => (
-        <TaskListContainer key={list.id} list={list} />
-      ))}
-    </div>
+    <TaskListView
+      tasks={tasks}
+      onToggle={handleToggle}
+      onUpdate={handleUpdate}
+      onDelete={handleDelete}
+      onAdd={handleAdd}
+      isLoading={isLoading}
+    />
   );
 };
