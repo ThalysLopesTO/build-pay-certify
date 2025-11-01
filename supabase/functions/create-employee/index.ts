@@ -119,7 +119,7 @@ const sendEmployeeWelcomeEmail = async (params: {
 
   try {
     const { error } = await resend.emails.send({
-      from: 'StackBuild <onboarding@resend.dev>',
+      from: `${params.companyName} <no-reply@stackbuild.ca>`,
       to: [params.email],
       subject: `Welcome to ${params.companyName} - Your StackBuild Account is Ready! 🎉`,
       html,
