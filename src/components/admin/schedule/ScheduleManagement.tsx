@@ -19,7 +19,7 @@ const ScheduleManagement = () => {
 
   if (selectedJobsiteId && selectedJobsite) {
     return (
-      <div className="h-screen flex flex-col">
+      <div className="fixed inset-0 z-50 bg-background">
         <GanttChartView
           jobsite={selectedJobsite}
           onBack={() => setSelectedJobsiteId(null)}
