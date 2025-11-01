@@ -83,6 +83,10 @@ const ScheduleTaskDialog: React.FC<ScheduleTaskDialogProps> = ({
           task_type: data.task_type,
         });
       }
+      
+      // Wait for cache to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       onOpenChange(false);
       form.reset();
     } catch (error) {

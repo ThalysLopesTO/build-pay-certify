@@ -58,11 +58,6 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
   // Empty links array for task dependencies (can be populated later)
   const links: any[] = [];
 
-  // Debug logging
-  useEffect(() => {
-    console.log('📊 Gantt Tasks:', ganttTasks);
-    console.log('🗺️ ID Mapping:', Object.fromEntries(idMap));
-  }, [ganttTasks, idMap]);
 
   const handleTaskUpdate = (data: { id: number; task: any }) => {
     const uuid = reverseIdMap.get(data.id);
@@ -128,33 +123,23 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
       </div>
 
       <div className="border rounded-lg overflow-hidden bg-background" style={{ height: 'calc(100vh - 250px)' }}>
-        {ganttTasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-4">
-            <p className="text-muted-foreground">No tasks scheduled yet</p>
-            <Button onClick={handleAddTask}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Task
-            </Button>
-          </div>
-        ) : (
-          <Willow>
-            <Gantt
-              tasks={ganttTasks}
-              links={links}
-              scales={[
-                { unit: 'month', step: 1, format: 'MMMM yyyy' },
-                { unit: 'day', step: 1, format: 'd' }
-              ]}
-              columns={[
-                { name: 'text', label: 'Task', width: 250 },
-                { name: 'start', label: 'Start Date', width: 100 },
-                { name: 'end', label: 'End Date', width: 100 },
-              ]}
-              onTaskUpdate={handleTaskUpdate}
-              onTaskDelete={handleTaskDelete}
-            />
-          </Willow>
-        )}
+        <Willow>
+          <Gantt
+            tasks={ganttTasks}
+            links={links}
+            scales={[
+              { unit: 'month', step: 1, format: 'MMMM yyyy' },
+              { unit: 'day', step: 1, format: 'd' }
+            ]}
+            columns={[
+              { name: 'text', label: 'Task', width: 250 },
+              { name: 'start', label: 'Start Date', width: 100 },
+              { name: 'end', label: 'End Date', width: 100 },
+            ]}
+            onTaskUpdate={handleTaskUpdate}
+            onTaskDelete={handleTaskDelete}
+          />
+        </Willow>
       </div>
 
       <ScheduleTaskDialog

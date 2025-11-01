@@ -44,11 +44,22 @@ export const useCreateScheduleTask = (jobsiteId: string) => {
       if (error) throw error;
       return result;
     },
+    onMutate: async (newTask) => {
+      await queryClient.cancelQueries({ queryKey: ['jobsite-schedule', jobsiteId] });
+      const previousTasks = queryClient.getQueryData(['jobsite-schedule', jobsiteId]);
+      
+      queryClient.setQueryData(['jobsite-schedule', jobsiteId], (old: any) => {
+        return [...(old || []), { ...newTask, id: 'temp-' + Date.now() }];
+      });
+      
+      return { previousTasks };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobsite-schedule', jobsiteId] });
       toast.success('Task created successfully');
     },
-    onError: (error) => {
+    onError: (error, newTask, context: any) => {
+      queryClient.setQueryData(['jobsite-schedule', jobsiteId], context?.previousTasks);
       console.error('Error creating task:', error);
       toast.error('Failed to create task');
     },
