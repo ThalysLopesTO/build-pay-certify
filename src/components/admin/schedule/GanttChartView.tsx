@@ -99,9 +99,10 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="flex flex-col h-full">
+      {/* Compact header */}
+      <div className="flex items-center justify-between p-4 border-b bg-background">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
@@ -110,19 +111,23 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{jobsite.name}</h1>
+            <h1 className="text-xl font-semibold">{jobsite.name}</h1>
             {jobsite.address && (
-              <p className="text-sm text-muted-foreground">{jobsite.address}</p>
+              <p className="text-xs text-muted-foreground">{jobsite.address}</p>
             )}
           </div>
         </div>
-        <Button onClick={handleAddTask}>
+        <Button 
+          onClick={handleAddTask}
+          className="bg-blue-500 hover:bg-blue-600 text-white"
+        >
           <Plus className="h-4 w-4 mr-2" />
-          Add Task
+          New task
         </Button>
       </div>
 
-      <div className="border rounded-lg overflow-hidden bg-background" style={{ height: 'calc(100vh - 250px)' }}>
+      {/* Full-width Gantt chart */}
+      <div className="flex-1">
         <Willow>
           <Gantt
             tasks={ganttTasks}
@@ -132,9 +137,9 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
               { unit: 'day', step: 1, format: 'd' }
             ]}
             columns={[
-              { name: 'text', label: 'Task', width: 250 },
-              { name: 'start', label: 'Start Date', width: 100 },
-              { name: 'end', label: 'End Date', width: 100 },
+              { name: 'text', label: 'Task name', width: 250 },
+              { name: 'start', label: 'Start date', width: 100 },
+              { name: 'duration', label: 'Duration', width: 80 },
             ]}
             onTaskUpdate={handleTaskUpdate}
             onTaskDelete={handleTaskDelete}
