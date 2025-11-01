@@ -372,7 +372,22 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
                   label: 'Start date', 
                   width: 120,
                   align: 'center',
-                  resize: true
+                  resize: true,
+                  template: (task: any) => {
+                    if (!task.start || !(task.start instanceof Date)) return '-';
+                    return task.start.toLocaleDateString('en-CA');
+                  }
+                },
+                { 
+                  name: 'end', 
+                  label: 'End date', 
+                  width: 120,
+                  align: 'center',
+                  resize: true,
+                  template: (task: any) => {
+                    if (!task.end || !(task.end instanceof Date)) return '-';
+                    return task.end.toLocaleDateString('en-CA');
+                  }
                 },
                 { 
                   name: 'duration', 
