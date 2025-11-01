@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -20,6 +21,7 @@ interface SidebarSectionProps {
 
 const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectionProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Filter items based on user role
   const filteredItems = items.filter(item => {
@@ -41,11 +43,20 @@ const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectio
           {filteredItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === (item.id || item.title.toLowerCase().replace(/\s+/g, '-'));
+            const isExternalRoute = item.href && !item.href.includes('?tab=') && item.href !== '/admin';
+            
+            const handleClick = () => {
+              if (isExternalRoute) {
+                navigate(item.href!);
+              } else {
+                setActiveTab(item.id || item.title.toLowerCase().replace(/\s+/g, '-'));
+              }
+            };
             
             return (
               <SidebarMenuItem key={item.id || item.title}>
                 <SidebarMenuButton
-                  onClick={() => setActiveTab(item.id || item.title.toLowerCase().replace(/\s+/g, '-'))}
+                  onClick={handleClick}
                   className={`
                     relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
                     transition-colors duration-200 hover:bg-white hover:text-black

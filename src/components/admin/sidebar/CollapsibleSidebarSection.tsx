@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -31,6 +32,7 @@ const CollapsibleSidebarSection = ({
   storageKey
 }: CollapsibleSidebarSectionProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   // Check if any item in this section is active
   const hasActiveItem = items.some(item => 
@@ -127,11 +129,20 @@ const CollapsibleSidebarSection = ({
           {filteredItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === (item.id || item.title.toLowerCase().replace(/\s+/g, '-'));
+            const isExternalRoute = item.href && !item.href.includes('?tab=') && item.href !== '/admin';
+            
+            const handleClick = () => {
+              if (isExternalRoute) {
+                navigate(item.href!);
+              } else {
+                setActiveTab(item.id || item.title.toLowerCase().replace(/\s+/g, '-'));
+              }
+            };
             
             return (
               <SidebarMenuItem key={item.id || item.title} data-sidebar-item={item.id || item.title.toLowerCase().replace(/\s+/g, '-')}>
                 <SidebarMenuButton
-                  onClick={() => setActiveTab(item.id || item.title.toLowerCase().replace(/\s+/g, '-'))}
+                  onClick={handleClick}
                   className={`
                     relative w-full flex items-center gap-3 px-4 py-2.5 ml-2 rounded-lg text-sm
                     transition-all duration-200 hover:bg-white hover:text-black
