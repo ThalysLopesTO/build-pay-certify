@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useTaskMutations } from '@/hooks/daily-tasks/useTaskMutations';
 import { Plus, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface TaskQuickAddProps {
   listId: string;
@@ -14,6 +15,7 @@ interface TaskQuickAddProps {
 export const TaskQuickAdd = ({ listId, parentItemId, onSuccess, onCancel }: TaskQuickAddProps) => {
   const [title, setTitle] = useState('');
   const { createTask } = useTaskMutations();
+  const queryClient = useQueryClient();
 
   const handleAdd = async () => {
     if (!title.trim()) return;
@@ -22,6 +24,12 @@ export const TaskQuickAdd = ({ listId, parentItemId, onSuccess, onCancel }: Task
       list_id: listId,
       title: title.trim(),
       parent_item_id: parentItemId,
+    });
+
+    // Force refetch to ensure new task appears immediately
+    await queryClient.refetchQueries({ 
+      queryKey: ['daily-task-items', listId],
+      exact: true 
     });
 
     setTitle('');
@@ -46,7 +54,7 @@ export const TaskQuickAdd = ({ listId, parentItemId, onSuccess, onCancel }: Task
         onKeyDown={handleKeyDown}
         autoFocus
       />
-      <Button onClick={handleAdd} size="icon" disabled={!title.trim()}>
+      <Button onClick={handleAdd} size="icon" disabled={!title.trim() || createTask.isPending}>
         <Plus className="h-4 w-4" />
       </Button>
       {onCancel && (
