@@ -23,6 +23,7 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
   const deleteTask = useDeleteScheduleTask(jobsite.id);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
+  const [error, setError] = useState<Error | null>(null);
   
   // SVAR API references
   const apiRef = useRef<any>(null);
@@ -49,17 +50,30 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
 
   // Transform data for Gantt chart with numeric IDs
   const ganttTasks = useMemo(() => {
-    return scheduleItems.map(item => ({
-      id: idMap.get(item.id)!,
-      text: item.task_text,
-      start: new Date(item.start_date),
-      end: new Date(item.end_date),
-      duration: item.duration,
-      progress: item.progress / 100,
-      type: item.task_type,
-      parent: item.parent_id ? (idMap.get(item.parent_id) || 0) : 0,
-      open: true, // Expand parent tasks by default
-    }));
+    return scheduleItems
+      .map(item => {
+        const startDate = new Date(item.start_date);
+        const endDate = new Date(item.end_date);
+        
+        // Validate dates
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          console.error('Invalid date for task:', item);
+          return null;
+        }
+        
+        return {
+          id: idMap.get(item.id)!,
+          text: item.task_text || 'Untitled Task',
+          start: startDate,
+          end: endDate,
+          duration: item.duration,
+          progress: item.progress / 100,
+          type: item.task_type || 'task',
+          parent: item.parent_id ? (idMap.get(item.parent_id) || 0) : 0,
+          open: true,
+        };
+      })
+      .filter((task): task is NonNullable<typeof task> => task !== null);
   }, [scheduleItems, idMap]);
 
   // Empty links array for task dependencies (can be populated later)
@@ -269,10 +283,41 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
     return [...baseItems, ...selectedItems];
   }, [selected, api]);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 Gantt Debug:', {
+      scheduleItemsCount: scheduleItems.length,
+      ganttTasksCount: ganttTasks.length,
+      jobsiteId: jobsite.id,
+      hasApi: !!api,
+      tasks: ganttTasks,
+    });
+  }, [scheduleItems, ganttTasks, jobsite.id, api]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-3 p-3 border-b bg-background shrink-0">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-lg font-semibold">Error Loading Schedule</h1>
+        </div>
+        <div className="flex items-center justify-center flex-1">
+          <div className="text-center max-w-md">
+            <p className="text-red-500 font-semibold mb-2">Error loading Gantt chart</p>
+            <p className="text-sm text-muted-foreground mb-4">{error.message}</p>
+            <Button onClick={onBack}>Go Back</Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -300,9 +345,9 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
       )}
 
       {/* Full-width Gantt chart */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <Willow>
-          <div style={{ height: '100%', width: '100%' }}>
+      <div className="flex-1 min-h-0">
+        <div style={{ height: '100%', width: '100%' }}>
+          <Willow>
             <Gantt
               init={initApi}
               tasks={ganttTasks}
@@ -340,8 +385,8 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
               onTaskUpdate={handleTaskUpdate}
               onTaskDelete={handleTaskDelete}
             />
-          </div>
-        </Willow>
+          </Willow>
+        </div>
       </div>
 
       <ScheduleTaskDialog
