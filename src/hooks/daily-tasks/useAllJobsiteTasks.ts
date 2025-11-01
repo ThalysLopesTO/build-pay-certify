@@ -31,22 +31,7 @@ export const useAllJobsiteTasks = (jobsiteId: string | null) => {
       // Fetch all tasks for these lists in one query
       const { data: tasks, error: tasksError } = await supabase
         .from('daily_task_items')
-        .select(`
-          *,
-          daily_task_item_assignees (
-            id,
-            item_id,
-            user_id,
-            assigned_by,
-            assigned_at,
-            user_profiles (
-              user_id,
-              first_name,
-              last_name,
-              photo_url
-            )
-          )
-        `)
+        .select('*')
         .in('list_id', listIds)
         .is('parent_item_id', null);
 
