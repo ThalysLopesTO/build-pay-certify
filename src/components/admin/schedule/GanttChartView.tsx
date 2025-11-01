@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Gantt } from '@svar-ui/react-gantt';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { Gantt, Willow } from '@svar-ui/react-gantt';
 import '@svar-ui/react-gantt/all.css';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus } from 'lucide-react';
@@ -23,31 +23,71 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
 
-  // Transform data for Gantt chart
-  const ganttTasks = scheduleItems.map(item => ({
-    id: item.id,
-    text: item.task_text,
-    start: new Date(item.start_date),
-    end: new Date(item.end_date),
-    duration: item.duration,
-    progress: item.progress / 100,
-    type: item.task_type,
-    parent: item.parent_id || 0,
-  }));
+  // Create ID mapping: UUID -> numeric ID (SVAR requires numeric IDs)
+  const idMap = useMemo(() => {
+    const map = new Map<string, number>();
+    scheduleItems.forEach((item, index) => {
+      map.set(item.id, index + 1);
+    });
+    return map;
+  }, [scheduleItems]);
 
-  const handleTaskUpdate = (id: string, task: any) => {
+  // Create reverse mapping: numeric ID -> UUID (for database operations)
+  const reverseIdMap = useMemo(() => {
+    const map = new Map<number, string>();
+    scheduleItems.forEach((item, index) => {
+      map.set(index + 1, item.id);
+    });
+    return map;
+  }, [scheduleItems]);
+
+  // Transform data for Gantt chart with numeric IDs
+  const ganttTasks = useMemo(() => {
+    return scheduleItems.map(item => ({
+      id: idMap.get(item.id)!,
+      text: item.task_text,
+      start: new Date(item.start_date),
+      end: new Date(item.end_date),
+      duration: item.duration,
+      progress: item.progress / 100,
+      type: item.task_type,
+      parent: item.parent_id ? (idMap.get(item.parent_id) || 0) : 0,
+    }));
+  }, [scheduleItems, idMap]);
+
+  // Empty links array for task dependencies (can be populated later)
+  const links: any[] = [];
+
+  // Debug logging
+  useEffect(() => {
+    console.log('📊 Gantt Tasks:', ganttTasks);
+    console.log('🗺️ ID Mapping:', Object.fromEntries(idMap));
+  }, [ganttTasks, idMap]);
+
+  const handleTaskUpdate = (data: { id: number; task: any }) => {
+    const uuid = reverseIdMap.get(data.id);
+    if (!uuid) {
+      console.error('Could not find UUID for task ID:', data.id);
+      return;
+    }
+    
     updateTask.mutate({
-      id,
-      task_text: task.text,
-      start_date: task.start.toISOString().split('T')[0],
-      end_date: task.end.toISOString().split('T')[0],
-      progress: Math.round(task.progress * 100),
-      task_type: task.type,
+      id: uuid,
+      task_text: data.task.text,
+      start_date: data.task.start.toISOString().split('T')[0],
+      end_date: data.task.end.toISOString().split('T')[0],
+      progress: Math.round(data.task.progress * 100),
+      task_type: data.task.type,
     });
   };
 
-  const handleTaskDelete = (id: string) => {
-    deleteTask.mutate(id);
+  const handleTaskDelete = (data: { id: number }) => {
+    const uuid = reverseIdMap.get(data.id);
+    if (uuid) {
+      deleteTask.mutate(uuid);
+    } else {
+      console.error('Could not find UUID for task ID:', data.id);
+    }
   };
 
   const handleAddTask = () => {
@@ -97,20 +137,23 @@ const GanttChartView: React.FC<GanttChartViewProps> = ({ jobsite, onBack }) => {
             </Button>
           </div>
         ) : (
-          <Gantt
-            tasks={ganttTasks}
-            scales={[
-              { unit: 'month', step: 1, format: 'MMMM yyyy' },
-              { unit: 'day', step: 1, format: 'd' }
-            ]}
-            columns={[
-              { name: 'text', label: 'Task', width: 250 },
-              { name: 'start', label: 'Start Date', width: 100 },
-              { name: 'end', label: 'End Date', width: 100 },
-            ]}
-            onTaskUpdate={({ id, task }) => handleTaskUpdate(id, task)}
-            onTaskDelete={({ id }) => handleTaskDelete(id)}
-          />
+          <Willow>
+            <Gantt
+              tasks={ganttTasks}
+              links={links}
+              scales={[
+                { unit: 'month', step: 1, format: 'MMMM yyyy' },
+                { unit: 'day', step: 1, format: 'd' }
+              ]}
+              columns={[
+                { name: 'text', label: 'Task', width: 250 },
+                { name: 'start', label: 'Start Date', width: 100 },
+                { name: 'end', label: 'End Date', width: 100 },
+              ]}
+              onTaskUpdate={handleTaskUpdate}
+              onTaskDelete={handleTaskDelete}
+            />
+          </Willow>
         )}
       </div>
 
