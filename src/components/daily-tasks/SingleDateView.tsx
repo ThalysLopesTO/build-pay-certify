@@ -129,7 +129,13 @@ export const SingleDateView: React.FC<SingleDateViewProps> = ({
           <div>
             <h2 className="text-2xl font-bold text-foreground">{dateFormatted}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Daily tasks for this date
+              {firstListId && listsWithTasks?.[0] ? (
+                <>
+                  Created by {(listsWithTasks[0] as any).creator?.first_name || 'Unknown'} {(listsWithTasks[0] as any).creator?.last_name || ''} • {format(new Date(listsWithTasks[0].created_at), 'h:mm a')}
+                </>
+              ) : (
+                'Daily tasks for this date'
+              )}
             </p>
           </div>
         </div>

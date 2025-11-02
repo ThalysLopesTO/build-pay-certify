@@ -15,7 +15,14 @@ export const useDailyTasksByDate = (jobsiteId: string | null, forDate: string | 
       // Fetch all lists for this jobsite and date
       const { data: lists, error: listsError } = await supabase
         .from('daily_task_lists')
-        .select('*')
+        .select(`
+          *,
+          creator:user_profiles!created_by (
+            user_id,
+            first_name,
+            last_name
+          )
+        `)
         .eq('jobsite_id', jobsiteId)
         .eq('for_date', forDate)
         .eq('status', 'open')
