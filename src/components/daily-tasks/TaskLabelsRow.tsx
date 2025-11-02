@@ -27,7 +27,7 @@ export const TaskLabelsRow: React.FC<TaskLabelsRowProps> = ({
   return (
     <div className={cn('flex flex-wrap items-center gap-2 mt-1.5', className)}>
       {task.priority && <TaskPriorityBadge priority={task.priority} />}
-      {assignees.length > 0 && <TaskAssigneeChips assignees={assignees} maxVisible={100} />}
+      {assignees.length > 0 && <TaskAssigneeChips assignees={assignees} />}
       {tags.map((tag) => (
         <TaskCustomTagChip key={tag.id} tag={tag.tag_text} />
       ))}

@@ -15,7 +15,7 @@ interface TaskAssigneeChipsProps {
 export const TaskAssigneeChips: React.FC<TaskAssigneeChipsProps> = ({
   assignees,
   onRemove,
-  maxVisible = 5,
+  maxVisible = 999,
   size = 'sm',
   className,
 }) => {
@@ -23,8 +23,8 @@ export const TaskAssigneeChips: React.FC<TaskAssigneeChipsProps> = ({
   const remaining = assignees.length - maxVisible;
 
   const sizeClasses = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2.5 py-1 text-sm',
+    sm: 'px-2.5 py-1 text-xs',
+    md: 'px-3 py-1.5 text-sm',
   };
 
   const avatarSizes = {
@@ -33,7 +33,7 @@ export const TaskAssigneeChips: React.FC<TaskAssigneeChipsProps> = ({
   };
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
+    <div className={cn('flex flex-wrap items-center gap-2', className)}>
       {visible.map((assignee) => {
         const firstName = assignee.user_profiles?.first_name || '';
         const lastName = assignee.user_profiles?.last_name || '';
@@ -44,15 +44,15 @@ export const TaskAssigneeChips: React.FC<TaskAssigneeChipsProps> = ({
           <div
             key={assignee.user_id}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-full bg-background border border-border font-medium group hover:border-primary transition-colors',
+              'inline-flex items-center gap-1.5 rounded-full bg-background border border-border font-medium group hover:border-primary hover:shadow-md transition-all duration-200 hover:scale-105',
               sizeClasses[size]
             )}
           >
-            <Avatar className={avatarSizes[size]}>
+            <Avatar className={cn(avatarSizes[size], 'ring-1 ring-border')}>
               <AvatarImage src={assignee.user_profiles?.photo_url || undefined} alt={fullName} />
-              <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+              <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{initials}</AvatarFallback>
             </Avatar>
-            <span className="text-foreground">{fullName || 'Unknown'}</span>
+            <span className="text-foreground font-medium">{fullName || 'Unknown'}</span>
             {onRemove && (
               <button
                 onClick={(e) => {
@@ -69,7 +69,9 @@ export const TaskAssigneeChips: React.FC<TaskAssigneeChipsProps> = ({
         );
       })}
       {remaining > 0 && (
-        <span className="text-xs text-muted-foreground px-2">+{remaining} more</span>
+        <span className="text-xs text-muted-foreground px-2 py-1 rounded-full bg-muted/50 border border-border">
+          +{remaining} more
+        </span>
       )}
     </div>
   );
