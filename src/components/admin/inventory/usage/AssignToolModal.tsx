@@ -5,8 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useInventory } from '@/hooks/useInventory';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
@@ -44,26 +46,8 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
     setEquipmentId(''); // Clear equipment selection when jobsite changes
   };
 
-  const { data: employeesData, isLoading: isLoadingEmployees, error: employeesError } = useQuery({
-    queryKey: ['employees', user?.companyId],
-    queryFn: async () => {
-      console.log('Fetching employees for company:', user?.companyId);
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('user_id, first_name, last_name')
-        .eq('company_id', user?.companyId)
-        .eq('is_active', true)
-        .order('first_name');
-      
-      if (error) {
-        console.error('Error fetching employees:', error);
-        throw error;
-      }
-      console.log('Employees fetched:', data?.length || 0, 'records');
-      return data || [];
-    },
-    enabled: !!user?.companyId && open,
-  });
+  // Fetch employees using existing hook (includes photo_url)
+  const { data: employeesData, isLoading: isLoadingEmployees, error: employeesError } = useEmployeeDirectory();
 
   const employees = Array.isArray(employeesData) ? employeesData : [];
 
@@ -233,7 +217,15 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
                   ) : (
                     employees.map((emp) => (
                       <SelectItem key={emp.user_id} value={emp.user_id}>
-                        {emp.first_name} {emp.last_name}
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={emp.photo_url || undefined} alt={`${emp.first_name} ${emp.last_name}`} />
+                            <AvatarFallback className="text-xs">
+                              {emp.first_name?.[0]}{emp.last_name?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{emp.first_name} {emp.last_name}</span>
+                        </div>
                       </SelectItem>
                     ))
                   )}
