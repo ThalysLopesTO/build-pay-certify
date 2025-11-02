@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Tag } from 'lucide-react';
+import { X } from 'lucide-react';
+import { BadgeWithDot } from '@/components/base/badges/badges';
 import { cn } from '@/lib/utils';
 
 interface TaskCustomTagChipProps {
@@ -15,20 +16,13 @@ export const TaskCustomTagChip: React.FC<TaskCustomTagChipProps> = ({
   size = 'sm',
   className,
 }) => {
-  const sizeClasses = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2.5 py-1 text-sm',
-  };
-
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 rounded-full bg-muted border border-border text-muted-foreground font-medium group hover:border-primary transition-colors',
-        sizeClasses[size],
-        className
-      )}
+    <BadgeWithDot
+      type="modern"
+      color="gray"
+      size={size}
+      className={cn('group', className)}
     >
-      <Tag className="h-3 w-3" />
       {tag}
       {onRemove && (
         <button
@@ -36,12 +30,12 @@ export const TaskCustomTagChip: React.FC<TaskCustomTagChipProps> = ({
             e.stopPropagation();
             onRemove();
           }}
-          className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
           type="button"
         >
           <X className="h-3 w-3 hover:text-destructive" />
         </button>
       )}
-    </span>
+    </BadgeWithDot>
   );
 };
