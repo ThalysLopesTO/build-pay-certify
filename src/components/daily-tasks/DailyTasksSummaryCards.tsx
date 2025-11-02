@@ -71,8 +71,6 @@ export const DailyTasksSummaryCards: React.FC<DailyTasksSummaryCardsProps> = ({
           </Card>)}
       </div>
       
-      {totalTasks > 0 && <Card>
-          
-        </Card>}
+      {totalTasks > 0}
     </div>;
 };
