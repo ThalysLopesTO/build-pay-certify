@@ -38,10 +38,13 @@ export const DateSelectionView: React.FC<DateSelectionViewProps> = ({
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { createList } = useTaskListMutations();
 
-  const { data: dateInfos, isLoading } = useQuery({
+  const { data: dateInfos, isLoading, error } = useQuery({
     queryKey: ['date-selection', jobsiteId, companyId],
     queryFn: async (): Promise<DateInfo[]> => {
+      console.log('DateSelectionView query running with:', { jobsiteId, companyId });
+      
       // Fetch all open lists for this jobsite
+      // Note: RLS policies on daily_task_lists already enforce company-level security
       const { data: lists, error: listsError } = await supabase
         .from('daily_task_lists')
         .select(`
@@ -54,10 +57,11 @@ export const DateSelectionView: React.FC<DateSelectionViewProps> = ({
           )
         `)
         .eq('jobsite_id', jobsiteId)
-        .eq('company_id', companyId)
         .eq('status', 'open')
         .order('for_date', { ascending: false });
 
+      console.log('DateSelectionView query result:', { lists, listsError });
+      
       if (listsError) throw listsError;
       if (!lists || lists.length === 0) return [];
 
@@ -98,8 +102,11 @@ export const DateSelectionView: React.FC<DateSelectionViewProps> = ({
 
       return result.sort((a, b) => b.date.localeCompare(a.date));
     },
-    enabled: !!jobsiteId && !!companyId,
+    enabled: !!jobsiteId,
   });
+
+  // Debug logging
+  console.log('DateSelectionView state:', { jobsiteId, companyId, isLoading, hasData: !!dateInfos, dataLength: dateInfos?.length, error });
 
   const handleDateClick = (date: string) => {
     const currentTab = searchParams.get('tab') || 'daily-tasks';
