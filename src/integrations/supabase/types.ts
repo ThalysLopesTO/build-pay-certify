@@ -933,6 +933,73 @@ export type Database = {
           },
         ]
       }
+      equipment_usage_log: {
+        Row: {
+          assigned_by: string
+          company_id: string
+          created_at: string
+          employee_id: string
+          equipment_id: string
+          id: string
+          jobsite_id: string
+          notes: string | null
+          return_time: string | null
+          start_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by: string
+          company_id: string
+          created_at?: string
+          employee_id: string
+          equipment_id: string
+          id?: string
+          jobsite_id: string
+          notes?: string | null
+          return_time?: string | null
+          start_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string
+          company_id?: string
+          created_at?: string
+          employee_id?: string
+          equipment_id?: string
+          id?: string
+          jobsite_id?: string
+          notes?: string | null
+          return_time?: string | null
+          start_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_usage_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_usage_log_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_usage_log_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_categories: {
         Row: {
           category_level: string

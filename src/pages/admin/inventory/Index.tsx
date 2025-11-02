@@ -3,7 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InventoryManagement from '@/components/admin/inventory/EquipmentManagement';
 import VehicleManagement from '@/components/admin/inventory/VehicleManagement';
 import PhoneManagement from '@/components/admin/inventory/PhoneManagement';
-import { Package, Car, Phone, BarChart3 } from 'lucide-react';
+import UsageTracker from '@/components/admin/inventory/UsageTracker';
+import { Package, Car, Phone, BarChart3, ClipboardList } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useInventory } from '@/hooks/useInventory';
 import { useVehicles } from '@/hooks/useVehicles';
@@ -74,7 +75,7 @@ const InventoryIndex = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg bg-muted/50 p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-4 max-w-2xl bg-muted/50 p-1 rounded-lg">
           <TabsTrigger 
             value="equipment" 
             className={cn(
@@ -105,6 +106,16 @@ const InventoryIndex = () => {
             <Phone className="h-4 w-4" />
             <span>Phone</span>
           </TabsTrigger>
+          <TabsTrigger 
+            value="usage" 
+            className={cn(
+              "flex items-center space-x-2 rounded-md transition-all",
+              "data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            )}
+          >
+            <ClipboardList className="h-4 w-4" />
+            <span>Usage Tracker</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="equipment" className="mt-6 animate-in fade-in-50">
@@ -117,6 +128,10 @@ const InventoryIndex = () => {
 
         <TabsContent value="phone" className="mt-6 animate-in fade-in-50">
           <PhoneManagement />
+        </TabsContent>
+
+        <TabsContent value="usage" className="mt-6 animate-in fade-in-50">
+          <UsageTracker />
         </TabsContent>
       </Tabs>
     </div>
