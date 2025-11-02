@@ -103,7 +103,7 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
                   <SelectValue placeholder="Select equipment" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableEquipment.map((item) => (
+                  {(availableEquipment || []).map((item) => (
                     <SelectItem key={item.id} value={item.id}>
                       {item.equipment_name} - {item.brand} ({item.sku})
                     </SelectItem>
@@ -119,7 +119,7 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
                 <SelectContent>
-                  {employees?.map((emp) => (
+                  {(employees || []).map((emp) => (
                     <SelectItem key={emp.user_id} value={emp.user_id}>
                       {emp.first_name} {emp.last_name}
                     </SelectItem>
@@ -135,7 +135,7 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
                   <SelectValue placeholder="Select jobsite" />
                 </SelectTrigger>
                 <SelectContent>
-                  {jobsites?.map((site) => (
+                  {(jobsites || []).map((site) => (
                     <SelectItem key={site.id} value={site.id}>
                       {site.name}
                     </SelectItem>
