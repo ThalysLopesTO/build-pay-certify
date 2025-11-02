@@ -20,12 +20,12 @@ export const TaskAssigneeLabel: React.FC<TaskAssigneeLabelProps> = ({
   const initials = `${firstName[0] || ''}${lastName[0] || ''}`.toUpperCase();
 
   return (
-    <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-background border border-border text-xs font-medium group hover:border-primary transition-colors">
-      <Avatar className="h-5 w-5">
+    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background border border-border text-xs font-medium group hover:border-primary hover:shadow-md transition-all duration-200 hover:scale-105">
+      <Avatar className="h-5 w-5 ring-1 ring-border">
         <AvatarImage src={assignee.user_profiles?.photo_url || undefined} alt={fullName} />
-        <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+        <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{initials}</AvatarFallback>
       </Avatar>
-      <span className="text-foreground">{fullName}</span>
+      <span className="text-foreground font-medium">{fullName}</span>
       {showRemove && onRemove && (
         <button
           onClick={(e) => {

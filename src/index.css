@@ -67,6 +67,28 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Task Priority Colors */
+    --priority-low: 210 40% 96.1%;
+    --priority-low-foreground: 215.4 16.3% 46.9%;
+    --priority-low-border: 214.3 31.8% 91.4%;
+    
+    --priority-medium: 217 91% 60%;
+    --priority-medium-foreground: 210 40% 98%;
+    --priority-medium-border: 217 91% 50%;
+    
+    --priority-high: 25 95% 53%;
+    --priority-high-foreground: 0 0% 100%;
+    --priority-high-border: 25 95% 43%;
+    
+    --priority-urgent: 0 84% 60%;
+    --priority-urgent-foreground: 0 0% 100%;
+    --priority-urgent-border: 0 84% 50%;
+
+    /* Tag/Label Colors */
+    --tag-bg: 210 40% 96.1%;
+    --tag-foreground: 215.4 16.3% 46.9%;
+    --tag-border: 214.3 31.8% 91.4%;
   }
 
   

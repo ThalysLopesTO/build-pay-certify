@@ -3,13 +3,13 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center gap-1.5 font-medium transition-colors',
+  'inline-flex items-center gap-1.5 font-medium transition-all duration-200',
   {
     variants: {
       type: {
-        'pill-color': 'rounded-full border',
-        'color': 'rounded-md border',
-        'modern': 'rounded-md border border-border/50',
+        'pill-color': 'rounded-full border shadow-sm hover:shadow-md',
+        'color': 'rounded-md border shadow-sm hover:shadow-md',
+        'modern': 'rounded-lg border shadow-sm hover:shadow-md hover:scale-105',
       },
       color: {
         gray: '',
@@ -19,90 +19,90 @@ const badgeVariants = cva(
         brand: '',
       },
       size: {
-        sm: 'px-2 py-0.5 text-xs',
-        md: 'px-2.5 py-1 text-sm',
+        sm: 'px-2.5 py-1 text-xs',
+        md: 'px-3 py-1.5 text-sm',
       },
     },
     compoundVariants: [
-      // Gray variants
+      // Gray variants - using semantic tokens
       {
         type: 'pill-color',
         color: 'gray',
-        className: 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-900/30 dark:border-gray-800 dark:text-gray-300',
+        className: 'bg-[hsl(var(--priority-low))] border-[hsl(var(--priority-low-border))] text-[hsl(var(--priority-low-foreground))]',
       },
       {
         type: 'color',
         color: 'gray',
-        className: 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-900/30 dark:border-gray-800 dark:text-gray-300',
+        className: 'bg-[hsl(var(--priority-low))] border-[hsl(var(--priority-low-border))] text-[hsl(var(--priority-low-foreground))]',
       },
       {
         type: 'modern',
         color: 'gray',
-        className: 'bg-muted/50 text-muted-foreground',
+        className: 'bg-[hsl(var(--tag-bg))] text-[hsl(var(--tag-foreground))] border-[hsl(var(--tag-border))]',
       },
-      // Blue variants
+      // Blue variants - using semantic tokens
       {
         type: 'pill-color',
         color: 'blue',
-        className: 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-400',
+        className: 'bg-[hsl(var(--priority-medium))] border-[hsl(var(--priority-medium-border))] text-[hsl(var(--priority-medium-foreground))]',
       },
       {
         type: 'color',
         color: 'blue',
-        className: 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-400',
+        className: 'bg-[hsl(var(--priority-medium))] border-[hsl(var(--priority-medium-border))] text-[hsl(var(--priority-medium-foreground))]',
       },
       {
         type: 'modern',
         color: 'blue',
-        className: 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-400',
+        className: 'bg-[hsl(var(--priority-medium))] border-[hsl(var(--priority-medium-border))] text-[hsl(var(--priority-medium-foreground))]',
       },
-      // Orange variants
+      // Orange variants - using semantic tokens
       {
         type: 'pill-color',
         color: 'orange',
-        className: 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950/30 dark:border-orange-800 dark:text-orange-400',
+        className: 'bg-[hsl(var(--priority-high))] border-[hsl(var(--priority-high-border))] text-[hsl(var(--priority-high-foreground))]',
       },
       {
         type: 'color',
         color: 'orange',
-        className: 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950/30 dark:border-orange-800 dark:text-orange-400',
+        className: 'bg-[hsl(var(--priority-high))] border-[hsl(var(--priority-high-border))] text-[hsl(var(--priority-high-foreground))]',
       },
       {
         type: 'modern',
         color: 'orange',
-        className: 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950/30 dark:border-orange-800 dark:text-orange-400',
+        className: 'bg-[hsl(var(--priority-high))] border-[hsl(var(--priority-high-border))] text-[hsl(var(--priority-high-foreground))]',
       },
-      // Error (red) variants
+      // Error (red) variants - using semantic tokens
       {
         type: 'pill-color',
         color: 'error',
-        className: 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400',
+        className: 'bg-[hsl(var(--priority-urgent))] border-[hsl(var(--priority-urgent-border))] text-[hsl(var(--priority-urgent-foreground))]',
       },
       {
         type: 'color',
         color: 'error',
-        className: 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400',
+        className: 'bg-[hsl(var(--priority-urgent))] border-[hsl(var(--priority-urgent-border))] text-[hsl(var(--priority-urgent-foreground))]',
       },
       {
         type: 'modern',
         color: 'error',
-        className: 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400',
+        className: 'bg-[hsl(var(--priority-urgent))] border-[hsl(var(--priority-urgent-border))] text-[hsl(var(--priority-urgent-foreground))]',
       },
       // Brand variants
       {
         type: 'pill-color',
         color: 'brand',
-        className: 'bg-primary/10 border-primary/20 text-primary dark:bg-primary/20 dark:border-primary/30',
+        className: 'bg-primary/10 border-primary/20 text-primary',
       },
       {
         type: 'color',
         color: 'brand',
-        className: 'bg-primary/10 border-primary/20 text-primary dark:bg-primary/20 dark:border-primary/30',
+        className: 'bg-primary/10 border-primary/20 text-primary',
       },
       {
         type: 'modern',
         color: 'brand',
-        className: 'bg-primary/10 border-primary/20 text-primary dark:bg-primary/20 dark:border-primary/30',
+        className: 'bg-primary/10 border-primary/20 text-primary',
       },
     ],
     defaultVariants: {
@@ -113,13 +113,13 @@ const badgeVariants = cva(
   }
 );
 
-const dotVariants = cva('w-1.5 h-1.5 rounded-full', {
+const dotVariants = cva('w-2 h-2 rounded-full shadow-sm', {
   variants: {
     color: {
-      gray: 'bg-gray-500 dark:bg-gray-400',
-      blue: 'bg-blue-500',
-      orange: 'bg-orange-500',
-      error: 'bg-red-500',
+      gray: 'bg-[hsl(var(--priority-low-foreground))]',
+      blue: 'bg-[hsl(var(--priority-medium-foreground))]',
+      orange: 'bg-[hsl(var(--priority-high-foreground))]',
+      error: 'bg-[hsl(var(--priority-urgent-foreground))]',
       brand: 'bg-primary',
     },
   },
