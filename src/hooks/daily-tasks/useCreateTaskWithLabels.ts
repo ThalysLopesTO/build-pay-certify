@@ -72,7 +72,17 @@ export const useCreateTaskWithLabels = (listId: string) => {
       return task;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['daily-task-items', listId] });
+      // Invalidate all task-related queries to ensure immediate updates across all views
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return (
+            key.includes('daily-task-items') ||
+            key.includes('daily-tasks-by-date') ||
+            key.includes('daily-task-lists')
+          );
+        }
+      });
       toast({ title: 'Task created successfully' });
     },
     onError: (error: Error) => {
