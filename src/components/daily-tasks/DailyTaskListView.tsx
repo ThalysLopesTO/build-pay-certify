@@ -25,6 +25,7 @@ export const DailyTaskListView: React.FC<DailyTaskListViewProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingListId, setEditingListId] = useState<string | null>(null);
+  const [expandedDateId, setExpandedDateId] = useState<string | null>(null);
 
   const { data, isLoading } = usePaginatedTaskLists(
     jobsiteId,
@@ -86,8 +87,13 @@ export const DailyTaskListView: React.FC<DailyTaskListViewProps> = ({
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= (data?.totalPages || 1)) {
       setCurrentPage(page);
+      setExpandedDateId(null); // Collapse all when changing pages
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const handleToggleDate = (dateId: string) => {
+    setExpandedDateId(prev => prev === dateId ? null : dateId);
   };
 
   const editingList = data?.dateGroups
@@ -169,11 +175,13 @@ export const DailyTaskListView: React.FC<DailyTaskListViewProps> = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {data.dateGroups.map((dateGroup) => (
             <DateGroupCard
               key={dateGroup.date}
               dateGroup={dateGroup}
+              isExpanded={expandedDateId === dateGroup.date}
+              onToggle={() => handleToggleDate(dateGroup.date)}
               onToggleTask={handleToggleTask}
               onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
