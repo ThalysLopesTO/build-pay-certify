@@ -38,7 +38,7 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
   const [startTime, setStartTime] = useState('');
   const [notes, setNotes] = useState('');
 
-  const { data: employees } = useQuery({
+  const { data: employeesData } = useQuery({
     queryKey: ['employees', user?.companyId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -49,12 +49,14 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
         .order('first_name');
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!user?.companyId && open,
   });
 
-  const { data: jobsites } = useQuery({
+  const employees = Array.isArray(employeesData) ? employeesData : [];
+
+  const { data: jobsitesData } = useQuery({
     queryKey: ['jobsites', user?.companyId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -64,12 +66,16 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
         .order('name');
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!user?.companyId && open,
   });
 
-  const availableEquipment = inventory.filter(item => !item.jobsite_id || item.return_date);
+  const jobsites = Array.isArray(jobsitesData) ? jobsitesData : [];
+
+  const availableEquipment = Array.isArray(inventory) 
+    ? inventory.filter(item => !item.jobsite_id || item.return_date)
+    : [];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +109,7 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
                   <SelectValue placeholder="Select equipment" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(availableEquipment || []).map((item) => (
+                  {availableEquipment.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
                       {item.equipment_name} - {item.brand} ({item.sku})
                     </SelectItem>
@@ -119,7 +125,7 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(employees || []).map((emp) => (
+                  {employees.map((emp) => (
                     <SelectItem key={emp.user_id} value={emp.user_id}>
                       {emp.first_name} {emp.last_name}
                     </SelectItem>
@@ -135,7 +141,7 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
                   <SelectValue placeholder="Select jobsite" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(jobsites || []).map((site) => (
+                  {jobsites.map((site) => (
                     <SelectItem key={site.id} value={site.id}>
                       {site.name}
                     </SelectItem>
