@@ -91,7 +91,6 @@ export const menuData: MenuItem[] = [
     icon: Truck,
   },
   
-  
   // Employee Management
   {
     id: 'employees',

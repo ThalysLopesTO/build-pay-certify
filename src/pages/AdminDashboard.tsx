@@ -30,7 +30,6 @@ import IncomeExpensesManagement from '@/components/admin/IncomeExpensesManagemen
 import TimeRequestsManagement from '@/components/admin/TimeRequestsManagement';
 import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
 
-
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const params = useParams();

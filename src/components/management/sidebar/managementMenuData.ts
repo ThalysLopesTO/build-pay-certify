@@ -16,8 +16,7 @@ import {
   TrendingUp,
   Wallet,
   FileSpreadsheet,
-  Bell,
-  ListChecks
+  Bell
 } from 'lucide-react';
 
 export const managementMenuItems = {
@@ -75,11 +74,6 @@ export const managementMenuItems = {
       title: 'Employee Registration',
       icon: UserPlus,
       id: 'employee-registration',
-    },
-    {
-      title: 'Daily Tasks',
-      icon: ListChecks,
-      id: 'daily-tasks',
     },
   ],
   inventory: [
