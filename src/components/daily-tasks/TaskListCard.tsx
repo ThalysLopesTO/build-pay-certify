@@ -117,13 +117,13 @@ export const TaskListCard: React.FC<TaskListCardProps> = ({
         ))}
 
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="w-full justify-start text-muted-foreground hover:text-foreground"
+          className="w-full justify-center mt-2 border-dashed hover:bg-primary/5 hover:border-primary"
           onClick={() => setShowCreateDialog(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add task
+          Add Task
         </Button>
         
         {/* Comments Section */}
