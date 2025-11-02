@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Check, X, Pencil, Trash2 } from 'lucide-react';
 import { TaskListActionsMenu } from './TaskListActionsMenu';
+import { TaskListComments } from './TaskListComments';
 import { DailyTaskItem } from '@/types/daily-tasks';
-import { TaskListWithTasks } from '@/hooks/daily-tasks/useDailyTasksByDate';
+import { TaskListWithTasks } from '@/hooks/daily-tasks/usePaginatedTaskLists';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
 
 interface TaskListCardProps {
   list: TaskListWithTasks;
@@ -38,9 +40,15 @@ export const TaskListCard: React.FC<TaskListCardProps> = ({
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [showCompleted, setShowCompleted] = useState(true);
 
   const completedCount = list.tasks.filter((t) => t.is_done).length;
   const totalCount = list.tasks.length;
+  const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  
+  const incompleteTasks = list.tasks.filter((t) => !t.is_done);
+  const completedTasks = list.tasks.filter((t) => t.is_done);
+  const visibleTasks = showCompleted ? list.tasks : incompleteTasks;
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
@@ -64,7 +72,7 @@ export const TaskListCard: React.FC<TaskListCardProps> = ({
   };
 
   return (
-    <Card>
+    <Card className="border-l-4 border-l-primary/20 hover:border-l-primary/40 transition-colors">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
@@ -82,15 +90,30 @@ export const TaskListCard: React.FC<TaskListCardProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-2 mt-2">
-          <Badge variant="secondary" className="text-xs">
-            {completedCount}/{totalCount} completed
-          </Badge>
+        <div className="space-y-2 mt-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Progress</span>
+            <Badge variant={progressPercentage === 100 ? "default" : "secondary"} className="text-xs">
+              {completedCount}/{totalCount} tasks
+            </Badge>
+          </div>
+          <Progress value={progressPercentage} className="h-2" />
         </div>
       </CardHeader>
 
       <CardContent className="space-y-2">
-        {list.tasks.map((task) => (
+        {completedCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-xs text-muted-foreground hover:text-foreground mb-2"
+            onClick={() => setShowCompleted(!showCompleted)}
+          >
+            {showCompleted ? 'Hide' : 'Show'} {completedCount} completed {completedCount === 1 ? 'task' : 'tasks'}
+          </Button>
+        )}
+        
+        {visibleTasks.map((task) => (
           <div
             key={task.id}
             className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 transition-colors group"
@@ -199,6 +222,9 @@ export const TaskListCard: React.FC<TaskListCardProps> = ({
             Add task
           </Button>
         )}
+        
+        {/* Comments Section */}
+        <TaskListComments listId={list.id} />
       </CardContent>
     </Card>
   );

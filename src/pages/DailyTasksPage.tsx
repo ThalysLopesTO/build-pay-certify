@@ -16,15 +16,15 @@ const DailyTasksPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-primary/10 rounded-lg">
-          <ListChecks className="h-6 w-6 text-primary" />
+      <div className="flex items-center gap-4 pb-4 border-b border-border">
+        <div className="p-3 bg-primary/10 rounded-xl">
+          <ListChecks className="h-7 w-7 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Daily Tasks</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-3xl font-bold text-foreground">Daily Tasks</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             {selectedJobsiteId 
-              ? 'Manage task lists for this jobsite'
+              ? `Manage task lists for ${selectedJobsite?.name || 'this jobsite'}`
               : 'Select a jobsite to view and manage daily tasks'}
           </p>
         </div>

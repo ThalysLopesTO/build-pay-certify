@@ -8,8 +8,9 @@ import { CreateListDialog } from './CreateListDialog';
 import { EditListDialog } from './EditListDialog';
 import { Button } from '@/components/ui/button';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface DailyTaskListViewProps {
   jobsiteId: string;
@@ -140,15 +141,33 @@ export const DailyTaskListView: React.FC<DailyTaskListViewProps> = ({
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : !data || data.dateGroups.length === 0 ? (
-        <div className="text-center py-12 bg-muted/20 rounded-lg border border-dashed border-border">
-          <p className="text-muted-foreground">
-            {activeTab === 'all'
-              ? 'No task lists yet. Create your first one!'
-              : activeTab === 'pending'
-              ? 'No pending task lists.'
-              : 'No completed task lists yet.'}
-          </p>
-        </div>
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="rounded-full bg-muted p-6 mb-4">
+              <ClipboardList className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              {activeTab === 'all'
+                ? 'No Task Lists Yet'
+                : activeTab === 'pending'
+                ? 'All Caught Up!'
+                : 'No Completed Tasks'}
+            </h3>
+            <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
+              {activeTab === 'all'
+                ? 'Get started by creating your first task list to organize your daily work.'
+                : activeTab === 'pending'
+                ? 'Great work! You have no pending tasks at the moment.'
+                : 'Complete some tasks to see them here.'}
+            </p>
+            {activeTab === 'all' && (
+              <Button onClick={() => setIsCreateDialogOpen(true)} size="lg">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First List
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-6">
           {data.dateGroups.map((dateGroup) => (
