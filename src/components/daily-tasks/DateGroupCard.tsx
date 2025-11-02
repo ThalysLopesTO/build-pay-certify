@@ -13,7 +13,6 @@ interface DateGroupCardProps {
   onToggleTask: (taskId: string, isDone: boolean) => void;
   onUpdateTask: (taskId: string, updates: { title: string }) => void;
   onDeleteTask: (taskId: string) => void;
-  onAddTask: (listId: string, title: string) => void;
   onEditList: (listId: string) => void;
   onDuplicateList: (listId: string) => void;
   onCloseList: (listId: string) => void;
@@ -27,7 +26,6 @@ export const DateGroupCard: React.FC<DateGroupCardProps> = ({
   onToggleTask,
   onUpdateTask,
   onDeleteTask,
-  onAddTask,
   onEditList,
   onDuplicateList,
   onCloseList,
@@ -73,11 +71,11 @@ export const DateGroupCard: React.FC<DateGroupCardProps> = ({
                 onToggleTask={onToggleTask}
                 onUpdateTask={onUpdateTask}
                 onDeleteTask={onDeleteTask}
-                onAddTask={onAddTask}
                 onEditList={() => onEditList(list.id)}
                 onDuplicateList={() => onDuplicateList(list.id)}
                 onCloseList={() => onCloseList(list.id)}
                 onDeleteList={() => onDeleteList(list.id)}
+                canEdit={true}
               />
             ))}
           </div>

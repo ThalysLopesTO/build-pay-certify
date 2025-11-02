@@ -136,7 +136,6 @@ export const DateBasedTaskView: React.FC<DateBasedTaskViewProps> = ({
               onToggleTask={(taskId, isDone) => toggleComplete.mutate({ id: taskId, is_done: isDone })}
               onUpdateTask={(taskId, updates) => updateTask.mutate({ id: taskId, updates })}
               onDeleteTask={(taskId) => deleteTask.mutate(taskId)}
-              onAddTask={(listId, title) => createTask.mutate({ title, list_id: listId })}
               onEditList={() => {
                 setEditingList(list);
                 setEditDialogOpen(true);
@@ -144,6 +143,7 @@ export const DateBasedTaskView: React.FC<DateBasedTaskViewProps> = ({
               onDuplicateList={() => setDuplicatingListId(list.id)}
               onCloseList={() => closeList.mutate(list.id)}
               onDeleteList={() => deleteList.mutate(list.id)}
+              canEdit={true}
             />
           ))}
         </div>

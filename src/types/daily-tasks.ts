@@ -1,3 +1,6 @@
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TaskStatus = 'all' | 'pending' | 'completed';
+
 export interface DailyTaskList {
   id: string;
   title: string;
@@ -12,6 +15,13 @@ export interface DailyTaskList {
   closed_at: string | null;
 }
 
+export interface DailyTaskTag {
+  id: string;
+  item_id: string;
+  tag_text: string;
+  created_at: string;
+}
+
 export interface DailyTaskItem {
   id: string;
   list_id: string;
@@ -21,13 +31,15 @@ export interface DailyTaskItem {
   done_at: string | null;
   done_by: string | null;
   due_date: string | null;
-  priority: 'low' | 'medium' | 'high' | null;
+  priority: TaskPriority | null;
   order_index: number;
   parent_item_id: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
   daily_task_item_assignees?: DailyTaskAssignee[];
+  daily_task_item_tags?: DailyTaskTag[];
+  subtasks?: DailyTaskItem[];
 }
 
 export interface DailyTaskAssignee {
@@ -46,4 +58,34 @@ export interface DailyTaskAssignee {
 
 export interface DailyTaskItemWithAssignees extends DailyTaskItem {
   assignees: DailyTaskAssignee[];
+}
+
+export interface DailyTaskItemWithLabels extends DailyTaskItem {
+  assignees: DailyTaskAssignee[];
+  tags: DailyTaskTag[];
+  subtasks: DailyTaskItem[];
+}
+
+export interface CreateTaskInput {
+  title: string;
+  list_id: string;
+  priority?: TaskPriority;
+  notes?: string;
+  parent_item_id?: string;
+  assignee_ids?: string[];
+  tags?: string[];
+  due_date?: string;
+}
+
+export interface CreateSubtaskInput {
+  title: string;
+  priority?: TaskPriority;
+  assignee_ids?: string[];
+}
+
+export interface TaskFilters {
+  priorities: TaskPriority[];
+  assignees: string[];
+  tags: string[];
+  status: TaskStatus;
 }

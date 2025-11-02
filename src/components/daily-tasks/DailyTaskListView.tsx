@@ -185,7 +185,6 @@ export const DailyTaskListView: React.FC<DailyTaskListViewProps> = ({
               onToggleTask={handleToggleTask}
               onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
-              onAddTask={handleAddTask}
               onEditList={handleEditList}
               onDuplicateList={handleDuplicateList}
               onCloseList={handleCloseList}

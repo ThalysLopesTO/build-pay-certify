@@ -947,6 +947,35 @@ export type Database = {
           },
         ]
       }
+      daily_task_item_tags: {
+        Row: {
+          created_at: string | null
+          id: string
+          item_id: string
+          tag_text: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          item_id: string
+          tag_text: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          item_id?: string
+          tag_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_task_item_tags_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "daily_task_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_task_items: {
         Row: {
           created_at: string

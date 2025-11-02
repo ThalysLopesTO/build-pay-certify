@@ -24,6 +24,34 @@ export const useDailyTaskItems = (listId: string | null) => {
               last_name,
               photo_url
             )
+          ),
+          daily_task_item_tags (
+            id,
+            item_id,
+            tag_text,
+            created_at
+          ),
+          subtasks:daily_task_items!parent_item_id (
+            *,
+            daily_task_item_assignees (
+              id,
+              item_id,
+              user_id,
+              assigned_by,
+              assigned_at,
+              user_profiles (
+                user_id,
+                first_name,
+                last_name,
+                photo_url
+              )
+            ),
+            daily_task_item_tags (
+              id,
+              item_id,
+              tag_text,
+              created_at
+            )
           )
         `)
         .eq('list_id', listId)

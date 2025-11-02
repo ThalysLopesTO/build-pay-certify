@@ -57,9 +57,6 @@ export const SingleDateView: React.FC<SingleDateViewProps> = ({
     }
   };
 
-  const handleAddTask = (listId: string, title: string) => {
-    addTask.mutate({ listId, title });
-  };
 
   const handleEditList = (listId: string) => {
     setEditingListId(listId);
@@ -170,11 +167,11 @@ export const SingleDateView: React.FC<SingleDateViewProps> = ({
               onToggleTask={handleToggleTask}
               onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
-              onAddTask={handleAddTask}
               onEditList={() => handleEditList(list.id)}
               onDuplicateList={() => handleDuplicateList(list.id)}
               onCloseList={() => handleCloseList(list.id)}
               onDeleteList={() => handleDeleteList(list.id)}
+              canEdit={true}
             />
           ))}
         </div>
