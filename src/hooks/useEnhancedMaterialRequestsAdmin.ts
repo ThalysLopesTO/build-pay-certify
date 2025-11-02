@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MaterialRequest, RequestStatus } from '@/components/admin/types/materialRequest';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
-export const useEnhancedMaterialRequestsAdmin = (onDeleteSuccess?: () => void) => {
+export const useEnhancedMaterialRequestsAdmin = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -163,8 +163,6 @@ export const useEnhancedMaterialRequestsAdmin = (onDeleteSuccess?: () => void) =
         title: 'Request Deleted',
         description: 'Material request has been permanently deleted.',
       });
-      // Close dialog after successful deletion
-      onDeleteSuccess?.();
     },
     onError: (error) => {
       console.error('Error deleting request:', error);

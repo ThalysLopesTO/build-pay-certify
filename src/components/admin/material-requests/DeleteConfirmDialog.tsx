@@ -22,14 +22,13 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   return (
     <ConfirmDialog
       open={open}
-      onOpenChange={isDeleting ? () => {} : onOpenChange}
+      onOpenChange={onOpenChange}
       title="Delete Material Request"
       description={`Are you sure you want to permanently delete the material request for "${request.jobsites?.name || 'Unknown Jobsite'}"? This action cannot be undone.`}
-      confirmText={isDeleting ? "Deleting..." : "Delete Request"}
+      confirmText="Delete Request"
       cancelText="Cancel"
       onConfirm={onConfirm}
       variant="destructive"
-      isLoading={isDeleting}
     />
   );
 };

@@ -46,10 +46,7 @@ const MaterialRequestInbox = () => {
     handleDeleteRequest,
     isDeleting,
     clearFilters
-  } = useEnhancedMaterialRequestsAdmin(() => {
-    setDeleteDialogOpen(false);
-    setRequestToDelete(null);
-  });
+  } = useEnhancedMaterialRequestsAdmin();
 
   const [detailsPanelOpen, setDetailsPanelOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -115,8 +112,11 @@ const MaterialRequestInbox = () => {
 
   const handleDeleteConfirm = () => {
     if (requestToDelete) {
+      // Close dialog immediately to prevent UI freeze
+      setDeleteDialogOpen(false);
+      setRequestToDelete(null);
+      // Trigger deletion in background
       handleDeleteRequest(requestToDelete.id);
-      // Don't close dialog immediately - let the mutation handle it
     }
   };
 
