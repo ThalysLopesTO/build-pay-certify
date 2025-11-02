@@ -29,7 +29,7 @@ import SystemSettings from '@/components/admin/SystemSettings';
 import IncomeExpensesManagement from '@/components/admin/IncomeExpensesManagement';
 import TimeRequestsManagement from '@/components/admin/TimeRequestsManagement';
 import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
-import DailyTasksPage from '@/pages/DailyTasksPage';
+
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -92,8 +92,6 @@ const AdminDashboard = () => {
         return <IncomeExpensesManagement />;
       case 'time-requests':
         return <TimeRequestsManagement />;
-      case 'daily-tasks':
-        return <DailyTasksPage />;
       case 'company-settings':
         return <SystemSettings />;
       case 'settings':

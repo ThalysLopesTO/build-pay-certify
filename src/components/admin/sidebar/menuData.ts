@@ -100,12 +100,6 @@ export const menuData: MenuItem[] = [
     icon: Users,
   },
   {
-    id: 'daily-tasks',
-    title: 'Daily Tasks',
-    href: '/admin?tab=daily-tasks',
-    icon: ListChecks,
-  },
-  {
     id: 'employee-registration',
     title: 'Employee Registration',
     href: '/admin/employee-registration',
@@ -204,7 +198,6 @@ export const groupedMenuItems = {
   employees: [
     menuData.find(item => item.id === 'employees')!,
     menuData.find(item => item.id === 'employee-registration')!,
-    menuData.find(item => item.id === 'daily-tasks')!,
     menuData.find(item => item.id === 'live-punch-monitor')!,
     menuData.find(item => item.id === 'time-summary')!,
     menuData.find(item => item.id === 'time-requests')!,
