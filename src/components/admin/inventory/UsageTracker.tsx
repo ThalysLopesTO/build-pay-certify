@@ -185,24 +185,24 @@ const UsageTracker = () => {
               </SelectContent>
             </Select>
 
-            <Select value={filters.jobsite_id || ''} onValueChange={(v) => setFilters({ ...filters, jobsite_id: v || undefined })}>
+            <Select value={filters.jobsite_id || 'all'} onValueChange={(v) => setFilters({ ...filters, jobsite_id: v === 'all' ? undefined : v })}>
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="All Jobsites" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Jobsites</SelectItem>
+                <SelectItem value="all">All Jobsites</SelectItem>
                 {jobsites?.map((site) => (
                   <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Select value={filters.employee_id || ''} onValueChange={(v) => setFilters({ ...filters, employee_id: v || undefined })}>
+            <Select value={filters.employee_id || 'all'} onValueChange={(v) => setFilters({ ...filters, employee_id: v === 'all' ? undefined : v })}>
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="All Employees" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Employees</SelectItem>
+                <SelectItem value="all">All Employees</SelectItem>
                 {employees?.map((emp) => (
                   <SelectItem key={emp.user_id} value={emp.user_id}>
                     {emp.first_name} {emp.last_name}
