@@ -32,11 +32,17 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
 }) => {
   const { user } = useAuth();
   const { inventory } = useInventory();
+  const [jobsiteId, setJobsiteId] = useState('');
   const [equipmentId, setEquipmentId] = useState('');
   const [employeeId, setEmployeeId] = useState('');
-  const [jobsiteId, setJobsiteId] = useState('');
   const [startTime, setStartTime] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Handler for jobsite change - clear equipment when jobsite changes
+  const handleJobsiteChange = (value: string) => {
+    setJobsiteId(value);
+    setEquipmentId(''); // Clear equipment selection when jobsite changes
+  };
 
   const { data: employeesData, isLoading: isLoadingEmployees, error: employeesError } = useQuery({
     queryKey: ['employees', user?.companyId],
@@ -105,12 +111,19 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
     enabled: !!user?.companyId && open,
   });
 
-  // Filter inventory to show only available equipment (not currently in use)
+  // Filter inventory by selected jobsite AND availability (not currently in use)
   const availableEquipment = Array.isArray(inventory) 
-    ? inventory.filter(item => !activeAssignments?.includes(item.id))
+    ? inventory.filter(item => {
+        // First filter by selected jobsite if one is selected
+        if (jobsiteId && item.jobsite_id !== jobsiteId) {
+          return false;
+        }
+        // Then check if equipment is not currently in use
+        return !activeAssignments?.includes(item.id);
+      })
     : [];
 
-  console.log('Available equipment count:', availableEquipment.length);
+  console.log('Available equipment for jobsite:', jobsiteId || 'none selected', availableEquipment.length);
   console.log('User company ID:', user?.companyId);
 
   const isLoadingData = isLoadingEmployees || isLoadingJobsites || isLoadingActiveAssignments;
@@ -125,9 +138,9 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
       notes: notes || undefined,
     });
     
+    setJobsiteId('');
     setEquipmentId('');
     setEmployeeId('');
-    setJobsiteId('');
     setStartTime('');
     setNotes('');
   };
@@ -140,16 +153,55 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
+            {/* Jobsite Select - FIRST */}
             <div className="space-y-2">
-              <Label htmlFor="equipment">Equipment * {!isLoadingData && `(${availableEquipment.length} available)`}</Label>
-              <Select value={equipmentId} onValueChange={setEquipmentId} required disabled={isLoadingData}>
-                <SelectTrigger id="equipment">
-                  <SelectValue placeholder={isLoadingData ? "Loading equipment..." : "Select equipment"} />
+              <Label htmlFor="jobsite">Jobsite * {!isLoadingData && `(${jobsites.length} sites)`}</Label>
+              <Select value={jobsiteId} onValueChange={handleJobsiteChange} required disabled={isLoadingData}>
+                <SelectTrigger id="jobsite">
+                  <SelectValue placeholder={isLoadingData ? "Loading jobsites..." : "Select jobsite first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableEquipment.length === 0 ? (
+                  {jobsitesError ? (
+                    <div className="px-2 py-6 text-center text-sm text-destructive">
+                      Error loading jobsites
+                    </div>
+                  ) : jobsites.length === 0 ? (
                     <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                      No available equipment found
+                      No jobsites available
+                    </div>
+                  ) : (
+                    jobsites.map((site) => (
+                      <SelectItem key={site.id} value={site.id}>
+                        {site.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Equipment Select - SECOND (filtered by jobsite) */}
+            <div className="space-y-2">
+              <Label htmlFor="equipment">
+                Equipment * 
+                {jobsiteId && !isLoadingData && ` (${availableEquipment.length} available at this site)`}
+              </Label>
+              <Select value={equipmentId} onValueChange={setEquipmentId} required disabled={isLoadingData || !jobsiteId}>
+                <SelectTrigger id="equipment">
+                  <SelectValue placeholder={
+                    isLoadingData ? "Loading equipment..." : 
+                    !jobsiteId ? "First select a jobsite" : 
+                    "Select equipment from this site"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {!jobsiteId ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      Please select a jobsite first
+                    </div>
+                  ) : availableEquipment.length === 0 ? (
+                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                      No available equipment at this jobsite
                     </div>
                   ) : (
                     availableEquipment.map((item) => (
@@ -162,6 +214,7 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
               </Select>
             </div>
 
+            {/* Employee Select - THIRD */}
             <div className="space-y-2">
               <Label htmlFor="employee">Assigned To * {!isLoadingData && `(${employees.length} employees)`}</Label>
               <Select value={employeeId} onValueChange={setEmployeeId} required disabled={isLoadingData}>
@@ -181,32 +234,6 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
                     employees.map((emp) => (
                       <SelectItem key={emp.user_id} value={emp.user_id}>
                         {emp.first_name} {emp.last_name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="jobsite">Jobsite * {!isLoadingData && `(${jobsites.length} sites)`}</Label>
-              <Select value={jobsiteId} onValueChange={setJobsiteId} required disabled={isLoadingData}>
-                <SelectTrigger id="jobsite">
-                  <SelectValue placeholder={isLoadingData ? "Loading jobsites..." : "Select jobsite"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {jobsitesError ? (
-                    <div className="px-2 py-6 text-center text-sm text-destructive">
-                      Error loading jobsites
-                    </div>
-                  ) : jobsites.length === 0 ? (
-                    <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                      No jobsites available
-                    </div>
-                  ) : (
-                    jobsites.map((site) => (
-                      <SelectItem key={site.id} value={site.id}>
-                        {site.name}
                       </SelectItem>
                     ))
                   )}
