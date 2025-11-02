@@ -27,6 +27,7 @@ export const useTaskListMutations = () => {
       return result;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-task-lists-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['daily-tasks-by-date'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-dates'] });
       queryClient.invalidateQueries({ queryKey: ['jobsite', 'tasks'] });
@@ -47,6 +48,7 @@ export const useTaskListMutations = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-task-lists-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['daily-tasks-by-date'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-dates'] });
       queryClient.invalidateQueries({ queryKey: ['jobsite', 'tasks'] });
@@ -76,6 +78,7 @@ export const useTaskListMutations = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-task-lists-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['daily-tasks-by-date'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-dates'] });
       queryClient.invalidateQueries({ queryKey: ['jobsite', 'tasks'] });
@@ -100,6 +103,7 @@ export const useTaskListMutations = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-task-lists-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['daily-tasks-by-date'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-dates'] });
       queryClient.invalidateQueries({ queryKey: ['jobsite', 'tasks'] });
@@ -166,6 +170,7 @@ export const useTaskListMutations = () => {
       return newList;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-task-lists-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['daily-tasks-by-date'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-dates'] });
       queryClient.invalidateQueries({ queryKey: ['jobsite', 'tasks'] });
