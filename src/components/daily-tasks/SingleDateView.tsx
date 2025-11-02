@@ -11,6 +11,8 @@ import { useTaskListMutations } from '@/hooks/daily-tasks/useTaskListMutations';
 import { TaskListCard } from './TaskListCard';
 import { CreateListDialog } from './CreateListDialog';
 import { EditListDialog } from './EditListDialog';
+import { CreateTaskDialog } from './CreateTaskDialog';
+import { useCreateTaskWithLabels } from '@/hooks/daily-tasks/useCreateTaskWithLabels';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 interface SingleDateViewProps {
@@ -26,7 +28,9 @@ export const SingleDateView: React.FC<SingleDateViewProps> = ({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
   const [editingListId, setEditingListId] = useState<string | null>(null);
+  
   const {
     data: stats,
     isLoading: statsLoading
@@ -35,6 +39,9 @@ export const SingleDateView: React.FC<SingleDateViewProps> = ({
     data: listsWithTasks,
     isLoading: listsLoading
   } = useDailyTasksByDate(jobsiteId, selectedDate);
+  
+  const firstListId = listsWithTasks?.[0]?.id;
+  const createTask = useCreateTaskWithLabels(firstListId || '');
   const {
     toggleTask,
     updateTask,
@@ -94,6 +101,24 @@ export const SingleDateView: React.FC<SingleDateViewProps> = ({
     }
   };
   const editingList = listsWithTasks?.find(l => l.id === editingListId);
+
+  const handleCreateTask = async (data: {
+    title: string;
+    priority: string;
+    notes?: string;
+    assignee_ids: string[];
+    tags: string[];
+  }) => {
+    if (!firstListId) {
+      alert('Please create a task list first');
+      return;
+    }
+    await createTask.mutateAsync({
+      list_id: firstListId,
+      ...data
+    });
+    setIsCreateTaskDialogOpen(false);
+  };
   return <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -108,9 +133,9 @@ export const SingleDateView: React.FC<SingleDateViewProps> = ({
             </p>
           </div>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)} size="lg">
+        <Button onClick={() => setIsCreateTaskDialogOpen(true)} size="lg" disabled={!firstListId}>
           <Plus className="h-4 w-4 mr-2" />
-          Create New Task List
+          Add Task
         </Button>
       </div>
 
@@ -166,5 +191,12 @@ export const SingleDateView: React.FC<SingleDateViewProps> = ({
       });
       setEditingListId(null);
     }} isLoading={updateList.isPending} />}
+
+      <CreateTaskDialog 
+        open={isCreateTaskDialogOpen} 
+        onClose={() => setIsCreateTaskDialogOpen(false)} 
+        onSubmit={handleCreateTask} 
+        isLoading={createTask.isPending} 
+      />
     </div>;
 };
