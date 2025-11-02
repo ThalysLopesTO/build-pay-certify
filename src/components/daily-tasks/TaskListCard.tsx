@@ -12,7 +12,6 @@ import { TaskListWithTasks } from '@/hooks/daily-tasks/usePaginatedTaskLists';
 import { useCreateTaskWithLabels } from '@/hooks/daily-tasks/useCreateTaskWithLabels';
 import { format } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
-
 interface TaskListCardProps {
   list: TaskListWithTasks;
   onToggleTask: (taskId: string, isDone: boolean) => void;
@@ -24,7 +23,6 @@ interface TaskListCardProps {
   onDeleteList: () => void;
   canEdit: boolean;
 }
-
 export const TaskListCard: React.FC<TaskListCardProps> = ({
   list,
   onToggleTask,
@@ -34,19 +32,15 @@ export const TaskListCard: React.FC<TaskListCardProps> = ({
   onDuplicateList,
   onCloseList,
   onDeleteList,
-  canEdit,
+  canEdit
 }) => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCompleted, setShowCompleted] = useState(true);
-
   const createTask = useCreateTaskWithLabels(list.id);
-
-  const completedCount = list.tasks.filter((t) => t.is_done).length;
+  const completedCount = list.tasks.filter(t => t.is_done).length;
   const totalCount = list.tasks.length;
-  const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  
-  const visibleTasks = showCompleted ? list.tasks : list.tasks.filter((t) => !t.is_done);
-
+  const progressPercentage = totalCount > 0 ? Math.round(completedCount / totalCount * 100) : 0;
+  const visibleTasks = showCompleted ? list.tasks : list.tasks.filter(t => !t.is_done);
   const handleCreateTask = async (data: {
     title: string;
     priority: string;
@@ -56,13 +50,11 @@ export const TaskListCard: React.FC<TaskListCardProps> = ({
   }) => {
     await createTask.mutateAsync({
       list_id: list.id,
-      ...data,
+      ...data
     });
     setShowCreateDialog(false);
   };
-
-  return (
-    <Card className="border-l-4 border-l-primary/20 hover:border-l-primary/40 transition-colors">
+  return <Card className="border-l-4 border-l-primary/20 hover:border-l-primary/40 transition-colors">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
@@ -71,57 +63,20 @@ export const TaskListCard: React.FC<TaskListCardProps> = ({
               Created {format(new Date(list.created_at), 'p')} 
             </p>
           </div>
-          <TaskListActionsMenu
-            list={list}
-            onEdit={onEditList}
-            onDuplicate={onDuplicateList}
-            onClose={onCloseList}
-            onDelete={onDeleteList}
-          />
+          <TaskListActionsMenu list={list} onEdit={onEditList} onDuplicate={onDuplicateList} onClose={onCloseList} onDelete={onDeleteList} />
         </div>
 
-        <div className="space-y-2 mt-3">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Progress</span>
-            <Badge variant={progressPercentage === 100 ? "default" : "secondary"} className="text-xs">
-              {completedCount}/{totalCount} tasks
-            </Badge>
-          </div>
-          <Progress value={progressPercentage} className="h-2" />
-        </div>
+        
       </CardHeader>
 
       <CardContent className="space-y-2">
-        {completedCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-xs text-muted-foreground hover:text-foreground mb-2"
-            onClick={() => setShowCompleted(!showCompleted)}
-          >
+        {completedCount > 0 && <Button variant="ghost" size="sm" className="w-full justify-start text-xs text-muted-foreground hover:text-foreground mb-2" onClick={() => setShowCompleted(!showCompleted)}>
             {showCompleted ? 'Hide' : 'Show'} {completedCount} completed {completedCount === 1 ? 'task' : 'tasks'}
-          </Button>
-        )}
+          </Button>}
         
-        {visibleTasks.map((task) => (
-          <EnhancedTaskItem
-            key={task.id}
-            task={task}
-            assignees={task.daily_task_item_assignees || []}
-            tags={task.daily_task_item_tags || []}
-            canEdit={canEdit}
-            onToggle={(taskId) => onToggleTask(taskId, !task.is_done)}
-            onUpdate={onUpdateTask}
-            onDelete={onDeleteTask}
-          />
-        ))}
+        {visibleTasks.map(task => <EnhancedTaskItem key={task.id} task={task} assignees={task.daily_task_item_assignees || []} tags={task.daily_task_item_tags || []} canEdit={canEdit} onToggle={taskId => onToggleTask(taskId, !task.is_done)} onUpdate={onUpdateTask} onDelete={onDeleteTask} />)}
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full justify-center mt-2 border-dashed hover:bg-primary/5 hover:border-primary"
-          onClick={() => setShowCreateDialog(true)}
-        >
+        <Button variant="outline" size="sm" className="w-full justify-center mt-2 border-dashed hover:bg-primary/5 hover:border-primary" onClick={() => setShowCreateDialog(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Task
         </Button>
@@ -130,13 +85,7 @@ export const TaskListCard: React.FC<TaskListCardProps> = ({
         <TaskListComments listId={list.id} />
 
         {/* Create Task Dialog */}
-        <CreateTaskDialog
-          open={showCreateDialog}
-          onClose={() => setShowCreateDialog(false)}
-          onSubmit={handleCreateTask}
-          isLoading={createTask.isPending}
-        />
+        <CreateTaskDialog open={showCreateDialog} onClose={() => setShowCreateDialog(false)} onSubmit={handleCreateTask} isLoading={createTask.isPending} />
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
