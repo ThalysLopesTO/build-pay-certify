@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CalendarDays, ChevronRight, Plus, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +22,11 @@ interface DateInfo {
   listCount: number;
   totalTasks: number;
   completedTasks: number;
+  creator?: {
+    first_name: string;
+    last_name: string;
+    photo_url: string | null;
+  };
 }
 
 export const DateSelectionView: React.FC<DateSelectionViewProps> = ({
@@ -38,7 +44,15 @@ export const DateSelectionView: React.FC<DateSelectionViewProps> = ({
       // Fetch all open lists for this jobsite
       const { data: lists, error: listsError } = await supabase
         .from('daily_task_lists')
-        .select('id, for_date')
+        .select(`
+          id, 
+          for_date,
+          creator:user_profiles!created_by (
+            first_name,
+            last_name,
+            photo_url
+          )
+        `)
         .eq('jobsite_id', jobsiteId)
         .eq('company_id', companyId)
         .eq('status', 'open')
@@ -48,10 +62,10 @@ export const DateSelectionView: React.FC<DateSelectionViewProps> = ({
       if (!lists || lists.length === 0) return [];
 
       // Group by date
-      const dateMap = new Map<string, { listIds: string[] }>();
-      lists.forEach((list) => {
+      const dateMap = new Map<string, { listIds: string[]; creator?: any }>();
+      lists.forEach((list: any) => {
         if (!dateMap.has(list.for_date)) {
-          dateMap.set(list.for_date, { listIds: [] });
+          dateMap.set(list.for_date, { listIds: [], creator: list.creator });
         }
         dateMap.get(list.for_date)!.listIds.push(list.id);
       });
@@ -78,6 +92,7 @@ export const DateSelectionView: React.FC<DateSelectionViewProps> = ({
           listCount: info.listIds.length,
           totalTasks,
           completedTasks,
+          creator: info.creator,
         });
       });
 
@@ -148,6 +163,22 @@ export const DateSelectionView: React.FC<DateSelectionViewProps> = ({
                       {dateInfo.dateFormatted}
                     </h3>
                     <div className="flex items-center gap-3 mt-1">
+                      {dateInfo.creator && (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-5 w-5 ring-1 ring-border">
+                              <AvatarImage src={dateInfo.creator.photo_url || undefined} />
+                              <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                {dateInfo.creator.first_name?.[0]}{dateInfo.creator.last_name?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm text-muted-foreground">
+                              {dateInfo.creator.first_name} {dateInfo.creator.last_name}
+                            </span>
+                          </div>
+                          <span className="text-muted-foreground">•</span>
+                        </>
+                      )}
                       <span className="text-sm text-muted-foreground">
                         {dateInfo.listCount} {dateInfo.listCount === 1 ? 'list' : 'lists'}
                       </span>
