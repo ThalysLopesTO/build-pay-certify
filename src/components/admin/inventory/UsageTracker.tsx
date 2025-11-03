@@ -348,8 +348,8 @@ const UsageTracker = () => {
       <AssignToolModal
         open={assignModalOpen}
         onOpenChange={setAssignModalOpen}
-        onAssign={(data) => {
-          assignEquipment(data);
+        onAssign={async (data) => {
+          await assignEquipment(data);
           setAssignModalOpen(false);
         }}
         isAssigning={isAssigning}

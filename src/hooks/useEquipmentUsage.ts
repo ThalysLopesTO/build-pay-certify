@@ -104,17 +104,6 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
 
   const assignMutation = useMutation({
     mutationFn: async (input: AssignEquipmentInput) => {
-      const { data: existingUsage } = await supabase
-        .from('equipment_usage_log')
-        .select('id')
-        .eq('equipment_id', input.equipment_id)
-        .eq('status', 'in_use')
-        .maybeSingle();
-
-      if (existingUsage) {
-        throw new Error('This equipment is already assigned to someone');
-      }
-
       const { data, error } = await supabase
         .from('equipment_usage_log')
         .insert({
@@ -127,25 +116,67 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
           notes: input.notes,
           status: 'in_use',
         })
-        .select()
+        .select(`
+          *,
+          equipment:inventory!equipment_id(equipment_name, brand, sku),
+          employee:user_profiles!employee_id(first_name, last_name, photo_url),
+          jobsite:jobsites!jobsite_id(name),
+          assigner:user_profiles!assigned_by(first_name, last_name)
+        `)
         .single();
 
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: ['equipment-usage', user?.companyId, filters] });
+      
+      const previousData = queryClient.getQueryData(['equipment-usage', user?.companyId, filters]);
+      
+      const optimisticRecord: EquipmentUsageLog = {
+        id: `temp-${Date.now()}`,
+        company_id: user?.companyId || '',
+        equipment_id: input.equipment_id,
+        employee_id: input.employee_id,
+        jobsite_id: input.jobsite_id,
+        assigned_by: user?.id || '',
+        start_time: input.start_time || new Date().toISOString(),
+        return_time: null,
+        status: 'in_use',
+        notes: input.notes || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData(['equipment-usage', user?.companyId, filters], (old: any) => {
+        return [optimisticRecord, ...(old || [])];
+      });
+      
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['equipment-usage', user?.companyId, filters], context.previousData);
+      }
+      toast({
+        title: 'Assignment Failed',
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['equipment-usage', user?.companyId, filters], (old: any) => {
+        const filtered = (old || []).filter((item: any) => !item.id.startsWith('temp-'));
+        return [data, ...filtered];
+      });
+      
       queryClient.invalidateQueries({ queryKey: ['equipment-usage'] });
       queryClient.invalidateQueries({ queryKey: ['equipment-usage-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['active-equipment-assignments'] });
+      
       toast({
         title: 'Equipment Assigned',
         description: 'Equipment has been successfully assigned.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Assignment Failed',
-        description: error.message,
-        variant: 'destructive',
       });
     },
   });
@@ -205,7 +236,7 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
     isLoading: usageQuery.isLoading || statsQuery.isLoading,
     isAssigning: assignMutation.isPending,
     isReturning: returnMutation.isPending,
-    assignEquipment: assignMutation.mutate,
+    assignEquipment: (data: AssignEquipmentInput) => assignMutation.mutateAsync(data),
     returnEquipment: returnMutation.mutate,
     getEquipmentHistory,
   };

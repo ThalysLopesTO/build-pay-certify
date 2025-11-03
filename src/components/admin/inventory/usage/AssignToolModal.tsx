@@ -73,44 +73,20 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
 
   const jobsites = Array.isArray(jobsitesData) ? jobsitesData : [];
 
-  // Query to get equipment that's currently in use
-  const { data: activeAssignments, isLoading: isLoadingActiveAssignments } = useQuery({
-    queryKey: ['active-equipment-assignments', user?.companyId],
-    queryFn: async () => {
-      console.log('Fetching active equipment assignments for company:', user?.companyId);
-      const { data, error } = await supabase
-        .from('equipment_usage_log')
-        .select('equipment_id')
-        .eq('company_id', user?.companyId)
-        .eq('status', 'in_use');
-      
-      if (error) {
-        console.error('Error fetching active assignments:', error);
-        throw error;
-      }
-      const assignedIds = data?.map(a => a.equipment_id) || [];
-      console.log('Equipment currently in use:', assignedIds.length, 'items');
-      return assignedIds;
-    },
-    enabled: !!user?.companyId && open,
-  });
-
-  // Filter inventory by selected jobsite AND availability (not currently in use)
+  // Filter inventory by selected jobsite (allow multiple assignments per tool)
   const availableEquipment = Array.isArray(inventory) 
     ? inventory.filter(item => {
-        // First filter by selected jobsite if one is selected
         if (jobsiteId && item.jobsite_id !== jobsiteId) {
           return false;
         }
-        // Then check if equipment is not currently in use
-        return !activeAssignments?.includes(item.id);
+        return true;
       })
     : [];
 
   console.log('Available equipment for jobsite:', jobsiteId || 'none selected', availableEquipment.length);
   console.log('User company ID:', user?.companyId);
 
-  const isLoadingData = isLoadingEmployees || isLoadingJobsites || isLoadingActiveAssignments;
+  const isLoadingData = isLoadingEmployees || isLoadingJobsites;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
