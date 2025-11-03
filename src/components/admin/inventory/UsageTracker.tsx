@@ -10,9 +10,11 @@ import { useEquipmentUsage } from '@/hooks/useEquipmentUsage';
 import { AssignToolModal } from './usage/AssignToolModal';
 import { ReturnToolModal } from './usage/ReturnToolModal';
 import { EquipmentHistoryDrawer } from './usage/EquipmentHistoryDrawer';
+import { EditToolAssignmentModal } from './usage/EditToolAssignmentModal';
+import { UsageLogDeleteConfirmDialog } from './usage/UsageLogDeleteConfirmDialog';
 import { UsageFilters, EquipmentUsageLog } from '@/types/equipment-usage';
 import { format } from 'date-fns';
-import { Search, Plus, Download, Clock, TrendingUp, AlertCircle, Package, History, RotateCcw } from 'lucide-react';
+import { Search, Plus, Download, Clock, TrendingUp, AlertCircle, Package, History, RotateCcw, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,10 +50,27 @@ const UsageTracker = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUsage, setSelectedUsage] = useState<EquipmentUsageLog | null>(null);
   const [selectedEquipment, setSelectedEquipment] = useState<{ id: string; name: string } | null>(null);
+  const [selectedUsageForEdit, setSelectedUsageForEdit] = useState<EquipmentUsageLog | null>(null);
+  const [selectedUsageForDelete, setSelectedUsageForDelete] = useState<EquipmentUsageLog | null>(null);
 
-  const { usageLogs, stats, isLoading, isAssigning, isReturning, assignEquipment, returnEquipment, getEquipmentHistory } = useEquipmentUsage(filters);
+  const { 
+    usageLogs, 
+    stats, 
+    isLoading, 
+    isAssigning, 
+    isReturning, 
+    isUpdating,
+    isDeleting,
+    assignEquipment, 
+    returnEquipment,
+    updateUsageLog,
+    deleteUsageLog,
+    getEquipmentHistory 
+  } = useEquipmentUsage(filters);
 
   const { data: jobsites } = useQuery({
     queryKey: ['jobsites', user?.companyId],
@@ -331,20 +350,40 @@ const UsageTracker = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
+                        {/* Edit Button */}
+                        {canManage && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedUsageForEdit(log);
+                              setEditModalOpen(true);
+                            }}
+                            className="h-8 w-8 p-0"
+                            title="Edit assignment"
+                          >
+                            <Edit className="h-4 w-4 text-blue-500" />
+                          </Button>
+                        )}
+
+                        {/* Return Button - Only for in_use items */}
                         {canManage && log.status === 'in_use' && (
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="ghost"
                             onClick={() => {
                               setSelectedUsage(log);
                               setReturnModalOpen(true);
                             }}
+                            className="h-8 w-8 p-0"
+                            title="Return equipment"
                           >
-                            <RotateCcw className="h-4 w-4 mr-1" />
-                            Return
+                            <RotateCcw className="h-4 w-4 text-orange-500" />
                           </Button>
                         )}
+
+                        {/* History Button */}
                         <Button
                           size="sm"
                           variant="ghost"
@@ -355,9 +394,27 @@ const UsageTracker = () => {
                             });
                             setHistoryDrawerOpen(true);
                           }}
+                          className="h-8 w-8 p-0"
+                          title="View history"
                         >
-                          <History className="h-4 w-4" />
+                          <History className="h-4 w-4 text-slate-600" />
                         </Button>
+
+                        {/* Delete Button */}
+                        {canManage && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedUsageForDelete(log);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="h-8 w-8 p-0"
+                            title="Delete record"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -393,6 +450,30 @@ const UsageTracker = () => {
         equipmentId={selectedEquipment?.id || null}
         equipmentName={selectedEquipment?.name || ''}
         getHistory={getEquipmentHistory}
+      />
+
+      <EditToolAssignmentModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        usageLog={selectedUsageForEdit}
+        onUpdate={async (id, updates) => {
+          await updateUsageLog(id, updates);
+          setEditModalOpen(false);
+        }}
+        isUpdating={isUpdating}
+      />
+
+      <UsageLogDeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        usageLog={selectedUsageForDelete}
+        onConfirm={() => {
+          if (selectedUsageForDelete) {
+            deleteUsageLog(selectedUsageForDelete.id);
+            setDeleteDialogOpen(false);
+          }
+        }}
+        isDeleting={isDeleting}
       />
     </div>
   );

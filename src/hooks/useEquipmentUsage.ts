@@ -240,6 +240,75 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async (input: { id: string; updates: Partial<AssignEquipmentInput> }) => {
+      const { data, error } = await supabase
+        .from('equipment_usage_log')
+        .update({
+          equipment_id: input.updates.equipment_id,
+          employee_id: input.updates.employee_id,
+          jobsite_id: input.updates.jobsite_id,
+          start_time: input.updates.start_time,
+          notes: input.updates.notes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', input.id)
+        .select(`
+          *,
+          equipment:inventory!equipment_id(equipment_name, brand, sku),
+          employee:user_profiles!employee_id(first_name, last_name, photo_url),
+          jobsite:jobsites!jobsite_id(name),
+          assigner:user_profiles!assigned_by(first_name, last_name)
+        `)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment-usage'] });
+      toast({
+        title: 'Usage Log Updated',
+        description: 'Changes saved successfully.',
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Update equipment usage error:', error);
+      toast({
+        title: 'Update Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (usageId: string) => {
+      const { error } = await supabase
+        .from('equipment_usage_log')
+        .delete()
+        .eq('id', usageId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment-usage'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-usage-stats'] });
+      toast({
+        title: 'Usage Log Deleted',
+        description: 'Record removed successfully.',
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Delete equipment usage error:', error);
+      toast({
+        title: 'Delete Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const getEquipmentHistory = async (equipmentId: string) => {
     const { data, error } = await supabase
       .from('equipment_usage_log')
@@ -262,8 +331,13 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
     isLoading: usageQuery.isLoading || statsQuery.isLoading,
     isAssigning: assignMutation.isPending,
     isReturning: returnMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
     assignEquipment: (data: AssignEquipmentInput) => assignMutation.mutateAsync(data),
     returnEquipment: returnMutation.mutate,
+    updateUsageLog: (id: string, updates: Partial<AssignEquipmentInput>) => 
+      updateMutation.mutateAsync({ id, updates }),
+    deleteUsageLog: deleteMutation.mutate,
     getEquipmentHistory,
   };
 };
