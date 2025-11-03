@@ -217,6 +217,7 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment-usage'] });
       queryClient.invalidateQueries({ queryKey: ['equipment-usage-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['active-equipment-assignments'] });
       toast({
         title: 'Equipment Returned',
         description: 'Equipment status has been updated.',
