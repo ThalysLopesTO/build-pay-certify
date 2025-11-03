@@ -104,6 +104,23 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
 
   const assignMutation = useMutation({
     mutationFn: async (input: AssignEquipmentInput) => {
+      // Check if equipment is already assigned to someone
+      const { data: existing, error: checkError } = await supabase
+        .from('equipment_usage_log')
+        .select('*, employee:user_profiles!employee_id(first_name, last_name)')
+        .eq('equipment_id', input.equipment_id)
+        .eq('status', 'in_use')
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existing) {
+        const employeeName = existing.employee 
+          ? `${existing.employee.first_name} ${existing.employee.last_name}`
+          : 'another employee';
+        throw new Error(`This equipment is already assigned to ${employeeName}`);
+      }
+
       const { data, error } = await supabase
         .from('equipment_usage_log')
         .insert({

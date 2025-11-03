@@ -11,7 +11,8 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface AssignToolModalProps {
   open: boolean;
@@ -73,14 +74,39 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
 
   const jobsites = Array.isArray(jobsitesData) ? jobsitesData : [];
 
-  // Filter inventory by selected jobsite (allow multiple assignments per tool)
+  // Fetch equipment usage status to show which are assigned
+  const { data: equipmentUsageData } = useQuery({
+    queryKey: ['active-equipment-assignments', user?.companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('equipment_usage_log')
+        .select('equipment_id, employee:user_profiles!employee_id(first_name, last_name)')
+        .eq('company_id', user?.companyId)
+        .eq('status', 'in_use');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.companyId && open,
+  });
+
+  // Create a map of equipment_id -> employee name for in-use equipment
+  const equipmentAssignments = new Map(
+    (equipmentUsageData || []).map((usage: any) => [
+      usage.equipment_id,
+      usage.employee ? `${usage.employee.first_name} ${usage.employee.last_name}` : 'Unknown'
+    ])
+  );
+
+  // Filter inventory by selected jobsite and include usage status
   const availableEquipment = Array.isArray(inventory) 
-    ? inventory.filter(item => {
-        if (jobsiteId && item.jobsite_id !== jobsiteId) {
-          return false;
-        }
-        return true;
-      })
+    ? inventory
+        .filter(item => !jobsiteId || item.jobsite_id === jobsiteId)
+        .map(item => ({
+          ...item,
+          isAssigned: equipmentAssignments.has(item.id),
+          assignedTo: equipmentAssignments.get(item.id)
+        }))
     : [];
 
   console.log('Available equipment for jobsite:', jobsiteId || 'none selected', availableEquipment.length);
@@ -165,8 +191,19 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
                     </div>
                   ) : (
                     availableEquipment.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.equipment_name} - {item.brand} ({item.sku})
+                      <SelectItem 
+                        key={item.id} 
+                        value={item.id}
+                        disabled={item.isAssigned}
+                      >
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <span>{item.equipment_name} - {item.brand} ({item.sku})</span>
+                          {item.isAssigned && (
+                            <Badge variant="destructive" className="ml-2 text-xs">
+                              In Use by {item.assignedTo}
+                            </Badge>
+                          )}
+                        </div>
                       </SelectItem>
                     ))
                   )}

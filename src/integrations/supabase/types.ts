@@ -998,6 +998,20 @@ export type Database = {
             referencedRelation: "jobsites"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_equipment_usage_assigned_by"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_equipment_usage_employee"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       expense_categories: {
