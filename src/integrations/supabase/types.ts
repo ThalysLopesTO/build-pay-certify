@@ -3249,6 +3249,7 @@ export type Database = {
         }[]
       }
       get_user_company_id: { Args: never; Returns: string }
+      get_user_company_id_safe: { Args: never; Returns: string }
       get_user_profile_for_join: {
         Args: { user_id_param: string }
         Returns: {
@@ -3364,6 +3365,7 @@ export type Database = {
         Args: { company_uuid: string }
         Returns: undefined
       }
+      user_has_admin_role: { Args: never; Returns: boolean }
     }
     Enums: {
       punch_type: "in" | "out" | "both"
