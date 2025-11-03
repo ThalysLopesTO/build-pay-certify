@@ -84,7 +84,7 @@ const SelectContent = React.forwardRef<
     >
       <SelectPrimitive.Viewport
         className={cn(
-          "p-1 overflow-y-auto max-h-[300px] pointer-events-auto",
+          "p-1 overflow-y-auto max-h-[450px] pointer-events-auto",
           "scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-100",
           "hover:scrollbar-thumb-gray-600 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800",
           "scroll-smooth overscroll-contain",
