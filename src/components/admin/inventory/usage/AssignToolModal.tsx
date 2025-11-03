@@ -218,7 +218,7 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
                 <SelectTrigger id="employee">
                   <SelectValue placeholder={isLoadingData ? "Loading employees..." : "Select employee"} />
                 </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
+                <SelectContent>
                   {employeesError ? (
                     <div className="px-2 py-6 text-center text-sm text-destructive">
                       Error loading employees
