@@ -17,6 +17,8 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Papa from 'papaparse';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { formatInCompanyTimezone } from '@/utils/timezone';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -38,6 +40,7 @@ const calculateDuration = (start: string, end: string | null) => {
 
 const UsageTracker = () => {
   const { user } = useAuth();
+  const { settings: companySettings } = useCompanySettings();
   const [filters, setFilters] = useState<UsageFilters>({
     status: 'all',
     search: '',
@@ -88,8 +91,18 @@ const UsageTracker = () => {
       SKU: log.equipment?.sku,
       Employee: `${log.employee?.first_name} ${log.employee?.last_name}`,
       Jobsite: log.jobsite?.name,
-      'Start Time': format(new Date(log.start_time), 'yyyy-MM-dd HH:mm'),
-      'Return Time': log.return_time ? format(new Date(log.return_time), 'yyyy-MM-dd HH:mm') : 'N/A',
+      'Start Time': formatInCompanyTimezone(
+        log.start_time, 
+        'MMM d, yyyy h:mm a',
+        companySettings?.timezone
+      ),
+      'Return Time': log.return_time 
+        ? formatInCompanyTimezone(
+            log.return_time, 
+            'MMM d, yyyy h:mm a',
+            companySettings?.timezone
+          )
+        : 'N/A',
       Duration: calculateDuration(log.start_time, log.return_time),
       Status: log.status,
       Notes: log.notes || '',
@@ -293,10 +306,21 @@ const UsageTracker = () => {
                       <Badge variant="outline">{log.jobsite?.name}</Badge>
                     </TableCell>
                     <TableCell className="text-sm">
-                      {format(new Date(log.start_time), 'MMM d, h:mm a')}
+                      {formatInCompanyTimezone(
+                        log.start_time, 
+                        'MMM d, h:mm a',
+                        companySettings?.timezone
+                      )}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {log.return_time ? format(new Date(log.return_time), 'MMM d, h:mm a') : '—'}
+                      {log.return_time 
+                        ? formatInCompanyTimezone(
+                            log.return_time, 
+                            'MMM d, h:mm a',
+                            companySettings?.timezone
+                          )
+                        : '—'
+                      }
                     </TableCell>
                     <TableCell className="text-sm">
                       {calculateDuration(log.start_time, log.return_time)}

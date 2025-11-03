@@ -13,6 +13,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { fromCompanyTimezone } from '@/utils/timezone';
 
 interface AssignToolModalProps {
   open: boolean;
@@ -34,6 +36,7 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
   isAssigning,
 }) => {
   const { user } = useAuth();
+  const { settings: companySettings } = useCompanySettings();
   const { inventory } = useInventory();
   const [jobsiteId, setJobsiteId] = useState('');
   const [equipmentId, setEquipmentId] = useState('');
@@ -116,11 +119,25 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Convert datetime-local value to proper UTC timestamp
+    let finalStartTime: string | undefined = undefined;
+    
+    if (startTime) {
+      // Parse the datetime-local value (format: "2025-11-02T07:00")
+      const localDate = new Date(startTime);
+      
+      // Convert from company timezone to UTC for storage
+      const timezone = companySettings?.timezone || 'America/Toronto';
+      const utcDate = fromCompanyTimezone(localDate, timezone);
+      finalStartTime = utcDate.toISOString();
+    }
+    
     onAssign({
       equipment_id: equipmentId,
       employee_id: employeeId,
       jobsite_id: jobsiteId,
-      start_time: startTime || undefined,
+      start_time: finalStartTime,
       notes: notes || undefined,
     });
     
@@ -247,7 +264,14 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="startTime">Start Time</Label>
+              <Label htmlFor="startTime">
+                Start Time
+                {companySettings?.timezone && (
+                  <span className="text-xs text-muted-foreground ml-2">
+                    ({companySettings.timezone})
+                  </span>
+                )}
+              </Label>
               <Input
                 id="startTime"
                 type="datetime-local"
@@ -255,6 +279,9 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
                 onChange={(e) => setStartTime(e.target.value)}
                 placeholder="Leave empty for current time"
               />
+              <p className="text-xs text-muted-foreground">
+                Leave empty to use current time
+              </p>
             </div>
 
             <div className="space-y-2">

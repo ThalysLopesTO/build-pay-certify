@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { EquipmentUsageLog } from '@/types/equipment-usage';
 import { Loader2 } from 'lucide-react';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { fromCompanyTimezone } from '@/utils/timezone';
 
 interface ReturnToolModalProps {
   open: boolean;
@@ -28,6 +30,7 @@ export const ReturnToolModal: React.FC<ReturnToolModalProps> = ({
   onReturn,
   isReturning,
 }) => {
+  const { settings: companySettings } = useCompanySettings();
   const [status, setStatus] = useState<'returned' | 'damaged' | 'lost'>('returned');
   const [returnTime, setReturnTime] = useState('');
   const [notes, setNotes] = useState('');
@@ -36,10 +39,20 @@ export const ReturnToolModal: React.FC<ReturnToolModalProps> = ({
     e.preventDefault();
     if (!usageLog) return;
 
+    // Convert datetime-local value to proper UTC timestamp
+    let finalReturnTime: string | undefined = undefined;
+    
+    if (returnTime) {
+      const localDate = new Date(returnTime);
+      const timezone = companySettings?.timezone || 'America/Toronto';
+      const utcDate = fromCompanyTimezone(localDate, timezone);
+      finalReturnTime = utcDate.toISOString();
+    }
+
     onReturn({
       usage_id: usageLog.id,
       status,
-      return_time: returnTime || undefined,
+      return_time: finalReturnTime,
       notes: notes || undefined,
     });
 
@@ -84,7 +97,14 @@ export const ReturnToolModal: React.FC<ReturnToolModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="returnTime">Return Time</Label>
+              <Label htmlFor="returnTime">
+                Return Time
+                {companySettings?.timezone && (
+                  <span className="text-xs text-muted-foreground ml-2">
+                    ({companySettings.timezone})
+                  </span>
+                )}
+              </Label>
               <Input
                 id="returnTime"
                 type="datetime-local"
@@ -92,6 +112,9 @@ export const ReturnToolModal: React.FC<ReturnToolModalProps> = ({
                 onChange={(e) => setReturnTime(e.target.value)}
                 placeholder="Leave empty for current time"
               />
+              <p className="text-xs text-muted-foreground">
+                Leave empty to use current time
+              </p>
             </div>
 
             <div className="space-y-2">

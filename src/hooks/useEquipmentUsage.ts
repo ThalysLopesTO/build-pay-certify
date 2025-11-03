@@ -9,9 +9,12 @@ import {
   UsageFilters,
   UsageStats
 } from '@/types/equipment-usage';
+import { fromCompanyTimezone } from '@/utils/timezone';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 
 export const useEquipmentUsage = (filters?: UsageFilters) => {
   const { user } = useAuth();
+  const { settings: companySettings } = useCompanySettings();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -129,7 +132,12 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
           employee_id: input.employee_id,
           jobsite_id: input.jobsite_id,
           assigned_by: user?.id,
-          start_time: input.start_time || new Date().toISOString(),
+          start_time: input.start_time || (() => {
+            const now = new Date();
+            const timezone = companySettings?.timezone || 'America/Toronto';
+            const utcDate = fromCompanyTimezone(now, timezone);
+            return utcDate.toISOString();
+          })(),
           notes: input.notes,
           status: 'in_use',
         })
