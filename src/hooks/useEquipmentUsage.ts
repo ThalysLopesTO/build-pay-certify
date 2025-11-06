@@ -53,6 +53,8 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
       if (error) throw error;
 
       let filteredData = data || [];
+      
+      // Apply search filter
       if (filters?.search) {
         const searchLower = filters.search.toLowerCase();
         filteredData = filteredData.filter(log =>
@@ -61,6 +63,25 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
           log.employee?.last_name?.toLowerCase().includes(searchLower) ||
           log.jobsite?.name?.toLowerCase().includes(searchLower)
         );
+      }
+
+      // Apply time-based filters
+      const now = new Date();
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      if (filters?.assigned_over_24h) {
+        filteredData = filteredData.filter(log => {
+          const startTime = new Date(log.start_time);
+          return log.status === 'in_use' && startTime < twentyFourHoursAgo;
+        });
+      }
+
+      if (filters?.assigned_over_7d) {
+        filteredData = filteredData.filter(log => {
+          const startTime = new Date(log.start_time);
+          return log.status === 'in_use' && startTime < sevenDaysAgo;
+        });
       }
 
       return filteredData as EquipmentUsageLog[];

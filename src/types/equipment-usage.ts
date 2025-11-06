@@ -55,6 +55,8 @@ export interface UsageFilters {
   employee_id?: string;
   date_from?: string;
   date_to?: string;
+  assigned_over_24h?: boolean;
+  assigned_over_7d?: boolean;
 }
 
 export interface UsageStats {

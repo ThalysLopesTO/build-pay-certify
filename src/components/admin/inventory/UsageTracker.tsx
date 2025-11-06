@@ -17,7 +17,7 @@ import { UsageTrackerMobileFilters } from './mobile/UsageTrackerMobileFilters';
 import { UsageTrackerMobileList } from './mobile/UsageTrackerMobileList';
 import { UsageFilters, EquipmentUsageLog } from '@/types/equipment-usage';
 import { format } from 'date-fns';
-import { Search, Plus, Download, Clock, TrendingUp, AlertCircle, Package, History, RotateCcw, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, Download, Clock, TrendingUp, AlertCircle, Package, History, RotateCcw, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +25,7 @@ import Papa from 'papaparse';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { formatInCompanyTimezone } from '@/utils/timezone';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { isAssignedOver24Hours, isAssignedOver7Days } from '@/utils/equipment-usage';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -363,14 +364,28 @@ const UsageTracker = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                usageLogs.map((log) => (
+                usageLogs.map((log) => {
+                  const isOver24h = log.status === 'in_use' && isAssignedOver24Hours(log.start_time);
+                  const isOver7d = log.status === 'in_use' && isAssignedOver7Days(log.start_time);
+                  
+                  return (
                   <TableRow key={log.id}>
                     <TableCell>
-                      <div>
-                        <p className="font-medium">{log.equipment?.equipment_name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {log.equipment?.brand} • {log.equipment?.sku}
-                        </p>
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{log.equipment?.equipment_name}</p>
+                            {isOver7d && (
+                              <AlertTriangle className="h-4 w-4 text-red-500" />
+                            )}
+                            {isOver24h && !isOver7d && (
+                              <AlertTriangle className="h-4 w-4 text-orange-500" />
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {log.equipment?.brand} • {log.equipment?.sku}
+                          </p>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -410,9 +425,21 @@ const UsageTracker = () => {
                       {calculateDuration(log.start_time, log.return_time)}
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(log.status)}>
-                        {log.status.replace('_', ' ')}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className={getStatusColor(log.status)}>
+                          {log.status.replace('_', ' ')}
+                        </Badge>
+                        {isOver7d && (
+                          <Badge variant="destructive" className="text-xs">
+                            Overdue
+                          </Badge>
+                        )}
+                        {isOver24h && !isOver7d && (
+                          <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-700 border-orange-200">
+                            &gt;24h
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -483,7 +510,8 @@ const UsageTracker = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                );
+                })
               )}
             </TableBody>
           </Table>

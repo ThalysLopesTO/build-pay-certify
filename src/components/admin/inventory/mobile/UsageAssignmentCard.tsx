@@ -4,8 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { EquipmentUsageLog } from '@/types/equipment-usage';
-import { Edit, RotateCcw, History, Trash2, MapPin, Clock } from 'lucide-react';
+import { Edit, RotateCcw, History, Trash2, MapPin, Clock, AlertTriangle } from 'lucide-react';
 import { formatInCompanyTimezone } from '@/utils/timezone';
+import { isAssignedOver24Hours, isAssignedOver7Days } from '@/utils/equipment-usage';
 
 interface UsageAssignmentCardProps {
   log: EquipmentUsageLog;
@@ -79,6 +80,9 @@ export const UsageAssignmentCard: React.FC<UsageAssignmentCardProps> = ({
     setTouchEnd(0);
   };
 
+  const isOver24h = log.status === 'in_use' && isAssignedOver24Hours(log.start_time);
+  const isOver7d = log.status === 'in_use' && isAssignedOver7Days(log.start_time);
+
   return (
     <div className="relative overflow-hidden">
       {/* Swipe Action Background */}
@@ -90,7 +94,9 @@ export const UsageAssignmentCard: React.FC<UsageAssignmentCardProps> = ({
 
       {/* Main Card */}
       <Card
-        className={`border-l-4 ${getStatusBorderColor(log.status)} transition-transform`}
+        className={`border-l-4 ${getStatusBorderColor(log.status)} transition-transform ${
+          isOver7d ? 'shadow-md shadow-red-500/20' : isOver24h ? 'shadow-md shadow-orange-500/20' : ''
+        }`}
         style={{ transform: `translateX(-${swipeOffset}px)` }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -100,16 +106,36 @@ export const UsageAssignmentCard: React.FC<UsageAssignmentCardProps> = ({
           {/* Header: Equipment Name + Status */}
           <div className="flex items-start justify-between gap-2 mb-3">
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-base truncate">
-                {log.equipment?.equipment_name}
-              </h4>
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-base truncate">
+                  {log.equipment?.equipment_name}
+                </h4>
+                {isOver7d && (
+                  <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+                )}
+                {isOver24h && !isOver7d && (
+                  <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
+                )}
+              </div>
               <p className="text-xs text-muted-foreground truncate">
                 {log.equipment?.brand} • {log.equipment?.sku}
               </p>
             </div>
-            <Badge className={getStatusColor(log.status)} variant="outline">
-              {log.status.replace('_', ' ')}
-            </Badge>
+            <div className="flex flex-col gap-1 items-end">
+              <Badge className={getStatusColor(log.status)} variant="outline">
+                {log.status.replace('_', ' ')}
+              </Badge>
+              {isOver7d && (
+                <Badge variant="destructive" className="text-xs">
+                  Overdue
+                </Badge>
+              )}
+              {isOver24h && !isOver7d && (
+                <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-700 border-orange-200">
+                  &gt;24h
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Employee Info */}
