@@ -12,15 +12,19 @@ import { ReturnToolModal } from './usage/ReturnToolModal';
 import { EquipmentHistoryDrawer } from './usage/EquipmentHistoryDrawer';
 import { EditToolAssignmentModal } from './usage/EditToolAssignmentModal';
 import { UsageLogDeleteConfirmDialog } from './usage/UsageLogDeleteConfirmDialog';
+import { UsageTrackerMobileStats } from './mobile/UsageTrackerMobileStats';
+import { UsageTrackerMobileFilters } from './mobile/UsageTrackerMobileFilters';
+import { UsageTrackerMobileList } from './mobile/UsageTrackerMobileList';
 import { UsageFilters, EquipmentUsageLog } from '@/types/equipment-usage';
 import { format } from 'date-fns';
 import { Search, Plus, Download, Clock, TrendingUp, AlertCircle, Package, History, RotateCcw, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Papa from 'papaparse';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { formatInCompanyTimezone } from '@/utils/timezone';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -43,6 +47,8 @@ const calculateDuration = (start: string, end: string | null) => {
 const UsageTracker = () => {
   const { user } = useAuth();
   const { settings: companySettings } = useCompanySettings();
+  const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [filters, setFilters] = useState<UsageFilters>({
     status: 'all',
     search: '',
@@ -137,10 +143,69 @@ const UsageTracker = () => {
 
   const canManage = user?.role && ['admin', 'super_admin', 'management', 'foreman'].includes(user.role);
 
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['equipment-usage'] });
+    await queryClient.invalidateQueries({ queryKey: ['usage-stats'] });
+  };
+
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {isMobile ? (
+        <>
+          {/* Mobile View */}
+          <UsageTrackerMobileStats stats={stats} />
+          
+          <UsageTrackerMobileFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            jobsites={jobsites}
+            employees={employees}
+            onExport={handleExportCSV}
+          />
+          
+          <UsageTrackerMobileList
+            usageLogs={usageLogs}
+            isLoading={isLoading}
+            onReturn={(log) => {
+              setSelectedUsage(log);
+              setReturnModalOpen(true);
+            }}
+            onEdit={(log) => {
+              setSelectedUsageForEdit(log);
+              setEditModalOpen(true);
+            }}
+            onDelete={(log) => {
+              setSelectedUsageForDelete(log);
+              setDeleteDialogOpen(true);
+            }}
+            onViewHistory={(log) => {
+              setSelectedEquipment({
+                id: log.equipment_id,
+                name: log.equipment?.equipment_name || 'Equipment',
+              });
+              setHistoryDrawerOpen(true);
+            }}
+            canManage={!!canManage}
+            timezone={companySettings?.timezone}
+            onRefresh={handleRefresh}
+            onAssignClick={() => setAssignModalOpen(true)}
+          />
+          
+          {/* Floating Action Button */}
+          {canManage && (
+            <Button
+              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+              onClick={() => setAssignModalOpen(true)}
+            >
+              <Plus className="h-6 w-6" />
+            </Button>
+          )}
+        </>
+      ) : (
+        <>
+          {/* Desktop View */}
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -424,8 +489,10 @@ const UsageTracker = () => {
           </Table>
         </CardContent>
       </Card>
+        </>
+      )}
 
-      {/* Modals */}
+      {/* Modals - Shared between mobile and desktop */}
       <AssignToolModal
         open={assignModalOpen}
         onOpenChange={setAssignModalOpen}
