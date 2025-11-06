@@ -39,6 +39,7 @@ import { getCategoryColor } from '@/utils/categoryColors';
 import { MonthlyCashFlowChart } from './income-expenses/MonthlyCashFlowChart';
 import { CategoryBreakdownChart } from './income-expenses/CategoryBreakdownChart';
 import { IncomeExpensesKPIs } from './income-expenses/IncomeExpensesKPIs';
+import { MobileChartWrapper } from './charts/MobileChartWrapper';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { usePrintIncomeExpenses, PrintOption } from '@/hooks/usePrintIncomeExpenses';
@@ -603,25 +604,50 @@ const IncomeExpensesManagement = () => {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4" data-print="charts">
-        <MonthlyCashFlowChart 
-          transactions={filteredTransactions}
-          dateRangeType={filters.dateRangeType}
-          onDateRangeChange={dateRange.setSelectedRange}
-          transactionTypeFilter={filters.transactionTypeFilter}
-          onTransactionTypeChange={filters.setTransactionTypeFilter}
-          customRange={dateRange.customRange}
-          onCustomRangeChange={dateRange.setCustomRange}
-        />
-        <CategoryBreakdownChart 
-          transactions={filteredTransactions}
-          dateRangeType={filters.dateRangeType}
-          onDateRangeChange={dateRange.setSelectedRange}
-          transactionTypeFilter={filters.transactionTypeFilter}
-          onTransactionTypeChange={filters.setTransactionTypeFilter}
-          getCategoryDisplay={getCategoryDisplay}
-        />
-      </div>
+      {isMobile ? (
+        <MobileChartWrapper
+          titles={["Cash Flow", "Category Breakdown"]}
+          className="mb-4"
+        >
+          <MonthlyCashFlowChart 
+            transactions={filteredTransactions}
+            dateRangeType={filters.dateRangeType}
+            onDateRangeChange={dateRange.setSelectedRange}
+            transactionTypeFilter={filters.transactionTypeFilter}
+            onTransactionTypeChange={filters.setTransactionTypeFilter}
+            customRange={dateRange.customRange}
+            onCustomRangeChange={dateRange.setCustomRange}
+          />
+          <CategoryBreakdownChart 
+            transactions={filteredTransactions}
+            dateRangeType={filters.dateRangeType}
+            onDateRangeChange={dateRange.setSelectedRange}
+            transactionTypeFilter={filters.transactionTypeFilter}
+            onTransactionTypeChange={filters.setTransactionTypeFilter}
+            getCategoryDisplay={getCategoryDisplay}
+          />
+        </MobileChartWrapper>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4" data-print="charts">
+          <MonthlyCashFlowChart 
+            transactions={filteredTransactions}
+            dateRangeType={filters.dateRangeType}
+            onDateRangeChange={dateRange.setSelectedRange}
+            transactionTypeFilter={filters.transactionTypeFilter}
+            onTransactionTypeChange={filters.setTransactionTypeFilter}
+            customRange={dateRange.customRange}
+            onCustomRangeChange={dateRange.setCustomRange}
+          />
+          <CategoryBreakdownChart 
+            transactions={filteredTransactions}
+            dateRangeType={filters.dateRangeType}
+            onDateRangeChange={dateRange.setSelectedRange}
+            transactionTypeFilter={filters.transactionTypeFilter}
+            onTransactionTypeChange={filters.setTransactionTypeFilter}
+            getCategoryDisplay={getCategoryDisplay}
+          />
+        </div>
+      )}
 
       {/* Advanced Filters Panel */}
       <Card className="bg-white shadow-sm border-slate-200 overflow-hidden">
