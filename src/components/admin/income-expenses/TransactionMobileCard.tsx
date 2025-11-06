@@ -2,6 +2,16 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Calendar, Folder, User, Edit, Trash2 } from 'lucide-react';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { formatDateFromDB } from '@/utils/dateUtils';
@@ -22,15 +32,21 @@ export const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
   getCategoryDisplay
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const DELETE_THRESHOLD = -120; // Pixels to swipe left before deleting
 
   const handleDragEnd = (_event: any, info: PanInfo) => {
     if (info.offset.x < DELETE_THRESHOLD) {
-      setIsDeleting(true);
-      setTimeout(() => {
-        onDelete(transaction.id);
-      }, 200);
+      setShowDeleteDialog(true);
     }
+  };
+
+  const handleConfirmDelete = () => {
+    setIsDeleting(true);
+    setTimeout(() => {
+      onDelete(transaction.id);
+      setShowDeleteDialog(false);
+    }, 200);
   };
   const getStatusBadge = (status: 'paid' | 'unpaid' | 'pending' | 'scheduled') => {
     const config = {
@@ -101,7 +117,31 @@ export const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-lg">
+    <>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{transaction.expense_title}</strong>? 
+              This action cannot be undone and will permanently remove this{' '}
+              {transaction.transaction_type === 'income' ? 'income' : 'expense'} record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="relative overflow-hidden rounded-lg">
       {/* Delete Background - Revealed on Swipe */}
       <div className="absolute inset-0 bg-gradient-to-l from-red-500 to-red-600 flex items-center justify-end pr-6 rounded-lg">
         <div className="flex flex-col items-center">
@@ -194,7 +234,7 @@ export const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onDelete(transaction.id)}
+                onClick={() => setShowDeleteDialog(true)}
                 className="flex-1 h-10 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -205,5 +245,6 @@ export const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
         </Card>
       </motion.div>
     </div>
+    </>
   );
 };
