@@ -33,10 +33,13 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { usePrintIncomeExpenses, PrintOption } from '@/hooks/usePrintIncomeExpenses';
 import * as XLSX from 'xlsx';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { TransactionMobileList } from './income-expenses/TransactionMobileList';
 
 
 const IncomeExpensesManagement = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [transactions, setTransactions] = useState<TransactionWithHierarchy[]>([]);
   
   const { 
@@ -805,184 +808,242 @@ const IncomeExpensesManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Transactions Table */}
-      <Card className="bg-white shadow-sm border-slate-200" data-print="table">
-        <CardHeader className="border-b border-slate-200 pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-semibold text-slate-900">
+      {/* Transactions Section - Mobile Cards or Desktop Table */}
+      {isMobile ? (
+        /* Mobile View */
+        <div className="space-y-3" data-print="table">
+          {/* Header with transaction count */}
+          <div className="flex items-center justify-between px-1 mb-4">
+            <h3 className="text-lg font-semibold text-slate-900">
               Transactions
-            </CardTitle>
-            <div className="flex items-center gap-4">
-              <div className="text-sm text-slate-600">
-                Showing {startItem} to {endItem} of {filteredTransactions.length} transactions
-              </div>
-              <Badge variant="outline" className="text-slate-600">
-                {filteredTransactions.length} total
-              </Badge>
-            </div>
+            </h3>
+            <Badge variant="outline" className="text-slate-600">
+              {filteredTransactions.length} total
+            </Badge>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-slate-200 bg-slate-50/50">
-                  <TableHead className="font-semibold text-slate-700 py-3">Date</TableHead>
-                  <TableHead className="font-semibold text-slate-700 py-3">Type</TableHead>
-                  <TableHead className="font-semibold text-slate-700 py-3">Title</TableHead>
-                  <TableHead className="font-semibold text-slate-700 py-3">Category</TableHead>
-                  <TableHead className="font-semibold text-slate-700 py-3">Payer/Payee</TableHead>
-                  <TableHead className="font-semibold text-slate-700 py-3 text-right">Amount</TableHead>
-                  <TableHead className="font-semibold text-slate-700 py-3">Status</TableHead>
-                  <TableHead className="font-semibold text-slate-700 py-3">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedTransactions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12 text-slate-500">
-                      <div className="flex flex-col items-center justify-center space-y-3">
-                        <Receipt className="h-12 w-12 text-slate-300" />
-                        <div>
-                          <p className="text-lg font-medium">No transactions match your filters</p>
-                          <p className="text-sm">Try adjusting your filters or add a new transaction</p>
-                        </div>
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            onClick={() => { setTransactionType('income'); resetForm(); setIsCreateDialogOpen(true); }}
-                            variant="outline"
-                            size="sm"
-                          >
-                            Add Income
-                          </Button>
-                          <Button
-                            onClick={() => { setTransactionType('expense'); resetForm(); setIsCreateDialogOpen(true); }}
-                            variant="outline"
-                            size="sm"
-                          >
-                            Add Expense
-                          </Button>
-                        </div>
-                      </div>
-                    </TableCell>
+          
+          {/* Mobile transaction cards */}
+          <TransactionMobileList
+            transactions={paginatedTransactions}
+            isLoading={isLoading}
+            onEdit={startEdit}
+            onDelete={handleDelete}
+            getCategoryDisplay={getCategoryDisplay}
+          />
+          
+          {/* Mobile Pagination */}
+          {totalPages > 1 && (
+            <div className="flex flex-col items-center gap-3 mt-6 pb-4">
+              <div className="text-sm text-slate-600 font-medium">
+                Page {currentPage} of {totalPages}
+              </div>
+              <div className="flex items-center gap-2 w-full max-w-sm">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="flex-1 h-11 font-medium"
+                >
+                  Previous
+                </Button>
+                <div className="px-4 py-2 bg-slate-100 rounded-md text-sm font-semibold text-slate-700 min-w-[60px] text-center">
+                  {currentPage}
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="flex-1 h-11 font-medium"
+                >
+                  Next
+                </Button>
+              </div>
+              <div className="text-xs text-slate-500">
+                Showing {startItem} to {endItem} of {filteredTransactions.length}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Desktop View - Table */
+        <Card className="bg-white shadow-sm border-slate-200" data-print="table">
+          <CardHeader className="border-b border-slate-200 pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl font-semibold text-slate-900">
+                Transactions
+              </CardTitle>
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-slate-600">
+                  Showing {startItem} to {endItem} of {filteredTransactions.length} transactions
+                </div>
+                <Badge variant="outline" className="text-slate-600">
+                  {filteredTransactions.length} total
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-b border-slate-200 bg-slate-50/50">
+                    <TableHead className="font-semibold text-slate-700 py-3">Date</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-3">Type</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-3">Title</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-3">Category</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-3">Payer/Payee</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-3 text-right">Amount</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-3">Status</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-3">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  paginatedTransactions.map((transaction) => (
-                    <TableRow key={transaction.id} className="border-b border-slate-100 hover:bg-slate-50/30">
-                      <TableCell className="font-medium text-slate-700 py-3">
-                        {formatDateFromDB(transaction.expense_date, 'MMM dd, yyyy')}
-                      </TableCell>
-                      <TableCell className="py-3">
-                        {getTransactionTypeBadge(transaction.transaction_type)}
-                      </TableCell>
-                      <TableCell className="font-medium text-slate-900 max-w-48 truncate py-3">
-                        {transaction.expense_title}
-                      </TableCell>
-                      <TableCell className="py-3">
-                        {getCategoryPillBadge(transaction.category_id)}
-                      </TableCell>
-                      <TableCell className="text-slate-700 max-w-32 truncate py-3">
-                        {transaction.vendor_payee}
-                      </TableCell>
-                      <TableCell className="text-right py-3">
-                        {formatAmount(transaction.amount, transaction.transaction_type)}
-                      </TableCell>
-                      <TableCell className="py-3">
-                        {getStatusBadge(transaction.payment_status)}
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => startEdit(transaction)}
-                            className="h-8 w-8 p-0 hover:bg-slate-100"
-                            title="Edit transaction"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(transaction.id)}
-                            className="h-8 w-8 p-0 hover:bg-red-50 text-red-600 hover:text-red-700"
-                            title="Delete transaction"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                </TableHeader>
+                <TableBody>
+                  {paginatedTransactions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-12 text-slate-500">
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <Receipt className="h-12 w-12 text-slate-300" />
+                          <div>
+                            <p className="text-lg font-medium">No transactions match your filters</p>
+                            <p className="text-sm">Try adjusting your filters or add a new transaction</p>
+                          </div>
+                          <div className="flex gap-2 mt-4">
+                            <Button
+                              onClick={() => { setTransactionType('income'); resetForm(); setIsCreateDialogOpen(true); }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Add Income
+                            </Button>
+                            <Button
+                              onClick={() => { setTransactionType('expense'); resetForm(); setIsCreateDialogOpen(true); }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Add Expense
+                            </Button>
+                          </div>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200">
-              <div className="text-sm text-slate-700">
-                Showing {startItem} to {endItem} of {filteredTransactions.length} transactions
-              </div>
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage > 1) setCurrentPage(currentPage - 1);
-                      }}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                  
-                  {/* Page numbers */}
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNumber;
-                    if (totalPages <= 5) {
-                      pageNumber = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNumber = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNumber = totalPages - 4 + i;
-                    } else {
-                      pageNumber = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <PaginationItem key={pageNumber}>
-                        <PaginationLink
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCurrentPage(pageNumber);
-                          }}
-                          isActive={currentPage === pageNumber}
-                        >
-                          {pageNumber}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  })}
-                  
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                      }}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+                  ) : (
+                    paginatedTransactions.map((transaction) => (
+                      <TableRow key={transaction.id} className="border-b border-slate-100 hover:bg-slate-50/30">
+                        <TableCell className="font-medium text-slate-700 py-3">
+                          {formatDateFromDB(transaction.expense_date, 'MMM dd, yyyy')}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          {getTransactionTypeBadge(transaction.transaction_type)}
+                        </TableCell>
+                        <TableCell className="font-medium text-slate-900 max-w-48 truncate py-3">
+                          {transaction.expense_title}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          {getCategoryPillBadge(transaction.category_id)}
+                        </TableCell>
+                        <TableCell className="text-slate-700 max-w-32 truncate py-3">
+                          {transaction.vendor_payee}
+                        </TableCell>
+                        <TableCell className="text-right py-3">
+                          {formatAmount(transaction.amount, transaction.transaction_type)}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          {getStatusBadge(transaction.payment_status)}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => startEdit(transaction)}
+                              className="h-8 w-8 p-0 hover:bg-slate-100"
+                              title="Edit transaction"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(transaction.id)}
+                              className="h-8 w-8 p-0 hover:bg-red-50 text-red-600 hover:text-red-700"
+                              title="Delete transaction"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200">
+                <div className="text-sm text-slate-700">
+                  Showing {startItem} to {endItem} of {filteredTransactions.length} transactions
+                </div>
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage > 1) setCurrentPage(currentPage - 1);
+                        }}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    
+                    {/* Page numbers */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNumber;
+                      if (totalPages <= 5) {
+                        pageNumber = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNumber = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNumber = totalPages - 4 + i;
+                      } else {
+                        pageNumber = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <PaginationItem key={pageNumber}>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentPage(pageNumber);
+                            }}
+                            isActive={currentPage === pageNumber}
+                          >
+                            {pageNumber}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                        }}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Create/Edit Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
