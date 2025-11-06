@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Select,
   SelectContent,
@@ -46,6 +47,9 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import VehicleFormFields from './VehicleFormFields';
+import VehicleMobileStats from './mobile/VehicleMobileStats';
+import VehicleMobileFilters from './mobile/VehicleMobileFilters';
+import VehicleMobileList from './mobile/VehicleMobileList';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,6 +71,7 @@ import {
 
 const VehicleManagement = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const { vehicles, isLoading, createVehicle, updateVehicle, deleteVehicle, isCreating, isUpdating, isDeleting } = useVehicles();
   const { data: jobsites = [] } = useActiveJobsites();
   
@@ -94,8 +99,17 @@ const VehicleManagement = () => {
 
   const canManageInventory = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management' || user?.role === 'foreman';
 
+  // Calculate stats
+  const stats = useMemo(() => {
+    const total = vehicles.length;
+    const active = vehicles.filter(v => v.status === 'active').length;
+    const maintenance = vehicles.filter(v => v.status === 'maintenance').length;
+    const unassigned = vehicles.filter(v => !v.jobsite_id || v.jobsite_id === 'unassigned').length;
+    return { total, active, maintenance, unassigned };
+  }, [vehicles]);
+
   // Filter vehicles based on search and filters
-  const filteredVehicles = vehicles.filter((vehicle) => {
+  const filteredVehicles = useMemo(() => vehicles.filter((vehicle) => {
     // Search filter
     const matchesSearch = 
       vehicle.vehicle_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,7 +129,7 @@ const VehicleManagement = () => {
       vehicle.jobsite_id === jobsiteFilter;
     
     return matchesSearch && matchesType && matchesStatus && matchesJobsite;
-  });
+  }), [vehicles, searchTerm, typeFilter, statusFilter, jobsiteFilter]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -253,7 +267,12 @@ const VehicleManagement = () => {
     setStatusFilter('all');
   };
 
-  if (isLoading) {
+  const handleRefresh = async () => {
+    // Vehicles will refresh automatically via react-query
+    return Promise.resolve();
+  };
+
+  if (isLoading && vehicles.length === 0) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -263,7 +282,56 @@ const VehicleManagement = () => {
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-sm">
+      {/* Mobile View */}
+      {isMobile && (
+        <>
+          <VehicleMobileStats
+            total={stats.total}
+            active={stats.active}
+            maintenance={stats.maintenance}
+            unassigned={stats.unassigned}
+          />
+          
+          <VehicleMobileFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            typeFilter={typeFilter}
+            onTypeChange={setTypeFilter}
+            jobsiteFilter={jobsiteFilter}
+            onJobsiteChange={setJobsiteFilter}
+            jobsites={jobsites}
+            onClearFilters={resetFilters}
+          />
+          
+          <VehicleMobileList
+            vehicles={filteredVehicles}
+            canManageInventory={canManageInventory}
+            onEdit={handleEditVehicle}
+            onDelete={setDeletingVehicle}
+            onView={setViewingVehicle}
+            onRefresh={handleRefresh}
+            isLoading={isLoading}
+          />
+
+          {/* Floating Action Button */}
+          {canManageInventory && (
+            <Button
+              onClick={() => setIsFormOpen(true)}
+              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+              size="icon"
+            >
+              <Plus className="h-6 w-6" />
+            </Button>
+          )}
+        </>
+      )}
+
+      {/* Desktop View */}
+      {!isMobile && (
+        <>
+        <Card className="shadow-sm">
         <CardContent className="p-6 space-y-6">
           {/* Filters and Search */}
           <div className="flex flex-wrap items-center gap-4">

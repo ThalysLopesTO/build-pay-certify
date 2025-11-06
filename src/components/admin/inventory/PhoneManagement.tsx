@@ -1,4 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import PhoneMobileStats from './mobile/PhoneMobileStats';
+import PhoneMobileFilters from './mobile/PhoneMobileFilters';
+import PhoneMobileList from './mobile/PhoneMobileList';
+import { Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,6 +65,7 @@ import PhoneCategoryManager from './PhoneCategoryManager';
 
 const PhoneManagement = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const { phones, isLoading, createPhone, updatePhone, deletePhone, isCreating, isUpdating, isDeleting } = useCompanyPhones();
   
   const [formData, setFormData] = useState({
@@ -426,6 +432,8 @@ const PhoneManagement = () => {
         isOpen={showCategoryManager}
         onClose={() => setShowCategoryManager(false)}
       />
+      </>
+      )}
     </div>
   );
 };
