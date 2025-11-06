@@ -21,9 +21,10 @@ interface HierarchicalCategory {
 interface HierarchicalCategoryManagerProps {
   categories: HierarchicalCategory[];
   onCategoriesChange: () => void;
+  trigger?: React.ReactNode;
 }
 
-export const HierarchicalCategoryManager = ({ categories, onCategoriesChange }: HierarchicalCategoryManagerProps) => {
+export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, trigger }: HierarchicalCategoryManagerProps) => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -234,10 +235,12 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange }: 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Settings className="h-4 w-4 mr-2" />
-          Manage Categories
-        </Button>
+        {trigger || (
+          <Button variant="outline" size="sm">
+            <Settings className="h-4 w-4 mr-2" />
+            Manage Categories
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">

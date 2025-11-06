@@ -468,80 +468,130 @@ const IncomeExpensesManagement = () => {
   }
 
   return (
-    <div className="space-y-6 p-6 bg-slate-50 min-h-screen">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div className="flex items-start space-x-4">
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-xl shadow-lg">
-            <Receipt className="h-8 w-8 text-white" />
+    <div className="space-y-6 p-4 md:p-6 bg-slate-50 min-h-screen overflow-x-hidden max-w-full">
+      {/* Desktop Header */}
+      {!isMobile && (
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-start space-x-4">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-xl shadow-lg">
+              <Receipt className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">
+                Income & Expenses
+              </h1>
+              <p className="text-lg text-slate-600 font-medium">
+                Track income and expenses, analyze cash flow, and manage your company's finances.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">
-              Income & Expenses
-            </h1>
-            <p className="text-lg text-slate-600 font-medium">
-              Track income and expenses, analyze cash flow, and manage your company's finances.
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline"
-                className="bg-white border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-sm hover:shadow-md transition-all duration-200 px-4 py-2.5 text-sm font-medium"
-              >
-                <Printer className="h-4 w-4 mr-2" />
-                Print Report
-                <ChevronDown className="h-3 w-3 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem 
-                onClick={() => handlePrint('charts')}
-                className="flex items-center px-3 py-2 text-sm"
-              >
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Charts & KPIs Only
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handlePrint('table')}
-                className="flex items-center px-3 py-2 text-sm"
-              >
-                <Receipt className="h-4 w-4 mr-2" />
-                Transaction Table Only
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handlePrint('full')}
-                className="flex items-center px-3 py-2 text-sm"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Full Report
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
           
-          <HierarchicalCategoryManager
-            categories={categories}
-            onCategoriesChange={fetchCategories}
-          />
-          <Button 
-            onClick={() => { setTransactionType('income'); resetForm(); setIsCreateDialogOpen(true); }} 
-            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Income
-          </Button>
-          <Button 
-            onClick={() => { setTransactionType('expense'); resetForm(); setIsCreateDialogOpen(true); }} 
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Expense
-          </Button>
+          <div className="flex gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline"
+                  className="bg-white border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-sm hover:shadow-md transition-all duration-200 px-4 py-2.5 text-sm font-medium"
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Report
+                  <ChevronDown className="h-3 w-3 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem 
+                  onClick={() => handlePrint('charts')}
+                  className="flex items-center px-3 py-2 text-sm"
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Charts & KPIs Only
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handlePrint('table')}
+                  className="flex items-center px-3 py-2 text-sm"
+                >
+                  <Receipt className="h-4 w-4 mr-2" />
+                  Transaction Table Only
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handlePrint('full')}
+                  className="flex items-center px-3 py-2 text-sm"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Full Report
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <HierarchicalCategoryManager
+              categories={categories}
+              onCategoriesChange={fetchCategories}
+            />
+            <Button 
+              onClick={() => { setTransactionType('income'); resetForm(); setIsCreateDialogOpen(true); }} 
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Income
+            </Button>
+            <Button 
+              onClick={() => { setTransactionType('expense'); resetForm(); setIsCreateDialogOpen(true); }} 
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Expense
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-start space-x-3">
+              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2.5 rounded-xl shadow-lg">
+                <Receipt className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900">
+                  Income & Expenses
+                </h1>
+                <p className="text-sm text-slate-600">
+                  Track finances
+                </p>
+              </div>
+            </div>
+            <HierarchicalCategoryManager
+              categories={categories}
+              onCategoriesChange={fetchCategories}
+              trigger={
+                <Button variant="outline" size="sm" className="h-9 w-9 p-0 flex-shrink-0">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              }
+            />
+          </div>
+          
+          {/* Mobile Action Buttons - Full Width */}
+          <div className="space-y-2">
+            <Button 
+              onClick={() => { setTransactionType('income'); resetForm(); setIsCreateDialogOpen(true); }}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all duration-200 h-11"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Income
+            </Button>
+            <Button 
+              onClick={() => { setTransactionType('expense'); resetForm(); setIsCreateDialogOpen(true); }}
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200 h-11"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Expense
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div data-print="kpis">
@@ -553,7 +603,7 @@ const IncomeExpensesManagement = () => {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" data-print="charts">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4" data-print="charts">
         <MonthlyCashFlowChart 
           transactions={filteredTransactions}
           dateRangeType={filters.dateRangeType}
@@ -616,7 +666,7 @@ const IncomeExpensesManagement = () => {
           </div>
         </CardHeader>
 
-        <CardContent className="p-6">
+        <CardContent className="p-3 md:p-6">
           {/* Filter Sections */}
           <div className="space-y-6">
             
@@ -715,7 +765,7 @@ const IncomeExpensesManagement = () => {
             )}
 
             {/* Multi-Select Filters Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               {/* Transaction Type */}
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">

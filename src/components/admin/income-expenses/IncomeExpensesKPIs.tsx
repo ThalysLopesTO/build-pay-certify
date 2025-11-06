@@ -54,7 +54,7 @@ export const IncomeExpensesKPIs: React.FC<IncomeExpensesKPIsProps> = ({
     return 'Top Categories';
   };
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
       {/* Total Inflow */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
