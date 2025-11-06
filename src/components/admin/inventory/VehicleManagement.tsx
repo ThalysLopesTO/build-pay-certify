@@ -309,8 +309,8 @@ const VehicleManagement = () => {
             vehicles={filteredVehicles}
             canManageInventory={canManageInventory}
             onEdit={handleEditVehicle}
-            onDelete={setDeletingVehicle}
-            onView={setViewingVehicle}
+            onDelete={(vehicle: any) => setDeletingVehicle(vehicle)}
+            onView={(vehicle: any) => setViewingVehicle(vehicle)}
             onRefresh={handleRefresh}
             isLoading={isLoading}
           />
@@ -662,6 +662,8 @@ const VehicleManagement = () => {
           )}
         </SheetContent>
       </Sheet>
+      </>
+      )}
     </div>
   );
 };

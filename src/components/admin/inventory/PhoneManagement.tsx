@@ -3,7 +3,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import PhoneMobileStats from './mobile/PhoneMobileStats';
 import PhoneMobileFilters from './mobile/PhoneMobileFilters';
 import PhoneMobileList from './mobile/PhoneMobileList';
-import { Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -211,6 +210,16 @@ const PhoneManagement = () => {
     return extension ? `${formatted} ext. ${extension}` : formatted;
   };
 
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    filteredPhones.forEach(phone => {
+      counts[phone.category] = (counts[phone.category] || 0) + 1;
+    });
+    return counts;
+  }, [filteredPhones]);
+
+  const handleRefresh = async () => Promise.resolve();
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -221,6 +230,36 @@ const PhoneManagement = () => {
 
   return (
     <div className="space-y-6">
+      {isMobile && (
+        <>
+          <PhoneMobileStats total={filteredPhones.length} byCategory={categoryCounts} />
+          <PhoneMobileFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            categoryFilter={categoryFilter}
+            onCategoryChange={setCategoryFilter}
+            categories={phoneCategories}
+            onManageCategories={() => setShowCategoryManager(true)}
+            categoryCounts={categoryCounts}
+          />
+          <PhoneMobileList
+            contacts={filteredPhones as any}
+            canManage={canManageInventory}
+            onEdit={(contact: any) => handleEditPhone(contact)}
+            onDelete={(contact: any) => setDeletingPhone(contact)}
+            onRefresh={handleRefresh}
+            isLoading={isLoading}
+          />
+          {canManageInventory && (
+            <Button onClick={() => setIsFormOpen(true)} className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50" size="icon">
+              <Plus className="h-6 w-6" />
+            </Button>
+          )}
+        </>
+      )}
+      {!isMobile && (
+      <>
+      {/* Phone Directory */}
       <Card className="shadow-sm">
         <CardContent className="p-6 space-y-6">
           {/* Filters and Search */}
