@@ -12,6 +12,10 @@ import { isPast, differenceInDays, isToday } from 'date-fns';
 import JobsiteTaskCard from './JobsiteTaskCard';
 import JobsiteTaskForm from './JobsiteTaskForm';
 import JobsiteMaterialTakeoff from './JobsiteMaterialTakeoff';
+import { AdvancedTaskList } from '../tasks/AdvancedTaskList';
+import { AdvancedTaskForm } from '../tasks/AdvancedTaskForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useJobsiteTasksAdvanced } from '@/hooks/useJobsiteTasksAdvanced';
 
 interface Jobsite {
   id: string;
@@ -30,7 +34,7 @@ const JobsiteProgressCard: React.FC<JobsiteProgressCardProps> = ({ jobsite }) =>
   const [showAddForm, setShowAddForm] = useState(false);
   const [showMaterials, setShowMaterials] = useState(false);
   const { user } = useAuth();
-  const { data: tasks = [], isLoading } = useJobsiteTasks(jobsite.id);
+  const { data: tasks = [], isLoading } = useJobsiteTasksAdvanced(jobsite.id, {});
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
@@ -200,7 +204,7 @@ const JobsiteProgressCard: React.FC<JobsiteProgressCardProps> = ({ jobsite }) =>
                 <h4 className="font-medium">Tasks & Phases</h4>
                 <Button
                   size="sm"
-                  onClick={() => setShowAddForm(!showAddForm)}
+                  onClick={() => setShowAddForm(true)}
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Task
@@ -208,32 +212,27 @@ const JobsiteProgressCard: React.FC<JobsiteProgressCardProps> = ({ jobsite }) =>
               </div>
             )}
 
-            {/* Add Task Form */}
-            {showAddForm && isAdmin && (
-              <JobsiteTaskForm
-                jobsiteId={jobsite.id}
-                onCancel={() => setShowAddForm(false)}
-                onSuccess={() => setShowAddForm(false)}
-              />
-            )}
-
             {/* Task List */}
-            {isLoading ? (
-              <div className="text-center py-4 text-gray-500">Loading tasks...</div>
-            ) : tasks.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                {isAdmin ? 'No tasks yet. Add your first task to get started.' : 'No tasks available for this jobsite.'}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {tasks.map((task) => (
-                  <JobsiteTaskCard 
-                    key={task.id} 
-                    task={task} 
-                    isAdmin={isAdmin}
+            <AdvancedTaskList
+              jobsiteId={jobsite.id}
+              filters={{}}
+              isAdmin={isAdmin}
+            />
+
+            {/* Add Task Dialog */}
+            {isAdmin && (
+              <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Create New Task</DialogTitle>
+                  </DialogHeader>
+                  <AdvancedTaskForm
+                    jobsiteId={jobsite.id}
+                    onCancel={() => setShowAddForm(false)}
+                    onSuccess={() => setShowAddForm(false)}
                   />
-                ))}
-              </div>
+                </DialogContent>
+              </Dialog>
             )}
 
             {/* Material Takeoff Section */}

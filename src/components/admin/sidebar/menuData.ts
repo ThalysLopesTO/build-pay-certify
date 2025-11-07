@@ -49,6 +49,12 @@ export const menuData: MenuItem[] = [
     icon: MapPin,
   },
   {
+    id: 'task-management',
+    title: 'Task Management',
+    href: '/admin/tasks',
+    icon: ListChecks,
+  },
+  {
     id: 'completed-jobsites',
     title: 'Completed Jobs',
     href: '/admin/completed-jobsites',
@@ -187,6 +193,7 @@ export const groupedMenuItems = {
   ],
   management: [
     menuData.find(item => item.id === 'jobsites')!,
+    menuData.find(item => item.id === 'task-management')!,
     menuData.find(item => item.id === 'material-takeoff')!,
     menuData.find(item => item.id === 'material-requests')!,
     menuData.find(item => item.id === 'change-orders')!,

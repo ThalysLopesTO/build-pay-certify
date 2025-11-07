@@ -10,6 +10,10 @@ import { isPast, differenceInDays, isToday } from 'date-fns';
 import JobsiteTaskCard from '../../admin/jobsite/JobsiteTaskCard';
 import JobsiteTaskForm from '../../admin/jobsite/JobsiteTaskForm';
 import { ForemanJobsite } from '@/hooks/useForemanJobsites';
+import { AdvancedTaskList } from '../../admin/tasks/AdvancedTaskList';
+import { AdvancedTaskForm } from '../../admin/tasks/AdvancedTaskForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useJobsiteTasksAdvanced } from '@/hooks/useJobsiteTasksAdvanced';
 
 interface ForemanJobsiteProgressCardProps {
   jobsite: ForemanJobsite;
@@ -19,7 +23,7 @@ const ForemanJobsiteProgressCard: React.FC<ForemanJobsiteProgressCardProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const { user } = useAuth();
-  const { data: tasks = [], isLoading } = useJobsiteTasks(jobsite.id);
+  const { data: tasks = [], isLoading } = useJobsiteTasksAdvanced(jobsite.id, {});
 
   const isForeman = user?.role === 'foreman';
 
@@ -197,7 +201,7 @@ const ForemanJobsiteProgressCard: React.FC<ForemanJobsiteProgressCardProps> = ({
                 <h4 className="font-medium">Tasks & Phases</h4>
                 <Button
                   size="sm"
-                  onClick={() => setShowAddForm(!showAddForm)}
+                  onClick={() => setShowAddForm(true)}
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Task
@@ -205,32 +209,27 @@ const ForemanJobsiteProgressCard: React.FC<ForemanJobsiteProgressCardProps> = ({
               </div>
             )}
 
-            {/* Add Task Form */}
-            {showAddForm && isForeman && (
-              <JobsiteTaskForm
-                jobsiteId={jobsite.id}
-                onCancel={() => setShowAddForm(false)}
-                onSuccess={() => setShowAddForm(false)}
-              />
-            )}
-
             {/* Task List */}
-            {isLoading ? (
-              <div className="text-center py-4 text-muted-foreground">Loading tasks...</div>
-            ) : tasks.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {isForeman ? 'No tasks yet. Add your first task to get started.' : 'No tasks available for this jobsite.'}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {tasks.map((task) => (
-                  <JobsiteTaskCard 
-                    key={task.id} 
-                    task={task} 
-                    isAdmin={isForeman}
+            <AdvancedTaskList
+              jobsiteId={jobsite.id}
+              filters={{}}
+              isAdmin={isForeman}
+            />
+
+            {/* Add Task Dialog */}
+            {isForeman && (
+              <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Create New Task</DialogTitle>
+                  </DialogHeader>
+                  <AdvancedTaskForm
+                    jobsiteId={jobsite.id}
+                    onCancel={() => setShowAddForm(false)}
+                    onSuccess={() => setShowAddForm(false)}
                   />
-                ))}
-              </div>
+                </DialogContent>
+              </Dialog>
             )}
           </div>
         </CardContent>

@@ -29,14 +29,21 @@ import SystemSettings from '@/components/admin/SystemSettings';
 import IncomeExpensesManagement from '@/components/admin/IncomeExpensesManagement';
 import TimeRequestsManagement from '@/components/admin/TimeRequestsManagement';
 import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
+import AdvancedTaskManagementPage from '@/pages/admin/AdvancedTaskManagementPage';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const params = useParams();
   const [searchParams] = useSearchParams();
 
-  // Update activeTab based on URL parameters
+  // Update activeTab based on URL path and parameters
   useEffect(() => {
+    // Handle /admin/tasks route
+    if (window.location.pathname === '/admin/tasks') {
+      setActiveTab('task-management');
+      return;
+    }
+    
     const tabParam = searchParams.get('tab');
     if (tabParam) {
       setActiveTab(tabParam);
@@ -59,6 +66,8 @@ const AdminDashboard = () => {
         return <EmployeeRegistration />;
       case 'jobsites':
         return <JobsiteManagement />;
+      case 'task-management':
+        return <AdvancedTaskManagementPage />;
       case 'safety-templates':
         return <SafetyTemplatesManagement />;
       case 'inventory':

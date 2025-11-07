@@ -13,6 +13,7 @@ import JobsiteMaterialTakeoff from './JobsiteMaterialTakeoff';
 import JobsiteEditModal from './JobsiteEditModal';
 import EditJobsiteDialog from './EditJobsiteDialog';
 import JobsiteDeleteDialog from './JobsiteDeleteDialog';
+import JobsiteTaskTab from '../tasks/JobsiteTaskTab';
 
 interface Jobsite {
   id: string;
@@ -233,23 +234,8 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
             </TabsContent>
 
             <TabsContent value="tasks" className="mt-6">
-              <div className="space-y-3">
-                {tasksLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <div className="animate-pulse">Loading tasks...</div>
-                  </div>
-                ) : tasks.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <ClipboardList className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm italic">No tasks created for this jobsite yet.</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {tasks.map((task) => (
-                      <JobsiteTaskCard key={task.id} task={task} isAdmin={true} />
-                    ))}
-                  </div>
-                )}
+              <div className="rounded-xl bg-muted/20 border p-4">
+                <JobsiteTaskTab jobsiteId={jobsite.id} isAdmin={true} />
               </div>
             </TabsContent>
           </Tabs>

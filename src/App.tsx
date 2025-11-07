@@ -102,6 +102,14 @@ const AppInner: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/tasks"
+          element={
+            <ProtectedRoute requireSubscription>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
