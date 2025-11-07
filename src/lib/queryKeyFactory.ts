@@ -21,6 +21,9 @@ export const queryKeys = {
     list: (companyId: string) => [...queryKeys.jobsite.all, 'list', companyId] as const,
     detail: (jobsiteId: string) => [...queryKeys.jobsite.all, 'detail', jobsiteId] as const,
     tasks: (jobsiteId: string) => [...queryKeys.jobsite.all, 'tasks', jobsiteId] as const,
+    tasksAdvanced: (jobsiteId: string, filters?: any) => 
+      [...queryKeys.jobsite.all, 'tasks-advanced', jobsiteId, filters] as const,
+    taskTags: (companyId: string) => [...queryKeys.jobsite.all, 'task-tags', companyId] as const,
     foremen: (jobsiteId: string) => [...queryKeys.jobsite.all, 'foremen', jobsiteId] as const,
   },
   
