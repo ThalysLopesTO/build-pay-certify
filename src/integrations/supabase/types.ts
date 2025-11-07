@@ -2492,6 +2492,109 @@ export type Database = {
           },
         ]
       }
+      subtask_assignees: {
+        Row: {
+          assigned_at: string | null
+          subtask_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          subtask_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          subtask_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtask_assignees_subtask_id_fkey"
+            columns: ["subtask_id"]
+            isOneToOne: false
+            referencedRelation: "subtasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtask_tag_links: {
+        Row: {
+          created_at: string | null
+          subtask_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          subtask_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string | null
+          subtask_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtask_tag_links_subtask_id_fkey"
+            columns: ["subtask_id"]
+            isOneToOne: false
+            referencedRelation: "subtasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtask_tag_links_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "task_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtasks: {
+        Row: {
+          created_at: string | null
+          due_time: string | null
+          id: string
+          notes: string | null
+          sort_order: number | null
+          status: string | null
+          task_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          due_time?: string | null
+          id?: string
+          notes?: string | null
+          sort_order?: number | null
+          status?: string | null
+          task_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          due_time?: string | null
+          id?: string
+          notes?: string | null
+          sort_order?: number | null
+          status?: string | null
+          task_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           address: string | null
@@ -2535,6 +2638,160 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_assignees: {
+        Row: {
+          assigned_at: string | null
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignees_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_tag_links: {
+        Row: {
+          created_at: string | null
+          tag_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          tag_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string | null
+          tag_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_tag_links_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "task_tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_tag_links_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_tags: {
+        Row: {
+          color: string | null
+          company_id: string
+          created_at: string | null
+          id: string
+          label: string
+        }
+        Insert: {
+          color?: string | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          label: string
+        }
+        Update: {
+          color?: string | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_tags_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string
+          description: string | null
+          due_time: string | null
+          id: string
+          jobsite_id: string
+          priority: string | null
+          status: string | null
+          task_date: string
+          title: string
+          trade: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          due_time?: string | null
+          id?: string
+          jobsite_id: string
+          priority?: string | null
+          status?: string | null
+          task_date: string
+          title: string
+          trade?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          due_time?: string | null
+          id?: string
+          jobsite_id?: string
+          priority?: string | null
+          status?: string | null
+          task_date?: string
+          title?: string
+          trade?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
             referencedColumns: ["id"]
           },
         ]
