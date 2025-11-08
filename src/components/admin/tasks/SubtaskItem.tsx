@@ -8,24 +8,24 @@ import { CheckCircle2, Circle, Clock } from 'lucide-react';
 interface SubtaskItemProps {
   subtask: Subtask;
   isEditing: boolean;
-  onToggleStatus?: (subtaskId: string, newStatus: 'pending' | 'in_progress' | 'completed') => void;
+  onToggleStatus?: (subtaskId: string, newStatus: 'pending' | 'in_progress' | 'done') => void;
 }
 
 const statusIcons = {
   pending: Circle,
   in_progress: Clock,
-  completed: CheckCircle2,
+  done: CheckCircle2,
 };
 
 const statusColors = {
   pending: 'text-muted-foreground',
   in_progress: 'text-primary',
-  completed: 'text-green-600 dark:text-green-400',
+  done: 'text-green-600 dark:text-green-400',
 };
 
 export function SubtaskItem({ subtask, isEditing, onToggleStatus }: SubtaskItemProps) {
   const StatusIcon = statusIcons[subtask.status];
-  const isCompleted = subtask.status === 'completed';
+  const isCompleted = subtask.status === 'done';
 
   const getInitials = (firstName?: string | null, lastName?: string | null) => {
     return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || '?';
@@ -33,7 +33,7 @@ export function SubtaskItem({ subtask, isEditing, onToggleStatus }: SubtaskItemP
 
   const handleToggle = () => {
     if (onToggleStatus) {
-      const newStatus = isCompleted ? 'pending' : 'completed';
+      const newStatus = isCompleted ? 'pending' : 'done';
       onToggleStatus(subtask.id, newStatus);
     }
   };

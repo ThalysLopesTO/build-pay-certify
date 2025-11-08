@@ -2,6 +2,7 @@ import { TaskFilters } from '@/hooks/useJobsiteTasksAdvanced';
 import { useTaskTags } from '@/hooks/useJobsiteTasksAdvanced';
 import { useEmployees } from '@/hooks/new/useUsers';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
@@ -30,7 +31,7 @@ export function TaskFilterPanel({ filters, onFiltersChange, onClearFilters }: Ta
   const statusOptions = [
     { value: 'pending', label: 'Pending' },
     { value: 'in_progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
+    { value: 'done', label: 'Done' },
   ];
 
   const priorityOptions = [
@@ -43,9 +44,8 @@ export function TaskFilterPanel({ filters, onFiltersChange, onClearFilters }: Ta
     filters.status,
     filters.priority,
     filters.trade,
-    filters.startDate,
-    filters.endDate,
-    filters.employeeIds?.length ? filters.employeeIds : null,
+    filters.taskDate,
+    filters.assigneeIds?.length ? filters.assigneeIds : null,
     filters.tagIds?.length ? filters.tagIds : null,
   ].filter(Boolean).length;
 
@@ -64,13 +64,13 @@ export function TaskFilterPanel({ filters, onFiltersChange, onClearFilters }: Ta
   };
 
   const handleEmployeeToggle = (userId: string) => {
-    const current = filters.employeeIds || [];
+    const current = filters.assigneeIds || [];
     const updated = current.includes(userId)
       ? current.filter(id => id !== userId)
       : [...current, userId];
     onFiltersChange({
       ...filters,
-      employeeIds: updated.length > 0 ? updated : undefined,
+      assigneeIds: updated.length > 0 ? updated : undefined,
     });
   };
 
@@ -159,54 +159,14 @@ export function TaskFilterPanel({ filters, onFiltersChange, onClearFilters }: Ta
           </Popover>
         </div>
 
-        {/* Start Date Filter */}
+        {/* Trade Filter */}
         <div className="space-y-2">
-          <Label>Start Date</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-start">
-                <CalendarIcon className="w-4 h-4 mr-2" />
-                {filters.startDate ? format(new Date(filters.startDate), 'PP') : 'Select date'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={filters.startDate ? new Date(filters.startDate) : undefined}
-                onSelect={(date) => onFiltersChange({
-                  ...filters,
-                  startDate: date ? format(date, 'yyyy-MM-dd') : undefined,
-                })}
-                initialFocus
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        {/* End Date Filter */}
-        <div className="space-y-2">
-          <Label>End Date</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-start">
-                <CalendarIcon className="w-4 h-4 mr-2" />
-                {filters.endDate ? format(new Date(filters.endDate), 'PP') : 'Select date'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={filters.endDate ? new Date(filters.endDate) : undefined}
-                onSelect={(date) => onFiltersChange({
-                  ...filters,
-                  endDate: date ? format(date, 'yyyy-MM-dd') : undefined,
-                })}
-                initialFocus
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
+          <Label>Trade</Label>
+          <Input
+            placeholder="Filter by trade..."
+            value={filters.trade || ''}
+            onChange={(e) => onFiltersChange({ ...filters, trade: e.target.value || undefined })}
+          />
         </div>
 
         {/* Assignees Filter */}
@@ -215,8 +175,8 @@ export function TaskFilterPanel({ filters, onFiltersChange, onClearFilters }: Ta
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start">
-                {filters.employeeIds && filters.employeeIds.length > 0
-                  ? `${filters.employeeIds.length} selected`
+                {filters.assigneeIds && filters.assigneeIds.length > 0
+                  ? `${filters.assigneeIds.length} selected`
                   : 'All Assignees'}
               </Button>
             </PopoverTrigger>
@@ -227,7 +187,7 @@ export function TaskFilterPanel({ filters, onFiltersChange, onClearFilters }: Ta
                   className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted cursor-pointer"
                 >
                   <Checkbox
-                    checked={filters.employeeIds?.includes(user.user_id)}
+                    checked={filters.assigneeIds?.includes(user.user_id)}
                     onCheckedChange={() => handleEmployeeToggle(user.user_id)}
                   />
                   <span className="text-sm">{user.first_name} {user.last_name}</span>
@@ -297,24 +257,12 @@ export function TaskFilterPanel({ filters, onFiltersChange, onClearFilters }: Ta
               </button>
             </Badge>
           )}
-          {filters.startDate && (
+          {filters.trade && (
             <Badge variant="secondary" className="gap-1">
-              From: {format(new Date(filters.startDate), 'PP')}
+              Trade: {filters.trade}
               <button
                 type="button"
-                onClick={() => onFiltersChange({ ...filters, startDate: undefined })}
-                className="hover:bg-background/50 rounded-full"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </Badge>
-          )}
-          {filters.endDate && (
-            <Badge variant="secondary" className="gap-1">
-              To: {format(new Date(filters.endDate), 'PP')}
-              <button
-                type="button"
-                onClick={() => onFiltersChange({ ...filters, endDate: undefined })}
+                onClick={() => onFiltersChange({ ...filters, trade: undefined })}
                 className="hover:bg-background/50 rounded-full"
               >
                 <X className="w-3 h-3" />
