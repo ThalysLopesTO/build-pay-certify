@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,8 +39,9 @@ import { cn } from '@/lib/utils';
 import { DateGroupHeader } from './DateGroupHeader';
 
 export function DailyTaskScreen() {
-  const { jobsiteId } = useParams<{ jobsiteId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const jobsiteId = searchParams.get('jobsite') || undefined;
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -105,7 +106,7 @@ export function DailyTaskScreen() {
       <div className="container max-w-7xl mx-auto p-4 sm:p-6">
         <div className="text-center py-12">
           <p className="text-muted-foreground">Jobsite not found</p>
-          <Button onClick={() => navigate('/admin/tasks')} className="mt-4">
+          <Button onClick={() => navigate('/admin/dashboard?tab=tasks')} className="mt-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Jobsites
           </Button>
@@ -122,7 +123,7 @@ export function DailyTaskScreen() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/admin/tasks')}
+            onClick={() => navigate('/admin/dashboard?tab=tasks')}
             className="md:flex"
           >
             <ArrowLeft className="w-5 h-5" />

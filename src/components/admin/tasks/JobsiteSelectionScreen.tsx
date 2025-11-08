@@ -67,7 +67,7 @@ export function JobsiteSelectionScreen() {
             <JobsiteCard
               key={jobsite.id}
               jobsite={jobsite}
-              onClick={() => navigate(`/admin/tasks/${jobsite.id}`)}
+              onClick={() => navigate(`/admin/dashboard?tab=tasks&jobsite=${jobsite.id}`)}
             />
           ))
         )}

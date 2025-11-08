@@ -29,6 +29,8 @@ import SystemSettings from '@/components/admin/SystemSettings';
 import IncomeExpensesManagement from '@/components/admin/IncomeExpensesManagement';
 import TimeRequestsManagement from '@/components/admin/TimeRequestsManagement';
 import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
+import { JobsiteSelectionScreen } from '@/components/admin/tasks/JobsiteSelectionScreen';
+import { DailyTaskScreen } from '@/components/admin/tasks/DailyTaskScreen';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -91,6 +93,15 @@ const AdminDashboard = () => {
         return <IncomeExpensesManagement />;
       case 'time-requests':
         return <TimeRequestsManagement />;
+      case 'tasks':
+        // Check if jobsite ID is in query params
+        const jobsiteId = searchParams.get('jobsite');
+        if (jobsiteId) {
+          // Render task list for specific jobsite
+          return <DailyTaskScreen />;
+        }
+        // Otherwise show jobsite selection
+        return <JobsiteSelectionScreen />;
       case 'company-settings':
         return <SystemSettings />;
       case 'settings':
