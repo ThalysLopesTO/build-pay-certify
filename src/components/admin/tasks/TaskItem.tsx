@@ -170,10 +170,10 @@ export function TaskItem({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         className={cn(
-          'border border-border rounded-xl p-4 transition-all duration-200',
-          'hover:shadow-md hover:border-primary/30 bg-card',
+          'py-3 px-2 transition-all duration-200 border-b border-border',
+          'hover:bg-muted/50 cursor-pointer',
           isExpanded && 'bg-muted/30',
-          isOverdue && 'border-destructive/50'
+          isOverdue && 'bg-destructive/5 border-l-4 border-l-destructive'
         )}
       >
         <div className="flex items-start gap-3">
@@ -357,13 +357,6 @@ export function TaskItem({
                 )}
               </div>
             </div>
-
-            {/* Description */}
-            {task.description && !isExpanded && (
-              <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                {task.description}
-              </p>
-            )}
 
             {/* Expanded Details */}
             <AnimatePresence>
