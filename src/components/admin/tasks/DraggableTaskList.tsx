@@ -3,6 +3,7 @@ import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-ki
 import { Task } from '@/hooks/useJobsiteTasksAdvanced';
 import { DraggableTaskItem } from './DraggableTaskItem';
 import { useState, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DraggableTaskListProps {
   tasks: Task[];
@@ -29,6 +30,7 @@ export function DraggableTaskList({
   onSelect,
   onReorder,
 }: DraggableTaskListProps) {
+  const isMobile = useIsMobile();
   const [orderedTasks, setOrderedTasks] = useState(tasks);
   
   // Sync with prop changes
@@ -68,6 +70,31 @@ export function DraggableTaskList({
     onReorder(updates);
   };
 
+  const taskList = (
+    <div className="space-y-0">
+      {orderedTasks.map((task) => (
+        <DraggableTaskItem
+          key={task.id}
+          task={task}
+          isExpanded={expandedTaskIds.has(task.id)}
+          isSelected={selectedTaskIds.has(task.id)}
+          onToggle={() => onToggle(task.id)}
+          onEdit={() => onEdit(task.id)}
+          onDuplicate={() => onDuplicate(task.id)}
+          onMoveToTomorrow={() => onMoveToTomorrow(task.id)}
+          onDelete={() => onDelete(task.id)}
+          onSelect={() => onSelect(task.id)}
+        />
+      ))}
+    </div>
+  );
+
+  // On mobile, disable drag-and-drop (use swipe gestures instead)
+  if (isMobile) {
+    return taskList;
+  }
+
+  // On desktop/tablet, use drag-and-drop for reordering
   return (
     <DndContext
       sensors={sensors}
@@ -78,22 +105,7 @@ export function DraggableTaskList({
         items={orderedTasks.map((t) => t.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="space-y-0">
-          {orderedTasks.map((task) => (
-            <DraggableTaskItem
-              key={task.id}
-              task={task}
-              isExpanded={expandedTaskIds.has(task.id)}
-              isSelected={selectedTaskIds.has(task.id)}
-              onToggle={() => onToggle(task.id)}
-              onEdit={() => onEdit(task.id)}
-              onDuplicate={() => onDuplicate(task.id)}
-              onMoveToTomorrow={() => onMoveToTomorrow(task.id)}
-              onDelete={() => onDelete(task.id)}
-              onSelect={() => onSelect(task.id)}
-            />
-          ))}
-        </div>
+        {taskList}
       </SortableContext>
     </DndContext>
   );
