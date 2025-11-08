@@ -15,7 +15,6 @@ export interface TaskTag {
   label: string;
   color: string;
   created_at: string;
-  updated_at: string;
 }
 
 export interface TaskAssignee {
@@ -159,8 +158,7 @@ export const useJobsiteTasksAdvanced = (jobsiteId?: string, filters?: TaskFilter
               company_id,
               label,
               color,
-              created_at,
-              updated_at
+              created_at
             )
           ),
           subtasks(
@@ -191,8 +189,7 @@ export const useJobsiteTasksAdvanced = (jobsiteId?: string, filters?: TaskFilter
                 company_id,
                 label,
                 color,
-                created_at,
-                updated_at
+                created_at
               )
             )
           )
