@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface JobsiteTaskTabProps {
   jobsiteId: string;
   isAdmin: boolean;
+  hideStats?: boolean;
+  compact?: boolean;
 }
 
-export default function JobsiteTaskTab({ jobsiteId, isAdmin }: JobsiteTaskTabProps) {
+export function JobsiteTaskTab({ jobsiteId, isAdmin, hideStats = false, compact = false }: JobsiteTaskTabProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [filters, setFilters] = useState<TaskFilters>({});
 
@@ -32,57 +34,59 @@ export default function JobsiteTaskTab({ jobsiteId, isAdmin }: JobsiteTaskTabPro
   }).length;
 
   return (
-    <div className="space-y-4">
+    <div className={compact ? "space-y-4" : "space-y-6"}>
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{totalTasks}</p>
+      {!hideStats && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total</p>
+                  <p className="text-2xl font-bold">{totalTasks}</p>
+                </div>
+                <ListTodo className="w-8 h-8 text-muted-foreground" />
               </div>
-              <ListTodo className="w-8 h-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">In Progress</p>
-                <p className="text-2xl font-bold text-blue-600">{inProgressTasks}</p>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">In Progress</p>
+                  <p className="text-2xl font-bold text-blue-600">{inProgressTasks}</p>
+                </div>
+                <Clock className="w-8 h-8 text-blue-600" />
               </div>
-              <Clock className="w-8 h-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold text-green-600">{completedTasks}</p>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Completed</p>
+                  <p className="text-2xl font-bold text-green-600">{completedTasks}</p>
+                </div>
+                <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
-              <CheckCircle2 className="w-8 h-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold text-destructive">{overdueTasks}</p>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Overdue</p>
+                  <p className="text-2xl font-bold text-destructive">{overdueTasks}</p>
+                </div>
+                <AlertTriangle className="w-8 h-8 text-destructive" />
               </div>
-              <AlertTriangle className="w-8 h-8 text-destructive" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Quick Filters */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">

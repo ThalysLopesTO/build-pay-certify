@@ -13,7 +13,7 @@ import JobsiteMaterialTakeoff from './JobsiteMaterialTakeoff';
 import JobsiteEditModal from './JobsiteEditModal';
 import EditJobsiteDialog from './EditJobsiteDialog';
 import JobsiteDeleteDialog from './JobsiteDeleteDialog';
-import JobsiteTaskTab from '../tasks/JobsiteTaskTab';
+import { JobsiteTaskTab } from '../tasks/JobsiteTaskTab';
 
 interface Jobsite {
   id: string;
