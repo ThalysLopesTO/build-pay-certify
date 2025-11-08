@@ -2,25 +2,22 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   ArrowLeft,
   Calendar as CalendarIcon,
   Plus,
   ListTodo,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
   MoreVertical,
   Download,
+  Trash2,
 } from 'lucide-react';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useJobsiteTasksAdvanced, useTaskActions } from '@/hooks/useJobsiteTasksAdvanced';
-import { format, startOfToday, subDays, addDays } from 'date-fns';
+import { format, startOfToday, addDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import {  Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { DailyTaskCard } from './DailyTaskCard';
 import { DailyTaskForm } from './DailyTaskForm';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -51,6 +48,7 @@ export function DailyTaskScreen() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [showBulkMoveDialog, setShowBulkMoveDialog] = useState(false);
   const [bulkMoveTargetDate, setBulkMoveTargetDate] = useState<Date | undefined>();
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'completed' | 'overdue'>('all');
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
   const { data: jobsites = [] } = useJobsites('active');
@@ -78,16 +76,16 @@ export function DailyTaskScreen() {
     return t.task_date < todayInCompanyTZ;
   }).length;
 
-  const handleQuickDateChange = (type: 'yesterday' | 'today' | 'tomorrow') => {
-    if (type === 'today') {
-      setSelectedDate(startOfToday());
-    } else if (type === 'yesterday') {
-      setSelectedDate(subDays(startOfToday(), 1));
-    } else {
-      setSelectedDate(addDays(startOfToday(), 1));
+  // Filter tasks based on status
+  const filteredTasks = tasks.filter(task => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'open') return task.status !== 'done';
+    if (statusFilter === 'completed') return task.status === 'done';
+    if (statusFilter === 'overdue') {
+      return task.task_date && task.task_date < todayInCompanyTZ && task.status !== 'done';
     }
-    setSelectedTaskIds(new Set()); // Clear selection when changing dates
-  };
+    return true;
+  });
 
   const handleToggleTaskSelection = (taskId: string) => {
     setSelectedTaskIds(prev => {
@@ -102,10 +100,10 @@ export function DailyTaskScreen() {
   };
 
   const handleSelectAll = () => {
-    if (selectedTaskIds.size === tasks.length) {
+    if (selectedTaskIds.size === filteredTasks.length && filteredTasks.length > 0) {
       setSelectedTaskIds(new Set());
     } else {
-      setSelectedTaskIds(new Set(tasks.map(t => t.id)));
+      setSelectedTaskIds(new Set(filteredTasks.map(t => t.id)));
     }
   };
 
@@ -183,175 +181,254 @@ export function DailyTaskScreen() {
 
   return (
     <div className="container max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      {/* Modern Clean Header */}
+      <div className="space-y-2 mb-6">
+        {/* Back button + Actions on same line */}
+        <div className="flex items-center justify-between">
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={() => navigate('/admin/dashboard?tab=tasks')}
-            className="md:flex"
+            className="text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
           </Button>
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-foreground truncate">{jobsite.name}</h1>
-            <p className="text-sm text-muted-foreground hidden sm:block">Daily Task Management</p>
+          
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => setShowCreateForm(true)} 
+              className="hidden md:flex rounded-full px-6"
+              size="lg"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              New Task
+            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Tasks
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          {/* Desktop: Add Task Button */}
-          <Button onClick={() => setShowCreateForm(true)} className="hidden md:flex">
-            <Plus className="w-4 h-4 mr-2" />
-            Create Task
-          </Button>
-
-          {/* Actions Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        
+        {/* Large Title Section */}
+        <div className="space-y-1">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
+            {format(selectedDate, 'yyyy-MM-dd') === format(startOfToday(), 'yyyy-MM-dd') 
+              ? "Today's Tasks" 
+              : format(selectedDate, 'EEEE')}
+          </h1>
+          <p className="text-base text-muted-foreground font-medium">
+            {format(selectedDate, 'EEEE, d MMMM yyyy')}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {jobsite.name}
+          </p>
         </div>
       </div>
 
-      {/* Date Quick Filters */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        <Button
-          variant={format(selectedDate, 'yyyy-MM-dd') === format(subDays(startOfToday(), 1), 'yyyy-MM-dd') ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => handleQuickDateChange('yesterday')}
-        >
-          Yesterday
-        </Button>
-        <Button
-          variant={format(selectedDate, 'yyyy-MM-dd') === format(startOfToday(), 'yyyy-MM-dd') ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => handleQuickDateChange('today')}
-        >
-          Today
-        </Button>
-        <Button
-          variant={format(selectedDate, 'yyyy-MM-dd') === format(addDays(startOfToday(), 1), 'yyyy-MM-dd') ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => handleQuickDateChange('tomorrow')}
-        >
-          Tomorrow
-        </Button>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm">
-              <CalendarIcon className="w-4 h-4 mr-2" />
-              Custom Date
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
-              initialFocus
-              className="pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
+      {/* Horizontal Date Picker - Similar to reference */}
+      <div className="relative mb-6">
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide">
+          {/* Generate 7 days: 3 before, today, 3 after */}
+          {[-3, -2, -1, 0, 1, 2, 3].map((offset) => {
+            const date = addDays(startOfToday(), offset);
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const isSelected = format(selectedDate, 'yyyy-MM-dd') === dateStr;
+            const isToday = format(startOfToday(), 'yyyy-MM-dd') === dateStr;
+            
+            return (
+              <button
+                key={offset}
+                onClick={() => {
+                  setSelectedDate(date);
+                  setSelectedTaskIds(new Set());
+                }}
+                className={cn(
+                  'flex flex-col items-center justify-center min-w-[64px] h-[72px] rounded-xl transition-all',
+                  'border-2 hover:border-primary/50',
+                  isSelected 
+                    ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700' 
+                    : 'bg-card border-border hover:bg-muted',
+                  isToday && !isSelected && 'border-primary/30'
+                )}
+              >
+                <span className={cn(
+                  'text-xs font-medium uppercase tracking-wide',
+                  isSelected ? 'text-amber-900 dark:text-amber-100' : 'text-muted-foreground'
+                )}>
+                  {format(date, 'EEE')}
+                </span>
+                <span className={cn(
+                  'text-2xl font-bold mt-1',
+                  isSelected ? 'text-amber-900 dark:text-amber-100' : 'text-foreground'
+                )}>
+                  {format(date, 'd')}
+                </span>
+              </button>
+            );
+          })}
+          
+          {/* Custom Date Picker Button */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                'flex flex-col items-center justify-center min-w-[64px] h-[72px] rounded-xl transition-all',
+                'border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-muted'
+              )}>
+                <CalendarIcon className="w-5 h-5 text-muted-foreground" />
+                <span className="text-xs mt-1 text-muted-foreground">More</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  if (date) {
+                    setSelectedDate(date);
+                    setSelectedTaskIds(new Set());
+                  }
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
-      {/* Summary Cards (Desktop Only) */}
-      <div className="hidden md:grid grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{totalTasks}</p>
-              </div>
+      {/* Status Filter Tabs */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-3 mb-6 border-b scrollbar-hide">
+        <button
+          onClick={() => setStatusFilter('all')}
+          className={cn(
+            'px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2',
+            statusFilter === 'all'
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+          )}
+        >
+          All
+          <Badge className={cn(
+            'border-0',
+            statusFilter === 'all' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'
+          )}>{totalTasks}</Badge>
+        </button>
+        
+        <button
+          onClick={() => setStatusFilter('open')}
+          className={cn(
+            'px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2',
+            statusFilter === 'open'
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+          )}
+        >
+          Open
+          <Badge className={cn(
+            'border-0',
+            statusFilter === 'open' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'
+          )}>
+            {tasks.filter(t => t.status !== 'done').length}
+          </Badge>
+        </button>
+        
+        <button
+          onClick={() => setStatusFilter('completed')}
+          className={cn(
+            'px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2',
+            statusFilter === 'completed'
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+          )}
+        >
+          Completed
+          <Badge className={cn(
+            'border-0',
+            statusFilter === 'completed' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'
+          )}>
+            {completedTasks}
+          </Badge>
+        </button>
+        
+        <button
+          onClick={() => setStatusFilter('overdue')}
+          className={cn(
+            'px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2',
+            statusFilter === 'overdue'
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+          )}
+        >
+          Overdue
+          <Badge className={cn(
+            'border-0',
+            statusFilter === 'overdue' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'
+          )}>
+            {overdueTasks}
+          </Badge>
+        </button>
+      </div>
+
+      {/* Task List - Clean Design */}
+      <div className="space-y-3">
+        {filteredTasks.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
               <ListTodo className="w-8 h-8 text-muted-foreground" />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">In Progress</p>
-                <p className="text-2xl font-bold text-blue-600">{inProgressTasks}</p>
-              </div>
-              <Clock className="w-8 h-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold text-green-600">{completedTasks}</p>
-              </div>
-              <CheckCircle2 className="w-8 h-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold text-destructive">{overdueTasks}</p>
-              </div>
-              <AlertTriangle className="w-8 h-8 text-destructive" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tasks for Selected Date */}
-      <div className="space-y-4">
-        {tasks.length === 0 ? (
-          <div className="text-center py-12">
-            <ListTodo className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              No Tasks for {format(selectedDate, 'MMMM dd, yyyy')}
+              No tasks {statusFilter !== 'all' && statusFilter}
             </h3>
-            <p className="text-sm text-muted-foreground mb-4">Create a task to get started</p>
-            <Button onClick={() => setShowCreateForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Task
-            </Button>
+            <p className="text-sm text-muted-foreground mb-6">
+              {statusFilter === 'all' 
+                ? `Create your first task for ${format(selectedDate, 'MMMM d')}`
+                : `All tasks are ${statusFilter === 'completed' ? 'incomplete' : 'up to date'}!`
+              }
+            </p>
+            {statusFilter === 'all' && (
+              <Button onClick={() => setShowCreateForm(true)} className="rounded-full px-6">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Task
+              </Button>
+            )}
           </div>
         ) : (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  checked={tasks.length > 0 && selectedTaskIds.size === tasks.length}
-                  onCheckedChange={handleSelectAll}
-                  className="h-5 w-5"
-                />
-                <h3 className="text-lg font-semibold">
-                  {format(selectedDate, 'EEEE, MMMM dd, yyyy')}
-                </h3>
+          <>
+            {/* Select All Header - Only show when viewing all */}
+            {statusFilter === 'all' && (
+              <div className="flex items-center justify-between py-3 px-2">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={filteredTasks.length > 0 && selectedTaskIds.size === filteredTasks.length}
+                    onCheckedChange={handleSelectAll}
+                    className="h-5 w-5"
+                  />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {selectedTaskIds.size > 0 
+                      ? `${selectedTaskIds.size} selected` 
+                      : 'Select all'}
+                  </span>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {completedTasks} of {totalTasks} completed
+                </span>
               </div>
-              <span className="text-sm text-muted-foreground">
-                {selectedTaskIds.size > 0 
-                  ? `${selectedTaskIds.size} selected` 
-                  : `${completedTasks} of ${totalTasks} completed`}
-              </span>
-            </div>
-            <div className="divide-y divide-border rounded-lg border bg-card">
-              {tasks.map((task) => (
+            )}
+            
+            {/* Task Cards with spacing */}
+            <div className="space-y-2">
+              {filteredTasks.map((task) => (
                 <DailyTaskCard
                   key={task.id}
                   task={task}
@@ -361,7 +438,7 @@ export function DailyTaskScreen() {
                 />
               ))}
             </div>
-          </div>
+          </>
         )}
       </div>
 
@@ -396,13 +473,13 @@ export function DailyTaskScreen() {
         </div>
       )}
 
-      {/* Mobile FAB */}
+      {/* Mobile FAB - Cleaner design */}
       <Button
         onClick={() => setShowCreateForm(true)}
-        className="md:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+        className="md:hidden fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-xl z-40 bg-foreground text-background hover:bg-foreground/90"
         size="icon"
       >
-        <Plus className="w-6 h-6" />
+        <Plus className="w-7 h-7" />
       </Button>
 
       {/* Create/Edit Task Form */}

@@ -310,3 +310,29 @@
 .dark .select-viewport-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }
+
+/* Hide scrollbar for horizontal date picker */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth task card animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.task-card-enter {
+  animation: slideIn 0.2s ease-out;
+}

@@ -15,12 +15,9 @@ import {
   Clock,
   MoreVertical,
   Edit,
-  Copy,
   ArrowRight,
   Trash2,
-  ChevronDown,
-  ChevronUp,
-  Tag as TagIcon,
+  CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addDays } from 'date-fns';
@@ -112,218 +109,198 @@ export function DailyTaskCard({ task, onEdit, isSelected = false, onToggleSelect
     });
   };
 
+  const isCompleted = task.status === 'done';
+
   return (
     <>
+      {/* Clean Card Design */}
       <div className={cn(
-        'p-4 hover:bg-muted/30 transition-colors',
-        isOverdue && 'bg-red-50/50 dark:bg-red-950/20',
-        isSelected && 'bg-blue-50 dark:bg-blue-950/30 border-l-4 border-l-blue-500'
+        'group relative rounded-xl transition-all duration-200',
+        'bg-card border hover:shadow-md',
+        isSelected && 'ring-2 ring-primary bg-primary/5',
+        isOverdue && !isCompleted && 'bg-destructive/5 border-destructive/20',
+        isCompleted && 'opacity-60'
       )}>
-        <div className="flex items-start gap-3">
-          {/* Selection Checkbox */}
-          {onToggleSelection && (
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={onToggleSelection}
-              className="mt-1 h-5 w-5 border-2"
-              onClick={(e) => e.stopPropagation()}
-            />
-          )}
-          
-          {/* Completion Checkbox */}
-          <Checkbox
-            checked={task.status === 'done'}
-            onCheckedChange={handleToggleStatus}
-            className="mt-1 h-5 w-5"
-          />
-
-          {/* Task Content */}
-          <div className="flex-1 min-w-0 space-y-3">
-            {/* Title & Priority */}
-            <div className="flex items-start justify-between gap-2">
-              <h4
-                className={cn(
-                  'font-semibold text-base',
-                  task.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'
+        <div className="p-5">
+          <div className="flex items-start gap-4">
+            {/* Left Side: Checkboxes */}
+            <div className="flex items-center gap-3 pt-1">
+              {/* Selection Checkbox */}
+              {onToggleSelection && (
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={onToggleSelection}
+                  className="h-5 w-5"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
+              
+              {/* Completion Checkbox - Larger, more prominent */}
+              <div className="relative">
+                <Checkbox
+                  checked={isCompleted}
+                  onCheckedChange={handleToggleStatus}
+                  className={cn(
+                    'h-6 w-6 rounded-full border-2 transition-all',
+                    isCompleted && 'bg-primary border-primary'
+                  )}
+                />
+                {/* Blue checkmark when completed */}
+                {isCompleted && (
+                  <div className="absolute -top-0.5 -right-0.5">
+                    <CheckCircle2 className="w-7 h-7 text-primary fill-primary" />
+                  </div>
                 )}
-              >
+              </div>
+            </div>
+
+            {/* Middle: Task Content */}
+            <div className="flex-1 min-w-0 space-y-2">
+              {/* Task Title - Larger, cleaner typography */}
+              <h4 className={cn(
+                'text-lg font-semibold leading-tight',
+                isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'
+              )}>
                 {task.title}
               </h4>
+
+              {/* Subtitle/Category */}
+              {(task.trade || task.tags?.[0]) && (
+                <p className="text-sm text-muted-foreground">
+                  {task.trade || task.tags?.[0]?.label}
+                </p>
+              )}
+
+              {/* Meta Row: Time + Priority */}
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Time Display */}
+                {task.due_time && (
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span>{task.due_time}</span>
+                  </div>
+                )}
+
+                {/* Priority Dot (minimal) */}
+                {task.priority && (
+                  <div className={cn(
+                    'w-2 h-2 rounded-full',
+                    task.priority === 'low' && 'bg-blue-500',
+                    task.priority === 'medium' && 'bg-yellow-500',
+                    task.priority === 'high' && 'bg-orange-500'
+                  )} />
+                )}
+
+                {/* Overdue indicator */}
+                {isOverdue && (
+                  <Badge variant="destructive" className="text-xs font-medium">
+                    Overdue
+                  </Badge>
+                )}
+              </div>
+
+              {/* Expandable Details Toggle */}
+              {(task.description || task.subtasks?.length > 0) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-xs text-muted-foreground hover:text-foreground -ml-2 h-auto py-1"
+                >
+                  {isExpanded ? 'Hide' : 'Show'} details
+                  {task.subtasks?.length > 0 && (
+                    <span className="ml-1">
+                      ({task.subtasks.filter(st => st.status === 'done').length}/{task.subtasks.length})
+                    </span>
+                  )}
+                </Button>
+              )}
+
+              {/* Expanded Content */}
+              {isExpanded && (
+                <div className="pt-3 space-y-3">
+                  {task.description && (
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {task.description}
+                    </p>
+                  )}
+                  
+                  {task.subtasks && task.subtasks.length > 0 && (
+                    <div className="space-y-1.5 pl-3 border-l-2">
+                      {task.subtasks.map(subtask => (
+                        <div key={subtask.id} className="flex items-center gap-2 text-sm">
+                          <Checkbox 
+                            checked={subtask.status === 'done'} 
+                            className="h-4 w-4" 
+                            disabled 
+                          />
+                          <span className={cn(
+                            subtask.status === 'done' && 'line-through text-muted-foreground'
+                          )}>
+                            {subtask.title}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right Side: Assignees + Menu */}
+            <div className="flex flex-col items-end gap-2 pt-1">
+              {/* Assignee Avatars - Like reference */}
+              {task.assignees && task.assignees.length > 0 && (
+                <div className="flex items-center -space-x-2">
+                  {task.assignees.slice(0, 2).map((assignee, idx) => (
+                    <Avatar 
+                      key={assignee.user_id} 
+                      className="w-8 h-8 border-2 border-card"
+                    >
+                      <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
+                        {getInitials(assignee.user_profiles.first_name, assignee.user_profiles.last_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {task.assignees.length > 2 && (
+                    <div className="w-8 h-8 rounded-full bg-muted border-2 border-card flex items-center justify-center text-xs font-semibold text-muted-foreground">
+                      +{task.assignees.length - 2}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Actions Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem onClick={onEdit}>
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => console.log('Duplicate')}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Duplicate to another date
+                    Edit Task
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleMoveToTomorrow}>
                     <ArrowRight className="w-4 h-4 mr-2" />
                     Move to Tomorrow
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-destructive">
+                  <DropdownMenuItem 
+                    onClick={() => setShowDeleteDialog(true)} 
+                    className="text-destructive focus:text-destructive"
+                  >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-
-            {/* Meta Info Row */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Assignees */}
-              {task.assignees && task.assignees.length > 0 && (
-                <div className="flex items-center gap-1">
-                  {task.assignees.slice(0, 3).map((assignee) => (
-                    <Avatar key={assignee.user_id} className="w-6 h-6 border">
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                        {getInitials(assignee.user_profiles.first_name, assignee.user_profiles.last_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                  {task.assignees.length > 3 && (
-                    <Badge variant="secondary" className="text-xs h-6 px-2">
-                      +{task.assignees.length - 3}
-                    </Badge>
-                  )}
-                </div>
-              )}
-
-              {/* Priority */}
-              {task.priority && (
-                <Badge variant="outline" className={cn('text-xs', priorityColors[task.priority])}>
-                  {task.priority}
-                </Badge>
-              )}
-
-              {/* Trade */}
-              {task.trade && (
-                <Badge variant="secondary" className="text-xs">
-                  {task.trade}
-                </Badge>
-              )}
-
-              {/* Due Time */}
-              {task.due_time && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  <span>{task.due_time}</span>
-                </div>
-              )}
-
-              {/* Tags */}
-              {task.tags && task.tags.length > 0 && (
-                <div className="flex items-center gap-1">
-                  {task.tags.slice(0, 2).map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant="outline"
-                      style={{
-                        borderColor: tag.color,
-                        color: tag.color,
-                        backgroundColor: `${tag.color}10`,
-                      }}
-                      className="text-xs"
-                    >
-                      {tag.label}
-                    </Badge>
-                  ))}
-                  {task.tags.length > 2 && (
-                    <Badge variant="secondary" className="text-xs">
-                      +{task.tags.length - 2}
-                    </Badge>
-                  )}
-                </div>
-              )}
-
-              {/* Overdue Badge */}
-              {isOverdue && (
-                <Badge variant="destructive" className="text-xs">
-                  Overdue
-                </Badge>
-              )}
-
-              {/* Status Badge */}
-              <Badge
-                variant={task.status === 'done' ? 'default' : task.status === 'in_progress' ? 'secondary' : 'outline'}
-                className="text-xs"
-              >
-                {task.status.replace('_', ' ')}
-              </Badge>
-            </div>
-
-            {/* Expandable Description & Subtasks */}
-            {(task.description || (task.subtasks && task.subtasks.length > 0)) && (
-              <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
-                    {isExpanded ? (
-                      <>
-                        <ChevronUp className="w-3 h-3 mr-1" />
-                        Hide details
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="w-3 h-3 mr-1" />
-                        Show details
-                        {task.subtasks && task.subtasks.length > 0 && (
-                          <span className="ml-1">
-                            ({task.subtasks.filter((st) => st.status === 'done').length}/{task.subtasks.length}{' '}
-                            subtasks)
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
-
-                <CollapsibleContent className="space-y-3 mt-3">
-                  {/* Description */}
-                  {task.description && (
-                    <div className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded-lg">
-                      {task.description}
-                    </div>
-                  )}
-
-                  {/* Subtasks */}
-                  {task.subtasks && task.subtasks.length > 0 && (
-                    <div className="space-y-2">
-                      <h5 className="text-xs font-semibold text-foreground flex items-center gap-2">
-                        <span>Subtasks</span>
-                        <span className="text-muted-foreground font-normal">
-                          ({task.subtasks.filter((st) => st.status === 'done').length}/{task.subtasks.length})
-                        </span>
-                      </h5>
-                      <div className="space-y-1.5 pl-2 border-l-2 border-border">
-                        {task.subtasks
-                          .sort((a, b) => a.sort_order - b.sort_order)
-                          .map((subtask) => (
-                            <div key={subtask.id} className="flex items-start gap-2 text-sm">
-                              <Checkbox checked={subtask.status === 'done'} className="h-4 w-4 mt-0.5" disabled />
-                              <span
-                                className={cn(
-                                  'flex-1',
-                                  subtask.status === 'done' && 'line-through text-muted-foreground'
-                                )}
-                              >
-                                {subtask.title}
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
-            )}
           </div>
         </div>
       </div>
