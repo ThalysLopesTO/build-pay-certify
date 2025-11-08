@@ -30,7 +30,6 @@ import { formatInCompanyTimezone, DEFAULT_TIMEZONE } from '@/utils/timezone';
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Task title is required'),
   task_date: z.string().min(1, 'Task date is required'),
-  status: z.enum(['pending', 'in_progress', 'done']),
   priority: z.enum(['low', 'medium', 'high']),
   trade: z.string().optional(),
   description: z.string().optional(),
@@ -62,7 +61,6 @@ export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyT
     defaultValues: {
       title: task?.title || '',
       task_date: task?.task_date || formatInCompanyTimezone(new Date(), 'yyyy-MM-dd', companyTimezone),
-      status: task?.status || 'pending',
       priority: task?.priority || 'medium',
       trade: task?.trade || '',
       description: task?.description || '',
@@ -80,7 +78,7 @@ export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyT
           taskData: {
             title: data.title,
             task_date: data.task_date,
-            status: data.status,
+            status: 'pending',
             priority: data.priority,
             trade: data.trade || undefined,
             description: data.description || undefined,
@@ -95,7 +93,7 @@ export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyT
           taskData: {
             title: data.title,
             task_date: data.task_date,
-            status: data.status,
+            status: 'pending',
             priority: data.priority,
             trade: data.trade || undefined,
             description: data.description || undefined,
@@ -141,13 +139,13 @@ export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyT
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {form.watch('task_date') ? format(new Date(form.watch('task_date')), 'PPP') : 'Pick a date'}
+              {form.watch('task_date') ? format(new Date(form.watch('task_date') + 'T12:00:00'), 'PPP') : 'Pick a date'}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="single"
-              selected={form.watch('task_date') ? new Date(form.watch('task_date')) : undefined}
+              selected={form.watch('task_date') ? new Date(form.watch('task_date') + 'T12:00:00') : undefined}
               onSelect={(date) => form.setValue('task_date', date ? format(date, 'yyyy-MM-dd') : '')}
               initialFocus
               className="pointer-events-auto"
@@ -171,35 +169,19 @@ export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyT
         />
       </div>
 
-      {/* Priority & Status */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Priority *</Label>
-          <Select value={form.watch('priority')} onValueChange={(value) => form.setValue('priority', value as any)}>
-            <SelectTrigger className="h-11">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Status *</Label>
-          <Select value={form.watch('status')} onValueChange={(value) => form.setValue('status', value as any)}>
-            <SelectTrigger className="h-11">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="done">Done</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Priority */}
+      <div className="space-y-2">
+        <Label>Priority *</Label>
+        <Select value={form.watch('priority')} onValueChange={(value) => form.setValue('priority', value as any)}>
+          <SelectTrigger className="h-11">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Trade & Due Time */}
