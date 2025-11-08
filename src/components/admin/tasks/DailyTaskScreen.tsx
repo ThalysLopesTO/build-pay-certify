@@ -18,7 +18,7 @@ import { format, startOfToday, addDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { DailyTaskCard } from './DailyTaskCard';
+import { TaskItem } from './TaskItem';
 import { DailyTaskForm } from './DailyTaskForm';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Calendar } from '@/components/ui/calendar';
@@ -49,6 +49,7 @@ export function DailyTaskScreen() {
   const [showBulkMoveDialog, setShowBulkMoveDialog] = useState(false);
   const [bulkMoveTargetDate, setBulkMoveTargetDate] = useState<Date | undefined>();
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'completed' | 'overdue'>('all');
+  const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(new Set());
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
   const { data: jobsites = [] } = useJobsites('active');
@@ -109,6 +110,18 @@ export function DailyTaskScreen() {
 
   const handleClearSelection = () => {
     setSelectedTaskIds(new Set());
+  };
+
+  const handleMoveTaskToTomorrow = async (taskId: string) => {
+    const tomorrowDate = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+    await bulkUpdateTasks.mutateAsync({
+      taskIds: [taskId],
+      taskData: { task_date: tomorrowDate }
+    });
+    toast({
+      title: 'Task Moved',
+      description: 'Task moved to tomorrow',
+    });
   };
 
   const handleBulkMove = async () => {
@@ -426,15 +439,43 @@ export function DailyTaskScreen() {
               </div>
             )}
             
-            {/* Task Cards with spacing */}
+            {/* Task Items with agent-plan style */}
             <div className="space-y-2">
               {filteredTasks.map((task) => (
-                <DailyTaskCard
+                <TaskItem
                   key={task.id}
                   task={task}
+                  isExpanded={expandedTaskIds.has(task.id)}
+                  onToggle={() => {
+                    setExpandedTaskIds(prev => {
+                      const newSet = new Set(prev);
+                      if (newSet.has(task.id)) {
+                        newSet.delete(task.id);
+                      } else {
+                        newSet.add(task.id);
+                      }
+                      return newSet;
+                    });
+                  }}
                   onEdit={() => setEditingTaskId(task.id)}
+                  onDuplicate={() => {
+                    // Duplicate functionality would go here
+                    toast({
+                      title: 'Duplicate',
+                      description: 'Task duplication coming soon',
+                    });
+                  }}
+                  onMoveToTomorrow={() => handleMoveTaskToTomorrow(task.id)}
+                  onDelete={() => {
+                    // Delete functionality would go here
+                    toast({
+                      title: 'Delete',
+                      description: 'Task deletion coming soon',
+                    });
+                  }}
+                  isSelectable={statusFilter === 'all'}
                   isSelected={selectedTaskIds.has(task.id)}
-                  onToggleSelection={() => handleToggleTaskSelection(task.id)}
+                  onSelect={() => handleToggleTaskSelection(task.id)}
                 />
               ))}
             </div>
