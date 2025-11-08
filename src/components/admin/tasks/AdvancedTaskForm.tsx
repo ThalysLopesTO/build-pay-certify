@@ -24,6 +24,8 @@ import { AssigneeSelector } from './AssigneeSelector';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { formatInCompanyTimezone, DEFAULT_TIMEZONE } from '@/utils/timezone';
 
 const advancedTaskFormSchema = z.object({
   task_name: z.string().min(1, 'Task name is required'),
@@ -48,13 +50,16 @@ interface AdvancedTaskFormProps {
 
 export function AdvancedTaskForm({ jobsiteId, task, onCancel, onSuccess }: AdvancedTaskFormProps) {
   const { createTask, updateTask } = useTaskActions();
+  const { settings } = useCompanySettings();
   const isEditing = !!task;
+
+  const companyTimezone = settings?.timezone || DEFAULT_TIMEZONE;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(advancedTaskFormSchema),
     defaultValues: {
       task_name: task?.title || '',
-      task_date: task?.task_date || '',
+      task_date: task?.task_date || formatInCompanyTimezone(new Date(), 'yyyy-MM-dd', companyTimezone),
       status: task?.status || 'pending',
       priority: task?.priority || 'medium',
       trade: task?.trade || '',

@@ -24,6 +24,8 @@ import { AssigneeSelector } from './AssigneeSelector';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { formatInCompanyTimezone, DEFAULT_TIMEZONE } from '@/utils/timezone';
 
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Task title is required'),
@@ -49,14 +51,17 @@ interface DailyTaskFormProps {
 export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyTaskFormProps) {
   const { createTask, updateTask } = useTaskActions();
   const { data: tasks = [] } = useJobsiteTasksAdvanced(jobsiteId, {});
+  const { settings } = useCompanySettings();
   const task = tasks.find((t) => t.id === taskId);
   const isEditing = !!task;
+
+  const companyTimezone = settings?.timezone || DEFAULT_TIMEZONE;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
       title: task?.title || '',
-      task_date: task?.task_date || format(new Date(), 'yyyy-MM-dd'),
+      task_date: task?.task_date || formatInCompanyTimezone(new Date(), 'yyyy-MM-dd', companyTimezone),
       status: task?.status || 'pending',
       priority: task?.priority || 'medium',
       trade: task?.trade || '',
@@ -145,6 +150,7 @@ export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyT
               selected={form.watch('task_date') ? new Date(form.watch('task_date')) : undefined}
               onSelect={(date) => form.setValue('task_date', date ? format(date, 'yyyy-MM-dd') : '')}
               initialFocus
+              className="pointer-events-auto"
             />
           </PopoverContent>
         </Popover>
