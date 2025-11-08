@@ -4,6 +4,7 @@ import { Plus, X, Calendar as CalendarIcon } from 'lucide-react';
 import { DraftTask } from './types';
 import { format, addDays, startOfToday } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import { parseLocalDate } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -28,7 +29,7 @@ export function QuickTaskInput({
   onQuickCreate,
   onCancel,
 }: QuickTaskInputProps) {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date(defaultDate));
+  const [selectedDate, setSelectedDate] = useState<Date>(parseLocalDate(defaultDate));
 
   const handleAddTask = () => {
     const newTask: DraftTask = {

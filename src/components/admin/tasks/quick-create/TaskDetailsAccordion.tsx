@@ -14,6 +14,7 @@ import { Calendar, Clock, User, Tag, FileText, AlertCircle, ListTodo, Briefcase 
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { parseLocalDate } from '@/utils/dateUtils';
 
 interface TaskDetailsAccordionProps {
   draftTasks: DraftTask[];
@@ -103,7 +104,7 @@ export function TaskDetailsAccordion({
                 <div className="flex flex-col items-start text-left">
                   <span className="font-medium">{task.title || 'Untitled Task'}</span>
                   <span className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(task.date), 'MMM d, yyyy')} • {getTaskSummary(task)}
+                    {format(parseLocalDate(task.date), 'MMM d, yyyy')} • {getTaskSummary(task)}
                   </span>
                 </div>
               </AccordionTrigger>
@@ -114,7 +115,7 @@ export function TaskDetailsAccordion({
                     <Calendar className="w-3.5 h-3.5" />
                     Task Date
                   </Label>
-                  <div className="text-sm font-medium">{format(new Date(task.date), 'EEEE, MMMM d, yyyy')}</div>
+                  <div className="text-sm font-medium">{format(parseLocalDate(task.date), 'EEEE, MMMM d, yyyy')}</div>
                 </div>
 
                 {/* Description */}
