@@ -155,6 +155,7 @@ export function DraggableTaskItem({
         confirmText="Complete All"
         cancelText="Task Only"
         onConfirm={handleCompleteAll}
+        onCancel={handleCompleteTaskOnly}
         variant="default"
       />
 
