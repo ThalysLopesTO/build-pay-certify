@@ -37,7 +37,6 @@ export const menuData: MenuItem[] = [
   {
     id: 'dashboard',
     title: 'Dashboard',
-    href: '/admin',
     icon: LayoutDashboard,
   },
   
@@ -45,7 +44,6 @@ export const menuData: MenuItem[] = [
   {
     id: 'jobsites',
     title: 'Jobsite Management',
-    href: '/admin/jobsites',
     icon: MapPin,
   },
   {
@@ -56,43 +54,36 @@ export const menuData: MenuItem[] = [
   {
     id: 'completed-jobsites',
     title: 'Completed Jobs',
-    href: '/admin/completed-jobsites',
     icon: Archive,
   },
   {
     id: 'material-takeoff',
     title: 'Material Takeoffs',
-    href: '/takeoffs',
     icon: Package,
   },
   {
     id: 'material-requests',
     title: 'Material Requests',
-    href: '/admin/material-requests',
     icon: Inbox,
   },
   {
     id: 'change-orders',
     title: 'Extras / Changes',
-    href: '/admin/change-orders',
     icon: ClipboardList,
   },
   {
     id: 'safety-templates',
     title: 'Safety Templates',
-    href: '/admin/safety-templates',
     icon: Shield,
   },
   {
     id: 'inventory',
     title: 'Inventory',
-    href: '/admin/inventory',
     icon: Package,
   },
   {
     id: 'suppliers',
     title: 'Suppliers',
-    href: '/admin/suppliers',
     icon: Truck,
   },
   
@@ -100,31 +91,26 @@ export const menuData: MenuItem[] = [
   {
     id: 'employees',
     title: 'Employee Management',
-    href: '/admin/employees',
     icon: Users,
   },
   {
     id: 'employee-registration',
     title: 'Employee Registration',
-    href: '/admin/employee-registration',
     icon: User2,
   },
   {
     id: 'live-punch-monitor',
     title: 'Live Punch Monitor',
-    href: '/admin/live-punch-monitor',
     icon: Clock,
   },
   {
     id: 'time-summary',
     title: 'Time Summary',
-    href: '/admin?tab=time-summary',
     icon: BarChart3,
   },
   {
     id: 'time-requests',
     title: 'Time Requests',
-    href: '/admin/time-requests',
     icon: Clock,
   },
   
@@ -132,13 +118,11 @@ export const menuData: MenuItem[] = [
   {
     id: 'timesheets',
     title: 'Timesheets',
-    href: '/admin/timesheets',
     icon: Calendar,
   },
   {
     id: 'payroll-summary',
     title: 'Payroll Summary',
-    href: '/admin/payroll-summary',
     icon: DollarSign,
   },
   
@@ -146,19 +130,16 @@ export const menuData: MenuItem[] = [
   {
     id: 'invoices',
     title: 'Invoices',
-    href: '/admin/invoices',
     icon: FileText,
   },
   {
     id: 'quotes',
     title: 'Quotes',
-    href: '/admin/quotes',
     icon: CreditCard,
   },
   {
     id: 'bills-expenses',
     title: 'Bills / Expenses',
-    href: '/admin/bills-expenses',
     icon: Receipt,
   },
   
@@ -166,7 +147,6 @@ export const menuData: MenuItem[] = [
   {
     id: 'daily-reports',
     title: 'Daily Reports',
-    href: '/admin/daily-reports',
     icon: ClipboardList,
   },
   
@@ -174,13 +154,11 @@ export const menuData: MenuItem[] = [
   {
     id: 'company-settings',
     title: 'Company Settings',
-    href: '/admin/company-settings',
     icon: Building2,
   },
   {
     id: 'settings',
     title: 'User Settings',
-    href: '/admin/settings',
     icon: Settings,
   },
 ];

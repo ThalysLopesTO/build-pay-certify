@@ -19,19 +19,18 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
   // Auto-scroll to active section
   useScrollToActiveSection(activeTab);
 
-  // Sync activeTab with current route
+  // Sync activeTab with current route and query params
   useEffect(() => {
     const path = location.pathname;
-    if (path === '/admin/tasks') {
-      setActiveTab('tasks');
-    } else if (path === '/admin/dashboard') {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    
+    if (tabParam) {
+      setActiveTab(tabParam);
+    } else if (path === '/admin/dashboard' || path === '/admin') {
       setActiveTab('dashboard');
-    } else if (path.startsWith('/admin/')) {
-      // Extract the tab name from the path
-      const tabName = path.replace('/admin/', '').split('/')[0];
-      setActiveTab(tabName);
     }
-  }, [location.pathname, setActiveTab]);
+  }, [location.pathname, location.search, setActiveTab]);
 
   return (
     <Sidebar className="border-r border-border bg-sidebar transition-colors">
