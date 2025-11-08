@@ -53,8 +53,7 @@ export function SubtaskList({ subtasks, isEditing, onUpdate, onToggleStatus }: S
             <SubtaskItem
               key={subtask.id}
               subtask={subtask}
-              isEditing={isEditing}
-              onToggleStatus={onToggleStatus}
+              isEditable={isEditing}
             />
           ))}
       </div>

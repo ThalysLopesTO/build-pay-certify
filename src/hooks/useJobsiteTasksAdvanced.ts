@@ -49,7 +49,7 @@ export interface Subtask {
   title: string;
   notes: string | null;
   due_time: string | null;
-  status: 'pending' | 'in_progress' | 'done';
+  status: 'pending' | 'in_progress' | 'done' | 'blocked' | 'failed';
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -65,7 +65,7 @@ export interface Task {
   description: string | null;
   task_date: string; // YYYY-MM-DD
   due_time: string | null; // HH:MM:SS or null
-  status: 'pending' | 'in_progress' | 'done';
+  status: 'pending' | 'in_progress' | 'done' | 'blocked' | 'failed';
   priority: 'low' | 'medium' | 'high';
   trade: string | null;
   created_by: string;
@@ -81,7 +81,7 @@ export interface TaskFilters {
   dateRange?: { start: string; end: string }; // for CSV export
   priority?: 'low' | 'medium' | 'high';
   trade?: string;
-  status?: 'pending' | 'in_progress' | 'done';
+  status?: 'pending' | 'in_progress' | 'done' | 'blocked' | 'failed';
   assigneeIds?: string[];
   tagIds?: string[];
 }
@@ -91,7 +91,7 @@ export interface CreateTaskInput {
   description?: string;
   task_date: string; // YYYY-MM-DD
   due_time?: string; // HH:MM or HH:MM:SS
-  status: 'pending' | 'in_progress' | 'done';
+  status: 'pending' | 'in_progress' | 'done' | 'blocked' | 'failed';
   priority: 'low' | 'medium' | 'high';
   trade?: string;
   assigneeIds?: string[];
@@ -100,7 +100,7 @@ export interface CreateTaskInput {
     title: string;
     notes?: string;
     due_time?: string;
-    status?: 'pending' | 'in_progress' | 'done';
+    status?: 'pending' | 'in_progress' | 'done' | 'blocked' | 'failed';
     assigneeIds?: string[];
     tagIds?: string[];
   }[];
@@ -111,7 +111,7 @@ export interface UpdateTaskInput {
   description?: string;
   task_date?: string;
   due_time?: string;
-  status?: 'pending' | 'in_progress' | 'done';
+  status?: 'pending' | 'in_progress' | 'done' | 'blocked' | 'failed';
   priority?: 'low' | 'medium' | 'high';
   trade?: string;
   assigneeIds?: string[];
@@ -822,6 +822,42 @@ export const useTaskActions = () => {
   });
 
   // --------------------------------------------------------------------------
+  // UPDATE SUBTASK STATUS
+  // --------------------------------------------------------------------------
+  const updateSubtask = useMutation({
+    mutationFn: async ({ subtaskId, status }: { subtaskId: string; status: 'pending' | 'in_progress' | 'done' | 'blocked' | 'failed' }) => {
+      const { error, data } = await supabase
+        .from('subtasks')
+        .update({ status })
+        .eq('id', subtaskId)
+        .select('task_id')
+        .single();
+
+      if (error) {
+        throw new Error('Failed to update subtask');
+      }
+
+      // Check if all subtasks are complete for auto-completion
+      const { data: allSubtasks } = await supabase
+        .from('subtasks')
+        .select('status')
+        .eq('task_id', data.task_id);
+
+      if (allSubtasks && allSubtasks.every(st => st.status === 'done')) {
+        await supabase
+          .from('tasks')
+          .update({ status: 'done' })
+          .eq('id', data.task_id);
+      }
+
+      return subtaskId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobsite.all });
+    },
+  });
+
+  // --------------------------------------------------------------------------
   // BULK COMPLETE SUBTASKS
   // --------------------------------------------------------------------------
   const bulkCompleteSubtasks = useMutation({
@@ -850,6 +886,7 @@ export const useTaskActions = () => {
     deleteTask,
     duplicateTaskToDate,
     moveTaskToTomorrow,
+    updateSubtask,
     bulkCompleteSubtasks,
   };
 };

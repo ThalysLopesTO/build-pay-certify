@@ -30,7 +30,7 @@ import { formatInCompanyTimezone, DEFAULT_TIMEZONE } from '@/utils/timezone';
 const advancedTaskFormSchema = z.object({
   task_name: z.string().min(1, 'Task name is required'),
   task_date: z.string().min(1, 'Task date is required'),
-  status: z.enum(['pending', 'in_progress', 'done']),
+  status: z.enum(['pending', 'in_progress', 'done', 'blocked', 'failed']),
   priority: z.enum(['low', 'medium', 'high']),
   trade: z.string().optional(),
   description: z.string().optional(),
