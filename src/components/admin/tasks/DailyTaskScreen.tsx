@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { TaskItem } from './TaskItem';
 import { DailyTaskForm } from './DailyTaskForm';
+import { DraggableTaskList } from './DraggableTaskList';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -57,7 +58,7 @@ export function DailyTaskScreen() {
   const { settings } = useCompanySettings();
   const companyTimezone = settings?.timezone || DEFAULT_TIMEZONE;
   const { toast } = useToast();
-  const { bulkUpdateTasks } = useTaskActions();
+  const { bulkUpdateTasks, bulkReorderTasks } = useTaskActions();
 
   // Filter tasks by selected date
   const { data: tasks = [], isLoading } = useJobsiteTasksAdvanced(jobsiteId || '', {
@@ -162,6 +163,10 @@ export function DailyTaskScreen() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleReorder = async (updates: { taskId: string; sortOrder: number }[]) => {
+    await bulkReorderTasks.mutateAsync({ updates });
   };
 
   if (isLoading) {
@@ -439,46 +444,41 @@ export function DailyTaskScreen() {
               </div>
             )}
             
-            {/* Task Items with agent-plan style */}
-            <div className="space-y-2">
-              {filteredTasks.map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  isExpanded={expandedTaskIds.has(task.id)}
-                  onToggle={() => {
-                    setExpandedTaskIds(prev => {
-                      const newSet = new Set(prev);
-                      if (newSet.has(task.id)) {
-                        newSet.delete(task.id);
-                      } else {
-                        newSet.add(task.id);
-                      }
-                      return newSet;
-                    });
-                  }}
-                  onEdit={() => setEditingTaskId(task.id)}
-                  onDuplicate={() => {
-                    // Duplicate functionality would go here
-                    toast({
-                      title: 'Duplicate',
-                      description: 'Task duplication coming soon',
-                    });
-                  }}
-                  onMoveToTomorrow={() => handleMoveTaskToTomorrow(task.id)}
-                  onDelete={() => {
-                    // Delete functionality would go here
-                    toast({
-                      title: 'Delete',
-                      description: 'Task deletion coming soon',
-                    });
-                  }}
-                  isSelectable={statusFilter === 'all'}
-                  isSelected={selectedTaskIds.has(task.id)}
-                  onSelect={() => handleToggleTaskSelection(task.id)}
-                />
-              ))}
-            </div>
+            {/* Task Items with drag-and-drop */}
+            <DraggableTaskList
+              tasks={filteredTasks}
+              expandedTaskIds={expandedTaskIds}
+              selectedTaskIds={selectedTaskIds}
+              onToggle={(taskId) => {
+                setExpandedTaskIds(prev => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(taskId)) {
+                    newSet.delete(taskId);
+                  } else {
+                    newSet.add(taskId);
+                  }
+                  return newSet;
+                });
+              }}
+              onEdit={(taskId) => setEditingTaskId(taskId)}
+              onDuplicate={(taskId) => {
+                // Duplicate functionality would go here
+                toast({
+                  title: 'Duplicate',
+                  description: 'Task duplication coming soon',
+                });
+              }}
+              onMoveToTomorrow={handleMoveTaskToTomorrow}
+              onDelete={(taskId) => {
+                // Delete functionality would go here
+                toast({
+                  title: 'Delete',
+                  description: 'Task deletion coming soon',
+                });
+              }}
+              onSelect={handleToggleTaskSelection}
+              onReorder={handleReorder}
+            />
           </>
         )}
       </div>

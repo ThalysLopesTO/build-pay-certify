@@ -2761,6 +2761,7 @@ export type Database = {
           id: string
           jobsite_id: string
           priority: string | null
+          sort_order: number | null
           status: string | null
           task_date: string
           title: string
@@ -2777,6 +2778,7 @@ export type Database = {
           id?: string
           jobsite_id: string
           priority?: string | null
+          sort_order?: number | null
           status?: string | null
           task_date: string
           title: string
@@ -2793,6 +2795,7 @@ export type Database = {
           id?: string
           jobsite_id?: string
           priority?: string | null
+          sort_order?: number | null
           status?: string | null
           task_date?: string
           title?: string

@@ -71,6 +71,7 @@ export interface Task {
   created_by: string;
   created_at: string;
   updated_at: string;
+  sort_order: number;
   assignees: TaskAssignee[];
   tags: TaskTag[];
   subtasks: Subtask[];
@@ -196,7 +197,9 @@ export const useJobsiteTasksAdvanced = (jobsiteId?: string, filters?: TaskFilter
         `)
         .eq('company_id', user.companyId)
         .eq('jobsite_id', jobsiteId)
-        .order('task_date', { ascending: true });
+        .order('task_date', { ascending: true })
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
 
       // Apply server-side filters
       if (filters?.taskDate) {
@@ -879,6 +882,48 @@ export const useTaskActions = () => {
     },
   });
 
+  // --------------------------------------------------------------------------
+  // BULK REORDER TASKS (for drag-and-drop)
+  // --------------------------------------------------------------------------
+  const bulkReorderTasks = useMutation({
+    mutationFn: async ({ 
+      updates 
+    }: { 
+      updates: { taskId: string; sortOrder: number }[];
+    }) => {
+      // Update multiple tasks at once
+      const promises = updates.map(({ taskId, sortOrder }) => 
+        supabase
+          .from('tasks')
+          .update({ sort_order: sortOrder })
+          .eq('id', taskId)
+      );
+
+      const results = await Promise.all(promises);
+      const errors = results.filter(r => r.error);
+      
+      if (errors.length > 0) {
+        throw new Error(`Failed to update ${errors.length} task(s)`);
+      }
+      
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobsite.all });
+      toast({
+        title: 'Tasks Reordered',
+        description: 'Task order updated successfully',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error Reordering Tasks',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     createTask,
     updateTask,
@@ -888,5 +933,6 @@ export const useTaskActions = () => {
     moveTaskToTomorrow,
     updateSubtask,
     bulkCompleteSubtasks,
+    bulkReorderTasks,
   };
 };
