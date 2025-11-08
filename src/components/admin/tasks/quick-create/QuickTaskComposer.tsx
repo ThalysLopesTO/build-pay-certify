@@ -227,7 +227,7 @@ export function QuickTaskComposer({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="h-[90vh]">
+        <DrawerContent className="h-[90vh] flex flex-col">
           {content}
         </DrawerContent>
       </Drawer>
@@ -236,7 +236,7 @@ export function QuickTaskComposer({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[500px] max-h-[90vh] p-0 gap-0">
+      <DialogContent className="max-w-[500px] max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
         {content}
       </DialogContent>
     </Dialog>

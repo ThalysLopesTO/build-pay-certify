@@ -96,7 +96,7 @@ export function TaskDetailsAccordion({
       </div>
 
       {/* Scrollable Task Details */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3">
         {draftTasks.map((task) => (
           <Accordion key={task.id} type="single" collapsible className="border rounded-lg">
             <AccordionItem value="item-1" className="border-none">
