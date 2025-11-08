@@ -30,7 +30,7 @@ import { formatInCompanyTimezone, DEFAULT_TIMEZONE } from '@/utils/timezone';
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Task title is required'),
   task_date: z.string().min(1, 'Task date is required'),
-  priority: z.enum(['low', 'medium', 'high']),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
   trade: z.string().optional(),
   description: z.string().optional(),
   due_time: z.string().optional(),
@@ -43,11 +43,12 @@ type FormValues = z.infer<typeof taskFormSchema>;
 interface DailyTaskFormProps {
   jobsiteId: string;
   taskId?: string;
+  defaultDate?: string;
   onCancel: () => void;
   onSuccess?: () => void;
 }
 
-export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyTaskFormProps) {
+export function DailyTaskForm({ jobsiteId, taskId, defaultDate, onCancel, onSuccess }: DailyTaskFormProps) {
   const { createTask, updateTask } = useTaskActions();
   const { data: tasks = [] } = useJobsiteTasksAdvanced(jobsiteId, {});
   const { settings } = useCompanySettings();
@@ -60,8 +61,8 @@ export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyT
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
       title: task?.title || '',
-      task_date: task?.task_date || formatInCompanyTimezone(new Date(), 'yyyy-MM-dd', companyTimezone),
-      priority: task?.priority || 'medium',
+      task_date: task?.task_date || defaultDate || formatInCompanyTimezone(new Date(), 'yyyy-MM-dd', companyTimezone),
+      priority: task?.priority || undefined,
       trade: task?.trade || '',
       description: task?.description || '',
       due_time: task?.due_time || '',
@@ -79,7 +80,7 @@ export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyT
             title: data.title,
             task_date: data.task_date,
             status: 'pending',
-            priority: data.priority,
+            priority: data.priority || 'medium',
             trade: data.trade || undefined,
             description: data.description || undefined,
             due_time: data.due_time || undefined,
@@ -94,7 +95,7 @@ export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyT
             title: data.title,
             task_date: data.task_date,
             status: 'pending',
-            priority: data.priority,
+            priority: data.priority || 'medium',
             trade: data.trade || undefined,
             description: data.description || undefined,
             due_time: data.due_time || undefined,
@@ -147,6 +148,11 @@ export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyT
               mode="single"
               selected={form.watch('task_date') ? new Date(form.watch('task_date') + 'T12:00:00') : undefined}
               onSelect={(date) => form.setValue('task_date', date ? format(date, 'yyyy-MM-dd') : '')}
+              disabled={(date) => {
+                const dateStr = format(date, 'yyyy-MM-dd');
+                const todayInCompanyTZ = formatInCompanyTimezone(new Date(), 'yyyy-MM-dd', companyTimezone);
+                return dateStr < todayInCompanyTZ;
+              }}
               initialFocus
               className="pointer-events-auto"
             />
@@ -171,10 +177,10 @@ export function DailyTaskForm({ jobsiteId, taskId, onCancel, onSuccess }: DailyT
 
       {/* Priority */}
       <div className="space-y-2">
-        <Label>Priority *</Label>
-        <Select value={form.watch('priority')} onValueChange={(value) => form.setValue('priority', value as any)}>
+        <Label>Priority (optional)</Label>
+        <Select value={form.watch('priority') || ''} onValueChange={(value) => form.setValue('priority', value as any)}>
           <SelectTrigger className="h-11">
-            <SelectValue />
+            <SelectValue placeholder="Select priority (optional)" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="low">Low</SelectItem>

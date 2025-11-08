@@ -23,7 +23,7 @@ import {
   Tag as TagIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, addDays, isPast, isToday } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { formatInCompanyTimezone, DEFAULT_TIMEZONE } from '@/utils/timezone';
 
 interface DailyTaskCardProps {
   task: Task;
@@ -52,13 +54,19 @@ export function DailyTaskCard({ task, onEdit }: DailyTaskCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const { updateTask, deleteTask, moveTaskToTomorrow, duplicateTaskToDate } = useTaskActions();
+  const { settings } = useCompanySettings();
+  const companyTimezone = settings?.timezone || DEFAULT_TIMEZONE;
 
   const getInitials = (firstName?: string | null, lastName?: string | null) => {
     return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || '?';
   };
 
+  // Calculate overdue status using company timezone
+  const todayInCompanyTZ = formatInCompanyTimezone(new Date(), 'yyyy-MM-dd', companyTimezone);
   const isOverdue =
-    task.task_date && isPast(new Date(task.task_date)) && !isToday(new Date(task.task_date)) && task.status !== 'done';
+    task.task_date && 
+    task.task_date < todayInCompanyTZ && 
+    task.status !== 'done';
 
   const handleToggleStatus = () => {
     const hasPendingSubtasks = task.subtasks?.some((st) => st.status !== 'done') || false;
@@ -92,7 +100,8 @@ export function DailyTaskCard({ task, onEdit }: DailyTaskCardProps) {
 
   const handleMoveToTomorrow = () => {
     if (!task.task_date) return;
-    const tomorrow = format(addDays(new Date(task.task_date), 1), 'yyyy-MM-dd');
+    const todayInCompanyTZ = formatInCompanyTimezone(new Date(), 'yyyy-MM-dd', companyTimezone);
+    const tomorrow = format(addDays(new Date(todayInCompanyTZ + 'T12:00:00'), 1), 'yyyy-MM-dd');
     updateTask.mutate({
       taskId: task.id,
       taskData: {

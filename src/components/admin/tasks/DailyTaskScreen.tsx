@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useJobsiteTasksAdvanced } from '@/hooks/useJobsiteTasksAdvanced';
-import { format, startOfToday, subDays, isPast, isToday } from 'date-fns';
+import { format, startOfToday, subDays, addDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {  Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
@@ -36,7 +36,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { DateGroupHeader } from './DateGroupHeader';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { formatInCompanyTimezone, DEFAULT_TIMEZONE } from '@/utils/timezone';
 
 export function DailyTaskScreen() {
   const navigate = useNavigate();
@@ -49,41 +50,34 @@ export function DailyTaskScreen() {
 
   const { data: jobsites = [] } = useJobsites('active');
   const jobsite = jobsites.find((j) => j.id === jobsiteId);
+  const { settings } = useCompanySettings();
+  const companyTimezone = settings?.timezone || DEFAULT_TIMEZONE;
 
-  const { data: tasks = [], isLoading } = useJobsiteTasksAdvanced(jobsiteId || '', {});
+  // Filter tasks by selected date
+  const { data: tasks = [], isLoading } = useJobsiteTasksAdvanced(jobsiteId || '', {
+    taskDate: format(selectedDate, 'yyyy-MM-dd')
+  });
 
-  // Calculate stats
+  // Get today in company timezone for overdue calculation
+  const todayInCompanyTZ = formatInCompanyTimezone(new Date(), 'yyyy-MM-dd', companyTimezone);
+
+  // Calculate stats for selected date only
   const totalTasks = tasks.length;
   const inProgressTasks = tasks.filter((t) => t.status === 'in_progress').length;
   const completedTasks = tasks.filter((t) => t.status === 'done').length;
   const overdueTasks = tasks.filter((t) => {
     if (t.status === 'done' || !t.task_date) return false;
-    const taskDate = new Date(t.task_date);
-    return isPast(taskDate) && !isToday(taskDate);
+    // Task is overdue if its date is before today in company timezone
+    return t.task_date < todayInCompanyTZ;
   }).length;
 
-  // Group tasks by date
-  const tasksByDate = tasks.reduce((acc, task) => {
-    const date = task.task_date || 'no-date';
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(task);
-    return acc;
-  }, {} as Record<string, typeof tasks>);
-
-  // Sort dates (most recent first)
-  const sortedDates = Object.keys(tasksByDate).sort((a, b) => {
-    if (a === 'no-date') return 1;
-    if (b === 'no-date') return -1;
-    return new Date(b).getTime() - new Date(a).getTime();
-  });
-
-  const handleQuickDateChange = (type: 'today' | 'yesterday') => {
+  const handleQuickDateChange = (type: 'yesterday' | 'today' | 'tomorrow') => {
     if (type === 'today') {
       setSelectedDate(startOfToday());
-    } else {
+    } else if (type === 'yesterday') {
       setSelectedDate(subDays(startOfToday(), 1));
+    } else {
+      setSelectedDate(addDays(startOfToday(), 1));
     }
   };
 
@@ -161,6 +155,13 @@ export function DailyTaskScreen() {
       {/* Date Quick Filters */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
         <Button
+          variant={format(selectedDate, 'yyyy-MM-dd') === format(subDays(startOfToday(), 1), 'yyyy-MM-dd') ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleQuickDateChange('yesterday')}
+        >
+          Yesterday
+        </Button>
+        <Button
           variant={format(selectedDate, 'yyyy-MM-dd') === format(startOfToday(), 'yyyy-MM-dd') ? 'default' : 'outline'}
           size="sm"
           onClick={() => handleQuickDateChange('today')}
@@ -168,17 +169,17 @@ export function DailyTaskScreen() {
           Today
         </Button>
         <Button
-          variant={format(selectedDate, 'yyyy-MM-dd') === format(subDays(startOfToday(), 1), 'yyyy-MM-dd') ? 'default' : 'outline'}
+          variant={format(selectedDate, 'yyyy-MM-dd') === format(addDays(startOfToday(), 1), 'yyyy-MM-dd') ? 'default' : 'outline'}
           size="sm"
-          onClick={() => handleQuickDateChange('yesterday')}
+          onClick={() => handleQuickDateChange('tomorrow')}
         >
-          Yesterday
+          Tomorrow
         </Button>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm">
               <CalendarIcon className="w-4 h-4 mr-2" />
-              {format(selectedDate, 'MMM dd, yyyy')}
+              Custom Date
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -187,6 +188,7 @@ export function DailyTaskScreen() {
               selected={selectedDate}
               onSelect={(date) => date && setSelectedDate(date)}
               initialFocus
+              className="pointer-events-auto"
             />
           </PopoverContent>
         </Popover>
@@ -243,27 +245,40 @@ export function DailyTaskScreen() {
         </Card>
       </div>
 
-      {/* Tasks Grouped by Date */}
-      <div className="space-y-6">
-        {sortedDates.length === 0 ? (
+      {/* Tasks for Selected Date */}
+      <div className="space-y-4">
+        {tasks.length === 0 ? (
           <div className="text-center py-12">
             <ListTodo className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No Tasks Yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">Create your first task to get started</p>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              No Tasks for {format(selectedDate, 'MMMM dd, yyyy')}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">Create a task to get started</p>
             <Button onClick={() => setShowCreateForm(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Create Task
             </Button>
           </div>
         ) : (
-          sortedDates.map((date) => (
-            <DateGroupHeader
-              key={date}
-              date={date}
-              tasks={tasksByDate[date]}
-              onTaskEdit={(taskId) => setEditingTaskId(taskId)}
-            />
-          ))
+          <div className="space-y-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">
+                {format(selectedDate, 'EEEE, MMMM dd, yyyy')}
+              </h3>
+              <span className="text-sm text-muted-foreground">
+                {completedTasks} of {totalTasks} completed
+              </span>
+            </div>
+            <div className="divide-y divide-border rounded-lg border bg-card">
+              {tasks.map((task) => (
+                <DailyTaskCard
+                  key={task.id}
+                  task={task}
+                  onEdit={() => setEditingTaskId(task.id)}
+                />
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
@@ -291,6 +306,7 @@ export function DailyTaskScreen() {
             <DailyTaskForm
               jobsiteId={jobsiteId || ''}
               taskId={editingTaskId || undefined}
+              defaultDate={format(selectedDate, 'yyyy-MM-dd')}
               onCancel={() => {
                 setShowCreateForm(false);
                 setEditingTaskId(null);
@@ -317,6 +333,7 @@ export function DailyTaskScreen() {
               <DailyTaskForm
                 jobsiteId={jobsiteId || ''}
                 taskId={editingTaskId || undefined}
+                defaultDate={format(selectedDate, 'yyyy-MM-dd')}
                 onCancel={() => {
                   setShowCreateForm(false);
                   setEditingTaskId(null);
