@@ -14,6 +14,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { StatusIcon } from './StatusIcon';
+import { TaskStatusBadge } from './TaskStatusBadge';
 import { SubtaskItem } from './SubtaskItem';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -85,8 +86,14 @@ export function TaskItem({
   const { user } = useAuth();
   const companyTimezone = settings?.timezone || DEFAULT_TIMEZONE;
 
-  const todayStr = formatInCompanyTimezone(new Date(), 'yyyy-MM-dd', companyTimezone);
-  const isOverdue = task.task_date < todayStr && task.status !== 'done';
+  const now = new Date();
+  const todayStr = formatInCompanyTimezone(now, 'yyyy-MM-dd', companyTimezone);
+  const currentTime = formatInCompanyTimezone(now, 'HH:mm', companyTimezone);
+  
+  const isOverdue = (
+    (task.task_date < todayStr && task.status !== 'done') ||
+    (task.task_date === todayStr && task.due_time && task.due_time < currentTime && task.status !== 'done')
+  );
   const isAssignedToUser = task.assignees.some(a => a.user_id === user?.id);
   const isAdmin = ['admin', 'super_admin', 'foreman'].includes(user?.role || '');
   const canEdit = isAdmin;
@@ -170,185 +177,138 @@ export function TaskItem({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         className={cn(
-          'py-3 px-2 transition-all duration-200 border-b border-border',
-          'hover:bg-muted/50 cursor-pointer',
-          isExpanded && 'bg-muted/30',
-          isOverdue && 'bg-destructive/5 border-l-4 border-l-destructive'
+          'py-2 px-3 transition-all duration-200 border-b border-border/50',
+          'hover:bg-muted/30',
+          isExpanded && 'bg-muted/20',
+          isOverdue && 'bg-destructive/5 border-l-4 border-l-destructive pl-2'
         )}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-3">
           {/* Checkbox for selection */}
           {isSelectable && (
             <Checkbox
               checked={isSelected}
               onCheckedChange={onSelect}
-              className="mt-1"
+              onClick={(e) => e.stopPropagation()}
             />
           )}
 
-          {/* Status Icon */}
-          <div className="mt-0.5">
-            {canToggleStatus ? (
-              <Select
-                value={task.status}
-                onValueChange={handleStatusChange}
-                disabled={!canToggleStatus}
-              >
-                <SelectTrigger className="h-6 w-6 p-0 border-0 bg-transparent">
-                  <StatusIcon status={task.status} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="done">Completed</SelectItem>
-                  <SelectItem value="blocked">Blocked</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <StatusIcon status={task.status} />
-            )}
+          {/* Status Icon - Clickable */}
+          <div 
+            className="cursor-pointer flex-shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!canToggleStatus) return;
+              
+              const statusCycle: Array<'pending' | 'in_progress' | 'done'> = ['pending', 'in_progress', 'done'];
+              const currentIndex = statusCycle.indexOf(task.status as any);
+              const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
+              handleStatusChange(nextStatus);
+            }}
+          >
+            <StatusIcon status={task.status} />
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              {/* Title & Meta */}
-              <div className="flex-1 min-w-0">
-                <button
-                  onClick={onToggle}
-                  className="text-left w-full group"
-                >
-                  <div className="flex items-center gap-2">
-                    <h3 className={cn(
-                      'font-medium text-foreground group-hover:text-primary transition-colors',
-                      task.status === 'done' && 'line-through text-muted-foreground'
-                    )}>
-                      {task.title}
-                    </h3>
-                    {task.subtasks.length > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        ({task.subtasks.filter(st => st.status === 'done').length}/{task.subtasks.length})
-                      </span>
+          {/* Main Content - Clickable Row */}
+          <div 
+            className="flex-1 min-w-0 cursor-pointer"
+            onClick={onToggle}
+          >
+            <div className="flex items-center justify-between gap-3">
+              {/* Title & Inline Meta */}
+              <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                <h3 className={cn(
+                  'font-medium text-base',
+                  task.status === 'done' && 'line-through text-muted-foreground'
+                )}>
+                  {task.title}
+                </h3>
+
+                {/* Subtask Count */}
+                {task.subtasks.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {task.subtasks.filter(st => st.status === 'done').length}/{task.subtasks.length}
+                  </span>
+                )}
+
+                {/* Priority Badge - only if not medium */}
+                {task.priority && task.priority !== 'medium' && (
+                  <Badge variant="outline" className={cn('text-xs', getPriorityColor(task.priority))}>
+                    {task.priority}
+                  </Badge>
+                )}
+
+                {/* Assignees - max 2 + counter */}
+                {task.assignees.length > 0 && (
+                  <div className="flex items-center -space-x-1.5">
+                    {task.assignees.slice(0, 2).map((assignee) => (
+                      <Avatar key={assignee.user_id} className="h-5 w-5 border-2 border-background">
+                        <AvatarFallback className="text-[10px]">
+                          {getInitials(assignee.user_profiles.first_name, assignee.user_profiles.last_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {task.assignees.length > 2 && (
+                      <div className="h-5 w-5 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] font-medium">
+                        +{task.assignees.length - 2}
+                      </div>
                     )}
                   </div>
-                </button>
+                )}
 
-                {/* Meta Row */}
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  {/* Due Time */}
-                  {task.due_time && (
-                    <Badge variant="outline" className="text-xs gap-1">
-                      <Clock className="w-3 h-3" />
-                      {task.due_time.slice(0, 5)}
-                    </Badge>
-                  )}
-
-                  {/* Priority */}
-                  {task.priority && task.priority !== 'medium' && (
-                    <Badge variant="outline" className={cn('text-xs', getPriorityColor(task.priority))}>
-                      {task.priority}
-                    </Badge>
-                  )}
-
-                  {/* Trade */}
-                  {task.trade && (
-                    <Badge variant="outline" className="text-xs gap-1">
-                      <Wrench className="w-3 h-3" />
-                      {task.trade}
-                    </Badge>
-                  )}
-
-                  {/* Overdue */}
-                  {isOverdue && (
-                    <Badge variant="destructive" className="text-xs gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      Overdue
-                    </Badge>
-                  )}
-
-                  {/* Assignees */}
-                  {task.assignees.length > 0 && (
-                    <div className="flex items-center -space-x-2">
-                      {task.assignees.slice(0, 3).map((assignee) => (
-                        <Avatar key={assignee.user_id} className="h-6 w-6 border-2 border-background">
-                          <AvatarFallback className="text-xs">
-                            {getInitials(assignee.user_profiles.first_name, assignee.user_profiles.last_name)}
-                          </AvatarFallback>
-                        </Avatar>
-                      ))}
-                      {task.assignees.length > 3 && (
-                        <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs">
-                          +{task.assignees.length - 3}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Tags */}
-                  {task.tags.slice(0, 2).map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant="secondary"
-                      className="text-xs"
-                      style={{
-                        backgroundColor: `${tag.color}20`,
-                        color: tag.color,
-                        borderColor: tag.color,
-                      }}
-                    >
-                      {tag.label}
-                    </Badge>
-                  ))}
-                  {task.tags.length > 2 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{task.tags.length - 2} more
-                    </Badge>
-                  )}
-                </div>
+                {/* Tags - max 2 + counter */}
+                {task.tags.length > 0 && (
+                  <>
+                    {task.tags.slice(0, 2).map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        variant="outline"
+                        className="text-xs h-5 px-1.5"
+                        style={{
+                          backgroundColor: `${tag.color}15`,
+                          color: tag.color,
+                          borderColor: `${tag.color}40`,
+                        }}
+                      >
+                        {tag.label}
+                      </Badge>
+                    ))}
+                    {task.tags.length > 2 && (
+                      <Badge variant="outline" className="text-xs h-5 px-1.5">
+                        +{task.tags.length - 2}
+                      </Badge>
+                    )}
+                  </>
+                )}
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-1">
-                {/* Expand/Collapse */}
-                {task.subtasks.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onToggle}
-                    className="h-8 w-8 p-0"
-                  >
-                    {isExpanded ? (
-                      <ChevronDown className="w-4 h-4" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4" />
-                    )}
-                  </Button>
-                )}
+              {/* Right Side: Status Badge & Actions */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <TaskStatusBadge status={task.status} />
 
                 {/* Kebab Menu */}
                 {canEdit && (
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         <MoreVertical className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={onEdit}>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
                         <Edit className="w-4 h-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setShowDuplicateDialog(true)}>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setShowDuplicateDialog(true); }}>
                         <Copy className="w-4 h-4 mr-2" />
                         Duplicate to Date
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={onMoveToTomorrow}>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMoveToTomorrow(); }}>
                         <ArrowRight className="w-4 h-4 mr-2" />
                         Move to Tomorrow
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-destructive">
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete
                       </DropdownMenuItem>
@@ -365,24 +325,48 @@ export function TaskItem({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="mt-4 space-y-3"
+                  className="mt-3 space-y-2 ml-1"
                 >
                   {/* Description */}
                   {task.description && (
-                    <div className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground pl-1">
                       {task.description}
+                    </p>
+                  )}
+
+                  {/* Meta Info Row - only in expanded */}
+                  {(task.due_time || task.trade || isOverdue) && (
+                    <div className="flex items-center gap-2 pl-1 flex-wrap">
+                      {task.due_time && (
+                        <Badge variant="outline" className="text-xs gap-1 h-5">
+                          <Clock className="w-3 h-3" />
+                          {task.due_time.slice(0, 5)}
+                        </Badge>
+                      )}
+                      {task.trade && (
+                        <Badge variant="outline" className="text-xs gap-1 h-5">
+                          <Briefcase className="w-3 h-3" />
+                          {task.trade}
+                        </Badge>
+                      )}
+                      {isOverdue && (
+                        <Badge variant="destructive" className="text-xs gap-1 h-5">
+                          <AlertCircle className="w-3 h-3" />
+                          Overdue
+                        </Badge>
+                      )}
                     </div>
                   )}
 
-                  {/* Subtasks */}
+                  {/* Subtasks with vertical dashed line */}
                   {task.subtasks.length > 0 && (
-                    <div className="space-y-1">
+                    <div className="space-y-0">
                       {task.subtasks.map((subtask) => (
-                      <SubtaskItem
-                        key={subtask.id}
-                        subtask={subtask}
-                        isEditable={canEdit}
-                      />
+                        <SubtaskItem
+                          key={subtask.id}
+                          subtask={subtask}
+                          isEditable={canEdit}
+                        />
                       ))}
                     </div>
                   )}

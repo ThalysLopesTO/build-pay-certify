@@ -1,4 +1,4 @@
-import { Circle, CheckCircle2, AlertTriangle, XCircle, Loader2 } from 'lucide-react';
+import { Circle, CheckCircle2, AlertTriangle, XCircle, CircleDot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type TaskStatus = 'pending' | 'in-progress' | 'in_progress' | 'done' | 'blocked' | 'failed';
@@ -19,7 +19,7 @@ export function StatusIcon({ status, className }: StatusIconProps) {
       bgClassName: '',
     },
     'in-progress': {
-      icon: Loader2,
+      icon: CircleDot,
       className: 'text-blue-500',
       bgClassName: 'bg-blue-500/10',
     },

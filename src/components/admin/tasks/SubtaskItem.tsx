@@ -51,36 +51,31 @@ export function SubtaskItem({ subtask, isEditable }: SubtaskItemProps) {
     <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      className="ml-8 border-l-2 border-dashed border-border"
+      className="ml-6 border-l-2 border-dashed border-border/60"
     >
-      <div className="pl-4 py-2">
-        <div className="flex items-center gap-3">
-          {/* Status Icon */}
-          <div className="cursor-pointer" onClick={() => canToggleStatus && setIsExpanded(!isExpanded)}>
-            {canToggleStatus ? (
-              <Select
-                value={subtask.status}
-                onValueChange={handleStatusChange}
-                disabled={!canToggleStatus}
-              >
-                <SelectTrigger className="h-6 w-6 p-0 border-0 bg-transparent">
-                  <StatusIcon status={subtask.status} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="done">Completed</SelectItem>
-                  <SelectItem value="blocked">Blocked</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <StatusIcon status={subtask.status} />
-            )}
+      <div className="pl-3 py-1.5">
+        <div className="flex items-center gap-2.5 group">
+          {/* Status Icon - Clickable */}
+          <div 
+            className="cursor-pointer flex-shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!canToggleStatus) return;
+              
+              const statusCycle: Array<'pending' | 'in_progress' | 'done'> = ['pending', 'in_progress', 'done'];
+              const currentIndex = statusCycle.indexOf(subtask.status as any);
+              const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
+              handleStatusChange(nextStatus);
+            }}
+          >
+            <StatusIcon status={subtask.status} />
           </div>
 
-          {/* Title */}
-          <div className="flex-1 flex items-center gap-2">
+          {/* Title & Due Time */}
+          <div 
+            className="flex-1 flex items-center gap-2 cursor-pointer"
+            onClick={() => hasDetails && setIsExpanded(!isExpanded)}
+          >
             <span className={cn(
               'text-sm',
               subtask.status === 'done' && 'line-through text-muted-foreground'
@@ -88,10 +83,9 @@ export function SubtaskItem({ subtask, isEditable }: SubtaskItemProps) {
               {subtask.title}
             </span>
 
-            {/* Due Time */}
             {subtask.due_time && (
-              <Badge variant="outline" className="text-xs gap-1">
-                <Clock className="w-3 h-3" />
+              <Badge variant="outline" className="text-xs gap-1 h-4 px-1.5">
+                <Clock className="w-2.5 h-2.5" />
                 {subtask.due_time.slice(0, 5)}
               </Badge>
             )}
@@ -102,13 +96,13 @@ export function SubtaskItem({ subtask, isEditable }: SubtaskItemProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="h-6 w-6 p-0"
+              onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               {isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-3.5 h-3.5" />
               ) : (
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3.5 h-3.5" />
               )}
             </Button>
           )}
@@ -120,42 +114,42 @@ export function SubtaskItem({ subtask, isEditable }: SubtaskItemProps) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="mt-3 space-y-2"
+            className="mt-2 ml-6 space-y-1.5"
           >
-            {/* Notes */}
+            {/* Notes/Description */}
             {subtask.notes && (
-              <div className="text-sm text-muted-foreground bg-muted/30 rounded-md p-2">
+              <p className="text-xs text-muted-foreground">
                 {subtask.notes}
-              </div>
+              </p>
             )}
 
-            {/* Assignees & Tags */}
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* Assignees */}
+            {/* Chips Row - Agent-Plan Style */}
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              {/* Assignees as chip */}
               {subtask.assignees.length > 0 && (
                 <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground">Assignees:</span>
                   {subtask.assignees.map((assignee) => (
-                    <Avatar key={assignee.user_id} className="h-6 w-6 border border-border">
-                      <AvatarFallback className="text-xs">
-                        {getInitials(assignee.user_profiles.first_name, assignee.user_profiles.last_name)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <Badge key={assignee.user_id} variant="outline" className="text-xs h-5 px-1.5">
+                      {getInitials(assignee.user_profiles.first_name, assignee.user_profiles.last_name)}
+                    </Badge>
                   ))}
                 </div>
               )}
 
-              {/* Tags */}
+              {/* Tags as chips */}
               {subtask.tags.length > 0 && (
-                <div className="flex items-center gap-1 flex-wrap">
+                <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground">Tags:</span>
                   {subtask.tags.map((tag) => (
                     <Badge
                       key={tag.id}
-                      variant="secondary"
-                      className="text-xs"
+                      variant="outline"
+                      className="text-xs h-5 px-1.5"
                       style={{
-                        backgroundColor: `${tag.color}20`,
+                        backgroundColor: `${tag.color}15`,
                         color: tag.color,
-                        borderColor: tag.color,
+                        borderColor: `${tag.color}40`,
                       }}
                     >
                       {tag.label}
