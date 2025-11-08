@@ -455,6 +455,65 @@ export const useTaskActions = () => {
   });
 
   // --------------------------------------------------------------------------
+  // BULK UPDATE TASKS
+  // --------------------------------------------------------------------------
+  const bulkUpdateTasks = useMutation({
+    mutationFn: async ({ 
+      taskIds, 
+      taskData 
+    }: { 
+      taskIds: string[]; 
+      taskData: UpdateTaskInput;
+    }) => {
+      console.log('Bulk updating tasks:', taskIds, taskData);
+
+      // Build update object from provided fields only
+      const updateFields: any = {};
+      if (taskData.title !== undefined) updateFields.title = taskData.title;
+      if (taskData.description !== undefined) updateFields.description = taskData.description;
+      if (taskData.task_date !== undefined) updateFields.task_date = taskData.task_date;
+      if (taskData.due_time !== undefined) updateFields.due_time = taskData.due_time;
+      if (taskData.status !== undefined) updateFields.status = taskData.status;
+      if (taskData.priority !== undefined) updateFields.priority = taskData.priority;
+      if (taskData.trade !== undefined) updateFields.trade = taskData.trade;
+
+      if (Object.keys(updateFields).length === 0) {
+        throw new Error('No fields to update');
+      }
+
+      // Supabase allows batch update using .in() filter
+      const { data, error } = await supabase
+        .from('tasks')
+        .update(updateFields)
+        .in('id', taskIds)
+        .select();
+
+      if (error) {
+        console.error('Error bulk updating tasks:', error);
+        throw new Error(error.message || 'Failed to update tasks');
+      }
+      
+      console.log('Tasks bulk updated:', data);
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      toast({
+        title: 'Success!',
+        description: `${variables.taskIds.length} task(s) updated successfully.`,
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobsite.all });
+    },
+    onError: (error: any) => {
+      console.error('Error bulk updating tasks:', error);
+      toast({
+        title: 'Error Updating Tasks',
+        description: error.message || 'Failed to update tasks. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // --------------------------------------------------------------------------
   // UPDATE TASK
   // --------------------------------------------------------------------------
   const updateTask = useMutation({
@@ -787,6 +846,7 @@ export const useTaskActions = () => {
   return {
     createTask,
     updateTask,
+    bulkUpdateTasks,
     deleteTask,
     duplicateTaskToDate,
     moveTaskToTomorrow,

@@ -41,6 +41,8 @@ import { formatInCompanyTimezone, DEFAULT_TIMEZONE } from '@/utils/timezone';
 interface DailyTaskCardProps {
   task: Task;
   onEdit: () => void;
+  isSelected?: boolean;
+  onToggleSelection?: () => void;
 }
 
 const priorityColors = {
@@ -49,7 +51,7 @@ const priorityColors = {
   high: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20',
 };
 
-export function DailyTaskCard({ task, onEdit }: DailyTaskCardProps) {
+export function DailyTaskCard({ task, onEdit, isSelected = false, onToggleSelection }: DailyTaskCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
@@ -112,9 +114,23 @@ export function DailyTaskCard({ task, onEdit }: DailyTaskCardProps) {
 
   return (
     <>
-      <div className={cn('p-4 hover:bg-muted/30 transition-colors', isOverdue && 'bg-red-50/50 dark:bg-red-950/20')}>
+      <div className={cn(
+        'p-4 hover:bg-muted/30 transition-colors',
+        isOverdue && 'bg-red-50/50 dark:bg-red-950/20',
+        isSelected && 'bg-blue-50 dark:bg-blue-950/30 border-l-4 border-l-blue-500'
+      )}>
         <div className="flex items-start gap-3">
-          {/* Checkbox */}
+          {/* Selection Checkbox */}
+          {onToggleSelection && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={onToggleSelection}
+              className="mt-1 h-5 w-5 border-2"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
+          
+          {/* Completion Checkbox */}
           <Checkbox
             checked={task.status === 'done'}
             onCheckedChange={handleToggleStatus}
