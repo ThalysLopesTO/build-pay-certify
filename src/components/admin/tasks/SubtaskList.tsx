@@ -7,17 +7,17 @@ interface SubtaskListProps {
   subtasks: Subtask[];
   isEditing: boolean;
   onUpdate: (subtasks: Subtask[]) => void;
-  onToggleStatus?: (subtaskId: string, newStatus: 'pending' | 'in_progress' | 'completed') => void;
+  onToggleStatus?: (subtaskId: string, newStatus: 'pending' | 'in_progress' | 'done') => void;
 }
 
 export function SubtaskList({ subtasks, isEditing, onUpdate, onToggleStatus }: SubtaskListProps) {
   const calculateProgress = () => {
     if (subtasks.length === 0) return 0;
-    const completed = subtasks.filter(st => st.status === 'completed').length;
+    const completed = subtasks.filter(st => st.status === 'done').length;
     return (completed / subtasks.length) * 100;
   };
 
-  const completedCount = subtasks.filter(st => st.status === 'completed').length;
+  const completedCount = subtasks.filter(st => st.status === 'done').length;
   const totalCount = subtasks.length;
 
   if (subtasks.length === 0) {

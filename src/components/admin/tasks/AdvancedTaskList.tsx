@@ -12,7 +12,7 @@ interface AdvancedTaskListProps {
   isAdmin: boolean;
   onEditTask?: (taskId: string) => void;
   onDeleteTask?: (taskId: string) => void;
-  onToggleTaskStatus?: (taskId: string, status: 'pending' | 'in_progress' | 'completed') => void;
+  onToggleTaskStatus?: (taskId: string, status: 'pending' | 'in_progress' | 'done') => void;
 }
 
 export function AdvancedTaskList({ 

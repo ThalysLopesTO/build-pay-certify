@@ -17,7 +17,7 @@ import {
   Circle,
   AlertCircle
 } from 'lucide-react';
-import { formatDistance } from 'date-fns';
+import { isPast, isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { SubtaskList } from './SubtaskList';
@@ -27,7 +27,7 @@ interface AdvancedTaskCardProps {
   isAdmin: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
-  onToggleStatus?: (status: 'pending' | 'in_progress' | 'completed') => void;
+  onToggleStatus?: (status: 'pending' | 'in_progress' | 'done') => void;
 }
 
 const priorityColors = {
@@ -40,13 +40,13 @@ const priorityColors = {
 const statusColors = {
   pending: 'bg-muted text-muted-foreground',
   in_progress: 'bg-primary/10 text-primary',
-  completed: 'bg-green-500/10 text-green-700 dark:text-green-400',
+  done: 'bg-green-500/10 text-green-700 dark:text-green-400',
 };
 
 const statusIcons = {
   pending: Circle,
   in_progress: Clock,
-  completed: CheckCircle2,
+  done: CheckCircle2,
 };
 
 export function AdvancedTaskCard({ task, isAdmin, onEdit, onDelete, onToggleStatus }: AdvancedTaskCardProps) {
@@ -56,30 +56,13 @@ export function AdvancedTaskCard({ task, isAdmin, onEdit, onDelete, onToggleStat
     return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || '?';
   };
 
-  const calculateDaysRemaining = () => {
-    const today = new Date();
-    const endDate = new Date(task.end_date);
-    const diffTime = endDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const calculateDuration = () => {
-    const start = new Date(task.start_date);
-    const end = new Date(task.end_date);
-    const diffTime = end.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
   const calculateSubtaskProgress = () => {
     if (!task.subtasks || task.subtasks.length === 0) return 0;
-    const completed = task.subtasks.filter(st => st.status === 'completed').length;
+    const completed = task.subtasks.filter(st => st.status === 'done').length;
     return (completed / task.subtasks.length) * 100;
   };
 
-  const daysRemaining = calculateDaysRemaining();
-  const isOverdue = daysRemaining < 0 && task.status !== 'completed';
+  const isOverdue = task.task_date && isPast(new Date(task.task_date)) && !isToday(new Date(task.task_date)) && task.status !== 'done';
   const StatusIcon = statusIcons[task.status];
 
   return (
@@ -92,7 +75,7 @@ export function AdvancedTaskCard({ task, isAdmin, onEdit, onDelete, onToggleStat
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <h3 className="font-semibold text-lg text-foreground truncate">
-              {task.task_name}
+              {task.title}
             </h3>
             {task.priority && (
               <Badge variant="outline" className={cn("text-xs", priorityColors[task.priority])}>
@@ -127,26 +110,21 @@ export function AdvancedTaskCard({ task, isAdmin, onEdit, onDelete, onToggleStat
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="w-4 h-4" />
           <span>
-            {new Date(task.start_date).toLocaleDateString()} - {new Date(task.end_date).toLocaleDateString()}
+            {task.task_date ? new Date(task.task_date).toLocaleDateString() : 'No date'}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Clock className="w-4 h-4" />
-          <span>{calculateDuration()} days duration</span>
-        </div>
+        {task.due_time && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="w-4 h-4" />
+            <span>{task.due_time}</span>
+          </div>
+        )}
 
         {isOverdue && (
           <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 font-medium">
             <AlertCircle className="w-4 h-4" />
-            <span>Overdue by {Math.abs(daysRemaining)} days</span>
-          </div>
-        )}
-
-        {!isOverdue && task.status !== 'completed' && daysRemaining >= 0 && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            <span>{daysRemaining} days remaining</span>
+            <span>Overdue</span>
           </div>
         )}
 
@@ -220,7 +198,7 @@ export function AdvancedTaskCard({ task, isAdmin, onEdit, onDelete, onToggleStat
               <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">
-                    Subtasks ({task.subtasks.filter(st => st.status === 'completed').length}/{task.subtasks.length})
+                    Subtasks ({task.subtasks.filter(st => st.status === 'done').length}/{task.subtasks.length})
                   </span>
                   <ChevronDown className={cn(
                     "w-4 h-4 transition-transform text-muted-foreground",
@@ -272,12 +250,12 @@ export function AdvancedTaskCard({ task, isAdmin, onEdit, onDelete, onToggleStat
             In Progress
           </Button>
           <Button
-            variant={task.status === 'completed' ? 'default' : 'outline'}
+            variant={task.status === 'done' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => onToggleStatus('completed')}
+            onClick={() => onToggleStatus('done')}
             className="flex-1"
           >
-            Completed
+            Done
           </Button>
         </div>
       )}

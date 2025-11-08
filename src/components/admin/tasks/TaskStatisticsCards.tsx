@@ -17,14 +17,15 @@ export function TaskStatisticsCards({ jobsites }: TaskStatisticsCardsProps) {
 
   // Calculate statistics
   const totalTasks = allTasks.length;
-  const completedTasks = allTasks.filter(t => t.status === 'completed').length;
+  const completedTasks = allTasks.filter(t => t.status === 'done').length;
   const inProgressTasks = allTasks.filter(t => t.status === 'in_progress').length;
   const overdueTasks = allTasks.filter(t => {
-    if (t.status === 'completed') return false;
-    const endDate = new Date(t.end_date);
+    if (t.status === 'done') return false;
+    if (!t.task_date) return false;
+    const taskDate = new Date(t.task_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return endDate < today;
+    return taskDate < today;
   }).length;
 
   return (

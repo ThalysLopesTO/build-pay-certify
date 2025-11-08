@@ -40,25 +40,14 @@ const JobsiteProgressCard: React.FC<JobsiteProgressCardProps> = ({ jobsite }) =>
 
   // Calculate enhanced progress metrics
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(task => task.status === 'completed').length;
+  const completedTasks = tasks.filter(task => task.status === 'done').length;
   const inProgressTasks = tasks.filter(task => task.status === 'in_progress').length;
   const pendingTasks = tasks.filter(task => task.status === 'pending').length;
   
-  // Calculate overdue tasks (not completed and past end date)
+  // Calculate overdue tasks (not done and past task date)
   const overdueTasks = tasks.filter(task => 
-    task.status !== 'completed' && isPast(new Date(task.end_date)) && !isToday(new Date(task.end_date))
+    task.status !== 'done' && task.task_date && isPast(new Date(task.task_date)) && !isToday(new Date(task.task_date))
   ).length;
-  
-  // Calculate duration statistics
-  const taskDurations = tasks.map(task => {
-    const startDate = new Date(task.start_date);
-    const endDate = new Date(task.end_date);
-    return differenceInDays(endDate, startDate) + 1;
-  });
-  
-  const shortTasks = taskDurations.filter(duration => duration <= 5).length;
-  const mediumTasks = taskDurations.filter(duration => duration >= 6 && duration <= 10).length;
-  const longTasks = taskDurations.filter(duration => duration >= 11).length;
   
   const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
@@ -168,33 +157,6 @@ const JobsiteProgressCard: React.FC<JobsiteProgressCardProps> = ({ jobsite }) =>
                     <div className="text-xs text-gray-500">Overdue</div>
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Duration Summary */}
-            {totalTasks > 0 && (
-              <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Timer className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Task Duration Summary:</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  {shortTasks > 0 && (
-                    <Badge className="bg-green-100 text-green-800">
-                      {shortTasks} Short (1-5d)
-                    </Badge>
-                  )}
-                  {mediumTasks > 0 && (
-                    <Badge className="bg-yellow-100 text-yellow-800">
-                      {mediumTasks} Medium (6-10d)
-                    </Badge>
-                  )}
-                  {longTasks > 0 && (
-                    <Badge className="bg-red-100 text-red-800">
-                      {longTasks} Long (11+d)
-                    </Badge>
-                  )}
-                </div>
               </div>
             )}
 

@@ -23,14 +23,15 @@ export function JobsiteTaskTab({ jobsiteId, isAdmin, hideStats = false, compact 
 
   // Calculate statistics
   const totalTasks = allTasks.length;
-  const completedTasks = allTasks.filter(t => t.status === 'completed').length;
+  const completedTasks = allTasks.filter(t => t.status === 'done').length;
   const inProgressTasks = allTasks.filter(t => t.status === 'in_progress').length;
   const overdueTasks = allTasks.filter(t => {
-    if (t.status === 'completed') return false;
-    const endDate = new Date(t.end_date);
+    if (t.status === 'done') return false;
+    if (!t.task_date) return false;
+    const taskDate = new Date(t.task_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return endDate < today;
+    return taskDate < today;
   }).length;
 
   return (
@@ -96,7 +97,7 @@ export function JobsiteTaskTab({ jobsiteId, isAdmin, hideStats = false, compact 
             onValueChange={(value) =>
               setFilters(prev => ({
                 ...prev,
-                status: value === 'all' ? undefined : (value as 'pending' | 'in_progress' | 'completed')
+                status: value === 'all' ? undefined : (value as 'pending' | 'in_progress' | 'done')
               }))
             }
           >
@@ -107,7 +108,7 @@ export function JobsiteTaskTab({ jobsiteId, isAdmin, hideStats = false, compact 
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="done">Done</SelectItem>
             </SelectContent>
           </Select>
 

@@ -2516,6 +2516,13 @@ export type Database = {
             referencedRelation: "subtasks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "subtask_assignees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       subtask_tag_links: {
@@ -2665,6 +2672,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tasks"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }

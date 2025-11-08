@@ -27,12 +27,12 @@ import { cn } from '@/lib/utils';
 
 const advancedTaskFormSchema = z.object({
   task_name: z.string().min(1, 'Task name is required'),
-  start_date: z.string().min(1, 'Start date is required'),
-  end_date: z.string().min(1, 'End date is required'),
-  status: z.enum(['pending', 'in_progress', 'completed']),
+  task_date: z.string().min(1, 'Task date is required'),
+  status: z.enum(['pending', 'in_progress', 'done']),
   priority: z.enum(['low', 'medium', 'high']),
   trade: z.string().optional(),
   description: z.string().optional(),
+  due_time: z.string().optional(),
   assigneeIds: z.array(z.string()).optional(),
   tagIds: z.array(z.string()).optional(),
 });
@@ -53,13 +53,13 @@ export function AdvancedTaskForm({ jobsiteId, task, onCancel, onSuccess }: Advan
   const form = useForm<FormValues>({
     resolver: zodResolver(advancedTaskFormSchema),
     defaultValues: {
-      task_name: task?.task_name || '',
-      start_date: task?.start_date || '',
-      end_date: task?.end_date || '',
+      task_name: task?.title || '',
+      task_date: task?.task_date || '',
       status: task?.status || 'pending',
       priority: task?.priority || 'medium',
       trade: task?.trade || '',
       description: task?.description || '',
+      due_time: task?.due_time || '',
       assigneeIds: task?.assignees?.map(a => a.user_id) || [],
       tagIds: task?.tags?.map(t => t.id) || [],
     },
@@ -71,13 +71,13 @@ export function AdvancedTaskForm({ jobsiteId, task, onCancel, onSuccess }: Advan
         await updateTask.mutateAsync({
           taskId: task.id,
           taskData: {
-            task_name: data.task_name,
-            start_date: data.start_date,
-            end_date: data.end_date,
+            title: data.task_name,
+            task_date: data.task_date,
             status: data.status,
             priority: data.priority,
             trade: data.trade || undefined,
             description: data.description || undefined,
+            due_time: data.due_time || undefined,
             assigneeIds: data.assigneeIds,
             tagIds: data.tagIds,
           },
@@ -86,13 +86,13 @@ export function AdvancedTaskForm({ jobsiteId, task, onCancel, onSuccess }: Advan
         await createTask.mutateAsync({
           jobsiteId,
           taskData: {
-            task_name: data.task_name,
-            start_date: data.start_date,
-            end_date: data.end_date,
+            title: data.task_name,
+            task_date: data.task_date,
             status: data.status,
             priority: data.priority,
             trade: data.trade || undefined,
             description: data.description || undefined,
+            due_time: data.due_time || undefined,
             assigneeIds: data.assigneeIds,
             tagIds: data.tagIds,
           },
@@ -124,71 +124,37 @@ export function AdvancedTaskForm({ jobsiteId, task, onCancel, onSuccess }: Advan
           )}
         </div>
 
-        {/* Date Range */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Start Date *</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !form.watch('start_date') && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {form.watch('start_date') 
-                    ? format(new Date(form.watch('start_date')), 'PPP')
-                    : 'Pick a date'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={form.watch('start_date') ? new Date(form.watch('start_date')) : undefined}
-                  onSelect={(date) => form.setValue('start_date', date ? format(date, 'yyyy-MM-dd') : '')}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-            {form.formState.errors.start_date && (
-              <p className="text-sm text-destructive">{form.formState.errors.start_date.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>End Date *</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !form.watch('end_date') && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {form.watch('end_date') 
-                    ? format(new Date(form.watch('end_date')), 'PPP')
-                    : 'Pick a date'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={form.watch('end_date') ? new Date(form.watch('end_date')) : undefined}
-                  onSelect={(date) => form.setValue('end_date', date ? format(date, 'yyyy-MM-dd') : '')}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-            {form.formState.errors.end_date && (
-              <p className="text-sm text-destructive">{form.formState.errors.end_date.message}</p>
-            )}
-          </div>
+        {/* Task Date */}
+        <div className="space-y-2">
+          <Label>Task Date *</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !form.watch('task_date') && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {form.watch('task_date') 
+                  ? format(new Date(form.watch('task_date')), 'PPP')
+                  : 'Pick a date'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={form.watch('task_date') ? new Date(form.watch('task_date')) : undefined}
+                onSelect={(date) => form.setValue('task_date', date ? format(date, 'yyyy-MM-dd') : '')}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+          {form.formState.errors.task_date && (
+            <p className="text-sm text-destructive">{form.formState.errors.task_date.message}</p>
+          )}
         </div>
 
         {/* Status and Priority */}
@@ -205,7 +171,7 @@ export function AdvancedTaskForm({ jobsiteId, task, onCancel, onSuccess }: Advan
               <SelectContent>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="done">Done</SelectItem>
               </SelectContent>
             </Select>
           </div>
