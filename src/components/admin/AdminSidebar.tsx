@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -13,8 +14,24 @@ import { AdminSidebarProps } from './sidebar/types';
 import { useScrollToActiveSection } from '@/hooks/useScrollToActiveSection';
 
 const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
+  const location = useLocation();
+  
   // Auto-scroll to active section
   useScrollToActiveSection(activeTab);
+
+  // Sync activeTab with current route
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/admin/tasks') {
+      setActiveTab('tasks');
+    } else if (path === '/admin/dashboard') {
+      setActiveTab('dashboard');
+    } else if (path.startsWith('/admin/')) {
+      // Extract the tab name from the path
+      const tabName = path.replace('/admin/', '').split('/')[0];
+      setActiveTab(tabName);
+    }
+  }, [location.pathname, setActiveTab]);
 
   return (
     <Sidebar className="border-r border-border bg-sidebar transition-colors">

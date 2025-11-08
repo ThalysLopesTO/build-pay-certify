@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -20,6 +21,8 @@ interface ManagementSidebarSectionProps {
 }
 
 const ManagementSidebarSection = ({ items, activeTab, setActiveTab }: ManagementSidebarSectionProps) => {
+  const navigate = useNavigate();
+  
   return (
     <SidebarGroup className="mt-2 first:mt-0">
       <SidebarGroupContent>
@@ -30,7 +33,13 @@ const ManagementSidebarSection = ({ items, activeTab, setActiveTab }: Management
             return (
               <SidebarMenuItem key={item.id}>
                 <SidebarMenuButton
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    if ((item as any).href) {
+                      navigate((item as any).href);
+                    } else {
+                      setActiveTab(item.id);
+                    }
+                  }}
                   className={`
                     relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
                     transition-colors duration-200 hover:bg-white hover:text-black
