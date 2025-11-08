@@ -21,6 +21,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/u
 import { TaskItem } from './TaskItem';
 import { DailyTaskForm } from './DailyTaskForm';
 import { DraggableTaskList } from './DraggableTaskList';
+import { QuickTaskComposer } from './quick-create/QuickTaskComposer';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -523,43 +524,52 @@ export function DailyTaskScreen() {
         <Plus className="w-7 h-7" />
       </Button>
 
-      {/* Create/Edit Task Form */}
-      {isDesktop ? (
-        <Dialog open={showCreateForm || !!editingTaskId} onOpenChange={(open) => {
+      {/* Quick Task Composer */}
+      <QuickTaskComposer
+        open={showCreateForm && !editingTaskId}
+        onOpenChange={(open) => {
           if (!open) {
             setShowCreateForm(false);
+          }
+        }}
+        jobsiteId={jobsiteId || ''}
+        jobsiteName={jobsite?.name || 'Unknown Jobsite'}
+        defaultDate={format(selectedDate, 'yyyy-MM-dd')}
+      />
+
+      {/* Edit Task Form (Old form only for editing existing tasks) */}
+      {isDesktop ? (
+        <Dialog open={!!editingTaskId} onOpenChange={(open) => {
+          if (!open) {
             setEditingTaskId(null);
           }
         }}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingTaskId ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+              <DialogTitle>Edit Task</DialogTitle>
             </DialogHeader>
             <DailyTaskForm
               jobsiteId={jobsiteId || ''}
               taskId={editingTaskId || undefined}
               defaultDate={format(selectedDate, 'yyyy-MM-dd')}
               onCancel={() => {
-                setShowCreateForm(false);
                 setEditingTaskId(null);
               }}
               onSuccess={() => {
-                setShowCreateForm(false);
                 setEditingTaskId(null);
               }}
             />
           </DialogContent>
         </Dialog>
       ) : (
-        <Drawer open={showCreateForm || !!editingTaskId} onOpenChange={(open) => {
+        <Drawer open={!!editingTaskId} onOpenChange={(open) => {
           if (!open) {
-            setShowCreateForm(false);
             setEditingTaskId(null);
           }
         }}>
           <DrawerContent className="max-h-[90vh]">
             <DrawerHeader>
-              <DrawerTitle>{editingTaskId ? 'Edit Task' : 'Create New Task'}</DrawerTitle>
+              <DrawerTitle>Edit Task</DrawerTitle>
             </DrawerHeader>
             <div className="overflow-y-auto px-4 pb-8">
               <DailyTaskForm
@@ -567,11 +577,9 @@ export function DailyTaskScreen() {
                 taskId={editingTaskId || undefined}
                 defaultDate={format(selectedDate, 'yyyy-MM-dd')}
                 onCancel={() => {
-                  setShowCreateForm(false);
                   setEditingTaskId(null);
                 }}
                 onSuccess={() => {
-                  setShowCreateForm(false);
                   setEditingTaskId(null);
                 }}
               />
