@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import TimesheetForm from '../components/employee/TimesheetForm';
 import AttentionReportForm from '../components/employee/AttentionReportForm';
@@ -13,11 +14,13 @@ import EmployeeDashboardHome from '../components/employee/EmployeeDashboardHome'
 import TimeTracker from '../components/employee/TimeTracker';
 import EmployeeBottomNav from '../components/employee/EmployeeBottomNav';
 import EmployeeDesktopNav from '../components/employee/EmployeeDesktopNav';
-import EmployeeDailyTasks from '../components/employee/EmployeeDailyTasks';
+import { JobsiteSelectionScreen } from '../components/admin/tasks/JobsiteSelectionScreen';
+import { DailyTaskScreen } from '../components/admin/tasks/DailyTaskScreen';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const EmployeeDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
 
   const handleNavigateToTab = (tab: string) => {
@@ -25,12 +28,14 @@ const EmployeeDashboard = () => {
   };
 
   const renderContent = () => {
+    const jobsiteId = searchParams.get('jobsite');
+    
     switch (activeTab) {
       case 'dashboard':
         return <EmployeeDashboardHome onNavigateToTab={handleNavigateToTab} />;
       case 'tasks':
       case 'daily-tasks':
-        return <EmployeeDailyTasks />;
+        return jobsiteId ? <DailyTaskScreen /> : <JobsiteSelectionScreen />;
       case 'time-tracker':
         return <TimeTracker />;
       case 'timesheet':
