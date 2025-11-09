@@ -94,44 +94,44 @@ const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
         </Button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent align="end" sideOffset={12} className="w-72 border border-border rounded-xl shadow-xl z-50 bg-slate-100">
+      <DropdownMenuContent align="end" sideOffset={12} className="w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-50">
         <DropdownMenuLabel className="font-normal p-0">
-          <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-t-xl border-b border-border/50">
-            <Avatar className="h-14 w-14 ring-2 ring-primary/20">
+          <div className="flex items-center gap-4 p-4 bg-white rounded-t-xl border-b border-gray-200">
+            <Avatar className="h-14 w-14 ring-2 ring-gray-200">
               <AvatarImage src={user.photo_url} alt={`${user.firstName} ${user.lastName}`} />
               <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
                 {getInitials()}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col space-y-1.5 min-w-0 flex-1">
-              <p className="text-base font-semibold leading-none text-foreground truncate">
+              <p className="text-base font-semibold leading-none text-gray-900 truncate">
                 {user.firstName} {user.lastName}
               </p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-xs text-gray-600 truncate">
                 {user.email}
               </p>
             </div>
           </div>
         </DropdownMenuLabel>
         
-        <DropdownMenuSeparator className="my-1" />
+        <DropdownMenuSeparator className="my-1 bg-gray-200" />
         
         <div className="p-2">
-          <DropdownMenuItem onClick={handleViewProfile} className="cursor-pointer hover:bg-accent/80 focus:bg-accent/80 py-3 px-3 rounded-lg transition-colors">
-            <User className="mr-3 h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">View Profile</span>
+          <DropdownMenuItem onClick={handleViewProfile} className="cursor-pointer hover:bg-gray-100 focus:bg-gray-100 py-3 px-3 rounded-lg transition-colors">
+            <User className="mr-3 h-4 w-4 text-gray-700" />
+            <span className="font-medium text-gray-900">View Profile</span>
           </DropdownMenuItem>
           
-          <DropdownMenuItem onClick={handleSettings} className="cursor-pointer hover:bg-accent/80 focus:bg-accent/80 py-3 px-3 rounded-lg transition-colors">
-            <Settings className="mr-3 h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">Settings</span>
+          <DropdownMenuItem onClick={handleSettings} className="cursor-pointer hover:bg-gray-100 focus:bg-gray-100 py-3 px-3 rounded-lg transition-colors">
+            <Settings className="mr-3 h-4 w-4 text-gray-700" />
+            <span className="font-medium text-gray-900">Settings</span>
           </DropdownMenuItem>
         </div>
         
-        <DropdownMenuSeparator className="my-1" />
+        <DropdownMenuSeparator className="my-1 bg-gray-200" />
         
         <div className="p-2">
-          <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} className="cursor-pointer hover:bg-destructive/10 focus:bg-destructive/10 text-destructive focus:text-destructive py-3 px-3 rounded-lg transition-colors font-medium">
+          <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} className="cursor-pointer hover:bg-red-50 focus:bg-red-50 text-red-600 focus:text-red-600 py-3 px-3 rounded-lg transition-colors font-medium">
             {isLoggingOut ? <Loader2 className="mr-3 h-4 w-4 animate-spin" /> : <LogOut className="mr-3 h-4 w-4" />}
             <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
           </DropdownMenuItem>
