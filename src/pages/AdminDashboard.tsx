@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import Header from '../components/Header';
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -36,6 +36,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const params = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Update activeTab based on URL path and parameters
   useEffect(() => {
@@ -44,6 +45,14 @@ const AdminDashboard = () => {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
+
+  // Sync activeTab to URL
+  useEffect(() => {
+    const currentTab = searchParams.get('tab');
+    if (currentTab !== activeTab) {
+      navigate(`/admin/dashboard?tab=${activeTab}`, { replace: true });
+    }
+  }, [activeTab, navigate, searchParams]);
 
   const renderContent = () => {
     // Handle dynamic routes first
