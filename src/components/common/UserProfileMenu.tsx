@@ -126,20 +126,20 @@ const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
       </DropdownMenuTrigger>
       
       <DropdownMenuContent 
-        className="w-64 bg-popover border border-border shadow-lg z-50" 
-        align={variant === 'mobile' ? 'end' : 'end'}
-        sideOffset={8}
+        className="w-72 bg-card border border-border rounded-xl shadow-xl z-50" 
+        align="end"
+        sideOffset={12}
       >
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex items-center gap-3 py-2">
-            <Avatar className="h-12 w-12">
+        <DropdownMenuLabel className="font-normal p-0">
+          <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-t-xl border-b border-border/50">
+            <Avatar className="h-14 w-14 ring-2 ring-primary/20">
               <AvatarImage src={user.photo_url} alt={`${user.firstName} ${user.lastName}`} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
                 {getInitials()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex flex-col space-y-1 min-w-0">
-              <p className="text-sm font-medium leading-none text-foreground truncate">
+            <div className="flex flex-col space-y-1.5 min-w-0 flex-1">
+              <p className="text-base font-semibold leading-none text-foreground truncate">
                 {user.firstName} {user.lastName}
               </p>
               <p className="text-xs text-muted-foreground truncate">
@@ -149,38 +149,42 @@ const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
           </div>
         </DropdownMenuLabel>
         
-        <DropdownMenuSeparator className="bg-border" />
+        <DropdownMenuSeparator className="my-1" />
         
-        <DropdownMenuItem 
-          onClick={handleViewProfile}
-          className="cursor-pointer hover:bg-accent focus:bg-accent py-2.5"
-        >
-          <User className="mr-2 h-4 w-4" />
-          <span>View Profile</span>
-        </DropdownMenuItem>
+        <div className="p-2">
+          <DropdownMenuItem 
+            onClick={handleViewProfile}
+            className="cursor-pointer hover:bg-accent/80 focus:bg-accent/80 py-3 px-3 rounded-lg transition-colors"
+          >
+            <User className="mr-3 h-4 w-4 text-muted-foreground" />
+            <span className="font-medium">View Profile</span>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem 
+            onClick={handleSettings}
+            className="cursor-pointer hover:bg-accent/80 focus:bg-accent/80 py-3 px-3 rounded-lg transition-colors"
+          >
+            <Settings className="mr-3 h-4 w-4 text-muted-foreground" />
+            <span className="font-medium">Settings</span>
+          </DropdownMenuItem>
+        </div>
         
-        <DropdownMenuItem 
-          onClick={handleSettings}
-          className="cursor-pointer hover:bg-accent focus:bg-accent py-2.5"
-        >
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
-        </DropdownMenuItem>
+        <DropdownMenuSeparator className="my-1" />
         
-        <DropdownMenuSeparator className="bg-border" />
-        
-        <DropdownMenuItem
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          className="cursor-pointer hover:bg-destructive/10 focus:bg-destructive/10 text-destructive focus:text-destructive py-2.5"
-        >
-          {isLoggingOut ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <LogOut className="mr-2 h-4 w-4" />
-          )}
-          <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
-        </DropdownMenuItem>
+        <div className="p-2">
+          <DropdownMenuItem
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="cursor-pointer hover:bg-destructive/10 focus:bg-destructive/10 text-destructive focus:text-destructive py-3 px-3 rounded-lg transition-colors font-medium"
+          >
+            {isLoggingOut ? (
+              <Loader2 className="mr-3 h-4 w-4 animate-spin" />
+            ) : (
+              <LogOut className="mr-3 h-4 w-4" />
+            )}
+            <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
+          </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
