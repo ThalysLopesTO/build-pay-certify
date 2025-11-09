@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Building, User, Clock, Timer, FileText, AlertTriangle, Award, Settings, ArrowRight, Eye, AlertCircle } from 'lucide-react';
+import { Building, User, Clock, Timer, FileText, AlertTriangle, Award, Settings, ArrowRight, Eye, AlertCircle, CheckSquare } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,6 +43,14 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
   const progressPercentage = Math.min((totalWeeklyHours / targetHours) * 100, 100);
 
   const allQuickActions = [
+    {
+      id: 'tasks',
+      title: 'My Tasks',
+      icon: CheckSquare,
+      onClick: () => onNavigateToTab('tasks'),
+      color: 'bg-green-600 hover:bg-green-700',
+      description: 'View & complete tasks'
+    },
     {
       id: 'time-tracker',
       title: 'Clock In/Out',

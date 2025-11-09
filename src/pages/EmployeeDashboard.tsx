@@ -13,6 +13,7 @@ import EmployeeDashboardHome from '../components/employee/EmployeeDashboardHome'
 import TimeTracker from '../components/employee/TimeTracker';
 import EmployeeBottomNav from '../components/employee/EmployeeBottomNav';
 import EmployeeDesktopNav from '../components/employee/EmployeeDesktopNav';
+import EmployeeDailyTasks from '../components/employee/EmployeeDailyTasks';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const EmployeeDashboard = () => {
@@ -27,6 +28,9 @@ const EmployeeDashboard = () => {
     switch (activeTab) {
       case 'dashboard':
         return <EmployeeDashboardHome onNavigateToTab={handleNavigateToTab} />;
+      case 'tasks':
+      case 'daily-tasks':
+        return <EmployeeDailyTasks />;
       case 'time-tracker':
         return <TimeTracker />;
       case 'timesheet':

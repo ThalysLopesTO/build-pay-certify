@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, FileText, AlertTriangle, Settings, Home, AlertCircle } from 'lucide-react';
+import { Clock, FileText, AlertTriangle, Settings, Home, AlertCircle, CheckSquare } from 'lucide-react';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { filterMenuByPermissions } from '@/utils/menuPermissions';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -21,6 +21,13 @@ const EmployeeBottomNav: React.FC<EmployeeBottomNavProps> = ({ activeTab, onTabC
       label: 'Home',
       icon: Home,
       color: 'text-slate-600'
+    },
+    {
+      id: 'tasks',
+      title: 'Tasks',
+      label: 'Tasks',
+      icon: CheckSquare,
+      color: 'text-green-600'
     },
     {
       id: 'timesheet',

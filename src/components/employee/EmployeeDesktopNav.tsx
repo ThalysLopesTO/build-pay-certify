@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, FileText, AlertTriangle, Settings, Home, Package, ClockIcon } from 'lucide-react';
+import { Clock, FileText, AlertTriangle, Settings, Home, Package, ClockIcon, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
@@ -27,6 +27,13 @@ const EmployeeDesktopNav: React.FC<EmployeeDesktopNavProps> = ({ activeTab, onTa
       label: 'Home',
       icon: Home,
       color: 'text-slate-600'
+    },
+    {
+      id: 'tasks',
+      title: 'Tasks',
+      label: 'Tasks',
+      icon: CheckSquare,
+      color: 'text-green-600'
     },
     {
       id: 'time-tracker',
