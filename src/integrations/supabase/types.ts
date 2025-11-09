@@ -2600,6 +2600,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "subtasks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "subtasks_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
@@ -2815,6 +2822,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "tasks_jobsite_id_fkey"
