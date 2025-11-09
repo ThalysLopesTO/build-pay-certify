@@ -117,7 +117,7 @@ const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
         <DropdownMenuSeparator className="my-2" />
         
         <div className="p-3">
-          <DropdownMenuItem onClick={handleViewProfile} className="cursor-pointer hover:bg-gray-100 focus:bg-gray-100 py-3 px-3 rounded-lg transition-colors">
+          <DropdownMenuItem onClick={handleSettings} className="cursor-pointer hover:bg-gray-100 focus:bg-gray-100 py-3 px-3 rounded-lg transition-colors">
             <User className="mr-3 h-4 w-4 text-gray-700" />
             <span className="font-medium text-gray-900">View Profile</span>
           </DropdownMenuItem>
