@@ -880,34 +880,64 @@ export const useTaskActions = () => {
   // --------------------------------------------------------------------------
   const updateSubtask = useMutation({
     mutationFn: async ({ subtaskId, status }: { subtaskId: string; status: 'pending' | 'in_progress' | 'done' | 'blocked' | 'failed' }) => {
-      const { error, data } = await supabase
+      // First get the task_id for this subtask
+      const { data: subtaskData, error: fetchError } = await supabase
+        .from('subtasks')
+        .select('task_id')
+        .eq('id', subtaskId)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('Subtask fetch error:', fetchError);
+        throw new Error('Failed to fetch subtask');
+      }
+
+      if (!subtaskData) {
+        throw new Error('Subtask not found');
+      }
+
+      const taskId = subtaskData.task_id;
+
+      // Now update the subtask status
+      const { error: updateError } = await supabase
         .from('subtasks')
         .update({ status })
-        .eq('id', subtaskId)
-        .select('task_id')
-        .single();
+        .eq('id', subtaskId);
 
-      if (error) {
-        throw new Error('Failed to update subtask');
+      if (updateError) {
+        console.error('Subtask update error:', updateError);
+        throw new Error('Failed to update subtask status');
       }
 
       // Check if all subtasks are complete for auto-completion
       const { data: allSubtasks } = await supabase
         .from('subtasks')
         .select('status')
-        .eq('task_id', data.task_id);
+        .eq('task_id', taskId);
 
       if (allSubtasks && allSubtasks.every(st => st.status === 'done')) {
         await supabase
           .from('tasks')
           .update({ status: 'done' })
-          .eq('id', data.task_id);
+          .eq('id', taskId);
       }
 
       return subtaskId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.jobsite.all });
+      toast({
+        title: 'Subtask Updated',
+        description: 'Subtask status has been updated successfully.',
+      });
+    },
+    onError: (error: any) => {
+      console.error('Subtask mutation error:', error);
+      toast({
+        title: 'Error Updating Subtask',
+        description: error.message || 'Failed to update subtask status.',
+        variant: 'destructive',
+      });
     },
   });
 
