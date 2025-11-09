@@ -21,10 +21,12 @@ import ForemanDailyReports from '../components/foreman/ForemanDailyReports';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import EquipmentManagement from '../components/admin/inventory/EquipmentManagement';
 import { JobsiteSelectionScreen } from '../components/admin/tasks/JobsiteSelectionScreen';
-import { useParams } from 'react-router-dom';
+import { DailyTaskScreen } from '../components/admin/tasks/DailyTaskScreen';
+import { useParams, useSearchParams } from 'react-router-dom';
 
 const ForemanDashboard = () => {
   const params = useParams();
+  const [searchParams] = useSearchParams();
   const preopenRequestId = params.requestId as string | undefined;
   const [activeTab, setActiveTab] = useState(preopenRequestId ? 'my-requests' : 'dashboard');
 
@@ -45,6 +47,10 @@ const ForemanDashboard = () => {
       case 'change-orders':
         return <ChangeOrdersPage />;
       case 'daily-tasks':
+        const foremanJobsiteId = searchParams.get('jobsite');
+        if (foremanJobsiteId) {
+          return <DailyTaskScreen />;
+        }
         return <JobsiteSelectionScreen />;
       case 'employees':
         return <EmployeeDirectory />;

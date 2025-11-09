@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function JobsiteSelectionScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { data: jobsites = [], isLoading } = useJobsites('active');
+
+  // Detect which dashboard we're in based on current route
+  const basePath = location.pathname;
+  const currentTab = searchParams.get('tab') || 'tasks';
 
   // Filter jobsites based on search
   const filteredJobsites = jobsites.filter((jobsite) =>
@@ -67,7 +73,7 @@ export function JobsiteSelectionScreen() {
             <JobsiteCard
               key={jobsite.id}
               jobsite={jobsite}
-              onClick={() => navigate(`/admin/dashboard?tab=tasks&jobsite=${jobsite.id}`)}
+              onClick={() => navigate(`${basePath}?tab=${currentTab}&jobsite=${jobsite.id}`)}
             />
           ))
         )}

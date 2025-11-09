@@ -44,6 +44,11 @@ export function DailyTaskScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const jobsiteId = searchParams.get('jobsite') || undefined;
+  
+  // Make navigation route-aware
+  const currentPath = window.location.pathname;
+  const currentTab = searchParams.get('tab') || 'tasks';
+  const backUrl = `${currentPath}?tab=${currentTab}`;
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -196,7 +201,7 @@ export function DailyTaskScreen() {
       <div className="container max-w-7xl mx-auto p-4 sm:p-6">
         <div className="text-center py-12">
           <p className="text-muted-foreground">Jobsite not found</p>
-          <Button onClick={() => navigate('/admin/dashboard?tab=tasks')} className="mt-4">
+          <Button onClick={() => navigate(backUrl)} className="mt-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Jobsites
           </Button>
@@ -214,7 +219,7 @@ export function DailyTaskScreen() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/admin/dashboard?tab=tasks')}
+            onClick={() => navigate(backUrl)}
             className="text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />

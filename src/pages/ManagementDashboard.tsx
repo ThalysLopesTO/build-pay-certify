@@ -23,6 +23,7 @@ import ManagementTimesheetView from '../components/management/ManagementTimeshee
 import MyTimesheetHistory from '../components/common/MyTimesheetHistory';
 import DailyReportsManagement from '../components/admin/DailyReportsManagement';
 import { JobsiteSelectionScreen } from '../components/admin/tasks/JobsiteSelectionScreen';
+import { DailyTaskScreen } from '../components/admin/tasks/DailyTaskScreen';
 
 const ManagementDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -45,6 +46,10 @@ const ManagementDashboard = () => {
       case 'live-punch-monitor':
         return <LivePunchMonitor />;
       case 'daily-tasks':
+        const mgmtJobsiteId = searchParams.get('jobsite');
+        if (mgmtJobsiteId) {
+          return <DailyTaskScreen />;
+        }
         return <JobsiteSelectionScreen />;
       case 'my-timesheet':
         return <ManagementTimesheetView />;
