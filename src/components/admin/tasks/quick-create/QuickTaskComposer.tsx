@@ -227,7 +227,7 @@ export function QuickTaskComposer({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="h-[90vh] flex flex-col">
+        <DrawerContent className="max-h-[90vh] flex flex-col">
           {content}
         </DrawerContent>
       </Drawer>
