@@ -3586,6 +3586,10 @@ export type Database = {
         Args: { target_company_id: string }
         Returns: boolean
       }
+      is_user_assigned_to_task: {
+        Args: { _task_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_user_super_admin: { Args: never; Returns: boolean }
       permanently_delete_employee: {
         Args: { employee_user_id: string }
