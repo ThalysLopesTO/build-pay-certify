@@ -891,22 +891,23 @@ export const useTaskActions = () => {
     }: { 
       updates: { taskId: string; sortOrder: number }[];
     }) => {
-      // Update multiple tasks at once
-      const promises = updates.map(({ taskId, sortOrder }) => 
-        supabase
-          .from('tasks')
-          .update({ sort_order: sortOrder })
-          .eq('id', taskId)
-      );
+      console.log('Bulk reordering tasks:', updates);
 
-      const results = await Promise.all(promises);
-      const errors = results.filter(r => r.error);
+      // Call the RPC function with all updates at once
+      const { data, error } = await supabase.rpc('bulk_reorder_tasks', {
+        task_updates: updates.map(u => ({
+          taskId: u.taskId,
+          sortOrder: u.sortOrder
+        }))
+      });
       
-      if (errors.length > 0) {
-        throw new Error(`Failed to update ${errors.length} task(s)`);
+      if (error) {
+        console.error('Error bulk reordering tasks:', error);
+        throw new Error(error.message || `Failed to update ${updates.length} task(s)`);
       }
       
-      return results;
+      console.log('Tasks reordered successfully');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.jobsite.all });

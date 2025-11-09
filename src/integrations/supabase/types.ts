@@ -3427,6 +3427,7 @@ export type Database = {
       approve_missed_punch_request:
         | { Args: { request_id: string }; Returns: Json }
         | { Args: { approver_id: string; request_id: string }; Returns: Json }
+      bulk_reorder_tasks: { Args: { task_updates: Json }; Returns: undefined }
       calculate_invoice_totals: {
         Args: { invoice_id_param: string }
         Returns: undefined
