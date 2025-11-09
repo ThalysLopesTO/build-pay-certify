@@ -69,17 +69,17 @@ const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
     const route = user.role ? profileRoutes[user.role] : '/profile';
     navigate(route);
   };
-  const handleSettings = () => {
-    // Navigate to settings based on role
+  const handleCompanySettings = () => {
+    // Navigate to company settings based on role
     const settingsRoutes: Record<string, string> = {
-      super_admin: '/admin/dashboard?tab=settings',
-      admin: '/admin/dashboard?tab=settings',
-      management: '/management/dashboard?tab=settings',
-      foreman: '/foreman/dashboard?tab=settings',
-      employee: '/employee/dashboard?tab=settings',
-      account: '/account/dashboard?tab=settings'
+      super_admin: '/admin/dashboard?tab=company-settings',
+      admin: '/admin/dashboard?tab=company-settings',
+      management: '/management/dashboard?tab=company-settings',
+      foreman: '/foreman/dashboard?tab=company-settings',
+      employee: '/employee/dashboard?tab=company-settings',
+      account: '/account/dashboard?tab=company-settings'
     };
-    const route = user.role ? settingsRoutes[user.role] : '/settings';
+    const route = user.role ? settingsRoutes[user.role] : '/company-settings';
     navigate(route);
   };
   return <DropdownMenu>
@@ -117,12 +117,12 @@ const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
         <DropdownMenuSeparator className="my-2" />
         
         <div className="p-3">
-          <DropdownMenuItem onClick={handleSettings} className="cursor-pointer hover:bg-gray-100 focus:bg-gray-100 py-3 px-3 rounded-lg transition-colors">
+          <DropdownMenuItem onClick={handleViewProfile} className="cursor-pointer hover:bg-gray-100 focus:bg-gray-100 py-3 px-3 rounded-lg transition-colors">
             <User className="mr-3 h-4 w-4 text-gray-700" />
             <span className="font-medium text-gray-900">View Profile</span>
           </DropdownMenuItem>
           
-          <DropdownMenuItem onClick={handleSettings} className="cursor-pointer hover:bg-gray-100 focus:bg-gray-100 py-3 px-3 rounded-lg transition-colors">
+          <DropdownMenuItem onClick={handleCompanySettings} className="cursor-pointer hover:bg-gray-100 focus:bg-gray-100 py-3 px-3 rounded-lg transition-colors">
             <Settings className="mr-3 h-4 w-4 text-gray-700" />
             <span className="font-medium text-gray-900">Settings</span>
           </DropdownMenuItem>
