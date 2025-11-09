@@ -114,9 +114,9 @@ const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
           </div>
         </DropdownMenuLabel>
         
-        <DropdownMenuSeparator className="my-1 bg-gray-200" />
+        <DropdownMenuSeparator className="my-2" />
         
-        <div className="p-2">
+        <div className="p-3">
           <DropdownMenuItem onClick={handleViewProfile} className="cursor-pointer hover:bg-gray-100 focus:bg-gray-100 py-3 px-3 rounded-lg transition-colors">
             <User className="mr-3 h-4 w-4 text-gray-700" />
             <span className="font-medium text-gray-900">View Profile</span>
@@ -128,13 +128,24 @@ const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
           </DropdownMenuItem>
         </div>
         
-        <DropdownMenuSeparator className="my-1 bg-gray-200" />
+        <DropdownMenuSeparator className="my-2" />
         
-        <div className="p-2">
-          <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} className="cursor-pointer hover:bg-red-50 focus:bg-red-50 text-red-600 focus:text-red-600 py-3 px-3 rounded-lg transition-colors font-medium">
-            {isLoggingOut ? <Loader2 className="mr-3 h-4 w-4 animate-spin" /> : <LogOut className="mr-3 h-4 w-4" />}
-            <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
-          </DropdownMenuItem>
+        <div className="p-3">
+          <Button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            variant="outline"
+            className="w-full justify-center border-gray-300 hover:bg-gray-50 text-gray-900 font-medium py-2"
+          >
+            {isLoggingOut ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing out...
+              </>
+            ) : (
+              'Sign Out'
+            )}
+          </Button>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>;
