@@ -332,7 +332,7 @@ export function TaskItem({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="mt-3 space-y-2 ml-1"
+                  className="mt-3 space-y-2 ml-1 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent"
                 >
                   {/* Description */}
                   {task.description && (

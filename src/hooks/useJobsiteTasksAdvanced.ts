@@ -480,7 +480,7 @@ export const useTaskActions = () => {
       queryClient.invalidateQueries({ 
         predicate: (query) => 
           query.queryKey[0] === 'jobsite' && 
-          (query.queryKey[1] === 'tasksAdvanced' || query.queryKey[1] === 'tasks')
+          (query.queryKey[1] === 'tasks-advanced' || query.queryKey[1] === 'tasks')
       });
     },
     onError: (error: any) => {
@@ -544,7 +544,7 @@ export const useTaskActions = () => {
       queryClient.invalidateQueries({ 
         predicate: (query) => 
           query.queryKey[0] === 'jobsite' && 
-          (query.queryKey[1] === 'tasksAdvanced' || query.queryKey[1] === 'tasks')
+          (query.queryKey[1] === 'tasks-advanced' || query.queryKey[1] === 'tasks')
       });
     },
     onError: (error: any) => {
@@ -658,7 +658,7 @@ export const useTaskActions = () => {
       queryClient.invalidateQueries({ 
         predicate: (query) => 
           query.queryKey[0] === 'jobsite' && 
-          (query.queryKey[1] === 'tasksAdvanced' || query.queryKey[1] === 'tasks')
+          (query.queryKey[1] === 'tasks-advanced' || query.queryKey[1] === 'tasks')
       });
     },
     onError: (error: any) => {
@@ -700,7 +700,7 @@ export const useTaskActions = () => {
       queryClient.invalidateQueries({ 
         predicate: (query) => 
           query.queryKey[0] === 'jobsite' && 
-          (query.queryKey[1] === 'tasksAdvanced' || query.queryKey[1] === 'tasks')
+          (query.queryKey[1] === 'tasks-advanced' || query.queryKey[1] === 'tasks')
       });
     },
     onError: (error: any) => {
