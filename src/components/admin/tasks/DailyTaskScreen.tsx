@@ -52,6 +52,7 @@ export function DailyTaskScreen() {
   const [bulkMoveTargetDate, setBulkMoveTargetDate] = useState<Date | undefined>();
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'completed' | 'overdue'>('all');
   const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
   const { data: jobsites = [] } = useJobsites('active');
@@ -111,6 +112,12 @@ export function DailyTaskScreen() {
   };
 
   const handleClearSelection = () => {
+    setSelectedTaskIds(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const handleExitSelectionMode = () => {
+    setIsSelectionMode(false);
     setSelectedTaskIds(new Set());
   };
 
@@ -427,21 +434,44 @@ export function DailyTaskScreen() {
             {/* Select All Header - Only show when viewing all */}
             {statusFilter === 'all' && (
               <div className="flex items-center justify-between py-3 px-2">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    checked={filteredTasks.length > 0 && selectedTaskIds.size === filteredTasks.length}
-                    onCheckedChange={handleSelectAll}
-                    className="h-5 w-5"
-                  />
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {selectedTaskIds.size > 0 
-                      ? `${selectedTaskIds.size} selected` 
-                      : 'Select all'}
-                  </span>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {completedTasks} of {totalTasks} completed
-                </span>
+                {isSelectionMode ? (
+                  <>
+                    {/* Selection Mode Active */}
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={filteredTasks.length > 0 && selectedTaskIds.size === filteredTasks.length}
+                        onCheckedChange={handleSelectAll}
+                        className="h-5 w-5"
+                      />
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {selectedTaskIds.size > 0 
+                          ? `${selectedTaskIds.size} selected` 
+                          : 'Select all'}
+                      </span>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={handleExitSelectionMode}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {/* Normal Mode */}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsSelectionMode(true)}
+                    >
+                      Select
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      {completedTasks} of {totalTasks} completed
+                    </span>
+                  </>
+                )}
               </div>
             )}
             
@@ -450,6 +480,7 @@ export function DailyTaskScreen() {
               tasks={filteredTasks}
               expandedTaskIds={expandedTaskIds}
               selectedTaskIds={selectedTaskIds}
+              isSelectionMode={isSelectionMode}
               onToggle={(taskId) => {
                 setExpandedTaskIds(prev => {
                   const newSet = new Set(prev);

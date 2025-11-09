@@ -9,6 +9,7 @@ interface DraggableTaskListProps {
   tasks: Task[];
   expandedTaskIds: Set<string>;
   selectedTaskIds: Set<string>;
+  isSelectionMode: boolean;
   onToggle: (taskId: string) => void;
   onEdit: (taskId: string) => void;
   onDuplicate: (taskId: string) => void;
@@ -22,6 +23,7 @@ export function DraggableTaskList({
   tasks,
   expandedTaskIds,
   selectedTaskIds,
+  isSelectionMode,
   onToggle,
   onEdit,
   onDuplicate,
@@ -78,6 +80,7 @@ export function DraggableTaskList({
           task={task}
           isExpanded={expandedTaskIds.has(task.id)}
           isSelected={selectedTaskIds.has(task.id)}
+          isSelectionMode={isSelectionMode}
           onToggle={() => onToggle(task.id)}
           onEdit={() => onEdit(task.id)}
           onDuplicate={() => onDuplicate(task.id)}

@@ -13,6 +13,7 @@ interface DraggableTaskItemProps {
   task: Task;
   isExpanded: boolean;
   isSelected: boolean;
+  isSelectionMode: boolean;
   onToggle: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
@@ -25,6 +26,7 @@ export function DraggableTaskItem({
   task,
   isExpanded,
   isSelected,
+  isSelectionMode,
   onToggle,
   onEdit,
   onDuplicate,
@@ -99,7 +101,7 @@ export function DraggableTaskItem({
       onDuplicate={onDuplicate}
       onMoveToTomorrow={onMoveToTomorrow}
       onDelete={onDelete}
-      isSelectable={true}
+      isSelectable={isSelectionMode}
       isSelected={isSelected}
       onSelect={onSelect}
     />
