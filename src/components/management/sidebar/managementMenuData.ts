@@ -16,7 +16,8 @@ import {
   TrendingUp,
   Wallet,
   FileSpreadsheet,
-  Bell
+  Bell,
+  CheckSquare
 } from 'lucide-react';
 
 export const managementMenuItems = {
@@ -37,6 +38,11 @@ export const managementMenuItems = {
       title: 'Time Clock (Punch In/Out)',
       icon: Clock,
       id: 'time-tracker',
+    },
+    {
+      title: 'Daily Tasks',
+      icon: CheckSquare,
+      id: 'daily-tasks',
     },
     {
       title: 'Live Punch Monitor',

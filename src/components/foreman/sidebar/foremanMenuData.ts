@@ -16,7 +16,8 @@ import {
   Shield,
   Home,
   ClipboardList,
-  UserPlus
+  UserPlus,
+  CheckSquare
 } from 'lucide-react';
 
 export const foremanMenuItems = [
@@ -125,6 +126,11 @@ export const groupedForemanItems = {
     },
   ],
   team: [
+    {
+      title: 'Daily Tasks',
+      icon: CheckSquare,
+      id: 'daily-tasks',
+    },
     {
       title: 'Employees',
       icon: Users,

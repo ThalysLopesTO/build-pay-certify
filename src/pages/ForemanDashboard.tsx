@@ -20,6 +20,7 @@ import ChangeOrdersPage from '@/components/admin/ChangeOrdersPage';
 import ForemanDailyReports from '../components/foreman/ForemanDailyReports';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import EquipmentManagement from '../components/admin/inventory/EquipmentManagement';
+import { JobsiteSelectionScreen } from '../components/admin/tasks/JobsiteSelectionScreen';
 import { useParams } from 'react-router-dom';
 
 const ForemanDashboard = () => {
@@ -43,6 +44,8 @@ const ForemanDashboard = () => {
         return <EquipmentManagement />;
       case 'change-orders':
         return <ChangeOrdersPage />;
+      case 'daily-tasks':
+        return <JobsiteSelectionScreen />;
       case 'employees':
         return <EmployeeDirectory />;
       case 'employee-registration':
