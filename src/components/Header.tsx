@@ -2,71 +2,18 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { LogOut, Crown, Loader2 } from 'lucide-react';
+import { Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { toast } from '@/hooks/use-toast';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
-import { useNavigate } from 'react-router-dom';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import ManagementNotificationBell from '@/components/management/ManagementNotificationBell';
 import PWAInstallButton from '@/components/common/PWAInstallButton';
 import MobileTopBar from '@/components/mobile/MobileTopBar';
+import UserProfileMenu from '@/components/common/UserProfileMenu';
 
 const Header = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { logoUrl, isLoading } = useCompanyLogo();
-  const navigate = useNavigate();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  const handleLogout = async () => {
-    if (isLoggingOut) return;
-    setIsLoggingOut(true);
-
-    try {
-      console.log('🚪 Logging out...');
-
-      toast({
-        title: 'Signing out...',
-        description: 'Please wait while we sign you out.',
-        duration: 2000,
-      });
-
-      // Call your Supabase logout function
-      await Promise.race([
-        logout(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Logout timeout')), 5000)
-        ),
-      ]);
-
-      // Clean local/session storage safely
-      localStorage.removeItem('supabase.auth.token');
-      sessionStorage.clear();
-
-      console.log('✅ Logout successful — redirecting to login');
-
-      toast({
-        title: 'Signed out',
-        description: 'You have been signed out successfully.',
-        duration: 2000,
-      });
-
-      window.location.replace('/admin-login');
-    } catch (error) {
-      console.error('❌ Logout error:', error);
-
-      toast({
-        title: 'Session ended',
-        description: 'You have been signed out.',
-        duration: 2000,
-      });
-
-      // Always redirect to login even if logout fails
-      window.location.replace('/admin-login');
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
 
   return (
     <>
@@ -107,7 +54,7 @@ const Header = () => {
             )}
           </div>
           
-          {/* Right: PWA Install, Notifications & User Profile & Logout */}
+          {/* Right: PWA Install, Notifications & User Profile Menu */}
           <div className="flex items-center space-x-4 flex-shrink-0">
             {/* PWA Install Button */}
             <PWAInstallButton />
@@ -119,30 +66,8 @@ const Header = () => {
               <NotificationBell />
             )}
             
-            {user && (
-              <div className="flex items-center space-x-3">
-                <div className="text-sm text-right min-w-0">
-                  <div className="font-medium text-foreground whitespace-nowrap">
-                    {user.firstName} {user.lastName}
-                  </div>
-                  <div className="text-muted-foreground whitespace-nowrap">{user.email}</div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="flex items-center space-x-2 flex-shrink-0"
-                >
-                  {isLoggingOut ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <LogOut className="h-4 w-4" />
-                  )}
-                  <span>{isLoggingOut ? 'Signing out...' : 'Logout'}</span>
-                </Button>
-              </div>
-            )}
+            {/* User Profile Menu */}
+            {user && <UserProfileMenu variant="desktop" />}
           </div>
         </div>
       </header>
