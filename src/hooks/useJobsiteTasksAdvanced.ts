@@ -9,6 +9,13 @@ import { format, addDays } from 'date-fns';
 // TYPE DEFINITIONS
 // ============================================================================
 
+export interface CompletedByProfile {
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  photo_url: string | null;
+}
+
 export interface TaskTag {
   id: string;
   company_id: string;
@@ -55,8 +62,11 @@ export interface Subtask {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  completed_at: string | null;
+  completed_by: string | null;
   assignees: SubtaskAssignee[];
   tags: TaskTag[];
+  completed_by_profile?: CompletedByProfile;
 }
 
 export interface Task {
@@ -73,10 +83,13 @@ export interface Task {
   created_by: string;
   created_at: string;
   updated_at: string;
+  completed_at: string | null;
+  completed_by: string | null;
   sort_order: number;
   assignees: TaskAssignee[];
   tags: TaskTag[];
   subtasks: Subtask[];
+  completed_by_profile?: CompletedByProfile;
 }
 
 export interface TaskFilters {
@@ -143,6 +156,12 @@ export const useJobsiteTasksAdvanced = (jobsiteId?: string, filters?: TaskFilter
         .from('tasks')
         .select(`
           *,
+          completed_by_profile:user_profiles!tasks_completed_by_fkey(
+            user_id,
+            first_name,
+            last_name,
+            photo_url
+          ),
           assignees:task_assignees(
             task_id,
             user_id,
@@ -175,6 +194,14 @@ export const useJobsiteTasksAdvanced = (jobsiteId?: string, filters?: TaskFilter
             sort_order,
             created_at,
             updated_at,
+            completed_at,
+            completed_by,
+            completed_by_profile:user_profiles!subtasks_completed_by_fkey(
+              user_id,
+              first_name,
+              last_name,
+              photo_url
+            ),
             assignees:subtask_assignees(
               subtask_id,
               user_id,

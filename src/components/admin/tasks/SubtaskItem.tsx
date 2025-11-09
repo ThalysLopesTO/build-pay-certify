@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronRight, Clock } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, CheckCircle2 } from 'lucide-react';
 import { StatusIcon } from './StatusIcon';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Subtask } from '@/hooks/useJobsiteTasksAdvanced';
@@ -121,6 +121,30 @@ export function SubtaskItem({ subtask, isEditable }: SubtaskItemProps) {
               <p className="text-xs text-muted-foreground">
                 {subtask.notes}
               </p>
+            )}
+
+            {/* Completion Info */}
+            {subtask.status === 'done' && subtask.completed_by_profile && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <CheckCircle2 className="w-3 h-3 text-green-600" />
+                <span>Completed by</span>
+                <div className="flex items-center gap-1">
+                  <Avatar className="h-4 w-4 border border-border">
+                    {subtask.completed_by_profile.photo_url && (
+                      <AvatarImage 
+                        src={subtask.completed_by_profile.photo_url} 
+                        alt={`${subtask.completed_by_profile.first_name} ${subtask.completed_by_profile.last_name}`}
+                      />
+                    )}
+                    <AvatarFallback className="text-[8px]">
+                      {getInitials(subtask.completed_by_profile.first_name, subtask.completed_by_profile.last_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium text-foreground">
+                    {subtask.completed_by_profile.first_name} {subtask.completed_by_profile.last_name}
+                  </span>
+                </div>
+              </div>
             )}
 
             {/* Chips Row - Agent-Plan Style */}

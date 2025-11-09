@@ -2561,6 +2561,7 @@ export type Database = {
       subtasks: {
         Row: {
           completed_at: string | null
+          completed_by: string | null
           created_at: string | null
           due_time: string | null
           id: string
@@ -2573,6 +2574,7 @@ export type Database = {
         }
         Insert: {
           completed_at?: string | null
+          completed_by?: string | null
           created_at?: string | null
           due_time?: string | null
           id?: string
@@ -2585,6 +2587,7 @@ export type Database = {
         }
         Update: {
           completed_at?: string | null
+          completed_by?: string | null
           created_at?: string | null
           due_time?: string | null
           id?: string
@@ -2754,6 +2757,7 @@ export type Database = {
         Row: {
           company_id: string
           completed_at: string | null
+          completed_by: string | null
           created_at: string | null
           created_by: string
           description: string | null
@@ -2771,6 +2775,7 @@ export type Database = {
         Insert: {
           company_id: string
           completed_at?: string | null
+          completed_by?: string | null
           created_at?: string | null
           created_by: string
           description?: string | null
@@ -2788,6 +2793,7 @@ export type Database = {
         Update: {
           company_id?: string
           completed_at?: string | null
+          completed_by?: string | null
           created_at?: string | null
           created_by?: string
           description?: string | null

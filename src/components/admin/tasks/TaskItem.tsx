@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Briefcase,
   Wrench,
+  CheckCircle2,
 } from 'lucide-react';
 import { StatusIcon } from './StatusIcon';
 import { TaskStatusBadge } from './TaskStatusBadge';
@@ -338,6 +339,35 @@ export function TaskItem({
                     <p className="text-sm text-muted-foreground pl-1">
                       {task.description}
                     </p>
+                  )}
+
+                  {/* Completion Info */}
+                  {task.status === 'done' && task.completed_by_profile && (
+                    <div className="flex items-center gap-2 pl-1 text-sm text-muted-foreground">
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <span>Completed by</span>
+                      <div className="flex items-center gap-1.5">
+                        <Avatar className="h-5 w-5 border border-border">
+                          {task.completed_by_profile.photo_url && (
+                            <AvatarImage 
+                              src={task.completed_by_profile.photo_url} 
+                              alt={`${task.completed_by_profile.first_name} ${task.completed_by_profile.last_name}`}
+                            />
+                          )}
+                          <AvatarFallback className="text-[10px]">
+                            {getInitials(task.completed_by_profile.first_name, task.completed_by_profile.last_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-foreground">
+                          {task.completed_by_profile.first_name} {task.completed_by_profile.last_name}
+                        </span>
+                      </div>
+                      {task.completed_at && (
+                        <span className="text-xs">
+                          • {formatInCompanyTimezone(new Date(task.completed_at), 'MMM d, h:mm a', companyTimezone)}
+                        </span>
+                      )}
+                    </div>
                   )}
 
                   {/* Meta Info Row - only in expanded */}
