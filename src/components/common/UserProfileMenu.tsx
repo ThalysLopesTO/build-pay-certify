@@ -57,16 +57,16 @@ const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
     }
   };
   const handleViewProfile = () => {
-    // Navigate to profile based on role
-    const profileRoutes: Record<string, string> = {
-      super_admin: '/admin/dashboard?tab=profile',
-      admin: '/admin/dashboard?tab=profile',
-      management: '/management/dashboard?tab=profile',
-      foreman: '/foreman/dashboard?tab=profile',
-      employee: '/employee/dashboard?tab=profile',
-      account: '/account/dashboard?tab=profile'
+    // Navigate to user settings based on role
+    const settingsRoutes: Record<string, string> = {
+      super_admin: '/admin/dashboard?tab=settings',
+      admin: '/admin/dashboard?tab=settings',
+      management: '/management/dashboard?tab=settings',
+      foreman: '/foreman/dashboard?tab=settings',
+      employee: '/employee/dashboard?tab=settings',
+      account: '/account/dashboard?tab=settings'
     };
-    const route = user.role ? profileRoutes[user.role] : '/profile';
+    const route = user.role ? settingsRoutes[user.role] : '/settings';
     navigate(route);
   };
   const handleCompanySettings = () => {
