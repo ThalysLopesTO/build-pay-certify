@@ -189,7 +189,7 @@ export function QuickTaskComposer({
   };
 
   const content = (
-    <div className="h-full">
+    <div className="h-full flex flex-col">
       {step === 'input' && (
         <QuickTaskInput
           jobsiteName={jobsiteName}

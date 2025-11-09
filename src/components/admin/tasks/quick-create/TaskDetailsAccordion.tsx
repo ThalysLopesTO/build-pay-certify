@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { parseLocalDate } from '@/utils/dateUtils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface TaskDetailsAccordionProps {
   draftTasks: DraftTask[];
@@ -96,8 +97,9 @@ export function TaskDetailsAccordion({
       </div>
 
       {/* Scrollable Task Details */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3">
-        {draftTasks.map((task) => (
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-3">
+          {draftTasks.map((task) => (
           <Accordion key={task.id} type="single" collapsible className="border rounded-lg">
             <AccordionItem value="item-1" className="border-none">
               <AccordionTrigger className="px-4 hover:no-underline">
@@ -285,7 +287,8 @@ export function TaskDetailsAccordion({
             </AccordionItem>
           </Accordion>
         ))}
-      </div>
+        </div>
+      </ScrollArea>
 
       {/* Bottom Actions */}
       <div className="flex-shrink-0 border-t border-border p-4 flex gap-2">
