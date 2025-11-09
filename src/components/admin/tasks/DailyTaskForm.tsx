@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -70,6 +71,22 @@ export function DailyTaskForm({ jobsiteId, taskId, defaultDate, onCancel, onSucc
       tagIds: task?.tags?.map((t) => t.id) || [],
     },
   });
+
+  // Reset form when task data becomes available
+  useEffect(() => {
+    if (task) {
+      form.reset({
+        title: task.title || '',
+        task_date: task.task_date || defaultDate || formatInCompanyTimezone(new Date(), 'yyyy-MM-dd', companyTimezone),
+        priority: task.priority || undefined,
+        trade: task.trade || '',
+        description: task.description || '',
+        due_time: task.due_time || '',
+        assigneeIds: task.assignees?.map((a) => a.user_id) || [],
+        tagIds: task.tags?.map((t) => t.id) || [],
+      });
+    }
+  }, [task, form, defaultDate, companyTimezone]);
 
   const onSubmit = async (data: FormValues) => {
     try {

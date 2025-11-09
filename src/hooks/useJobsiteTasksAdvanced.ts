@@ -476,7 +476,12 @@ export const useTaskActions = () => {
         title: 'Success!',
         description: 'Task has been created successfully.',
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.jobsite.all });
+      // Only invalidate task-related queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === 'jobsite' && 
+          (query.queryKey[1] === 'tasksAdvanced' || query.queryKey[1] === 'tasks')
+      });
     },
     onError: (error: any) => {
       console.error('Error creating task:', error);
@@ -535,7 +540,12 @@ export const useTaskActions = () => {
         title: 'Success!',
         description: `${variables.taskIds.length} task(s) updated successfully.`,
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.jobsite.all });
+      // Only invalidate task-related queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === 'jobsite' && 
+          (query.queryKey[1] === 'tasksAdvanced' || query.queryKey[1] === 'tasks')
+      });
     },
     onError: (error: any) => {
       console.error('Error bulk updating tasks:', error);
@@ -644,7 +654,12 @@ export const useTaskActions = () => {
         title: 'Success!',
         description: 'Task has been updated successfully.',
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.jobsite.all });
+      // Only invalidate task-related queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === 'jobsite' && 
+          (query.queryKey[1] === 'tasksAdvanced' || query.queryKey[1] === 'tasks')
+      });
     },
     onError: (error: any) => {
       console.error('Error updating task:', error);
@@ -681,7 +696,12 @@ export const useTaskActions = () => {
         title: 'Success!',
         description: 'Task has been deleted successfully.',
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.jobsite.all });
+      // Only invalidate task-related queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === 'jobsite' && 
+          (query.queryKey[1] === 'tasksAdvanced' || query.queryKey[1] === 'tasks')
+      });
     },
     onError: (error: any) => {
       console.error('Error deleting task:', error);
