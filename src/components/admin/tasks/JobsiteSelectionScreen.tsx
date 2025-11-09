@@ -29,15 +29,15 @@ export function JobsiteSelectionScreen() {
 
   if (isLoading) {
     return (
-      <div className="container max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        <div className="space-y-3">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-5 w-96" />
+      <div className="container mx-auto p-4 sm:p-6 max-w-5xl">
+        <div className="mb-6">
+          <Skeleton className="h-9 w-80 mb-2" />
+          <Skeleton className="h-5 w-96 mb-4" />
+          <Skeleton className="h-11 w-full max-w-md" />
         </div>
-        <Skeleton className="h-14 w-full rounded-xl" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-[280px] w-full rounded-xl" />
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-lg" />
           ))}
         </div>
       </div>
@@ -45,45 +45,45 @@ export function JobsiteSelectionScreen() {
   }
 
   return (
-    <div className="container max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="container mx-auto p-4 sm:p-6 max-w-5xl">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl sm:text-4xl font-bold text-foreground">Project Sites</h1>
-        <p className="text-base text-muted-foreground">
-          {totalJobsites} {totalJobsites === 1 ? 'active site' : 'active sites'} • Select a project to manage daily tasks
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-1">
+          Project Sites – Daily Tasks
+        </h1>
+        <p className="text-sm text-muted-foreground mb-4">
+          Select a project to view and manage daily tasks
+          {totalJobsites > 0 && ` • ${totalJobsites} active ${totalJobsites === 1 ? 'site' : 'sites'}`}
         </p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Search projects by name or location..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-12 pr-10 h-14 rounded-xl border-2 focus:border-primary transition-colors text-base"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
+        
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            type="text"
+            placeholder="Search projects by name or location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 pr-10 h-11 text-sm rounded-lg border-border focus:border-primary transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Jobsite List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="space-y-2">
         {filteredJobsites.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-16 sm:py-20">
-            <div className="w-20 h-20 rounded-2xl bg-muted/50 flex items-center justify-center mb-6">
-              <ListTodo className="w-10 h-10 text-muted-foreground" />
-            </div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">No Projects Found</h3>
-            <p className="text-sm text-muted-foreground text-center max-w-sm">
-              {searchQuery ? 'Try adjusting your search query to find projects' : 'No active project sites available at the moment'}
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Building2 className="w-12 h-12 text-muted-foreground/50 mb-3" />
+            <p className="text-base font-medium text-muted-foreground">
+              {searchQuery ? 'No jobsites found matching your search' : 'No active jobsites found'}
             </p>
           </div>
         ) : (
@@ -129,84 +129,71 @@ function JobsiteCard({ jobsite, isMobile, onClick }: JobsiteCardProps) {
   // Calculate completion percentage
   const completionPercentage = totalTasks > 0 ? Math.round((completedToday / totalTasks) * 100) : 0;
 
-  // Determine border color based on status
-  const getBorderColor = () => {
-    if (overdueTasks > 0) return 'border-l-red-500';
-    if (openTasks > 0) return 'border-l-orange-500';
-    return 'border-l-green-500';
-  };
-
   return (
-    <Card 
-      className={`group relative overflow-hidden border-l-4 ${getBorderColor()} hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 cursor-pointer bg-gradient-to-br from-card to-card/50`}
+    <div
       onClick={onClick}
+      className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 
+                 border border-border rounded-lg bg-card hover:bg-accent/50 
+                 hover:shadow-sm transition-all cursor-pointer group"
     >
-      <CardContent className={isMobile ? 'p-5' : 'p-6'}>
-        <div className="space-y-4">
-          {/* Icon/Avatar & Status Badge */}
-          <div className="flex items-start justify-between">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-6 h-6 text-primary" />
-            </div>
-            <Badge variant="outline" className="text-xs font-medium">
-              Active
-            </Badge>
-          </div>
-
-          {/* Title & Address */}
-          <div>
-            <h3 className="font-bold text-xl mb-2 line-clamp-1 group-hover:text-primary transition-colors">
-              {jobsite.name}
-            </h3>
-            <div className="flex items-start gap-2 text-sm text-muted-foreground">
-              <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span className="line-clamp-2">{jobsite.address}</span>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          {totalTasks > 0 && (
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-medium text-muted-foreground">Task Progress</span>
-                <span className="text-xs font-bold text-foreground">{completionPercentage}%</span>
-              </div>
-              <Progress value={completionPercentage} className="h-2" />
-            </div>
-          )}
-
-          {/* Task Stats - Redesigned as Badges */}
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 px-3 py-1">
-              <div className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
-              <span className="font-semibold">{openTasks}</span>
-              <span className="ml-1 font-normal">Open</span>
-            </Badge>
-            
-            <Badge variant="secondary" className="bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 px-3 py-1">
-              <CheckCircle2 className="w-3 h-3 mr-1.5" />
-              <span className="font-semibold">{completedToday}</span>
-              <span className="ml-1 font-normal">Done</span>
-            </Badge>
-            
-            {overdueTasks > 0 && (
-              <Badge variant="secondary" className="bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800 px-3 py-1">
-                <AlertCircle className="w-3 h-3 mr-1.5" />
-                <span className="font-semibold">{overdueTasks}</span>
-                <span className="ml-1 font-normal">Overdue</span>
-              </Badge>
-            )}
-          </div>
-
-          {/* View Button - More Prominent */}
-          <Button 
-            className="w-full justify-between bg-primary hover:bg-primary/90 text-primary-foreground shadow-md group-hover:shadow-lg transition-all h-11"
-          >
-            <span className="font-medium">View Tasks</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
+      {/* Left: Name, Address, Status */}
+      <div className="flex-1 min-w-0 w-full md:w-auto">
+        <h3 className="font-semibold text-base text-foreground truncate mb-0.5">
+          {jobsite.name}
+        </h3>
+        
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
+          <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="truncate">{jobsite.address}</span>
         </div>
-      </CardContent>
-    </Card>
+        
+        <Badge variant="outline" className="text-xs px-2 py-0.5 bg-background">
+          Active
+        </Badge>
+      </div>
+
+      {/* Middle: Progress & Stats */}
+      <div className="flex-1 min-w-0 w-full md:w-auto">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-medium text-muted-foreground">Task Progress</span>
+          <span className="text-xs font-semibold text-foreground">{completionPercentage}%</span>
+        </div>
+        
+        <Progress value={completionPercentage} className="h-1.5 mb-2" />
+        
+        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+          <span className="flex items-center gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            {openTasks} Open
+          </span>
+          <span className="flex items-center gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            {completedToday} Done
+          </span>
+          {overdueTasks > 0 && (
+            <span className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              {overdueTasks} Overdue
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Right: Button */}
+      <div className="flex-shrink-0 w-full md:w-auto">
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="gap-2 hover:bg-accent w-full md:w-auto"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+        >
+          View Tasks
+          <ArrowRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
   );
 }
