@@ -138,7 +138,7 @@ const CollapsibleSidebarSection = ({
                       navigate(item.href);
                     } else {
                       const tabId = item.id || item.title.toLowerCase().replace(/\s+/g, '-');
-                      setActiveTab(tabId);
+                      navigate(`?tab=${tabId}`, { replace: true });
                     }
                   }}
                   className={`

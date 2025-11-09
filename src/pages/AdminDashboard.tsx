@@ -43,16 +43,10 @@ const AdminDashboard = () => {
     const tabParam = searchParams.get('tab');
     if (tabParam) {
       setActiveTab(tabParam);
+    } else {
+      setActiveTab('dashboard');
     }
   }, [searchParams]);
-
-  // Sync activeTab to URL
-  useEffect(() => {
-    const currentTab = searchParams.get('tab');
-    if (currentTab !== activeTab) {
-      navigate(`/admin/dashboard?tab=${activeTab}`, { replace: true });
-    }
-  }, [activeTab, navigate, searchParams]);
 
   const renderContent = () => {
     // Handle dynamic routes first

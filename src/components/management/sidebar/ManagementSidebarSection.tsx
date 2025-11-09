@@ -37,7 +37,7 @@ const ManagementSidebarSection = ({ items, activeTab, setActiveTab }: Management
                     if ((item as any).href) {
                       navigate((item as any).href);
                     } else {
-                      setActiveTab(item.id);
+                      navigate(`?tab=${item.id}`, { replace: true });
                     }
                   }}
                   className={`
