@@ -51,7 +51,8 @@ const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectio
                     if (item.href) {
                       navigate(item.href);
                     } else {
-                      setActiveTab(item.id || item.title.toLowerCase().replace(/\s+/g, '-'));
+                      const tabId = item.id || item.title.toLowerCase().replace(/\s+/g, '-');
+                      navigate(`/admin/dashboard?tab=${tabId}`);
                     }
                   }}
                   className={`

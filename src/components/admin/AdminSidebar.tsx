@@ -21,16 +21,13 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
 
   // Sync activeTab with current route and query params
   useEffect(() => {
-    const path = location.pathname;
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
     
     if (tabParam) {
       setActiveTab(tabParam);
-    } else if (path === '/admin/dashboard' || path === '/admin') {
-      setActiveTab('dashboard');
     }
-  }, [location.pathname, location.search, setActiveTab]);
+  }, [location.search, setActiveTab]);
 
   return (
     <Sidebar className="border-r border-border bg-sidebar transition-colors">
