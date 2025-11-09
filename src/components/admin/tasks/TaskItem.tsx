@@ -16,7 +16,7 @@ import {
 import { StatusIcon } from './StatusIcon';
 import { TaskStatusBadge } from './TaskStatusBadge';
 import { SubtaskItem } from './SubtaskItem';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -243,6 +243,12 @@ export function TaskItem({
                   <div className="flex items-center -space-x-1.5">
                     {task.assignees.slice(0, 2).map((assignee) => (
                       <Avatar key={assignee.user_id} className="h-5 w-5 border-2 border-background">
+                        {assignee.user_profiles.photo_url && (
+                          <AvatarImage 
+                            src={assignee.user_profiles.photo_url} 
+                            alt={`${assignee.user_profiles.first_name} ${assignee.user_profiles.last_name}`}
+                          />
+                        )}
                         <AvatarFallback className="text-[10px]">
                           {getInitials(assignee.user_profiles.first_name, assignee.user_profiles.last_name)}
                         </AvatarFallback>

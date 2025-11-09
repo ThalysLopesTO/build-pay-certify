@@ -27,6 +27,7 @@ export interface TaskAssignee {
     last_name: string | null;
     trade: string | null;
     position: string | null;
+    photo_url: string | null;
   };
 }
 
@@ -40,6 +41,7 @@ export interface SubtaskAssignee {
     last_name: string | null;
     trade: string | null;
     position: string | null;
+    photo_url: string | null;
   };
 }
 
@@ -150,7 +152,8 @@ export const useJobsiteTasksAdvanced = (jobsiteId?: string, filters?: TaskFilter
               first_name,
               last_name,
               trade,
-              position
+              position,
+              photo_url
             )
           ),
           tags:task_tag_links(
@@ -181,7 +184,8 @@ export const useJobsiteTasksAdvanced = (jobsiteId?: string, filters?: TaskFilter
                 first_name,
                 last_name,
                 trade,
-                position
+                position,
+                photo_url
               )
             ),
             tags:subtask_tag_links(
