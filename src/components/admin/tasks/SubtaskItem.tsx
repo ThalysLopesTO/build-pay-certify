@@ -98,6 +98,18 @@ export function SubtaskItem({ subtask, isEditable }: SubtaskItemProps) {
                 {subtask.due_time.slice(0, 5)}
               </Badge>
             )}
+
+            {/* Inline Completion Badge */}
+            {subtask.status === 'done' && subtask.completed_by_profile && (
+              <Badge 
+                variant="outline" 
+                className="text-xs h-4 px-1.5 gap-0.5 bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800/50"
+                title={`Completed by ${subtask.completed_by_profile.first_name} ${subtask.completed_by_profile.last_name}`}
+              >
+                <CheckCircle2 className="w-2.5 h-2.5" />
+                {getInitials(subtask.completed_by_profile.first_name, subtask.completed_by_profile.last_name)}
+              </Badge>
+            )}
           </div>
 
           {/* Expand/Collapse if has details */}
