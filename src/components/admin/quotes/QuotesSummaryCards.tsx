@@ -15,36 +15,44 @@ const QuotesSummaryCards: React.FC<QuotesSummaryCardsProps> = ({ quotes }) => {
 
   const cards = [
     {
-      label: 'Draft',
+      label: 'DRAFT',
+      subtitle: 'Pending review',
       count: draftCount,
       icon: FileText,
-      bgColor: 'bg-muted/30',
-      iconColor: 'text-muted-foreground',
-      borderColor: 'border-border',
+      bgColor: 'bg-slate-50/80 dark:bg-slate-900/40',
+      iconColor: 'text-slate-600 dark:text-slate-400',
+      iconBgGradient: 'from-slate-500/20 to-slate-600/10',
+      countColor: 'text-slate-900 dark:text-slate-100',
     },
     {
-      label: 'Awaiting Response',
+      label: 'AWAITING RESPONSE',
+      subtitle: 'Waiting for client',
       count: awaitingCount,
       icon: Clock,
-      bgColor: 'bg-yellow-50 dark:bg-yellow-950/20',
-      iconColor: 'text-yellow-600 dark:text-yellow-500',
-      borderColor: 'border-yellow-200 dark:border-yellow-800',
+      bgColor: 'bg-amber-50/80 dark:bg-amber-950/20',
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      iconBgGradient: 'from-amber-500/20 to-amber-600/10',
+      countColor: 'text-amber-700 dark:text-amber-400',
     },
     {
-      label: 'Changes Requested',
+      label: 'CHANGES REQUESTED',
+      subtitle: 'Requires updates',
       count: changesRequestedCount,
       icon: AlertCircle,
-      bgColor: 'bg-orange-50 dark:bg-orange-950/20',
-      iconColor: 'text-orange-600 dark:text-orange-500',
-      borderColor: 'border-orange-200 dark:border-orange-800',
+      bgColor: 'bg-orange-50/80 dark:bg-orange-950/20',
+      iconColor: 'text-orange-600 dark:text-orange-400',
+      iconBgGradient: 'from-orange-500/20 to-orange-600/10',
+      countColor: 'text-orange-700 dark:text-orange-400',
     },
     {
-      label: 'Approved',
+      label: 'APPROVED',
+      subtitle: 'Ready to invoice',
       count: approvedCount,
       icon: CheckCircle,
-      bgColor: 'bg-green-50 dark:bg-green-950/20',
-      iconColor: 'text-green-600 dark:text-green-500',
-      borderColor: 'border-green-200 dark:border-green-800',
+      bgColor: 'bg-emerald-50/80 dark:bg-emerald-950/20',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      iconBgGradient: 'from-emerald-500/20 to-emerald-600/10',
+      countColor: 'text-emerald-700 dark:text-emerald-400',
     },
   ];
 
@@ -53,19 +61,22 @@ const QuotesSummaryCards: React.FC<QuotesSummaryCardsProps> = ({ quotes }) => {
       {cards.map((card) => (
         <Card 
           key={card.label} 
-          className={`shadow-sm border-2 ${card.borderColor} ${card.bgColor} hover:shadow-md transition-shadow`}
+          className={`relative overflow-hidden ${card.bgColor} backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer`}
         >
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
-                  {card.label}
-                </p>
-                <p className={`text-3xl font-bold ${card.iconColor}`}>
-                  {card.count}
-                </p>
-              </div>
-              <card.icon className={`h-10 w-10 ${card.iconColor} opacity-30`} />
+            <div className="absolute top-4 right-4 w-14 h-14 rounded-full bg-gradient-to-br ${card.iconBgGradient} flex items-center justify-center">
+              <card.icon className={`h-7 w-7 ${card.iconColor} opacity-40`} />
+            </div>
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                {card.label}
+              </p>
+              <p className={`text-5xl font-bold ${card.countColor}`}>
+                {card.count}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {card.subtitle}
+              </p>
             </div>
           </CardContent>
         </Card>

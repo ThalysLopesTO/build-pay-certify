@@ -1,6 +1,4 @@
-
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -34,59 +32,57 @@ const QuotesFilters: React.FC<QuotesFiltersProps> = ({ filters, onFiltersChange 
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardContent className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search client name..."
-              value={filters.client_name}
-              onChange={(e) => handleFilterChange('client_name', e.target.value)}
-              className="pl-10 h-10"
-            />
-          </div>
-          
-          <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
-            <SelectTrigger className="h-10">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="sent">Sent</SelectItem>
-              <SelectItem value="accepted">Accepted</SelectItem>
-              <SelectItem value="declined">Declined</SelectItem>
-            </SelectContent>
-          </Select>
-
+    <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/60 dark:border-slate-800/60 rounded-xl p-4 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex-1 min-w-[220px] relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            type="date"
-            placeholder="From date"
-            value={filters.date_from}
-            onChange={(e) => handleFilterChange('date_from', e.target.value)}
-            className="h-10"
+            placeholder="Search client name..."
+            value={filters.client_name}
+            onChange={(e) => handleFilterChange('client_name', e.target.value)}
+            className="pl-10 h-10 rounded-lg border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20"
           />
-
-          <Input
-            type="date"
-            placeholder="To date"
-            value={filters.date_to}
-            onChange={(e) => handleFilterChange('date_to', e.target.value)}
-            className="h-10"
-          />
-
-          <Button 
-            variant="outline" 
-            onClick={handleClearFilters}
-            className="h-10 flex items-center gap-2"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Clear
-          </Button>
         </div>
-      </CardContent>
-    </Card>
+        
+        <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+          <SelectTrigger className="w-[180px] h-10 rounded-lg border-slate-200 dark:border-slate-700">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="sent">Sent</SelectItem>
+            <SelectItem value="accepted">Accepted</SelectItem>
+            <SelectItem value="declined">Declined</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Input
+          type="date"
+          placeholder="From date"
+          value={filters.date_from}
+          onChange={(e) => handleFilterChange('date_from', e.target.value)}
+          className="w-[160px] h-10 rounded-lg border-slate-200 dark:border-slate-700"
+        />
+
+        <Input
+          type="date"
+          placeholder="To date"
+          value={filters.date_to}
+          onChange={(e) => handleFilterChange('date_to', e.target.value)}
+          className="w-[160px] h-10 rounded-lg border-slate-200 dark:border-slate-700"
+        />
+
+        <Button 
+          variant="ghost" 
+          onClick={handleClearFilters}
+          className="h-10 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800"
+        >
+          <RotateCcw className="h-4 w-4" />
+          Clear
+        </Button>
+      </div>
+    </div>
   );
 };
 
