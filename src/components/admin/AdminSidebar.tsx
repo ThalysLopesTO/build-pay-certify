@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import React from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -14,20 +13,8 @@ import { AdminSidebarProps } from './sidebar/types';
 import { useScrollToActiveSection } from '@/hooks/useScrollToActiveSection';
 
 const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
-  const location = useLocation();
-  
   // Auto-scroll to active section
   useScrollToActiveSection(activeTab);
-
-  // Sync activeTab with current route and query params
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tabParam = params.get('tab');
-    
-    if (tabParam) {
-      setActiveTab(tabParam);
-    }
-  }, [location.search, setActiveTab]);
 
   return (
     <Sidebar className="border-r border-border bg-sidebar transition-colors">
