@@ -28,7 +28,8 @@ export function SubtaskItem({ subtask, isEditable }: SubtaskItemProps) {
   const { user } = useAuth();
 
   const isAssignedToUser = subtask.assignees.some(a => a.user_id === user?.id);
-  const canToggleStatus = isEditable || (['admin', 'super_admin', 'foreman'].includes(user?.role || '') || isAssignedToUser);
+  const isAdmin = ['admin', 'super_admin', 'foreman'].includes(user?.role || '');
+  const canToggleStatus = true; // All authenticated users can toggle status (RLS enforces company boundary)
 
   const handleStatusChange = async (newStatus: 'pending' | 'in_progress' | 'done' | 'blocked' | 'failed') => {
     if (!canToggleStatus) return;
@@ -62,10 +63,18 @@ export function SubtaskItem({ subtask, isEditable }: SubtaskItemProps) {
               e.stopPropagation();
               if (!canToggleStatus) return;
               
-              const statusCycle: Array<'pending' | 'in_progress' | 'done'> = ['pending', 'in_progress', 'done'];
-              const currentIndex = statusCycle.indexOf(subtask.status as any);
-              const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
-              handleStatusChange(nextStatus);
+              // For employees: simple toggle between pending and done
+              // For admins/foreman: full cycle
+              if (isAdmin) {
+                const statusCycle: Array<'pending' | 'in_progress' | 'done'> = ['pending', 'in_progress', 'done'];
+                const currentIndex = statusCycle.indexOf(subtask.status as any);
+                const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
+                handleStatusChange(nextStatus);
+              } else {
+                // Employee: toggle directly between pending and done
+                const newStatus = subtask.status === 'done' ? 'pending' : 'done';
+                handleStatusChange(newStatus);
+              }
             }}
           >
             <StatusIcon status={subtask.status} />
