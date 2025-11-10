@@ -53,7 +53,7 @@ const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectio
                     } else {
                       const tabId = item.id || item.title.toLowerCase().replace(/\s+/g, '-');
                       setActiveTab(tabId);
-                      navigate(`/admin/dashboard?tab=${tabId}`, { replace: true });
+                      navigate(`/admin/dashboard?tab=${tabId}`);
                     }
                   }}
                   className={`
