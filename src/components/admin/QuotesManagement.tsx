@@ -2,13 +2,11 @@
 import React, { useState } from 'react';
 import { useQuotes } from '@/hooks/quotes';
 import { Button } from '@/components/ui/button';
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import QuotesTable from './quotes/QuotesTable';
 import QuotesFilters from './quotes/QuotesFilters';
 import QuoteEditor from './quotes/QuoteEditor';
 import QuotesSummaryCards from './quotes/QuotesSummaryCards';
-import QuotesEmptyState from './quotes/QuotesEmptyState';
-
 
 const QuotesManagement = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -54,7 +52,7 @@ const QuotesManagement = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted/30">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="animate-pulse space-y-6">
             <div className="h-12 bg-muted rounded-lg w-1/3"></div>
@@ -68,7 +66,7 @@ const QuotesManagement = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted/30">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="text-center py-12">
             <p className="text-destructive mb-4 text-lg">Failed to load quotes</p>
@@ -80,24 +78,17 @@ const QuotesManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex justify-between items-start">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <h1 className="text-4xl font-bold tracking-tight text-foreground">Quote Management</h1>
-                <Sparkles className="h-6 w-6 text-primary/60" />
-              </div>
-              <p className="text-muted-foreground text-base">Create and manage project quotes with ease</p>
+    <div className="min-h-screen bg-muted/30">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Quote Management</h1>
+              <p className="text-muted-foreground mt-1">Create and manage project quotes</p>
             </div>
-            <Button 
-              onClick={handleCreateQuote} 
-              size="lg" 
-              className="shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-            >
-              <Plus className="h-5 w-5 mr-2" />
+            <Button onClick={handleCreateQuote} size="lg" className="shadow-sm">
+              <Plus className="h-4 w-4 mr-2" />
               New Quote
             </Button>
           </div>
@@ -106,24 +97,18 @@ const QuotesManagement = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
-        {quotes.length === 0 ? (
-          <QuotesEmptyState onCreateQuote={handleCreateQuote} />
-        ) : (
-          <>
-            <QuotesSummaryCards quotes={quotes} />
-            
-            <QuotesFilters 
-              filters={filters}
-              onFiltersChange={handleFilterChange}
-            />
+        <QuotesSummaryCards quotes={quotes} />
+        
+        <QuotesFilters 
+          filters={filters}
+          onFiltersChange={handleFilterChange}
+        />
 
-            <QuotesTable
-              quotes={quotes}
-              onEdit={handleEditQuote}
-              onRefresh={refetch}
-            />
-          </>
-        )}
+        <QuotesTable
+          quotes={quotes}
+          onEdit={handleEditQuote}
+          onRefresh={refetch}
+        />
       </div>
     </div>
   );
