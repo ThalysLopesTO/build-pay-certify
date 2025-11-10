@@ -5,15 +5,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
-import { useEmailTemplate, getDefaultTemplate, replacePlaceholders } from '@/hooks/useEmailTemplates';
 import { sendEmail } from '@/utils/sendEmail';
 import { generateQuotePDFBlob, blobToBase64 } from '@/utils/quotePDFGenerator';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
-import { useQuoteLineItems } from '@/hooks/quotes';
+import { useQuoteLineItems, useUpdateQuote } from '@/hooks/quotes';
 import { Quote } from '@/hooks/quotes/types';
 import { format } from 'date-fns';
 import { Mail, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { createQuoteEmailHTML, getQuoteEmailSubject } from '@/utils/quoteEmailTemplate';
+import { v4 as uuidv4 } from 'uuid';
 
 interface QuoteEmailSenderProps {
   quote: Quote;
@@ -28,36 +29,40 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
 }) => {
   const { toast } = useToast();
   const { settings, isSettingsComplete } = useCompanySettings();
-  const { logoUrl } = useCompanyLogo(); // ✅ using the shared hook for logo
+  const { logoUrl } = useCompanyLogo();
   const { data: lineItems = [] } = useQuoteLineItems(quote.id);
-  const { template } = useEmailTemplate('quote');
+  const updateQuote = useUpdateQuote();
   const [isLoading, setIsLoading] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
 
-  // ✅ Generate subject & body text for the email
+  const generatePublicQuoteUrl = (): string => {
+    const baseUrl = window.location.origin;
+    const token = quote.public_token || uuidv4();
+    return `${baseUrl}/public/quote/${token}`;
+  };
+
   const generateEmailContent = () => {
-    if (!settings) return { subject: '', bodyText: '' };
+    if (!settings) return { subject: '', html: '' };
 
-    const emailTemplate = template || getDefaultTemplate('quote');
+    const publicQuoteUrl = generatePublicQuoteUrl();
 
-    const templateData = {
-      client_name: quote.client_name,
-      client_company: quote.client_company || quote.client_name,
-      company_name: settings.company_name,
-      company_address: settings.company_address || '',
-      company_phone: settings.company_phone || '',
-      quote_number: quote.quote_number,
-      project_name: quote.project_name,
-      total_amount: quote.total_amount.toFixed(2),
-      expiry_date: quote.expiry_date ? format(new Date(quote.expiry_date), 'MMM dd, yyyy') : 'No expiry',
-      hst_number: settings.hst_number || '',
-      custom_message: customMessage || 'Thank you for considering our services.',
-    };
+    const subject = getQuoteEmailSubject(settings.company_name, quote.quote_number);
 
-    return {
-      subject: replacePlaceholders(emailTemplate.subject, templateData),
-      bodyText: replacePlaceholders(emailTemplate.body_html, templateData),
-    };
+    const html = createQuoteEmailHTML({
+      clientName: quote.client_name,
+      companyName: settings.company_name,
+      projectName: quote.project_name,
+      quoteNumber: quote.quote_number,
+      totalAmount: quote.total_amount.toFixed(2),
+      expiryDate: quote.expiry_date 
+        ? format(new Date(quote.expiry_date), 'MMM dd, yyyy') 
+        : 'No expiry date',
+      publicQuoteUrl,
+      companyLogoUrl: logoUrl || undefined,
+      customMessage: customMessage || undefined,
+    });
+
+    return { subject, html };
   };
 
   const handleSendEmail = async () => {
@@ -72,23 +77,46 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
 
     setIsLoading(true);
     try {
+      // Step 1: Ensure quote has public_token and update status
+      const tokenToUse = quote.public_token || uuidv4();
+      
+      if (!quote.public_token || quote.status !== 'sent') {
+        console.log('Updating quote status and ensuring public_token...');
+        await updateQuote.mutateAsync({
+          id: quote.id,
+          updates: {
+            public_token: tokenToUse,
+            status: 'sent',
+            public_status: 'awaiting_response',
+            sent_date: new Date().toISOString(),
+          }
+        });
+      }
+
+      // Step 2: Generate email content with public URL
       const emailContent = generateEmailContent();
 
-      // ✅ Generate PDF attachment for quote
-      const { blob, filename } = await generateQuotePDFBlob(quote, lineItems, settings, logoUrl);
+      // Step 3: Generate PDF attachment
+      const { blob, filename } = await generateQuotePDFBlob(
+        quote, 
+        lineItems, 
+        settings, 
+        logoUrl
+      );
       const base64Content = await blobToBase64(blob);
 
-      // ✅ Send email with branded wrapper & PDF
+      // Step 4: Send email with new template and PDF attachment
       const emailResult = await sendEmail({
         to: quote.client_email,
         subject: emailContent.subject,
-        bodyText: emailContent.bodyText,
+        bodyText: '', // Not used when customHtml is provided
         companyData: {
           name: settings.company_name,
           address: settings.company_address,
           phone: settings.company_phone,
-          logoUrl // ✅ consistent with InvoiceEmailSender
+          logoUrl
         },
+        customHtml: emailContent.html,
         attachments: [
           {
             filename,
@@ -101,7 +129,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
       if (emailResult.success) {
         toast({
           title: 'Quote Sent Successfully',
-          description: `Quote ${quote.quote_number} has been sent to ${quote.client_email} with PDF attachment`,
+          description: `Quote ${quote.quote_number} has been sent to ${quote.client_email}`,
         });
         onClose();
       } else {
@@ -172,13 +200,28 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
               </div>
               
               <div>
-                <Label className="text-sm font-medium">Body (Preview):</Label>
-                <div className="mt-1 p-2 bg-muted rounded text-sm max-h-32 overflow-y-auto">
-                  {emailContent.bodyText}
+                <Label className="text-sm font-medium">Message:</Label>
+                <div className="mt-1 p-3 bg-muted rounded text-sm max-h-48 overflow-y-auto">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    ✉️ Branded email with "View Quote Online" button
+                  </p>
+                  <div className="space-y-2">
+                    <p><strong>To:</strong> {quote.client_name} ({quote.client_email})</p>
+                    <p><strong>Project:</strong> {quote.project_name}</p>
+                    <p><strong>Total:</strong> ${quote.total_amount.toFixed(2)}</p>
+                    <p className="text-xs text-green-600 mt-2">
+                      🔗 Includes link to public quote page where client can approve or request changes
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      📎 PDF attachment included for client records
+                    </p>
+                    {customMessage && (
+                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs">
+                        <strong>Your message:</strong> {customMessage}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  This text will be automatically wrapped in your company’s branded email template when sent.
-                </p>
               </div>
             </div>
           </div>
@@ -192,7 +235,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
             onClick={handleSendEmail} 
             disabled={isLoading || !isSettingsComplete()}
           >
-            {isLoading ? 'Sending Quote...' : 'Send Quote with PDF'}
+            {isLoading ? 'Sending Quote...' : 'Send Quote'}
           </Button>
         </DialogFooter>
       </DialogContent>

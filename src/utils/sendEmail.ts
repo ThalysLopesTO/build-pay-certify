@@ -18,6 +18,7 @@ interface SendEmailParams {
     logoUrl?: string;   // ✅ company logo URL for branding
   };
   attachments?: Attachment[]; // ✅ Optional attachments array
+  customHtml?: string; // ✅ NEW: Allow custom HTML that bypasses wrapper
 }
 
 interface SendEmailResponse {
@@ -31,20 +32,21 @@ export const sendEmail = async ({
   subject,
   bodyText,
   companyData,
-  attachments = []  // ✅ Default empty array
+  attachments = [],  // ✅ Default empty array
+  customHtml // ✅ NEW: Allow custom HTML that bypasses wrapper
 }: SendEmailParams): Promise<SendEmailResponse> => {
-  // ✅ Prepare branded email wrapper data for preview
-  const emailWrapperData: EmailWrapperData = {
-    subject,
-    bodyText,
-    companyName: companyData.name,
-    companyAddress: companyData.address || '',
-    companyPhone: companyData.phone || '',
-    companyLogoUrl: companyData.logoUrl || ''
-  };
-
-  // ✅ Generate branded HTML for preview purposes
-  const html = createEmailWrapper(emailWrapperData);
+  // ✅ Use custom HTML if provided, otherwise generate wrapper
+  const html = customHtml || (() => {
+    const emailWrapperData: EmailWrapperData = {
+      subject,
+      bodyText,
+      companyName: companyData.name,
+      companyAddress: companyData.address || '',
+      companyPhone: companyData.phone || '',
+      companyLogoUrl: companyData.logoUrl || ''
+    };
+    return createEmailWrapper(emailWrapperData);
+  })();
 
   // ✅ Build payload for Supabase Edge Function
   const payload: any = {

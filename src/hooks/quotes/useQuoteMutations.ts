@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Quote } from './types';
+import { v4 as uuidv4 } from 'uuid';
 
 // Helper to keep public_status in sync with internal status
 const syncPublicStatus = (internalStatus: string): 'awaiting_response' | 'changes_requested' | 'approved' | 'declined' => {
@@ -17,6 +18,18 @@ const syncPublicStatus = (internalStatus: string): 'awaiting_response' | 'change
     default:
       return 'awaiting_response';
   }
+};
+
+// Helper to ensure public_token exists when sending quotes
+const ensurePublicToken = (updates: Partial<Quote>): Partial<Quote> => {
+  // If we're marking as 'sent' and there's no public_token, generate one
+  if (updates.status === 'sent' && !updates.public_token) {
+    return {
+      ...updates,
+      public_token: uuidv4(),
+    };
+  }
+  return updates;
 };
 
 export const useCreateQuote = () => {
@@ -71,8 +84,10 @@ export const useUpdateQuote = () => {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Quote> }) => {
+      // Ensure public_token exists when sending
+      let finalUpdates = ensurePublicToken({ ...updates });
+      
       // Auto-sync public_status if internal status is being changed
-      const finalUpdates = { ...updates };
       if (updates.status && !updates.public_status) {
         finalUpdates.public_status = syncPublicStatus(updates.status);
       }
