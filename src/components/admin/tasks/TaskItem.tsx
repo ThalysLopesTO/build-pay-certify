@@ -98,7 +98,7 @@ export function TaskItem({
   const isAssignedToUser = task.assignees.some(a => a.user_id === user?.id);
   const isAdmin = ['admin', 'super_admin', 'foreman'].includes(user?.role || '');
   const canEdit = isAdmin;
-  const canToggleStatus = isAdmin || isAssignedToUser;
+  const canToggleStatus = true; // All authenticated users can toggle status (RLS enforces company boundary)
 
   const getInitials = (firstName: string | null, lastName: string | null) => {
     const first = firstName?.charAt(0) || '';
@@ -201,10 +201,18 @@ export function TaskItem({
               e.stopPropagation();
               if (!canToggleStatus) return;
               
-              const statusCycle: Array<'pending' | 'in_progress' | 'done'> = ['pending', 'in_progress', 'done'];
-              const currentIndex = statusCycle.indexOf(task.status as any);
-              const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
-              handleStatusChange(nextStatus);
+              // For employees: simple toggle between pending and done
+              // For admins/foreman: full cycle
+              if (isAdmin) {
+                const statusCycle: Array<'pending' | 'in_progress' | 'done'> = ['pending', 'in_progress', 'done'];
+                const currentIndex = statusCycle.indexOf(task.status as any);
+                const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
+                handleStatusChange(nextStatus);
+              } else {
+                // Employee: toggle directly between pending and done
+                const newStatus = task.status === 'done' ? 'pending' : 'done';
+                handleStatusChange(newStatus);
+              }
             }}
           >
             <StatusIcon status={task.status} />
