@@ -43,9 +43,8 @@ const AdminDashboard = () => {
     const tabParam = searchParams.get('tab');
     if (tabParam) {
       setActiveTab(tabParam);
-    } else {
-      setActiveTab('dashboard');
     }
+    // Don't force reset to 'dashboard' - let activeTab state persist
   }, [searchParams]);
 
   const renderContent = () => {
