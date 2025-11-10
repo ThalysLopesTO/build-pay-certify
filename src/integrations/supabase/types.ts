@@ -3584,6 +3584,7 @@ export type Database = {
           updated_by: string
         }[]
       }
+      get_public_quote: { Args: { token_param: string }; Returns: Json }
       get_user_company_id: { Args: never; Returns: string }
       get_user_company_id_safe: { Args: never; Returns: string }
       get_user_profile_for_join: {
@@ -3612,6 +3613,7 @@ export type Database = {
         Returns: boolean
       }
       is_user_super_admin: { Args: never; Returns: boolean }
+      mark_quote_viewed: { Args: { token_param: string }; Returns: boolean }
       permanently_delete_employee: {
         Args: { employee_user_id: string }
         Returns: Json

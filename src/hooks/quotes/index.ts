@@ -1,4 +1,3 @@
-
 // Export types
 export type { Quote, QuoteLineItem } from './types';
 
@@ -20,3 +19,6 @@ export {
 } from './useQuoteLineItemMutations';
 
 export { useConvertQuoteToInvoice } from './useConvertQuoteToInvoice';
+
+// Export public quote hooks
+export { usePublicQuote, useMarkQuoteViewed } from './usePublicQuote';

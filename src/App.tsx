@@ -29,6 +29,7 @@ import LicenseExpired from "@/pages/LicenseExpired";
 import InvoicePreview from "@/pages/InvoicePreview";
 import MaterialTakeoffPage from "@/pages/admin/MaterialTakeoffPage";
 import InventoryIndex from "@/pages/admin/inventory/Index";
+import PublicQuotePage from "@/pages/PublicQuotePage";
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 
@@ -85,6 +86,9 @@ const AppInner: React.FC = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/license-expired" element={<LicenseExpired />} />
         <Route path="/invoice-preview" element={<InvoicePreview />} />
+        
+        {/* Public Quote Viewing */}
+        <Route path="/public/quote/:token" element={<PublicQuotePage />} />
 
         <Route
           path="/admin/material-takeoff"
