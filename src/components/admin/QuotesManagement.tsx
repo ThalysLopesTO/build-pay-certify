@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import QuotesTable from './quotes/QuotesTable';
 import QuotesFilters from './quotes/QuotesFilters';
-import QuoteFormModal from './quotes/QuoteFormModal';
+import QuoteEditor from './quotes/QuoteEditor';
 import QuotesSummaryCards from './quotes/QuotesSummaryCards';
 
 const QuotesManagement = () => {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [filters, setFilters] = useState({
     status: 'all',
@@ -22,16 +22,16 @@ const QuotesManagement = () => {
 
   const handleCreateQuote = () => {
     setSelectedQuote(null);
-    setIsCreateModalOpen(true);
+    setIsEditorOpen(true);
   };
 
   const handleEditQuote = (quote: any) => {
     setSelectedQuote(quote);
-    setIsCreateModalOpen(true);
+    setIsEditorOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsCreateModalOpen(false);
+  const handleCloseEditor = () => {
+    setIsEditorOpen(false);
     setSelectedQuote(null);
     refetch();
   };
@@ -39,6 +39,16 @@ const QuotesManagement = () => {
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
   };
+
+  // If editor is open, show only the editor
+  if (isEditorOpen) {
+    return (
+      <QuoteEditor
+        quote={selectedQuote}
+        onClose={handleCloseEditor}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -100,12 +110,6 @@ const QuotesManagement = () => {
           onRefresh={refetch}
         />
       </div>
-
-      <QuoteFormModal
-        quote={selectedQuote}
-        isOpen={isCreateModalOpen}
-        onClose={handleCloseModal}
-      />
     </div>
   );
 };
