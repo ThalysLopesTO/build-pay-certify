@@ -25,6 +25,13 @@ export interface Quote {
   created_by: string;
   created_at: string;
   updated_at: string;
+  public_token?: string;
+  client_viewed_at?: string;
+  client_approved_at?: string;
+  client_declined_at?: string;
+  client_name_signed?: string;
+  client_change_request?: string;
+  public_status?: 'awaiting_response' | 'changes_requested' | 'approved' | 'declined';
 }
 
 export interface QuoteLineItem {

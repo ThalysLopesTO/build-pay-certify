@@ -1,8 +1,23 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Quote } from './types';
+
+// Helper to keep public_status in sync with internal status
+const syncPublicStatus = (internalStatus: string): 'awaiting_response' | 'changes_requested' | 'approved' | 'declined' => {
+  switch (internalStatus) {
+    case 'accepted':
+      return 'approved';
+    case 'declined':
+      return 'declined';
+    case 'sent':
+      return 'awaiting_response';
+    case 'draft':
+      return 'awaiting_response';
+    default:
+      return 'awaiting_response';
+  }
+};
 
 export const useCreateQuote = () => {
   const queryClient = useQueryClient();
@@ -56,9 +71,15 @@ export const useUpdateQuote = () => {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Quote> }) => {
+      // Auto-sync public_status if internal status is being changed
+      const finalUpdates = { ...updates };
+      if (updates.status && !updates.public_status) {
+        finalUpdates.public_status = syncPublicStatus(updates.status);
+      }
+
       const { data, error } = await supabase
         .from('quotes')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...finalUpdates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
         .single();

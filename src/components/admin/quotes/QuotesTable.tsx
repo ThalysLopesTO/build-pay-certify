@@ -83,7 +83,7 @@ const QuotesTable: React.FC<QuotesTableProps> = ({ quotes, onEdit, onRefresh }) 
                       {quote.sent_date ? format(new Date(quote.sent_date), 'MMM dd, yyyy') : '—'}
                     </TableCell>
                     <TableCell>
-                      <QuoteStatusBadge status={quote.status} />
+                      <QuoteStatusBadge status={quote.status} publicStatus={quote.public_status} />
                     </TableCell>
                     <TableCell className="text-right">
                       <span className="font-semibold text-lg">

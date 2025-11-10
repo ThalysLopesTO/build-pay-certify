@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 import QuotesTable from './quotes/QuotesTable';
 import QuotesFilters from './quotes/QuotesFilters';
 import QuoteFormModal from './quotes/QuoteFormModal';
+import QuotesSummaryCards from './quotes/QuotesSummaryCards';
 
 const QuotesManagement = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -86,6 +87,8 @@ const QuotesManagement = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+        <QuotesSummaryCards quotes={quotes} />
+        
         <QuotesFilters 
           filters={filters}
           onFiltersChange={handleFilterChange}

@@ -2086,10 +2086,15 @@ export type Database = {
         Row: {
           accepted_date: string | null
           client_address: string | null
+          client_approved_at: string | null
+          client_change_request: string | null
           client_company: string | null
+          client_declined_at: string | null
           client_email: string
           client_name: string
+          client_name_signed: string | null
           client_phone: string | null
+          client_viewed_at: string | null
           company_id: string
           created_at: string
           created_by: string | null
@@ -2100,6 +2105,8 @@ export type Database = {
           invoice_id: string | null
           notes: string | null
           project_name: string
+          public_status: string | null
+          public_token: string | null
           quote_date: string
           quote_number: string
           sent_date: string | null
@@ -2113,10 +2120,15 @@ export type Database = {
         Insert: {
           accepted_date?: string | null
           client_address?: string | null
+          client_approved_at?: string | null
+          client_change_request?: string | null
           client_company?: string | null
+          client_declined_at?: string | null
           client_email: string
           client_name: string
+          client_name_signed?: string | null
           client_phone?: string | null
+          client_viewed_at?: string | null
           company_id: string
           created_at?: string
           created_by?: string | null
@@ -2127,6 +2139,8 @@ export type Database = {
           invoice_id?: string | null
           notes?: string | null
           project_name: string
+          public_status?: string | null
+          public_token?: string | null
           quote_date?: string
           quote_number: string
           sent_date?: string | null
@@ -2140,10 +2154,15 @@ export type Database = {
         Update: {
           accepted_date?: string | null
           client_address?: string | null
+          client_approved_at?: string | null
+          client_change_request?: string | null
           client_company?: string | null
+          client_declined_at?: string | null
           client_email?: string
           client_name?: string
+          client_name_signed?: string | null
           client_phone?: string | null
+          client_viewed_at?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null
@@ -2154,6 +2173,8 @@ export type Database = {
           invoice_id?: string | null
           notes?: string | null
           project_name?: string
+          public_status?: string | null
+          public_token?: string | null
           quote_date?: string
           quote_number?: string
           sent_date?: string | null
