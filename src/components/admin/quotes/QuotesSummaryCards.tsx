@@ -19,40 +19,40 @@ const QuotesSummaryCards: React.FC<QuotesSummaryCardsProps> = ({ quotes }) => {
       subtitle: 'Pending review',
       count: draftCount,
       icon: FileText,
-      bgColor: 'bg-slate-50/80 dark:bg-slate-900/40',
-      iconColor: 'text-slate-600 dark:text-slate-400',
+      borderColor: 'border-l-slate-400',
+      iconColor: 'text-slate-600',
       iconBgGradient: 'from-slate-500/20 to-slate-600/10',
-      countColor: 'text-slate-900 dark:text-slate-100',
+      countColor: 'text-slate-900',
     },
     {
       label: 'AWAITING RESPONSE',
       subtitle: 'Waiting for client',
       count: awaitingCount,
       icon: Clock,
-      bgColor: 'bg-amber-50/80 dark:bg-amber-950/20',
-      iconColor: 'text-amber-600 dark:text-amber-400',
+      borderColor: 'border-l-amber-400',
+      iconColor: 'text-amber-600',
       iconBgGradient: 'from-amber-500/20 to-amber-600/10',
-      countColor: 'text-amber-700 dark:text-amber-400',
+      countColor: 'text-amber-700',
     },
     {
       label: 'CHANGES REQUESTED',
       subtitle: 'Requires updates',
       count: changesRequestedCount,
       icon: AlertCircle,
-      bgColor: 'bg-orange-50/80 dark:bg-orange-950/20',
-      iconColor: 'text-orange-600 dark:text-orange-400',
+      borderColor: 'border-l-orange-400',
+      iconColor: 'text-orange-600',
       iconBgGradient: 'from-orange-500/20 to-orange-600/10',
-      countColor: 'text-orange-700 dark:text-orange-400',
+      countColor: 'text-orange-700',
     },
     {
       label: 'APPROVED',
       subtitle: 'Ready to invoice',
       count: approvedCount,
       icon: CheckCircle,
-      bgColor: 'bg-emerald-50/80 dark:bg-emerald-950/20',
-      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      borderColor: 'border-l-emerald-400',
+      iconColor: 'text-emerald-600',
       iconBgGradient: 'from-emerald-500/20 to-emerald-600/10',
-      countColor: 'text-emerald-700 dark:text-emerald-400',
+      countColor: 'text-emerald-700',
     },
   ];
 
@@ -61,10 +61,10 @@ const QuotesSummaryCards: React.FC<QuotesSummaryCardsProps> = ({ quotes }) => {
       {cards.map((card) => (
         <Card 
           key={card.label} 
-          className={`relative overflow-hidden ${card.bgColor} backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer`}
+          className={`relative overflow-hidden bg-white border border-gray-200 ${card.borderColor} border-l-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] cursor-pointer`}
         >
           <CardContent className="p-6">
-            <div className="absolute top-4 right-4 w-14 h-14 rounded-full bg-gradient-to-br ${card.iconBgGradient} flex items-center justify-center">
+            <div className={`absolute top-4 right-4 w-14 h-14 rounded-full bg-gradient-to-br ${card.iconBgGradient} flex items-center justify-center`}>
               <card.icon className={`h-7 w-7 ${card.iconColor} opacity-40`} />
             </div>
             <div className="space-y-2">
