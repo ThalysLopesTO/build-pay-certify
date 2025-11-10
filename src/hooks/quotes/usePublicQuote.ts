@@ -20,18 +20,23 @@ export const usePublicQuote = (token: string) => {
   return useQuery({
     queryKey: ['public-quote', token],
     queryFn: async () => {
+      console.log('Fetching public quote with token:', token);
+      
       const { data, error } = await supabase.rpc('get_public_quote', {
         token_param: token
       });
 
       if (error) {
+        console.error('Error fetching public quote:', error);
         throw error;
       }
 
       if (!data) {
+        console.warn('No quote found for token:', token);
         return null;
       }
 
+      console.log('Successfully fetched quote:', data);
       return data as PublicQuoteData;
     },
     enabled: !!token,

@@ -2106,7 +2106,7 @@ export type Database = {
           notes: string | null
           project_name: string
           public_status: string | null
-          public_token: string | null
+          public_token: string
           quote_date: string
           quote_number: string
           sent_date: string | null
@@ -2140,7 +2140,7 @@ export type Database = {
           notes?: string | null
           project_name: string
           public_status?: string | null
-          public_token?: string | null
+          public_token?: string
           quote_date?: string
           quote_number: string
           sent_date?: string | null
@@ -2174,7 +2174,7 @@ export type Database = {
           notes?: string | null
           project_name?: string
           public_status?: string | null
-          public_token?: string | null
+          public_token?: string
           quote_date?: string
           quote_number?: string
           sent_date?: string | null

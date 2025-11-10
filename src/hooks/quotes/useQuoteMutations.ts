@@ -49,6 +49,7 @@ export const useCreateQuote = () => {
         .from('quotes')
         .insert([{
           ...quoteData,
+          public_token: quoteData.public_token || uuidv4(), // Ensure token exists
           created_by: user.data.user?.id!,
           company_id: userProfile.data?.company_id!
         }])

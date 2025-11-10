@@ -15,6 +15,18 @@ const PublicQuotePage: React.FC = () => {
   const { data, isLoading, error } = usePublicQuote(token || '');
   const markViewed = useMarkQuoteViewed();
 
+  // Validate token format
+  useEffect(() => {
+    if (token) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(token)) {
+        console.error('Invalid token format:', token);
+      } else {
+        console.log('Valid token format:', token);
+      }
+    }
+  }, [token]);
+
   // Track first view
   useEffect(() => {
     if (data && token) {
@@ -52,6 +64,9 @@ const PublicQuotePage: React.FC = () => {
   }
 
   if (error || !data) {
+    const errorMessage = error?.message || 'Unknown error';
+    console.error('Public quote error:', { error, token });
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-muted/30 to-muted/50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -59,9 +74,20 @@ const PublicQuotePage: React.FC = () => {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Quote Not Found</AlertTitle>
-              <AlertDescription>
-                This quote is no longer available or the link may have expired.
-                Please contact the company if you believe this is an error.
+              <AlertDescription className="space-y-2">
+                <p>
+                  This quote is no longer available or the link may have expired.
+                  Please contact the company if you believe this is an error.
+                </p>
+                {process.env.NODE_ENV === 'development' && (
+                  <details className="mt-2 text-xs">
+                    <summary className="cursor-pointer font-semibold">Debug Info</summary>
+                    <pre className="mt-2 p-2 bg-muted rounded overflow-x-auto">
+                      Token: {token}
+                      Error: {errorMessage}
+                    </pre>
+                  </details>
+                )}
               </AlertDescription>
             </Alert>
           </CardContent>
