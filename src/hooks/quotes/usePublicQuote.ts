@@ -60,7 +60,7 @@ export const useMarkQuoteViewed = () => {
   });
 };
 
-// Hook to fetch other quotes for the same client using secure RPC
+// Hook to fetch other quotes for the same client
 export const useClientOtherQuotes = (
   clientEmail: string, 
   companyId: string, 
@@ -88,7 +88,7 @@ export const useClientOtherQuotes = (
   });
 };
 
-// Hook to fetch invoices for the same client using secure RPC
+// Hook to fetch invoices for the same client
 export const useClientInvoices = (
   clientEmail: string,
   companyId: string
