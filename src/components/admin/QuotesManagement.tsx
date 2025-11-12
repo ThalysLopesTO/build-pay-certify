@@ -52,7 +52,7 @@ const QuotesManagement = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-muted/30">
+      <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="animate-pulse space-y-6">
             <div className="h-12 bg-muted rounded-lg w-1/3"></div>
@@ -66,7 +66,7 @@ const QuotesManagement = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-muted/30">
+      <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="text-center py-12">
             <p className="text-destructive mb-4 text-lg">Failed to load quotes</p>
@@ -78,9 +78,9 @@ const QuotesManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-gray-50">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div>

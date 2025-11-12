@@ -16,49 +16,49 @@ const QuoteStatusBadge: React.FC<QuoteStatusBadgeProps> = ({ status, publicStatu
         return {
           label: 'Awaiting Response',
           icon: Clock,
-          className: 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-100 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800',
+          className: 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-50',
         };
       case 'changes_requested':
         return {
           label: 'Changes Requested',
           icon: AlertCircle,
-          className: 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-100 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800',
+          className: 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-50',
         };
       case 'approved':
         return {
           label: 'Approved',
           icon: CheckCircle,
-          className: 'bg-green-100 text-green-800 border-green-300 hover:bg-green-100 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800',
+          className: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50',
         };
       case 'declined':
         return {
           label: 'Declined',
           icon: XCircle,
-          className: 'bg-red-100 text-red-800 border-red-300 hover:bg-red-100 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800',
+          className: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-50',
         };
       case 'draft':
         return {
           label: 'Draft',
           icon: FileEdit,
-          className: 'bg-muted text-muted-foreground border-border hover:bg-muted',
+          className: 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-50',
         };
       case 'sent':
         return {
           label: 'Sent',
           icon: Clock,
-          className: 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800',
+          className: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50',
         };
       case 'invoiced':
         return {
           label: 'Invoiced',
           icon: CheckCircle,
-          className: 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800',
+          className: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50',
         };
       default:
         return {
           label: status,
           icon: FileEdit,
-          className: 'bg-muted text-muted-foreground border-border hover:bg-muted',
+          className: 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-50',
         };
     }
   };
