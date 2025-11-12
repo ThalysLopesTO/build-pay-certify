@@ -3474,7 +3474,7 @@ export type Database = {
       }
       approve_quote_public: {
         Args: { p_signed_name: string; p_token: string }
-        Returns: boolean
+        Returns: Json
       }
       bulk_reorder_tasks: { Args: { task_updates: Json }; Returns: undefined }
       calculate_invoice_totals: {
@@ -3634,7 +3634,7 @@ export type Database = {
       }
       request_quote_changes_public: {
         Args: { p_message: string; p_token: string }
-        Returns: boolean
+        Returns: Json
       }
       rpc_time_summary_details:
         | {
