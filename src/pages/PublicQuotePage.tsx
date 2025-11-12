@@ -20,6 +20,8 @@ import { ApproveQuoteModal } from '@/components/public/ApproveQuoteModal';
 import { RequestChangesModal } from '@/components/public/RequestChangesModal';
 import { RelatedQuotesSection } from '@/components/public/RelatedQuotesSection';
 import { RelatedInvoicesSection } from '@/components/public/RelatedInvoicesSection';
+import { QuoteActionSidebar } from '@/components/public/QuoteActionSidebar';
+import { QuoteSummaryCard } from '@/components/public/QuoteSummaryCard';
 import { toast } from 'sonner';
 
 const PublicQuotePage: React.FC = () => {
@@ -158,18 +160,21 @@ const PublicQuotePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-muted/30 to-muted/50 py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Success Message */}
-        {successMessage && (
-          <Alert className="bg-green-50 border-green-200">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
-              {successMessage}
-            </AlertDescription>
-          </Alert>
-        )}
+      <div className="max-w-7xl mx-auto">
+        <div className="space-y-6 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
+          {/* LEFT COLUMN - Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Success Message */}
+            {successMessage && (
+              <Alert className="bg-green-50 border-green-200">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  {successMessage}
+                </AlertDescription>
+              </Alert>
+            )}
 
-        {/* Header Card */}
+            {/* Header Card */}
         <Card className="shadow-lg">
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -202,8 +207,8 @@ const PublicQuotePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Download Button */}
-              <Button onClick={handleDownloadPDF} className="shadow-sm">
+              {/* Download Button - Desktop Only */}
+              <Button onClick={handleDownloadPDF} className="shadow-sm hidden lg:flex">
                 <Download className="h-4 w-4 mr-2" />
                 Download PDF
               </Button>
@@ -386,78 +391,61 @@ const PublicQuotePage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Client Actions Card */}
-        <Card className="border-2 border-primary/20 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl">Quote Actions</CardTitle>
-            <CardDescription>
-              {quote.public_status === 'approved' && (
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span>
-                    Approved on {quote.client_approved_at && format(new Date(quote.client_approved_at), 'MMM dd, yyyy')}
-                  </span>
-                </div>
-              )}
-              {quote.public_status === 'changes_requested' && (
-                <div className="flex items-center gap-2 text-blue-600">
-                  <MessageCircle className="h-5 w-5" />
-                  <span>Change request submitted</span>
-                </div>
-              )}
-              {(!quote.public_status || quote.public_status === 'awaiting_response') && (
-                <span>Please review and take action on this quote</span>
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {(!quote.public_status || quote.public_status === 'awaiting_response') && (
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={() => setShowApproveModal(true)}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                  size="lg"
-                >
-                  <CheckCircle2 className="mr-2 h-5 w-5" />
-                  Approve Quote
-                </Button>
-                <Button
-                  onClick={() => setShowRequestChangesModal(true)}
-                  variant="outline"
-                  className="flex-1"
-                  size="lg"
-                >
-                  <MessageCircle className="mr-2 h-5 w-5" />
-                  Request Changes
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          {/* Footer Notes */}
+          {company_settings.hst_number && (
+            <Card className="shadow-sm">
+              <CardContent className="pt-6">
+                <p className="text-xs text-muted-foreground text-center">
+                  HST #: {company_settings.hst_number}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
-        {/* Related Quotes Section */}
-        <RelatedQuotesSection 
-          quotes={otherQuotes} 
-          isLoading={isLoadingOtherQuotes} 
-        />
+        {/* RIGHT COLUMN - Sidebar (Sticky on Desktop) */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="lg:sticky lg:top-6 space-y-6">
+            {/* Quote Summary Card */}
+            <QuoteSummaryCard
+              total={total}
+              status={quote.status}
+              publicStatus={quote.public_status}
+              quoteNumber={quote.quote_number}
+              expiryDate={quote.expiry_date}
+              viewedAt={quote.client_viewed_at}
+              sentDate={quote.sent_date}
+              createdAt={quote.created_at}
+            />
 
-        {/* Related Invoices Section */}
-        <RelatedInvoicesSection 
-          invoices={clientInvoices} 
-          isLoading={isLoadingInvoices} 
-        />
+            {/* Action Sidebar */}
+            <QuoteActionSidebar
+              publicStatus={quote.public_status}
+              clientApprovedAt={quote.client_approved_at}
+              onApprove={() => setShowApproveModal(true)}
+              onRequestChanges={() => setShowRequestChangesModal(true)}
+              onDownloadPDF={handleDownloadPDF}
+              isProcessing={approveMutation.isPending || requestChangesMutation.isPending}
+              companyName={company_settings.company_name}
+              companyEmail={company_settings.company_email}
+              companyPhone={company_settings.company_phone}
+            />
 
-        {/* Footer Notes */}
-        {company_settings.hst_number && (
-          <Card className="shadow-sm">
-            <CardContent className="pt-6">
-              <p className="text-xs text-muted-foreground text-center">
-                HST #: {company_settings.hst_number}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+            {/* Related Quotes Section */}
+            <RelatedQuotesSection 
+              quotes={otherQuotes} 
+              isLoading={isLoadingOtherQuotes} 
+            />
+
+            {/* Related Invoices Section */}
+            <RelatedInvoicesSection 
+              invoices={clientInvoices} 
+              isLoading={isLoadingInvoices} 
+            />
+          </div>
+        </div>
       </div>
+    </div>
 
       {/* Modals */}
       <ApproveQuoteModal
