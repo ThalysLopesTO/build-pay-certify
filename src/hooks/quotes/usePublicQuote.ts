@@ -71,15 +71,11 @@ export const useClientOtherQuotes = (
     queryFn: async () => {
       console.log('Fetching other quotes for client:', clientEmail);
       
-      const { data, error } = await supabase
-        .from('quotes')
-        .select('id, quote_number, project_name, quote_date, status, total_amount, public_status, public_token')
-        .eq('client_email', clientEmail)
-        .eq('company_id', companyId)
-        .neq('id', currentQuoteId)
-        .neq('status', 'draft')
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const { data, error } = await supabase.rpc('get_client_other_quotes', {
+        p_client_email: clientEmail,
+        p_company_id: companyId,
+        p_current_quote_id: currentQuoteId
+      });
       
       if (error) {
         console.error('Error fetching client other quotes:', error);
@@ -102,13 +98,10 @@ export const useClientInvoices = (
     queryFn: async () => {
       console.log('Fetching invoices for client:', clientEmail);
       
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('id, invoice_number, title, due_date, status, total_amount, created_at')
-        .eq('client_email', clientEmail)
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const { data, error } = await supabase.rpc('get_client_invoices', {
+        p_client_email: clientEmail,
+        p_company_id: companyId
+      });
       
       if (error) {
         console.error('Error fetching client invoices:', error);

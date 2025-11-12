@@ -3545,6 +3545,18 @@ export type Database = {
       generate_invoice_number: { Args: never; Returns: string }
       generate_quote_number: { Args: never; Returns: string }
       generate_recurring_bills: { Args: never; Returns: undefined }
+      get_client_invoices: {
+        Args: { p_client_email: string; p_company_id: string }
+        Returns: Json
+      }
+      get_client_other_quotes: {
+        Args: {
+          p_client_email: string
+          p_company_id: string
+          p_current_quote_id: string
+        }
+        Returns: Json
+      }
       get_client_portal_data: { Args: { token_param: string }; Returns: Json }
       get_companies_with_status: {
         Args: never
