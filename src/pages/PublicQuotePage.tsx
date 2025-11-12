@@ -1,19 +1,31 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { usePublicQuote, useMarkQuoteViewed } from '@/hooks/quotes';
+import { usePublicQuote, useMarkQuoteViewed, useApproveQuote, useRequestChanges } from '@/hooks/quotes';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Download, AlertCircle, Loader2 } from 'lucide-react';
+import { Download, AlertCircle, Loader2, CheckCircle2, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { generateQuotePDF } from '@/utils/quotePDFGenerator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import QuoteStatusBadge from '@/components/admin/quotes/QuoteStatusBadge';
+import { ApproveQuoteModal } from '@/components/public/ApproveQuoteModal';
+import { RequestChangesModal } from '@/components/public/RequestChangesModal';
+import { toast } from 'sonner';
 
 const PublicQuotePage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const { data, isLoading, error } = usePublicQuote(token || '');
   const markViewed = useMarkQuoteViewed();
+  
+  // Modal states
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRequestChangesModal, setShowRequestChangesModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  // Mutations
+  const approveMutation = useApproveQuote();
+  const requestChangesMutation = useRequestChanges();
 
   // Validate token format
   useEffect(() => {
@@ -47,6 +59,26 @@ const PublicQuotePage: React.FC = () => {
       );
     } catch (error) {
       console.error('Error generating PDF:', error);
+    }
+  };
+
+  const handleApprove = async (signedName: string) => {
+    try {
+      await approveMutation.mutateAsync({ token: token!, signedName });
+      setSuccessMessage('Thank you! Your quote has been approved. We\'ll contact you shortly to schedule the work.');
+      setShowApproveModal(false);
+    } catch (error) {
+      toast.error('Failed to approve quote. Please try again.');
+    }
+  };
+
+  const handleRequestChanges = async (message: string) => {
+    try {
+      await requestChangesMutation.mutateAsync({ token: token!, message });
+      setSuccessMessage('Thanks! Your request has been sent. We\'ll review it and follow up with you.');
+      setShowRequestChangesModal(false);
+    } catch (error) {
+      toast.error('Failed to send request. Please try again.');
     }
   };
 
@@ -106,6 +138,16 @@ const PublicQuotePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-muted/30 to-muted/50 py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Success Message */}
+        {successMessage && (
+          <Alert className="bg-green-50 border-green-200">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              {successMessage}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Header Card */}
         <Card className="shadow-lg">
           <CardContent className="pt-6">
@@ -323,6 +365,55 @@ const PublicQuotePage: React.FC = () => {
           </CardContent>
         </Card>
 
+        {/* Client Actions Card */}
+        <Card className="border-2 border-primary/20 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl">Quote Actions</CardTitle>
+            <CardDescription>
+              {quote.public_status === 'approved' && (
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span>
+                    Approved on {quote.client_approved_at && format(new Date(quote.client_approved_at), 'MMM dd, yyyy')}
+                  </span>
+                </div>
+              )}
+              {quote.public_status === 'changes_requested' && (
+                <div className="flex items-center gap-2 text-blue-600">
+                  <MessageCircle className="h-5 w-5" />
+                  <span>Change request submitted</span>
+                </div>
+              )}
+              {(!quote.public_status || quote.public_status === 'awaiting_response') && (
+                <span>Please review and take action on this quote</span>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(!quote.public_status || quote.public_status === 'awaiting_response') && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={() => setShowApproveModal(true)}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  size="lg"
+                >
+                  <CheckCircle2 className="mr-2 h-5 w-5" />
+                  Approve Quote
+                </Button>
+                <Button
+                  onClick={() => setShowRequestChangesModal(true)}
+                  variant="outline"
+                  className="flex-1"
+                  size="lg"
+                >
+                  <MessageCircle className="mr-2 h-5 w-5" />
+                  Request Changes
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Footer Notes */}
         {company_settings.hst_number && (
           <Card className="shadow-sm">
@@ -334,6 +425,22 @@ const PublicQuotePage: React.FC = () => {
           </Card>
         )}
       </div>
+
+      {/* Modals */}
+      <ApproveQuoteModal
+        open={showApproveModal}
+        onOpenChange={setShowApproveModal}
+        onConfirm={handleApprove}
+        isLoading={approveMutation.isPending}
+        quoteTotal={total}
+      />
+
+      <RequestChangesModal
+        open={showRequestChangesModal}
+        onOpenChange={setShowRequestChangesModal}
+        onConfirm={handleRequestChanges}
+        isLoading={requestChangesMutation.isPending}
+      />
     </div>
   );
 };

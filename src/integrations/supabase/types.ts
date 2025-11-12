@@ -3473,8 +3473,8 @@ export type Database = {
         Returns: Json
       }
       approve_quote_public: {
-        Args: { client_name_param: string; token_param: string }
-        Returns: Json
+        Args: { p_signed_name: string; p_token: string }
+        Returns: boolean
       }
       bulk_reorder_tasks: { Args: { task_updates: Json }; Returns: undefined }
       calculate_invoice_totals: {
@@ -3633,8 +3633,8 @@ export type Database = {
         Returns: Json
       }
       request_quote_changes_public: {
-        Args: { change_request_param: string; token_param: string }
-        Returns: Json
+        Args: { p_message: string; p_token: string }
+        Returns: boolean
       }
       rpc_time_summary_details:
         | {
