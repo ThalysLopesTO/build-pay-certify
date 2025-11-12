@@ -52,14 +52,11 @@ export const HierarchicalCategorySelector = ({
 
   return (
     <div>
-      <Label htmlFor="category">
-        Category {required && <span className="text-destructive">*</span>}
-      </Label>
       <Select value={selectedCategoryId} onValueChange={handleCategoryChange}>
-        <SelectTrigger>
+        <SelectTrigger className="h-11">
           <SelectValue placeholder="Select category" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-background border-border z-50">
           {allCategoryOptions.map((option) => (
             <SelectItem key={option.id} value={option.id}>
               <span className={option.isParent ? "font-medium" : "text-muted-foreground"}>
