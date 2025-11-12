@@ -1158,7 +1158,7 @@ const IncomeExpensesManagement = () => {
 
       {/* Create/Edit Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingTransaction 
@@ -1167,9 +1167,9 @@ const IncomeExpensesManagement = () => {
               }
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Title and Category Row */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-2">
                 <Label htmlFor="expense_title" className="text-sm font-medium text-slate-700">
                   {transactionType === 'income' ? 'Income' : 'Expense'} Title *
@@ -1197,7 +1197,7 @@ const IncomeExpensesManagement = () => {
             </div>
 
             {/* Vendor/Payee and Amount Row */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-2">
                 <Label htmlFor="vendor_payee" className="text-sm font-medium text-slate-700">
                   {transactionType === 'income' ? 'Payer' : 'Vendor / Payee'} *
@@ -1232,7 +1232,7 @@ const IncomeExpensesManagement = () => {
             </div>
 
             {/* Date and Status Row */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-slate-700">
                   Date of {transactionType === 'income' ? 'Income' : 'Expense'} *
@@ -1250,7 +1250,7 @@ const IncomeExpensesManagement = () => {
                       {formData.expense_date ? format(formData.expense_date, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
                     <Calendar
                       mode="single"
                       selected={formData.expense_date}
@@ -1372,7 +1372,7 @@ const IncomeExpensesManagement = () => {
 
                 {formData.is_recurring && (
                   <div className="pl-6 space-y-4 border-l-2 border-slate-200">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-medium text-slate-600">
                           Frequency
@@ -1410,7 +1410,7 @@ const IncomeExpensesManagement = () => {
                               {formData.end_date ? format(formData.end_date, "PPP") : "No end date"}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
                             <Calendar
                               mode="single"
                               selected={formData.end_date || undefined}
@@ -1428,18 +1428,18 @@ const IncomeExpensesManagement = () => {
             )}
 
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-3 pt-6 border-t">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={resetForm}
-                className="px-6 h-11 border-slate-300 hover:bg-slate-50"
+                className="w-full sm:w-auto px-6 h-11 border-slate-300 hover:bg-slate-50"
               >
                 Cancel
               </Button>
               <Button 
                 type="submit"
-                className="px-6 h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm"
+                className="w-full sm:w-auto px-6 h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm"
               >
                 {editingTransaction ? 'Update' : 'Create'} {transactionType === 'income' ? 'Income' : 'Expense'}
               </Button>
