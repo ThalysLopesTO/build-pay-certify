@@ -3468,6 +3468,10 @@ export type Database = {
       approve_missed_punch_request:
         | { Args: { request_id: string }; Returns: Json }
         | { Args: { approver_id: string; request_id: string }; Returns: Json }
+      approve_public_quote: {
+        Args: { signature_name: string; token_param: string }
+        Returns: Json
+      }
       approve_quote_public: {
         Args: { client_name_param: string; token_param: string }
         Returns: Json
@@ -3541,6 +3545,7 @@ export type Database = {
       generate_invoice_number: { Args: never; Returns: string }
       generate_quote_number: { Args: never; Returns: string }
       generate_recurring_bills: { Args: never; Returns: undefined }
+      get_client_portal_data: { Args: { token_param: string }; Returns: Json }
       get_companies_with_status: {
         Args: never
         Returns: {
@@ -3623,6 +3628,10 @@ export type Database = {
         Returns: Json
       }
       reactivate_employee: { Args: { employee_user_id: string }; Returns: Json }
+      request_quote_changes: {
+        Args: { change_message: string; token_param: string }
+        Returns: Json
+      }
       request_quote_changes_public: {
         Args: { change_request_param: string; token_param: string }
         Returns: Json

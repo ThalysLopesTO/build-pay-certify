@@ -25,7 +25,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown, Paperclip, Eye } from 'lucide-react';
+import ExpenseAttachmentField from './income-expenses/ExpenseAttachmentField';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { formatDateFromDB, formatDateForDB, parseLocalDate } from '@/utils/dateUtils';
@@ -94,6 +95,8 @@ const IncomeExpensesManagement = () => {
     recurrence_frequency: string;
     start_date: Date | null;
     end_date: Date | null;
+    attachmentFile: File | null;
+    existingAttachmentUrl: string | null;
   }>({
     expense_title: '',
     category_id: '',
@@ -106,7 +109,9 @@ const IncomeExpensesManagement = () => {
     is_recurring: false,
     recurrence_frequency: 'monthly',
     start_date: null,
-    end_date: null
+    end_date: null,
+    attachmentFile: null,
+    existingAttachmentUrl: null
   });
 
   useEffect(() => {
@@ -135,6 +140,29 @@ const IncomeExpensesManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let attachmentUrl = formData.existingAttachmentUrl;
+
+      // Upload file to storage if present
+      if (formData.attachmentFile) {
+        const fileExt = formData.attachmentFile.name.split('.').pop();
+        const fileName = `${user?.companyId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('expense-attachments')
+          .upload(fileName, formData.attachmentFile);
+        
+        if (uploadError) throw uploadError;
+        
+        attachmentUrl = fileName;
+        
+        // Delete old attachment if replacing
+        if (editingTransaction?.attachment_url) {
+          await supabase.storage
+            .from('expense-attachments')
+            .remove([editingTransaction.attachment_url]);
+        }
+      }
+
       const transactionData = {
         company_id: user?.companyId,
         expense_title: formData.expense_title,
@@ -146,7 +174,8 @@ const IncomeExpensesManagement = () => {
         payment_method: formData.payment_method || null,
         notes: formData.notes || null,
         created_by: user?.id,
-        transaction_type: transactionType
+        transaction_type: transactionType,
+        attachment_url: attachmentUrl
       };
 
       if (editingTransaction) {
@@ -187,6 +216,16 @@ const IncomeExpensesManagement = () => {
     }
   };
 
+  const handleViewAttachment = (attachmentPath: string | null) => {
+    if (!attachmentPath) return;
+    
+    const { data } = supabase.storage
+      .from('expense-attachments')
+      .getPublicUrl(attachmentPath);
+    
+    window.open(data.publicUrl, '_blank');
+  };
+
   const handleDelete = async (id: string) => {
     setTransactionToDelete(id);
     setDeleteDialogOpen(true);
@@ -196,6 +235,16 @@ const IncomeExpensesManagement = () => {
     if (!transactionToDelete) return;
     
     try {
+      // Find the transaction to get attachment info
+      const transaction = transactions.find(t => t.id === transactionToDelete);
+      
+      // Delete attachment from storage if exists
+      if (transaction?.attachment_url) {
+        await supabase.storage
+          .from('expense-attachments')
+          .remove([transaction.attachment_url]);
+      }
+      
       const { error } = await supabase
         .from('bills_expenses')
         .delete()
@@ -232,7 +281,9 @@ const IncomeExpensesManagement = () => {
       is_recurring: false,
       recurrence_frequency: 'monthly',
       start_date: null,
-      end_date: null
+      end_date: null,
+      attachmentFile: null,
+      existingAttachmentUrl: null
     });
     setEditingTransaction(null);
     setIsCreateDialogOpen(false);
@@ -251,7 +302,9 @@ const IncomeExpensesManagement = () => {
       is_recurring: false,
       recurrence_frequency: 'monthly',
       start_date: null,
-      end_date: null
+      end_date: null,
+      attachmentFile: null,
+      existingAttachmentUrl: transaction.attachment_url || null
     });
     setTransactionType(transaction.transaction_type);
     setEditingTransaction(transaction);
@@ -1005,13 +1058,14 @@ const IncomeExpensesManagement = () => {
                     <TableHead className="font-semibold text-slate-700 py-3">Payer/Payee</TableHead>
                     <TableHead className="font-semibold text-slate-700 py-3 text-right">Amount</TableHead>
                     <TableHead className="font-semibold text-slate-700 py-3">Status</TableHead>
+                    <TableHead className="font-semibold text-slate-700 py-3 text-center">File</TableHead>
                     <TableHead className="font-semibold text-slate-700 py-3">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedTransactions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-12 text-slate-500">
+                      <TableCell colSpan={9} className="text-center py-12 text-slate-500">
                         <div className="flex flex-col items-center justify-center space-y-3">
                           <Receipt className="h-12 w-12 text-slate-300" />
                           <div>
@@ -1060,6 +1114,21 @@ const IncomeExpensesManagement = () => {
                         </TableCell>
                         <TableCell className="py-3">
                           {getStatusBadge(transaction.payment_status)}
+                        </TableCell>
+                        <TableCell className="py-3 text-center">
+                          {transaction.attachment_url ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewAttachment(transaction.attachment_url)}
+                              className="h-8 px-2 hover:bg-blue-50"
+                              title="View attachment"
+                            >
+                              <Paperclip className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          ) : (
+                            <span className="text-slate-400 text-xs">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="py-3">
                           <div className="flex gap-1">
@@ -1350,6 +1419,22 @@ const IncomeExpensesManagement = () => {
                 rows={3}
                 className="border-slate-300 resize-none"
               />
+            </div>
+
+            {/* Attachment Upload */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-slate-700">
+                Attach Receipt/Document (Optional)
+              </Label>
+              <ExpenseAttachmentField
+                value={formData.attachmentFile}
+                existingUrl={formData.existingAttachmentUrl}
+                onChange={(file) => setFormData({ ...formData, attachmentFile: file })}
+                disabled={false}
+              />
+              <p className="text-xs text-slate-500">
+                Upload a photo or PDF of your receipt/invoice for record keeping
+              </p>
             </div>
 
             {/* Recurring Expense Toggle */}

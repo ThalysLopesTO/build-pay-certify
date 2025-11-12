@@ -12,7 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Calendar, Folder, User, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Folder, User, Edit, Trash2, Paperclip } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { formatDateFromDB } from '@/utils/dateUtils';
 import { getCategoryColor } from '@/utils/categoryColors';
@@ -39,6 +40,16 @@ export const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
     if (info.offset.x < DELETE_THRESHOLD) {
       setShowDeleteDialog(true);
     }
+  };
+
+  const handleViewAttachment = () => {
+    if (!transaction.attachment_url) return;
+    
+    const { data } = supabase.storage
+      .from('expense-attachments')
+      .getPublicUrl(transaction.attachment_url);
+    
+    window.open(data.publicUrl, '_blank');
   };
 
   const handleConfirmDelete = () => {
@@ -213,6 +224,21 @@ export const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Attachment Indicator */}
+            {transaction.attachment_url && (
+              <div className="mb-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleViewAttachment}
+                  className="w-full h-9 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                >
+                  <Paperclip className="h-4 w-4 mr-2" />
+                  View Attachment
+                </Button>
+              </div>
+            )}
 
             {/* Notes (if any) */}
             {transaction.notes && (
