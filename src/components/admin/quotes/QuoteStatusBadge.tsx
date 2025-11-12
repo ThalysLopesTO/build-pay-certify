@@ -5,9 +5,10 @@ import { Clock, AlertCircle, CheckCircle, XCircle, FileEdit } from 'lucide-react
 interface QuoteStatusBadgeProps {
   status: 'draft' | 'sent' | 'accepted' | 'declined' | 'invoiced';
   publicStatus?: 'awaiting_response' | 'changes_requested' | 'approved' | 'declined';
+  compact?: boolean;
 }
 
-const QuoteStatusBadge: React.FC<QuoteStatusBadgeProps> = ({ status, publicStatus }) => {
+const QuoteStatusBadge: React.FC<QuoteStatusBadgeProps> = ({ status, publicStatus, compact = false }) => {
   const displayStatus = publicStatus || status;
 
   const getStatusConfig = () => {
@@ -69,9 +70,11 @@ const QuoteStatusBadge: React.FC<QuoteStatusBadgeProps> = ({ status, publicStatu
   return (
     <Badge 
       variant="outline" 
-      className={`font-medium border ${config.className} flex items-center gap-1.5 px-3 py-1`}
+      className={`font-medium border ${config.className} flex items-center gap-1.5 ${
+        compact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1'
+      }`}
     >
-      <Icon className="h-3.5 w-3.5" />
+      <Icon className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
       {config.label}
     </Badge>
   );

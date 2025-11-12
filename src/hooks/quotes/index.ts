@@ -21,5 +21,10 @@ export {
 export { useConvertQuoteToInvoice } from './useConvertQuoteToInvoice';
 
 // Export public quote hooks
-export { usePublicQuote, useMarkQuoteViewed } from './usePublicQuote';
+export { 
+  usePublicQuote, 
+  useMarkQuoteViewed,
+  useClientOtherQuotes,
+  useClientInvoices 
+} from './usePublicQuote';
 export { useApproveQuote, useRequestChanges } from './useQuoteActions';

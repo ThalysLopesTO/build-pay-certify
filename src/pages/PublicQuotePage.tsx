@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { usePublicQuote, useMarkQuoteViewed, useApproveQuote, useRequestChanges } from '@/hooks/quotes';
+import { 
+  usePublicQuote, 
+  useMarkQuoteViewed, 
+  useApproveQuote, 
+  useRequestChanges,
+  useClientOtherQuotes,
+  useClientInvoices 
+} from '@/hooks/quotes';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -11,6 +18,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import QuoteStatusBadge from '@/components/admin/quotes/QuoteStatusBadge';
 import { ApproveQuoteModal } from '@/components/public/ApproveQuoteModal';
 import { RequestChangesModal } from '@/components/public/RequestChangesModal';
+import { RelatedQuotesSection } from '@/components/public/RelatedQuotesSection';
+import { RelatedInvoicesSection } from '@/components/public/RelatedInvoicesSection';
 import { toast } from 'sonner';
 
 const PublicQuotePage: React.FC = () => {
@@ -26,6 +35,18 @@ const PublicQuotePage: React.FC = () => {
   // Mutations
   const approveMutation = useApproveQuote();
   const requestChangesMutation = useRequestChanges();
+
+  // Fetch related quotes and invoices
+  const { data: otherQuotes = [], isLoading: isLoadingOtherQuotes } = useClientOtherQuotes(
+    data?.quote?.client_email || '',
+    data?.quote?.company_id || '',
+    data?.quote?.id || ''
+  );
+
+  const { data: clientInvoices = [], isLoading: isLoadingInvoices } = useClientInvoices(
+    data?.quote?.client_email || '',
+    data?.quote?.company_id || ''
+  );
 
   // Validate token format
   useEffect(() => {
@@ -413,6 +434,18 @@ const PublicQuotePage: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Related Quotes Section */}
+        <RelatedQuotesSection 
+          quotes={otherQuotes} 
+          isLoading={isLoadingOtherQuotes} 
+        />
+
+        {/* Related Invoices Section */}
+        <RelatedInvoicesSection 
+          invoices={clientInvoices} 
+          isLoading={isLoadingInvoices} 
+        />
 
         {/* Footer Notes */}
         {company_settings.hst_number && (

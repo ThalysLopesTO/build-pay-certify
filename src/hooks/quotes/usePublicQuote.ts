@@ -59,3 +59,64 @@ export const useMarkQuoteViewed = () => {
     },
   });
 };
+
+// Hook to fetch other quotes for the same client
+export const useClientOtherQuotes = (
+  clientEmail: string, 
+  companyId: string, 
+  currentQuoteId: string
+) => {
+  return useQuery({
+    queryKey: ['client-other-quotes', clientEmail, companyId, currentQuoteId],
+    queryFn: async () => {
+      console.log('Fetching other quotes for client:', clientEmail);
+      
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('id, quote_number, project_name, quote_date, status, total_amount, public_status, public_token')
+        .eq('client_email', clientEmail)
+        .eq('company_id', companyId)
+        .neq('id', currentQuoteId)
+        .neq('status', 'draft')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (error) {
+        console.error('Error fetching client other quotes:', error);
+        throw error;
+      }
+      
+      return data || [];
+    },
+    enabled: !!clientEmail && !!companyId && !!currentQuoteId,
+  });
+};
+
+// Hook to fetch invoices for the same client
+export const useClientInvoices = (
+  clientEmail: string,
+  companyId: string
+) => {
+  return useQuery({
+    queryKey: ['client-invoices', clientEmail, companyId],
+    queryFn: async () => {
+      console.log('Fetching invoices for client:', clientEmail);
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, title, due_date, status, total_amount, created_at')
+        .eq('client_email', clientEmail)
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (error) {
+        console.error('Error fetching client invoices:', error);
+        throw error;
+      }
+      
+      return data || [];
+    },
+    enabled: !!clientEmail && !!companyId,
+  });
+};
