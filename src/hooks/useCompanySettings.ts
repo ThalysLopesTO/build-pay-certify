@@ -25,6 +25,8 @@ export interface CompanySettings {
   invoice_overdue_reminder_days: number; // Days after due date to send overdue reminder
   enable_quote_reminders: boolean; // Whether to enable quote reminders
   quote_reminder_days: number; // Days after quote date to send reminder
+  enable_quote_expiry_reminders: boolean; // Whether to enable quote expiry reminders
+  quote_expiry_reminder_days_before: number; // Days before expiry to send reminder
   webhook_url: string | null; // Webhook endpoint URL for daily summaries
   webhook_secret: string | null; // Secret key for webhook signature verification
   webhook_enabled: boolean; // Whether webhooks are enabled

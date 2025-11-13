@@ -49,6 +49,8 @@ export const CompanySettingsTab = () => {
       invoice_overdue_reminder_days: settings?.invoice_overdue_reminder_days ?? 7,
       enable_quote_reminders: settings?.enable_quote_reminders ?? true,
       quote_reminder_days: settings?.quote_reminder_days ?? 14,
+      enable_quote_expiry_reminders: settings?.enable_quote_expiry_reminders ?? true,
+      quote_expiry_reminder_days_before: settings?.quote_expiry_reminder_days_before ?? 3,
       timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
       start_date: settings?.start_date || null,
       webhook_url: settings?.webhook_url || '',
@@ -79,6 +81,8 @@ export const CompanySettingsTab = () => {
         invoice_overdue_reminder_days: settings.invoice_overdue_reminder_days ?? 7,
         enable_quote_reminders: settings.enable_quote_reminders ?? true,
         quote_reminder_days: settings.quote_reminder_days ?? 14,
+        enable_quote_expiry_reminders: settings.enable_quote_expiry_reminders ?? true,
+        quote_expiry_reminder_days_before: settings.quote_expiry_reminder_days_before ?? 3,
         timesheet_frequency: (settings as any)?.timesheet_frequency || 'weekly',
         start_date: settings.start_date || null,
         webhook_url: settings.webhook_url || '',
@@ -486,6 +490,57 @@ export const CompanySettingsTab = () => {
                           </FormControl>
                           <FormDescription>
                             Send follow-up reminder this many days after quote was sent
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Quote Expiry Reminders */}
+                <div className="space-y-4 pt-4 border-t border-border">
+                  <FormField
+                    control={form.control}
+                    name="enable_quote_expiry_reminders"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start justify-between rounded-lg border border-border p-4 bg-muted/30">
+                        <div className="space-y-1 flex-1">
+                          <FormLabel className="text-base font-medium">
+                            Enable Quote Expiry Reminders
+                          </FormLabel>
+                          <FormDescription className="text-sm text-muted-foreground">
+                            Automatically remind clients when quotes are about to expire.
+                          </FormDescription>
+                        </div>
+                        <FormControl className="ml-6">
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="max-w-md">
+                    <FormField
+                      control={form.control}
+                      name="quote_expiry_reminder_days_before"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Days Before Expiry</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="30"
+                              placeholder="3"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 3)}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Send reminder this many days before quote expires
                           </FormDescription>
                         </FormItem>
                       )}

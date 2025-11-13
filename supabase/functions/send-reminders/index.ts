@@ -75,6 +75,8 @@ interface Company {
     invoice_overdue_reminder_days: number;
     enable_quote_reminders: boolean;
     quote_reminder_days: number;
+    enable_quote_expiry_reminders: boolean;
+    quote_expiry_reminder_days_before: number;
     company_email: string;
     company_name: string;
     company_address?: string;
@@ -103,7 +105,10 @@ interface Quote {
   client_email: string;
   total_amount: number;
   quote_date: string;
+  expiry_date?: string;
   status: string;
+  public_status?: string;
+  public_token?: string;
   company_id: string;
 }
 
@@ -190,6 +195,10 @@ async function processCompanyReminders(company: Company) {
   if (settings.enable_quote_reminders) {
     await processQuoteReminders(company, settings);
   }
+
+  if (settings.enable_quote_expiry_reminders) {
+    await processQuoteExpiryReminders(company, settings);
+  }
 }
 
 /* -------------------- INVOICE REMINDERS -------------------- */
@@ -255,6 +264,40 @@ async function processQuoteReminders(company: Company, settings: any) {
       continue;
     }
     await sendQuoteReminder(company, quote as Quote, settings);
+  }
+}
+
+/* -------------------- QUOTE EXPIRY REMINDERS -------------------- */
+async function processQuoteExpiryReminders(company: Company, settings: any) {
+  const today = new Date();
+  const expiryReminderDate = new Date(today);
+  expiryReminderDate.setDate(today.getDate() + settings.quote_expiry_reminder_days_before);
+  
+  console.log(`📅 Checking for quotes expiring on ${expiryReminderDate.toISOString().split('T')[0]} for ${company.name}`);
+
+  const { data: quotes, error } = await supabase
+    .from('quotes')
+    .select('*')
+    .eq('company_id', company.id)
+    .eq('status', 'sent')
+    .in('public_status', ['awaiting_response', 'changes_requested'])
+    .eq('expiry_date', expiryReminderDate.toISOString().split('T')[0])
+    .not('expiry_date', 'is', null);
+
+  if (error) {
+    console.error(`❌ Error fetching expiring quotes for ${company.name}:`, error);
+    return;
+  }
+
+  console.log(`📧 Found ${quotes?.length || 0} expiring quotes to process`);
+
+  for (const quote of quotes || []) {
+    const alreadySent = await checkReminderSent(company.id, 'quote_expiry', quote.id, 'expiry_reminder');
+    if (alreadySent) {
+      console.log(`⏩ Expiry reminder already sent for quote ${quote.quote_number}`);
+      continue;
+    }
+    await sendQuoteExpiryReminder(company, quote as Quote, settings);
   }
 }
 
@@ -324,7 +367,6 @@ async function sendQuoteReminder(company: Company, quote: Quote, settings: any) 
       .replace(/{{total_amount}}/g, quote.total_amount.toFixed(2));
 
     const html = createEmailWrapper({
-      subject: template.subject,
       bodyText,
       companyName: settings.company_name,
       companyAddress: settings.company_address,
@@ -341,6 +383,50 @@ async function sendQuoteReminder(company: Company, quote: Quote, settings: any) 
 
   } catch (error) {
     console.error(`❌ Error sending quote reminder for ${quote.quote_number}:`, error);
+  }
+}
+
+async function sendQuoteExpiryReminder(company: Company, quote: Quote, settings: any) {
+  try {
+    console.log(`📧 Sending expiry reminder for quote ${quote.quote_number}...`);
+    
+    const template = await getEmailTemplate(company.id, 'quote_expiry', 'expiry_reminder');
+    const daysUntilExpiry = settings.quote_expiry_reminder_days_before;
+    const quoteLink = quote.public_token 
+      ? `https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/public-quote?token=${quote.public_token}`
+      : '';
+
+    const bodyText = template.body_text
+      .replace(/{{client_name}}/g, quote.client_name)
+      .replace(/{{quote_number}}/g, quote.quote_number)
+      .replace(/{{project_name}}/g, quote.project_name)
+      .replace(/{{total_amount}}/g, quote.total_amount.toFixed(2))
+      .replace(/{{expiry_date}}/g, quote.expiry_date ? new Date(quote.expiry_date).toLocaleDateString() : 'N/A')
+      .replace(/{{days_until_expiry}}/g, daysUntilExpiry.toString())
+      .replace(/{{company_name}}/g, settings.company_name || company.name)
+      .replace(/{{quote_link}}/g, quoteLink);
+
+    const subject = template.subject
+      .replace(/{{quote_number}}/g, quote.quote_number)
+      .replace(/{{days_until_expiry}}/g, daysUntilExpiry.toString());
+
+    const html = createEmailWrapper({
+      bodyText,
+      companyName: settings.company_name || company.name,
+      companyAddress: settings.company_address,
+      companyPhone: settings.company_phone,
+      companyLogo: settings.company_logo_url
+    });
+
+    await supabase.functions.invoke('send-email', {
+      body: { to: quote.client_email, subject, html }
+    });
+
+    await logReminder(company.id, 'quote_expiry', quote.id);
+    console.log(`✅ Expiry reminder sent for quote ${quote.quote_number} to ${quote.client_email}`);
+
+  } catch (error) {
+    console.error(`❌ Error sending quote expiry reminder for ${quote.quote_number}:`, error);
   }
 }
 
@@ -376,6 +462,27 @@ function getDefaultTemplate(templateType: string, reminderStage: string = 'gener
       body_text: reminderStage === 'overdue'
         ? 'Dear {{client_name}}, your invoice {{invoice_number}} is overdue. Amount due: ${{total_amount}}. Please make payment immediately.'
         : 'Dear {{client_name}}, this is a friendly reminder that your invoice {{invoice_number}} is due soon. Amount: ${{total_amount}}.'
+    };
+  } else if (templateType === 'quote_expiry' && reminderStage === 'expiry_reminder') {
+    return {
+      subject: 'Quote {{quote_number}} Expires in {{days_until_expiry}} Days',
+      body_text: `Dear {{client_name}},
+
+This is a friendly reminder that your quote for {{project_name}} (Quote #{{quote_number}}) will expire in {{days_until_expiry}} days.
+
+Quote Details:
+- Quote Number: {{quote_number}}
+- Project: {{project_name}}
+- Amount: ${{total_amount}}
+- Expiry Date: {{expiry_date}}
+
+To review and accept this quote before it expires, please visit:
+{{quote_link}}
+
+If you have any questions or need an extension, please don't hesitate to reach out.
+
+Best regards,
+{{company_name}}`
     };
   } else {
     return {
