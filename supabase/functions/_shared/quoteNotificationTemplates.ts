@@ -20,6 +20,17 @@ interface QuoteChangesRequestedEmailData {
   quoteUrl: string;
 }
 
+interface QuoteDeclinedEmailData {
+  clientName: string;
+  companyName: string;
+  projectName: string;
+  quoteNumber: string;
+  totalAmount: string;
+  declineReason: string;
+  declinedAt: string;
+  quoteUrl: string;
+}
+
 export const createQuoteApprovedEmailHTML = (data: QuoteApprovedEmailData): string => {
   const {
     clientName,
@@ -256,4 +267,109 @@ export const getQuoteApprovedEmailSubject = (quoteNumber: string, clientName: st
 
 export const getQuoteChangesRequestedEmailSubject = (quoteNumber: string, clientName: string): string => {
   return `💬 Quote #${quoteNumber} - Changes Requested by ${clientName}`;
+};
+
+export const createQuoteDeclinedEmailHTML = (data: QuoteDeclinedEmailData): string => {
+  const {
+    clientName,
+    companyName,
+    projectName,
+    quoteNumber,
+    totalAmount,
+    declineReason,
+    declinedAt,
+    quoteUrl
+  } = data;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quote Declined - ${quoteNumber}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
+    
+    <!-- Header -->
+    <div style="text-align: center; padding: 40px 20px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+      <div style="font-size: 48px; margin-bottom: 10px;">❌</div>
+      <h1 style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0;">Quote Declined</h1>
+    </div>
+
+    <!-- Main Content -->
+    <div style="padding: 40px 30px;">
+      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+        <strong>${clientName}</strong> has declined the quote for <strong>${projectName}</strong>.
+      </p>
+
+      <!-- Quote Details Card -->
+      <div style="background-color: #fef2f2; border-radius: 8px; padding: 20px; margin: 30px 0; border-left: 4px solid #ef4444;">
+        <div style="display: table; width: 100%; border-spacing: 0;">
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Quote Number:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${quoteNumber}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Project:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${projectName}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Total Amount:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 700; font-size: 18px;">$${totalAmount}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Client:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${clientName}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Declined At:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${declinedAt}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Decline Reason -->
+      <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 30px 0;">
+        <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #1f2937; font-weight: 600;">Reason for Declining:</h3>
+        <p style="margin: 0; font-size: 15px; color: #4b5563; line-height: 1.6; white-space: pre-wrap;">${declineReason}</p>
+      </div>
+
+      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 30px 0 20px 0; text-align: center;">
+        <strong>Next Steps:</strong>
+      </p>
+
+      <ul style="color: #4b5563; font-size: 15px; line-height: 1.8; margin: 0 0 30px 20px; padding: 0;">
+        <li>Review the client's feedback</li>
+        <li>Consider reaching out to discuss their concerns</li>
+        <li>Determine if a revised quote is appropriate</li>
+      </ul>
+
+      <!-- CTA Buttons -->
+      <div style="text-align: center; margin: 40px 0;">
+        <a href="${quoteUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 0 8px 12px 8px;">
+          Review Quote
+        </a>
+        <a href="mailto:${clientName}" style="display: inline-block; background-color: #6b7280; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 0 8px 12px 8px;">
+          Contact Client
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: #1f2937;">${companyName}</p>
+      <p style="margin: 0; font-size: 13px; color: #6b7280;">
+        This is an automated notification from your quote management system.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+};
+
+export const getQuoteDeclinedEmailSubject = (quoteNumber: string, clientName: string): string => {
+  return `❌ Quote #${quoteNumber} Declined by ${clientName}`;
 };

@@ -27,4 +27,4 @@ export {
   useClientOtherQuotes,
   useClientInvoices 
 } from './usePublicQuote';
-export { useApproveQuote, useRequestChanges } from './useQuoteActions';
+export { useApproveQuote, useRequestChanges, useDeclineQuote } from './useQuoteActions';
