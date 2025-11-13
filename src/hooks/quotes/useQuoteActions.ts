@@ -46,3 +46,26 @@ export const useRequestChanges = () => {
     },
   });
 };
+
+export const useDeclineQuote = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ token, reason }: { token: string; reason: string }) => {
+      const { data, error } = await supabase.rpc('decline_quote_public', {
+        p_token: token,
+        p_reason: reason
+      });
+      
+      if (error) {
+        console.error('Error declining quote:', error);
+        throw error;
+      }
+      
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['public-quote', variables.token] });
+    },
+  });
+};

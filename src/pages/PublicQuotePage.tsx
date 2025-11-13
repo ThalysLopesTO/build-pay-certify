@@ -5,6 +5,7 @@ import {
   useMarkQuoteViewed, 
   useApproveQuote, 
   useRequestChanges,
+  useDeclineQuote,
   useClientOtherQuotes,
   useClientInvoices 
 } from '@/hooks/quotes';
@@ -18,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import QuoteStatusBadge from '@/components/admin/quotes/QuoteStatusBadge';
 import { ApproveQuoteModal } from '@/components/public/ApproveQuoteModal';
 import { RequestChangesModal } from '@/components/public/RequestChangesModal';
+import { DeclineQuoteModal } from '@/components/public/DeclineQuoteModal';
 import { RelatedQuotesSection } from '@/components/public/RelatedQuotesSection';
 import { RelatedInvoicesSection } from '@/components/public/RelatedInvoicesSection';
 import { QuoteActionSidebar } from '@/components/public/QuoteActionSidebar';
@@ -32,11 +34,13 @@ const PublicQuotePage: React.FC = () => {
   // Modal states
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRequestChangesModal, setShowRequestChangesModal] = useState(false);
+  const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   // Mutations
   const approveMutation = useApproveQuote();
   const requestChangesMutation = useRequestChanges();
+  const declineMutation = useDeclineQuote();
 
   // Fetch related quotes and invoices
   const { data: otherQuotes = [], isLoading: isLoadingOtherQuotes } = useClientOtherQuotes(
@@ -102,6 +106,16 @@ const PublicQuotePage: React.FC = () => {
       setShowRequestChangesModal(false);
     } catch (error) {
       toast.error('Failed to send request. Please try again.');
+    }
+  };
+
+  const handleDecline = async (reason: string) => {
+    try {
+      await declineMutation.mutateAsync({ token: token!, reason });
+      setSuccessMessage('Thank you for your feedback. We appreciate you taking the time to review our quote.');
+      setShowDeclineModal(false);
+    } catch (error) {
+      toast.error('Failed to decline quote. Please try again.');
     }
   };
 
@@ -422,10 +436,12 @@ const PublicQuotePage: React.FC = () => {
             <QuoteActionSidebar
               publicStatus={quote.public_status}
               clientApprovedAt={quote.client_approved_at}
+              clientDeclinedAt={quote.client_declined_at}
               onApprove={() => setShowApproveModal(true)}
               onRequestChanges={() => setShowRequestChangesModal(true)}
+              onDecline={() => setShowDeclineModal(true)}
               onDownloadPDF={handleDownloadPDF}
-              isProcessing={approveMutation.isPending || requestChangesMutation.isPending}
+              isProcessing={approveMutation.isPending || requestChangesMutation.isPending || declineMutation.isPending}
               companyName={company_settings.company_name}
               companyEmail={company_settings.company_email}
               companyPhone={company_settings.company_phone}
@@ -461,6 +477,13 @@ const PublicQuotePage: React.FC = () => {
         onOpenChange={setShowRequestChangesModal}
         onConfirm={handleRequestChanges}
         isLoading={requestChangesMutation.isPending}
+      />
+
+      <DeclineQuoteModal
+        open={showDeclineModal}
+        onOpenChange={setShowDeclineModal}
+        onDecline={handleDecline}
+        isLoading={declineMutation.isPending}
       />
     </div>
   );

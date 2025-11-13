@@ -1,14 +1,16 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, CheckCircle2, MessageCircle, Mail, Phone } from 'lucide-react';
+import { Download, CheckCircle2, MessageCircle, Mail, Phone, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface QuoteActionSidebarProps {
   publicStatus?: 'awaiting_response' | 'changes_requested' | 'approved' | 'declined';
   clientApprovedAt?: string;
+  clientDeclinedAt?: string;
   onApprove: () => void;
   onRequestChanges: () => void;
+  onDecline: () => void;
   onDownloadPDF: () => void;
   isProcessing: boolean;
   companyName: string;
@@ -19,8 +21,10 @@ interface QuoteActionSidebarProps {
 export const QuoteActionSidebar: React.FC<QuoteActionSidebarProps> = ({
   publicStatus,
   clientApprovedAt,
+  clientDeclinedAt,
   onApprove,
   onRequestChanges,
+  onDecline,
   onDownloadPDF,
   isProcessing,
   companyName,
@@ -46,6 +50,14 @@ export const QuoteActionSidebar: React.FC<QuoteActionSidebarProps> = ({
               <div className="flex items-center gap-2 text-blue-600">
                 <MessageCircle className="h-5 w-5" />
                 <span>Change request submitted</span>
+              </div>
+            )}
+            {publicStatus === 'declined' && (
+              <div className="flex items-center gap-2 text-destructive">
+                <XCircle className="h-5 w-5" />
+                <span>
+                  Declined on {clientDeclinedAt && format(new Date(clientDeclinedAt), 'MMM dd, yyyy')}
+                </span>
               </div>
             )}
             {(!publicStatus || publicStatus === 'awaiting_response') && (
@@ -74,6 +86,16 @@ export const QuoteActionSidebar: React.FC<QuoteActionSidebarProps> = ({
               >
                 <MessageCircle className="mr-2 h-5 w-5" />
                 Request Changes
+              </Button>
+              <Button
+                onClick={onDecline}
+                variant="destructive"
+                className="w-full"
+                size="lg"
+                disabled={isProcessing}
+              >
+                <XCircle className="mr-2 h-5 w-5" />
+                Decline Quote
               </Button>
             </>
           )}
