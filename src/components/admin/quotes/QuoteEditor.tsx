@@ -19,6 +19,7 @@ import QuoteEditorJobSection from './editor/QuoteEditorJobSection';
 import QuoteEditorLineItemsSection from './editor/QuoteEditorLineItemsSection';
 import QuoteEditorDetailsCard from './editor/QuoteEditorDetailsCard';
 import QuoteEditorTotalsCard from './editor/QuoteEditorTotalsCard';
+import { ChangeRequestResponseCard } from './ChangeRequestResponseCard';
 import { useToast } from '@/hooks/use-toast';
 
 interface QuoteEditorProps {
@@ -288,6 +289,18 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
             {/* LEFT COLUMN */}
             <div className="space-y-6">
+              {/* Change Request Response Card - Show if quote has changes requested */}
+              {quote && quote.public_status === 'changes_requested' && quote.client_change_request && (
+                <ChangeRequestResponseCard
+                  quoteId={quote.id}
+                  clientName={quote.client_name}
+                  clientChangeRequest={quote.client_change_request}
+                  requestedAt={quote.client_change_request ? new Date().toISOString() : ''}
+                  adminResponse={quote.admin_response_to_changes}
+                  adminRespondedAt={quote.admin_responded_at}
+                />
+              )}
+              
               <QuoteEditorClientSection
                 formData={formData}
                 handleInputChange={handleInputChange}

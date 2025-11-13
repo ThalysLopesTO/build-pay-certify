@@ -32,6 +32,9 @@ export interface Quote {
   client_name_signed?: string;
   client_change_request?: string;
   public_status?: 'awaiting_response' | 'changes_requested' | 'approved' | 'declined';
+  admin_response_to_changes?: string;
+  admin_responded_at?: string;
+  admin_responded_by?: string;
 }
 
 export interface QuoteLineItem {

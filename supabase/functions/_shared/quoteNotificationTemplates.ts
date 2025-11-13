@@ -373,3 +373,91 @@ export const createQuoteDeclinedEmailHTML = (data: QuoteDeclinedEmailData): stri
 export const getQuoteDeclinedEmailSubject = (quoteNumber: string, clientName: string): string => {
   return `❌ Quote #${quoteNumber} Declined by ${clientName}`;
 };
+
+export const createQuoteChangesResponseEmailHTML = (
+  clientName: string,
+  quoteNumber: string,
+  projectName: string,
+  clientChangeRequest: string,
+  adminResponse: string,
+  adminName: string,
+  publicToken: string,
+  totalAmount: number
+): string => {
+  const quoteUrl = `${FRONTEND_URL}/quote/${publicToken}`;
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Response to Your Quote Change Request</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+        .quote-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }
+        .change-request-box { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .response-box { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 style="margin: 0;">Response to Your Change Request</h1>
+          <p style="margin: 10px 0 0 0; opacity: 0.9;">Quote #${quoteNumber}</p>
+        </div>
+        
+        <div class="content">
+          <p>Hi ${clientName},</p>
+          
+          <p>Thank you for your feedback on the quote. We've reviewed your change request and have responded below.</p>
+          
+          <div class="quote-info">
+            <h3 style="margin-top: 0; color: #667eea;">Quote Details</h3>
+            <p><strong>Project:</strong> ${projectName}</p>
+            <p><strong>Quote Number:</strong> ${quoteNumber}</p>
+            <p><strong>Total Amount:</strong> $${totalAmount.toFixed(2)}</p>
+          </div>
+          
+          <div class="change-request-box">
+            <h4 style="margin-top: 0; color: #2196f3;">Your Change Request:</h4>
+            <p style="margin: 0; font-style: italic;">"${clientChangeRequest}"</p>
+          </div>
+          
+          <div class="response-box">
+            <h4 style="margin-top: 0; color: #4caf50;">Our Response:</h4>
+            <p style="margin: 0; white-space: pre-wrap;">${adminResponse}</p>
+            <p style="margin: 15px 0 0 0; font-size: 14px; color: #666;">
+              - ${adminName}
+            </p>
+          </div>
+          
+          <p>Please review the updated quote and let us know if you have any questions or if you're ready to proceed.</p>
+          
+          <div style="text-align: center;">
+            <a href="${quoteUrl}" class="button">View Updated Quote</a>
+          </div>
+          
+          <p style="margin-top: 30px;">If you have any questions or need further clarification, please don't hesitate to reach out.</p>
+          
+          <p>Best regards,<br>${adminName}<br>StackBuild Team</p>
+        </div>
+        
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} StackBuild. All rights reserved.</p>
+          <p>This is an automated message regarding your quote request.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+export const getQuoteChangesResponseEmailSubject = (quoteNumber: string): string => {
+  return `Response to Your Quote Change Request - Quote #${quoteNumber}`;
+};

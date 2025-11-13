@@ -28,3 +28,4 @@ export {
   useClientInvoices 
 } from './usePublicQuote';
 export { useApproveQuote, useRequestChanges, useDeclineQuote } from './useQuoteActions';
+export { useRespondToChangeRequest } from './useRespondToChangeRequest';
