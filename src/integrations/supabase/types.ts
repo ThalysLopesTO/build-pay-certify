@@ -619,11 +619,13 @@ export type Database = {
           company_rules_text: string | null
           created_at: string
           enable_invoice_reminders: boolean | null
+          enable_quote_expiry_reminders: boolean | null
           enable_quote_reminders: boolean | null
           hst_number: string | null
           id: string
           invoice_overdue_reminder_days: number | null
           invoice_reminder_days_before: number | null
+          quote_expiry_reminder_days_before: number | null
           quote_reminder_days: number | null
           show_tax_breakdown_to_employees: boolean | null
           start_date: string | null
@@ -649,11 +651,13 @@ export type Database = {
           company_rules_text?: string | null
           created_at?: string
           enable_invoice_reminders?: boolean | null
+          enable_quote_expiry_reminders?: boolean | null
           enable_quote_reminders?: boolean | null
           hst_number?: string | null
           id?: string
           invoice_overdue_reminder_days?: number | null
           invoice_reminder_days_before?: number | null
+          quote_expiry_reminder_days_before?: number | null
           quote_reminder_days?: number | null
           show_tax_breakdown_to_employees?: boolean | null
           start_date?: string | null
@@ -679,11 +683,13 @@ export type Database = {
           company_rules_text?: string | null
           created_at?: string
           enable_invoice_reminders?: boolean | null
+          enable_quote_expiry_reminders?: boolean | null
           enable_quote_reminders?: boolean | null
           hst_number?: string | null
           id?: string
           invoice_overdue_reminder_days?: number | null
           invoice_reminder_days_before?: number | null
+          quote_expiry_reminder_days_before?: number | null
           quote_reminder_days?: number | null
           show_tax_breakdown_to_employees?: boolean | null
           start_date?: string | null
@@ -2085,10 +2091,14 @@ export type Database = {
       quotes: {
         Row: {
           accepted_date: string | null
+          admin_responded_at: string | null
+          admin_responded_by: string | null
+          admin_response_to_changes: string | null
           client_address: string | null
           client_approved_at: string | null
           client_change_request: string | null
           client_company: string | null
+          client_decline_reason: string | null
           client_declined_at: string | null
           client_email: string
           client_name: string
@@ -2119,10 +2129,14 @@ export type Database = {
         }
         Insert: {
           accepted_date?: string | null
+          admin_responded_at?: string | null
+          admin_responded_by?: string | null
+          admin_response_to_changes?: string | null
           client_address?: string | null
           client_approved_at?: string | null
           client_change_request?: string | null
           client_company?: string | null
+          client_decline_reason?: string | null
           client_declined_at?: string | null
           client_email: string
           client_name: string
@@ -2153,10 +2167,14 @@ export type Database = {
         }
         Update: {
           accepted_date?: string | null
+          admin_responded_at?: string | null
+          admin_responded_by?: string | null
+          admin_response_to_changes?: string | null
           client_address?: string | null
           client_approved_at?: string | null
           client_change_request?: string | null
           client_company?: string | null
+          client_decline_reason?: string | null
           client_declined_at?: string | null
           client_email?: string
           client_name?: string
@@ -3517,6 +3535,10 @@ export type Database = {
         Args: { quote_id_param: string }
         Returns: string
       }
+      decline_quote_public: {
+        Args: { p_reason: string; p_token: string }
+        Returns: Json
+      }
       delete_employee: { Args: { employee_user_id: string }; Returns: Json }
       fix_biweekly_timesheet_totals: {
         Args: never
@@ -3569,6 +3591,10 @@ export type Database = {
           registration_date: string
           status: string
         }[]
+      }
+      get_company_admin_emails: {
+        Args: { p_company_id: string }
+        Returns: string[]
       }
       get_company_employee_count: {
         Args: { company_id_param: string }
@@ -3646,6 +3672,10 @@ export type Database = {
       request_quote_changes_public:
         | { Args: { p_message: string; p_token: string }; Returns: Json }
         | { Args: { p_message: string; p_token: string }; Returns: Json }
+      respond_to_quote_changes: {
+        Args: { p_quote_id: string; p_response_message: string }
+        Returns: Json
+      }
       rpc_time_summary_details:
         | {
             Args: {
@@ -3732,6 +3762,10 @@ export type Database = {
       run_daily_notification_checks: { Args: never; Returns: undefined }
       seed_default_role_permissions: {
         Args: { company_uuid: string }
+        Returns: undefined
+      }
+      send_quote_notification_email: {
+        Args: { p_html: string; p_subject: string; p_to_email: string }
         Returns: undefined
       }
       user_has_admin_role: { Args: never; Returns: boolean }

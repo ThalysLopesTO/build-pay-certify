@@ -9,7 +9,7 @@ interface ClassicTemplateProps {
 }
 
 export const generateClassicTemplate = ({ quote, lineItems, settings, logoUrl }: ClassicTemplateProps) => {
-  const discountAmount = quote.subtotal * (quote.discount / 100);
+  const discountAmount = quote.discount || 0;
   const taxAmount = (quote.subtotal - discountAmount) * (quote.tax / 100);
   const total = quote.subtotal - discountAmount + taxAmount;
 
