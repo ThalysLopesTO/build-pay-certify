@@ -8,6 +8,7 @@ interface QuoteEmailData {
   publicQuoteUrl: string;
   companyLogoUrl?: string;
   customMessage?: string;
+  isRevised?: boolean;
 }
 
 export const createQuoteEmailHTML = (data: QuoteEmailData): string => {
@@ -20,7 +21,8 @@ export const createQuoteEmailHTML = (data: QuoteEmailData): string => {
     expiryDate,
     publicQuoteUrl,
     companyLogoUrl,
-    customMessage
+    customMessage,
+    isRevised
   } = data;
 
   return `
@@ -39,7 +41,7 @@ export const createQuoteEmailHTML = (data: QuoteEmailData): string => {
       ${companyLogoUrl ? `
         <img src="${companyLogoUrl}" alt="${companyName}" style="max-width: 180px; max-height: 60px; margin-bottom: 20px;" />
       ` : ''}
-      <h1 style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0;">Your Quote is Ready!</h1>
+      <h1 style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0;">${isRevised ? 'Your Revised Quote is Ready!' : 'Your Quote is Ready!'}</h1>
     </div>
 
     <!-- Main Content -->
@@ -48,9 +50,15 @@ export const createQuoteEmailHTML = (data: QuoteEmailData): string => {
         Hi ${clientName},
       </p>
       
-      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
-        Thank you for considering <strong>${companyName}</strong> for your project. We've prepared a detailed quote for <strong>${projectName}</strong>.
-      </p>
+      ${isRevised ? `
+        <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+          We've reviewed your change request and prepared a <strong>revised quote</strong> for <strong>${projectName}</strong>. Please review the updated details below.
+        </p>
+      ` : `
+        <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+          Thank you for considering <strong>${companyName}</strong> for your project. We've prepared a detailed quote for <strong>${projectName}</strong>.
+        </p>
+      `}
 
       ${customMessage ? `
         <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
