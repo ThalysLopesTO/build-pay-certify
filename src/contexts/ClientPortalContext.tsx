@@ -21,6 +21,7 @@ interface PortalQuote {
   accepted_date: string | null;
   declined_date: string | null;
   client_change_request: string | null;
+  client_change_requested_at: string | null;
 }
 
 interface PortalInvoice {
