@@ -3,6 +3,7 @@ export interface Invoice {
   id: string;
   invoice_number: string;
   title: string;
+  client_id: string | null;
   client_company: string;
   client_email: string;
   client_address: string | null;
@@ -39,6 +40,7 @@ export interface InvoiceLineItem {
 
 export interface CreateInvoiceData {
   title: string;
+  client_id?: string;
   client_company: string;
   client_email: string;
   client_address: string;

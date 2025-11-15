@@ -16,9 +16,12 @@ import { CreateInvoiceData, Invoice } from './types/invoice';
 import { autoSendInvoiceEmail } from '@/utils/autoSendInvoiceEmail';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, X, Calendar, MapPin, User, Building, Mail, Phone, Hash, FileText, DollarSign, Save, Send, Download, Paperclip } from 'lucide-react';
+import ClientSelector from './quotes/editor/ClientSelector';
+import type { Client } from '@/hooks/useClients';
 
 interface InvoiceFormData {
   title: string;
+  client_id: string;
   client_company: string;
   client_email: string;
   client_address: string;
@@ -45,10 +48,12 @@ const CreateInvoiceForm = () => {
   const { toast } = useToast();
   const [isDraft, setIsDraft] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   
   const form = useForm<InvoiceFormData>({
     defaultValues: {
       title: '',
+      client_id: '',
       client_company: '',
       client_email: '',
       client_address: '',
@@ -70,14 +75,46 @@ const CreateInvoiceForm = () => {
     }
   }, [settings?.tax_percentage, form]);
 
+  // Handle client selection
+  const handleClientSelect = (clientId: string) => {
+    const client = selectedClient;
+    if (client && client.id === clientId) {
+      form.setValue('client_id', client.id);
+      form.setValue('client_company', client.client_company || '');
+      form.setValue('client_email', client.client_email);
+      form.setValue('client_phone', client.client_phone || '');
+      form.setValue('client_address', client.client_address || '');
+    }
+  };
+
+  const handleClientChange = (client: Client) => {
+    setSelectedClient(client);
+    form.setValue('client_id', client.id);
+    form.setValue('client_company', client.client_company || '');
+    form.setValue('client_email', client.client_email);
+    form.setValue('client_phone', client.client_phone || '');
+    form.setValue('client_address', client.client_address || '');
+  };
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'line_items',
   });
 
   const onSubmit = async (data: InvoiceFormData, saveAsDraft = false, sendEmailFlag = false) => {
+    // Validate client selection
+    if (!data.client_id) {
+      toast({
+        title: 'Client Required',
+        description: 'Please select a client before creating the invoice',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const invoiceData: CreateInvoiceData & { sendEmail?: boolean } = {
       ...data,
+      client_id: data.client_id,
       notes: data.notes || null,
       line_items: data.line_items.filter(item => item.description && item.quantity > 0 && item.unit_price > 0).map(item => ({
         description: `${item.name ? item.name + ' - ' : ''}${item.description}`,
@@ -178,94 +215,10 @@ const CreateInvoiceForm = () => {
           </CardHeader>
         </div>
         <CardContent className="p-8">
-          <Form {...form}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <FormField
-                control={form.control}
-                name="client_company"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
-                      <Building className="h-4 w-4 text-blue-500" />
-                      <span>Client Company</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter client company name" 
-                        className="h-12 border-2 border-border/50 focus:border-blue-500 rounded-xl transition-all duration-200 bg-background/50" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="client_email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
-                      <Mail className="h-4 w-4 text-blue-500" />
-                      <span>Client Email</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="email" 
-                        placeholder="client@company.com" 
-                        className="h-12 border-2 border-border/50 focus:border-blue-500 rounded-xl transition-all duration-200 bg-background/50" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="client_phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
-                      <Phone className="h-4 w-4 text-blue-500" />
-                      <span>Client Phone</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="(555) 123-4567" 
-                        className="h-12 border-2 border-border/50 focus:border-blue-500 rounded-xl transition-all duration-200 bg-background/50" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="client_address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
-                      <MapPin className="h-4 w-4 text-blue-500" />
-                      <span>Client Address</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="123 Main Street, City, Province, Postal Code" 
-                        className="h-12 border-2 border-border/50 focus:border-blue-500 rounded-xl transition-all duration-200 bg-background/50" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </Form>
+          <ClientSelector
+            selectedClientId={form.watch('client_id')}
+            onClientSelect={handleClientChange}
+          />
         </CardContent>
       </Card>
 
