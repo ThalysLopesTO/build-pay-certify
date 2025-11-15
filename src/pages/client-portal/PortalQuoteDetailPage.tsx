@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, MapPin, DollarSign, CheckCircle, XCircle, MessageCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatInCompanyTimezone, getReportDisplayDate, DEFAULT_TIMEZONE } from '@/utils/timezone';
 import { ApproveQuoteDialog, DeclineQuoteDialog, RequestChangesDialog } from '@/components/client-portal/QuoteActionDialogs';
 import { useState } from 'react';
 import { useApproveQuote, useRequestChanges, useDeclineQuote } from '@/hooks/quotes/useQuoteActions';
@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function PortalQuoteDetailPage() {
   const { quoteId } = useParams();
-  const { quotes, token } = useClientPortalContext();
+  const { quotes, token, company_settings } = useClientPortalContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -142,7 +142,7 @@ export default function PortalQuoteDetailPage() {
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Date:</span>
                 <span className="font-medium">
-                  {format(new Date(quote.quote_date), 'MMM d, yyyy')}
+                  {getReportDisplayDate(quote.quote_date, company_settings.timezone || DEFAULT_TIMEZONE)}
                 </span>
               </div>
             )}
@@ -152,7 +152,7 @@ export default function PortalQuoteDetailPage() {
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Expires:</span>
                 <span className="font-medium">
-                  {format(new Date(quote.expiry_date), 'MMM d, yyyy')}
+                  {getReportDisplayDate(quote.expiry_date, company_settings.timezone || DEFAULT_TIMEZONE)}
                 </span>
               </div>
             )}
@@ -225,7 +225,7 @@ export default function PortalQuoteDetailPage() {
             {quote.client_change_requested_at && (
               <div className="text-sm text-muted-foreground">
                 <span className="font-medium">Requested on:</span>{' '}
-                {format(new Date(quote.client_change_requested_at), 'MMM d, yyyy \'at\' h:mm a')}
+                {formatInCompanyTimezone(quote.client_change_requested_at, 'MMM d, yyyy \'at\' h:mm a', company_settings.timezone || DEFAULT_TIMEZONE)}
               </div>
             )}
 
@@ -302,7 +302,7 @@ export default function PortalQuoteDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Approved on:</p>
                 <p className="font-medium">
-                  {format(new Date(quote.client_approved_at), 'MMMM d, yyyy \'at\' h:mm a')}
+                  {formatInCompanyTimezone(quote.client_approved_at, 'MMMM d, yyyy \'at\' h:mm a', company_settings.timezone || DEFAULT_TIMEZONE)}
                 </p>
               </div>
             )}
@@ -310,7 +310,7 @@ export default function PortalQuoteDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Declined on:</p>
                 <p className="font-medium">
-                  {format(new Date(quote.client_declined_at), 'MMMM d, yyyy \'at\' h:mm a')}
+                  {formatInCompanyTimezone(quote.client_declined_at, 'MMMM d, yyyy \'at\' h:mm a', company_settings.timezone || DEFAULT_TIMEZONE)}
                 </p>
               </div>
             )}
