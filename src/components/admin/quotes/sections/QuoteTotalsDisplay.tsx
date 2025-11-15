@@ -33,18 +33,17 @@ const QuoteTotalsDisplay: React.FC<QuoteTotalsDisplayProps> = ({
         <div className="flex justify-between items-center">
           <span>Discount:</span>
           <div className="flex items-center gap-2">
+            <span>$</span>
             <Input
               type="number"
               value={formData.discount}
               onChange={(e) => handleInputChange('discount', Number(e.target.value))}
               min="0"
-              max="100"
               step="0.01"
-              className="w-20"
+              className="w-24"
+              placeholder="0.00"
               autoComplete="off"
             />
-            <span>%</span>
-            <span>-${discountAmount.toFixed(2)}</span>
           </div>
         </div>
         

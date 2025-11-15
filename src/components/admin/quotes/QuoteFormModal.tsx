@@ -160,7 +160,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
       if (quote) {
         // Update existing quote with recalculated totals
         const subtotal = calculateSubtotal();
-        const discountAmount = subtotal * (Number(formData.discount) / 100);
+        const discountAmount = Math.min(Number(formData.discount) || 0, subtotal);
         const taxAmount = (subtotal - discountAmount) * (Number(formData.tax) / 100);
         const total = subtotal - discountAmount + taxAmount;
 
@@ -198,7 +198,7 @@ const QuoteFormModal: React.FC<QuoteFormModalProps> = ({ quote, isOpen, onClose 
       } else {
         // Create new quote with all required fields
         const subtotal = calculateSubtotal();
-        const discountAmount = subtotal * (Number(formData.discount) / 100);
+        const discountAmount = Math.min(Number(formData.discount) || 0, subtotal);
         const taxAmount = (subtotal - discountAmount) * (Number(formData.tax) / 100);
         const total = subtotal - discountAmount + taxAmount;
 

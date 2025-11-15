@@ -19,7 +19,7 @@ const QuoteEditorTotalsCard: React.FC<QuoteEditorTotalsCardProps> = ({
   handleInputChange,
 }) => {
   const subtotal = calculateSubtotal();
-  const discountAmount = subtotal * (Number(formData.discount) / 100);
+  const discountAmount = Math.min(Number(formData.discount) || 0, subtotal);
   const taxAmount = (subtotal - discountAmount) * (Number(formData.tax) / 100);
   const total = subtotal - discountAmount + taxAmount;
 
@@ -39,21 +39,18 @@ const QuoteEditorTotalsCard: React.FC<QuoteEditorTotalsCardProps> = ({
         <div className="flex justify-between items-center text-sm">
           <span className="text-muted-foreground">Discount</span>
           <div className="flex items-center gap-2">
+            <span>$</span>
             <Input 
               type="number" 
               value={formData.discount}
               onChange={(e) => handleInputChange('discount', Number(e.target.value))}
-              className="w-20 h-8 text-right"
+              className="w-24 h-8 text-right"
               min="0"
-              max="100"
               step="0.01"
+              placeholder="0.00"
               autoComplete="off"
             />
-            <span>%</span>
           </div>
-        </div>
-        <div className="flex justify-between text-sm pl-4">
-          <span className="text-muted-foreground">- ${discountAmount.toFixed(2)}</span>
         </div>
 
         {/* Tax Input */}

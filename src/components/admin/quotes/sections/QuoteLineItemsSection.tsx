@@ -31,7 +31,7 @@ const QuoteLineItemsSection: React.FC<QuoteLineItemsSectionProps> = ({
   handleInputChange,
 }) => {
   const subtotal = calculateSubtotal();
-  const discountAmount = subtotal * (Number(formData.discount) / 100);
+  const discountAmount = Math.min(Number(formData.discount) || 0, subtotal);
   const taxAmount = (subtotal - discountAmount) * (Number(formData.tax) / 100);
   const total = subtotal - discountAmount + taxAmount;
 

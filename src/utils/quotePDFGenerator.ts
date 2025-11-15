@@ -124,7 +124,7 @@ const generateQuoteHTML = async (
   const tax = quote.tax || 0;
   const total = quote.total_amount || 0;
   
-  const discountAmount = (subtotal * discount) / 100;
+  const discountAmount = discount || 0;
   const taxAmount = ((subtotal - discountAmount) * tax) / 100;
 
   return `
@@ -213,7 +213,7 @@ const generateQuoteHTML = async (
             </tr>
             ${discount > 0 ? `
               <tr>
-                <td style="padding: 8px 0; color: #6b7280;">Discount (${discount}%):</td>
+                <td style="padding: 8px 0; color: #6b7280;">Discount:</td>
                 <td style="padding: 8px 0; text-align: right; color: #dc2626;">-${formatCurrency(discountAmount)}</td>
               </tr>
             ` : ''}
