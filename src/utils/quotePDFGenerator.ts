@@ -241,6 +241,33 @@ const generateQuoteHTML = async (
         </div>
       ` : ''}
 
+      <!-- Client Signature Section -->
+      ${quote.client_approved_at && quote.client_name_signed ? `
+        <div style="margin-bottom: 40px; background: #f0fdf4; padding: 20px; border-radius: 8px; border: 2px solid #86efac;">
+          <h3 style="font-size: 16px; font-weight: 700; color: #15803d; margin: 0 0 15px 0; display: flex; align-items: center;">
+            <span style="display: inline-block; width: 20px; height: 20px; background: #22c55e; border-radius: 50%; margin-right: 10px;"></span>
+            Client Approval
+          </h3>
+          <div style="margin-bottom: 15px;">
+            <p style="margin: 0; font-size: 13px; color: #6b7280;">Signature:</p>
+            <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: 600; font-style: italic; color: #1f2937; border-bottom: 2px solid #9ca3af; display: inline-block; padding-bottom: 5px;">
+              ${quote.client_name_signed}
+            </p>
+          </div>
+          <div>
+            <p style="margin: 0; font-size: 13px; color: #6b7280;">Date:</p>
+            <p style="margin: 5px 0 0 0; font-size: 14px; font-weight: 500; color: #1f2937;">
+              ${formatDate(quote.client_approved_at)}
+            </p>
+          </div>
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #86efac;">
+            <p style="margin: 0; font-size: 11px; color: #6b7280; line-height: 1.5;">
+              This electronic signature has the same legal effect as a handwritten signature and constitutes acceptance of the terms outlined in this quote.
+            </p>
+          </div>
+        </div>
+      ` : ''}
+
       <!-- Footer -->
       <div style="text-align: center; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px;">
         <p style="margin: 5px 0;">Thank you for your business!</p>
