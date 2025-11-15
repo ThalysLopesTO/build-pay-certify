@@ -34,7 +34,7 @@ export default function PortalInvoicesPage() {
             color="red"
             defaultOpen={true}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               {overdueInvoices.map(invoice => (
                 <PortalInvoiceCard key={invoice.id} invoice={invoice} />
               ))}
@@ -47,7 +47,7 @@ export default function PortalInvoicesPage() {
             color="orange"
             defaultOpen={true}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               {awaitingInvoices.map(invoice => (
                 <PortalInvoiceCard key={invoice.id} invoice={invoice} />
               ))}
@@ -60,7 +60,7 @@ export default function PortalInvoicesPage() {
             color="green"
             defaultOpen={false}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               {paidInvoices.map(invoice => (
                 <PortalInvoiceCard key={invoice.id} invoice={invoice} />
               ))}
