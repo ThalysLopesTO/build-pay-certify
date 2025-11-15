@@ -3623,9 +3623,10 @@ export type Database = {
         Args: { signature_name: string; token_param: string }
         Returns: Json
       }
-      approve_quote_public:
-        | { Args: { p_signed_name: string; p_token: string }; Returns: Json }
-        | { Args: { p_signed_name: string; p_token: string }; Returns: Json }
+      approve_quote_public: {
+        Args: { p_signed_name: string; p_token: string }
+        Returns: Json
+      }
       bulk_reorder_tasks: { Args: { task_updates: Json }; Returns: undefined }
       calculate_invoice_totals: {
         Args: { invoice_id_param: string }
