@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Send } from 'lucide-react';
+import { ArrowLeft, Save, Send, MessageSquare } from 'lucide-react';
 import { 
   Quote, 
   QuoteLineItem, 
@@ -282,9 +282,17 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
                 Back to Quotes
               </Button>
               <div className="border-l h-8" />
-              <h1 className="text-2xl font-bold">
-                Quote for {formData.client_name || 'New Client'}
-              </h1>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold">
+                  Quote for {formData.client_name || 'New Client'}
+                </h1>
+                {quote && quote.public_status === 'changes_requested' && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <MessageSquare className="h-4 w-4 text-orange-600" />
+                    <span className="text-sm text-orange-600 font-medium">Client Requested Changes</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Button type="button" variant="outline" onClick={onClose}>
@@ -323,6 +331,9 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
                   requestedAt={quote.client_change_request ? new Date().toISOString() : ''}
                   adminResponse={quote.admin_response_to_changes}
                   adminRespondedAt={quote.admin_responded_at}
+                  onQuoteReset={() => {
+                    onClose();
+                  }}
                 />
               )}
               

@@ -47,9 +47,12 @@ const QuotesTable: React.FC<QuotesTableProps> = ({ quotes, onEdit, onRefresh }) 
                 quotes.map((quote) => (
                   <TableRow 
                     key={quote.id} 
-                    className={`hover:bg-muted/50 transition-colors ${
+                    className={`hover:bg-muted/50 transition-colors cursor-pointer ${
                       quote.status === 'accepted' ? 'bg-green-50/50 border-green-100' : ''
+                    } ${
+                      quote.public_status === 'changes_requested' ? 'bg-orange-50/30 hover:bg-orange-50/50 border-l-4 border-l-orange-500' : ''
                     }`}
+                    onClick={() => onEdit(quote)}
                   >
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
@@ -63,10 +66,15 @@ const QuotesTable: React.FC<QuotesTableProps> = ({ quotes, onEdit, onRefresh }) 
                           </div>
                         )}
                         {quote.public_status === 'changes_requested' && (
-                          <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50">
-                            <MessageSquare className="h-3 w-3 mr-1" />
-                            Changes Requested
-                          </Badge>
+                          <div className="relative group">
+                            <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50 animate-pulse">
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              Changes Requested
+                            </Badge>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-foreground text-background text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                              Click to view change request
+                            </div>
+                          </div>
                         )}
                       </div>
                     </TableCell>

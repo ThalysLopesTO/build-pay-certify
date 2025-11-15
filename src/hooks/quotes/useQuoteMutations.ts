@@ -93,6 +93,15 @@ export const useUpdateQuote = () => {
         finalUpdates.public_status = syncPublicStatus(updates.status);
       }
 
+      // If status is being changed to 'sent', reset public_status and clear change request data
+      if (updates.status === 'sent') {
+        finalUpdates.public_status = 'awaiting_response';
+        finalUpdates.client_change_request = null;
+        finalUpdates.admin_response_to_changes = null;
+        finalUpdates.admin_responded_at = null;
+        finalUpdates.admin_responded_by = null;
+      }
+
       const { data, error } = await supabase
         .from('quotes')
         .update({ ...finalUpdates, updated_at: new Date().toISOString() })
