@@ -83,7 +83,7 @@ export const createQuoteEmailHTML = (data: QuoteEmailData): string => {
       </div>
 
       <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 30px 0 20px 0; text-align: center;">
-        Click the button below to view your quote online, approve it, or request changes:
+        Click the button below to access your client portal where you can view this quote, approve it, or request changes:
       </p>
 
       <!-- Primary CTA Button -->
@@ -92,7 +92,7 @@ export const createQuoteEmailHTML = (data: QuoteEmailData): string => {
            style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; 
                   padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 700; 
                   font-size: 16px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);">
-          📋 View Quote Online
+          🏠 Access Client Portal
         </a>
       </div>
 
