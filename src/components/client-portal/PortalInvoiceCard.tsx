@@ -18,50 +18,53 @@ interface PortalInvoiceCardProps {
 export function PortalInvoiceCard({ invoice }: PortalInvoiceCardProps) {
   const getStatusColor = (status: string) => {
     const statusMap: Record<string, string> = {
-      pending: 'bg-yellow-500',
-      paid: 'bg-green-500',
-      expired: 'bg-red-500',
+      pending: 'bg-orange-500 hover:bg-orange-600',
+      paid: 'bg-green-500 hover:bg-green-600',
+      expired: 'bg-red-500 hover:bg-red-600',
     };
-    return statusMap[status] || 'bg-gray-500';
+    return statusMap[status] || 'bg-gray-500 hover:bg-gray-600';
   };
 
   const isOverdue = new Date(invoice.due_date) < new Date() && invoice.status === 'pending';
 
   return (
-    <div className="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow">
+    <div className="bg-card border rounded-lg p-6 hover:shadow-lg hover:scale-[1.02] transition-all">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <Receipt className="w-5 h-5 text-muted-foreground" />
+          <div className="flex items-center gap-2 mb-2">
+            <Receipt className="w-5 h-5 text-primary" />
             <h3 className="font-semibold text-lg">{invoice.invoice_number}</h3>
           </div>
-          <p className="text-muted-foreground">{invoice.title}</p>
+          <p className="text-foreground font-medium mb-1">{invoice.title}</p>
+          {invoice.sent_date && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              Sent {format(new Date(invoice.sent_date), 'MMM d, yyyy')}
+            </p>
+          )}
         </div>
         <div className="flex flex-col gap-2 items-end">
-          <Badge className={getStatusColor(invoice.status)}>
+          <Badge className={`${getStatusColor(invoice.status)} text-white border-0`}>
             {invoice.status}
           </Badge>
           {isOverdue && (
-            <Badge variant="destructive">Overdue</Badge>
+            <Badge className="bg-red-500 hover:bg-red-600 text-white border-0">
+              Overdue
+            </Badge>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center gap-2 text-sm">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-          <div>
-            <p className="text-xs text-muted-foreground">Due Date</p>
-            <p>{format(new Date(invoice.due_date), 'MMM d, yyyy')}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <DollarSign className="w-4 h-4 text-muted-foreground" />
-          <div>
-            <p className="text-xs text-muted-foreground">Amount</p>
-            <p className="font-semibold">${invoice.total_amount.toFixed(2)}</p>
-          </div>
-        </div>
+      <div className="flex items-center justify-between py-4 border-t border-b mb-4">
+        <div className="text-sm text-muted-foreground">Total amount</div>
+        <div className="text-2xl font-bold">${invoice.total_amount.toFixed(2)}</div>
+      </div>
+
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">Due date</span>
+        <span className={`font-medium ${isOverdue ? 'text-red-500' : ''}`}>
+          {format(new Date(invoice.due_date), 'MMM d, yyyy')}
+        </span>
       </div>
     </div>
   );

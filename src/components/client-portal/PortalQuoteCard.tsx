@@ -24,13 +24,13 @@ export function PortalQuoteCard({ quote }: PortalQuoteCardProps) {
 
   const getStatusColor = (status: string) => {
     const statusMap: Record<string, string> = {
-      draft: 'bg-gray-500',
-      sent: 'bg-blue-500',
-      accepted: 'bg-green-500',
-      declined: 'bg-red-500',
-      invoiced: 'bg-purple-500',
+      draft: 'bg-gray-500 hover:bg-gray-600',
+      sent: 'bg-orange-500 hover:bg-orange-600',
+      accepted: 'bg-green-500 hover:bg-green-600',
+      declined: 'bg-red-500 hover:bg-red-600',
+      invoiced: 'bg-purple-500 hover:bg-purple-600',
     };
-    return statusMap[status] || 'bg-gray-500';
+    return statusMap[status] || 'bg-gray-500 hover:bg-gray-600';
   };
 
   const handleView = () => {
@@ -40,47 +40,39 @@ export function PortalQuoteCard({ quote }: PortalQuoteCardProps) {
   };
 
   return (
-    <div className="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow">
+    <div className="bg-card border rounded-lg p-6 hover:shadow-lg hover:scale-[1.02] transition-all">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <FileText className="w-5 h-5 text-muted-foreground" />
+          <div className="flex items-center gap-2 mb-2">
+            <FileText className="w-5 h-5 text-primary" />
             <h3 className="font-semibold text-lg">{quote.quote_number}</h3>
           </div>
-          <p className="text-muted-foreground">{quote.project_name}</p>
+          <p className="text-foreground font-medium mb-1">{quote.project_name}</p>
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            Sent {format(new Date(quote.quote_date), 'MMM d, yyyy')}
+          </p>
         </div>
-        <Badge className={getStatusColor(quote.status)}>
+        <Badge className={`${getStatusColor(quote.status)} text-white border-0`}>
           {quote.status}
         </Badge>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="flex items-center gap-2 text-sm">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-          <div>
-            <p className="text-xs text-muted-foreground">Date</p>
-            <p>{format(new Date(quote.quote_date), 'MMM d, yyyy')}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <DollarSign className="w-4 h-4 text-muted-foreground" />
-          <div>
-            <p className="text-xs text-muted-foreground">Amount</p>
-            <p className="font-semibold">${quote.total_amount.toFixed(2)}</p>
-          </div>
-        </div>
+      <div className="flex items-center justify-between py-4 border-t border-b mb-4">
+        <div className="text-sm text-muted-foreground">Total amount</div>
+        <div className="text-2xl font-bold">${quote.total_amount.toFixed(2)}</div>
       </div>
 
       {quote.expiry_date && (
         <div className="mb-4">
           <p className="text-sm text-muted-foreground">
-            Expires: {format(new Date(quote.expiry_date), 'MMM d, yyyy')}
+            Expires {format(new Date(quote.expiry_date), 'MMM d, yyyy')}
           </p>
         </div>
       )}
 
       {quote.public_token && (
-        <Button onClick={handleView} className="w-full">
+        <Button onClick={handleView} className="w-full" size="lg">
           <ExternalLink className="w-4 h-4 mr-2" />
           View Quote
         </Button>
