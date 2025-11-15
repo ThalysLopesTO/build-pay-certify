@@ -15,6 +15,22 @@ export const useApproveQuote = () => {
         console.error('Error approving quote:', error);
         throw error;
       }
+
+      // Send admin notification
+      try {
+        const quoteData = data as any;
+        await supabase.functions.invoke('send-quote-notification', {
+          body: {
+            action: 'approved',
+            quoteNumber: quoteData.quote_number,
+            clientName: quoteData.client_name,
+            projectName: quoteData.project_name,
+            companyId: quoteData.company_id,
+          },
+        });
+      } catch (notificationError) {
+        console.error('Failed to send notification:', notificationError);
+      }
       
       return data;
     },
@@ -38,6 +54,23 @@ export const useRequestChanges = () => {
         console.error('Error requesting changes:', error);
         throw error;
       }
+
+      // Send admin notification
+      try {
+        const quoteData = data as any;
+        await supabase.functions.invoke('send-quote-notification', {
+          body: {
+            action: 'changes_requested',
+            quoteNumber: quoteData.quote_number,
+            clientName: quoteData.client_name,
+            projectName: quoteData.project_name,
+            message: message,
+            companyId: quoteData.company_id,
+          },
+        });
+      } catch (notificationError) {
+        console.error('Failed to send notification:', notificationError);
+      }
       
       return data;
     },
@@ -60,6 +93,23 @@ export const useDeclineQuote = () => {
       if (error) {
         console.error('Error declining quote:', error);
         throw error;
+      }
+
+      // Send admin notification
+      try {
+        const quoteData = data as any;
+        await supabase.functions.invoke('send-quote-notification', {
+          body: {
+            action: 'declined',
+            quoteNumber: quoteData.quote_number,
+            clientName: quoteData.client_name,
+            projectName: quoteData.project_name,
+            message: reason,
+            companyId: quoteData.company_id,
+          },
+        });
+      } catch (notificationError) {
+        console.error('Failed to send notification:', notificationError);
       }
       
       return data;

@@ -2110,6 +2110,63 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_messages: {
+        Row: {
+          client_email: string
+          client_id: string
+          client_name: string
+          company_id: string
+          created_at: string
+          id: string
+          message: string
+          portal_token: string
+          read_at: string | null
+          replied_at: string | null
+          subject: string
+        }
+        Insert: {
+          client_email: string
+          client_id: string
+          client_name: string
+          company_id: string
+          created_at?: string
+          id?: string
+          message: string
+          portal_token: string
+          read_at?: string | null
+          replied_at?: string | null
+          subject: string
+        }
+        Update: {
+          client_email?: string
+          client_id?: string
+          client_name?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          portal_token?: string
+          read_at?: string | null
+          replied_at?: string | null
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_messages_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_line_items: {
         Row: {
           amount: number
@@ -3851,6 +3908,10 @@ export type Database = {
       seed_default_role_permissions: {
         Args: { company_uuid: string }
         Returns: undefined
+      }
+      send_portal_message: {
+        Args: { p_message: string; p_portal_token: string; p_subject: string }
+        Returns: Json
       }
       send_quote_notification_email:
         | {
