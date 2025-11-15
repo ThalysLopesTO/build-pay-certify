@@ -2,8 +2,9 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { FileText } from 'lucide-react';
+import { FileText, MessageSquare } from 'lucide-react';
 import { Quote } from '@/hooks/quotes';
 import QuoteStatusBadge from './QuoteStatusBadge';
 import QuoteActions from './QuoteActions';
@@ -60,6 +61,12 @@ const QuotesTable: React.FC<QuotesTableProps> = ({ quotes, onEdit, onRefresh }) 
                               Converted to Invoice
                             </div>
                           </div>
+                        )}
+                        {quote.public_status === 'changes_requested' && (
+                          <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50">
+                            <MessageSquare className="h-3 w-3 mr-1" />
+                            Changes Requested
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
