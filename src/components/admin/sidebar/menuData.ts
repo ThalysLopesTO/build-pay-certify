@@ -128,6 +128,11 @@ export const menuData: MenuItem[] = [
   
   // Invoices & Financial
   {
+    id: 'clients',
+    title: 'Clients',
+    icon: Building2,
+  },
+  {
     id: 'invoices',
     title: 'Invoices',
     icon: FileText,
@@ -190,6 +195,7 @@ export const groupedMenuItems = {
     menuData.find(item => item.id === 'payroll-summary')!,
   ],
   invoices: [
+    menuData.find(item => item.id === 'clients')!,
     menuData.find(item => item.id === 'invoices')!,
     menuData.find(item => item.id === 'quotes')!,
     menuData.find(item => item.id === 'bills-expenses')!,
