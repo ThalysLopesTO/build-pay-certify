@@ -2220,6 +2220,7 @@ export type Database = {
           client_address: string | null
           client_approved_at: string | null
           client_change_request: string | null
+          client_change_requested_at: string | null
           client_company: string | null
           client_decline_reason: string | null
           client_declined_at: string | null
@@ -2259,6 +2260,7 @@ export type Database = {
           client_address?: string | null
           client_approved_at?: string | null
           client_change_request?: string | null
+          client_change_requested_at?: string | null
           client_company?: string | null
           client_decline_reason?: string | null
           client_declined_at?: string | null
@@ -2298,6 +2300,7 @@ export type Database = {
           client_address?: string | null
           client_approved_at?: string | null
           client_change_request?: string | null
+          client_change_requested_at?: string | null
           client_company?: string | null
           client_decline_reason?: string | null
           client_declined_at?: string | null

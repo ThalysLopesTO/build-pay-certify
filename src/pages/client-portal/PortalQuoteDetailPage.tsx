@@ -191,26 +191,80 @@ export default function PortalQuoteDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Change Request Status - Show when changes are requested */}
-      {quote.public_status === 'changes_requested' && quote.client_change_request && (
-        <Card className="border-l-4 border-l-blue-600">
+      {/* Change Request History - Always show if client_change_request exists */}
+      {quote.client_change_request && (
+        <Card className={`border-l-4 ${
+          quote.public_status === 'changes_requested' 
+            ? 'border-l-blue-600' 
+            : 'border-l-muted'
+        }`}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-700">
+            <CardTitle className={`flex items-center gap-2 ${
+              quote.public_status === 'changes_requested'
+                ? 'text-blue-700'
+                : 'text-muted-foreground'
+            }`}>
               <MessageCircle className="h-5 w-5" />
-              Changes Requested
+              {quote.public_status === 'changes_requested' 
+                ? 'Changes Requested' 
+                : 'Change Request History'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-2">Your Message:</p>
-              <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-md">
+              <div className={`p-4 rounded-md ${
+                quote.public_status === 'changes_requested'
+                  ? 'bg-blue-50 dark:bg-blue-950/20'
+                  : 'bg-muted/30'
+              }`}>
                 <p className="text-sm italic">"{quote.client_change_request}"</p>
               </div>
             </div>
-            <div className="bg-muted/50 p-4 rounded-md">
-              <p className="text-sm text-muted-foreground">
-                The company has received your change request and will review it shortly. 
-                You'll receive an email notification when they respond with an updated quote.
+            
+            {quote.client_change_requested_at && (
+              <div className="text-sm text-muted-foreground">
+                <span className="font-medium">Requested on:</span>{' '}
+                {format(new Date(quote.client_change_requested_at), 'MMM d, yyyy \'at\' h:mm a')}
+              </div>
+            )}
+
+            <div className={`p-4 rounded-md ${
+              quote.public_status === 'changes_requested'
+                ? 'bg-muted/50'
+                : 'bg-muted/30'
+            }`}>
+              <p className="text-sm">
+                {quote.public_status === 'changes_requested' && (
+                  <>
+                    <span className="font-semibold text-blue-700">Status: Pending Review</span>
+                    <br />
+                    The company has received your change request and will review it shortly. 
+                    You'll receive an email notification when they respond with an updated quote.
+                  </>
+                )}
+                {quote.public_status === 'awaiting_response' && !quote.client_approved_at && !quote.client_declined_at && (
+                  <>
+                    <span className="font-semibold text-green-700">Status: Updated Quote Sent</span>
+                    <br />
+                    The company has reviewed your request and sent an updated quote above. 
+                    Please review the changes and take action.
+                  </>
+                )}
+                {(quote.public_status === 'approved' || quote.client_approved_at) && (
+                  <>
+                    <span className="font-semibold">Historical Record</span>
+                    <br />
+                    This change request was addressed before the quote was approved.
+                  </>
+                )}
+                {(quote.public_status === 'declined' || quote.client_declined_at) && (
+                  <>
+                    <span className="font-semibold">Historical Record</span>
+                    <br />
+                    Original change request from before the quote was declined.
+                  </>
+                )}
               </p>
             </div>
           </CardContent>

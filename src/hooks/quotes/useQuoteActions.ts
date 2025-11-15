@@ -55,6 +55,14 @@ export const useRequestChanges = () => {
         throw error;
       }
 
+      // Set the timestamp for when the change was requested
+      if (data && (data as any).id) {
+        await supabase
+          .from('quotes')
+          .update({ client_change_requested_at: new Date().toISOString() })
+          .eq('id', (data as any).id);
+      }
+
       // Send admin notification
       try {
         const quoteData = data as any;
