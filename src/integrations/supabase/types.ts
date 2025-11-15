@@ -3806,9 +3806,10 @@ export type Database = {
         Args: { change_message: string; token_param: string }
         Returns: Json
       }
-      request_quote_changes_public:
-        | { Args: { p_message: string; p_token: string }; Returns: Json }
-        | { Args: { p_message: string; p_token: string }; Returns: Json }
+      request_quote_changes_public: {
+        Args: { p_message: string; p_token: string }
+        Returns: Json
+      }
       respond_to_quote_changes: {
         Args: { p_quote_id: string; p_response_message: string }
         Returns: Json
