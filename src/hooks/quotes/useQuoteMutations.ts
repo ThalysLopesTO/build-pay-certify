@@ -93,10 +93,11 @@ export const useUpdateQuote = () => {
         finalUpdates.public_status = syncPublicStatus(updates.status);
       }
 
-      // If status is being changed to 'sent', reset public_status and clear change request data
+      // If status is being changed to 'sent', reset public_status to awaiting_response
+      // Keep client_change_request and client_change_requested_at for history tracking
       if (updates.status === 'sent') {
         finalUpdates.public_status = 'awaiting_response';
-        finalUpdates.client_change_request = null;
+        // Reset admin response fields only (allows fresh admin response if needed)
         finalUpdates.admin_response_to_changes = null;
         finalUpdates.admin_responded_at = null;
         finalUpdates.admin_responded_by = null;
