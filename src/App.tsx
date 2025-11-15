@@ -30,6 +30,8 @@ import InvoicePreview from "@/pages/InvoicePreview";
 import MaterialTakeoffPage from "@/pages/admin/MaterialTakeoffPage";
 import InventoryIndex from "@/pages/admin/inventory/Index";
 import PublicQuotePage from "@/pages/PublicQuotePage";
+import ClientPortal from "@/pages/ClientPortal";
+import ClientsPage from "@/pages/admin/ClientsPage";
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 
@@ -89,7 +91,18 @@ const AppInner: React.FC = () => {
         
         {/* Public Quote Viewing */}
         <Route path="/public/quote/:token" element={<PublicQuotePage />} />
+        
+        {/* Client Portal */}
+        <Route path="/client/:token" element={<ClientPortal />} />
 
+        <Route
+          path="/admin/clients"
+          element={
+            <ProtectedRoute requireSubscription>
+              <ClientsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/admin/material-takeoff"
           element={
