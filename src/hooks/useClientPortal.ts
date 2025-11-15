@@ -12,6 +12,10 @@ interface PortalQuote {
   total_amount: number;
   public_token: string | null;
   notes: string | null;
+  client_address: string | null;
+  client_viewed_at: string | null;
+  client_approved_at: string | null;
+  client_declined_at: string | null;
 }
 
 interface PortalInvoice {
@@ -23,6 +27,10 @@ interface PortalInvoice {
   total_amount: number;
   sent_date: string | null;
   notes: string | null;
+  client_address: string | null;
+  subtotal: number;
+  tax: number | null;
+  discount: number | null;
 }
 
 interface ClientPortalData {
