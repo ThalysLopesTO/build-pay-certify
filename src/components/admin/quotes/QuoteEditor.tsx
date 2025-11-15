@@ -32,6 +32,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
   const { settings } = useCompanySettings();
   
   const [formData, setFormData] = useState({
+    client_id: '',
     client_name: '',
     client_company: '',
     client_email: '',
@@ -65,6 +66,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
   useEffect(() => {
     if (quote) {
       setFormData({
+        client_id: quote.client_id || '',
         client_name: quote.client_name || '',
         client_company: quote.client_company || '',
         client_email: quote.client_email || '',
@@ -85,6 +87,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
       }
     } else {
       setFormData({
+        client_id: '',
         client_name: '',
         client_company: '',
         client_email: '',
@@ -102,6 +105,18 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
       setLineItems([{ description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }]);
     }
   }, [quote?.id, existingLineItems.length, settings?.tax_percentage]);
+
+  const handleClientSelect = (client: any) => {
+    setFormData(prev => ({
+      ...prev,
+      client_id: client.id,
+      client_name: client.client_name,
+      client_company: client.client_company || '',
+      client_email: client.client_email,
+      client_phone: client.client_phone || '',
+      client_address: client.client_address || '',
+    }));
+  };
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ 
@@ -145,6 +160,16 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    
+    // Validate client is selected
+    if (!formData.client_id || !formData.client_name || !formData.client_email) {
+      toast({
+        title: "Client Required",
+        description: "Please select a client before saving the quote.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       const subtotal = calculateSubtotal();
@@ -302,8 +327,8 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
               )}
               
               <QuoteEditorClientSection
-                formData={formData}
-                handleInputChange={handleInputChange}
+                selectedClientId={formData.client_id}
+                onClientSelect={handleClientSelect}
               />
               
               <QuoteEditorJobSection
