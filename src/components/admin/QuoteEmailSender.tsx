@@ -15,6 +15,7 @@ import { Mail, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { createQuoteEmailHTML, getQuoteEmailSubject } from '@/utils/quoteEmailTemplate';
 import { v4 as uuidv4 } from 'uuid';
+import { useClient } from '@/hooks/useClient';
 
 interface QuoteEmailSenderProps {
   quote: Quote;
@@ -31,12 +32,17 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
   const { settings, isSettingsComplete } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
   const { data: lineItems = [] } = useQuoteLineItems(quote.id);
+  const { data: client } = useClient(quote.client_id);
   const updateQuote = useUpdateQuote();
   const [isLoading, setIsLoading] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
 
   const generatePublicQuoteUrl = (): string => {
     const baseUrl = window.location.origin;
+    // Link to client portal if client exists, otherwise fallback to individual quote
+    if (client?.portal_token) {
+      return `${baseUrl}/client/${client.portal_token}`;
+    }
     const token = quote.public_token || uuidv4();
     return `${baseUrl}/public/quote/${token}`;
   };
