@@ -30,10 +30,15 @@ import InvoicePreview from "@/pages/InvoicePreview";
 import MaterialTakeoffPage from "@/pages/admin/MaterialTakeoffPage";
 import InventoryIndex from "@/pages/admin/inventory/Index";
 import PublicQuotePage from "@/pages/PublicQuotePage";
-import ClientPortal from "@/pages/ClientPortal";
 import ClientsPage from "@/pages/admin/ClientsPage";
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
+import { ClientPortalProvider } from "@/contexts/ClientPortalContext";
+import { PortalLayout } from "@/components/client-portal/PortalLayout";
+import PortalDashboard from "@/pages/client-portal/PortalDashboard";
+import PortalQuotesPage from "@/pages/client-portal/PortalQuotesPage";
+import PortalInvoicesPage from "@/pages/client-portal/PortalInvoicesPage";
+import PortalContactPage from "@/pages/client-portal/PortalContactPage";
 
 const AppInner: React.FC = () => {
   return (
@@ -92,8 +97,13 @@ const AppInner: React.FC = () => {
         {/* Public Quote Viewing */}
         <Route path="/public/quote/:token" element={<PublicQuotePage />} />
         
-        {/* Client Portal */}
-        <Route path="/client/:token" element={<ClientPortal />} />
+        {/* Client Portal - Nested Routes */}
+        <Route path="/client/:token" element={<ClientPortalProvider><PortalLayout /></ClientPortalProvider>}>
+          <Route index element={<PortalDashboard />} />
+          <Route path="quotes" element={<PortalQuotesPage />} />
+          <Route path="invoices" element={<PortalInvoicesPage />} />
+          <Route path="contact" element={<PortalContactPage />} />
+        </Route>
 
         <Route
           path="/admin/clients"
