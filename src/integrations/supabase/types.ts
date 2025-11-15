@@ -402,6 +402,62 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          client_address: string | null
+          client_company: string | null
+          client_email: string
+          client_name: string
+          client_phone: string | null
+          company_id: string
+          created_at: string
+          id: string
+          portal_token: string
+          total_invoices: number | null
+          total_quotes: number | null
+          total_revenue: number | null
+          updated_at: string
+        }
+        Insert: {
+          client_address?: string | null
+          client_company?: string | null
+          client_email: string
+          client_name: string
+          client_phone?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          portal_token?: string
+          total_invoices?: number | null
+          total_quotes?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+        }
+        Update: {
+          client_address?: string | null
+          client_company?: string | null
+          client_email?: string
+          client_name?: string
+          client_phone?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          portal_token?: string
+          total_invoices?: number | null
+          total_quotes?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           company_rules_text: string | null
@@ -1181,6 +1237,7 @@ export type Database = {
           client_address: string | null
           client_company: string
           client_email: string
+          client_id: string | null
           client_phone: string | null
           company_id: string | null
           created_at: string
@@ -1203,6 +1260,7 @@ export type Database = {
           client_address?: string | null
           client_company: string
           client_email: string
+          client_id?: string | null
           client_phone?: string | null
           company_id?: string | null
           created_at?: string
@@ -1225,6 +1283,7 @@ export type Database = {
           client_address?: string | null
           client_company?: string
           client_email?: string
+          client_id?: string | null
           client_phone?: string | null
           company_id?: string | null
           created_at?: string
@@ -1244,6 +1303,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_company_id_fkey"
             columns: ["company_id"]
@@ -2101,6 +2167,7 @@ export type Database = {
           client_decline_reason: string | null
           client_declined_at: string | null
           client_email: string
+          client_id: string | null
           client_name: string
           client_name_signed: string | null
           client_phone: string | null
@@ -2139,6 +2206,7 @@ export type Database = {
           client_decline_reason?: string | null
           client_declined_at?: string | null
           client_email: string
+          client_id?: string | null
           client_name: string
           client_name_signed?: string | null
           client_phone?: string | null
@@ -2177,6 +2245,7 @@ export type Database = {
           client_decline_reason?: string | null
           client_declined_at?: string | null
           client_email?: string
+          client_id?: string | null
           client_name?: string
           client_name_signed?: string | null
           client_phone?: string | null
@@ -2204,6 +2273,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotes_created_by_fkey"
             columns: ["created_by"]
@@ -3578,7 +3654,10 @@ export type Database = {
         }
         Returns: Json
       }
-      get_client_portal_data: { Args: { token_param: string }; Returns: Json }
+      get_client_portal_data: {
+        Args: { p_portal_token: string }
+        Returns: Json
+      }
       get_companies_with_status: {
         Args: never
         Returns: {

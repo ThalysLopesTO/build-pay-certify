@@ -96,6 +96,11 @@ export const managementMenuItems = {
   ],
   financial: [
     {
+      title: 'Clients',
+      icon: Building2,
+      id: 'clients',
+    },
+    {
       title: 'Quotes',
       icon: CreditCard,
       id: 'quotes',
