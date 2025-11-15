@@ -15,6 +15,7 @@ interface ChangeRequestResponseCardProps {
   requestedAt: string;
   adminResponse?: string;
   adminRespondedAt?: string;
+  onQuoteReset?: () => void;
 }
 
 export const ChangeRequestResponseCard: React.FC<ChangeRequestResponseCardProps> = ({
@@ -24,6 +25,7 @@ export const ChangeRequestResponseCard: React.FC<ChangeRequestResponseCardProps>
   requestedAt,
   adminResponse,
   adminRespondedAt,
+  onQuoteReset,
 }) => {
   const [response, setResponse] = useState(adminResponse || '');
   const [isEditing, setIsEditing] = useState(!adminResponse);
@@ -46,7 +48,9 @@ export const ChangeRequestResponseCard: React.FC<ChangeRequestResponseCardProps>
   const handleResetForEditing = () => {
     resetQuote(quoteId, {
       onSuccess: () => {
-        window.location.reload();
+        if (onQuoteReset) {
+          onQuoteReset();
+        }
       },
     });
   };
