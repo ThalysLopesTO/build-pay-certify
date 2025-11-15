@@ -34,8 +34,8 @@ export const useApproveQuote = () => {
       
       return data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['public-quote', variables.token] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-portal'] });
     },
   });
 };
@@ -74,8 +74,8 @@ export const useRequestChanges = () => {
       
       return data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['public-quote', variables.token] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-portal'] });
     },
   });
 };
@@ -114,8 +114,8 @@ export const useDeclineQuote = () => {
       
       return data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['public-quote', variables.token] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-portal'] });
     },
   });
 };

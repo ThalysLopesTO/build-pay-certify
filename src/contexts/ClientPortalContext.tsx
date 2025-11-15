@@ -17,6 +17,10 @@ interface PortalQuote {
   client_viewed_at: string | null;
   client_approved_at: string | null;
   client_declined_at: string | null;
+  client_name_signed: string | null;
+  accepted_date: string | null;
+  declined_date: string | null;
+  client_change_request: string | null;
 }
 
 interface PortalInvoice {

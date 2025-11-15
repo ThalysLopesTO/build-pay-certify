@@ -3,7 +3,7 @@ import { useClientPortalContext } from '@/contexts/ClientPortalContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, MapPin, DollarSign } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ApproveQuoteDialog, DeclineQuoteDialog, RequestChangesDialog } from '@/components/client-portal/QuoteActionDialogs';
 import { useState } from 'react';
@@ -187,6 +187,59 @@ export default function PortalQuoteDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Client Signature Section - Show if approved or declined */}
+      {(quote.client_approved_at || quote.client_declined_at) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {quote.client_approved_at ? (
+                <>
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  Quote Approved
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-5 w-5 text-red-600" />
+                  Quote Declined
+                </>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {quote.client_name_signed && (
+              <div className="border-t pt-4">
+                <p className="text-sm text-muted-foreground mb-2">Client Signature:</p>
+                <p className="font-semibold text-lg italic border-b-2 border-border inline-block pb-1">
+                  {quote.client_name_signed}
+                </p>
+              </div>
+            )}
+            {quote.client_approved_at && (
+              <div>
+                <p className="text-sm text-muted-foreground">Approved on:</p>
+                <p className="font-medium">
+                  {format(new Date(quote.client_approved_at), 'MMMM d, yyyy \'at\' h:mm a')}
+                </p>
+              </div>
+            )}
+            {quote.client_declined_at && (
+              <div>
+                <p className="text-sm text-muted-foreground">Declined on:</p>
+                <p className="font-medium">
+                  {format(new Date(quote.client_declined_at), 'MMMM d, yyyy \'at\' h:mm a')}
+                </p>
+              </div>
+            )}
+            <div className="bg-muted/50 p-4 rounded-md">
+              <p className="text-xs text-muted-foreground">
+                This electronic signature has the same legal effect as a handwritten signature 
+                and constitutes acceptance of the terms outlined in this quote.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Action Buttons */}
       {canTakeAction && (
