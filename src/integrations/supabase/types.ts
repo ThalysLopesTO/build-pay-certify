@@ -3764,10 +3764,23 @@ export type Database = {
         Args: { company_uuid: string }
         Returns: undefined
       }
-      send_quote_notification_email: {
-        Args: { p_html: string; p_subject: string; p_to_email: string }
-        Returns: undefined
-      }
+      send_quote_notification_email:
+        | {
+            Args: {
+              p_admin_email: string
+              p_body_text: string
+              p_client_email: string
+              p_client_name: string
+              p_quote_id: string
+              p_quote_number: string
+              p_subject: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: { p_html: string; p_subject: string; p_to_email: string }
+            Returns: undefined
+          }
       user_has_admin_role: { Args: never; Returns: boolean }
     }
     Enums: {
