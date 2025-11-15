@@ -3,7 +3,7 @@ import { useClientPortalContext } from '@/contexts/ClientPortalContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, MapPin, DollarSign, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, DollarSign, CheckCircle, XCircle, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ApproveQuoteDialog, DeclineQuoteDialog, RequestChangesDialog } from '@/components/client-portal/QuoteActionDialogs';
 import { useState } from 'react';
@@ -94,7 +94,7 @@ export default function PortalQuoteDetailPage() {
       await requestChanges.mutateAsync({ token: quote.public_token, message });
       toast({
         title: 'Changes Requested',
-        description: 'Your request has been sent. We\'ll review and get back to you.',
+        description: 'Your request has been sent successfully. The company will review your request and send you an updated quote.',
       });
       setChangesOpen(false);
     } catch (error) {
@@ -136,13 +136,15 @@ export default function PortalQuoteDetailPage() {
         <CardContent className="space-y-4">
           {/* Quote Details Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Date:</span>
-              <span className="font-medium">
-                {format(new Date(quote.quote_date), 'MMM d, yyyy')}
-              </span>
-            </div>
+            {quote.quote_date && (
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Date:</span>
+                <span className="font-medium">
+                  {format(new Date(quote.quote_date), 'MMM d, yyyy')}
+                </span>
+              </div>
+            )}
             
             {quote.expiry_date && (
               <div className="flex items-center gap-2 text-sm">
@@ -187,6 +189,32 @@ export default function PortalQuoteDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Change Request Status - Show when changes are requested */}
+      {quote.public_status === 'changes_requested' && quote.client_change_request && (
+        <Card className="border-l-4 border-l-blue-600">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-700">
+              <MessageCircle className="h-5 w-5" />
+              Changes Requested
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Your Message:</p>
+              <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-md">
+                <p className="text-sm italic">"{quote.client_change_request}"</p>
+              </div>
+            </div>
+            <div className="bg-muted/50 p-4 rounded-md">
+              <p className="text-sm text-muted-foreground">
+                The company has received your change request and will review it shortly. 
+                You'll receive an email notification when they respond with an updated quote.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Client Signature Section - Show if approved or declined */}
       {(quote.client_approved_at || quote.client_declined_at) && (
