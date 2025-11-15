@@ -3810,6 +3810,7 @@ export type Database = {
         Args: { p_message: string; p_token: string }
         Returns: Json
       }
+      reset_quote_for_editing: { Args: { p_quote_id: string }; Returns: Json }
       respond_to_quote_changes: {
         Args: { p_quote_id: string; p_response_message: string }
         Returns: Json

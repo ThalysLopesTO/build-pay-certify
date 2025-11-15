@@ -4,8 +4,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { MessageSquare, Send, CheckCircle2 } from 'lucide-react';
-import { useRespondToChangeRequest } from '@/hooks/quotes';
+import { MessageSquare, Send, CheckCircle2, FileEdit } from 'lucide-react';
+import { useRespondToChangeRequest, useResetQuoteForEditing } from '@/hooks/quotes';
 import { format } from 'date-fns';
 
 interface ChangeRequestResponseCardProps {
@@ -28,6 +28,7 @@ export const ChangeRequestResponseCard: React.FC<ChangeRequestResponseCardProps>
   const [response, setResponse] = useState(adminResponse || '');
   const [isEditing, setIsEditing] = useState(!adminResponse);
   const { mutate: sendResponse, isPending } = useRespondToChangeRequest();
+  const { mutate: resetQuote, isPending: isResetting } = useResetQuoteForEditing();
 
   const handleSendResponse = () => {
     if (!response.trim()) return;
@@ -40,6 +41,14 @@ export const ChangeRequestResponseCard: React.FC<ChangeRequestResponseCardProps>
         },
       }
     );
+  };
+
+  const handleResetForEditing = () => {
+    resetQuote(quoteId, {
+      onSuccess: () => {
+        window.location.reload();
+      },
+    });
   };
 
   const hasResponded = !!adminResponse && !isEditing;
@@ -126,14 +135,28 @@ export const ChangeRequestResponseCard: React.FC<ChangeRequestResponseCardProps>
         )}
 
         {hasResponded && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditing(true)}
-            className="mt-4"
-          >
-            Update Response
-          </Button>
+          <div className="mt-4 pt-4 border-t space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Now that you've responded, you can edit this quote and send the updated version.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleResetForEditing}
+                disabled={isResetting}
+                className="flex-1"
+              >
+                <FileEdit className="h-4 w-4 mr-2" />
+                {isResetting ? 'Resetting...' : 'Edit Quote & Prepare New Version'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+              >
+                Update Response
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </Card>
