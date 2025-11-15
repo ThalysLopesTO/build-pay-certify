@@ -2,9 +2,10 @@ import { useClientPortalContext } from '@/contexts/ClientPortalContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Mail, Phone, MapPin, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ContactForm } from '@/components/client-portal/ContactForm';
 
 export default function PortalContactPage() {
-  const { company_settings } = useClientPortalContext();
+  const { company_settings, token } = useClientPortalContext();
 
   const contactItems = [
     {
@@ -95,6 +96,9 @@ export default function PortalContactPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Contact Form */}
+      <ContactForm portalToken={token} />
     </div>
   );
 }

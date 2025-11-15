@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { PortalQuoteCard } from '@/components/client-portal/PortalQuoteCard';
 import { PortalInvoiceCard } from '@/components/client-portal/PortalInvoiceCard';
+import { ActivityTimeline } from '@/components/client-portal/ActivityTimeline';
 
 export default function PortalDashboard() {
   const { client, quotes, invoices, token } = useClientPortalContext();
@@ -78,6 +79,9 @@ export default function PortalDashboard() {
           );
         })}
       </div>
+
+      {/* Activity Timeline */}
+      <ActivityTimeline quotes={quotes} invoices={invoices} />
 
       {/* Recent Quotes */}
       {recentQuotes.length > 0 && (
