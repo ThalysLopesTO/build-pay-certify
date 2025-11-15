@@ -37,7 +37,9 @@ import { ClientPortalProvider } from "@/contexts/ClientPortalContext";
 import { PortalLayout } from "@/components/client-portal/PortalLayout";
 import PortalDashboard from "@/pages/client-portal/PortalDashboard";
 import PortalQuotesPage from "@/pages/client-portal/PortalQuotesPage";
+import PortalQuoteDetailPage from "@/pages/client-portal/PortalQuoteDetailPage";
 import PortalInvoicesPage from "@/pages/client-portal/PortalInvoicesPage";
+import PortalInvoiceDetailPage from "@/pages/client-portal/PortalInvoiceDetailPage";
 import PortalContactPage from "@/pages/client-portal/PortalContactPage";
 
 const AppInner: React.FC = () => {
@@ -101,7 +103,9 @@ const AppInner: React.FC = () => {
         <Route path="/client/:token" element={<ClientPortalProvider><PortalLayout /></ClientPortalProvider>}>
           <Route index element={<PortalDashboard />} />
           <Route path="quotes" element={<PortalQuotesPage />} />
+          <Route path="quotes/:quoteId" element={<PortalQuoteDetailPage />} />
           <Route path="invoices" element={<PortalInvoicesPage />} />
+          <Route path="invoices/:invoiceId" element={<PortalInvoiceDetailPage />} />
           <Route path="contact" element={<PortalContactPage />} />
         </Route>
 

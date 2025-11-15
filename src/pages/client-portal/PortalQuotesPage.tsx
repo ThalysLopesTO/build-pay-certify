@@ -35,7 +35,7 @@ export default function PortalQuotesPage() {
             color="orange"
             defaultOpen={true}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               {awaitingQuotes.map(quote => (
                 <PortalQuoteCard key={quote.id} quote={quote} />
               ))}
@@ -48,7 +48,7 @@ export default function PortalQuotesPage() {
             color="green"
             defaultOpen={true}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               {approvedQuotes.map(quote => (
                 <PortalQuoteCard key={quote.id} quote={quote} />
               ))}
@@ -61,7 +61,7 @@ export default function PortalQuotesPage() {
             color="red"
             defaultOpen={false}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               {declinedQuotes.map(quote => (
                 <PortalQuoteCard key={quote.id} quote={quote} />
               ))}
@@ -74,7 +74,7 @@ export default function PortalQuotesPage() {
             color="gray"
             defaultOpen={false}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               {otherQuotes.map(quote => (
                 <PortalQuoteCard key={quote.id} quote={quote} />
               ))}

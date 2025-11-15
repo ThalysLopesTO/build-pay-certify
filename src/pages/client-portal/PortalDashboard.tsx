@@ -59,20 +59,20 @@ export default function PortalDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.title}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
+                  <div className="w-full">
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-1">
                       {stat.title}
                     </p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
+                    <p className="text-lg sm:text-2xl font-bold truncate">{stat.value}</p>
                   </div>
-                  <Icon className={`h-8 w-8 ${stat.color}`} />
+                  <Icon className={`h-6 w-6 sm:h-8 sm:w-8 ${stat.color} flex-shrink-0`} />
                 </div>
               </CardContent>
             </Card>
@@ -87,14 +87,14 @@ export default function PortalDashboard() {
       {recentQuotes.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold">Recent Quotes</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold">Recent Quotes</h2>
             <Link to={`/client/${token}/quotes`}>
               <Button variant="outline" size="sm">
                 View All
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             {recentQuotes.map((quote) => (
               <PortalQuoteCard key={quote.id} quote={quote} />
             ))}
@@ -106,14 +106,14 @@ export default function PortalDashboard() {
       {recentInvoices.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold">Recent Invoices</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold">Recent Invoices</h2>
             <Link to={`/client/${token}/invoices`}>
               <Button variant="outline" size="sm">
                 View All
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             {recentInvoices.map((invoice) => (
               <PortalInvoiceCard key={invoice.id} invoice={invoice} />
             ))}
