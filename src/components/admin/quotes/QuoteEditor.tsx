@@ -328,9 +328,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
                   quoteId={quote.id}
                   clientName={quote.client_name}
                   clientChangeRequest={quote.client_change_request}
-                  requestedAt={quote.client_change_request ? new Date().toISOString() : ''}
-                  adminResponse={quote.admin_response_to_changes}
-                  adminRespondedAt={quote.admin_responded_at}
+                  requestedAt={new Date().toISOString()}
                   onQuoteReset={() => {
                     onClose();
                   }}

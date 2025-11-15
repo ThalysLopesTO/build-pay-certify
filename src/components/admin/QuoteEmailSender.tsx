@@ -66,6 +66,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
       publicQuoteUrl,
       companyLogoUrl: logoUrl || undefined,
       customMessage: customMessage || undefined,
+      isRevised: !!quote.client_change_request,
     });
 
     return { subject, html };
