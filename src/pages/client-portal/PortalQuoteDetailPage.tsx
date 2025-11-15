@@ -39,7 +39,8 @@ export default function PortalQuoteDetailPage() {
 
   const canTakeAction = (quote.status === 'sent' || quote.public_status === 'sent' || quote.public_status === 'awaiting_response') &&
     !quote.client_approved_at && 
-    !quote.client_declined_at;
+    !quote.client_declined_at &&
+    quote.public_status !== 'changes_requested';
 
   const getStatusColor = (status: string, publicStatus?: string | null) => {
     if (publicStatus === 'approved' || status === 'accepted') return 'bg-green-600';
