@@ -56,6 +56,7 @@ interface ClientPortalContextType {
     company_email: string | null;
     company_phone: string | null;
     company_address: string | null;
+    timezone?: string;
   };
   token: string;
   isLoading: boolean;
