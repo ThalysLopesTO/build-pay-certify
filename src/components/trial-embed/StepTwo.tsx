@@ -1,26 +1,25 @@
-import { useState, FormEvent } from 'react';
-import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
-import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
-import { TrialEmbedFormData } from '@/types/trialEmbed';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { SUBSCRIPTION_PLANS } from '@/config/subscriptionPlans';
-import { toast } from 'sonner';
+import { useState, FormEvent } from "react";
+import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
+import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
+import { TrialEmbedFormData } from "@/types/trialEmbed";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
+import { toast } from "sonner";
 
 interface StepTwoProps {
   formData: TrialEmbedFormData;
-  clientSecret: string;
-  intentType: 'payment' | 'setup';
+  intentType: "payment" | "setup";
   registrationRequestId: string;
   onBack: () => void;
 }
 
-const StepTwo = ({ formData, clientSecret, intentType, registrationRequestId, onBack }: StepTwoProps) => {
+const StepTwo = ({ formData, intentType, registrationRequestId, onBack }: StepTwoProps) => {
   const stripe = useStripe();
   const elements = useElements();
   const planDetails = SUBSCRIPTION_PLANS[formData.plan];
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
 
@@ -34,61 +33,56 @@ const StepTwo = ({ formData, clientSecret, intentType, registrationRequestId, on
     setIsProcessing(true);
 
     try {
-      if (intentType === 'payment') {
-        // Confirm PaymentIntent
+      if (intentType === "payment") {
         const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
           confirmParams: {
-            return_url: window.location.origin + '/start-trial-embed?success=true',
+            return_url: window.location.origin + "/start-trial-embed?success=true",
           },
-          redirect: 'if_required',
+          redirect: "if_required",
         });
 
         if (error) {
-          toast.error(error.message || 'Payment failed');
-          console.error('Payment error:', error);
-        } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+          toast.error(error.message || "Payment failed");
+          console.error("Payment error:", error);
+        } else if (paymentIntent && paymentIntent.status === "succeeded") {
           setPaymentSucceeded(true);
-          toast.success('✅ Payment confirmed!');
+          toast.success("✅ Payment confirmed!");
         }
       } else {
-        // Confirm SetupIntent
         const { error, setupIntent } = await stripe.confirmSetup({
           elements,
           confirmParams: {
-            return_url: window.location.origin + '/start-trial-embed?success=true',
+            return_url: window.location.origin + "/start-trial-embed?success=true",
           },
-          redirect: 'if_required',
+          redirect: "if_required",
         });
 
         if (error) {
-          toast.error(error.message || 'Setup failed');
-          console.error('Setup error:', error);
-        } else if (setupIntent && setupIntent.status === 'succeeded') {
+          toast.error(error.message || "Setup failed");
+          console.error("Setup error:", error);
+        } else if (setupIntent && setupIntent.status === "succeeded") {
           setPaymentSucceeded(true);
-          toast.success('✅ Payment method confirmed!');
+          toast.success("✅ Payment method confirmed!");
         }
       }
     } catch (err) {
-      toast.error('An unexpected error occurred');
-      console.error('Payment error:', err);
+      toast.error("An unexpected error occurred");
+      console.error("Payment error:", err);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Success state
   if (paymentSucceeded) {
     return (
       <div className="text-center space-y-4 py-8">
         <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
         <h2 className="text-2xl font-semibold text-foreground">Payment Confirmed!</h2>
         <p className="text-muted-foreground max-w-md mx-auto">
-          ✅ Payment confirmed in test mode. In the next step we will wire this to the actual company registration flow.
+          ✅ Payment confirmed in live mode. Next we will connect this with the real company registration flow.
         </p>
-        <p className="text-xs text-muted-foreground">
-          Registration Request ID: {registrationRequestId}
-        </p>
+        <p className="text-xs text-muted-foreground">Registration Request ID: {registrationRequestId}</p>
       </div>
     );
   }
@@ -100,7 +94,7 @@ const StepTwo = ({ formData, clientSecret, intentType, registrationRequestId, on
         <p className="text-sm text-muted-foreground">Step 2 of 2</p>
       </div>
 
-      {/* Summary Section */}
+      {/* Summary */}
       <Card>
         <CardContent className="pt-6 space-y-4">
           <div>
@@ -162,32 +156,20 @@ const StepTwo = ({ formData, clientSecret, intentType, registrationRequestId, on
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
+      {/* Buttons */}
       <div className="flex flex-col gap-3">
-        <Button
-          type="submit"
-          className="w-full"
-          size="lg"
-          disabled={!stripe || isProcessing}
-        >
+        <Button type="submit" className="w-full" size="lg" disabled={!stripe || isProcessing}>
           {isProcessing ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Processing payment...
             </>
           ) : (
-            'Confirm and Start Trial (Test Mode)'
+            "Confirm and Start Trial"
           )}
         </Button>
-        
-        <Button
-          onClick={onBack}
-          type="button"
-          variant="ghost"
-          className="w-full"
-          size="lg"
-          disabled={isProcessing}
-        >
+
+        <Button onClick={onBack} type="button" variant="ghost" className="w-full" size="lg" disabled={isProcessing}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Step 1
         </Button>
