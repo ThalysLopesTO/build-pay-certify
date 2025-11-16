@@ -22,6 +22,8 @@ export const useGooglePlacesAutocomplete = ({
   input,
   onPlaceSelect
 }: UseGooglePlacesAutocompleteProps): UseGooglePlacesAutocompleteReturn => {
+  console.log('🚀 HOOK EXECUTED, input:', input);
+  
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export const useGooglePlacesAutocomplete = ({
 
   // Fetch predictions when input changes
   useEffect(() => {
-    console.log('🔍 Places hook input changed:', input);
+    console.log('🔍 EFFECT RAN, input:', input);
     
     if (!input || input.length < 3) {
       console.log('⏭️ Input too short, clearing predictions');
@@ -60,7 +62,7 @@ export const useGooglePlacesAutocomplete = ({
       return;
     }
 
-    console.log('📤 Places query:', input);
+    console.log('📤 REQUEST to Places API with:', input);
     setIsLoading(true);
     setError(null);
 
@@ -73,6 +75,7 @@ export const useGooglePlacesAutocomplete = ({
     autocompleteServiceRef.current.getPlacePredictions(
       request,
       (results: any, status: any) => {
+        console.log('📥 RESPONSE from Places API, status:', status);
         setIsLoading(false);
 
         if (status === (window as any).google.maps.places.PlacesServiceStatus.OK && results) {
@@ -81,13 +84,13 @@ export const useGooglePlacesAutocomplete = ({
             description: result.description
           }));
           
-          console.log('✅ Places predictions received:', formattedPredictions);
+          console.log('✅ RESPONSE predictions:', formattedPredictions);
           setPredictions(formattedPredictions);
         } else if (status === (window as any).google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
           console.log('📍 No predictions found for:', input);
           setPredictions([]);
         } else {
-          console.error('❌ Places API error:', status);
+          console.error('❌ Places API status:', status);
           setError('Unable to fetch address suggestions');
           setPredictions([]);
         }
