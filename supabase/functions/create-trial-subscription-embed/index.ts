@@ -120,9 +120,16 @@ serve(async (req) => {
       console.log('Using PaymentIntent client_secret:', paymentIntent.id);
     } else if (subscription.pending_setup_intent) {
       const setupIntent = subscription.pending_setup_intent as Stripe.SetupIntent;
-      clientSecret = setupIntent.client_secret || null;
+      if (!setupIntent.client_secret) {
+        console.error('SetupIntent missing client_secret:', setupIntent.id);
+        return new Response(
+          JSON.stringify({ error: 'Failed to get SetupIntent client secret' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      clientSecret = setupIntent.client_secret;
       intentType = 'setup';
-      console.log('Using SetupIntent client_secret:', setupIntent.id);
+      console.log('Using SetupIntent client_secret:', setupIntent.client_secret);
     }
 
     if (!clientSecret || !intentType) {
