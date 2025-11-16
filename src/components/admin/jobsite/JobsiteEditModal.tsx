@@ -11,6 +11,8 @@ import { MapPin, AlertTriangle } from 'lucide-react';
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
 import { validateCoordinates, formatCoordinates } from '@/services/geocoding';
 import { loadGoogleMaps } from '@/utils/loadGoogleMaps';
+import JobsiteMapPreview from './JobsiteMapPreview';
+import { GOOGLE_MAPS_API_KEY } from '@/config/googleMaps';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Jobsite name is required').min(2, 'Jobsite name must be at least 2 characters'),
@@ -65,7 +67,7 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
   useEffect(() => {
     if (!open) return;
 
-    loadGoogleMaps('AIzaSyBgdO3avHHtY9d0TpYkxb22mcPGIPNWJvU')
+    loadGoogleMaps(GOOGLE_MAPS_API_KEY)
       .then(() => {
         if (!addressInputRef.current || !window.google?.maps?.places) {
           console.warn('⚠️ Google Maps Places API not available in Edit Modal');
@@ -235,6 +237,22 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                 </FormItem>
               )}
             />
+
+            {/* ✅ MAP PREVIEW */}
+            {form.watch('latitude') && form.watch('longitude') && (
+              <div className="space-y-2">
+                <FormLabel className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Location Preview
+                </FormLabel>
+                <JobsiteMapPreview
+                  latitude={parseFloat(form.watch('latitude') || '0')}
+                  longitude={parseFloat(form.watch('longitude') || '0')}
+                  address={form.watch('address')}
+                  height="180px"
+                />
+              </div>
+            )}
 
             {/* ✅ GPS COORDINATES */}
             <div className="space-y-4">

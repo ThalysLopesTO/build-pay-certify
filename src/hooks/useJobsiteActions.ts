@@ -45,8 +45,11 @@ export const useJobsiteActions = () => {
         insertData.starting_date = data.starting_date;
       }
 
-      // Coordinates removed for faster jobsite creation
-      // Jobsite will be created with just name, address and dates
+      // Add coordinates if provided
+      if (data.latitude !== undefined && data.longitude !== undefined) {
+        insertData.latitude = data.latitude;
+        insertData.longitude = data.longitude;
+      }
 
       const { data: result, error } = await supabase
         .from('jobsites')
@@ -355,8 +358,11 @@ export const useJobsiteActions = () => {
         updateData.starting_date = data.starting_date;
       }
 
-      // Coordinates handling removed for simplicity
-      // Updates only handle basic fields: name, address, dates
+      // Handle coordinates if provided
+      if (data.latitude !== undefined && data.longitude !== undefined) {
+        updateData.latitude = data.latitude;
+        updateData.longitude = data.longitude;
+      }
 
       const { error } = await supabase
         .from('jobsites')
