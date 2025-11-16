@@ -65,7 +65,13 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
 
   // ✅ Initialize Google Places Autocomplete when modal opens
   useEffect(() => {
-    if (!open) return;
+    if (!open || !addressInputRef.current) return;
+    
+    // Cleanup previous instance if exists
+    if (autocompleteRef.current && window.google?.maps?.event) {
+      window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      autocompleteRef.current = null;
+    }
 
     loadGoogleMaps(GOOGLE_MAPS_API_KEY)
       .then(() => {
@@ -77,7 +83,7 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
         console.log('✅ Initializing Google Places Autocomplete in Edit Modal');
 
         autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
-          types: ['geocode'],
+          types: ['address'],
           componentRestrictions: { country: ['ca', 'us'] },
           fields: ['formatted_address', 'geometry', 'address_components'],
         });
@@ -108,10 +114,11 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
     return () => {
       if (autocompleteRef.current && window.google?.maps?.event) {
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
         console.log('🧹 Cleaned up Autocomplete listeners in Edit Modal.');
       }
     };
-  }, [form, useManualCoordinates, open]);
+  }, [open, useManualCoordinates]); // Only re-initialize when modal opens or manual mode changes
 
   // ✅ Reset form when jobsite changes
   React.useEffect(() => {
