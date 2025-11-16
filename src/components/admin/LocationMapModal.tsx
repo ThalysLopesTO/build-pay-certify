@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Calculate distance between two points using Haversine formula
 const calculateDistanceMeters = (
@@ -81,6 +82,7 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   jobsiteLongitude,
   employeePunches = [],
 }) => {
+  const isMobile = useIsMobile();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -330,21 +332,21 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   }, [latitude, longitude, employeeName, jobsiteName, jobsiteLatitude, jobsiteLongitude, timestamp]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-[700px] max-w-full">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-[700px] md:w-[700px] max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-lg font-semibold">📍 Punch-in Location</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+        <div className="flex justify-between items-center p-3 md:p-4 border-b">
+          <h2 className="text-base md:text-lg font-semibold">📍 Punch-in Location</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl">
             ✖
           </button>
         </div>
 
         {/* Map */}
-        <div ref={mapRef} className="w-full h-[400px]" />
+        <div ref={mapRef} className="w-full h-[300px] md:h-[400px]" />
 
         {/* Footer Info */}
-        <div className="p-4 border-t text-sm space-y-3">
+        <div className="p-3 md:p-4 border-t text-sm space-y-3">
           <div>
             <p><strong>Employee:</strong> {employeeName}</p>
             <p><strong>Selected Punch:</strong> {new Date(timestamp).toLocaleString()}</p>
@@ -362,7 +364,7 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
           </div>
           
           {/* Compact modern legend with pills */}
-          <div className="flex flex-wrap items-center gap-3 pt-2 border-t text-xs">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 pt-2 border-t text-[11px] md:text-xs">
             {jobsiteLatitude != null && jobsiteLongitude != null && (
               <>
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded-full">
@@ -383,13 +385,15 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
 
           {/* Coordinates (smaller, less prominent) */}
           <div className="pt-2 border-t text-xs text-muted-foreground">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <span className="font-medium">Punch:</span> {latitude.toFixed(6)}, {longitude.toFixed(6)}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="overflow-hidden">
+                <span className="font-medium">Punch:</span>{' '}
+                <span className="break-all">{latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
               </div>
               {jobsiteLatitude != null && jobsiteLongitude != null && (
-                <div>
-                  <span className="font-medium">Jobsite:</span> {jobsiteLatitude.toFixed(6)}, {jobsiteLongitude.toFixed(6)}
+                <div className="overflow-hidden">
+                  <span className="font-medium">Jobsite:</span>{' '}
+                  <span className="break-all">{jobsiteLatitude.toFixed(6)}, {jobsiteLongitude.toFixed(6)}</span>
                 </div>
               )}
             </div>
