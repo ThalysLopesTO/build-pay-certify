@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,7 +12,8 @@ import ForemanAssignmentSection from './ForemanAssignmentSection';
 import JobsiteMapPreview from './JobsiteMapPreview';
 import { GOOGLE_MAPS_API_KEY } from '@/config/googleMaps';
 import { loadGoogleMaps } from '@/utils/loadGoogleMaps';
-import { MapPin } from 'lucide-react';
+import { MapPin, Loader2 } from 'lucide-react';
+import { useGooglePlacesAutocomplete } from '@/hooks/useGooglePlacesAutocomplete';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Jobsite name is required').min(2, 'Jobsite name must be at least 2 characters'),
@@ -32,9 +33,9 @@ interface JobsiteFormProps {
 const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
   const { addJobsite } = useJobsiteActions();
   const assignForemen = useAssignForemen();
-  const addressInputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [addressInput, setAddressInput] = useState('');
+  const [googleMapsReady, setGoogleMapsReady] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -48,78 +49,29 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
     },
   });
 
-  // Initialize Google Places Autocomplete
+  // Initialize Google Maps
   useEffect(() => {
-    if (!addressInputRef.current) {
-      console.log('⚠️ Address input ref not available yet');
-      return;
-    }
-    
-    // Prevent re-initialization if already exists
-    if (autocompleteRef.current) {
-      console.log('ℹ️ Autocomplete already initialized, skipping');
-      return;
-    }
-
-    console.log('🔄 Starting Google Maps initialization for JobsiteForm...');
-    
     loadGoogleMaps(GOOGLE_MAPS_API_KEY)
       .then(() => {
-        if (!addressInputRef.current) {
-          console.warn('⚠️ Address input ref lost during loading');
-          return;
-        }
-        
-        if (!window.google?.maps?.places) {
-          console.error('❌ Google Maps Places API not available after loading');
-          return;
-        }
-
-        console.log('✅ Google Maps loaded successfully');
-        console.log('✅ Creating Autocomplete widget on input:', addressInputRef.current);
-
-        try {
-          autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(addressInputRef.current, {
-            types: ['address'],
-            componentRestrictions: { country: ['ca', 'us'] },
-            fields: ['formatted_address', 'geometry.location', 'place_id'],
-          });
-
-          console.log('✅ Autocomplete widget created successfully');
-
-          autocompleteRef.current.addListener('place_changed', () => {
-            const place = autocompleteRef.current?.getPlace();
-            console.log('📍 Place selected from dropdown:', place);
-
-            if (place?.geometry?.location) {
-              const address = place.formatted_address || '';
-              const lat = place.geometry.location.lat();
-              const lng = place.geometry.location.lng();
-
-              form.setValue('address', address);
-              setCoordinates({ lat, lng });
-              console.log('✅ Address and coordinates set:', { address, lat, lng });
-            } else {
-              console.warn('⚠️ No geometry found for selected place');
-            }
-          });
-          
-          console.log('✅ Autocomplete event listener attached');
-        } catch (error) {
-          console.error('❌ Error creating Autocomplete widget:', error);
-        }
+        console.log('✅ Google Maps ready for JobsiteForm');
+        setGoogleMapsReady(true);
       })
       .catch((error) => {
         console.error('❌ Failed to load Google Maps:', error);
       });
+  }, []);
 
-    return () => {
-      if (autocompleteRef.current && (window as any).google?.maps?.event) {
-        (window as any).google.maps.event.clearInstanceListeners(autocompleteRef.current);
-        autocompleteRef.current = null;
+  // Use Google Places Autocomplete hook
+  const { predictions, isLoading: isPredictionsLoading, error: predictionsError, selectPlace } = 
+    useGooglePlacesAutocomplete({
+      input: addressInput,
+      onPlaceSelect: (place) => {
+        form.setValue('address', place.address);
+        setAddressInput(place.address);
+        setCoordinates({ lat: place.latitude, lng: place.longitude });
+        console.log('✅ Place selected:', place);
       }
-    };
-  }, []); // Remove 'form' dependency to prevent re-initialization
+    });
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -199,23 +151,60 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                     Address *
                   </FormLabel>
                   <FormControl>
-                    <div className="space-y-2">
+                    <div className="relative">
                       <Input
-                        ref={addressInputRef}
                         placeholder="Start typing to search addresses..."
                         autoComplete="off"
-                        {...field}
+                        value={addressInput}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setAddressInput(value);
+                          field.onChange(value);
+                        }}
                         required
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Select an address from the dropdown to set map location
-                      </p>
-                      {coordinates && (
-                        <div className="flex items-center gap-2 text-xs text-primary bg-primary/10 p-2 rounded">
-                          <MapPin className="h-3 w-3" />
-                          Location confirmed
+                      
+                      {/* Custom Predictions Dropdown */}
+                      {googleMapsReady && predictions.length > 0 && (
+                        <ul className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+                          {predictions.map((prediction) => (
+                            <li
+                              key={prediction.place_id}
+                              onClick={() => {
+                                selectPlace(prediction.place_id);
+                              }}
+                              className="px-4 py-2 hover:bg-accent cursor-pointer text-sm transition-colors"
+                            >
+                              {prediction.description}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {isPredictionsLoading && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                         </div>
                       )}
+
+                      <div className="mt-2 space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          {googleMapsReady 
+                            ? 'Type at least 3 characters to see address suggestions'
+                            : 'Loading Google Maps...'}
+                        </p>
+                        
+                        {predictionsError && (
+                          <p className="text-xs text-destructive">{predictionsError}</p>
+                        )}
+                        
+                        {coordinates && (
+                          <div className="flex items-center gap-2 text-xs text-primary bg-primary/10 p-2 rounded">
+                            <MapPin className="h-3 w-3" />
+                            Location confirmed
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </FormControl>
                   <FormMessage />
