@@ -22,8 +22,6 @@ export const useGooglePlacesAutocomplete = ({
   input,
   onPlaceSelect
 }: UseGooglePlacesAutocompleteProps): UseGooglePlacesAutocompleteReturn => {
-  console.log('🚀 HOOK EXECUTED, input:', input);
-  
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,33 +34,25 @@ export const useGooglePlacesAutocomplete = ({
 
     if (!autocompleteServiceRef.current) {
       autocompleteServiceRef.current = new (window as any).google.maps.places.AutocompleteService();
-      console.log('✅ AutocompleteService initialized');
     }
 
     if (!placesServiceRef.current) {
-      // Create a dummy div for PlacesService (it requires a container)
       const dummyDiv = document.createElement('div');
       placesServiceRef.current = new (window as any).google.maps.places.PlacesService(dummyDiv);
-      console.log('✅ PlacesService initialized');
     }
   }, []);
 
   // Fetch predictions when input changes
   useEffect(() => {
-    console.log('🔍 EFFECT RAN, input:', input);
-    
     if (!input || input.length < 3) {
-      console.log('⏭️ Input too short, clearing predictions');
       setPredictions([]);
       return;
     }
 
     if (!autocompleteServiceRef.current) {
-      console.warn('⚠️ AutocompleteService not ready');
       return;
     }
 
-    console.log('📤 REQUEST to Places API with:', input);
     setIsLoading(true);
     setError(null);
 
@@ -75,7 +65,6 @@ export const useGooglePlacesAutocomplete = ({
     autocompleteServiceRef.current.getPlacePredictions(
       request,
       (results: any, status: any) => {
-        console.log('📥 RESPONSE from Places API, status:', status);
         setIsLoading(false);
 
         if (status === (window as any).google.maps.places.PlacesServiceStatus.OK && results) {
@@ -84,13 +73,11 @@ export const useGooglePlacesAutocomplete = ({
             description: result.description
           }));
           
-          console.log('✅ RESPONSE predictions:', formattedPredictions);
           setPredictions(formattedPredictions);
         } else if (status === (window as any).google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          console.log('📍 No predictions found for:', input);
           setPredictions([]);
         } else {
-          console.error('❌ Places API status:', status);
+          console.error('Places API error:', status);
           setError('Unable to fetch address suggestions');
           setPredictions([]);
         }
@@ -100,7 +87,7 @@ export const useGooglePlacesAutocomplete = ({
 
   const selectPlace = async (placeId: string) => {
     if (!placesServiceRef.current) {
-      console.error('❌ PlacesService not available');
+      console.error('PlacesService not available');
       return;
     }
 
@@ -116,8 +103,6 @@ export const useGooglePlacesAutocomplete = ({
         const address = place.formatted_address || '';
         const latitude = place.geometry?.location?.lat();
         const longitude = place.geometry?.location?.lng();
-
-        console.log('✅ Place selected:', { address, latitude, longitude });
 
         if (latitude && longitude) {
           try {
@@ -142,12 +127,12 @@ export const useGooglePlacesAutocomplete = ({
           setError('Unable to get coordinates for this address');
         }
       } else {
-        console.error('❌ Failed to get place details:', status);
+        console.error('Failed to get place details:', status);
         setError('Unable to get address details');
       }
 
       setIsLoading(false);
-      setPredictions([]); // Clear predictions after selection
+      setPredictions([]);
     });
   };
 
