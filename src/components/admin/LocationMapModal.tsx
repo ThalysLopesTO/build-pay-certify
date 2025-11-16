@@ -27,7 +27,6 @@ interface PunchLocation {
   longitude: number;
   timestamp: string;
   employeeName: string;
-  photoUrl?: string;
 }
 
 interface LocationMapModalProps {
@@ -40,7 +39,6 @@ interface LocationMapModalProps {
   jobsiteLatitude?: number;
   jobsiteLongitude?: number;
   employeePunches?: PunchLocation[];
-  photoUrl?: string;
 }
 
 const LocationMapModal: React.FC<LocationMapModalProps> = ({
@@ -53,7 +51,6 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   jobsiteLatitude,
   jobsiteLongitude,
   employeePunches = [],
-  photoUrl,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -62,13 +59,53 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   const polylineRef = useRef<any>(null);
   const retryCount = useRef(0);
 
-  // Helper to get initials from name
-  const getInitials = (name: string) => {
-    const parts = name.split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  // Helper to create markers with different styles
+  const createMarker = (
+    map: any,
+    position: { lat: number; lng: number },
+    type: "jobsite" | "punch" | "selectedPunch",
+    title?: string
+  ) => {
+    const baseConfig: any = {
+      map,
+      position,
+      title,
+    };
+
+    if (type === "jobsite") {
+      baseConfig.icon = {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: "#2563eb",
+        fillOpacity: 1,
+        strokeColor: "#1d4ed8",
+        strokeWeight: 2,
+      };
+      baseConfig.zIndex = 100;
+    } else if (type === "selectedPunch") {
+      baseConfig.icon = {
+        path: window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+        scale: 7,
+        fillColor: "#dc2626",
+        fillOpacity: 1,
+        strokeColor: "#991b1b",
+        strokeWeight: 2,
+        rotation: 180,
+      };
+      baseConfig.zIndex = 200;
+    } else {
+      baseConfig.icon = {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: 5,
+        fillColor: "#f97316",
+        fillOpacity: 1,
+        strokeColor: "#c2410c",
+        strokeWeight: 1.5,
+      };
+      baseConfig.zIndex = 150;
     }
-    return name.substring(0, 2).toUpperCase();
+
+    return new window.google.maps.Marker(baseConfig);
   };
 
   // Calculate distance between punch and jobsite
@@ -153,20 +190,12 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       const jobsitePosition = { lat: jobsiteLatitude, lng: jobsiteLongitude };
       
       // Jobsite marker (blue circle)
-      const jobsiteMarker = new window.google.maps.Marker({
-        position: jobsitePosition,
-        map: mapInstanceRef.current,
-        title: `Jobsite: ${jobsiteName || 'Jobsite'}`,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: "#2563eb",
-          fillOpacity: 1,
-          strokeColor: "#1d4ed8",
-          strokeWeight: 2,
-        },
-        zIndex: 100,
-      });
+      const jobsiteMarker = createMarker(
+        mapInstanceRef.current,
+        jobsitePosition,
+        "jobsite",
+        `Jobsite: ${jobsiteName || 'Jobsite'}`
+      );
       markersRef.current.push(jobsiteMarker);
       bounds.extend(jobsitePosition);
 
@@ -183,96 +212,24 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       });
     }
 
-    // 2. Employee punch markers
-    const punchesToDisplay = employeePunches.length > 0 ? employeePunches : [
-      { id: 'current', latitude, longitude, timestamp, employeeName, photoUrl }
-    ];
-
-    // Sort by timestamp
-    const sortedPunches = [...punchesToDisplay].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    // 2. Selected punch marker (red flag)
+    const selectedPunchPosition = { lat: latitude, lng: longitude };
+    const punchMarker = createMarker(
+      mapInstanceRef.current,
+      selectedPunchPosition,
+      "selectedPunch",
+      `${employeeName} – ${new Date(timestamp).toLocaleTimeString()}`
     );
+    markersRef.current.push(punchMarker);
+    bounds.extend(selectedPunchPosition);
 
-    const routePath: { lat: number; lng: number }[] = [];
-    const currentPunchId = employeePunches.length > 0 ? 
-      punchesToDisplay.find(p => p.latitude === latitude && p.longitude === longitude)?.id : 
-      'current';
-
-    sortedPunches.forEach((punch) => {
-      if (punch.latitude == null || punch.longitude == null) return;
-
-      const pos = { lat: punch.latitude, lng: punch.longitude };
-      routePath.push(pos);
-
-      const isSelected = punch.id === currentPunchId;
-      const size = isSelected ? 50 : 42;
-      
-      let markerIcon: any;
-      
-      if (punch.photoUrl) {
-        // Photo-based circular marker
-        markerIcon = {
-          url: punch.photoUrl,
-          scaledSize: new window.google.maps.Size(size, size),
-          anchor: new window.google.maps.Point(size / 2, size / 2),
-        };
-      } else {
-        // Canvas-based circular marker with initials
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        
-        if (ctx) {
-          // Outer white circle with shadow
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-          ctx.shadowBlur = isSelected ? 6 : 3;
-          ctx.shadowOffsetY = 2;
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Inner colored circle
-          ctx.shadowColor = 'transparent';
-          ctx.fillStyle = isSelected ? '#dc2626' : '#ef4444';
-          ctx.beginPath();
-          ctx.arc(size / 2, size / 2, size / 2 - 3, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Initials
-          ctx.fillStyle = '#ffffff';
-          ctx.font = `bold ${Math.floor(size / 3)}px sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(getInitials(punch.employeeName), size / 2, size / 2);
-
-          markerIcon = {
-            url: canvas.toDataURL(),
-            scaledSize: new window.google.maps.Size(size, size),
-            anchor: new window.google.maps.Point(size / 2, size / 2),
-          };
-        }
-      }
-
-      const marker = new window.google.maps.Marker({
-        position: pos,
-        map: mapInstanceRef.current,
-        title: `${punch.employeeName} – ${new Date(punch.timestamp).toLocaleTimeString()}`,
-        icon: markerIcon,
-        zIndex: isSelected ? 200 : 150,
-      });
-
-      markersRef.current.push(marker);
-      bounds.extend(pos);
-    });
-
-    // 3. Draw polyline connecting punches (emerald color with rounded appearance)
-    if (routePath.length > 1) {
+    // 3. Draw line between jobsite and selected punch (if both exist)
+    if (hasJobsite) {
+      const jobsitePosition = { lat: jobsiteLatitude, lng: jobsiteLongitude };
       polylineRef.current = new window.google.maps.Polyline({
-        path: routePath,
+        path: [jobsitePosition, selectedPunchPosition],
         geodesic: true,
-        strokeColor: "#0f766e",
+        strokeColor: "#10b981",
         strokeOpacity: 0.9,
         strokeWeight: 3,
         map: mapInstanceRef.current,
@@ -286,7 +243,7 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       mapInstanceRef.current.setCenter({ lat: latitude, lng: longitude });
       mapInstanceRef.current.setZoom(16);
     }
-  }, [latitude, longitude, employeeName, jobsiteName, jobsiteLatitude, jobsiteLongitude, employeePunches, timestamp, photoUrl]);
+  }, [latitude, longitude, employeeName, jobsiteName, jobsiteLatitude, jobsiteLongitude, employeePunches, timestamp]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -323,21 +280,21 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
           {/* Compact modern legend with pills */}
           <div className="flex flex-wrap items-center gap-3 pt-2 border-t text-xs">
             {jobsiteLatitude != null && jobsiteLongitude != null && (
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded-full">
-                <span className="inline-block h-2 w-2 rounded-full bg-blue-600" />
-                <span className="text-blue-900">Jobsite (60m)</span>
-              </div>
+              <>
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded-full">
+                  <span className="inline-block h-2 w-2 rounded-full bg-blue-600" />
+                  <span className="text-blue-900">Jobsite (60m)</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded-full">
+                  <span className="inline-block h-0.5 w-4 bg-emerald-500 rounded" />
+                  <span className="text-emerald-900">Distance line</span>
+                </div>
+              </>
             )}
             <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 rounded-full">
-              <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
-              <span className="text-red-900">Punch locations</span>
+              <span className="inline-block h-2 w-2 rounded-full bg-red-600" />
+              <span className="text-red-900">Selected punch</span>
             </div>
-            {employeePunches.length > 1 && (
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded-full">
-                <span className="inline-block h-0.5 w-4 bg-emerald-600 rounded" />
-                <span className="text-emerald-900">Route</span>
-              </div>
-            )}
           </div>
 
           {/* Coordinates (smaller, less prominent) */}
