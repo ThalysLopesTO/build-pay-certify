@@ -1,0 +1,13 @@
+{
+  "supabase": {
+    "projectId": "qsqjwpajvcmahoamwwww",
+    "url": "https://qsqjwpajvcmahoamwwww.supabase.co",
+    "publicAnonKeyEnv": "VITE_SUPABASE_PUBLISHABLE_KEY"
+  },
+  "stripe": {
+    "publishableKeyEnv": "VITE_STRIPE_PUBLISHABLE_KEY"
+  },
+  "env": {
+    "projectIdEnv": "VITE_SUPABASE_PROJECT_ID"
+  }
+}
