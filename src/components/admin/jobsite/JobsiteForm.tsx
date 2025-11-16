@@ -1,24 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { useJobsiteActions } from '@/hooks/useJobsiteActions';
-import { useAssignForemen } from '@/hooks/useJobsiteForemen';
-import ForemanAssignmentSection from './ForemanAssignmentSection';
-import JobsiteMapPreview from './JobsiteMapPreview';
-import { GOOGLE_MAPS_API_KEY } from '@/config/googleMaps';
-import { loadGoogleMaps } from '@/utils/loadGoogleMaps';
-import { MapPin, Loader2 } from 'lucide-react';
-import { useGooglePlacesAutocomplete } from '@/hooks/useGooglePlacesAutocomplete';
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useJobsiteActions } from "@/hooks/useJobsiteActions";
+import { useAssignForemen } from "@/hooks/useJobsiteForemen";
+import ForemanAssignmentSection from "./ForemanAssignmentSection";
+import JobsiteMapPreview from "./JobsiteMapPreview";
+import { GOOGLE_MAPS_API_KEY } from "@/config/googleMaps";
+import { loadGoogleMaps } from "@/utils/loadGoogleMaps";
+import { MapPin, Loader2 } from "lucide-react";
+import { useGooglePlacesAutocomplete } from "@/hooks/useGooglePlacesAutocomplete";
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Jobsite name is required').min(2, 'Jobsite name must be at least 2 characters'),
-  address: z.string().min(1, 'Address is required').min(5, 'Address must be at least 5 characters'),
-  starting_date: z.string().min(1, 'Starting date is required'),
+  name: z.string().min(1, "Jobsite name is required").min(2, "Jobsite name must be at least 2 characters"),
+  address: z.string().min(1, "Address is required").min(5, "Address must be at least 5 characters"),
+  starting_date: z.string().min(1, "Starting date is required"),
   assignedForemen: z.array(z.string()).optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
@@ -31,22 +31,22 @@ interface JobsiteFormProps {
 }
 
 const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
-  console.log('🏗️ JobsiteForm component rendered');
-  
+  console.log("🏗️ JobsiteForm component rendered");
+
   const { addJobsite } = useJobsiteActions();
   const assignForemen = useAssignForemen();
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
-  const [addressInput, setAddressInput] = useState('');
+  const [addressInput, setAddressInput] = useState("");
   const [googleMapsReady, setGoogleMapsReady] = useState(false);
-  
-  console.log('📝 Current addressInput state:', addressInput);
+
+  console.log("📝 Current addressInput state:", addressInput);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      address: '',
-      starting_date: '',
+      name: "",
+      address: "",
+      starting_date: "",
       assignedForemen: [],
       latitude: undefined,
       longitude: undefined,
@@ -57,42 +57,46 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
   useEffect(() => {
     loadGoogleMaps(GOOGLE_MAPS_API_KEY)
       .then(() => {
-        console.log('✅ Google Maps ready for JobsiteForm');
+        console.log("✅ Google Maps ready for JobsiteForm");
         setGoogleMapsReady(true);
       })
       .catch((error) => {
-        console.error('❌ Failed to load Google Maps:', error);
+        console.error("❌ Failed to load Google Maps:", error);
       });
   }, []);
 
   // Use Google Places Autocomplete hook
-  console.log('🔌 About to call useGooglePlacesAutocomplete with input:', addressInput);
-  const { predictions, isLoading: isPredictionsLoading, error: predictionsError, selectPlace } = 
-    useGooglePlacesAutocomplete({
-      input: addressInput,
-      onPlaceSelect: (place) => {
-        form.setValue('address', place.address);
-        setAddressInput(place.address);
-        setCoordinates({ lat: place.latitude, lng: place.longitude });
-        console.log('✅ Place selected:', place);
-      }
-    });
-  console.log('📊 Hook returned - predictions:', predictions.length, 'isLoading:', isPredictionsLoading);
+  console.log("🔌 About to call useGooglePlacesAutocomplete with input:", addressInput);
+  const {
+    predictions,
+    isLoading: isPredictionsLoading,
+    error: predictionsError,
+    selectPlace,
+  } = useGooglePlacesAutocomplete({
+    input: addressInput,
+    onPlaceSelect: (place) => {
+      form.setValue("address", place.address);
+      setAddressInput(place.address);
+      setCoordinates({ lat: place.latitude, lng: place.longitude });
+      console.log("✅ Place selected:", place);
+    },
+  });
+  console.log("📊 Hook returned - predictions:", predictions.length, "isLoading:", isPredictionsLoading);
 
   const onSubmit = async (data: FormData) => {
     try {
-      console.log('📤 Submitting form data:', data);
+      console.log("📤 Submitting form data:", data);
 
       if (!data.name?.trim()) {
-        form.setError('name', { message: 'Jobsite name is required' });
+        form.setError("name", { message: "Jobsite name is required" });
         return;
       }
       if (!data.address?.trim()) {
-        form.setError('address', { message: 'Address is required' });
+        form.setError("address", { message: "Address is required" });
         return;
       }
       if (!data.starting_date?.trim()) {
-        form.setError('starting_date', { message: 'Starting date is required' });
+        form.setError("starting_date", { message: "Starting date is required" });
         return;
       }
 
@@ -105,12 +109,12 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
       };
 
       const result = await addJobsite.mutateAsync(jobsiteData);
-      
+
       // Assign foremen if any are selected
       if (data.assignedForemen && data.assignedForemen.length > 0 && result?.[0]?.id) {
         await assignForemen.mutateAsync({
           jobsiteId: result[0].id,
-          foremanIds: data.assignedForemen
+          foremanIds: data.assignedForemen,
         });
       }
 
@@ -118,10 +122,23 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
       setCoordinates(null);
       onCancel();
     } catch (error) {
-      console.error('❌ Error adding jobsite:', error);
-      form.setError('root', { message: `Failed to add jobsite: ${error?.message || 'Unknown error'}` });
+      console.error("❌ Error adding jobsite:", error);
+      form.setError("root", { message: `Failed to add jobsite: ${error?.message || "Unknown error"}` });
     }
   };
+
+  <div
+    style={{
+      padding: "8px",
+      background: "red",
+      color: "white",
+      fontWeight: "bold",
+      borderRadius: "4px",
+      marginBottom: "8px",
+    }}
+  >
+    DEBUG BUILD – IF YOU SEE THIS, NEW DEPLOY IS LIVE
+  </div>;
 
   return (
     <Card className="mb-6">
@@ -164,33 +181,35 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                         value={addressInput}
                         onChange={(e) => {
                           const value = e.target.value;
-                          console.log('🔤 INPUT CHANGED:', value);
+                          console.log("🔤 INPUT CHANGED:", value);
                           setAddressInput(value);
                           field.onChange(value);
                         }}
                         required
                       />
-                      
+
                       {/* FORCED DEBUG BLOCK */}
-                      <div style={{ 
-                        padding: '8px', 
-                        background: '#f9f9f9', 
-                        border: '2px solid #ff0000', 
-                        marginTop: '8px',
-                        fontSize: '12px'
-                      }}>
-                        <div style={{ fontWeight: 'bold' }}>🐛 FORCED DEBUG:</div>
+                      <div
+                        style={{
+                          padding: "8px",
+                          background: "#f9f9f9",
+                          border: "2px solid #ff0000",
+                          marginTop: "8px",
+                          fontSize: "12px",
+                        }}
+                      >
+                        <div style={{ fontWeight: "bold" }}>🐛 FORCED DEBUG:</div>
                         <div>Search text: "{addressInput}"</div>
-                        <div>Google Maps ready: {googleMapsReady ? '✅' : '❌'}</div>
+                        <div>Google Maps ready: {googleMapsReady ? "✅" : "❌"}</div>
                         <div>Predictions count: {predictions?.length || 0}</div>
-                        <div>Is loading: {isPredictionsLoading ? '⏳' : '✅'}</div>
+                        <div>Is loading: {isPredictionsLoading ? "⏳" : "✅"}</div>
                         <ul>
                           {predictions?.map((p) => (
                             <li key={p.place_id}>{p.description}</li>
                           ))}
                         </ul>
                       </div>
-                      
+
                       {/* Custom Predictions Dropdown */}
                       {googleMapsReady && predictions.length > 0 && (
                         <ul className="absolute z-[100] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-60 overflow-auto">
@@ -198,7 +217,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                             <li
                               key={prediction.place_id}
                               onClick={() => {
-                                console.log('🎯 Prediction clicked:', prediction);
+                                console.log("🎯 Prediction clicked:", prediction);
                                 selectPlace(prediction.place_id);
                               }}
                               className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer text-sm transition-colors border-b border-gray-200 dark:border-gray-700 last:border-b-0"
@@ -217,15 +236,13 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
 
                       <div className="mt-2 space-y-2">
                         <p className="text-xs text-muted-foreground">
-                          {googleMapsReady 
-                            ? 'Type at least 3 characters to see address suggestions'
-                            : 'Loading Google Maps...'}
+                          {googleMapsReady
+                            ? "Type at least 3 characters to see address suggestions"
+                            : "Loading Google Maps..."}
                         </p>
-                        
-                        {predictionsError && (
-                          <p className="text-xs text-destructive">{predictionsError}</p>
-                        )}
-                        
+
+                        {predictionsError && <p className="text-xs text-destructive">{predictionsError}</p>}
+
                         {coordinates && (
                           <div className="flex items-center gap-2 text-xs text-primary bg-primary/10 p-2 rounded">
                             <MapPin className="h-3 w-3" />
@@ -246,7 +263,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                 <JobsiteMapPreview
                   latitude={coordinates.lat}
                   longitude={coordinates.lng}
-                  address={form.watch('address')}
+                  address={form.watch("address")}
                   height="180px"
                 />
               </div>
@@ -272,15 +289,17 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
 
             {/* ERROR MESSAGES */}
             {form.formState.errors.root && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {form.formState.errors.root.message}
-              </div>
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">{form.formState.errors.root.message}</div>
             )}
 
             {/* BUTTONS */}
             <div className="flex space-x-2">
               <Button type="submit" disabled={addJobsite.isPending || assignForemen.isPending}>
-                {addJobsite.isPending ? 'Creating jobsite...' : assignForemen.isPending ? 'Assigning foremen...' : 'Add Jobsite'}
+                {addJobsite.isPending
+                  ? "Creating jobsite..."
+                  : assignForemen.isPending
+                    ? "Assigning foremen..."
+                    : "Add Jobsite"}
               </Button>
               <Button
                 type="button"
