@@ -214,6 +214,7 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                         id="jobsite-edit-address"
                         ref={addressInputRef}
                         placeholder="Start typing an address..."
+                        autoComplete="off"
                         {...field}
                       />
                       <p className="text-xs text-muted-foreground">Powered by Google</p>

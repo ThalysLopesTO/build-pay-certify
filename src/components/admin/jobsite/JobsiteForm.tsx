@@ -50,42 +50,64 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
 
   // Initialize Google Places Autocomplete
   useEffect(() => {
-    if (!addressInputRef.current) return;
+    if (!addressInputRef.current) {
+      console.log('⚠️ Address input ref not available yet');
+      return;
+    }
     
     // Prevent re-initialization if already exists
-    if (autocompleteRef.current) return;
+    if (autocompleteRef.current) {
+      console.log('ℹ️ Autocomplete already initialized, skipping');
+      return;
+    }
 
+    console.log('🔄 Starting Google Maps initialization for JobsiteForm...');
+    
     loadGoogleMaps(GOOGLE_MAPS_API_KEY)
       .then(() => {
-        if (!addressInputRef.current || !window.google?.maps?.places) {
-          console.warn('⚠️ Google Maps Places API not available');
+        if (!addressInputRef.current) {
+          console.warn('⚠️ Address input ref lost during loading');
+          return;
+        }
+        
+        if (!window.google?.maps?.places) {
+          console.error('❌ Google Maps Places API not available after loading');
           return;
         }
 
-        console.log('✅ Initializing Google Places Autocomplete in JobsiteForm');
+        console.log('✅ Google Maps loaded successfully');
+        console.log('✅ Creating Autocomplete widget on input:', addressInputRef.current);
 
-        autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(addressInputRef.current, {
-          types: ['address'],
-          componentRestrictions: { country: ['ca', 'us'] },
-          fields: ['formatted_address', 'geometry.location', 'place_id'],
-        });
+        try {
+          autocompleteRef.current = new (window as any).google.maps.places.Autocomplete(addressInputRef.current, {
+            types: ['address'],
+            componentRestrictions: { country: ['ca', 'us'] },
+            fields: ['formatted_address', 'geometry.location', 'place_id'],
+          });
 
-        autocompleteRef.current.addListener('place_changed', () => {
-          const place = autocompleteRef.current?.getPlace();
-          console.log('📍 Place selected:', place);
+          console.log('✅ Autocomplete widget created successfully');
 
-          if (place?.geometry?.location) {
-            const address = place.formatted_address || '';
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
+          autocompleteRef.current.addListener('place_changed', () => {
+            const place = autocompleteRef.current?.getPlace();
+            console.log('📍 Place selected from dropdown:', place);
 
-            form.setValue('address', address);
-            setCoordinates({ lat, lng });
-            console.log('✅ Coordinates set:', { lat, lng });
-          } else {
-            console.warn('⚠️ No geometry found for selected place');
-          }
-        });
+            if (place?.geometry?.location) {
+              const address = place.formatted_address || '';
+              const lat = place.geometry.location.lat();
+              const lng = place.geometry.location.lng();
+
+              form.setValue('address', address);
+              setCoordinates({ lat, lng });
+              console.log('✅ Address and coordinates set:', { address, lat, lng });
+            } else {
+              console.warn('⚠️ No geometry found for selected place');
+            }
+          });
+          
+          console.log('✅ Autocomplete event listener attached');
+        } catch (error) {
+          console.error('❌ Error creating Autocomplete widget:', error);
+        }
       })
       .catch((error) => {
         console.error('❌ Failed to load Google Maps:', error);
@@ -181,6 +203,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                       <Input
                         ref={addressInputRef}
                         placeholder="Start typing to search addresses..."
+                        autoComplete="off"
                         {...field}
                         required
                       />
