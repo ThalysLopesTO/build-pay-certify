@@ -16,7 +16,7 @@ const ForemanAssignmentSection: React.FC<ForemanAssignmentSectionProps> = ({
   jobsiteId 
 }) => {
   const { data: availableForemen = [], isLoading: isLoadingForemen } = useAvailableForemen();
-  const { data: assignedForemen = [] } = useJobsiteForemen(jobsiteId || '');
+  const { data: assignedForemen = [] } = useJobsiteForemen(jobsiteId || undefined);
 
   // Get currently assigned foreman IDs
   const assignedForemanIds = assignedForemen.map(af => af.foreman_id);

@@ -50,6 +50,11 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
 
   // Initialize Google Places Autocomplete
   useEffect(() => {
+    if (!addressInputRef.current) return;
+    
+    // Prevent re-initialization if already exists
+    if (autocompleteRef.current) return;
+
     loadGoogleMaps(GOOGLE_MAPS_API_KEY)
       .then(() => {
         if (!addressInputRef.current || !window.google?.maps?.places) {
@@ -89,9 +94,10 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
     return () => {
       if (autocompleteRef.current && (window as any).google?.maps?.event) {
         (window as any).google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
       }
     };
-  }, [form]);
+  }, []); // Remove 'form' dependency to prevent re-initialization
 
   const onSubmit = async (data: FormData) => {
     try {
