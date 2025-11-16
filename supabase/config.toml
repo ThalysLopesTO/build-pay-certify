@@ -65,3 +65,6 @@ verify_jwt = false
 
 [functions.trigger-all-daily-webhooks]
 verify_jwt = false
+
+[functions.create-trial-subscription-embed]
+verify_jwt = false

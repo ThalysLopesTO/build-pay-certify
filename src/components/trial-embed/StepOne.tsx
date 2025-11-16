@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 import { trialEmbedSchema, type TrialEmbedFormSchema } from '@/schemas/trialEmbedSchema';
 import { TrialEmbedFormData } from '@/types/trialEmbed';
 import { Button } from '@/components/ui/button';
@@ -16,10 +17,11 @@ import { SUBSCRIPTION_PLANS } from '@/config/subscriptionPlans';
 
 interface StepOneProps {
   initialData: TrialEmbedFormData;
-  onNext: (data: TrialEmbedFormData) => void;
+  onNext: (data: TrialEmbedFormData) => Promise<void>;
+  isLoading?: boolean;
 }
 
-const StepOne = ({ initialData, onNext }: StepOneProps) => {
+const StepOne = ({ initialData, onNext, isLoading = false }: StepOneProps) => {
   const {
     register,
     handleSubmit,
@@ -39,8 +41,8 @@ const StepOne = ({ initialData, onNext }: StepOneProps) => {
 
   const selectedPlan = watch('plan');
 
-  const onSubmit = (data: TrialEmbedFormData) => {
-    onNext(data);
+  const onSubmit = async (data: TrialEmbedFormData) => {
+    await onNext(data);
   };
 
   return (
@@ -133,9 +135,16 @@ const StepOne = ({ initialData, onNext }: StepOneProps) => {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" size="lg">
-        Go to Step #2
-      </Button>
+        <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating subscription...
+            </>
+          ) : (
+            'Go to Step #2'
+          )}
+        </Button>
     </form>
   );
 };

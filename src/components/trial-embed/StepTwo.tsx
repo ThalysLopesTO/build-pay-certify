@@ -1,4 +1,6 @@
-import { CreditCard, ArrowLeft } from 'lucide-react';
+import { useState, FormEvent } from 'react';
+import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
+import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { TrialEmbedFormData } from '@/types/trialEmbed';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,23 +10,70 @@ import { toast } from 'sonner';
 
 interface StepTwoProps {
   formData: TrialEmbedFormData;
+  clientSecret: string;
+  registrationRequestId: string;
   onBack: () => void;
 }
 
-const StepTwo = ({ formData, onBack }: StepTwoProps) => {
+const StepTwo = ({ formData, clientSecret, registrationRequestId, onBack }: StepTwoProps) => {
+  const stripe = useStripe();
+  const elements = useElements();
   const planDetails = SUBSCRIPTION_PLANS[formData.plan];
+  
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentSucceeded, setPaymentSucceeded] = useState(false);
 
-  const handleFinish = () => {
-    toast.success(
-      "This is a test version. In the real flow, we will process payment and redirect you to the company registration page.",
-      {
-        duration: 5000,
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + '/start-trial-embed?success=true',
+        },
+        redirect: 'if_required', // Stay on page if possible
+      });
+
+      if (error) {
+        toast.error(error.message || 'Payment failed');
+        console.error('Payment error:', error);
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        setPaymentSucceeded(true);
+        toast.success('✅ Payment confirmed in test mode!');
       }
-    );
+    } catch (err) {
+      toast.error('An unexpected error occurred');
+      console.error('Payment error:', err);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
+  // Success state
+  if (paymentSucceeded) {
+    return (
+      <div className="text-center space-y-4 py-8">
+        <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+        <h2 className="text-2xl font-semibold text-foreground">Payment Confirmed!</h2>
+        <p className="text-muted-foreground max-w-md mx-auto">
+          ✅ Payment confirmed in test mode. In the next step we will wire this to the actual company registration flow.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Registration Request ID: {registrationRequestId}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold text-foreground">Trial details & payment</h2>
         <p className="text-sm text-muted-foreground">Step 2 of 2</p>
@@ -79,17 +128,14 @@ const StepTwo = ({ formData, onBack }: StepTwoProps) => {
         </CardContent>
       </Card>
 
-      {/* Payment Placeholder */}
+      {/* Payment Element */}
       <Card>
         <CardContent className="pt-6">
           <h3 className="font-semibold text-foreground mb-4">Payment Information</h3>
-          <div className="bg-muted/50 border border-border rounded-lg p-8 flex flex-col items-center justify-center space-y-3">
-            <CreditCard className="h-12 w-12 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground text-center">
-              Stripe Payment Element will be integrated here
-            </p>
+          <div className="space-y-4">
+            <PaymentElement />
             <p className="text-xs text-muted-foreground">
-              Secure payment processing powered by Stripe
+              Your card will be charged after the 14-day trial period ends. You can cancel anytime.
             </p>
           </div>
         </CardContent>
@@ -98,24 +144,34 @@ const StepTwo = ({ formData, onBack }: StepTwoProps) => {
       {/* Action Buttons */}
       <div className="flex flex-col gap-3">
         <Button
-          onClick={handleFinish}
+          type="submit"
           className="w-full"
           size="lg"
+          disabled={!stripe || isProcessing}
         >
-          Finish & Start Trial (Test mode)
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing payment...
+            </>
+          ) : (
+            'Confirm and Start Trial (Test Mode)'
+          )}
         </Button>
         
         <Button
           onClick={onBack}
+          type="button"
           variant="ghost"
           className="w-full"
           size="lg"
+          disabled={isProcessing}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Step 1
         </Button>
       </div>
-    </div>
+    </form>
   );
 };
 
