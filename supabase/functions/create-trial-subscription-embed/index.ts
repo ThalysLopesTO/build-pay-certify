@@ -94,10 +94,11 @@ serve(async (req) => {
       items: [{ price: PLAN_PRICE_IDS[plan] }],
       trial_period_days: 14,
       payment_behavior: 'default_incomplete',
+      collection_method: 'charge_automatically',
       payment_settings: {
         save_default_payment_method: 'on_subscription',
       },
-      expand: ['latest_invoice.payment_intent'],
+      expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
       metadata: {
         companyName: companyName,
         plan: plan,
@@ -106,20 +107,33 @@ serve(async (req) => {
     });
     console.log('Stripe subscription created:', subscription.id);
 
-    // Extract payment intent client secret
-    const invoice = subscription.latest_invoice as Stripe.Invoice;
-    const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
-    
-    if (!paymentIntent || !paymentIntent.client_secret) {
-      console.error('Failed to get payment intent client secret');
+    // Extract client secret from payment_intent or pending_setup_intent
+    let clientSecret = null;
+
+    if (
+      subscription.latest_invoice &&
+      (subscription.latest_invoice as any).payment_intent &&
+      (subscription.latest_invoice as any).payment_intent.client_secret
+    ) {
+      const invoice = subscription.latest_invoice as Stripe.Invoice;
+      const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
+      clientSecret = paymentIntent.client_secret;
+      console.log('Payment intent created:', paymentIntent.id);
+    }
+
+    if (!clientSecret && subscription.pending_setup_intent) {
+      const setupIntent = subscription.pending_setup_intent as Stripe.SetupIntent;
+      clientSecret = setupIntent.client_secret;
+      console.log('Setup intent created:', setupIntent.id);
+    }
+
+    if (!clientSecret) {
+      console.error('Failed to get client secret from payment_intent or pending_setup_intent');
       return new Response(
         JSON.stringify({ error: 'Failed to initialize payment' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const clientSecret = paymentIntent.client_secret;
-    console.log('Payment intent created:', paymentIntent.id);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
