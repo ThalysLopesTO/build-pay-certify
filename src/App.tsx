@@ -41,6 +41,8 @@ import PortalQuoteDetailPage from "@/pages/client-portal/PortalQuoteDetailPage";
 import PortalInvoicesPage from "@/pages/client-portal/PortalInvoicesPage";
 import PortalInvoiceDetailPage from "@/pages/client-portal/PortalInvoiceDetailPage";
 import PortalContactPage from "@/pages/client-portal/PortalContactPage";
+import StartTrialEmbedPage from "@/pages/StartTrialEmbedPage";
+
 
 const AppInner: React.FC = () => {
   return (
@@ -133,6 +135,9 @@ const AppInner: React.FC = () => {
             </ProtectedRoute>
           }
         />
+
+        {/* Trial Embed Page */}
+        <Route path="/start-trial-embed" element={<StartTrialEmbedPage />} />
 
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
