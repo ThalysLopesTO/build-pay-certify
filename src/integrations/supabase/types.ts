@@ -613,7 +613,10 @@ export type Database = {
           created_at: string
           id: string
           rejection_reason: string | null
+          source: string | null
           status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string
         }
         Insert: {
@@ -632,7 +635,10 @@ export type Database = {
           created_at?: string
           id?: string
           rejection_reason?: string | null
+          source?: string | null
           status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -651,7 +657,10 @@ export type Database = {
           created_at?: string
           id?: string
           rejection_reason?: string | null
+          source?: string | null
           status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
         }
         Relationships: [

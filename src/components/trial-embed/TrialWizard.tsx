@@ -22,6 +22,7 @@ const TrialWizard = ({ initialPlan }: TrialWizardProps) => {
     plan: initialPlan,
   });
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [intentType, setIntentType] = useState<'payment' | 'setup' | null>(null);
   const [registrationRequestId, setRegistrationRequestId] = useState<string | null>(null);
   const [isCreatingSubscription, setIsCreatingSubscription] = useState(false);
 
@@ -48,15 +49,16 @@ const TrialWizard = ({ initialPlan }: TrialWizardProps) => {
         return;
       }
 
-      if (!response?.clientSecret) {
+      if (!response?.clientSecret || !response?.intentType) {
         toast.error('Invalid response from server. Please try again.');
-        console.error('Missing clientSecret in response:', response);
+        console.error('Missing clientSecret or intentType in response:', response);
         return;
       }
 
       // Store in state
       setFormData(data);
       setClientSecret(response.clientSecret);
+      setIntentType(response.intentType);
       setRegistrationRequestId(response.registrationRequestId);
       
       // Move to step 2
@@ -83,11 +85,12 @@ const TrialWizard = ({ initialPlan }: TrialWizardProps) => {
             onNext={handleStepOneComplete}
             isLoading={isCreatingSubscription}
           />
-        ) : clientSecret ? (
+        ) : clientSecret && intentType ? (
           <Elements stripe={stripePromise} options={{ clientSecret }}>
             <StepTwo 
               formData={formData}
               clientSecret={clientSecret}
+              intentType={intentType}
               registrationRequestId={registrationRequestId || ''}
               onBack={handleBackToStepOne}
             />
