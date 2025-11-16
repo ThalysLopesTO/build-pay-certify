@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,6 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
 import { useAssignForemen, useJobsiteForemen } from '@/hooks/useJobsiteForemen';
 import ForemanAssignmentSection from './ForemanAssignmentSection';
+import { loadGoogleMaps } from '@/utils/loadGoogleMaps';
+import { GOOGLE_MAPS_API_KEY } from '@/config/googleMaps';
+import { useGooglePlacesAutocomplete } from '@/hooks/useGooglePlacesAutocomplete';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Jobsite name is required'),
@@ -43,6 +47,8 @@ const EditJobsiteDialog: React.FC<EditJobsiteDialogProps> = ({
   const { updateJobsite } = useJobsiteActions();
   const assignForemen = useAssignForemen();
   const { data: assignedForemen = [] } = useJobsiteForemen(jobsite.id);
+  const [addressInput, setAddressInput] = useState('');
+  const [googleMapsReady, setGoogleMapsReady] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -55,6 +61,37 @@ const EditJobsiteDialog: React.FC<EditJobsiteDialogProps> = ({
       assignedForemen: assignedForemen.map(af => af.foreman_id),
     },
   });
+
+  // Initialize Google Maps API
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    loadGoogleMaps(GOOGLE_MAPS_API_KEY)
+      .then(() => {
+        console.log('✅ Google Maps ready for EditJobsiteDialog');
+        setGoogleMapsReady(true);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load Google Maps:', error);
+      });
+  }, [isOpen]);
+
+  // Initialize address input
+  useEffect(() => {
+    if (jobsite.address) {
+      setAddressInput(jobsite.address);
+    }
+  }, [jobsite.address]);
+
+  // Google Places Autocomplete
+  const { predictions, isLoading: isPredictionsLoading, error: predictionsError, selectPlace } = 
+    useGooglePlacesAutocomplete({
+      input: addressInput,
+      onPlaceSelect: (place) => {
+        form.setValue('address', place.address);
+        setAddressInput(place.address);
+      }
+    });
 
   // Update form when assigned foremen data loads
   React.useEffect(() => {
@@ -119,8 +156,56 @@ const EditJobsiteDialog: React.FC<EditJobsiteDialogProps> = ({
                 <FormItem>
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        value={addressInput}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setAddressInput(value);
+                          field.onChange(value);
+                        }}
+                        placeholder="Start typing an address..."
+                      />
+                      
+                      {/* Autocomplete Dropdown */}
+                      {googleMapsReady && predictions.length > 0 && (
+                        <ul className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+                          {predictions.map((prediction) => (
+                            <li
+                              key={prediction.place_id}
+                              onClick={() => {
+                                selectPlace(prediction.place_id);
+                              }}
+                              className="px-4 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer text-sm transition-colors"
+                            >
+                              {prediction.description}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {/* Loading Indicator */}
+                      {isPredictionsLoading && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
                   </FormControl>
+                  
+                  {/* Helper Text */}
+                  <div className="mt-1 space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      {googleMapsReady 
+                        ? 'Type at least 3 characters to see address suggestions'
+                        : 'Loading Google Maps...'}
+                    </p>
+                    {predictionsError && (
+                      <p className="text-xs text-destructive">{predictionsError}</p>
+                    )}
+                  </div>
+                  
                   <FormMessage />
                 </FormItem>
               )}
