@@ -48,7 +48,7 @@ const ForemanAssignmentSection: React.FC<ForemanAssignmentSectionProps> = ({
           Select foremen who will manage this jobsite. They will see this project in their dashboard.
         </p>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 max-h-[300px] overflow-y-auto">
         {availableForemen.length === 0 ? (
           <div className="text-center text-muted-foreground py-4">
             No foremen available in your company.
