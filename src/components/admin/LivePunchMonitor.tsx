@@ -559,7 +559,6 @@ const LivePunchMonitor = () => {
           jobsiteName={selectedLocation.jobsiteName}
           jobsiteLatitude={selectedLocation.jobsiteLatitude}
           jobsiteLongitude={selectedLocation.jobsiteLongitude}
-          photoUrl={selectedLocation.photoUrl}
           employeePunches={selectedLocation.employeePunches}
           onClose={() => setSelectedLocation(null)}
         />
