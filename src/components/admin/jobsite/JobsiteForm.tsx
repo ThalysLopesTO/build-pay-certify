@@ -35,6 +35,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
 
   const { addJobsite } = useJobsiteActions();
   const assignForemen = useAssignForemen();
+
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [addressInput, setAddressInput] = useState("");
   const [googleMapsReady, setGoogleMapsReady] = useState(false);
@@ -65,8 +66,8 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
       });
   }, []);
 
-  // Use Google Places Autocomplete hook
-  console.log("🔌 About to call useGooglePlacesAutocomplete with input:", addressInput);
+  // Google autocomplete hook
+  console.log("🔌 Calling useGooglePlacesAutocomplete with:", addressInput);
   const {
     predictions,
     isLoading: isPredictionsLoading,
@@ -78,27 +79,15 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
       form.setValue("address", place.address);
       setAddressInput(place.address);
       setCoordinates({ lat: place.latitude, lng: place.longitude });
+
       console.log("✅ Place selected:", place);
     },
   });
-  console.log("📊 Hook returned - predictions:", predictions.length, "isLoading:", isPredictionsLoading);
+  console.log("📊 Predictions:", predictions.length);
 
   const onSubmit = async (data: FormData) => {
     try {
-      console.log("📤 Submitting form data:", data);
-
-      if (!data.name?.trim()) {
-        form.setError("name", { message: "Jobsite name is required" });
-        return;
-      }
-      if (!data.address?.trim()) {
-        form.setError("address", { message: "Address is required" });
-        return;
-      }
-      if (!data.starting_date?.trim()) {
-        form.setError("starting_date", { message: "Starting date is required" });
-        return;
-      }
+      console.log("📤 Submitting form:", data);
 
       const jobsiteData = {
         name: data.name.trim(),
@@ -110,7 +99,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
 
       const result = await addJobsite.mutateAsync(jobsiteData);
 
-      // Assign foremen if any are selected
+      // Assign selected foremen
       if (data.assignedForemen && data.assignedForemen.length > 0 && result?.[0]?.id) {
         await assignForemen.mutateAsync({
           jobsiteId: result[0].id,
@@ -121,202 +110,191 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
       form.reset();
       setCoordinates(null);
       onCancel();
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Error adding jobsite:", error);
-      form.setError("root", { message: `Failed to add jobsite: ${error?.message || "Unknown error"}` });
+      form.setError("root", {
+        message: `Failed to add jobsite: ${error?.message || "Unknown error"}`,
+      });
     }
   };
 
-  <div
-    style={{
-      padding: "8px",
-      background: "red",
-      color: "white",
-      fontWeight: "bold",
-      borderRadius: "4px",
-      marginBottom: "8px",
-    }}
-  >
-    DEBUG BUILD – IF YOU SEE THIS, NEW DEPLOY IS LIVE
-  </div>;
-
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="text-lg">Add New Jobsite</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* JOBSITE NAME */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Jobsite Name *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter jobsite name" {...field} required />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <>
+      {/* DEBUG BANNER */}
+      <div
+        style={{
+          padding: "8px",
+          background: "red",
+          color: "white",
+          fontWeight: "bold",
+          borderRadius: "4px",
+          marginBottom: "8px",
+        }}
+      >
+        DEBUG BUILD – IF YOU SEE THIS, NEW DEPLOY IS LIVE
+      </div>
 
-            {/* ADDRESS FIELD WITH AUTOCOMPLETE */}
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Address *
-                  </FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        placeholder="Start typing to search addresses..."
-                        autoComplete="off"
-                        value={addressInput}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          console.log("🔤 INPUT CHANGED:", value);
-                          setAddressInput(value);
-                          field.onChange(value);
-                        }}
-                        required
-                      />
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg">Add New Jobsite</CardTitle>
+        </CardHeader>
 
-                      {/* FORCED DEBUG BLOCK */}
-                      <div
-                        style={{
-                          padding: "8px",
-                          background: "#f9f9f9",
-                          border: "2px solid #ff0000",
-                          marginTop: "8px",
-                          fontSize: "12px",
-                        }}
-                      >
-                        <div style={{ fontWeight: "bold" }}>🐛 FORCED DEBUG:</div>
-                        <div>Search text: "{addressInput}"</div>
-                        <div>Google Maps ready: {googleMapsReady ? "✅" : "❌"}</div>
-                        <div>Predictions count: {predictions?.length || 0}</div>
-                        <div>Is loading: {isPredictionsLoading ? "⏳" : "✅"}</div>
-                        <ul>
-                          {predictions?.map((p) => (
-                            <li key={p.place_id}>{p.description}</li>
-                          ))}
-                        </ul>
-                      </div>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* JOBSITE NAME */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Jobsite Name *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter jobsite name" {...field} required />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                      {/* Custom Predictions Dropdown */}
-                      {googleMapsReady && predictions.length > 0 && (
-                        <ul className="absolute z-[100] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-60 overflow-auto">
-                          {predictions.map((prediction) => (
-                            <li
-                              key={prediction.place_id}
-                              onClick={() => {
-                                console.log("🎯 Prediction clicked:", prediction);
-                                selectPlace(prediction.place_id);
-                              }}
-                              className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer text-sm transition-colors border-b border-gray-200 dark:border-gray-700 last:border-b-0"
-                            >
-                              {prediction.description}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+              {/* ADDRESS WITH AUTOCOMPLETE */}
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      Address *
+                    </FormLabel>
 
-                      {isPredictionsLoading && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          placeholder="Start typing to search addresses..."
+                          autoComplete="off"
+                          value={addressInput}
+                          onChange={(e) => {
+                            setAddressInput(e.target.value);
+                            field.onChange(e.target.value);
+                          }}
+                          required
+                        />
+
+                        {/* DEBUG BLOCK */}
+                        <div
+                          style={{
+                            padding: "8px",
+                            background: "#f9f9f9",
+                            border: "2px solid #ff0000",
+                            marginTop: "8px",
+                            fontSize: "12px",
+                          }}
+                        >
+                          <div style={{ fontWeight: "bold" }}>🐛 DEBUG INFO</div>
+                          <div>Search text: "{addressInput}"</div>
+                          <div>Google Maps loaded: {googleMapsReady ? "✅" : "❌"}</div>
+                          <div>Predictions count: {predictions?.length || 0}</div>
+                          <div>Loading: {isPredictionsLoading ? "⏳" : "✅"}</div>
+                          <ul>
+                            {predictions.map((p) => (
+                              <li key={p.place_id}>{p.description}</li>
+                            ))}
+                          </ul>
                         </div>
-                      )}
 
-                      <div className="mt-2 space-y-2">
-                        <p className="text-xs text-muted-foreground">
-                          {googleMapsReady
-                            ? "Type at least 3 characters to see address suggestions"
-                            : "Loading Google Maps..."}
-                        </p>
+                        {/* PREDICTION DROPDOWN */}
+                        {googleMapsReady && predictions.length > 0 && (
+                          <ul className="absolute z-[100] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-60 overflow-auto">
+                            {predictions.map((prediction) => (
+                              <li
+                                key={prediction.place_id}
+                                onClick={() => selectPlace(prediction.place_id)}
+                                className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer text-sm transition-colors"
+                              >
+                                {prediction.description}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
 
-                        {predictionsError && <p className="text-xs text-destructive">{predictionsError}</p>}
-
-                        {coordinates && (
-                          <div className="flex items-center gap-2 text-xs text-primary bg-primary/10 p-2 rounded">
-                            <MapPin className="h-3 w-3" />
-                            Location confirmed
+                        {isPredictionsLoading && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                           </div>
                         )}
                       </div>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    </FormControl>
 
-            {/* MAP PREVIEW */}
-            {coordinates && (
-              <div className="space-y-2">
-                <JobsiteMapPreview
-                  latitude={coordinates.lat}
-                  longitude={coordinates.lng}
-                  address={form.watch("address")}
-                  height="180px"
-                />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* MAP PREVIEW */}
+              {coordinates && (
+                <div className="space-y-2">
+                  <JobsiteMapPreview
+                    latitude={coordinates.lat}
+                    longitude={coordinates.lng}
+                    address={form.watch("address")}
+                    height="180px"
+                  />
+                </div>
+              )}
+
+              {/* STARTING DATE */}
+              <FormField
+                control={form.control}
+                name="starting_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Starting Date *</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} required />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* FOREMAN SECTION */}
+              <ForemanAssignmentSection control={form.control} />
+
+              {/* ERROR MESSAGE */}
+              {form.formState.errors.root && (
+                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+                  {form.formState.errors.root.message}
+                </div>
+              )}
+
+              {/* BUTTONS */}
+              <div className="flex space-x-2">
+                <Button type="submit" disabled={addJobsite.isPending || assignForemen.isPending}>
+                  {addJobsite.isPending
+                    ? "Creating jobsite..."
+                    : assignForemen.isPending
+                      ? "Assigning foremen..."
+                      : "Add Jobsite"}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    onCancel();
+                    form.reset();
+                    setCoordinates(null);
+                  }}
+                >
+                  Cancel
+                </Button>
               </div>
-            )}
-
-            {/* STARTING DATE */}
-            <FormField
-              control={form.control}
-              name="starting_date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Starting Date *</FormLabel>
-                  <FormControl>
-                    <Input type="date" placeholder="Select starting date" {...field} required />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* FOREMAN ASSIGNMENT */}
-            <ForemanAssignmentSection control={form.control} />
-
-            {/* ERROR MESSAGES */}
-            {form.formState.errors.root && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">{form.formState.errors.root.message}</div>
-            )}
-
-            {/* BUTTONS */}
-            <div className="flex space-x-2">
-              <Button type="submit" disabled={addJobsite.isPending || assignForemen.isPending}>
-                {addJobsite.isPending
-                  ? "Creating jobsite..."
-                  : assignForemen.isPending
-                    ? "Assigning foremen..."
-                    : "Add Jobsite"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  onCancel();
-                  form.reset();
-                  setCoordinates(null);
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </>
   );
 };
 
