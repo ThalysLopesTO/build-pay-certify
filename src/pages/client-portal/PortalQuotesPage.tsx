@@ -8,10 +8,10 @@ export default function PortalQuotesPage() {
   const awaitingQuotes = quotes.filter(
     q => q.status === 'sent' || q.public_status === 'awaiting'
   );
-  const approvedQuotes = quotes.filter(q => q.status === 'accepted');
+  const approvedQuotes = quotes.filter(q => q.status === 'approved' || q.status === 'accepted' || q.public_status === 'approved');
   const declinedQuotes = quotes.filter(q => q.status === 'declined');
   const otherQuotes = quotes.filter(
-    q => !['sent', 'accepted', 'declined'].includes(q.status) && q.public_status !== 'awaiting'
+    q => !['sent', 'accepted', 'approved', 'declined'].includes(q.status) && q.public_status !== 'awaiting' && q.public_status !== 'approved'
   );
 
   return (
