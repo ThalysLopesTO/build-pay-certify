@@ -15,6 +15,7 @@ interface HierarchicalCategory {
   category_level: 'parent' | 'subcategory';
   parent_category_id?: string;
   sort_order: number;
+  category_type?: 'income' | 'expense' | 'both';
   subcategories?: HierarchicalCategory[];
 }
 
@@ -28,10 +29,12 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, tr
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryType, setNewCategoryType] = useState<'income' | 'expense' | 'both'>('both');
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
   const [selectedParentForSubcategory, setSelectedParentForSubcategory] = useState('');
   const [editingCategory, setEditingCategory] = useState<HierarchicalCategory | null>(null);
   const [editName, setEditName] = useState('');
+  const [editCategoryType, setEditCategoryType] = useState<'income' | 'expense' | 'both'>('both');
   const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
   
   // Organize categories into parent-child hierarchy
@@ -55,6 +58,7 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, tr
           company_id: user?.companyId,
           name: newCategoryName.trim(),
           category_level: 'parent',
+          category_type: newCategoryType,
           sort_order: parentCategories.length,
         });
 
@@ -66,6 +70,7 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, tr
       });
 
       setNewCategoryName('');
+      setNewCategoryType('both');
       onCategoriesChange();
     } catch (error) {
       console.error('Error adding parent category:', error);
@@ -91,6 +96,7 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, tr
           name: newSubcategoryName.trim(),
           category_level: 'subcategory',
           parent_category_id: selectedParentForSubcategory,
+          category_type: parentCategory?.category_type || 'expense',
           sort_order: subcategoryCount,
         });
 
@@ -120,7 +126,10 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, tr
     try {
       const { error } = await supabase
         .from('expense_categories')
-        .update({ name: editName.trim() })
+        .update({ 
+          name: editName.trim(),
+          category_type: editCategoryType
+        })
         .eq('id', editingCategory.id);
 
       if (error) throw error;
@@ -208,11 +217,13 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, tr
   const startEdit = (category: HierarchicalCategory) => {
     setEditingCategory(category);
     setEditName(category.name);
+    setEditCategoryType(category.category_type || 'expense');
   };
 
   const cancelEdit = () => {
     setEditingCategory(null);
     setEditName('');
+    setEditCategoryType('expense');
   };
 
   const toggleParentExpansion = (parentId: string) => {
@@ -244,26 +255,41 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, tr
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
-          <DialogTitle>Manage Expense Categories</DialogTitle>
+          <DialogTitle>Manage Income & Expense Categories</DialogTitle>
         </DialogHeader>
         
         <div className="flex-1 overflow-hidden flex flex-col space-y-6">
           {/* Add Parent Category */}
-          <div className="flex-shrink-0 flex items-end space-x-2">
-            <div className="flex-1">
-              <Label htmlFor="new-parent-category">Add Parent Category</Label>
-              <Input
-                id="new-parent-category"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="Enter parent category name"
-                onKeyPress={(e) => e.key === 'Enter' && handleAddParentCategory()}
-              />
+          <div className="flex-shrink-0 space-y-2">
+            <div className="flex items-end space-x-2">
+              <div className="flex-1">
+                <Label htmlFor="new-parent-category">Add Parent Category</Label>
+                <Input
+                  id="new-parent-category"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Enter parent category name"
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddParentCategory()}
+                />
+              </div>
+              <div className="w-48">
+                <Label htmlFor="category-type">Category Type</Label>
+                <Select value={newCategoryType} onValueChange={(value: 'income' | 'expense' | 'both') => setNewCategoryType(value)}>
+                  <SelectTrigger id="category-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="expense">Expense Only</SelectItem>
+                    <SelectItem value="income">Income Only</SelectItem>
+                    <SelectItem value="both">Both Income & Expense</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleAddParentCategory} disabled={!newCategoryName.trim()}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Parent
+              </Button>
             </div>
-            <Button onClick={handleAddParentCategory} disabled={!newCategoryName.trim()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Parent
-            </Button>
           </div>
 
           {/* Add Subcategory */}
@@ -334,6 +360,16 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, tr
                               onKeyPress={(e) => e.key === 'Enter' && handleEditCategory()}
                               className="h-8"
                             />
+                            <Select value={editCategoryType} onValueChange={(value: 'income' | 'expense' | 'both') => setEditCategoryType(value)}>
+                              <SelectTrigger className="h-8 w-40">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="expense">Expense Only</SelectItem>
+                                <SelectItem value="income">Income Only</SelectItem>
+                                <SelectItem value="both">Both</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <Button size="sm" onClick={handleEditCategory}>
                               Save
                             </Button>
@@ -342,7 +378,24 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, tr
                             </Button>
                           </div>
                         ) : (
-                          <span className="font-semibold text-primary">{parent.name}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold text-primary">{parent.name}</span>
+                            {parent.category_type === 'income' && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                Income
+                              </span>
+                            )}
+                            {parent.category_type === 'expense' && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                                Expense
+                              </span>
+                            )}
+                            {parent.category_type === 'both' && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                                Both
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                       
@@ -390,6 +443,16 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, tr
                                     onKeyPress={(e) => e.key === 'Enter' && handleEditCategory()}
                                     className="h-8"
                                   />
+                                  <Select value={editCategoryType} onValueChange={(value: 'income' | 'expense' | 'both') => setEditCategoryType(value)}>
+                                    <SelectTrigger className="h-8 w-40">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="expense">Expense Only</SelectItem>
+                                      <SelectItem value="income">Income Only</SelectItem>
+                                      <SelectItem value="both">Both</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                   <Button size="sm" onClick={handleEditCategory}>
                                     Save
                                   </Button>
@@ -399,7 +462,24 @@ export const HierarchicalCategoryManager = ({ categories, onCategoriesChange, tr
                                 </div>
                               ) : (
                                 <>
-                                  <span className="text-muted-foreground">• {subcategory.name}</span>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-muted-foreground">• {subcategory.name}</span>
+                                    {subcategory.category_type === 'income' && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                        Income
+                                      </span>
+                                    )}
+                                    {subcategory.category_type === 'expense' && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                                        Expense
+                                      </span>
+                                    )}
+                                    {subcategory.category_type === 'both' && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                                        Both
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="flex items-center space-x-1">
                                     <Button
                                       variant="ghost"
