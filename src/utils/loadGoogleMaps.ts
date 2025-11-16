@@ -7,9 +7,12 @@ export const loadGoogleMaps = (apiKey: string) => {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry`;
+    const scriptUrl = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry`;
+    script.src = scriptUrl;
     script.async = true;
     script.defer = true;
+    
+    console.log("🔄 Loading Google Maps API from:", scriptUrl);
 
     script.onload = () => {
       console.log("✅ Google Maps API script loaded");
