@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { TrialEmbedFormData, PlanId } from '@/types/trialEmbed';
 import { Card } from '@/components/ui/card';
-import { Elements } from '@stripe/react-stripe-js';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { stripePromise } from '@/lib/stripe';
 import StepOne from './StepOne';
-import StepTwo from './StepTwo';
+import StepTwoWrapper from '@/pages/start-trial-embed/StepTwoWrapper';
 
 interface TrialWizardProps {
   initialPlan: PlanId;
@@ -86,15 +84,13 @@ const TrialWizard = ({ initialPlan }: TrialWizardProps) => {
             isLoading={isCreatingSubscription}
           />
         ) : clientSecret && intentType ? (
-          <Elements stripe={stripePromise} options={{ clientSecret }}>
-            <StepTwo 
-              formData={formData}
-              clientSecret={clientSecret}
-              intentType={intentType}
-              registrationRequestId={registrationRequestId || ''}
-              onBack={handleBackToStepOne}
-            />
-          </Elements>
+          <StepTwoWrapper 
+            formData={formData}
+            clientSecret={clientSecret}
+            intentType={intentType}
+            registrationRequestId={registrationRequestId || ''}
+            onBack={handleBackToStepOne}
+          />
         ) : (
           <div className="text-center py-8">
             <p className="text-muted-foreground">Loading payment information...</p>
