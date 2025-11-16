@@ -6,6 +6,9 @@ interface LocationMapModalProps {
   employeeName: string;
   timestamp: string;
   onClose: () => void;
+  jobsiteName?: string;
+  jobsiteLatitude?: number;
+  jobsiteLongitude?: number;
 }
 
 const LocationMapModal: React.FC<LocationMapModalProps> = ({
@@ -14,18 +17,24 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   employeeName,
   timestamp,
   onClose,
+  jobsiteName,
+  jobsiteLatitude,
+  jobsiteLongitude,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const punchMarkerRef = useRef<any>(null);
+  const jobsiteMarkerRef = useRef<any>(null);
   const retryCount = useRef(0);
 
-  // ✅ Initialize Google Map with retry logic
+  // Initialize map once
   useEffect(() => {
     const loadMap = () => {
       if (!window.google || !window.google.maps) {
         console.warn("⚠️ Google Maps not ready yet...");
         if (retryCount.current < 5) {
           retryCount.current += 1;
-          setTimeout(loadMap, 400); // retry in 400ms
+          setTimeout(loadMap, 400);
         } else {
           if (mapRef.current) {
             mapRef.current.innerHTML =
@@ -35,26 +44,92 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
         return;
       }
 
-      console.log("✅ Google Maps API loaded, rendering map...");
+      if (!mapRef.current || mapInstanceRef.current) return;
 
-      if (mapRef.current) {
-        // 🗺️ Create the map
-        const map = new window.google.maps.Map(mapRef.current, {
-          center: { lat: latitude, lng: longitude },
-          zoom: 16,
-        });
-
-        // 📍 Add a marker
-        new window.google.maps.Marker({
-          position: { lat: latitude, lng: longitude },
-          map,
-          title: `Punch-in location for ${employeeName}`,
-        });
-      }
+      // Create the map
+      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+        center: { lat: latitude, lng: longitude },
+        zoom: 15,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        zoomControl: true,
+      });
     };
 
     loadMap();
-  }, [latitude, longitude, employeeName]);
+
+    // Cleanup on unmount
+    return () => {
+      if (punchMarkerRef.current) {
+        punchMarkerRef.current.setMap(null);
+        punchMarkerRef.current = null;
+      }
+      if (jobsiteMarkerRef.current) {
+        jobsiteMarkerRef.current.setMap(null);
+        jobsiteMarkerRef.current = null;
+      }
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update markers and bounds when coordinates change
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.google?.maps) return;
+
+    const hasJobsite = jobsiteLatitude != null && jobsiteLongitude != null;
+    const bounds = new window.google.maps.LatLngBounds();
+
+    // Punch-in marker (red)
+    const punchPosition = { lat: latitude, lng: longitude };
+    if (punchMarkerRef.current) {
+      punchMarkerRef.current.setPosition(punchPosition);
+      punchMarkerRef.current.setTitle(`Punch-in: ${employeeName}`);
+    } else {
+      punchMarkerRef.current = new window.google.maps.Marker({
+        position: punchPosition,
+        map: mapInstanceRef.current,
+        title: `Punch-in: ${employeeName}`,
+        icon: {
+          url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+        },
+      });
+    }
+    bounds.extend(punchPosition);
+
+    // Jobsite marker (blue)
+    if (hasJobsite) {
+      const jobsitePosition = { lat: jobsiteLatitude, lng: jobsiteLongitude };
+      if (jobsiteMarkerRef.current) {
+        jobsiteMarkerRef.current.setPosition(jobsitePosition);
+        jobsiteMarkerRef.current.setTitle(`Jobsite: ${jobsiteName || 'Jobsite'}`);
+      } else {
+        jobsiteMarkerRef.current = new window.google.maps.Marker({
+          position: jobsitePosition,
+          map: mapInstanceRef.current,
+          title: `Jobsite: ${jobsiteName || 'Jobsite'}`,
+          icon: {
+            url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+          },
+        });
+      }
+      bounds.extend(jobsitePosition);
+      
+      // Fit both markers
+      mapInstanceRef.current.fitBounds(bounds);
+    } else {
+      // Remove jobsite marker if it exists
+      if (jobsiteMarkerRef.current) {
+        jobsiteMarkerRef.current.setMap(null);
+        jobsiteMarkerRef.current = null;
+      }
+      // Center on punch-in only
+      mapInstanceRef.current.setCenter(punchPosition);
+      mapInstanceRef.current.setZoom(16);
+    }
+  }, [latitude, longitude, employeeName, jobsiteName, jobsiteLatitude, jobsiteLongitude]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -71,11 +146,31 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
         <div ref={mapRef} className="w-full h-[400px]" />
 
         {/* Footer Info */}
-        <div className="p-4 border-t text-sm">
-          <p><strong>Employee:</strong> {employeeName}</p>
-          <p><strong>Punch-in:</strong> {timestamp}</p>
-          <p><strong>Latitude:</strong> {latitude}</p>
-          <p><strong>Longitude:</strong> {longitude}</p>
+        <div className="p-4 border-t text-sm space-y-2">
+          <div>
+            <p><strong>Employee:</strong> {employeeName}</p>
+            <p><strong>Punch-in:</strong> {timestamp}</p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+            <div>
+              <p className="font-semibold flex items-center gap-1">
+                <span className="inline-block w-3 h-3 rounded-full bg-red-500"></span>
+                Punch-in Location
+              </p>
+              <p className="text-xs text-muted-foreground">{latitude.toFixed(6)}, {longitude.toFixed(6)}</p>
+            </div>
+            {jobsiteLatitude != null && jobsiteLongitude != null && (
+              <div>
+                <p className="font-semibold flex items-center gap-1">
+                  <span className="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
+                  Jobsite Location
+                </p>
+                <p className="text-xs text-muted-foreground">{jobsiteName || 'Jobsite'}</p>
+                <p className="text-xs text-muted-foreground">{jobsiteLatitude.toFixed(6)}, {jobsiteLongitude.toFixed(6)}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

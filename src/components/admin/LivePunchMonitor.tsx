@@ -58,7 +58,9 @@ const LivePunchMonitor = () => {
     punchLocation: string | null;
     employeeName: string;
     timestamp: string;
-    // TODO: Will re-add jobsite prop later for distance calculations
+    jobsiteName?: string;
+    jobsiteLatitude?: number;
+    jobsiteLongitude?: number;
   } | null>(null);
 
   // Pagination state
@@ -348,8 +350,10 @@ const LivePunchMonitor = () => {
     setSelectedLocation({
       punchLocation: entry.check_in_location,
       employeeName,
-      timestamp
-      // TODO: Will re-add jobsite data later for distance calculations
+      timestamp,
+      jobsiteName: entry.jobsites?.name,
+      jobsiteLatitude: entry.jobsites?.latitude ?? undefined,
+      jobsiteLongitude: entry.jobsites?.longitude ?? undefined,
     });
   };
 
@@ -516,8 +520,19 @@ const LivePunchMonitor = () => {
 
     {/* Location Map Modal */}
     {selectedLocation && (() => {
-      const [lat, lng] = selectedLocation.punchLocation.split(',').map(Number);
-      return <LocationMapModal latitude={lat} longitude={lng} employeeName={selectedLocation.employeeName} timestamp={selectedLocation.timestamp} onClose={() => setSelectedLocation(null)} />;
+      const [lat, lng] = selectedLocation.punchLocation?.split(',').map(Number) ?? [0, 0];
+      return (
+        <LocationMapModal
+          latitude={lat}
+          longitude={lng}
+          employeeName={selectedLocation.employeeName}
+          timestamp={selectedLocation.timestamp}
+          jobsiteName={selectedLocation.jobsiteName}
+          jobsiteLatitude={selectedLocation.jobsiteLatitude}
+          jobsiteLongitude={selectedLocation.jobsiteLongitude}
+          onClose={() => setSelectedLocation(null)}
+        />
+      );
     })()}
   </div>;
 };
