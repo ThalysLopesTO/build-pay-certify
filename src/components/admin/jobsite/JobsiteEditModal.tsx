@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { MapPin, AlertTriangle } from 'lucide-react';
+import { MapPin, AlertTriangle, Loader2 } from 'lucide-react';
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
 import { validateCoordinates, formatCoordinates } from '@/services/geocoding';
 import { loadGoogleMaps } from '@/utils/loadGoogleMaps';
 import JobsiteMapPreview from './JobsiteMapPreview';
 import { GOOGLE_MAPS_API_KEY } from '@/config/googleMaps';
+import { useGooglePlacesAutocomplete } from '@/hooks/useGooglePlacesAutocomplete';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Jobsite name is required').min(2, 'Jobsite name must be at least 2 characters'),
@@ -46,11 +47,10 @@ interface JobsiteEditModalProps {
 
 const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOpenChange }) => {
   const { updateJobsite } = useJobsiteActions();
-  // Geocoding removed for simpler jobsite management
   const [useManualCoordinates, setUseManualCoordinates] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
-  const addressInputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<any>(null);
+  const [addressInput, setAddressInput] = useState('');
+  const [googleMapsReady, setGoogleMapsReady] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -63,62 +63,39 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
     },
   });
 
-  // ✅ Initialize Google Places Autocomplete when modal opens
+  // Initialize address input when jobsite changes
   useEffect(() => {
-    if (!open || !addressInputRef.current) return;
-    
-    // Cleanup previous instance if exists
-    if (autocompleteRef.current && window.google?.maps?.event) {
-      window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
-      autocompleteRef.current = null;
+    if (jobsite.address) {
+      setAddressInput(jobsite.address);
     }
+  }, [jobsite.address]);
 
+  // Initialize Google Maps
+  useEffect(() => {
+    if (!open) return;
+    
     loadGoogleMaps(GOOGLE_MAPS_API_KEY)
       .then(() => {
-        if (!addressInputRef.current || !window.google?.maps?.places) {
-          console.warn('⚠️ Google Maps Places API not available in Edit Modal');
-          return;
-        }
-
-        console.log('✅ Initializing Google Places Autocomplete in Edit Modal');
-
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(addressInputRef.current, {
-          types: ['address'],
-          componentRestrictions: { country: ['ca', 'us'] },
-          fields: ['formatted_address', 'geometry', 'address_components'],
-        });
-
-        autocompleteRef.current.addListener('place_changed', () => {
-          const place = autocompleteRef.current?.getPlace();
-          console.log('📍 Place selected (Edit Modal):', place);
-
-          if (place?.geometry?.location) {
-            const address = place.formatted_address || '';
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
-
-            form.setValue('address', address);
-            if (!useManualCoordinates) {
-              form.setValue('latitude', lat.toString());
-              form.setValue('longitude', lng.toString());
-            }
-            setGeocodeError(null);
-          } else {
-            console.warn('⚠️ No geometry found for selected place (Edit Modal).');
-            setGeocodeError('Unable to find location for this address');
-          }
-        });
+        console.log('✅ Google Maps ready for JobsiteEditModal');
+        setGoogleMapsReady(true);
       })
-      .catch((err) => console.error(err));
+      .catch((error) => {
+        console.error('❌ Failed to load Google Maps:', error);
+      });
+  }, [open]);
 
-    return () => {
-      if (autocompleteRef.current && window.google?.maps?.event) {
-        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
-        autocompleteRef.current = null;
-        console.log('🧹 Cleaned up Autocomplete listeners in Edit Modal.');
+  // Use Google Places Autocomplete hook
+  const { predictions, isLoading: isPredictionsLoading, error: predictionsError, selectPlace} = 
+    useGooglePlacesAutocomplete({
+      input: addressInput,
+      onPlaceSelect: (place) => {
+        form.setValue('address', place.address);
+        form.setValue('latitude', place.latitude.toString());
+        form.setValue('longitude', place.longitude.toString());
+        setAddressInput(place.address);
+        console.log('✅ Place selected in edit modal:', place);
       }
-    };
-  }, [open, useManualCoordinates]); // Only re-initialize when modal opens or manual mode changes
+    });
 
   // ✅ Reset form when jobsite changes
   React.useEffect(() => {
@@ -207,23 +184,65 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Address *</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Address *
+                  </FormLabel>
                   <FormControl>
-                    <div className="space-y-2">
+                    <div className="relative">
                       <Input
                         id="jobsite-edit-address"
-                        ref={addressInputRef}
-                        placeholder="Start typing an address..."
+                        placeholder="Start typing to search addresses..."
                         autoComplete="off"
-                        {...field}
+                        value={addressInput}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setAddressInput(value);
+                          field.onChange(value);
+                        }}
                       />
-                      <p className="text-xs text-muted-foreground">Powered by Google</p>
-                      {geocodeError && (
-                        <div className="flex items-center gap-2 text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
-                          <AlertTriangle className="h-3 w-3" />
-                          {geocodeError} Enter coordinates manually below.
+                      
+                      {/* Custom Predictions Dropdown */}
+                      {googleMapsReady && predictions.length > 0 && (
+                        <ul className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+                          {predictions.map((prediction) => (
+                            <li
+                              key={prediction.place_id}
+                              onClick={() => {
+                                selectPlace(prediction.place_id);
+                              }}
+                              className="px-4 py-2 hover:bg-accent cursor-pointer text-sm transition-colors"
+                            >
+                              {prediction.description}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {isPredictionsLoading && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                         </div>
                       )}
+
+                      <div className="mt-2 space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          {googleMapsReady 
+                            ? 'Type at least 3 characters to see address suggestions'
+                            : 'Loading Google Maps...'}
+                        </p>
+                        
+                        {predictionsError && (
+                          <p className="text-xs text-destructive">{predictionsError}</p>
+                        )}
+                        
+                        {geocodeError && (
+                          <div className="flex items-center gap-2 text-xs text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded">
+                            <AlertTriangle className="h-3 w-3" />
+                            {geocodeError} Enter coordinates manually below.
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </FormControl>
                   <FormMessage />
