@@ -158,22 +158,43 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                         value={addressInput}
                         onChange={(e) => {
                           const value = e.target.value;
+                          console.log('🔤 Address input changed:', value);
                           setAddressInput(value);
                           field.onChange(value);
                         }}
                         required
                       />
                       
+                      {/* Debug Block - Remove after testing */}
+                      <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded text-xs">
+                        <div className="font-semibold mb-1">🐛 Debug Info:</div>
+                        <div>Search text: "{addressInput}"</div>
+                        <div>Google Maps ready: {googleMapsReady ? '✅' : '❌'}</div>
+                        <div>Predictions count: {predictions.length}</div>
+                        <div>Is loading: {isPredictionsLoading ? '⏳' : '✅'}</div>
+                        {predictions.length > 0 && (
+                          <div className="mt-2">
+                            <div className="font-semibold">Predictions:</div>
+                            <ul className="list-disc pl-5 mt-1">
+                              {predictions.map((p) => (
+                                <li key={p.place_id}>{p.description}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                      
                       {/* Custom Predictions Dropdown */}
                       {googleMapsReady && predictions.length > 0 && (
-                        <ul className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+                        <ul className="absolute z-[100] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-60 overflow-auto">
                           {predictions.map((prediction) => (
                             <li
                               key={prediction.place_id}
                               onClick={() => {
+                                console.log('🎯 Prediction clicked:', prediction);
                                 selectPlace(prediction.place_id);
                               }}
-                              className="px-4 py-2 hover:bg-accent cursor-pointer text-sm transition-colors"
+                              className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer text-sm transition-colors border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                             >
                               {prediction.description}
                             </li>
