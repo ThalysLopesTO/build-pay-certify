@@ -156,7 +156,7 @@ const JobsiteManagement = () => {
           <Tabs defaultValue={isMobile ? "mobile" : "detailed"} className="w-full">
             <div className="border-b bg-muted/50 rounded-t-lg">
               <TabsList className="grid w-full bg-transparent h-auto p-2 gap-2" style={{
-                gridTemplateColumns: isMobile ? 'repeat(6, 1fr)' : 'repeat(5, 1fr)'
+                gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)'
               }}>
                 {isMobile && (
                   <TabsTrigger 
@@ -167,30 +167,36 @@ const JobsiteManagement = () => {
                     <span className="hidden sm:inline">Mobile</span>
                   </TabsTrigger>
                 )}
-                <TabsTrigger 
-                  value="detailed" 
-                  className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-xs sm:text-sm font-medium transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <Package className="h-4 w-4" />
-                  <span className="hidden sm:inline">Detailed View</span>
-                  <span className="sm:hidden">Details</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="grid" 
-                  className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-xs sm:text-sm font-medium transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <Grid3X3 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Grid View</span>
-                  <span className="sm:hidden">Grid</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="progress" 
-                  className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-xs sm:text-sm font-medium transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Progress</span>
-                  <span className="sm:hidden">Progress</span>
-                </TabsTrigger>
+                {!isMobile && (
+                  <TabsTrigger 
+                    value="detailed" 
+                    className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-xs sm:text-sm font-medium transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  >
+                    <Package className="h-4 w-4" />
+                    <span className="hidden sm:inline">Detailed View</span>
+                    <span className="sm:hidden">Details</span>
+                  </TabsTrigger>
+                )}
+                {!isMobile && (
+                  <TabsTrigger 
+                    value="grid" 
+                    className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-xs sm:text-sm font-medium transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Grid View</span>
+                    <span className="sm:hidden">Grid</span>
+                  </TabsTrigger>
+                )}
+                {!isMobile && (
+                  <TabsTrigger 
+                    value="progress" 
+                    className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-xs sm:text-sm font-medium transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Progress</span>
+                    <span className="sm:hidden">Progress</span>
+                  </TabsTrigger>
+                )}
                 <TabsTrigger 
                   value="tasks" 
                   className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-xs sm:text-sm font-medium transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
@@ -219,7 +225,9 @@ const JobsiteManagement = () => {
 
             {/* Detailed View */}
             <TabsContent value="detailed" className="p-6">
-              {isLoading ? (
+              {isMobile ? (
+                <JobsiteMobileList jobsites={filteredAndSortedJobsites} isLoading={isLoading} />
+              ) : isLoading ? (
                 <div className="space-y-4">
                   {[...Array(3)].map((_, index) => (
                     <Card key={index} className="animate-pulse">
