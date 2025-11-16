@@ -191,12 +191,73 @@ const JobsiteDeleteDialog: React.FC<JobsiteDeleteDialogProps> = ({
               </div>
             </>
           ) : (
-            <Alert className="border-green-500/50 bg-green-500/5">
-              <AlertTriangle className="h-4 w-4 text-green-600" />
-              <AlertDescription>
-                This jobsite has no associated records and can be safely deleted.
-              </AlertDescription>
-            </Alert>
+            <>
+              <Alert className="border-green-500/50 bg-green-500/5">
+                <AlertTriangle className="h-4 w-4 text-green-600" />
+                <AlertDescription>
+                  This jobsite has no associated records and can be safely deleted.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-3 pt-4 border-t">
+                <h4 className="font-medium text-sm">Choose an action:</h4>
+                
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30">
+                    <input
+                      type="radio"
+                      name="action"
+                      value="delete"
+                      checked={selectedAction === 'delete'}
+                      onChange={(e) => setSelectedAction(e.target.value as any)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <X className="h-4 w-4 text-destructive" />
+                        <span className="font-medium text-sm">Delete Jobsite</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Permanently remove this jobsite from the system.
+                      </p>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30">
+                    <input
+                      type="radio"
+                      name="action"
+                      value="archive"
+                      checked={selectedAction === 'archive'}
+                      onChange={(e) => setSelectedAction(e.target.value as any)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Archive className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium text-sm">Archive Jobsite (Safer)</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Mark as archived instead. Can be restored later if needed.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                {selectedAction === 'archive' && (
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Checkbox 
+                      id="confirm-archive" 
+                      checked={confirmArchive}
+                      onCheckedChange={(checked) => setConfirmArchive(checked === true)}
+                    />
+                    <label htmlFor="confirm-archive" className="text-sm">
+                      I understand this will archive the jobsite and hide it from active lists
+                    </label>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
 

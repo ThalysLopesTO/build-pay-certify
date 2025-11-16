@@ -100,6 +100,18 @@ export const useJobsiteActions = () => {
         throw new Error('Jobsite ID is required for deletion');
       }
 
+      // Check for dependencies first
+      const dependencyChecks = await Promise.all([
+        supabase.from('material_requests').select('id', { count: 'exact', head: true }).eq('jobsite_id', id),
+        supabase.from('timesheets').select('id', { count: 'exact', head: true }).eq('jobsite_id', id),
+        supabase.from('inventory').select('id', { count: 'exact', head: true }).eq('jobsite_id', id),
+      ]);
+
+      const hasDependencies = dependencyChecks.some(check => (check.count || 0) > 0);
+      if (hasDependencies) {
+        throw new Error('Cannot delete jobsite: it has associated records. Please use the cascade delete option.');
+      }
+
       const { error } = await supabase
         .from('jobsites')
         .delete()
