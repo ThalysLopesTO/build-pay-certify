@@ -90,13 +90,14 @@ const EditJobsiteDialog: React.FC<EditJobsiteDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[90vh] max-w-[95vw] sm:max-w-2xl flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit Jobsite</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <div className="overflow-y-auto flex-1 px-1 space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -178,8 +179,9 @@ const EditJobsiteDialog: React.FC<EditJobsiteDialogProps> = ({
             />
 
             <ForemanAssignmentSection control={form.control} jobsiteId={jobsite.id} />
+            </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-4 border-t mt-4">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
