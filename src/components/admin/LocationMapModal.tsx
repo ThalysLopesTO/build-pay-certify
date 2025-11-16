@@ -1,4 +1,25 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
+
+// Calculate distance between two points using Haversine formula
+const calculateDistanceMeters = (
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number => {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // Distance in meters
+};
 
 interface PunchLocation {
   id: string;
@@ -40,6 +61,23 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   const circleRef = useRef<any>(null);
   const polylineRef = useRef<any>(null);
   const retryCount = useRef(0);
+
+  // Helper to get initials from name
+  const getInitials = (name: string) => {
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  // Calculate distance between punch and jobsite
+  const distance = useMemo(() => {
+    if (jobsiteLatitude != null && jobsiteLongitude != null && latitude != null && longitude != null) {
+      return calculateDistanceMeters(latitude, longitude, jobsiteLatitude, jobsiteLongitude);
+    }
+    return null;
+  }, [latitude, longitude, jobsiteLatitude, jobsiteLongitude]);
 
   // Initialize map once
   useEffect(() => {
@@ -132,15 +170,15 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       markersRef.current.push(jobsiteMarker);
       bounds.extend(jobsitePosition);
 
-      // Radius circle around jobsite
+      // Radius circle around jobsite (60m with subtle styling)
       circleRef.current = new window.google.maps.Circle({
         map: mapInstanceRef.current,
         center: jobsitePosition,
-        radius: 150, // 150 meters
+        radius: 60,
         strokeColor: "#2563eb",
-        strokeOpacity: 0.7,
-        strokeWeight: 1,
-        fillColor: "#3b82f6",
+        strokeOpacity: 0.8,
+        strokeWeight: 1.5,
+        fillColor: "#2563eb",
         fillOpacity: 0.08,
       });
     }
@@ -167,25 +205,54 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       routePath.push(pos);
 
       const isSelected = punch.id === currentPunchId;
+      const size = isSelected ? 50 : 42;
       
-      // Create custom marker icon with employee photo or fallback to colored circle
       let markerIcon: any;
       
       if (punch.photoUrl) {
+        // Photo-based circular marker
         markerIcon = {
           url: punch.photoUrl,
-          scaledSize: new window.google.maps.Size(isSelected ? 44 : 36, isSelected ? 44 : 36),
-          anchor: new window.google.maps.Point(isSelected ? 22 : 18, isSelected ? 22 : 18),
+          scaledSize: new window.google.maps.Size(size, size),
+          anchor: new window.google.maps.Point(size / 2, size / 2),
         };
       } else {
-        markerIcon = {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: isSelected ? 10 : 7,
-          fillColor: isSelected ? "#dc2626" : "#f97316",
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 2,
-        };
+        // Canvas-based circular marker with initials
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          // Outer white circle with shadow
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+          ctx.shadowBlur = isSelected ? 6 : 3;
+          ctx.shadowOffsetY = 2;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Inner colored circle
+          ctx.shadowColor = 'transparent';
+          ctx.fillStyle = isSelected ? '#dc2626' : '#ef4444';
+          ctx.beginPath();
+          ctx.arc(size / 2, size / 2, size / 2 - 3, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Initials
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `bold ${Math.floor(size / 3)}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(getInitials(punch.employeeName), size / 2, size / 2);
+
+          markerIcon = {
+            url: canvas.toDataURL(),
+            scaledSize: new window.google.maps.Size(size, size),
+            anchor: new window.google.maps.Point(size / 2, size / 2),
+          };
+        }
       }
 
       const marker = new window.google.maps.Marker({
@@ -200,12 +267,12 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       bounds.extend(pos);
     });
 
-    // 3. Draw polyline connecting punches
+    // 3. Draw polyline connecting punches (emerald color with rounded appearance)
     if (routePath.length > 1) {
       polylineRef.current = new window.google.maps.Polyline({
         path: routePath,
         geodesic: true,
-        strokeColor: "#0ea5e9",
+        strokeColor: "#0f766e",
         strokeOpacity: 0.9,
         strokeWeight: 3,
         map: mapInstanceRef.current,
@@ -239,7 +306,13 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
         <div className="p-4 border-t text-sm space-y-3">
           <div>
             <p><strong>Employee:</strong> {employeeName}</p>
-            <p><strong>Selected Punch:</strong> {timestamp}</p>
+            <p><strong>Selected Punch:</strong> {new Date(timestamp).toLocaleString()}</p>
+            {jobsiteName && (
+              <p><strong>Jobsite:</strong> {jobsiteName}</p>
+            )}
+            {distance !== null && (
+              <p><strong>Distance from jobsite:</strong> {Math.round(distance)} m</p>
+            )}
             {employeePunches.length > 1 && (
               <p className="text-xs text-muted-foreground mt-1">
                 Showing {employeePunches.length} punch locations for this employee
@@ -247,42 +320,38 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
             )}
           </div>
           
-          <div className="grid grid-cols-2 gap-4 pt-2 border-t">
-            <div>
-              <p className="font-semibold flex items-center gap-1">
-                <span className="inline-block w-3 h-3 rounded-full bg-red-500"></span>
-                Punch Location
-              </p>
-              <p className="text-xs text-muted-foreground">{latitude.toFixed(6)}, {longitude.toFixed(6)}</p>
-            </div>
+          {/* Compact modern legend with pills */}
+          <div className="flex flex-wrap items-center gap-3 pt-2 border-t text-xs">
             {jobsiteLatitude != null && jobsiteLongitude != null && (
-              <div>
-                <p className="font-semibold flex items-center gap-1">
-                  <span className="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
-                  Jobsite Location
-                </p>
-                <p className="text-xs text-muted-foreground">{jobsiteName || 'Jobsite'}</p>
-                <p className="text-xs text-muted-foreground">{jobsiteLatitude.toFixed(6)}, {jobsiteLongitude.toFixed(6)}</p>
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded-full">
+                <span className="inline-block h-2 w-2 rounded-full bg-blue-600" />
+                <span className="text-blue-900">Jobsite (60m)</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 rounded-full">
+              <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+              <span className="text-red-900">Punch locations</span>
+            </div>
+            {employeePunches.length > 1 && (
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded-full">
+                <span className="inline-block h-0.5 w-4 bg-emerald-600 rounded" />
+                <span className="text-emerald-900">Route</span>
               </div>
             )}
           </div>
 
-          {/* Legend */}
-          <div className="flex flex-wrap items-center gap-4 pt-2 border-t text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 rounded-full bg-blue-600" />
-              <span>Jobsite (150m radius)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 rounded-full bg-red-500" />
-              <span>Punch locations</span>
-            </div>
-            {employeePunches.length > 1 && (
-              <div className="flex items-center gap-2">
-                <span className="inline-block h-0.5 w-6 bg-sky-400" />
-                <span>Route</span>
+          {/* Coordinates (smaller, less prominent) */}
+          <div className="pt-2 border-t text-xs text-muted-foreground">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <span className="font-medium">Punch:</span> {latitude.toFixed(6)}, {longitude.toFixed(6)}
               </div>
-            )}
+              {jobsiteLatitude != null && jobsiteLongitude != null && (
+                <div>
+                  <span className="font-medium">Jobsite:</span> {jobsiteLatitude.toFixed(6)}, {jobsiteLongitude.toFixed(6)}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
