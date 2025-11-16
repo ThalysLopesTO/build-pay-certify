@@ -22,6 +22,8 @@ const formSchema = z.object({
   due_date: z.string().optional(),
   status: z.enum(['active', 'completed']),
   assignedForemen: z.array(z.string()).optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -36,6 +38,8 @@ interface EditJobsiteDialogProps {
     starting_date?: string;
     due_date?: string;
     status: string;
+    latitude?: number;
+    longitude?: number;
   };
 }
 
@@ -59,6 +63,8 @@ const EditJobsiteDialog: React.FC<EditJobsiteDialogProps> = ({
       due_date: jobsite.due_date || '',
       status: jobsite.status as 'active' | 'completed',
       assignedForemen: assignedForemen.map(af => af.foreman_id),
+      latitude: jobsite.latitude || undefined,
+      longitude: jobsite.longitude || undefined,
     },
   });
 
@@ -90,6 +96,13 @@ const EditJobsiteDialog: React.FC<EditJobsiteDialogProps> = ({
       onPlaceSelect: (place) => {
         form.setValue('address', place.address);
         setAddressInput(place.address);
+        
+        // Capture coordinates when place is selected
+        if (place.latitude !== undefined && place.longitude !== undefined) {
+          form.setValue('latitude', place.latitude);
+          form.setValue('longitude', place.longitude);
+          console.log('✅ Coordinates captured:', place.latitude, place.longitude);
+        }
       }
     });
 
@@ -102,13 +115,22 @@ const EditJobsiteDialog: React.FC<EditJobsiteDialogProps> = ({
 
   const onSubmit = async (data: FormData) => {
     try {
+      const updateData: any = {
+        name: data.name,
+        address: data.address,
+        starting_date: data.starting_date || undefined,
+      };
+
+      // Include coordinates if they exist
+      if (data.latitude !== undefined && data.longitude !== undefined) {
+        updateData.latitude = data.latitude;
+        updateData.longitude = data.longitude;
+        console.log('✅ Updating with coordinates:', data.latitude, data.longitude);
+      }
+
       await updateJobsite.mutateAsync({
         id: jobsite.id,
-        data: {
-          name: data.name,
-          address: data.address,
-          starting_date: data.starting_date || undefined,
-        }
+        data: updateData
       });
 
       // Update foreman assignments
