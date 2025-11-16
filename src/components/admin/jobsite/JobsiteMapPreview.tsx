@@ -29,64 +29,72 @@ const JobsiteMapPreview: React.FC<JobsiteMapPreviewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Initialize map once
   useEffect(() => {
-    if (!latitude || !longitude || !mapRef.current) {
-      setIsLoading(false);
-      return;
-    }
+    if (!mapRef.current) return;
 
     const initializeMap = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-
         await loadGoogleMaps(GOOGLE_MAPS_API_KEY);
 
-        if (!mapRef.current) return;
+        if (!mapRef.current || mapInstanceRef.current) return;
 
-        const position = { lat: latitude, lng: longitude };
-
-        // Create or update map
-        if (!mapInstanceRef.current) {
-          mapInstanceRef.current = new (window as any).google.maps.Map(mapRef.current, {
-            center: position,
-            zoom: 15,
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: false,
-            zoomControl: true,
-          });
-        } else {
-          mapInstanceRef.current.setCenter(position);
-        }
-
-        // Create or update marker
-        if (markerRef.current) {
-          markerRef.current.setPosition(position);
-        } else {
-          markerRef.current = new (window as any).google.maps.Marker({
-            position,
-            map: mapInstanceRef.current,
-            title: address || 'Jobsite Location',
-          });
-        }
-
-        setIsLoading(false);
+        mapInstanceRef.current = new (window as any).google.maps.Map(mapRef.current, {
+          center: { lat: 0, lng: 0 },
+          zoom: 15,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          zoomControl: true,
+        });
       } catch (err) {
         console.error('Error initializing map:', err);
         setError('Failed to load map');
-        setIsLoading(false);
       }
     };
 
     initializeMap();
 
+    // Cleanup only on unmount
     return () => {
       if (markerRef.current) {
         markerRef.current.setMap(null);
         markerRef.current = null;
       }
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current = null;
+      }
     };
+  }, []);
+
+  // Update map position when coordinates change
+  useEffect(() => {
+    if (!latitude || !longitude || !mapInstanceRef.current) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    const position = { lat: latitude, lng: longitude };
+
+    // Update map center
+    mapInstanceRef.current.setCenter(position);
+
+    // Update or create marker
+    if (markerRef.current) {
+      markerRef.current.setPosition(position);
+      markerRef.current.setTitle(address || 'Jobsite Location');
+    } else if (window.google?.maps?.Marker) {
+      markerRef.current = new window.google.maps.Marker({
+        position,
+        map: mapInstanceRef.current,
+        title: address || 'Jobsite Location',
+      });
+    }
+
+    setIsLoading(false);
   }, [latitude, longitude, address]);
 
   if (!latitude || !longitude) {
