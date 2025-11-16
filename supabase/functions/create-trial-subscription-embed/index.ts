@@ -87,42 +87,23 @@ serve(async (req) => {
     });
     console.log('Stripe customer created:', customer.id);
 
-    // Create Stripe Subscription with 14-day trial
-    console.log('Creating Stripe subscription with trial...');
-    const subscription = await stripe.subscriptions.create({
+    // Create PaymentIntent manually (subscription will be created after payment confirmation)
+    console.log('Creating PaymentIntent for trial signup...');
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 0, // $0 for trial signup
+      currency: 'cad',
       customer: customer.id,
-      items: [{ price: PLAN_PRICE_IDS[plan] }],
-      payment_behavior: 'default_incomplete',
-      payment_settings: {
-        payment_method_types: ['card'],
-        save_default_payment_method: 'on_subscription',
-      },
-      trial_settings: {
-        end_behavior: { missing_payment_method: 'cancel' },
-      },
-      trial_period_days: 14,
-      expand: ['latest_invoice.payment_intent'],
+      setup_future_usage: 'off_session',
       metadata: {
-        companyName: companyName,
         plan: plan,
+        companyName: companyName,
+        email: email,
         source: 'embed_trial',
       },
     });
-    console.log('Stripe subscription created:', subscription.id);
+    console.log('PaymentIntent created:', paymentIntent.id);
 
-    // Extract payment intent client secret
-    if (!subscription.latest_invoice) {
-      console.error('No invoice created for subscription');
-      return new Response(
-        JSON.stringify({ error: 'Failed to create invoice' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const invoice = subscription.latest_invoice as Stripe.Invoice;
-    const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
-    
-    if (!paymentIntent || !paymentIntent.client_secret) {
+    if (!paymentIntent.client_secret) {
       console.error('Failed to get payment intent client secret');
       return new Response(
         JSON.stringify({ error: 'Failed to initialize payment' }),
@@ -131,7 +112,6 @@ serve(async (req) => {
     }
 
     const clientSecret = paymentIntent.client_secret;
-    console.log('Payment intent created:', paymentIntent.id);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -149,7 +129,7 @@ serve(async (req) => {
         admin_first_name: firstName,
         admin_last_name: lastName,
         admin_email: email,
-        status: 'pending_payment',
+        status: 'awaiting_payment',
       })
       .select()
       .single();
@@ -167,11 +147,9 @@ serve(async (req) => {
     const response = {
       clientSecret: clientSecret,
       registrationRequestId: registrationRequest?.id || null,
-      subscriptionId: subscription.id,
-      customerId: customer.id,
     };
 
-    console.log('Trial subscription created successfully');
+    console.log('PaymentIntent created successfully for trial signup');
     return new Response(
       JSON.stringify(response),
       { 
