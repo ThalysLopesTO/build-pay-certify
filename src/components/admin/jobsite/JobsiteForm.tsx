@@ -31,16 +31,12 @@ interface JobsiteFormProps {
 }
 
 const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
-  console.log("🏗️ JobsiteForm component rendered");
-
   const { addJobsite } = useJobsiteActions();
   const assignForemen = useAssignForemen();
 
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [addressInput, setAddressInput] = useState("");
   const [googleMapsReady, setGoogleMapsReady] = useState(false);
-
-  console.log("📝 Current addressInput state:", addressInput);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -58,16 +54,14 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
   useEffect(() => {
     loadGoogleMaps(GOOGLE_MAPS_API_KEY)
       .then(() => {
-        console.log("✅ Google Maps ready for JobsiteForm");
         setGoogleMapsReady(true);
       })
       .catch((error) => {
-        console.error("❌ Failed to load Google Maps:", error);
+        console.error("Failed to load Google Maps:", error);
       });
   }, []);
 
-  // Google autocomplete hook
-  console.log("🔌 Calling useGooglePlacesAutocomplete with:", addressInput);
+  // Google Places autocomplete hook
   const {
     predictions,
     isLoading: isPredictionsLoading,
@@ -79,16 +73,11 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
       form.setValue("address", place.address);
       setAddressInput(place.address);
       setCoordinates({ lat: place.latitude, lng: place.longitude });
-
-      console.log("✅ Place selected:", place);
     },
   });
-  console.log("📊 Predictions:", predictions.length);
 
   const onSubmit = async (data: FormData) => {
     try {
-      console.log("📤 Submitting form:", data);
-
       const jobsiteData = {
         name: data.name.trim(),
         address: data.address.trim(),
@@ -109,9 +98,10 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
 
       form.reset();
       setCoordinates(null);
+      setAddressInput("");
       onCancel();
     } catch (error: any) {
-      console.error("❌ Error adding jobsite:", error);
+      console.error("Error adding jobsite:", error);
       form.setError("root", {
         message: `Failed to add jobsite: ${error?.message || "Unknown error"}`,
       });
@@ -119,22 +109,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
   };
 
   return (
-    <>
-      {/* DEBUG BANNER */}
-      <div
-        style={{
-          padding: "8px",
-          background: "red",
-          color: "white",
-          fontWeight: "bold",
-          borderRadius: "4px",
-          marginBottom: "8px",
-        }}
-      >
-        DEBUG BUILD – IF YOU SEE THIS, NEW DEPLOY IS LIVE
-      </div>
-
-      <Card className="mb-6">
+    <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-lg">Add New Jobsite</CardTitle>
         </CardHeader>
@@ -181,36 +156,14 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                           required
                         />
 
-                        {/* DEBUG BLOCK */}
-                        <div
-                          style={{
-                            padding: "8px",
-                            background: "#f9f9f9",
-                            border: "2px solid #ff0000",
-                            marginTop: "8px",
-                            fontSize: "12px",
-                          }}
-                        >
-                          <div style={{ fontWeight: "bold" }}>🐛 DEBUG INFO</div>
-                          <div>Search text: "{addressInput}"</div>
-                          <div>Google Maps loaded: {googleMapsReady ? "✅" : "❌"}</div>
-                          <div>Predictions count: {predictions?.length || 0}</div>
-                          <div>Loading: {isPredictionsLoading ? "⏳" : "✅"}</div>
-                          <ul>
-                            {predictions.map((p) => (
-                              <li key={p.place_id}>{p.description}</li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* PREDICTION DROPDOWN */}
+                        {/* Autocomplete suggestions dropdown */}
                         {googleMapsReady && predictions.length > 0 && (
-                          <ul className="absolute z-[100] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl max-h-60 overflow-auto">
+                          <ul className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
                             {predictions.map((prediction) => (
                               <li
                                 key={prediction.place_id}
                                 onClick={() => selectPlace(prediction.place_id)}
-                                className="px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer text-sm transition-colors"
+                                className="px-4 py-2.5 hover:bg-accent cursor-pointer text-sm transition-colors truncate"
                               >
                                 {prediction.description}
                               </li>
@@ -285,6 +238,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                     onCancel();
                     form.reset();
                     setCoordinates(null);
+                    setAddressInput("");
                   }}
                 >
                   Cancel
@@ -294,7 +248,6 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
           </Form>
         </CardContent>
       </Card>
-    </>
   );
 };
 
