@@ -21,6 +21,9 @@ const calculateDistanceMeters = (
   return R * c; // Distance in meters
 };
 
+// Constants for marker styling
+const JOBSITE_RADIUS_METERS = 40;
+
 // Helper to create simple circular markers
 const createMarker = (
   map: any,
@@ -38,10 +41,10 @@ const createMarker = (
       path: window.google.maps.SymbolPath.CIRCLE,
       fillColor: isJobsite ? "#2563eb" : "#ffffff",
       fillOpacity: 1,
-      strokeColor: isJobsite ? "#1d4ed8" : "#dc2626",
+      strokeColor: isJobsite ? "#ffffff" : "#ef4444",
       strokeOpacity: 1,
-      strokeWeight: 2,
-      scale: isJobsite ? 8 : 7,
+      strokeWeight: isJobsite ? 2 : 3,
+      scale: isJobsite ? 9 : 6,
     },
     zIndex: isJobsite ? 100 : 200,
   });
@@ -122,12 +125,13 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       circleRef.current = new window.google.maps.Circle({
         map: mapInstanceRef.current,
         center: jobsitePosition,
-        radius: 40,
-        strokeColor: "#9ca3af",
-        strokeOpacity: 0.8,
+        radius: JOBSITE_RADIUS_METERS,
+        strokeColor: "#cbd5e1",
+        strokeOpacity: 0.9,
         strokeWeight: 1,
-        fillColor: "#e5e7eb",
+        fillColor: "#e5f2ff",
         fillOpacity: 0.25,
+        clickable: false,
       });
     }
 
@@ -147,20 +151,29 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       const jobsitePosition = { lat: jobsiteLatitude, lng: jobsiteLongitude };
       polylineRef.current = new window.google.maps.Polyline({
         path: [jobsitePosition, selectedPunchPosition],
-        geodesic: true,
+        geodesic: false,
         strokeColor: "#9ca3af",
-        strokeOpacity: 1,
+        strokeOpacity: 0.9,
         strokeWeight: 2,
         map: mapInstanceRef.current,
+        clickable: false,
       });
     }
 
-    // 4. Fit map to show all markers with padding
+    // 4. Fit map to show all markers with padding and cap zoom
     if (!bounds.isEmpty()) {
       mapInstanceRef.current.fitBounds(bounds, { top: 60, bottom: 60, left: 40, right: 40 });
+      
+      // Cap zoom at 19 after fitBounds
+      window.google.maps.event.addListenerOnce(mapInstanceRef.current, 'bounds_changed', () => {
+        const currentZoom = mapInstanceRef.current?.getZoom();
+        if (currentZoom && currentZoom > 19) {
+          mapInstanceRef.current?.setZoom(19);
+        }
+      });
     } else {
       mapInstanceRef.current.setCenter({ lat: latitude, lng: longitude });
-      mapInstanceRef.current.setZoom(18);
+      mapInstanceRef.current.setZoom(19);
     }
   }, [latitude, longitude, employeeName, jobsiteName, jobsiteLatitude, jobsiteLongitude, timestamp]);
 
@@ -195,7 +208,12 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
         center: { lat: latitude, lng: longitude },
         zoom: 15,
-        mapTypeControl: false,
+        mapTypeControl: true,
+        mapTypeControlOptions: {
+          style: window.google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+          position: window.google.maps.ControlPosition.TOP_RIGHT,
+          mapTypeIds: ['roadmap', 'satellite'],
+        },
         streetViewControl: false,
         fullscreenControl: false,
         zoomControl: true,
@@ -259,12 +277,13 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       circleRef.current = new window.google.maps.Circle({
         map: mapInstanceRef.current,
         center: jobsitePosition,
-        radius: 40,
-        strokeColor: "#9ca3af",
-        strokeOpacity: 0.8,
+        radius: JOBSITE_RADIUS_METERS,
+        strokeColor: "#cbd5e1",
+        strokeOpacity: 0.9,
         strokeWeight: 1,
-        fillColor: "#e5e7eb",
+        fillColor: "#e5f2ff",
         fillOpacity: 0.25,
+        clickable: false,
       });
     }
 
@@ -284,20 +303,29 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       const jobsitePosition = { lat: jobsiteLatitude, lng: jobsiteLongitude };
       polylineRef.current = new window.google.maps.Polyline({
         path: [jobsitePosition, selectedPunchPosition],
-        geodesic: true,
+        geodesic: false,
         strokeColor: "#9ca3af",
-        strokeOpacity: 1,
+        strokeOpacity: 0.9,
         strokeWeight: 2,
         map: mapInstanceRef.current,
+        clickable: false,
       });
     }
 
-    // 4. Fit map to show all markers with padding
+    // 4. Fit map to show all markers with padding and cap zoom
     if (!bounds.isEmpty()) {
       mapInstanceRef.current.fitBounds(bounds, { top: 60, bottom: 60, left: 40, right: 40 });
+      
+      // Cap zoom at 19 after fitBounds
+      window.google.maps.event.addListenerOnce(mapInstanceRef.current, 'bounds_changed', () => {
+        const currentZoom = mapInstanceRef.current?.getZoom();
+        if (currentZoom && currentZoom > 19) {
+          mapInstanceRef.current?.setZoom(19);
+        }
+      });
     } else {
       mapInstanceRef.current.setCenter({ lat: latitude, lng: longitude });
-      mapInstanceRef.current.setZoom(18);
+      mapInstanceRef.current.setZoom(19);
     }
   }, [latitude, longitude, employeeName, jobsiteName, jobsiteLatitude, jobsiteLongitude, timestamp]);
 
