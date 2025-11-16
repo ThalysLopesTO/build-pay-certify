@@ -21,7 +21,7 @@ const JobsiteMapPreview: React.FC<JobsiteMapPreviewProps> = ({
   latitude,
   longitude,
   address,
-  height = '200px',
+  height = '240px',
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -40,13 +40,22 @@ const JobsiteMapPreview: React.FC<JobsiteMapPreviewProps> = ({
         if (!mapRef.current || mapInstanceRef.current) return;
 
         mapInstanceRef.current = new (window as any).google.maps.Map(mapRef.current, {
-          center: { lat: 0, lng: 0 },
+          center: { lat: 43.65, lng: -79.38 }, // Default to Toronto
           zoom: 15,
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
           zoomControl: true,
         });
+
+        // Trigger resize to ensure tiles load properly
+        if (window.google?.maps?.event) {
+          setTimeout(() => {
+            if (mapInstanceRef.current) {
+              window.google.maps.event.trigger(mapInstanceRef.current, 'resize');
+            }
+          }, 100);
+        }
       } catch (err) {
         console.error('Error initializing map:', err);
         setError('Failed to load map');
@@ -79,8 +88,14 @@ const JobsiteMapPreview: React.FC<JobsiteMapPreviewProps> = ({
 
     const position = { lat: latitude, lng: longitude };
 
-    // Update map center
+    // Update map center and zoom
     mapInstanceRef.current.setCenter(position);
+    mapInstanceRef.current.setZoom(16);
+
+    // Trigger resize to ensure tiles render after position change
+    if (window.google?.maps?.event) {
+      window.google.maps.event.trigger(mapInstanceRef.current, 'resize');
+    }
 
     // Update or create marker
     if (markerRef.current) {
@@ -91,6 +106,7 @@ const JobsiteMapPreview: React.FC<JobsiteMapPreviewProps> = ({
         position,
         map: mapInstanceRef.current,
         title: address || 'Jobsite Location',
+        animation: window.google.maps.Animation.DROP,
       });
     }
 
@@ -126,8 +142,8 @@ const JobsiteMapPreview: React.FC<JobsiteMapPreviewProps> = ({
     <div className="space-y-2">
       <div
         ref={mapRef}
-        className="relative rounded-lg border overflow-hidden shadow-sm"
-        style={{ height }}
+        className="relative w-full rounded-lg border border-border shadow-sm"
+        style={{ height, minHeight: height }}
       >
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
