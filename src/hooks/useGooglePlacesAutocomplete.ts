@@ -47,7 +47,10 @@ export const useGooglePlacesAutocomplete = ({
 
   // Fetch predictions when input changes
   useEffect(() => {
+    console.log('🔍 Places hook input changed:', input);
+    
     if (!input || input.length < 3) {
+      console.log('⏭️ Input too short, clearing predictions');
       setPredictions([]);
       return;
     }
@@ -57,6 +60,7 @@ export const useGooglePlacesAutocomplete = ({
       return;
     }
 
+    console.log('📤 Places query:', input);
     setIsLoading(true);
     setError(null);
 
@@ -77,13 +81,13 @@ export const useGooglePlacesAutocomplete = ({
             description: result.description
           }));
           
-          console.log('📍 Places predictions received:', formattedPredictions);
+          console.log('✅ Places predictions received:', formattedPredictions);
           setPredictions(formattedPredictions);
         } else if (status === (window as any).google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
           console.log('📍 No predictions found for:', input);
           setPredictions([]);
         } else {
-          console.warn('⚠️ Places API error:', status);
+          console.error('❌ Places API error:', status);
           setError('Unable to fetch address suggestions');
           setPredictions([]);
         }
