@@ -31,11 +31,15 @@ interface JobsiteFormProps {
 }
 
 const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
+  console.log('🏗️ JobsiteForm component rendered');
+  
   const { addJobsite } = useJobsiteActions();
   const assignForemen = useAssignForemen();
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [addressInput, setAddressInput] = useState('');
   const [googleMapsReady, setGoogleMapsReady] = useState(false);
+  
+  console.log('📝 Current addressInput state:', addressInput);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -62,6 +66,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
   }, []);
 
   // Use Google Places Autocomplete hook
+  console.log('🔌 About to call useGooglePlacesAutocomplete with input:', addressInput);
   const { predictions, isLoading: isPredictionsLoading, error: predictionsError, selectPlace } = 
     useGooglePlacesAutocomplete({
       input: addressInput,
@@ -72,6 +77,7 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
         console.log('✅ Place selected:', place);
       }
     });
+  console.log('📊 Hook returned - predictions:', predictions.length, 'isLoading:', isPredictionsLoading);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -158,30 +164,31 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                         value={addressInput}
                         onChange={(e) => {
                           const value = e.target.value;
-                          console.log('🔤 Address input changed:', value);
+                          console.log('🔤 INPUT CHANGED:', value);
                           setAddressInput(value);
                           field.onChange(value);
                         }}
                         required
                       />
                       
-                      {/* Debug Block - Remove after testing */}
-                      <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded text-xs">
-                        <div className="font-semibold mb-1">🐛 Debug Info:</div>
+                      {/* FORCED DEBUG BLOCK */}
+                      <div style={{ 
+                        padding: '8px', 
+                        background: '#f9f9f9', 
+                        border: '2px solid #ff0000', 
+                        marginTop: '8px',
+                        fontSize: '12px'
+                      }}>
+                        <div style={{ fontWeight: 'bold' }}>🐛 FORCED DEBUG:</div>
                         <div>Search text: "{addressInput}"</div>
                         <div>Google Maps ready: {googleMapsReady ? '✅' : '❌'}</div>
-                        <div>Predictions count: {predictions.length}</div>
+                        <div>Predictions count: {predictions?.length || 0}</div>
                         <div>Is loading: {isPredictionsLoading ? '⏳' : '✅'}</div>
-                        {predictions.length > 0 && (
-                          <div className="mt-2">
-                            <div className="font-semibold">Predictions:</div>
-                            <ul className="list-disc pl-5 mt-1">
-                              {predictions.map((p) => (
-                                <li key={p.place_id}>{p.description}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        <ul>
+                          {predictions?.map((p) => (
+                            <li key={p.place_id}>{p.description}</li>
+                          ))}
+                        </ul>
                       </div>
                       
                       {/* Custom Predictions Dropdown */}
