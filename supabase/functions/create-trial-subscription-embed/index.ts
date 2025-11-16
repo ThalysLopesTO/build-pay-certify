@@ -87,31 +87,51 @@ serve(async (req) => {
     });
     console.log('Stripe customer created:', customer.id);
 
-    // Create PaymentIntent manually (subscription will be created after payment confirmation)
-    console.log('Creating PaymentIntent for trial signup...');
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: 0, // $0 for trial signup
-      currency: 'cad',
+    // Create Stripe Subscription with 14-day trial
+    console.log('Creating Stripe subscription with trial...');
+    const subscription = await stripe.subscriptions.create({
       customer: customer.id,
-      setup_future_usage: 'off_session',
+      items: [{ price: PLAN_PRICE_IDS[plan] }],
+      trial_period_days: 14,
+      payment_behavior: 'default_incomplete',
+      payment_settings: {
+        save_default_payment_method: 'on_subscription',
+      },
+      collection_method: 'charge_automatically',
+      expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
       metadata: {
-        plan: plan,
         companyName: companyName,
-        email: email,
+        plan: plan,
         source: 'embed_trial',
       },
     });
-    console.log('PaymentIntent created:', paymentIntent.id);
+    console.log('Stripe subscription created:', subscription.id);
 
-    if (!paymentIntent.client_secret) {
-      console.error('Failed to get payment intent client secret');
+    // Extract client secret - try payment_intent first, then setup_intent
+    let clientSecret: string | null = null;
+    let intentType: 'payment' | 'setup' | null = null;
+
+    const invoice = subscription.latest_invoice as Stripe.Invoice | null;
+    const paymentIntent = invoice?.payment_intent as Stripe.PaymentIntent | null;
+
+    if (paymentIntent?.client_secret) {
+      clientSecret = paymentIntent.client_secret;
+      intentType = 'payment';
+      console.log('Using PaymentIntent client_secret:', paymentIntent.id);
+    } else if (subscription.pending_setup_intent) {
+      const setupIntent = subscription.pending_setup_intent as Stripe.SetupIntent;
+      clientSecret = setupIntent.client_secret || null;
+      intentType = 'setup';
+      console.log('Using SetupIntent client_secret:', setupIntent.id);
+    }
+
+    if (!clientSecret || !intentType) {
+      console.error('No payment_intent or setup_intent client_secret found for subscription', subscription.id);
       return new Response(
-        JSON.stringify({ error: 'Failed to initialize payment' }),
+        JSON.stringify({ error: 'Failed to initialize payment for trial subscription.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const clientSecret = paymentIntent.client_secret;
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -129,7 +149,10 @@ serve(async (req) => {
         admin_first_name: firstName,
         admin_last_name: lastName,
         admin_email: email,
-        status: 'awaiting_payment',
+        status: 'pending_payment',
+        stripe_customer_id: customer.id,
+        stripe_subscription_id: subscription.id,
+        source: 'embed_trial',
       })
       .select()
       .single();
@@ -146,10 +169,13 @@ serve(async (req) => {
     // Return success response
     const response = {
       clientSecret: clientSecret,
+      intentType: intentType,
       registrationRequestId: registrationRequest?.id || null,
+      subscriptionId: subscription.id,
+      customerId: customer.id,
     };
 
-    console.log('PaymentIntent created successfully for trial signup');
+    console.log('Trial subscription created successfully with intentType:', intentType);
     return new Response(
       JSON.stringify(response),
       { 

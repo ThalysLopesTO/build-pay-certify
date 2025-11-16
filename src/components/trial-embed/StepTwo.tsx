@@ -11,11 +11,12 @@ import { toast } from 'sonner';
 interface StepTwoProps {
   formData: TrialEmbedFormData;
   clientSecret: string;
+  intentType: 'payment' | 'setup';
   registrationRequestId: string;
   onBack: () => void;
 }
 
-const StepTwo = ({ formData, clientSecret, registrationRequestId, onBack }: StepTwoProps) => {
+const StepTwo = ({ formData, clientSecret, intentType, registrationRequestId, onBack }: StepTwoProps) => {
   const stripe = useStripe();
   const elements = useElements();
   const planDetails = SUBSCRIPTION_PLANS[formData.plan];
@@ -33,20 +34,40 @@ const StepTwo = ({ formData, clientSecret, registrationRequestId, onBack }: Step
     setIsProcessing(true);
 
     try {
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: window.location.origin + '/start-trial-embed?success=true',
-        },
-        redirect: 'if_required', // Stay on page if possible
-      });
+      if (intentType === 'payment') {
+        // Confirm PaymentIntent
+        const { error, paymentIntent } = await stripe.confirmPayment({
+          elements,
+          confirmParams: {
+            return_url: window.location.origin + '/start-trial-embed?success=true',
+          },
+          redirect: 'if_required',
+        });
 
-      if (error) {
-        toast.error(error.message || 'Payment failed');
-        console.error('Payment error:', error);
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        setPaymentSucceeded(true);
-        toast.success('✅ Payment confirmed in test mode!');
+        if (error) {
+          toast.error(error.message || 'Payment failed');
+          console.error('Payment error:', error);
+        } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+          setPaymentSucceeded(true);
+          toast.success('✅ Payment confirmed!');
+        }
+      } else {
+        // Confirm SetupIntent
+        const { error, setupIntent } = await stripe.confirmSetup({
+          elements,
+          confirmParams: {
+            return_url: window.location.origin + '/start-trial-embed?success=true',
+          },
+          redirect: 'if_required',
+        });
+
+        if (error) {
+          toast.error(error.message || 'Setup failed');
+          console.error('Setup error:', error);
+        } else if (setupIntent && setupIntent.status === 'succeeded') {
+          setPaymentSucceeded(true);
+          toast.success('✅ Payment method confirmed!');
+        }
       }
     } catch (err) {
       toast.error('An unexpected error occurred');
