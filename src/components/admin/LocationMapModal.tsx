@@ -21,6 +21,32 @@ const calculateDistanceMeters = (
   return R * c; // Distance in meters
 };
 
+// Helper to create simple circular markers
+const createMarker = (
+  map: any,
+  position: { lat: number; lng: number },
+  type: "jobsite" | "punch",
+  title?: string
+) => {
+  const isJobsite = type === "jobsite";
+  
+  return new window.google.maps.Marker({
+    map,
+    position,
+    title: title || (isJobsite ? "Jobsite location" : "Punch location"),
+    icon: {
+      path: window.google.maps.SymbolPath.CIRCLE,
+      fillColor: isJobsite ? "#2563eb" : "#ffffff",
+      fillOpacity: 1,
+      strokeColor: isJobsite ? "#1d4ed8" : "#dc2626",
+      strokeOpacity: 1,
+      strokeWeight: 2,
+      scale: isJobsite ? 8 : 7,
+    },
+    zIndex: isJobsite ? 100 : 200,
+  });
+};
+
 interface PunchLocation {
   id: string;
   latitude: number;
@@ -59,54 +85,84 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
   const polylineRef = useRef<any>(null);
   const retryCount = useRef(0);
 
-  // Helper to create markers with different styles
-  const createMarker = (
-    map: any,
-    position: { lat: number; lng: number },
-    type: "jobsite" | "punch" | "selectedPunch",
-    title?: string
-  ) => {
-    const baseConfig: any = {
-      map,
-      position,
-      title,
-    };
+  // Update markers, circle, and polyline when coordinates change
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.google?.maps) return;
 
-    if (type === "jobsite") {
-      baseConfig.icon = {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        scale: 8,
-        fillColor: "#2563eb",
-        fillOpacity: 1,
-        strokeColor: "#1d4ed8",
-        strokeWeight: 2,
-      };
-      baseConfig.zIndex = 100;
-    } else if (type === "selectedPunch") {
-      baseConfig.icon = {
-        path: window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-        scale: 7,
-        fillColor: "#dc2626",
-        fillOpacity: 1,
-        strokeColor: "#991b1b",
-        strokeWeight: 2,
-        rotation: 180,
-      };
-      baseConfig.zIndex = 200;
-    } else {
-      baseConfig.icon = {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        scale: 5,
-        fillColor: "#f97316",
-        fillOpacity: 1,
-        strokeColor: "#c2410c",
-        strokeWeight: 1.5,
-      };
-      baseConfig.zIndex = 150;
+    // Clear existing markers, circle, and polyline
+    markersRef.current.forEach(marker => marker?.setMap(null));
+    markersRef.current = [];
+    if (circleRef.current) {
+      circleRef.current.setMap(null);
+      circleRef.current = null;
+    }
+    if (polylineRef.current) {
+      polylineRef.current.setMap(null);
+      polylineRef.current = null;
     }
 
-    return new window.google.maps.Marker(baseConfig);
-  };
+    const bounds = new window.google.maps.LatLngBounds();
+    const hasJobsite = jobsiteLatitude != null && jobsiteLongitude != null;
+
+    // 1. Jobsite marker with radius circle
+    if (hasJobsite) {
+      const jobsitePosition = { lat: jobsiteLatitude, lng: jobsiteLongitude };
+      
+      // Jobsite marker (blue circle)
+      const jobsiteMarker = createMarker(
+        mapInstanceRef.current,
+        jobsitePosition,
+        "jobsite",
+        `Jobsite: ${jobsiteName || 'Jobsite'}`
+      );
+      markersRef.current.push(jobsiteMarker);
+      bounds.extend(jobsitePosition);
+
+      // Radius circle around jobsite (40m with discrete gray styling)
+      circleRef.current = new window.google.maps.Circle({
+        map: mapInstanceRef.current,
+        center: jobsitePosition,
+        radius: 40,
+        strokeColor: "#9ca3af",
+        strokeOpacity: 0.8,
+        strokeWeight: 1,
+        fillColor: "#e5e7eb",
+        fillOpacity: 0.25,
+      });
+    }
+
+    // 2. Selected punch marker (white with red border)
+    const selectedPunchPosition = { lat: latitude, lng: longitude };
+    const punchMarker = createMarker(
+      mapInstanceRef.current,
+      selectedPunchPosition,
+      "punch",
+      `${employeeName} – ${new Date(timestamp).toLocaleTimeString()}`
+    );
+    markersRef.current.push(punchMarker);
+    bounds.extend(selectedPunchPosition);
+
+    // 3. Draw line between jobsite and selected punch (if both exist)
+    if (hasJobsite) {
+      const jobsitePosition = { lat: jobsiteLatitude, lng: jobsiteLongitude };
+      polylineRef.current = new window.google.maps.Polyline({
+        path: [jobsitePosition, selectedPunchPosition],
+        geodesic: true,
+        strokeColor: "#9ca3af",
+        strokeOpacity: 1,
+        strokeWeight: 2,
+        map: mapInstanceRef.current,
+      });
+    }
+
+    // 4. Fit map to show all markers with padding
+    if (!bounds.isEmpty()) {
+      mapInstanceRef.current.fitBounds(bounds, { top: 60, bottom: 60, left: 40, right: 40 });
+    } else {
+      mapInstanceRef.current.setCenter({ lat: latitude, lng: longitude });
+      mapInstanceRef.current.setZoom(18);
+    }
+  }, [latitude, longitude, employeeName, jobsiteName, jobsiteLatitude, jobsiteLongitude, timestamp]);
 
   // Calculate distance between punch and jobsite
   const distance = useMemo(() => {
@@ -199,25 +255,25 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       markersRef.current.push(jobsiteMarker);
       bounds.extend(jobsitePosition);
 
-      // Radius circle around jobsite (60m with subtle styling)
+      // Radius circle around jobsite (40m with discrete gray styling)
       circleRef.current = new window.google.maps.Circle({
         map: mapInstanceRef.current,
         center: jobsitePosition,
-        radius: 60,
-        strokeColor: "#2563eb",
+        radius: 40,
+        strokeColor: "#9ca3af",
         strokeOpacity: 0.8,
-        strokeWeight: 1.5,
-        fillColor: "#2563eb",
-        fillOpacity: 0.08,
+        strokeWeight: 1,
+        fillColor: "#e5e7eb",
+        fillOpacity: 0.25,
       });
     }
 
-    // 2. Selected punch marker (red flag)
+    // 2. Selected punch marker (white with red border)
     const selectedPunchPosition = { lat: latitude, lng: longitude };
     const punchMarker = createMarker(
       mapInstanceRef.current,
       selectedPunchPosition,
-      "selectedPunch",
+      "punch",
       `${employeeName} – ${new Date(timestamp).toLocaleTimeString()}`
     );
     markersRef.current.push(punchMarker);
@@ -229,21 +285,21 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
       polylineRef.current = new window.google.maps.Polyline({
         path: [jobsitePosition, selectedPunchPosition],
         geodesic: true,
-        strokeColor: "#10b981",
-        strokeOpacity: 0.9,
-        strokeWeight: 3,
+        strokeColor: "#9ca3af",
+        strokeOpacity: 1,
+        strokeWeight: 2,
         map: mapInstanceRef.current,
       });
     }
 
-    // 4. Fit map to show all markers
+    // 4. Fit map to show all markers with padding
     if (!bounds.isEmpty()) {
-      mapInstanceRef.current.fitBounds(bounds);
+      mapInstanceRef.current.fitBounds(bounds, { top: 60, bottom: 60, left: 40, right: 40 });
     } else {
       mapInstanceRef.current.setCenter({ lat: latitude, lng: longitude });
-      mapInstanceRef.current.setZoom(16);
+      mapInstanceRef.current.setZoom(18);
     }
-  }, [latitude, longitude, employeeName, jobsiteName, jobsiteLatitude, jobsiteLongitude, employeePunches, timestamp]);
+  }, [latitude, longitude, employeeName, jobsiteName, jobsiteLatitude, jobsiteLongitude, timestamp]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -283,17 +339,17 @@ const LocationMapModal: React.FC<LocationMapModalProps> = ({
               <>
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded-full">
                   <span className="inline-block h-2 w-2 rounded-full bg-blue-600" />
-                  <span className="text-blue-900">Jobsite (60m)</span>
+                  <span className="text-blue-900">Jobsite (40m radius)</span>
                 </div>
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded-full">
-                  <span className="inline-block h-0.5 w-4 bg-emerald-500 rounded" />
-                  <span className="text-emerald-900">Distance line</span>
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded-full">
+                  <span className="inline-block h-0.5 w-4 bg-gray-400 rounded" />
+                  <span className="text-gray-700">Distance line</span>
                 </div>
               </>
             )}
             <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 rounded-full">
-              <span className="inline-block h-2 w-2 rounded-full bg-red-600" />
-              <span className="text-red-900">Selected punch</span>
+              <span className="inline-block h-2 w-2 rounded-full bg-red-600 border border-white shadow-sm" />
+              <span className="text-red-900">Punch location</span>
             </div>
           </div>
 
