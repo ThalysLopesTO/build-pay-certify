@@ -61,6 +61,15 @@ const LivePunchMonitor = () => {
     jobsiteName?: string;
     jobsiteLatitude?: number;
     jobsiteLongitude?: number;
+    photoUrl?: string;
+    employeePunches: Array<{
+      id: string;
+      latitude: number;
+      longitude: number;
+      timestamp: string;
+      employeeName: string;
+      photoUrl?: string;
+    }>;
   } | null>(null);
 
   // Pagination state
@@ -347,6 +356,24 @@ const LivePunchMonitor = () => {
   const handleViewLocation = (entry: PunchEntry) => {
     const employeeName = entry.user_profiles ? `${entry.user_profiles.first_name} ${entry.user_profiles.last_name}` : 'Unknown Employee';
     const timestamp = entry.check_in_time ? format(new Date(entry.check_in_time), 'MMM dd, yyyy h:mm a') : 'Unknown time';
+    const photoUrl = entry.user_profiles?.photo_url ?? undefined;
+    
+    // Get all punches for this employee on the selected date
+    const employeePunches = (punchEntries || [])
+      .filter(e => e.user_id === entry.user_id)
+      .map(e => {
+        const [lat, lng] = e.check_in_location?.split(',').map(Number) ?? [0, 0];
+        return {
+          id: e.id,
+          latitude: lat,
+          longitude: lng,
+          timestamp: e.check_in_time || '',
+          employeeName: e.user_profiles ? `${e.user_profiles.first_name} ${e.user_profiles.last_name}` : '',
+          photoUrl: e.user_profiles?.photo_url ?? undefined,
+        };
+      })
+      .filter(p => p.latitude && p.longitude);
+
     setSelectedLocation({
       punchLocation: entry.check_in_location,
       employeeName,
@@ -354,6 +381,8 @@ const LivePunchMonitor = () => {
       jobsiteName: entry.jobsites?.name,
       jobsiteLatitude: entry.jobsites?.latitude ?? undefined,
       jobsiteLongitude: entry.jobsites?.longitude ?? undefined,
+      photoUrl,
+      employeePunches,
     });
   };
 
@@ -530,6 +559,8 @@ const LivePunchMonitor = () => {
           jobsiteName={selectedLocation.jobsiteName}
           jobsiteLatitude={selectedLocation.jobsiteLatitude}
           jobsiteLongitude={selectedLocation.jobsiteLongitude}
+          photoUrl={selectedLocation.photoUrl}
+          employeePunches={selectedLocation.employeePunches}
           onClose={() => setSelectedLocation(null)}
         />
       );
