@@ -17,6 +17,8 @@ import JobsiteStatsOverview from './jobsite/JobsiteStatsOverview';
 import JobsiteFilters from './jobsite/JobsiteFilters';
 import JobsiteGrid from './jobsite/JobsiteGrid';
 import JobsiteMobileList from './jobsite/JobsiteMobileList';
+import JobsiteMobileHeader from './jobsite/JobsiteMobileHeader';
+import JobsiteMobileFilters from './jobsite/JobsiteMobileFilters';
 
 const JobsiteManagement = () => {
   const [showForm, setShowForm] = useState(false);
@@ -84,10 +86,28 @@ const JobsiteManagement = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Enhanced Header */}
-        <div className="flex flex-col space-y-4 lg:flex-row lg:items-start lg:justify-between lg:space-y-0">
-          <div className="space-y-2">
+      {/* Mobile-Only Header & Filters */}
+      {isMobile && (
+        <>
+          <JobsiteMobileHeader jobsiteCount={allJobsites.length} />
+          <JobsiteMobileFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            sortBy={sortBy}
+            onSortByChange={setSortBy}
+            sortOrder={sortOrder}
+            onSortOrderChange={setSortOrder}
+          />
+        </>
+      )}
+
+      <div className={isMobile ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6"}>
+        {/* Desktop Header - Hidden on Mobile */}
+        {!isMobile && (
+          <div className="flex flex-col space-y-4 lg:flex-row lg:items-start lg:justify-between lg:space-y-0">
+            <div className="space-y-2">
             <div className="flex items-center space-x-3">
               <div className="p-2 rounded-xl bg-primary/10">
                 <Building className="h-6 w-6 text-primary" />
@@ -106,22 +126,25 @@ const JobsiteManagement = () => {
             <Plus className="h-4 w-4 mr-2" />
             Add New Jobsite
           </Button>
-        </div>
+          </div>
+        )}
 
-        {/* Stats Overview */}
-        <JobsiteStatsOverview jobsites={allJobsites} isLoading={isLoading} />
-
-        {/* Search and Filters */}
-        <JobsiteFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          sortOrder={sortOrder}
-          onSortOrderChange={setSortOrder}
-          sortBy={sortBy}
-          onSortByChange={setSortBy}
-        />
+        {/* Desktop Stats & Filters - Hidden on Mobile */}
+        {!isMobile && (
+          <>
+            <JobsiteStatsOverview jobsites={allJobsites} isLoading={isLoading} />
+            <JobsiteFilters
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              sortOrder={sortOrder}
+              onSortOrderChange={setSortOrder}
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+            />
+          </>
+        )}
 
         {/* Form Modal */}
         {showForm && (
