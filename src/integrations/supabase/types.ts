@@ -3715,19 +3715,10 @@ export type Database = {
         }
         Returns: Json
       }
-      get_client_portal_data:
-        | {
-            Args: { p_portal_token: string }
-            Returns: {
-              error: true
-            } & "Could not choose the best candidate function between: public.get_client_portal_data(p_portal_token => text), public.get_client_portal_data(p_portal_token => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
-          }
-        | {
-            Args: { p_portal_token: string }
-            Returns: {
-              error: true
-            } & "Could not choose the best candidate function between: public.get_client_portal_data(p_portal_token => text), public.get_client_portal_data(p_portal_token => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
-          }
+      get_client_portal_data: {
+        Args: { p_portal_token: string }
+        Returns: Json
+      }
       get_companies_with_status: {
         Args: never
         Returns: {
