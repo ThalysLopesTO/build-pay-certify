@@ -1,37 +1,50 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ClipboardList } from 'lucide-react';
-import { useDailyReports } from '@/hooks/useDailyReports';
+import { Plus, AlertCircle } from 'lucide-react';
+import { useDailyReports, DailyReport } from '@/hooks/useDailyReports';
+import DailyReportsTable from '../admin/DailyReportsTable';
+import DailyReportsFilters from '../admin/DailyReportsFilters';
+import { DailyReportsPagination } from '../admin/daily-reports/DailyReportsPagination';
+import DailyReportsForm from '../admin/DailyReportsForm';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import DailyReportsForm from '@/components/admin/DailyReportsForm';
-import DailyReportsTable from '@/components/admin/DailyReportsTable';
-import DailyReportsFilters from '@/components/admin/DailyReportsFilters';
-import { DailyReportsPagination } from '@/components/admin/daily-reports/DailyReportsPagination';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { DailyReportsMobileFilters } from '../admin/daily-reports/DailyReportsMobileFilters';
+import { DailyReportsMobileList } from '../admin/daily-reports/DailyReportsMobileList';
+import DailyReportDetailsModal from '../admin/DailyReportDetailsModal';
+import DailyReportEditModal from '../admin/DailyReportEditModal';
+import { DailyReportDeleteConfirmDialog } from '../admin/DailyReportDeleteConfirmDialog';
+import { useDailyReportPDF } from '@/hooks/useDailyReportPDF';
+import { useDailyReportDelete } from '@/hooks/useDailyReportDelete';
 import { useToast } from '@/hooks/use-toast';
 
-const ForemanDailyReports = () => {
+const ForemanDailyReports: React.FC = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize] = useState(10);
   const [filters, setFilters] = useState<{
     jobsite_id?: string;
     date_from?: string;
     date_to?: string;
     submitted_by?: string;
     search?: string;
-  }>({
-    // Show all company reports by default
-  });
-
-  // Use debounced filters to prevent too many queries
+  }>({});
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
+  const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
+  const [editingReport, setEditingReport] = useState<DailyReport | null>(null);
+  const [deletingReport, setDeletingReport] = useState<DailyReport | null>(null);
+  
+  const { generateDailyReportPDF } = useDailyReportPDF();
+  const { mutate: deleteReport, isPending: isDeleting } = useDailyReportDelete();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedFilters(filters);
-    }, 300); // 300ms debounce
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [filters]);
@@ -51,10 +64,45 @@ const ForemanDailyReports = () => {
     setCurrentPage(1);
   }, []);
 
-  // Manual refresh for when connection is restored
-  const handleRefresh = useCallback(() => {
-    refetch();
-  }, [refetch]);
+  const handleRefresh = async () => {
+    await refetch();
+  };
+
+  const handleDownloadPDF = async (report: DailyReport) => {
+    try {
+      const pdfData = {
+        jobsite: report.jobsites?.name,
+        address: report.jobsites?.address,
+        reportDate: report.report_date,
+        submittedBy: `${report.user_profiles?.first_name} ${report.user_profiles?.last_name}`,
+        submittedTime: report.created_at,
+        summary: report.summary,
+        photos: report.photos?.map(url => ({ src: url })),
+      };
+      await generateDailyReportPDF({ report: pdfData });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to generate PDF',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteReport = (report: DailyReport) => {
+    setDeletingReport(report);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deletingReport) {
+      deleteReport(deletingReport.id);
+      setDeletingReport(null);
+    }
+  };
+
+  const canEditReport = (report: DailyReport) => {
+    return isAdmin || report.submitted_by === user?.id;
+  };
 
   // Filter reports by search term if provided
   const filteredReports = filters.search
