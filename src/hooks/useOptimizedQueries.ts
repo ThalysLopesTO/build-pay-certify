@@ -41,6 +41,7 @@ export const useJobsites = () => {
         .from('jobsites')
         .select('id, name, address, status, assigned_foreman_id')
         .eq('company_id', user.companyId)
+        .eq('status', 'active')
         .order('name');
 
       if (error) throw error;

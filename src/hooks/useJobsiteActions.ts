@@ -196,7 +196,7 @@ export const useJobsiteActions = () => {
 
       // Delete associated records in the correct order to avoid foreign key violations
       
-      // First get related record IDs
+      // First get related record IDs for nested dependencies
       const { data: materialRequestIds } = await supabase
         .from('material_requests')
         .select('id')
@@ -207,15 +207,26 @@ export const useJobsiteActions = () => {
         .select('id')
         .eq('jobsite_id', id);
 
+      const { data: dailyReportIds } = await supabase
+        .from('daily_reports')
+        .select('id')
+        .eq('jobsite_id', id);
+
       // Delete nested dependencies first
       if (materialRequestIds?.length) {
         const mrIds = materialRequestIds.map(mr => mr.id);
         await supabase.from('material_request_attachments').delete().in('material_request_id', mrIds);
+        await supabase.from('material_request_line_items').delete().in('material_request_id', mrIds);
       }
 
       if (attentionReportIds?.length) {
         const arIds = attentionReportIds.map(ar => ar.id);
         await supabase.from('attention_report_attachments').delete().in('report_id', arIds);
+      }
+
+      if (dailyReportIds?.length) {
+        const drIds = dailyReportIds.map(dr => dr.id);
+        await supabase.from('daily_report_comments').delete().in('daily_report_id', drIds);
       }
 
       // Delete main associated records
@@ -224,13 +235,16 @@ export const useJobsiteActions = () => {
         supabase.from('timesheets').delete().eq('jobsite_id', id),
         supabase.from('weekly_timesheets').delete().eq('jobsite_id', id),
         supabase.from('inventory').delete().eq('jobsite_id', id),
+        supabase.from('equipment_usage_log').delete().eq('jobsite_id', id),
         supabase.from('attention_reports').delete().eq('jobsite_id', id),
         supabase.from('daily_reports').delete().eq('jobsite_id', id),
         supabase.from('missed_punch_requests').delete().eq('jobsite_id', id),
         supabase.from('material_takeoff_notes').delete().eq('jobsite_id', id),
         supabase.from('jobsite_foremen').delete().eq('jobsite_id', id),
         supabase.from('jobsite_tasks').delete().eq('jobsite_id', id),
+        supabase.from('jobsite_schedule_items').delete().eq('jobsite_id', id),
         supabase.from('invoices').update({ jobsite_id: null }).eq('jobsite_id', id),
+        supabase.from('change_orders').update({ project_id: null }).eq('project_id', id),
         supabase.from('audit_logs').delete().or(`original_jobsite_id.eq.${id},new_jobsite_id.eq.${id}`),
       ];
 

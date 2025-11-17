@@ -62,12 +62,13 @@ export const useEnhancedMaterialRequestsAdmin = () => {
       const jobsiteIds = [...new Set(materialRequests.map(r => r.jobsite_id))];
       const userIds = [...new Set(materialRequests.map(r => r.submitted_by))];
 
-      // Fetch jobsites data
+      // Fetch jobsites data (active only)
       const { data: jobsites, error: jobsitesError } = await supabase
         .from('jobsites')
         .select('id, name, address')
         .in('id', jobsiteIds)
-        .eq('company_id', user.companyId);
+        .eq('company_id', user.companyId)
+        .eq('status', 'active');
 
       if (jobsitesError) {
         console.error('Error fetching jobsites:', jobsitesError);
