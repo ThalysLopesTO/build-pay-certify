@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, AlertTriangle, Clock, Briefcase, Calendar } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertTriangle, Clock, Briefcase, Calendar, RefreshCw } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { EmployeeSummary } from '@/hooks/useTimeSummaryData';
 import { useTimeSummaryDetails } from '@/hooks/useTimeSummaryDetails';
 import { cn } from '@/lib/utils';
 import { RoleBadge } from './RoleBadge';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface EmployeeTimeSummaryRowProps {
   employee: EmployeeSummary;
@@ -22,15 +25,29 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
   endDate 
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   // Fetch daily details when row is expanded
-  const { data: dailyPunches, isLoading } = useTimeSummaryDetails({
+  const { data: dailyPunches, isLoading, refetch } = useTimeSummaryDetails({
     employeeId: employee.employee_id,
     jobsiteId,
     startDate,
     endDate,
     enabled: isExpanded,
   });
+
+  // Manual refresh handler
+  const handleRefresh = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Get first and last name for avatar
   const nameParts = employee.employee_name.split(' ');
@@ -111,9 +128,26 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
       {/* Expanded Daily Breakdown */}
       {isExpanded && (
         <div className="mt-2 px-3 md:px-4 py-4 bg-muted/30 border rounded-lg shadow-inner">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Calendar className="h-4 w-4 text-primary" />
-            DAILY BREAKDOWN
+          {/* Header with Date Range and Refresh */}
+          <div className="mb-3 flex items-center justify-between pb-2 border-b border-border/50">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">
+                {format(startDate, 'MMM dd')} - {format(endDate, 'MMM dd, yyyy')}
+              </span>
+              <Badge variant="secondary" className="text-xs">
+                {dailyPunches?.length || 0} {dailyPunches?.length === 1 ? 'day' : 'days'}
+              </Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="h-7 px-2"
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+            </Button>
           </div>
 
           {isLoading ? (
@@ -123,7 +157,11 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
             </div>
           ) : !dailyPunches || dailyPunches.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No punch records found
+              <Clock className="h-10 w-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm font-medium">No punch records found</p>
+              <p className="text-xs mt-1">
+                Filter: {format(startDate, 'MMM dd')} - {format(endDate, 'MMM dd, yyyy')}
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
