@@ -121,76 +121,119 @@ const ForemanDailyReports: React.FC = () => {
     : reports;
 
   if (error) {
-    console.error('Daily reports error:', error);
     return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-2">
-          <ClipboardList className="h-6 w-6" />
-          <h2 className="text-2xl font-bold">Daily Reports</h2>
-        </div>
-        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-          <h3 className="font-semibold text-destructive mb-2">Connection Error</h3>
-          <p className="text-sm text-muted-foreground mb-4">
+      <div className="space-y-6 p-4 md:p-6">
+        <h1 className="text-2xl md:text-3xl font-bold">Daily Reports</h1>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Connection Error</AlertTitle>
+          <AlertDescription>
             Unable to load daily reports: {error?.message || 'Unknown error'}
-          </p>
-          <Button onClick={handleRefresh} variant="outline" size="sm">
-            Try Again
-          </Button>
-        </div>
+            <Button onClick={handleRefresh} variant="outline" size="sm" className="mt-2">
+              Try Again
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header Section with Connection Status */}
-        <div className="flex flex-col space-y-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight mb-2">Daily Reports</h1>
-              <p className="text-muted-foreground">
-                Submit and manage your daily progress reports
-              </p>
-            </div>
-            <Button 
-              onClick={() => setIsFormOpen(true)} 
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-3"
-            >
-              <PlusCircle className="h-5 w-5 mr-2" />
-              Create Daily Report
-            </Button>
-          </div>
+    <div className="space-y-6 p-4 md:p-6 overflow-x-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight truncate">Daily Reports</h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">
+            View and manage your daily reports
+          </p>
         </div>
+        <Button onClick={() => setIsFormOpen(true)} size={isMobile ? 'icon' : 'default'} className="shrink-0">
+          <Plus className={isMobile ? 'h-4 w-4' : 'mr-2 h-4 w-4'} />
+          {!isMobile && 'Create Daily Report'}
+        </Button>
+      </div>
 
-        {/* Filters Section */}
+      {/* Filters */}
+      {isMobile ? (
+        <DailyReportsMobileFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onClearFilters={handleClearFilters}
+        />
+      ) : (
         <DailyReportsFilters
           filters={filters}
           onFiltersChange={handleFiltersChange}
           onClearFilters={handleClearFilters}
         />
+      )}
 
-        {/* Reports Table */}
-        <DailyReportsTable reports={filteredReports} isLoading={isLoading} />
-
-        {/* Pagination */}
-        {!isLoading && totalCount > 0 && (
-          <DailyReportsPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalCount}
-            itemsPerPage={pageSize}
-            onPageChange={setCurrentPage}
-          />
-        )}
-
-        {/* Form Modal */}
-        <DailyReportsForm
-          open={isFormOpen}
-          onOpenChange={setIsFormOpen}
+      {/* Content */}
+      {isMobile ? (
+        <DailyReportsMobileList
+          reports={filteredReports}
+          isLoading={isLoading}
+          onView={setSelectedReport}
+          onEdit={setEditingReport}
+          onDownload={handleDownloadPDF}
+          onDelete={handleDeleteReport}
+          canEdit={canEditReport}
+          canDelete={isAdmin}
+          onRefresh={handleRefresh}
         />
-      </div>
+      ) : (
+        <DailyReportsTable 
+          reports={filteredReports} 
+          isLoading={isLoading}
+        />
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <DailyReportsPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalCount}
+          itemsPerPage={pageSize}
+          onPageChange={setCurrentPage}
+        />
+      )}
+
+      {/* Create/Edit Form */}
+      <DailyReportsForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+      />
+
+      {/* Mobile Modals */}
+      {isMobile && (
+        <>
+          {selectedReport && (
+            <DailyReportDetailsModal
+              report={selectedReport}
+              open={!!selectedReport}
+              onOpenChange={(open) => !open && setSelectedReport(null)}
+            />
+          )}
+          {editingReport && (
+            <DailyReportEditModal
+              report={editingReport}
+              open={!!editingReport}
+              onOpenChange={(open) => !open && setEditingReport(null)}
+            />
+          )}
+          {deletingReport && (
+            <DailyReportDeleteConfirmDialog
+              report={deletingReport}
+              open={!!deletingReport}
+              onOpenChange={(open) => !open && setDeletingReport(null)}
+              onConfirm={handleConfirmDelete}
+              isDeleting={isDeleting}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 };
