@@ -21,13 +21,18 @@ export const useTimeSummaryDetails = ({
 }: TimeSummaryDetailsParams) => {
   const { user } = useAuth();
 
+  // More specific cache key to ensure proper invalidation
+  const startDateStr = format(startDate, "yyyy-MM-dd");
+  const endDateStr = format(endDate, "yyyy-MM-dd");
+
   return useQuery({
     queryKey: [
       "timeSummaryDetails", 
+      user?.companyId,
       employeeId, 
       jobsiteId, 
-      format(startDate, "yyyy-MM-dd"),
-      format(endDate, "yyyy-MM-dd")
+      startDateStr,
+      endDateStr
     ],
     queryFn: async () => {
       if (!user?.companyId) throw new Error("No company ID");
@@ -71,10 +76,10 @@ export const useTimeSummaryDetails = ({
 
       return dailyPunches;
     },
-    enabled: enabled && !!user?.companyId && !!employeeId,
-    staleTime: 0, // Always fetch fresh data
+    enabled: enabled && !!user?.companyId && !!employeeId && !!jobsiteId,
+    staleTime: 0, // Always fetch fresh data when date range changes
+    gcTime: 1000 * 60 * 5, // Cache for 5 minutes
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    refetchInterval: 30000, // Auto-refresh every 30 seconds as fallback
   });
 };

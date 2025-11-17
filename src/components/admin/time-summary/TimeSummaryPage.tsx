@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, RefreshCw } from 'lucide-react';
+import { BarChart3, RefreshCw, X, Calendar, Building, Users, Filter as FilterIcon } from 'lucide-react';
 import { TimeSummaryFilters } from './TimeSummaryFilters';
 import { TimeSummaryTable } from './TimeSummaryTable';
 import { TimeSummaryExport } from './TimeSummaryExport';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { useTimeSummaryData, TimeSummaryFilters as Filters } from '@/hooks/useTimeSummaryData';
-import { startOfWeek, endOfWeek } from 'date-fns';
+import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -104,6 +106,13 @@ export const TimeSummaryPage: React.FC = () => {
     queryClient.refetchQueries({ queryKey: ['time-summary'] });
   };
 
+  // Count active filters
+  const activeFilterCount = [
+    filters.jobsiteIds && filters.jobsiteIds.length > 0,
+    filters.employeeIds && filters.employeeIds.length > 0,
+    filters.status !== 'all',
+  ].filter(Boolean).length;
+
   return (
     <div className="space-y-4 md:space-y-6 pb-6">
       {/* Page Header */}
@@ -140,6 +149,63 @@ export const TimeSummaryPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Active Filters Display */}
+      {activeFilterCount > 0 && (
+        <Card className="p-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FilterIcon className="h-4 w-4" />
+              <span className="font-medium">Active Filters:</span>
+            </div>
+            
+            {/* Date Range Badge */}
+            <Badge variant="secondary" className="gap-1">
+              <Calendar className="h-3 w-3" />
+              {format(filters.dateRange.start, 'MMM dd')} - {format(filters.dateRange.end, 'MMM dd, yyyy')}
+            </Badge>
+
+            {/* Jobsite Filters */}
+            {filters.jobsiteIds && filters.jobsiteIds.length > 0 && (
+              <Badge variant="secondary" className="gap-1">
+                <Building className="h-3 w-3" />
+                {filters.jobsiteIds.length} {filters.jobsiteIds.length === 1 ? 'Project' : 'Projects'}
+              </Badge>
+            )}
+
+            {/* Employee Filters */}
+            {filters.employeeIds && filters.employeeIds.length > 0 && (
+              <Badge variant="secondary" className="gap-1">
+                <Users className="h-3 w-3" />
+                {filters.employeeIds.length} {filters.employeeIds.length === 1 ? 'Employee' : 'Employees'}
+              </Badge>
+            )}
+
+            {/* Status Filter */}
+            {filters.status !== 'all' && (
+              <Badge variant="secondary" className="capitalize">
+                {filters.status}
+              </Badge>
+            )}
+
+            {/* Clear All Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilters({
+                dateRange: { start: startOfWeek(new Date(), { weekStartsOn: 1 }), end: endOfWeek(new Date(), { weekStartsOn: 1 }) },
+                jobsiteIds: [],
+                employeeIds: [],
+                status: 'all'
+              })}
+              className="h-7 px-2 text-xs gap-1 ml-auto"
+            >
+              <X className="h-3 w-3" />
+              Clear All
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* Filters */}
       <TimeSummaryFilters filters={filters} onFiltersChange={setFilters} />
