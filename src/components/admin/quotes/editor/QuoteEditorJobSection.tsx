@@ -19,24 +19,24 @@ const QuoteEditorJobSection: React.FC<QuoteEditorJobSectionProps> = ({
 }) => {
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 px-4 md:px-6">
         <CardTitle className="text-lg">Job Details</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-4 md:px-6">
         <div>
-          <Label htmlFor="project_name">Project Name *</Label>
+          <Label htmlFor="project_name" className="text-sm">Project Name *</Label>
           <Input 
             id="project_name"
             value={formData.project_name}
             onChange={(e) => handleInputChange('project_name', e.target.value)}
             placeholder="e.g., Kitchen Renovation"
-            className="text-lg font-medium"
+            className="text-base md:text-lg font-medium h-11 md:h-10"
             required
             autoComplete="off"
           />
         </div>
         <div>
-          <Label htmlFor="notes">Scope of Work / Notes</Label>
+          <Label htmlFor="notes" className="text-sm">Scope of Work / Notes</Label>
           <Textarea 
             id="notes"
             value={formData.notes}
@@ -44,6 +44,7 @@ const QuoteEditorJobSection: React.FC<QuoteEditorJobSectionProps> = ({
             placeholder="Describe the project scope, deliverables, timeline..."
             rows={4}
             autoComplete="off"
+            className="min-h-[100px]"
           />
         </div>
       </CardContent>
