@@ -16,6 +16,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useInventory, InventoryItem } from '@/hooks/useInventory';
@@ -23,15 +24,18 @@ import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useIsMobile } from '@/hooks/use-mobile';
 import InventoryForm from '../InventoryForm';
 import InventoryByJobsite from './InventoryByJobsite';
+import UsageTracker from './UsageTracker';
 import EquipmentMobileStats from './mobile/EquipmentMobileStats';
 import EquipmentMobileFilters from './mobile/EquipmentMobileFilters';
 import EquipmentMobileList from './mobile/EquipmentMobileList';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Package, ClipboardList } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const EquipmentManagement = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState('equipment');
   const { 
     inventory,
     isLoading,
@@ -197,177 +201,194 @@ const EquipmentManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Desktop View */}
-      {!isMobile && (
-        <InventoryByJobsite
-          onAddEquipment={() => setIsFormOpen(true)}
-          onEditItem={handleEditItem}
-          onDeleteItem={setDeletingItem}
-          onViewItem={setViewingItem}
-          onReturnItem={setReturningItem}
-          isReturning={isReturning}
-        />
-      )}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md bg-muted/50 p-1 rounded-lg">
+          <TabsTrigger 
+            value="equipment" 
+            className={cn(
+              "flex items-center space-x-2 rounded-md transition-all",
+              "data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            )}
+          >
+            <Package className="h-4 w-4" />
+            <span>Equipment</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="usage" 
+            className={cn(
+              "flex items-center space-x-2 rounded-md transition-all",
+              "data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            )}
+          >
+            <ClipboardList className="h-4 w-4" />
+            <span>Usage Tracker</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Mobile View */}
-      {isMobile && (
-        <>
-          <EquipmentMobileStats
-            total={stats.total}
-            assigned={stats.assigned}
-            available={stats.available}
-            overdue={stats.overdue}
-          />
-          
-          <EquipmentMobileFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            statusFilter={statusFilter}
-            onStatusChange={setStatusFilter}
-            jobsiteFilter={jobsiteFilter}
-            onJobsiteChange={setJobsiteFilter}
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            jobsites={jobsites}
-            onClearFilters={resetFilters}
-          />
-          
-          <EquipmentMobileList
-            groupedEquipment={groupedInventory}
-            getEquipmentStatus={getEquipmentStatus}
-            canManageInventory={canManageInventory}
-            onEdit={handleEditItem}
-            onDelete={setDeletingItem}
-            onView={setViewingItem}
-            onReturn={setReturningItem}
-            isReturning={isReturning}
-            onRefresh={handleRefresh}
-            isLoading={isLoading}
-          />
-
-          {/* Floating Action Button */}
-          {canManageInventory && (
-            <Button
-              onClick={() => setIsFormOpen(true)}
-              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
-              size="icon"
-            >
-              <Plus className="h-6 w-6" />
-            </Button>
+        <TabsContent value="equipment" className="mt-6 space-y-6">
+          {/* Desktop View */}
+          {!isMobile && (
+            <InventoryByJobsite
+              onAddEquipment={() => setIsFormOpen(true)}
+              onEditItem={handleEditItem}
+              onDeleteItem={setDeletingItem}
+              onViewItem={setViewingItem}
+              onReturnItem={setReturningItem}
+              isReturning={isReturning}
+            />
           )}
-        </>
-      )}
+
+          {/* Mobile View */}
+          {isMobile && (
+            <>
+              <EquipmentMobileStats
+                total={stats.total}
+                assigned={stats.assigned}
+                available={stats.available}
+                overdue={stats.overdue}
+              />
+              
+              <EquipmentMobileFilters
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                statusFilter={statusFilter}
+                onStatusChange={setStatusFilter}
+                jobsiteFilter={jobsiteFilter}
+                onJobsiteChange={setJobsiteFilter}
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+                jobsites={jobsites}
+                onClearFilters={resetFilters}
+              />
+              
+              <EquipmentMobileList
+                groupedEquipment={groupedInventory}
+                getEquipmentStatus={getEquipmentStatus}
+                canManageInventory={canManageInventory}
+                onEdit={handleEditItem}
+                onDelete={setDeletingItem}
+                onView={setViewingItem}
+                onReturn={setReturningItem}
+                isReturning={isReturning}
+                onRefresh={handleRefresh}
+                isLoading={isLoading}
+              />
+
+              {/* Floating Action Button */}
+              {canManageInventory && (
+                <Button
+                  onClick={() => setIsFormOpen(true)}
+                  className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+                  size="icon"
+                >
+                  <Plus className="h-6 w-6" />
+                </Button>
+              )}
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="usage" className="mt-6">
+          <UsageTracker />
+        </TabsContent>
+      </Tabs>
 
       {/* Inventory Form Modal */}
-      {isFormOpen && (
-        <InventoryForm
-          isOpen={isFormOpen}
-          onClose={handleCloseForm}
-          onSubmit={editingItem ? handleUpdateItem : handleCreateItem}
-          initialData={editingItem}
-          isSubmitting={editingItem ? isUpdating : isCreating}
-        />
-      )}
+      <InventoryForm
+        isOpen={isFormOpen}
+        onClose={handleCloseForm}
+        onSubmit={editingItem ? handleUpdateItem : handleCreateItem}
+        initialData={editingItem}
+        isSubmitting={isCreating || isUpdating}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingItem} onOpenChange={(open) => !open && setDeletingItem(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Equipment Item</AlertDialogTitle>
+            <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete "{deletingItem?.equipment_name}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteItem} 
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteItem}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Return Equipment Confirmation Dialog */}
+      {/* Return Confirmation Dialog */}
       <AlertDialog open={!!returningItem} onOpenChange={(open) => !open && setReturningItem(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Set Equipment as Returned</AlertDialogTitle>
+            <AlertDialogTitle>Return Equipment</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to mark "{returningItem?.equipment_name}" as returned? 
-              This will remove it from the current jobsite assignment.
+              Mark "{returningItem?.equipment_name}" as returned to inventory?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isReturning}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleSetAsReturned} 
-              disabled={isReturning}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {isReturning ? "Setting as Returned..." : "Set as Returned"}
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSetAsReturned}>
+              {isReturning ? 'Returning...' : 'Mark as Returned'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* View Equipment Details Sheet */}
+      {/* View Equipment Sheet */}
       <Sheet open={!!viewingItem} onOpenChange={(open) => !open && setViewingItem(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-lg">
+        <SheetContent>
           <SheetHeader>
             <SheetTitle>Equipment Details</SheetTitle>
             <SheetDescription>
-              View detailed information about this equipment item.
+              View detailed information about this equipment
             </SheetDescription>
           </SheetHeader>
           
           {viewingItem && (
             <div className="mt-6 space-y-6">
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Equipment Name</label>
-                  <p className="text-lg font-semibold">{viewingItem.equipment_name}</p>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Equipment Name</p>
+                  <p className="font-medium">{viewingItem.equipment_name}</p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Brand</label>
-                    <p className="font-medium">{viewingItem.brand}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">SKU</label>
-                    <p className="font-medium">{viewingItem.sku}</p>
-                  </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Brand</p>
+                  <p className="font-medium">{viewingItem.brand}</p>
                 </div>
                 
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">SKU</p>
+                  <p className="font-medium">{viewingItem.sku}</p>
+                </div>
                 
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Jobsite</label>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Assigned to</p>
                   <p className="font-medium">
-                    {viewingItem.jobsites?.name || 'Unassigned'}
+                    {viewingItem.jobsites?.name || 'Not assigned'}
                   </p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Start Date</label>
-                    <p className="font-medium">{format(new Date(viewingItem.start_date), 'MMM dd, yyyy')}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Return Date</label>
-                    <p className="font-medium">
-                      {viewingItem.return_date 
-                        ? format(new Date(viewingItem.return_date), 'MMM dd, yyyy')
-                        : 'Not set'
-                      }
-                    </p>
-                  </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Start Date</p>
+                  <p className="font-medium">
+                    {format(new Date(viewingItem.start_date), 'MMM dd, yyyy')}
+                  </p>
                 </div>
                 
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Return Date</p>
+                  <p className="font-medium">
+                    {viewingItem.return_date 
+                      ? format(new Date(viewingItem.return_date), 'MMM dd, yyyy')
+                      : 'Not set'
+                    }
+                  </p>
+                </div>
               </div>
+              
             </div>
           )}
         </SheetContent>
