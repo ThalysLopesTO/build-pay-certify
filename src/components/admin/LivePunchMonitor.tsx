@@ -12,12 +12,14 @@ import { format, isToday } from 'date-fns';
 import LocationMapModal from './LocationMapModal';
 import EditPunchModal from './timesheets/EditPunchModal';
 import LivePunchFilters from './live-punch-monitor/LivePunchFilters';
+import LivePunchMobileFilters from './live-punch-monitor/LivePunchMobileFilters';
 import LivePunchSummaryCards from './live-punch-monitor/LivePunchSummaryCards';
 import LivePunchTable from './live-punch-monitor/LivePunchTable';
 import { useDeleteTimesheet } from '@/hooks/useDeleteTimesheet';
 import DashboardHeader from '@/components/common/DashboardHeader';
 import Papa from 'papaparse';
 import { useSearchParams } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 interface PunchEntry {
   id: string;
   user_id: string;
@@ -46,6 +48,7 @@ const LivePunchMonitor = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const deleteTimesheet = useDeleteTimesheet();
+  const isMobile = useIsMobile();
   const [selectedJobsite, setSelectedJobsite] = useState<string>('all');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -483,7 +486,7 @@ const LivePunchMonitor = () => {
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
     </div>;
   }
-  return <div className="space-y-8 p-6 max-w-7xl mx-auto">
+  return <div className="space-y-8 p-4 md:p-6 max-w-7xl mx-auto overflow-x-hidden">
     <DashboardHeader
       title="Live Punch Monitor"
       subtitle="Real-time tracking of employee punches at assigned jobsites"
@@ -497,12 +500,41 @@ const LivePunchMonitor = () => {
     <LivePunchSummaryCards filteredEntries={filteredEntries} selectedDate={selectedDate} />
 
     {/* Modern Filter Panel */}
-    <Card className="shadow-sm border-accent/20">
-      <CardContent className="p-6">
-
-        <LivePunchFilters selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedJobsite={selectedJobsite} setSelectedJobsite={setSelectedJobsite} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee} statusFilter={statusFilter} setStatusFilter={setStatusFilter} jobsites={jobsites} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters()} />
-      </CardContent>
-    </Card>
+    {isMobile ? (
+      <div className="px-2">
+        <LivePunchMobileFilters 
+          selectedDate={selectedDate} 
+          setSelectedDate={setSelectedDate} 
+          selectedJobsite={selectedJobsite} 
+          setSelectedJobsite={setSelectedJobsite} 
+          selectedEmployee={selectedEmployee} 
+          setSelectedEmployee={setSelectedEmployee} 
+          statusFilter={statusFilter} 
+          setStatusFilter={setStatusFilter} 
+          jobsites={jobsites} 
+          onClearFilters={handleClearFilters} 
+          hasActiveFilters={hasActiveFilters()} 
+        />
+      </div>
+    ) : (
+      <Card className="shadow-sm border-accent/20">
+        <CardContent className="p-6">
+          <LivePunchFilters 
+            selectedDate={selectedDate} 
+            setSelectedDate={setSelectedDate} 
+            selectedJobsite={selectedJobsite} 
+            setSelectedJobsite={setSelectedJobsite} 
+            selectedEmployee={selectedEmployee} 
+            setSelectedEmployee={setSelectedEmployee} 
+            statusFilter={statusFilter} 
+            setStatusFilter={setStatusFilter} 
+            jobsites={jobsites} 
+            onClearFilters={handleClearFilters} 
+            hasActiveFilters={hasActiveFilters()} 
+          />
+        </CardContent>
+      </Card>
+    )}
 
     {/* Results Section */}
     <div className="space-y-4">

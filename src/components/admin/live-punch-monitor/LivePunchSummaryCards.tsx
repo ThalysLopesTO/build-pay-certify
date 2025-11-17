@@ -60,7 +60,7 @@ const LivePunchSummaryCards: React.FC<LivePunchSummaryCardsProps> = ({
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 px-2 md:px-0">
       {stats.map((stat, index) => {
         const IconComponent = stat.icon;
         return (
