@@ -3855,6 +3855,25 @@ export type Database = {
               p_company_id: string
               p_employee_id: string
               p_end_date: string
+              p_jobsite_id: string
+              p_start_date: string
+              p_timezone?: string
+            }
+            Returns: {
+              check_in_time: string
+              check_out_time: string
+              edited_note: string
+              employee_id: string
+              id: string
+              jobsite_id: string
+              status: string
+            }[]
+          }
+        | {
+            Args: {
+              p_company_id: string
+              p_employee_id: string
+              p_end_date: string
               p_start_date: string
               p_timezone?: string
             }
