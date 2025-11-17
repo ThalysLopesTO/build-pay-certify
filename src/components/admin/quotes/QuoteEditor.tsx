@@ -13,12 +13,15 @@ import {
   useDeleteQuoteLineItem 
 } from '@/hooks/quotes';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { QuoteEmailSender } from '../QuoteEmailSender';
 import QuoteEditorClientSection from './editor/QuoteEditorClientSection';
 import QuoteEditorJobSection from './editor/QuoteEditorJobSection';
 import QuoteEditorLineItemsSection from './editor/QuoteEditorLineItemsSection';
 import QuoteEditorDetailsCard from './editor/QuoteEditorDetailsCard';
 import QuoteEditorTotalsCard from './editor/QuoteEditorTotalsCard';
+import QuoteEditorMobileHeader from './editor/QuoteEditorMobileHeader';
+import QuoteEditorMobileActions from './editor/QuoteEditorMobileActions';
 import { ChangeRequestResponseCard } from './ChangeRequestResponseCard';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,6 +33,7 @@ interface QuoteEditorProps {
 const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
   const { toast } = useToast();
   const { settings } = useCompanySettings();
+  const isMobile = useIsMobile();
   
   const [formData, setFormData] = useState({
     client_id: '',
@@ -271,55 +275,66 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Top Action Bar - Sticky */}
-      <div className="sticky top-0 z-20 bg-background border-b shadow-sm">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={onClose} type="button">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Quotes
-              </Button>
-              <div className="border-l h-8" />
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold">
-                  Quote for {formData.client_name || 'New Client'}
-                </h1>
-                {quote && quote.public_status === 'changes_requested' && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <MessageSquare className="h-4 w-4 text-orange-600" />
-                    <span className="text-sm text-orange-600 font-medium">Client Requested Changes</span>
-                  </div>
-                )}
+    <div className="min-h-screen bg-muted/30 overflow-x-hidden">
+      {/* Header - Mobile vs Desktop */}
+      {isMobile ? (
+        <QuoteEditorMobileHeader
+          isEditing={!!quote}
+          clientName={formData.client_name}
+          onBack={onClose}
+          onSave={() => handleSubmit()}
+          onSaveAndSend={handleSaveAndSend}
+          onCancel={onClose}
+        />
+      ) : (
+        <div className="sticky top-0 z-20 bg-background border-b shadow-sm">
+          <div className="max-w-[1600px] mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" onClick={onClose} type="button">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Quotes
+                </Button>
+                <div className="border-l h-8" />
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold">
+                    Quote for {formData.client_name || 'New Client'}
+                  </h1>
+                  {quote && quote.public_status === 'changes_requested' && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <MessageSquare className="h-4 w-4 text-orange-600" />
+                      <span className="text-sm text-orange-600 font-medium">Client Requested Changes</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="button" variant="default" onClick={() => handleSubmit()}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Quote
-              </Button>
-              <Button 
-                type="button" 
-                variant="default" 
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={handleSaveAndSend}
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Save & Send
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="button" variant="default" onClick={() => handleSubmit()}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Quote
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="default" 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={handleSaveAndSend}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Save & Send
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Editor Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-8">
+      <div className={`max-w-[1600px] mx-auto px-4 md:px-6 py-4 md:py-8 ${isMobile ? 'pb-32' : ''}`}>
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
+          <div className={`grid gap-6 md:gap-8 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[1fr_400px]'}`}>
             {/* LEFT COLUMN */}
             <div className="space-y-6">
               {/* Change Request Response Card - Show if quote has changes requested */}
@@ -353,26 +368,55 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
               />
             </div>
 
-            {/* RIGHT COLUMN - Sticky */}
+            {/* RIGHT COLUMN - Sticky on desktop, inline on mobile */}
             <div className="space-y-6">
-              <div className="lg:sticky lg:top-24">
-                <QuoteEditorDetailsCard
-                  formData={formData}
-                  handleInputChange={handleInputChange}
-                  quote={quote}
-                />
-                
-                <QuoteEditorTotalsCard
-                  formData={formData}
-                  calculateSubtotal={calculateSubtotal}
-                  handleInputChange={handleInputChange}
-                />
-              </div>
+              {isMobile ? (
+                <>
+                  <QuoteEditorDetailsCard
+                    formData={formData}
+                    handleInputChange={handleInputChange}
+                    quote={quote}
+                  />
+                  <QuoteEditorTotalsCard
+                    formData={formData}
+                    calculateSubtotal={calculateSubtotal}
+                    handleInputChange={handleInputChange}
+                  />
+                </>
+              ) : (
+                <>
+                  <div className="sticky top-24">
+                    <QuoteEditorDetailsCard
+                      formData={formData}
+                      handleInputChange={handleInputChange}
+                      quote={quote}
+                    />
+                  </div>
+                  
+                  <div className="sticky top-[520px]">
+                    <QuoteEditorTotalsCard
+                      formData={formData}
+                      calculateSubtotal={calculateSubtotal}
+                      handleInputChange={handleInputChange}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </form>
       </div>
 
+      {/* Mobile Bottom Action Bar */}
+      {isMobile && (
+        <QuoteEditorMobileActions
+          onSave={() => handleSubmit()}
+          onSaveAndSend={handleSaveAndSend}
+          onCancel={onClose}
+        />
+      )}
+
+      {/* Email Sender Modal */}
       {savedQuote && (
         <QuoteEmailSender
           quote={savedQuote}

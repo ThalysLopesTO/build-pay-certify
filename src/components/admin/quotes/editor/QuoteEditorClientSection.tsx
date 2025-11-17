@@ -24,13 +24,13 @@ const QuoteEditorClientSection: React.FC<QuoteEditorClientSectionProps> = ({
 }) => {
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 px-4 md:px-6">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Client Information</CardTitle>
-          <Badge variant="outline">Required</Badge>
+          <Badge variant="outline" className="text-xs">Required</Badge>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 md:px-6">
         <ClientSelector
           selectedClientId={selectedClientId}
           onClientSelect={onClientSelect}
