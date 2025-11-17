@@ -14,6 +14,8 @@ import { useDailyReportSubmission, DailyReportFormData } from '@/hooks/useDailyR
 import DatePickerField from '@/components/foreman/DatePickerField';
 import { DailyReportValidation } from '@/components/foreman/DailyReportValidation';
 import { DailyReportProgressIndicator } from '@/components/foreman/DailyReportProgressIndicator';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   jobsite_id: z.string().min(1, 'Please select a jobsite'),
@@ -38,6 +40,7 @@ interface SubmissionStep {
 }
 
 const DailyReportsForm: React.FC<DailyReportsFormProps> = ({ open, onOpenChange }) => {
+  const isMobile = useIsMobile();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [submissionSteps, setSubmissionSteps] = useState<SubmissionStep[]>([
     { key: 'validation', label: 'Validating form data', status: 'pending' },

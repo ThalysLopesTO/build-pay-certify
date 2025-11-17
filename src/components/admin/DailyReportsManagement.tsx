@@ -1,18 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ClipboardList } from 'lucide-react';
-import { useDailyReports } from '@/hooks/useDailyReports';
+import { Plus } from 'lucide-react';
+import { useDailyReports, DailyReport } from '@/hooks/useDailyReports';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import DailyReportsForm from './DailyReportsForm';
 import DailyReportsTable from './DailyReportsTable';
 import DailyReportsFilters from './DailyReportsFilters';
 import { DailyReportsPagination } from './daily-reports/DailyReportsPagination';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { DailyReportsMobileFilters } from './daily-reports/DailyReportsMobileFilters';
+import { DailyReportsMobileList } from './daily-reports/DailyReportsMobileList';
+import DailyReportDetailsModal from './DailyReportDetailsModal';
+import DailyReportEditModal from './DailyReportEditModal';
+import { DailyReportDeleteConfirmDialog } from './DailyReportDeleteConfirmDialog';
+import { useDailyReportPDF } from '@/hooks/useDailyReportPDF';
+import { useDailyReportDelete } from '@/hooks/useDailyReportDelete';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useCompanyLogo } from '@/hooks/useCompanyLogo';
+import { useToast } from '@/hooks/use-toast';
 
 const DailyReportsManagement = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize] = useState(10);
   const [filters, setFilters] = useState<{
     jobsite_id?: string;
     date_from?: string;
@@ -20,27 +32,23 @@ const DailyReportsManagement = () => {
     submitted_by?: string;
     search?: string;
   }>({});
+  const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
+  const [editingReport, setEditingReport] = useState<DailyReport | null>(null);
+  const [deletingReport, setDeletingReport] = useState<DailyReport | null>(null);
+  
+  const { generateDailyReportPDF } = useDailyReportPDF();
+  const { mutate: deleteReport } = useDailyReportDelete();
+  const { settings: companySettings } = useCompanySettings();
+  const { logoUrl } = useCompanyLogo();
+  const { toast } = useToast();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
-  const { data, isLoading, error } = useDailyReports(filters, { page: currentPage, pageSize });
+  const { data, isLoading, error, refetch } = useDailyReports(filters, { page: currentPage, pageSize });
   const reports = data?.data || [];
   const totalCount = data?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  // Early return if there's an error
-  if (error) {
-    console.error('Daily reports error:', error);
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-2">
-          <ClipboardList className="h-6 w-6" />
-          <h2 className="text-2xl font-bold">Daily Reports</h2>
-        </div>
-        <div className="text-red-500">
-          Error loading daily reports: {error?.message || 'Unknown error'}
-        </div>
-      </div>
-    );
-  }
+  // Remove the error section - let the mobile list handle errors
 
   console.log('DailyReportsManagement render:', { 
     user: user?.email, 
@@ -67,14 +75,45 @@ const DailyReportsManagement = () => {
       })
     : reports;
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({});
     setCurrentPage(1);
+  }, []);
+
+  const handleFiltersChange = useCallback((newFilters: typeof filters) => {
+    setFilters(newFilters);
+    setCurrentPage(1);
+  }, []);
+
+  const handleRefresh = async () => {
+    await refetch();
   };
 
-  const handleFiltersChange = (newFilters: typeof filters) => {
-    setFilters(newFilters);
-    setCurrentPage(1); // Reset to first page when filters change
+  const handleDownloadPDF = async (report: DailyReport) => {
+    try {
+      await generateDailyReportPDF(report);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to generate PDF',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteReport = (report: DailyReport) => {
+    setDeletingReport(report);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deletingReport) {
+      deleteReport(deletingReport.id);
+      setDeletingReport(null);
+    }
+  };
+
+  const canEditReport = (report: DailyReport) => {
+    return isAdmin || report.submitted_by === user?.id;
   };
 
   const canCreateReports = user?.role && ['foreman', 'admin', 'super_admin'].includes(user.role);
