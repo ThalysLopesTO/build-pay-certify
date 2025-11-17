@@ -12,6 +12,8 @@ import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useToast } from '@/hooks/use-toast';
 import DailyReportCommentSection from '@/components/daily-reports/DailyReportCommentSection';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface DailyReportDetailsModalProps {
   report: DailyReport | null;
@@ -24,6 +26,7 @@ const DailyReportDetailsModal: React.FC<DailyReportDetailsModalProps> = ({
   open,
   onOpenChange,
 }) => {
+  const isMobile = useIsMobile();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { generateDailyReportPDF } = useDailyReportPDF();
   const { settings: companySettings } = useCompanySettings();
