@@ -45,23 +45,23 @@ const QuotesSummaryCards: React.FC<QuotesSummaryCardsProps> = ({ quotes }) => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 px-2 md:px-0">
       {cards.map((card) => (
         <Card 
           key={card.label} 
           className={`bg-white border border-gray-200 border-l-4 ${card.borderAccent} shadow-sm hover:shadow-md transition-shadow`}
         >
-          <CardContent className="p-6">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-slate-600">
+                <p className="text-xs md:text-sm font-medium text-slate-600 line-clamp-1">
                   {card.label}
                 </p>
-                <p className={`text-3xl font-bold ${card.iconColor}`}>
+                <p className={`text-2xl md:text-3xl font-bold ${card.iconColor}`}>
                   {card.count}
                 </p>
               </div>
-              <card.icon className={`h-10 w-10 ${card.iconColor} opacity-30`} />
+              <card.icon className={`h-8 w-8 md:h-10 md:w-10 ${card.iconColor} opacity-30`} />
             </div>
           </CardContent>
         </Card>
