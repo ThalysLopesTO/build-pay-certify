@@ -1,5 +1,7 @@
-import { ClientCard } from './ClientCard';
 import { Client } from '@/hooks/useClients';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ClientsTable } from './ClientsTable';
+import { ClientsMobileList } from './ClientsMobileList';
 
 interface ClientsListProps {
   clients: Client[];
@@ -7,16 +9,19 @@ interface ClientsListProps {
 }
 
 export function ClientsList({ clients, isLoading }: ClientsListProps) {
+  const isMobile = useIsMobile();
+
   if (isLoading) {
+    if (isMobile) {
+      return <ClientsMobileList clients={[]} isLoading={true} />;
+    }
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="bg-card border rounded-lg p-6 animate-pulse">
-            <div className="h-6 bg-muted rounded w-3/4 mb-4" />
-            <div className="h-4 bg-muted rounded w-1/2 mb-2" />
-            <div className="h-4 bg-muted rounded w-2/3" />
-          </div>
-        ))}
+      <div className="border rounded-lg p-8">
+        <div className="animate-pulse space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-16 bg-muted rounded" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -29,11 +34,9 @@ export function ClientsList({ clients, isLoading }: ClientsListProps) {
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {clients.map((client) => (
-        <ClientCard key={client.id} client={client} />
-      ))}
-    </div>
-  );
+  if (isMobile) {
+    return <ClientsMobileList clients={clients} isLoading={false} />;
+  }
+
+  return <ClientsTable clients={clients} />;
 }
