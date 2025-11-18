@@ -39,68 +39,64 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({
     setShowQuickAdd(false);
   };
 
-  if (selectedClient) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-foreground mb-3">Selected Client</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium text-foreground">{selectedClient.client_name}</span>
-                  {selectedClient.client_company && (
-                    <span className="text-muted-foreground">• {selectedClient.client_company}</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{selectedClient.client_email}</span>
-                </div>
-                {selectedClient.client_phone && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{selectedClient.client_phone}</span>
-                  </div>
-                )}
-                {selectedClient.client_address && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{selectedClient.client_address}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setOpen(true)}
-              disabled={disabled}
-            >
-              Change Client
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-2">
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-            disabled={disabled}
-          >
-            {isLoading ? "Loading clients..." : "Select a client..."}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
+        <PopoverTrigger asChild disabled={disabled}>
+          {selectedClient ? (
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-foreground mb-3">Selected Client</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium text-foreground">{selectedClient.client_name}</span>
+                        {selectedClient.client_company && (
+                          <span className="text-muted-foreground">• {selectedClient.client_company}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">{selectedClient.client_email}</span>
+                      </div>
+                      {selectedClient.client_phone && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{selectedClient.client_phone}</span>
+                        </div>
+                      )}
+                      {selectedClient.client_address && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{selectedClient.client_address}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="pointer-events-none"
+                  >
+                    Change Client
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between"
+            >
+              {isLoading ? "Loading clients..." : "Select a client..."}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          )}
         </PopoverTrigger>
         <PopoverContent className="w-[500px] p-0" align="start">
           <Command>
