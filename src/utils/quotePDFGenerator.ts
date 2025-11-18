@@ -63,36 +63,36 @@ const addHeaderSection = async (
 ): Promise<number> => {
   // Draw dark box on right side first
   pdf.setFillColor(60, 60, 60);
-  pdf.roundedRect(120, margin, 75, 50, 2, 2, 'F');
+  pdf.roundedRect(115, margin, 80, 50, 2, 2, 'F');
   
   // Add logo on left
   if (logoUrl) {
     try {
       const logoBase64 = await fetchLogoAsBase64(logoUrl);
-      pdf.addImage(logoBase64, 'PNG', margin, margin, 40, 20);
+      pdf.addImage(logoBase64, 'PNG', margin, margin, 45, 22);
     } catch (error) {
       console.error('Failed to load logo:', error);
     }
   }
   
   // Company info on left
-  let y = margin + 27;
-  pdf.setFontSize(16);
+  let y = margin + 29;
+  pdf.setFontSize(18);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(0, 0, 0);
   pdf.text(settings?.company_name || 'Company Name', margin, y);
   
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'normal');
-  y += 7;
+  y += 8;
   if (settings?.company_address) {
-    const addressLines = pdf.splitTextToSize(settings.company_address, 100);
+    const addressLines = pdf.splitTextToSize(settings.company_address, 90);
     pdf.text(addressLines, margin, y);
     y += addressLines.length * 5;
   }
   if (settings?.company_phone) {
     pdf.text(`Phone: ${settings.company_phone}`, margin, y);
-    y += 5;
+    y += 6;
   }
   if (settings?.company_email) {
     pdf.text(`Email: ${settings.company_email}`, margin, y);
@@ -102,7 +102,7 @@ const addHeaderSection = async (
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(14);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(`Quote #${quote.quote_number}`, 157.5, margin + 12, { align: 'center' });
+  pdf.text(`Quote #${quote.quote_number}`, 155, margin + 12, { align: 'center' });
   
   pdf.setFontSize(11);
   pdf.setFont('helvetica', 'normal');
@@ -112,15 +112,15 @@ const addHeaderSection = async (
     month: '2-digit',
     day: '2-digit'
   });
-  pdf.text(`Sent on ${quoteDate}`, 157.5, margin + 20, { align: 'center' });
+  pdf.text(`Sent on ${quoteDate}`, 155, margin + 20, { align: 'center' });
   
   // Divider line
   pdf.setDrawColor(200, 200, 200);
-  pdf.line(125, margin + 25, 190, margin + 25);
+  pdf.line(120, margin + 25, 190, margin + 25);
   
   // Total amount
   pdf.setFontSize(12);
-  pdf.text('Total', 157.5, margin + 32, { align: 'center' });
+  pdf.text('Total', 155, margin + 32, { align: 'center' });
   
   pdf.setFontSize(18);
   pdf.setFont('helvetica', 'bold');
@@ -128,12 +128,12 @@ const addHeaderSection = async (
     style: 'currency',
     currency: 'USD'
   }).format(quote.total_amount);
-  pdf.text(formattedTotal, 157.5, margin + 43, { align: 'center' });
+  pdf.text(formattedTotal, 155, margin + 43, { align: 'center' });
   
   // Reset text color
   pdf.setTextColor(0, 0, 0);
   
-  return margin + 70; // Return Y position after header
+  return margin + 75; // Return Y position after header
 };
 
 // Helper: Add recipient section
@@ -146,37 +146,37 @@ const addRecipientSection = (
   let y = startY;
   
   // Section header
-  pdf.setFontSize(12);
+  pdf.setFontSize(13);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(0, 0, 0);
   pdf.text('RECIPIENT:', margin, y);
-  y += 8;
+  y += 10;
   
   // Client details
   pdf.setFontSize(11);
   pdf.setFont('helvetica', 'bold');
   pdf.text(quote.client_name, margin, y);
-  y += 6;
+  y += 7;
   
   pdf.setFontSize(11);
   pdf.setFont('helvetica', 'normal');
   if (quote.client_company) {
     pdf.text(quote.client_company, margin, y);
-    y += 5;
+    y += 6;
   }
   if (quote.client_address) {
-    const addressLines = pdf.splitTextToSize(quote.client_address, 100);
+    const addressLines = pdf.splitTextToSize(quote.client_address, 85);
     pdf.text(addressLines, margin, y);
-    y += addressLines.length * 5;
+    y += addressLines.length * 6;
   }
   pdf.text(quote.client_email, margin, y);
-  y += 5;
+  y += 6;
   if (quote.client_phone) {
     pdf.text(`Phone: ${quote.client_phone}`, margin, y);
-    y += 5;
+    y += 6;
   }
   
-  return y + 10; // Add spacing after section
+  return y + 12; // Add spacing after section
 };
 
 // Helper: Add project details section  
@@ -189,18 +189,19 @@ const addProjectDetailsSection = (
   let y = startY;
   
   // Section header
-  pdf.setFontSize(12);
+  pdf.setFontSize(13);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(0, 0, 0);
   pdf.text('PROJECT DETAILS:', margin, y);
-  y += 8;
+  y += 10;
   
   pdf.setFontSize(11);
   pdf.setFont('helvetica', 'normal');
   
   // Project name
-  pdf.text(`Project: ${quote.project_name}`, margin, y);
-  y += 6;
+  const projectLines = pdf.splitTextToSize(`Project: ${quote.project_name}`, 85);
+  pdf.text(projectLines, margin, y);
+  y += projectLines.length * 6 + 1;
   
   // Quote date
   const quoteDate = new Date(quote.quote_date).toLocaleDateString('en-US', {
@@ -209,7 +210,7 @@ const addProjectDetailsSection = (
     day: 'numeric'
   });
   pdf.text(`Quote Date: ${quoteDate}`, margin, y);
-  y += 6;
+  y += 7;
   
   // Valid until
   if (quote.expiry_date) {
@@ -219,14 +220,14 @@ const addProjectDetailsSection = (
       day: 'numeric'
     });
     pdf.text(`Valid Until: ${expiryDate}`, margin, y);
-    y += 6;
+    y += 7;
   }
   
   // Status
   pdf.text(`Status: ${quote.status.toUpperCase()}`, margin, y);
-  y += 6;
+  y += 7;
   
-  return y + 10; // Add spacing after section
+  return y + 15; // Add spacing after section
 };
 
 // Helper: Add line items table using autoTable
@@ -254,29 +255,31 @@ const addLineItemsTable = (
   // Generate table
   autoTable(pdf, {
     startY: startY,
-    head: [['Product/Service', 'Vendor', 'Total']],
+    head: [['Description', 'Vendor', 'Total']],
     body: tableData,
     theme: 'grid',
     headStyles: {
-      fillColor: [240, 240, 240],
-      textColor: [0, 0, 0],
-      fontSize: 11,
+      fillColor: [33, 150, 243],
+      textColor: [255, 255, 255],
+      fontSize: 12,
       fontStyle: 'bold',
-      halign: 'left'
+      halign: 'left',
+      cellPadding: 4
     },
     styles: {
-      fontSize: 10,
-      cellPadding: 3,
+      fontSize: 11,
+      cellPadding: 4,
       lineColor: [200, 200, 200],
-      lineWidth: 0.1
+      lineWidth: 0.25,
+      minCellHeight: 10
     },
     columnStyles: {
-      0: { cellWidth: 60, halign: 'left' },
-      1: { cellWidth: 85, halign: 'left' },
+      0: { cellWidth: 90, halign: 'left' },
+      1: { cellWidth: 55, halign: 'left' },
       2: { cellWidth: 35, halign: 'right' }
     },
     alternateRowStyles: {
-      fillColor: [250, 250, 250]
+      fillColor: [248, 250, 252]
     },
     margin: { left: margin, right: margin }
   });
@@ -293,7 +296,7 @@ const addTotalsSection = (
   margin: number
 ): number => {
   const rightX = pageWidth - margin;
-  const labelX = rightX - 55;
+  const labelX = rightX - 60;
   const valueX = rightX;
   let y = startY;
   
@@ -303,34 +306,35 @@ const addTotalsSection = (
       currency: 'USD'
     }).format(amount);
   
-  pdf.setFontSize(12);
+  pdf.setFontSize(13);
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(0, 0, 0);
   
   // Subtotal
   pdf.text('Subtotal:', labelX, y, { align: 'right' });
   pdf.text(formatCurrency(quote.subtotal), valueX, y, { align: 'right' });
-  y += 7;
+  y += 8;
   
   // Discount (if any)
   if (quote.discount > 0) {
     pdf.text('Discount:', labelX, y, { align: 'right' });
     pdf.text(`-${formatCurrency(quote.discount)}`, valueX, y, { align: 'right' });
-    y += 7;
+    y += 8;
   }
   
   // Tax
   const taxAmount = (quote.subtotal - (quote.discount || 0)) * (quote.tax / 100);
   pdf.text(`Tax (${quote.tax}%):`, labelX, y, { align: 'right' });
   pdf.text(formatCurrency(taxAmount), valueX, y, { align: 'right' });
-  y += 10;
+  y += 11;
   
   // Divider line
   pdf.setDrawColor(200, 200, 200);
+  pdf.setLineWidth(0.5);
   pdf.line(labelX - 5, y - 3, valueX, y - 3);
   
   // Total (bold and larger)
-  pdf.setFontSize(14);
+  pdf.setFontSize(16);
   pdf.setFont('helvetica', 'bold');
   pdf.text('TOTAL:', labelX, y, { align: 'right' });
   pdf.text(formatCurrency(quote.total_amount), valueX, y, { align: 'right' });
@@ -356,24 +360,25 @@ const addNotesSection = (
   let y = startY;
   
   // Section header
-  pdf.setFontSize(12);
+  pdf.setFontSize(13);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(0, 0, 0);
   pdf.text('NOTES:', margin, y);
-  y += 8;
+  y += 10;
   
   // Notes content
-  pdf.setFontSize(10);
+  pdf.setFontSize(11);
   pdf.setFont('helvetica', 'normal');
   const maxWidth = pageWidth - 2 * margin;
-  const splitNotes = pdf.splitTextToSize(notes, maxWidth - 6);
+  const splitNotes = pdf.splitTextToSize(notes, maxWidth - 10);
   
   // Draw border around notes
-  const notesHeight = splitNotes.length * 5 + 6;
-  pdf.setDrawColor(200, 200, 200);
+  const notesHeight = splitNotes.length * 6 + 10;
+  pdf.setDrawColor(180, 180, 180);
+  pdf.setLineWidth(0.25);
   pdf.rect(margin, y - 3, maxWidth, notesHeight);
   
-  pdf.text(splitNotes, margin + 3, y + 2);
+  pdf.text(splitNotes, margin + 5, y + 3);
   
   return y + notesHeight + 10;
 };
