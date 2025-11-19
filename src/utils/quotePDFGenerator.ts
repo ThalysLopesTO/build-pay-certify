@@ -23,6 +23,28 @@ export const generateQuotePDF = async (
 
   let currentY = margin;
 
+  // -------- novos campos de texto / seções --------
+  const qAny = quote as any;
+
+  const legacyNotes = (quote as any).notes as string | undefined;
+
+  let scopeOfWork =
+    (qAny.scope_of_work as string | undefined) || qAny.scope || (qAny.scopeNotes as string | undefined) || "";
+
+  const clientMessage = (qAny.client_message as string | undefined) || "";
+  const contractDisclaimer =
+    (qAny.contract_disclaimer as string | undefined) || (qAny.disclaimer as string | undefined) || "";
+  const paymentScheduleText =
+    (qAny.payment_schedule_text as string | undefined) ||
+    (qAny.payment_schedule_details as string | undefined) ||
+    (qAny.payment_schedule as string | undefined) ||
+    "";
+
+  // compat: se não temos scopeOfWork mas temos notes
+  if (!scopeOfWork && legacyNotes && !clientMessage && !contractDisclaimer) {
+    scopeOfWork = legacyNotes;
+  }
+
   // 1. Header minimalista
   currentY = await addHeaderSection(pdf, quote, companySettings, logoUrl, currentY, pageWidth, margin);
 
@@ -32,18 +54,39 @@ export const generateQuotePDF = async (
   // 3. Project details
   currentY = addProjectDetailsSection(pdf, quote, currentY, margin, pageWidth);
 
-  // 4. Tabela
-  currentY = addLineItemsTable(pdf, lineItems, currentY, margin, pageWidth);
-
-  // 5. Totais
-  currentY = addTotalsSection(pdf, quote, currentY, pageWidth, pageHeight, margin);
-
-  // 6. Notas
-  if (quote.notes) {
-    currentY = addNotesSection(pdf, quote.notes, currentY, pageWidth, margin, pageHeight);
+  // 4. Scope of Work (antes dos itens)
+  if (scopeOfWork && scopeOfWork.trim().length > 0) {
+    currentY = addTextSection(pdf, "Scope of Work", scopeOfWork, currentY, pageWidth, margin, pageHeight);
   }
 
-  // 7. Rodapé com dados da empresa
+  // 5. Tabela de itens
+  currentY = addLineItemsTable(pdf, lineItems, currentY, margin, pageWidth);
+
+  // 6. Totais
+  currentY = addTotalsSection(pdf, quote, currentY, pageWidth, pageHeight, margin);
+
+  // 7. Demais seções de texto
+  if (clientMessage && clientMessage.trim().length > 0) {
+    currentY = addTextSection(pdf, "Client message", clientMessage, currentY, pageWidth, margin, pageHeight);
+  }
+
+  if (paymentScheduleText && paymentScheduleText.trim().length > 0) {
+    currentY = addTextSection(pdf, "Payment Schedule", paymentScheduleText, currentY, pageWidth, margin, pageHeight);
+  }
+
+  if (contractDisclaimer && contractDisclaimer.trim().length > 0) {
+    currentY = addTextSection(
+      pdf,
+      "Contract / Disclaimer",
+      contractDisclaimer,
+      currentY,
+      pageWidth,
+      margin,
+      pageHeight,
+    );
+  }
+
+  // 8. Rodapé com dados da empresa
   addFooterToAllPages(pdf, pageWidth, pageHeight, companySettings || null);
 
   const filename = `Quote-${quote.quote_number}-${quote.client_name.replace(/\s+/g, "")}.pdf`;
@@ -64,15 +107,15 @@ const addHeaderSection = async (
   const headerTop = startY;
   const rightX = pageWidth - margin;
 
-  // Logo à esquerda (tamanho ajustado)
+  // Logo à esquerda (tamanho ajustado novamente)
   let leftBottomY = headerTop;
 
   if (logoUrl) {
     try {
       const logoBase64 = await fetchLogoAsBase64(logoUrl);
-      // Mais discreto: 25 x 13 mm
-      pdf.addImage(logoBase64, "PNG", margin, headerTop, 25, 13);
-      leftBottomY = headerTop + 13;
+      // menor e mais proporcional: 22 x 11 mm
+      pdf.addImage(logoBase64, "PNG", margin, headerTop, 22, 11);
+      leftBottomY = headerTop + 11;
     } catch (error) {
       console.error("Failed to load logo:", error);
     }
@@ -181,13 +224,13 @@ const addRecipientSection = (pdf: jsPDF, quote: Quote, startY: number, margin: n
   pdf.text(quote.client_name, margin, y);
   y += 4.5;
 
-  if (quote.client_company) {
-    pdf.text(quote.client_company, margin, y);
+  if ((quote as any).client_company) {
+    pdf.text((quote as any).client_company, margin, y);
     y += 4.5;
   }
 
-  if (quote.client_address) {
-    const addressLines = pdf.splitTextToSize(quote.client_address, 90);
+  if ((quote as any).client_address) {
+    const addressLines = pdf.splitTextToSize((quote as any).client_address, 90);
     pdf.text(addressLines, margin, y);
     y += addressLines.length * 4.2;
   }
@@ -197,8 +240,8 @@ const addRecipientSection = (pdf: jsPDF, quote: Quote, startY: number, margin: n
     y += 4.2;
   }
 
-  if (quote.client_phone) {
-    pdf.text(`Phone: ${quote.client_phone}`, margin, y);
+  if ((quote as any).client_phone) {
+    pdf.text(`Phone: ${(quote as any).client_phone}`, margin, y);
     y += 4.2;
   }
 
@@ -259,6 +302,53 @@ const addProjectDetailsSection = (
   return y;
 };
 
+// ============== TEXT SECTION (GENÉRICO) ==============
+
+const addTextSection = (
+  pdf: jsPDF,
+  title: string,
+  content: string,
+  startY: number,
+  pageWidth: number,
+  margin: number,
+  pageHeight: number,
+): number => {
+  if (!content || content.trim().length === 0) {
+    return startY;
+  }
+
+  let y = startY;
+
+  // quebra de página se não tiver espaço
+  if (y + 25 > pageHeight - margin) {
+    pdf.addPage();
+    y = margin;
+  }
+
+  pdf.setFontSize(10);
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(15, 23, 42);
+  pdf.text(title, margin, y);
+  y += 4;
+
+  pdf.setDrawColor(229, 231, 235);
+  pdf.setLineWidth(0.3);
+  pdf.line(margin, y, pageWidth - margin, y);
+  y += 6;
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(55, 65, 81);
+
+  const maxWidth = pageWidth - 2 * margin;
+  const lines = pdf.splitTextToSize(content, maxWidth);
+
+  pdf.text(lines, margin, y);
+
+  const sectionHeight = lines.length * 4.2;
+  return y + sectionHeight + 8;
+};
+
 // ============== TABLE ==============
 
 const addLineItemsTable = (
@@ -284,7 +374,7 @@ const addLineItemsTable = (
     theme: "grid",
     margin: { left: margin, right: margin },
     headStyles: {
-      fillColor: [248, 250, 252], // cinza muito claro
+      fillColor: [248, 250, 252],
       textColor: [15, 23, 42],
       fontSize: 9,
       fontStyle: "bold",
@@ -339,7 +429,6 @@ const addTotalsSection = (
       currency: "USD",
     }).format(amount);
 
-  // Linha separadora
   pdf.setDrawColor(209, 213, 219);
   pdf.setLineWidth(0.4);
   pdf.line(labelX - 5, y, valueX, y);
@@ -366,7 +455,6 @@ const addTotalsSection = (
   pdf.text(formatCurrency(taxAmount), valueX, y, { align: "right" });
   y += 7;
 
-  // TOTAL
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
   pdf.setTextColor(17, 24, 39);
@@ -375,47 +463,6 @@ const addTotalsSection = (
   y += 8;
 
   return y;
-};
-
-// ============== NOTES (MINIMAL) ==============
-
-const addNotesSection = (
-  pdf: jsPDF,
-  notes: string,
-  startY: number,
-  pageWidth: number,
-  margin: number,
-  pageHeight: number,
-): number => {
-  if (startY + 25 > pageHeight - margin) {
-    pdf.addPage();
-    startY = margin;
-  }
-
-  let y = startY;
-
-  pdf.setFontSize(10);
-  pdf.setFont("helvetica", "bold");
-  pdf.setTextColor(15, 23, 42);
-  pdf.text("NOTES", margin, y);
-  y += 4;
-
-  pdf.setDrawColor(229, 231, 235);
-  pdf.setLineWidth(0.3);
-  pdf.line(margin, y, pageWidth - margin, y);
-  y += 6;
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(9);
-  pdf.setTextColor(55, 65, 81);
-
-  const maxWidth = pageWidth - 2 * margin;
-  const splitNotes = pdf.splitTextToSize(notes, maxWidth);
-
-  pdf.text(splitNotes, margin, y);
-
-  const notesHeight = splitNotes.length * 4.2;
-  return y + notesHeight + 8;
 };
 
 // ============== FOOTER (COM CONTATO) ==============
@@ -437,7 +484,6 @@ const addFooterToAllPages = (
 
     let contactY = pageHeight - 14;
 
-    // Linha com telefone e email
     if (settings?.company_phone || settings?.company_email) {
       const parts: string[] = [];
       if (settings.company_phone) parts.push(`Phone: ${settings.company_phone}`);
@@ -447,7 +493,6 @@ const addFooterToAllPages = (
       contactY += 4;
     }
 
-    // Linha com endereço
     if (settings?.company_address) {
       const addressLines = pdf.splitTextToSize(settings.company_address, pageWidth - 2 * margin);
       pdf.text(addressLines as string[], pageWidth / 2, contactY, {
@@ -456,7 +501,6 @@ const addFooterToAllPages = (
       contactY += addressLines.length * 3.2;
     }
 
-    // Número da página
     pdf.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 4, { align: "center" });
   }
 
@@ -478,14 +522,54 @@ export const generateQuotePDFBlob = async (
 
   let currentY = margin;
 
+  const qAny = quote as any;
+  const legacyNotes = (quote as any).notes as string | undefined;
+
+  let scopeOfWork =
+    (qAny.scope_of_work as string | undefined) || qAny.scope || (qAny.scopeNotes as string | undefined) || "";
+
+  const clientMessage = (qAny.client_message as string | undefined) || "";
+  const contractDisclaimer =
+    (qAny.contract_disclaimer as string | undefined) || (qAny.disclaimer as string | undefined) || "";
+  const paymentScheduleText =
+    (qAny.payment_schedule_text as string | undefined) ||
+    (qAny.payment_schedule_details as string | undefined) ||
+    (qAny.payment_schedule as string | undefined) ||
+    "";
+
+  if (!scopeOfWork && legacyNotes && !clientMessage && !contractDisclaimer) {
+    scopeOfWork = legacyNotes;
+  }
+
   currentY = await addHeaderSection(pdf, quote, companySettings, logoUrl, currentY, pageWidth, margin);
   currentY = addRecipientSection(pdf, quote, currentY, margin, pageWidth);
   currentY = addProjectDetailsSection(pdf, quote, currentY, margin, pageWidth);
+
+  if (scopeOfWork && scopeOfWork.trim().length > 0) {
+    currentY = addTextSection(pdf, "Scope of Work", scopeOfWork, currentY, pageWidth, margin, pageHeight);
+  }
+
   currentY = addLineItemsTable(pdf, lineItems, currentY, margin, pageWidth);
   currentY = addTotalsSection(pdf, quote, currentY, pageWidth, pageHeight, margin);
 
-  if (quote.notes) {
-    currentY = addNotesSection(pdf, quote.notes, currentY, pageWidth, margin, pageHeight);
+  if (clientMessage && clientMessage.trim().length > 0) {
+    currentY = addTextSection(pdf, "Client message", clientMessage, currentY, pageWidth, margin, pageHeight);
+  }
+
+  if (paymentScheduleText && paymentScheduleText.trim().length > 0) {
+    currentY = addTextSection(pdf, "Payment Schedule", paymentScheduleText, currentY, pageWidth, margin, pageHeight);
+  }
+
+  if (contractDisclaimer && contractDisclaimer.trim().length > 0) {
+    currentY = addTextSection(
+      pdf,
+      "Contract / Disclaimer",
+      contractDisclaimer,
+      currentY,
+      pageWidth,
+      margin,
+      pageHeight,
+    );
   }
 
   addFooterToAllPages(pdf, pageWidth, pageHeight, companySettings || null);
