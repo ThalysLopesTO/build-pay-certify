@@ -1,4 +1,19 @@
 
+export interface PaymentScheduleItem {
+  id: string;
+  amount_type: 'percentage' | 'fixed';
+  amount_value: number;
+  description: string;
+  calculated_total: number;
+}
+
+export interface PaymentConfig {
+  mode: 'full' | 'deposit' | 'schedule';
+  deposit_type?: 'percentage' | 'fixed';
+  deposit_value?: number;
+  schedule_items?: PaymentScheduleItem[];
+}
+
 export interface Quote {
   id: string;
   company_id: string;
@@ -37,6 +52,10 @@ export interface Quote {
   admin_response_to_changes?: string;
   admin_responded_at?: string;
   admin_responded_by?: string;
+  client_message?: string;
+  contract_disclaimer?: string;
+  internal_notes?: string;
+  payment_config?: PaymentConfig;
 }
 
 export interface QuoteLineItem {

@@ -20,7 +20,7 @@ const QuoteEditorJobSection: React.FC<QuoteEditorJobSectionProps> = ({
   return (
     <Card>
       <CardHeader className="pb-3 px-4 md:px-6">
-        <CardTitle className="text-lg">Job Details</CardTitle>
+        <CardTitle className="text-lg">Job / Project Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 px-4 md:px-6">
         <div>

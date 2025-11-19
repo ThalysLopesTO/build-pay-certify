@@ -8,6 +8,7 @@ import { Quote } from '@/hooks/quotes';
 
 interface QuoteEditorDetailsCardProps {
   formData: {
+    quote_number: string;
     quote_date: string;
     expiry_date: string;
     status: string;
@@ -28,12 +29,21 @@ const QuoteEditorDetailsCard: React.FC<QuoteEditorDetailsCardProps> = ({
         <CardTitle className="text-lg">Quote Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
-        {/* Quote Number - Read Only */}
+        {/* Quote Number - Editable */}
         <div>
-          <Label className="text-xs text-muted-foreground">Quote Number</Label>
-          <div className="text-lg font-mono font-bold text-primary">
-            {quote?.quote_number || 'Auto-generated'}
-          </div>
+          <Label htmlFor="quote_number" className="text-xs text-muted-foreground">
+            Quote Number
+          </Label>
+          <Input
+            id="quote_number"
+            value={formData.quote_number || ''}
+            onChange={(e) => handleInputChange('quote_number', e.target.value)}
+            placeholder="Auto-generated"
+            className="font-mono font-semibold"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Leave blank to auto-generate, or customize this quote number.
+          </p>
         </div>
 
         {/* Date Fields */}

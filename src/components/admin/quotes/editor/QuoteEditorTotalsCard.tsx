@@ -2,7 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Calculator } from 'lucide-react';
+import { PaymentConfig } from '@/hooks/quotes/types';
 
 interface QuoteEditorTotalsCardProps {
   formData: {
@@ -11,17 +14,35 @@ interface QuoteEditorTotalsCardProps {
   };
   calculateSubtotal: () => number;
   handleInputChange: (field: string, value: number) => void;
+  paymentConfig: PaymentConfig;
+  onPaymentScheduleClick: () => void;
 }
 
 const QuoteEditorTotalsCard: React.FC<QuoteEditorTotalsCardProps> = ({
   formData,
   calculateSubtotal,
   handleInputChange,
+  paymentConfig,
+  onPaymentScheduleClick,
 }) => {
   const subtotal = calculateSubtotal();
   const discountAmount = Math.min(Number(formData.discount) || 0, subtotal);
   const taxAmount = (subtotal - discountAmount) * (Number(formData.tax) / 100);
   const total = subtotal - discountAmount + taxAmount;
+
+  const getPaymentSummary = () => {
+    if (paymentConfig.mode === 'deposit') {
+      const amount =
+        paymentConfig.deposit_type === 'percentage'
+          ? `${paymentConfig.deposit_value}%`
+          : `$${paymentConfig.deposit_value?.toFixed(2)}`;
+      return `Deposit: ${amount} required`;
+    }
+    if (paymentConfig.mode === 'schedule' && paymentConfig.schedule_items) {
+      return `Payment schedule: ${paymentConfig.schedule_items.length} invoices`;
+    }
+    return null;
+  };
 
   return (
     <Card className="shadow-lg mt-4">
@@ -83,6 +104,25 @@ const QuoteEditorTotalsCard: React.FC<QuoteEditorTotalsCardProps> = ({
           <span className="text-2xl font-bold text-primary">
             ${total.toFixed(2)}
           </span>
+        </div>
+
+        {/* Payment Schedule Link */}
+        <div className="pt-3 border-t">
+          <Button
+            type="button"
+            variant="link"
+            className="p-0 h-auto text-sm text-primary hover:underline"
+            onClick={onPaymentScheduleClick}
+          >
+            <Calculator className="w-4 h-4 mr-1" />
+            Deposit or payment schedule
+          </Button>
+
+          {paymentConfig.mode !== 'full' && (
+            <div className="mt-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+              {getPaymentSummary()}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
