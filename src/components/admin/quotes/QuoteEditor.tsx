@@ -5,6 +5,7 @@ import { ArrowLeft, Save, Send, MessageSquare } from 'lucide-react';
 import { 
   Quote, 
   QuoteLineItem, 
+  PaymentConfig,
   useCreateQuote, 
   useUpdateQuote, 
   useQuoteLineItems, 
@@ -22,6 +23,10 @@ import QuoteEditorDetailsCard from './editor/QuoteEditorDetailsCard';
 import QuoteEditorTotalsCard from './editor/QuoteEditorTotalsCard';
 import QuoteEditorMobileHeader from './editor/QuoteEditorMobileHeader';
 import QuoteEditorMobileActions from './editor/QuoteEditorMobileActions';
+import QuoteEditorClientMessageCard from './editor/QuoteEditorClientMessageCard';
+import QuoteEditorContractCard from './editor/QuoteEditorContractCard';
+import QuoteEditorInternalNotesCard from './editor/QuoteEditorInternalNotesCard';
+import { PaymentScheduleModal } from './editor/PaymentScheduleModal';
 import { ChangeRequestResponseCard } from './ChangeRequestResponseCard';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,6 +41,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
   const isMobile = useIsMobile();
   
   const [formData, setFormData] = useState({
+    quote_number: '',
     client_id: '',
     client_name: '',
     client_company: '',
@@ -50,12 +56,23 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
     discount: 0,
     notes: '',
     template: 'classic',
+    client_message: '',
+    contract_disclaimer: 'This quote is valid for the next 30 days, after which values may be subject to change.',
+    internal_notes: '',
   });
 
   const [lineItems, setLineItems] = useState<Partial<QuoteLineItem>[]>([
     { description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }
   ]);
 
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({
+    mode: 'full',
+    deposit_type: 'percentage',
+    deposit_value: 0,
+    schedule_items: []
+  });
+
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [savedQuote, setSavedQuote] = useState<Quote | null>(null);
 
@@ -70,6 +87,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
   useEffect(() => {
     if (quote) {
       setFormData({
+        quote_number: quote.quote_number || '',
         client_id: quote.client_id || '',
         client_name: quote.client_name || '',
         client_company: quote.client_company || '',
@@ -84,13 +102,21 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
         discount: quote.discount || 0,
         notes: quote.notes || '',
         template: quote.template || 'classic',
+        client_message: quote.client_message || '',
+        contract_disclaimer: quote.contract_disclaimer || 'This quote is valid for the next 30 days, after which values may be subject to change.',
+        internal_notes: quote.internal_notes || '',
       });
+      
+      if (quote.payment_config) {
+        setPaymentConfig(quote.payment_config);
+      }
       
       if (existingLineItems.length > 0) {
         setLineItems(existingLineItems);
       }
     } else {
       setFormData({
+        quote_number: '',
         client_id: '',
         client_name: '',
         client_company: '',
@@ -105,8 +131,17 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
         discount: 0,
         notes: '',
         template: 'classic',
+        client_message: '',
+        contract_disclaimer: 'This quote is valid for the next 30 days, after which values may be subject to change.',
+        internal_notes: '',
       });
       setLineItems([{ description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }]);
+      setPaymentConfig({
+        mode: 'full',
+        deposit_type: 'percentage',
+        deposit_value: 0,
+        schedule_items: []
+      });
     }
   }, [quote?.id, existingLineItems.length, settings?.tax_percentage]);
 
@@ -189,7 +224,8 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
           updates: { 
             ...formData,
             subtotal,
-            total_amount: total
+            total_amount: total,
+            payment_config: paymentConfig,
           }
         });
         
@@ -214,14 +250,15 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
             });
           }
         }
-        resultQuote = { ...quote, ...formData, subtotal, total_amount: total };
+        resultQuote = { ...quote, ...formData, subtotal, total_amount: total, payment_config: paymentConfig };
       } else {
         const newQuote = await createQuote.mutateAsync({
           ...formData,
           status: formData.status,
           subtotal,
           total_amount: total,
-          quote_number: '',
+          quote_number: formData.quote_number || undefined,
+          payment_config: paymentConfig,
         });
         
         for (const item of lineItems) {
@@ -366,6 +403,21 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
                 addLineItem={addLineItem}
                 removeLineItem={removeLineItem}
               />
+              
+              <QuoteEditorClientMessageCard
+                value={formData.client_message}
+                onChange={(value) => handleInputChange('client_message', value)}
+              />
+              
+              <QuoteEditorContractCard
+                value={formData.contract_disclaimer}
+                onChange={(value) => handleInputChange('contract_disclaimer', value)}
+              />
+              
+              <QuoteEditorInternalNotesCard
+                value={formData.internal_notes}
+                onChange={(value) => handleInputChange('internal_notes', value)}
+              />
             </div>
 
             {/* RIGHT COLUMN - Sticky on desktop, inline on mobile */}
@@ -381,6 +433,8 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
                     formData={formData}
                     calculateSubtotal={calculateSubtotal}
                     handleInputChange={handleInputChange}
+                    paymentConfig={paymentConfig}
+                    onPaymentScheduleClick={() => setIsPaymentModalOpen(true)}
                   />
                 </>
               ) : (
@@ -398,6 +452,8 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
                       formData={formData}
                       calculateSubtotal={calculateSubtotal}
                       handleInputChange={handleInputChange}
+                      paymentConfig={paymentConfig}
+                      onPaymentScheduleClick={() => setIsPaymentModalOpen(true)}
                     />
                   </div>
                 </>
@@ -415,6 +471,18 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
           onCancel={onClose}
         />
       )}
+
+      {/* Payment Schedule Modal */}
+      <PaymentScheduleModal
+        open={isPaymentModalOpen}
+        onOpenChange={setIsPaymentModalOpen}
+        currentConfig={paymentConfig}
+        jobTotal={calculateSubtotal() - (Number(formData.discount) || 0) + ((calculateSubtotal() - (Number(formData.discount) || 0)) * (Number(formData.tax) / 100))}
+        onSave={(config) => {
+          setPaymentConfig(config);
+          setIsPaymentModalOpen(false);
+        }}
+      />
 
       {/* Email Sender Modal */}
       {savedQuote && (

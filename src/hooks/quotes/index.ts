@@ -1,5 +1,5 @@
 // Export types
-export type { Quote, QuoteLineItem } from './types';
+export type { Quote, QuoteLineItem, PaymentConfig, PaymentScheduleItem } from './types';
 
 // Export query hooks
 export { useQuotes } from './useQuotesQuery';

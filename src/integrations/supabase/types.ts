@@ -2235,19 +2235,23 @@ export type Database = {
           client_declined_at: string | null
           client_email: string
           client_id: string | null
+          client_message: string | null
           client_name: string
           client_name_signed: string | null
           client_phone: string | null
           client_viewed_at: string | null
           company_id: string
+          contract_disclaimer: string | null
           created_at: string
           created_by: string | null
           declined_date: string | null
           discount: number | null
           expiry_date: string | null
           id: string
+          internal_notes: string | null
           invoice_id: string | null
           notes: string | null
+          payment_config: Json | null
           project_name: string
           public_status: string | null
           public_token: string
@@ -2275,19 +2279,23 @@ export type Database = {
           client_declined_at?: string | null
           client_email: string
           client_id?: string | null
+          client_message?: string | null
           client_name: string
           client_name_signed?: string | null
           client_phone?: string | null
           client_viewed_at?: string | null
           company_id: string
+          contract_disclaimer?: string | null
           created_at?: string
           created_by?: string | null
           declined_date?: string | null
           discount?: number | null
           expiry_date?: string | null
           id?: string
+          internal_notes?: string | null
           invoice_id?: string | null
           notes?: string | null
+          payment_config?: Json | null
           project_name: string
           public_status?: string | null
           public_token?: string
@@ -2315,19 +2323,23 @@ export type Database = {
           client_declined_at?: string | null
           client_email?: string
           client_id?: string | null
+          client_message?: string | null
           client_name?: string
           client_name_signed?: string | null
           client_phone?: string | null
           client_viewed_at?: string | null
           company_id?: string
+          contract_disclaimer?: string | null
           created_at?: string
           created_by?: string | null
           declined_date?: string | null
           discount?: number | null
           expiry_date?: string | null
           id?: string
+          internal_notes?: string | null
           invoice_id?: string | null
           notes?: string | null
+          payment_config?: Json | null
           project_name?: string
           public_status?: string | null
           public_token?: string
