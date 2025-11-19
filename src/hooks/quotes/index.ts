@@ -29,3 +29,4 @@ export {
 } from './usePublicQuote';
 export { useApproveQuote, useRequestChanges, useDeclineQuote } from './useQuoteActions';
 export { useResetQuoteForEditing } from './useResetQuoteForEditing';
+export { useNextQuoteNumber } from './useNextQuoteNumber';
