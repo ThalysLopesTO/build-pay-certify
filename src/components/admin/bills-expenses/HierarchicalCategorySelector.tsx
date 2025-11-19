@@ -56,7 +56,7 @@ export const HierarchicalCategorySelector = ({
         <SelectTrigger className="h-11">
           <SelectValue placeholder="Select category" />
         </SelectTrigger>
-        <SelectContent className="bg-background border-border z-50 max-h-[60vh] overflow-y-auto">
+        <SelectContent className="bg-background border-border z-50">
           {allCategoryOptions.map((option) => (
             <SelectItem key={option.id} value={option.id}>
               <span className={option.isParent ? "font-medium" : "text-muted-foreground"}>
