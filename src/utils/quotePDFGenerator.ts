@@ -43,8 +43,8 @@ export const generateQuotePDF = async (
     currentY = addNotesSection(pdf, quote.notes, currentY, pageWidth, margin, pageHeight);
   }
 
-  // 7. Rodapé
-  addFooterToAllPages(pdf, pageWidth, pageHeight);
+  // 7. Rodapé com dados da empresa
+  addFooterToAllPages(pdf, pageWidth, pageHeight, companySettings || null);
 
   const filename = `Quote-${quote.quote_number}-${quote.client_name.replace(/\s+/g, "")}.pdf`;
   pdf.save(filename);
@@ -64,15 +64,15 @@ const addHeaderSection = async (
   const headerTop = startY;
   const rightX = pageWidth - margin;
 
-  // Logo à esquerda
+  // Logo à esquerda (tamanho ajustado)
   let leftBottomY = headerTop;
 
   if (logoUrl) {
     try {
       const logoBase64 = await fetchLogoAsBase64(logoUrl);
-      // logo discreto
-      pdf.addImage(logoBase64, "PNG", margin, headerTop, 30, 16);
-      leftBottomY = headerTop + 16;
+      // Mais discreto: 25 x 13 mm
+      pdf.addImage(logoBase64, "PNG", margin, headerTop, 25, 13);
+      leftBottomY = headerTop + 13;
     } catch (error) {
       console.error("Failed to load logo:", error);
     }
@@ -418,20 +418,46 @@ const addNotesSection = (
   return y + notesHeight + 8;
 };
 
-// ============== FOOTER ==============
+// ============== FOOTER (COM CONTATO) ==============
 
-const addFooterToAllPages = (pdf: ExtendedJsPDF, pageWidth: number, pageHeight: number) => {
+const addFooterToAllPages = (
+  pdf: ExtendedJsPDF,
+  pageWidth: number,
+  pageHeight: number,
+  settings: CompanySettings | null,
+) => {
   const pageCount = pdf.getNumberOfPages();
+  const margin = 18;
 
   for (let i = 1; i <= pageCount; i++) {
     pdf.setPage(i);
-    pdf.setFontSize(8);
     pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
     pdf.setTextColor(148, 163, 184);
 
-    pdf.text("Thank you for your business.", pageWidth / 2, pageHeight - 12, { align: "center" });
+    let contactY = pageHeight - 14;
 
-    pdf.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 6, { align: "center" });
+    // Linha com telefone e email
+    if (settings?.company_phone || settings?.company_email) {
+      const parts: string[] = [];
+      if (settings.company_phone) parts.push(`Phone: ${settings.company_phone}`);
+      if (settings.company_email) parts.push(`Email: ${settings.company_email}`);
+      const contactLine = parts.join("  •  ");
+      pdf.text(contactLine, pageWidth / 2, contactY, { align: "center" });
+      contactY += 4;
+    }
+
+    // Linha com endereço
+    if (settings?.company_address) {
+      const addressLines = pdf.splitTextToSize(settings.company_address, pageWidth - 2 * margin);
+      pdf.text(addressLines as string[], pageWidth / 2, contactY, {
+        align: "center",
+      });
+      contactY += addressLines.length * 3.2;
+    }
+
+    // Número da página
+    pdf.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 4, { align: "center" });
   }
 
   pdf.setTextColor(0, 0, 0);
@@ -462,7 +488,7 @@ export const generateQuotePDFBlob = async (
     currentY = addNotesSection(pdf, quote.notes, currentY, pageWidth, margin, pageHeight);
   }
 
-  addFooterToAllPages(pdf, pageWidth, pageHeight);
+  addFooterToAllPages(pdf, pageWidth, pageHeight, companySettings || null);
 
   const blob = pdf.output("blob");
   const filename = `Quote-${quote.quote_number}-${quote.client_name.replace(/\s+/g, "")}.pdf`;
