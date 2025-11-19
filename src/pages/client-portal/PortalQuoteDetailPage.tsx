@@ -3,18 +3,21 @@ import { useClientPortalContext } from '@/contexts/ClientPortalContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, MapPin, DollarSign, CheckCircle, XCircle, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, DollarSign, CheckCircle, XCircle, MessageCircle, Loader2 } from 'lucide-react';
 import { formatInCompanyTimezone, getReportDisplayDate, DEFAULT_TIMEZONE } from '@/utils/timezone';
 import { ApproveQuoteDialog, DeclineQuoteDialog, RequestChangesDialog } from '@/components/client-portal/QuoteActionDialogs';
 import { useState } from 'react';
-import { useApproveQuote, useRequestChanges, useDeclineQuote } from '@/hooks/quotes/useQuoteActions';
+import { useApproveQuote, useRequestChanges, useDeclineQuote, usePublicQuote } from '@/hooks/quotes';
 import { useToast } from '@/hooks/use-toast';
+import { QuoteLineItemsTable, QuoteTotalsBreakdown, QuotePaymentSchedule, QuoteContractSection, QuoteScopeSection } from '@/components/shared/quote';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function PortalQuoteDetailPage() {
   const { quoteId } = useParams();
   const { quotes, token, company_settings } = useClientPortalContext();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [approveOpen, setApproveOpen] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
@@ -25,6 +28,11 @@ export default function PortalQuoteDetailPage() {
   const declineQuote = useDeclineQuote();
 
   const quote = quotes.find(q => q.id === quoteId);
+  
+  // Fetch full quote data including line items
+  const { data: fullQuoteData, isLoading: isLoadingFullQuote } = usePublicQuote(
+    quote?.public_token || ''
+  );
 
   if (!quote) {
     return (
@@ -33,6 +41,14 @@ export default function PortalQuoteDetailPage() {
         <Button onClick={() => navigate(`/client/${token}/quotes`)} className="mt-4">
           Back to Quotes
         </Button>
+      </div>
+    );
+  }
+
+  if (isLoadingFullQuote) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -190,6 +206,39 @@ export default function PortalQuoteDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Scope of Work */}
+      {fullQuoteData?.quote?.client_message && (
+        <QuoteScopeSection clientMessage={fullQuoteData.quote.client_message} />
+      )}
+
+      {/* Line Items */}
+      {fullQuoteData?.line_items && fullQuoteData.line_items.length > 0 && (
+        <QuoteLineItemsTable lineItems={fullQuoteData.line_items} isMobile={isMobile} />
+      )}
+
+      {/* Totals Breakdown */}
+      {fullQuoteData?.quote && (
+        <QuoteTotalsBreakdown
+          subtotal={fullQuoteData.quote.subtotal}
+          discount={fullQuoteData.quote.discount}
+          tax={fullQuoteData.quote.tax}
+          total={fullQuoteData.quote.total_amount}
+        />
+      )}
+
+      {/* Payment Schedule */}
+      {fullQuoteData?.quote?.payment_config && (
+        <QuotePaymentSchedule
+          paymentConfig={fullQuoteData.quote.payment_config}
+          total={fullQuoteData.quote.total_amount}
+        />
+      )}
+
+      {/* Contract Disclaimer */}
+      {fullQuoteData?.quote?.contract_disclaimer && (
+        <QuoteContractSection disclaimer={fullQuoteData.quote.contract_disclaimer} />
+      )}
 
       {/* Change Request History - Always show if client_change_request exists */}
       {quote.client_change_request && (
