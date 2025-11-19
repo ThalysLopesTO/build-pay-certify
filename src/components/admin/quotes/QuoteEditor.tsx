@@ -193,6 +193,15 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
     setLineItems(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleReorderLineItems = (startIndex: number, endIndex: number) => {
+    setLineItems(prevItems => {
+      const result = Array.from(prevItems);
+      const [removed] = result.splice(startIndex, 1);
+      result.splice(endIndex, 0, removed);
+      return result;
+    });
+  };
+
   const calculateSubtotal = () => {
     return lineItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   };
@@ -397,12 +406,13 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
                 handleInputChange={handleInputChange}
               />
               
-              <QuoteEditorLineItemsSection
-                lineItems={lineItems}
-                handleLineItemChange={handleLineItemChange}
-                addLineItem={addLineItem}
-                removeLineItem={removeLineItem}
-              />
+          <QuoteEditorLineItemsSection
+            lineItems={lineItems}
+            handleLineItemChange={handleLineItemChange}
+            addLineItem={addLineItem}
+            removeLineItem={removeLineItem}
+            onReorderLineItems={handleReorderLineItems}
+          />
               
               <QuoteEditorClientMessageCard
                 value={formData.client_message}
