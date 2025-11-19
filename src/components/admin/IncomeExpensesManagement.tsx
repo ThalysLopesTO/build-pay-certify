@@ -1306,7 +1306,7 @@ const IncomeExpensesManagement = () => {
                 <Label className="text-sm font-medium text-slate-700">
                   Date of {transactionType === 'income' ? 'Income' : 'Expense'} *
                 </Label>
-                <Popover>
+                <Popover modal={false}>
                   <PopoverTrigger asChild>
                     <Button 
                       variant="outline" 
@@ -1319,7 +1319,7 @@ const IncomeExpensesManagement = () => {
                       {formData.expense_date ? format(formData.expense_date, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
+                  <PopoverContent className="w-auto p-0 z-[100]" align="start" sideOffset={8}>
                     <Calendar
                       mode="single"
                       selected={formData.expense_date}
