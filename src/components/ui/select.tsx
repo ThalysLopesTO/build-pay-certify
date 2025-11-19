@@ -86,7 +86,10 @@ const SelectContent = React.forwardRef<
         className={cn(
           "p-1 overflow-y-auto max-h-[min(450px,60vh)] pointer-events-auto",
           "scroll-smooth overscroll-contain touch-pan-y",
-          "select-viewport-scrollbar",
+          "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:block",
+          "[&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded-full",
+          "[&::-webkit-scrollbar-thumb]:bg-slate-400 [&::-webkit-scrollbar-thumb]:rounded-full",
+          "[&::-webkit-scrollbar-thumb]:hover:bg-slate-500",
           position === "popper" &&
             "w-full min-w-[var(--radix-select-trigger-width)]"
         )}
