@@ -6,6 +6,7 @@ import ForemanDashboardHome from '../components/foreman/dashboard/ForemanDashboa
 import ForemanTimesheetForm from '../components/foreman/ForemanTimesheetForm';
 import MaterialRequestForm from '../components/foreman/MaterialRequestForm';
 import TimeTracker from '../components/employee/TimeTracker';
+import MissedPunchRequests from '../components/employee/MissedPunchRequests';
 import MyMaterialRequests from '../components/foreman/MyMaterialRequests';
 import EmployeeDirectory from '../components/foreman/EmployeeDirectory';
 import EmployeeReports from '../components/foreman/EmployeeReports';
@@ -38,6 +39,8 @@ const ForemanDashboard = () => {
         return <TimeTracker />;
       case 'timesheet':
         return <ForemanTimesheetForm />;
+      case 'missed-punch-requests':
+        return <MissedPunchRequests />;
       case 'material-request':
         return <MaterialRequestForm />;
       case 'my-requests':

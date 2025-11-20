@@ -102,6 +102,11 @@ export const groupedForemanItems = {
       icon: Clock,
       id: 'timesheet',
     },
+    {
+      title: 'Missed Punch Requests',
+      icon: Clock,
+      id: 'missed-punch-requests',
+    },
   ],
   materials: [
     {
