@@ -36,10 +36,11 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
 
   // ✅ Generate subject & body text from template or fallback
   const generateEmailContent = () => {
-    if (!settings) return { subject: '', bodyText: '' };
+    if (!settings) return { subject: '', bodyText: '', html: '' };
 
     const emailTemplate = template || getDefaultTemplate('invoice');
-
+    const portalUrl = generateClientPortalUrl();
+    
     const templateData = {
       client_name: invoice.client_company,
       client_company: invoice.client_company,
@@ -52,11 +53,24 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
       due_date: format(new Date(invoice.due_date), 'MMM dd, yyyy'),
       hst_number: settings.hst_number || '',
       custom_message: customMessage || 'Thank you for your business.',
+      portal_url: portalUrl || '',
     };
+
+    const html = createInvoiceEmailHTML({
+      clientName: invoice.client_company,
+      companyName: settings.company_name,
+      invoiceNumber: invoice.invoice_number,
+      totalAmount: invoice.total_amount.toFixed(2),
+      dueDate: format(new Date(invoice.due_date), 'MMM dd, yyyy'),
+      portalUrl: portalUrl || undefined,
+      companyLogoUrl: logoUrl || undefined,
+      customMessage: customMessage || undefined,
+    });
 
     return {
       subject: replacePlaceholders(emailTemplate.subject, templateData),
       bodyText: replacePlaceholders(emailTemplate.body_html, templateData),
+      html,
     };
   };
 
