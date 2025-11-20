@@ -15,6 +15,8 @@ import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
 import { Mail, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useClient } from '@/hooks/useClient';
+import { createInvoiceEmailHTML } from '@/utils/invoiceEmailTemplate';
 
 interface InvoiceEmailSenderProps {
   invoice: Invoice;
@@ -29,10 +31,19 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
 }) => {
   const { toast } = useToast();
   const { settings, isSettingsComplete } = useCompanySettings();
-  const { logoUrl } = useCompanyLogo(); // ✅ use this if this is your correct logo source
+  const { logoUrl } = useCompanyLogo();
   const { template } = useEmailTemplate('invoice');
+  const { data: client } = useClient(invoice.client_id);
   const [isLoading, setIsLoading] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
+
+  const generateClientPortalUrl = (): string | null => {
+    const baseUrl = window.location.origin;
+    if (client?.portal_token) {
+      return `${baseUrl}/client/${client.portal_token}/invoices`;
+    }
+    return null;
+  };
 
   // ✅ Generate subject & body text from template or fallback
   const generateEmailContent = () => {
@@ -103,11 +114,12 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
         to: invoice.client_email,
         subject: emailContent.subject,
         bodyText: emailContent.bodyText,
+        customHtml: emailContent.html,
         companyData: {
           name: settings.company_name,
           address: settings.company_address,
           phone: settings.company_phone,
-          logoUrl // ✅ now uses useCompanyLogo()
+          logoUrl
         },
         attachments: [
           {
