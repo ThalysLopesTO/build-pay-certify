@@ -12,7 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 const MaterialTakeoffNotesTable: React.FC = () => {
   const { notes, isLoading, deleteNote, error } = useMaterialTakeoffNotes();
-  const { data: jobsites = [], isLoading: jobsitesLoading, error: jobsitesError } = useJobsites();
+  const { data: jobsites = [], isLoading: jobsitesLoading, error: jobsitesError } = useJobsites('active');
   const [selectedJobsite, setSelectedJobsite] = useState<{ id: string; name: string } | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [viewMode, setViewMode] = useState<'view' | 'edit'>('edit');
