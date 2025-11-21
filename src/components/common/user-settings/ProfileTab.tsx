@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,10 +10,13 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useUpdateProfile } from '@/hooks/useUserSettings';
 import { profileSchema, ProfileFormData } from './schemas';
+import ProfilePhotoUpload from './ProfilePhotoUpload';
 
 const ProfileTab = () => {
   const { user, isCompanyAdmin } = useAuth();
   const updateProfile = useUpdateProfile();
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -26,6 +29,19 @@ const ProfileTab = () => {
     },
   });
 
+  const handlePhotoChange = (file: File | null) => {
+    setPhotoFile(file);
+    setRemovePhoto(false);
+    profileForm.setValue('photo', file || undefined);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setRemovePhoto(true);
+    profileForm.setValue('photo', undefined);
+    profileForm.setValue('removePhoto', true);
+  };
+
   const onProfileSubmit = (data: ProfileFormData) => {
     // Transform the data to match UpdateProfileData interface
     const updateData = {
@@ -34,6 +50,8 @@ const ProfileTab = () => {
       trade: data.trade || undefined,
       position: data.position || undefined,
       hourly_rate: data.hourly_rate || undefined,
+      photo: photoFile || undefined,
+      removePhoto: removePhoto,
     };
     updateProfile.mutate(updateData);
   };
@@ -46,6 +64,19 @@ const ProfileTab = () => {
       <CardContent>
         <Form {...profileForm}>
           <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+            {/* Profile Photo Section */}
+            <div className="flex justify-center py-4">
+              <ProfilePhotoUpload
+                currentPhotoUrl={user?.photo_url}
+                firstName={user?.firstName}
+                lastName={user?.lastName}
+                onPhotoChange={handlePhotoChange}
+                onRemovePhoto={handleRemovePhoto}
+              />
+            </div>
+
+            <Separator />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={profileForm.control}
