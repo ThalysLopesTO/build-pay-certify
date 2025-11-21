@@ -10,6 +10,8 @@ interface UpdateProfileData {
   trade?: string;
   position?: string;
   hourly_rate?: number;
+  photo?: File;
+  removePhoto?: boolean;
 }
 
 interface UpdatePasswordData {
@@ -25,16 +27,51 @@ export const useUpdateProfile = () => {
     mutationFn: async (data: UpdateProfileData) => {
       if (!user) throw new Error('User not authenticated');
 
+      // Handle photo upload/removal
+      let photoUrl: string | null | undefined = undefined;
+
+      if (data.removePhoto) {
+        // User wants to remove photo
+        photoUrl = null;
+      } else if (data.photo) {
+        // User uploaded new photo
+        const fileExtension = data.photo.name.split('.').pop();
+        const fileName = `${user.id}_${crypto.randomUUID()}.${fileExtension}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('employee-photos')
+          .upload(fileName, data.photo, {
+            cacheControl: '3600',
+            upsert: false
+          });
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: publicUrlData } = supabase.storage
+          .from('employee-photos')
+          .getPublicUrl(fileName);
+        
+        photoUrl = publicUrlData.publicUrl;
+      }
+
+      // Build update payload
+      const updatePayload: any = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        trade: data.trade,
+        position: data.position,
+        hourly_rate: data.hourly_rate,
+        updated_at: new Date().toISOString()
+      };
+
+      // Only update photo_url if it changed
+      if (photoUrl !== undefined) {
+        updatePayload.photo_url = photoUrl;
+      }
+
       const { error } = await supabase
         .from('user_profiles')
-        .update({
-          first_name: data.first_name,
-          last_name: data.last_name,
-          trade: data.trade,
-          position: data.position,
-          hourly_rate: data.hourly_rate,
-          updated_at: new Date().toISOString()
-        })
+        .update(updatePayload)
         .eq('user_id', user.id);
 
       if (error) throw error;

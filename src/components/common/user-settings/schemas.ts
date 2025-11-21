@@ -7,6 +7,8 @@ export const profileSchema = z.object({
   trade: z.string().optional(),
   position: z.string().optional(),
   hourly_rate: z.number().min(0, 'Hourly rate must be positive').optional(),
+  photo: z.instanceof(File).optional(),
+  removePhoto: z.boolean().optional(),
 });
 
 export const passwordSchema = z.object({
