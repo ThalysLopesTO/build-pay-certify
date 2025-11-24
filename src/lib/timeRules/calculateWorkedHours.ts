@@ -1,6 +1,5 @@
 import { parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
 import {
   parseTimeToDate,
   clamp,
@@ -9,9 +8,6 @@ import {
   generateFlags,
   formatISO,
 } from './utils';
-
-type JobsiteTimeRule = Database['public']['Tables']['jobsite_time_rules']['Row'];
-type CompanyTimeRule = Database['public']['Tables']['company_time_rules']['Row'];
 
 interface TimeRule {
   work_start_time: string;
@@ -24,12 +20,11 @@ interface TimeRule {
 
 /**
  * Fetch the applicable time rule for a jobsite
- * Returns jobsite rule if exists and not inheriting, otherwise company default rule
+ * Returns jobsite rule if it exists and time rules are enabled (inherits_company_rule = false)
+ * Otherwise returns null (free schedule)
  */
 async function getApplicableTimeRule(
-  jobsiteId: string,
-  companyId: string,
-  date: string
+  jobsiteId: string
 ): Promise<TimeRule | null> {
   // Fetch jobsite rule
   const { data: jobsiteRule, error: jobsiteError } = await supabase
@@ -40,13 +35,20 @@ async function getApplicableTimeRule(
 
   if (jobsiteError) {
     console.error('Error fetching jobsite time rule:', jobsiteError);
+    return null;
   }
 
-  // If jobsite has a rule and doesn't inherit, use it
+  // If jobsite has time rules enabled (inherits_company_rule = false), use them
   if (jobsiteRule && !jobsiteRule.inherits_company_rule) {
+    // Validate that required fields are present
+    if (!jobsiteRule.work_start_time || !jobsiteRule.work_end_time) {
+      console.warn('Jobsite rule missing required time fields');
+      return null;
+    }
+    
     return {
-      work_start_time: jobsiteRule.work_start_time!,
-      work_end_time: jobsiteRule.work_end_time!,
+      work_start_time: jobsiteRule.work_start_time,
+      work_end_time: jobsiteRule.work_end_time,
       break_minutes: jobsiteRule.break_minutes ?? 0,
       break_is_paid: jobsiteRule.break_is_paid ?? false,
       early_grace_minutes: jobsiteRule.early_grace_minutes ?? 0,
@@ -54,45 +56,7 @@ async function getApplicableTimeRule(
     };
   }
 
-  // Otherwise, fetch company default rule
-  const dayOfWeek = parseISO(date).getDay(); // 0 = Sunday, 6 = Saturday
-
-  // Try to find a day-specific rule first
-  let { data: companyRule, error: companyError } = await supabase
-    .from('company_time_rules')
-    .select('*')
-    .eq('company_id', companyId)
-    .eq('day_of_week', dayOfWeek)
-    .maybeSingle();
-
-  // If no day-specific rule, try to find a default (day_of_week = null)
-  if (!companyRule && !companyError) {
-    const result = await supabase
-      .from('company_time_rules')
-      .select('*')
-      .eq('company_id', companyId)
-      .is('day_of_week', null)
-      .maybeSingle();
-    
-    companyRule = result.data;
-    companyError = result.error;
-  }
-
-  if (companyError) {
-    console.error('Error fetching company time rule:', companyError);
-  }
-
-  if (companyRule) {
-    return {
-      work_start_time: companyRule.work_start_time,
-      work_end_time: companyRule.work_end_time,
-      break_minutes: companyRule.break_minutes ?? 0,
-      break_is_paid: companyRule.break_is_paid ?? false,
-      early_grace_minutes: companyRule.early_grace_minutes ?? 0,
-      late_grace_minutes: companyRule.late_grace_minutes ?? 0,
-    };
-  }
-
+  // No rule configured or time rules disabled - use free schedule
   return null;
 }
 
@@ -138,9 +102,9 @@ export async function calculateWorkedHours({
   }
 
   // Fetch applicable time rule
-  const timeRule = await getApplicableTimeRule(jobsiteId, companyId, date);
+  const timeRule = await getApplicableTimeRule(jobsiteId);
 
-  // If no rule exists, use raw times (no adjustments)
+  // If no rule exists or time rules disabled, use raw times (free schedule)
   if (!timeRule) {
     const totalMinutes = diffInMinutes(rawInDate, rawOutDate);
     return {
@@ -149,7 +113,7 @@ export async function calculateWorkedHours({
       totalMinutes,
       paidMinutes: totalMinutes,
       paidHours: totalMinutes / 60,
-      flags: [],
+      flags: [], // No schedule-based flags for free schedule
     };
   }
 
