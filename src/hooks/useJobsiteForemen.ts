@@ -25,7 +25,7 @@ export const useJobsiteForemen = (jobsiteId: string) => {
         .from('jobsite_foremen')
         .select(`
           *,
-          user_profiles!inner(
+          user_profiles!jobsite_foremen_foreman_id_fkey(
             user_id,
             first_name,
             last_name
