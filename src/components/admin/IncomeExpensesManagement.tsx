@@ -1229,7 +1229,7 @@ const IncomeExpensesManagement = () => {
       {/* Create/Edit Dialog/Sheet - Responsive */}
       {isMobile ? (
         <Sheet open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
+          <SheetContent side="bottom" className="h-[90vh] overflow-y-auto relative">
             <SheetHeader>
               <SheetTitle>
                 {editingTransaction 
@@ -1308,7 +1308,7 @@ const IncomeExpensesManagement = () => {
                   <Label className="text-sm font-medium text-slate-700">
                     Date of {transactionType === 'income' ? 'Income' : 'Expense'} *
                   </Label>
-                  <Popover modal={true}>
+                  <Popover modal={false}>
                     <PopoverTrigger asChild>
                       <Button 
                         variant="outline" 
@@ -1322,16 +1322,9 @@ const IncomeExpensesManagement = () => {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent 
-                      className="w-auto p-0 z-[9999]" 
+                      className="w-auto p-0" 
                       align="start" 
-                      side="bottom"
-                      sideOffset={8}
-                      avoidCollisions={true}
-                      sticky="always"
-                      style={{
-                        touchAction: 'pan-y',
-                        WebkitOverflowScrolling: 'touch'
-                      } as any}
+                      sideOffset={4}
                     >
                       <Calendar
                         mode="single"
@@ -1339,10 +1332,6 @@ const IncomeExpensesManagement = () => {
                         onSelect={(date) => date && setFormData({ ...formData, expense_date: date })}
                         initialFocus
                         className="pointer-events-auto"
-                        style={{
-                          WebkitOverflowScrolling: 'touch',
-                          touchAction: 'pan-y'
-                        } as any}
                       />
                     </PopoverContent>
                   </Popover>
