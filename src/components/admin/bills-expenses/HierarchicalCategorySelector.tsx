@@ -2,6 +2,9 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useHierarchicalCategories } from '@/hooks/useHierarchicalCategories';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileCategorySelector } from './MobileCategorySelector';
+import { cn } from '@/lib/utils';
 
 interface HierarchicalCategorySelectorProps {
   selectedCategoryId: string;
@@ -16,9 +19,22 @@ export const HierarchicalCategorySelector = ({
   required = false,
   transactionType = 'expense'
 }: HierarchicalCategorySelectorProps) => {
+  const isMobile = useIsMobile();
   const { categories, getParentCategories, getSubcategoriesForParent } = useHierarchicalCategories();
   
   const parentCategories = getParentCategories(transactionType);
+  
+  // Use mobile-optimized selector on mobile devices
+  if (isMobile) {
+    return (
+      <MobileCategorySelector
+        selectedCategoryId={selectedCategoryId}
+        onCategoryChange={onCategoryChange}
+        required={required}
+        transactionType={transactionType}
+      />
+    );
+  }
   
   // Create a unified list of all categories with proper display names
   const allCategoryOptions = React.useMemo(() => {
@@ -56,7 +72,7 @@ export const HierarchicalCategorySelector = ({
         <SelectTrigger className="h-11">
           <SelectValue placeholder="Select category" />
         </SelectTrigger>
-        <SelectContent className="bg-background border-border z-50">
+        <SelectContent className={cn("bg-background border-border z-50 max-h-[300px] overflow-auto pointer-events-auto")}>
           {allCategoryOptions.map((option) => (
             <SelectItem key={option.id} value={option.id}>
               <span className={option.isParent ? "font-medium" : "text-muted-foreground"}>
