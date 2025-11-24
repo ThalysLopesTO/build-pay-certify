@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, MapPin, Calendar, Package, ClipboardList, Globe, BarChart3, CheckCircle } from 'lucide-react';
+import { X, MapPin, Calendar, Package, ClipboardList, Globe, BarChart3, CheckCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { formatCoordinates } from '@/services/geocoding';
 import { useJobsiteTasks } from '@/hooks/useJobsiteTasks';
 import JobsiteMaterialTakeoff from './JobsiteMaterialTakeoff';
+import JobsiteTimeRules from './JobsiteTimeRules';
 import { ChevronDown } from 'lucide-react';
 
 interface Jobsite {
@@ -37,6 +38,7 @@ const JobsiteMobileDetail: React.FC<JobsiteMobileDetailProps> = ({
   const [locationOpen, setLocationOpen] = React.useState(false);
   const [tasksOpen, setTasksOpen] = React.useState(false);
   const [materialsOpen, setMaterialsOpen] = React.useState(false);
+  const [timeRulesOpen, setTimeRulesOpen] = React.useState(false);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Not set';
@@ -200,6 +202,24 @@ const JobsiteMobileDetail: React.FC<JobsiteMobileDetailProps> = ({
             <CollapsibleContent>
               <div className="pl-6">
                 <JobsiteMaterialTakeoff jobsiteId={jobsite.id} jobsiteName={jobsite.name} />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Time Rules (Collapsible) */}
+          <Collapsible open={timeRulesOpen} onOpenChange={setTimeRulesOpen}>
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between py-2">
+                <h3 className="font-semibold text-base flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Time Rules
+                </h3>
+                <ChevronDown className={`h-4 w-4 transition-transform ${timeRulesOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="pl-6">
+                <JobsiteTimeRules jobsiteId={jobsite.id} />
               </div>
             </CollapsibleContent>
           </Collapsible>

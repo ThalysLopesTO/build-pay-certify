@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Calendar, MapPin, BarChart3, Package, ClipboardList, CheckCircle, RotateCcw, Edit, Globe, RefreshCw } from 'lucide-react';
+import { Trash2, Calendar, MapPin, BarChart3, Package, ClipboardList, CheckCircle, RotateCcw, Edit, Globe, RefreshCw, Clock } from 'lucide-react';
 import { useJobsiteActions } from '@/hooks/useJobsiteActions';
 import { useJobsiteTasks } from '@/hooks/useJobsiteTasks';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -14,6 +14,7 @@ import JobsiteEditModal from './JobsiteEditModal';
 import EditJobsiteDialog from './EditJobsiteDialog';
 import JobsiteDeleteDialog from './JobsiteDeleteDialog';
 import { JobsiteTaskTab } from '../tasks/JobsiteTaskTab';
+import JobsiteTimeRules from './JobsiteTimeRules';
 
 interface Jobsite {
   id: string;
@@ -204,7 +205,7 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
       <CardContent className="pt-0">
         <div className="grid grid-cols-3 gap-4 mb-6">
           <Tabs defaultValue="materials" className="col-span-3">
-            <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl h-auto p-1.5 shadow-inner">
+            <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl h-auto p-1.5 shadow-inner">
               <TabsTrigger 
                 value="materials" 
                 className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/50"
@@ -222,6 +223,13 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
                   {totalTasks}
                 </span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="time-rules" 
+                className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all hover:bg-background/80 data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-border/50"
+              >
+                <Clock className="h-4 w-4" />
+                <span className="font-semibold">Time Rules</span>
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="materials" className="mt-6">
@@ -236,6 +244,12 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
             <TabsContent value="tasks" className="mt-6">
               <div className="rounded-xl bg-muted/20 border p-4">
                 <JobsiteTaskTab jobsiteId={jobsite.id} isAdmin={true} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="time-rules" className="mt-6">
+              <div className="rounded-xl bg-muted/20 border p-4">
+                <JobsiteTimeRules jobsiteId={jobsite.id} />
               </div>
             </TabsContent>
           </Tabs>
