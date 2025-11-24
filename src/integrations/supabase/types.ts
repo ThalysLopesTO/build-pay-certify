@@ -780,6 +780,59 @@ export type Database = {
           },
         ]
       }
+      company_time_rules: {
+        Row: {
+          break_is_paid: boolean
+          break_minutes: number
+          company_id: string
+          created_at: string
+          day_of_week: number | null
+          early_grace_minutes: number
+          id: string
+          late_grace_minutes: number
+          name: string
+          updated_at: string
+          work_end_time: string
+          work_start_time: string
+        }
+        Insert: {
+          break_is_paid?: boolean
+          break_minutes?: number
+          company_id: string
+          created_at?: string
+          day_of_week?: number | null
+          early_grace_minutes?: number
+          id?: string
+          late_grace_minutes?: number
+          name: string
+          updated_at?: string
+          work_end_time: string
+          work_start_time: string
+        }
+        Update: {
+          break_is_paid?: boolean
+          break_minutes?: number
+          company_id?: string
+          created_at?: string
+          day_of_week?: number | null
+          early_grace_minutes?: number
+          id?: string
+          late_grace_minutes?: number
+          name?: string
+          updated_at?: string
+          work_end_time?: string
+          work_start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_time_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_report_comments: {
         Row: {
           comment_text: string
@@ -1484,6 +1537,56 @@ export type Database = {
           },
           {
             foreignKeyName: "jobsite_tasks_jobsite_id_fkey"
+            columns: ["jobsite_id"]
+            isOneToOne: false
+            referencedRelation: "jobsites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobsite_time_rules: {
+        Row: {
+          break_is_paid: boolean | null
+          break_minutes: number | null
+          created_at: string
+          early_grace_minutes: number | null
+          id: string
+          inherits_company_rule: boolean
+          jobsite_id: string
+          late_grace_minutes: number | null
+          updated_at: string
+          work_end_time: string | null
+          work_start_time: string | null
+        }
+        Insert: {
+          break_is_paid?: boolean | null
+          break_minutes?: number | null
+          created_at?: string
+          early_grace_minutes?: number | null
+          id?: string
+          inherits_company_rule?: boolean
+          jobsite_id: string
+          late_grace_minutes?: number | null
+          updated_at?: string
+          work_end_time?: string | null
+          work_start_time?: string | null
+        }
+        Update: {
+          break_is_paid?: boolean | null
+          break_minutes?: number | null
+          created_at?: string
+          early_grace_minutes?: number | null
+          id?: string
+          inherits_company_rule?: boolean
+          jobsite_id?: string
+          late_grace_minutes?: number | null
+          updated_at?: string
+          work_end_time?: string | null
+          work_start_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobsite_time_rules_jobsite_id_fkey"
             columns: ["jobsite_id"]
             isOneToOne: false
             referencedRelation: "jobsites"
