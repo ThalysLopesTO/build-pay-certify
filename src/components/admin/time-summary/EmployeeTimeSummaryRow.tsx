@@ -129,8 +129,8 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
       {isExpanded && (
         <div className="mt-2 px-3 md:px-4 py-4 bg-muted/30 border rounded-lg shadow-inner">
           {/* Header with Date Range and Refresh */}
-          <div className="mb-3 flex items-center justify-between pb-2 border-b border-border/50">
-            <div className="flex items-center gap-2">
+          <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b border-border/50">
+            <div className="flex items-center gap-2 flex-wrap">
               <Calendar className="h-4 w-4 text-primary" />
               <span className="text-sm font-semibold text-foreground">
                 {format(startDate, 'MMM dd')} - {format(endDate, 'MMM dd, yyyy')}
@@ -139,15 +139,20 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                 {dailyPunches?.length || 0} {dailyPunches?.length === 1 ? 'day' : 'days'}
               </Badge>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="h-7 px-2"
-            >
-              <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-muted-foreground hidden sm:block">
+                Hours by time rules
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="h-7 px-2"
+              >
+                <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+              </Button>
+            </div>
           </div>
 
           {isLoading ? (
