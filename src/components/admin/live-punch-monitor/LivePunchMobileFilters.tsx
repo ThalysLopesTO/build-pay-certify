@@ -123,6 +123,7 @@ const LivePunchMobileFilters: React.FC<LivePunchMobileFiltersProps> = ({
                   selected={selectedDate || undefined}
                   onSelect={(date) => setSelectedDate(date || null)}
                   initialFocus
+                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>
