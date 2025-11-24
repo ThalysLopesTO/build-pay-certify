@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/SupabaseAuthContext";
 import { DailyPunch } from "./useTimeSummaryData";
 import { format } from "date-fns";
+import { calculateWorkedHours } from "@/lib/timeRules/calculateWorkedHours";
 
 interface TimeSummaryDetailsParams {
   employeeId: string;
@@ -63,15 +64,55 @@ export const useTimeSummaryDetails = ({
         throw error;
       }
 
-      // Transform the data to match DailyPunch interface
-      const dailyPunches: DailyPunch[] = (data || []).map((row: any) => ({
-        date: row.punch_date,
-        check_in_time: row.check_in_time,
-        check_out_time: row.check_out_time,
-        hours_worked: parseFloat(row.hours_worked) || 0,
-        jobsite_name: row.jobsite_name || "Unknown Project",
-        location: null,
-        status: row.status,
+      // Transform the data and apply time rules
+      const dailyPunches: DailyPunch[] = await Promise.all((data || []).map(async (row: any) => {
+        const base: DailyPunch = {
+          date: row.punch_date,
+          check_in_time: row.check_in_time,
+          check_out_time: row.check_out_time,
+          hours_worked: parseFloat(row.hours_worked) || 0,
+          jobsite_name: row.jobsite_name || "Unknown Project",
+          location: null,
+          status: row.status,
+          jobsite_id: jobsiteId,
+        };
+
+        // Calculate time rules if punch is complete
+        if (row.check_in_time && row.check_out_time) {
+          try {
+            const result = await calculateWorkedHours({
+              rawIn: row.check_in_time,
+              rawOut: row.check_out_time,
+              jobsiteId: jobsiteId,
+              companyId: user.companyId,
+              date: row.punch_date,
+            });
+
+            return {
+              ...base,
+              raw_hours: result.totalMinutes / 60,
+              paid_hours: result.paidMinutes / 60,
+              flags: result.flags || [],
+            };
+          } catch (error) {
+            console.error('Error calculating time rules for punch:', error);
+            // Fallback to raw hours
+            return {
+              ...base,
+              raw_hours: base.hours_worked,
+              paid_hours: base.hours_worked,
+              flags: [],
+            };
+          }
+        }
+
+        // Active punch or incomplete
+        return {
+          ...base,
+          raw_hours: 0,
+          paid_hours: 0,
+          flags: [],
+        };
       }));
 
       return dailyPunches;

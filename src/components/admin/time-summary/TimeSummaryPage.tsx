@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, RefreshCw, X, Calendar, Building, Users, Filter as FilterIcon } from 'lucide-react';
+import { BarChart3, RefreshCw, X, Calendar, Building, Users, Filter as FilterIcon, Download } from 'lucide-react';
 import { TimeSummaryFilters } from './TimeSummaryFilters';
 import { TimeSummaryTable } from './TimeSummaryTable';
-import { TimeSummaryExport } from './TimeSummaryExport';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { useTimeSummaryData, TimeSummaryFilters as Filters } from '@/hooks/useTimeSummaryData';
+import { useTimeSummaryDataWithRules } from '@/hooks/useTimeSummaryDataWithRules';
+import { useTimeSummaryExport } from '@/hooks/useTimeSummaryExport';
+import { TimeSummaryFilters as Filters } from '@/hooks/useTimeSummaryData';
 import { startOfWeek, endOfWeek, format } from 'date-fns';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -45,7 +46,17 @@ export const TimeSummaryPage: React.FC = () => {
     enabled: !!user?.companyId,
   });
 
-  const { data, isLoading } = useTimeSummaryData(filters);
+  const { data, isLoading } = useTimeSummaryDataWithRules(filters);
+
+  // Initialize export hook
+  const { isExporting, exportPayrollCSV } = useTimeSummaryExport({
+    companyId: user?.companyId || '',
+    companyName: companySettings?.company_name || 'Company',
+    dateRange: filters.dateRange,
+    jobsiteFilter: filters.jobsiteIds,
+    employeeFilter: filters.employeeIds,
+    data: data || [],
+  });
 
   // Invalidate detail caches when date filters change
   useEffect(() => {
@@ -139,14 +150,18 @@ export const TimeSummaryPage: React.FC = () => {
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''} md:mr-2`} />
             <span className="hidden md:inline">Refresh</span>
           </Button>
-          {data && data.length > 0 && (
-            <TimeSummaryExport
-              data={data}
-              dateRange={filters.dateRange}
-              companyName={companySettings?.company_name}
-              companyLogo={companySettings?.company_logo_url || undefined}
-            />
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportPayrollCSV}
+            disabled={isLoading || isExporting || !data || data.length === 0}
+            className="min-h-[44px]"
+          >
+            <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''} md:mr-2`} />
+            <span className="hidden md:inline">
+              {isExporting ? 'Exporting...' : 'Download Report'}
+            </span>
+          </Button>
         </div>
       </div>
 

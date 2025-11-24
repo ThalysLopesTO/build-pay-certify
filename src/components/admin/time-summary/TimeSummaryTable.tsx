@@ -43,9 +43,17 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
     );
   }
 
-  // Calculate grand totals
-  const grandTotalHours = data.reduce((sum, jobsite) => {
-    return sum + jobsite.employees.reduce((empSum, emp) => empSum + emp.total_hours, 0);
+  // Calculate grand totals with paid hours
+  const grandTotalPaidHours = data.reduce((sum, jobsite) => {
+    return sum + jobsite.employees.reduce((empSum, emp) => 
+      empSum + (emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours), 0
+    );
+  }, 0);
+
+  const grandTotalRawHours = data.reduce((sum, jobsite) => {
+    return sum + jobsite.employees.reduce((empSum, emp) => 
+      empSum + (emp.total_raw_hours !== undefined ? emp.total_raw_hours : emp.total_hours), 0
+    );
   }, 0);
 
   const grandTotalEmployees = data.reduce((sum, jobsite) => sum + jobsite.employees.length, 0);
@@ -60,7 +68,7 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
               <div className="p-2 rounded-lg bg-blue-500/10">
                 <MapPin className="h-5 w-5 text-blue-600" />
               </div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Jobsites</div>
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Locations</div>
             </div>
             <p className="text-3xl md:text-4xl font-bold text-foreground">{data.length}</p>
             <p className="text-xs text-muted-foreground mt-1">Active locations</p>
@@ -72,7 +80,7 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
               <div className="p-2 rounded-lg bg-green-500/10">
                 <Users className="h-5 w-5 text-green-600" />
               </div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Employees</div>
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Team</div>
             </div>
             <p className="text-3xl md:text-4xl font-bold text-foreground">{grandTotalEmployees}</p>
             <p className="text-xs text-muted-foreground mt-1">Team members</p>
@@ -84,12 +92,17 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
               <div className="p-2 rounded-lg bg-purple-500/10">
                 <MapPin className="h-5 w-5 text-purple-600" />
               </div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Hours</div>
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Paid Hours</div>
             </div>
-            <p className="text-3xl md:text-4xl font-bold text-foreground">{grandTotalHours.toFixed(2)}</p>
+            <p className="text-3xl md:text-4xl font-bold text-foreground">{grandTotalPaidHours.toFixed(2)}</p>
             <div className="flex items-center justify-between mt-1">
-              <p className="text-xs text-muted-foreground">Hours worked</p>
+              <p className="text-xs text-muted-foreground">Total paid hours</p>
             </div>
+            {grandTotalRawHours !== grandTotalPaidHours && (
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                Raw: {grandTotalRawHours.toFixed(2)} hrs
+              </p>
+            )}
             <div className="mt-2">
               <RuleBasedTimeSummaryNote />
             </div>
@@ -99,7 +112,9 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
 
       {/* Jobsite Groups */}
       {data.map((jobsite) => {
-        const jobsiteTotalHours = jobsite.employees.reduce((sum, emp) => sum + emp.total_hours, 0);
+        const jobsiteTotalPaidHours = jobsite.employees.reduce((sum, emp) => 
+          sum + (emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours), 0
+        );
 
         return (
           <Card key={jobsite.jobsite_id} className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-200">
@@ -124,7 +139,7 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Jobsite Total</p>
-                    <p className="text-2xl md:text-3xl font-bold text-primary mt-0.5">{jobsiteTotalHours.toFixed(2)} <span className="text-sm font-normal text-muted-foreground">hrs</span></p>
+                    <p className="text-2xl md:text-3xl font-bold text-primary mt-0.5">{jobsiteTotalPaidHours.toFixed(2)} <span className="text-sm font-normal text-muted-foreground">hrs</span></p>
                   </div>
                 </div>
               </div>
