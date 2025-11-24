@@ -19,7 +19,7 @@ const JobsiteTimeRules: React.FC<JobsiteTimeRulesProps> = ({ jobsiteId }) => {
   const { data: timeRule, isLoading, upsertTimeRule, isUpdating } = useJobsiteTimeRule(jobsiteId);
 
   // Form state with defaults
-  const [inheritsCompanyRule, setInheritsCompanyRule] = useState(true);
+  const [timeRulesEnabled, setTimeRulesEnabled] = useState(false);
   const [workStartTime, setWorkStartTime] = useState('06:00');
   const [workEndTime, setWorkEndTime] = useState('14:00');
   const [breakMinutes, setBreakMinutes] = useState('0');
@@ -30,7 +30,8 @@ const JobsiteTimeRules: React.FC<JobsiteTimeRulesProps> = ({ jobsiteId }) => {
   // Load existing data when available
   useEffect(() => {
     if (timeRule) {
-      setInheritsCompanyRule(timeRule.inherits_company_rule);
+      // Time rules are enabled if inherits_company_rule is false
+      setTimeRulesEnabled(!timeRule.inherits_company_rule);
       setWorkStartTime(timeRule.work_start_time || '06:00');
       setWorkEndTime(timeRule.work_end_time || '14:00');
       setBreakMinutes(String(timeRule.break_minutes || 0));
@@ -42,24 +43,21 @@ const JobsiteTimeRules: React.FC<JobsiteTimeRulesProps> = ({ jobsiteId }) => {
 
   const handleSave = async () => {
     const payload: JobsiteTimeRulePayload = {
-      inherits_company_rule: inheritsCompanyRule,
-      work_start_time: inheritsCompanyRule ? null : workStartTime,
-      work_end_time: inheritsCompanyRule ? null : workEndTime,
-      break_minutes: inheritsCompanyRule ? 0 : parseInt(breakMinutes),
-      break_is_paid: inheritsCompanyRule ? false : breakIsPaid,
-      early_grace_minutes: inheritsCompanyRule ? 0 : parseInt(earlyGraceMinutes),
-      late_grace_minutes: inheritsCompanyRule ? 0 : parseInt(lateGraceMinutes),
+      // inherits_company_rule is now inverted: true = disabled, false = enabled
+      inherits_company_rule: !timeRulesEnabled,
+      work_start_time: timeRulesEnabled ? workStartTime : null,
+      work_end_time: timeRulesEnabled ? workEndTime : null,
+      break_minutes: timeRulesEnabled ? parseInt(breakMinutes) : 0,
+      break_is_paid: timeRulesEnabled ? breakIsPaid : false,
+      early_grace_minutes: timeRulesEnabled ? parseInt(earlyGraceMinutes) : 0,
+      late_grace_minutes: timeRulesEnabled ? parseInt(lateGraceMinutes) : 0,
     };
 
     await upsertTimeRule(payload);
   };
 
-  const handleResetToCompanyDefault = () => {
-    setInheritsCompanyRule(true);
-  };
-
   const isValid = () => {
-    if (inheritsCompanyRule) return true;
+    if (!timeRulesEnabled) return true;
     return workStartTime && workEndTime;
   };
 
@@ -86,34 +84,34 @@ const JobsiteTimeRules: React.FC<JobsiteTimeRulesProps> = ({ jobsiteId }) => {
       </CardHeader>
 
       <CardContent className="space-y-6 px-0">
-        {/* Inherit Company Rule Toggle */}
+        {/* Enable Time Rules Toggle */}
         <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
           <div className="space-y-0.5 flex-1">
-            <Label htmlFor="inherit-company-rule" className="text-base font-medium">
-              Use company default schedule
+            <Label htmlFor="enable-time-rules" className="text-base font-medium">
+              Enable time rules for this jobsite
             </Label>
             <p className="text-sm text-muted-foreground">
-              Apply the company-wide time rules to this jobsite
+              Apply work schedule, breaks, and grace periods to calculate paid hours
             </p>
           </div>
           <Switch
-            id="inherit-company-rule"
-            checked={inheritsCompanyRule}
-            onCheckedChange={setInheritsCompanyRule}
+            id="enable-time-rules"
+            checked={timeRulesEnabled}
+            onCheckedChange={setTimeRulesEnabled}
           />
         </div>
 
-        {inheritsCompanyRule && (
+        {!timeRulesEnabled && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              This jobsite currently uses the company default time rules. Toggle off to configure custom rules.
+              This jobsite currently has no time rules. Employee hours will be calculated directly from punch in/out times, and no schedule-based flags will be generated.
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Custom Time Rules (disabled when inheriting) */}
-        <div className={`space-y-6 ${inheritsCompanyRule ? 'opacity-50 pointer-events-none' : ''}`}>
+        {/* Time Rules Form (disabled when not enabled) */}
+        <div className={`space-y-6 ${!timeRulesEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
           {/* Work Hours Section */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -128,7 +126,7 @@ const JobsiteTimeRules: React.FC<JobsiteTimeRulesProps> = ({ jobsiteId }) => {
                   type="time"
                   value={workStartTime}
                   onChange={(e) => setWorkStartTime(e.target.value)}
-                  disabled={inheritsCompanyRule}
+                  disabled={!timeRulesEnabled}
                 />
               </div>
               <div className="space-y-2">
@@ -138,7 +136,7 @@ const JobsiteTimeRules: React.FC<JobsiteTimeRulesProps> = ({ jobsiteId }) => {
                   type="time"
                   value={workEndTime}
                   onChange={(e) => setWorkEndTime(e.target.value)}
-                  disabled={inheritsCompanyRule}
+                  disabled={!timeRulesEnabled}
                 />
               </div>
             </div>
@@ -156,7 +154,7 @@ const JobsiteTimeRules: React.FC<JobsiteTimeRulesProps> = ({ jobsiteId }) => {
                 <Select
                   value={breakMinutes}
                   onValueChange={setBreakMinutes}
-                  disabled={inheritsCompanyRule}
+                  disabled={!timeRulesEnabled}
                 >
                   <SelectTrigger id="break-minutes">
                     <SelectValue placeholder="Select break duration" />
@@ -179,7 +177,7 @@ const JobsiteTimeRules: React.FC<JobsiteTimeRulesProps> = ({ jobsiteId }) => {
                   <RadioGroup
                     value={breakIsPaid ? 'paid' : 'unpaid'}
                     onValueChange={(value) => setBreakIsPaid(value === 'paid')}
-                    disabled={inheritsCompanyRule}
+                    disabled={!timeRulesEnabled}
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="paid" id="break-paid" />
@@ -214,7 +212,7 @@ const JobsiteTimeRules: React.FC<JobsiteTimeRulesProps> = ({ jobsiteId }) => {
                   min="0"
                   value={earlyGraceMinutes}
                   onChange={(e) => setEarlyGraceMinutes(e.target.value)}
-                  disabled={inheritsCompanyRule}
+                  disabled={!timeRulesEnabled}
                   placeholder="0"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -229,7 +227,7 @@ const JobsiteTimeRules: React.FC<JobsiteTimeRulesProps> = ({ jobsiteId }) => {
                   min="0"
                   value={lateGraceMinutes}
                   onChange={(e) => setLateGraceMinutes(e.target.value)}
-                  disabled={inheritsCompanyRule}
+                  disabled={!timeRulesEnabled}
                   placeholder="0"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -250,15 +248,6 @@ const JobsiteTimeRules: React.FC<JobsiteTimeRulesProps> = ({ jobsiteId }) => {
             {isUpdating && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
             Save changes
           </Button>
-          {!inheritsCompanyRule && (
-            <Button
-              variant="outline"
-              onClick={handleResetToCompanyDefault}
-              disabled={isUpdating}
-            >
-              Reset to company default
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>
