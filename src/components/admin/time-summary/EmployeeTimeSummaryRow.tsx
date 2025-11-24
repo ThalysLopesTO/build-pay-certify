@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, AlertTriangle, Clock, Briefcase, Calendar, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertTriangle, Clock, Briefcase, Calendar, RefreshCw, CheckCircle } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -98,23 +98,44 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
           </div>
 
           {/* Right Side: Hours and Issues Badge */}
-          <div className="flex items-center gap-2 justify-between sm:justify-end">
+          <div className="flex flex-col items-end gap-1.5">
+            {/* Paid Hours - Large */}
             <div className="flex items-center gap-1">
               <span className="text-base md:text-lg font-bold text-foreground">
-                {employee.total_hours.toFixed(2)}
+                {(employee.total_paid_hours !== undefined ? employee.total_paid_hours : employee.total_hours).toFixed(2)}
               </span>
               <span className="text-xs text-muted-foreground">hrs</span>
             </div>
             
-            {employee.has_flags && (
+            {/* Raw Hours - Small (only if different) */}
+            {employee.total_raw_hours !== undefined && 
+             employee.total_paid_hours !== undefined && 
+             employee.total_raw_hours !== employee.total_paid_hours && (
+              <p className="text-xs text-muted-foreground">
+                Raw: {employee.total_raw_hours.toFixed(2)} hrs
+              </p>
+            )}
+            
+            {/* Issues Badge */}
+            {employee.issue_count !== undefined && employee.issue_count > 0 ? (
+              <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                <AlertTriangle className="h-3 w-3" />
+                <span>{employee.issue_count} {employee.issue_count === 1 ? 'issue' : 'issues'}</span>
+              </Badge>
+            ) : employee.issue_count !== undefined ? (
+              <Badge variant="outline" className="flex items-center gap-1 text-xs bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+                <CheckCircle className="h-3 w-3" />
+                <span className="hidden sm:inline">No issues</span>
+              </Badge>
+            ) : employee.has_flags ? (
               <Badge variant="destructive" className="flex items-center gap-1 text-xs">
                 <AlertTriangle className="h-3 w-3" />
                 <span className="hidden sm:inline">Issues</span>
               </Badge>
-            )}
+            ) : null}
 
             {/* Expand Icon */}
-            <div className="flex-shrink-0 ml-1">
+            <div className="flex-shrink-0">
               {isExpanded ? (
                 <ChevronUp className="h-4 w-4 text-muted-foreground" />
               ) : (
@@ -171,19 +192,21 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
           ) : (
             <div className="space-y-2">
               {/* Table Header - Hidden on mobile */}
-              <div className="hidden md:grid grid-cols-[120px_1fr_100px_100px_100px] gap-3 px-3 py-2 bg-background/50 rounded-md text-xs font-medium text-muted-foreground border">
+              <div className="hidden md:grid grid-cols-[120px_1fr_100px_100px_90px_90px_120px] gap-3 px-3 py-2 bg-background/50 rounded-md text-xs font-medium text-muted-foreground border">
                 <div>Date</div>
                 <div>Project</div>
                 <div>Time In</div>
                 <div>Time Out</div>
-                <div className="text-right">Hours</div>
+                <div className="text-right">Raw</div>
+                <div className="text-right">Paid</div>
+                <div>Issues</div>
               </div>
 
               {/* Table Rows */}
               {dailyPunches.map((punch, index) => (
                 <div key={index}>
                   {/* Desktop View */}
-                  <div className="hidden md:grid grid-cols-[120px_1fr_100px_100px_100px] gap-3 px-3 py-3 bg-background rounded-md border hover:bg-accent/50 transition-colors">
+                  <div className="hidden md:grid grid-cols-[120px_1fr_100px_100px_90px_90px_120px] gap-3 px-3 py-3 bg-background rounded-md border hover:bg-accent/50 transition-colors">
                     <div className="text-sm font-medium">
                       {format(new Date(punch.date), "MMM dd, yyyy")}
                     </div>
@@ -207,40 +230,105 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                         "—"
                       )}
                     </div>
-                      <div className="text-sm font-semibold text-right">
-                        {punch.hours_worked.toFixed(2)} hrs
-                      </div>
+                    <div className="text-sm font-medium text-right">
+                      {punch.raw_hours !== undefined ? punch.raw_hours.toFixed(2) : punch.hours_worked.toFixed(2)}
                     </div>
-                    
-                    {/* Mobile View */}
-                    <div className="md:hidden bg-background rounded-lg border p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold">{format(new Date(punch.date), "MMM dd, yyyy")}</span>
-                        <span className="text-sm font-bold text-primary">{punch.hours_worked.toFixed(2)} hrs</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Briefcase className="h-3.5 w-3.5" />
-                        <span className="truncate">{punch.jobsite_name}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5 text-green-600" />
-                          <span>{punch.check_in_time || "—"}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5 text-red-600" />
-                          {punch.check_out_time ? (
-                            <span>{punch.check_out_time}</span>
-                          ) : punch.status === "active" ? (
-                            <Badge variant="secondary" className="text-xs">Active</Badge>
-                          ) : (
-                            <span>—</span>
-                          )}
-                        </div>
-                      </div>
+                    <div className="text-sm font-semibold text-right text-primary">
+                      {punch.paid_hours !== undefined ? punch.paid_hours.toFixed(2) : punch.hours_worked.toFixed(2)}
+                    </div>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {punch.flags && punch.flags.length > 0 ? (
+                        punch.flags.map((flag, idx) => (
+                          <Badge key={idx} variant="destructive" className="text-xs">
+                            {flag}
+                          </Badge>
+                        ))
+                      ) : (
+                        <Badge variant="outline" className="text-xs text-green-600 border-green-200">
+                          ✓ OK
+                        </Badge>
+                      )}
                     </div>
                   </div>
+                  
+                  {/* Mobile View */}
+                  <div className="md:hidden bg-background rounded-lg border p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold">{format(new Date(punch.date), "MMM dd, yyyy")}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Paid:</span>
+                        <span className="text-sm font-bold text-primary">
+                          {punch.paid_hours !== undefined ? punch.paid_hours.toFixed(2) : punch.hours_worked.toFixed(2)} hrs
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Briefcase className="h-3.5 w-3.5" />
+                      <span className="truncate">{punch.jobsite_name}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5 text-green-600" />
+                        <span>{punch.check_in_time || "—"}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5 text-red-600" />
+                        {punch.check_out_time ? (
+                          <span>{punch.check_out_time}</span>
+                        ) : punch.status === "active" ? (
+                          <Badge variant="secondary" className="text-xs">Active</Badge>
+                        ) : (
+                          <span>—</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs pt-1 border-t">
+                      <span className="text-muted-foreground">
+                        Raw: {punch.raw_hours !== undefined ? punch.raw_hours.toFixed(2) : punch.hours_worked.toFixed(2)} hrs
+                      </span>
+                      {punch.flags && punch.flags.length > 0 && (
+                        <div className="flex gap-1 flex-wrap">
+                          {punch.flags.map((flag, idx) => (
+                            <Badge key={idx} variant="destructive" className="text-xs">
+                              {flag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ))}
+
+              {/* Summary Footer */}
+              {dailyPunches && dailyPunches.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-border/50 bg-muted/20 rounded-lg p-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total Raw Hours</p>
+                      <p className="font-semibold">
+                        {dailyPunches.reduce((sum, p) => sum + (p.raw_hours !== undefined ? p.raw_hours : p.hours_worked), 0).toFixed(2)} hrs
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total Paid Hours</p>
+                      <p className="font-semibold text-primary">
+                        {dailyPunches.reduce((sum, p) => sum + (p.paid_hours !== undefined ? p.paid_hours : p.hours_worked), 0).toFixed(2)} hrs
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Days Worked</p>
+                      <p className="font-semibold">{dailyPunches.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total Issues</p>
+                      <p className="font-semibold text-destructive">
+                        {dailyPunches.reduce((sum, p) => sum + (p.flags?.length || 0), 0)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

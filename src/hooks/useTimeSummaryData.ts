@@ -32,6 +32,11 @@ export interface DailyPunch {
   jobsite_name: string;
   location: string | null;
   status: string;
+  // Extended for rules-based calculations
+  raw_hours?: number;
+  paid_hours?: number;
+  flags?: string[];
+  jobsite_id?: string;
 }
 
 export interface EmployeeSummary {
@@ -45,6 +50,11 @@ export interface EmployeeSummary {
   total_punches: number;
   has_flags: boolean;
   daily_punches: DailyPunch[];
+  // Extended for rules-based calculations
+  total_raw_hours?: number;
+  total_paid_hours?: number;
+  issue_count?: number;
+  days_worked?: number;
 }
 
 export interface JobsiteSummary {
