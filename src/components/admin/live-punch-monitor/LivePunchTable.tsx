@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import WorkNoteDisplay from './WorkNoteDisplay';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
+import { RuleBasedHours, RuleBasedHoursCell } from './RuleBasedHours';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 // Global Google Maps type declaration
 declare global {
@@ -74,6 +76,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
   onPageChange
 }) => {
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   
   // TODO: Will re-add distance calculation functions later for jobsite comparison
   
@@ -265,6 +268,19 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                           </div>
                         </div>
                       </div>
+
+                      {/* Rule-based Hours Display */}
+                      {entry.check_out_time && user?.companyId && (
+                        <div className="pt-2 border-t border-border/30">
+                          <RuleBasedHours
+                            checkInTime={entry.check_in_time}
+                            checkOutTime={entry.check_out_time}
+                            jobsiteId={entry.jobsite_id}
+                            companyId={user.companyId}
+                            date={entry.check_in_time ? format(new Date(entry.check_in_time), 'yyyy-MM-dd') : format(selectedDate, 'yyyy-MM-dd')}
+                          />
+                        </div>
+                      )}
 
                       {/* Action Buttons Row */}
                       <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/30">
@@ -477,11 +493,24 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                             )}
                           </TableCell>
                           <TableCell className="py-6">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-primary" />
-                              <span className="font-mono text-sm font-bold text-foreground">
-                                {calculateTotalTime(entry.check_in_time, entry.check_out_time)}
-                              </span>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-primary" />
+                                <span className="font-mono text-sm font-bold text-foreground">
+                                  {calculateTotalTime(entry.check_in_time, entry.check_out_time)}
+                                </span>
+                              </div>
+                              {entry.check_out_time && user?.companyId && (
+                                <div className="pl-6">
+                                  <RuleBasedHoursCell
+                                    checkInTime={entry.check_in_time}
+                                    checkOutTime={entry.check_out_time}
+                                    jobsiteId={entry.jobsite_id}
+                                    companyId={user.companyId}
+                                    date={entry.check_in_time ? format(new Date(entry.check_in_time), 'yyyy-MM-dd') : format(selectedDate, 'yyyy-MM-dd')}
+                                  />
+                                </div>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell className="py-6">

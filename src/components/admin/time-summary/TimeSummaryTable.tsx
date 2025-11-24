@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { MapPin, Users } from 'lucide-react';
 import { EmployeeTimeSummaryRow } from './EmployeeTimeSummaryRow';
 import { JobsiteSummary } from '@/hooks/useTimeSummaryData';
+import { RuleBasedTimeSummaryNote } from './RuleBasedTimeSummaryNote';
 
 interface TimeSummaryTableProps {
   data: JobsiteSummary[];
@@ -86,7 +87,12 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Hours</div>
             </div>
             <p className="text-3xl md:text-4xl font-bold text-foreground">{grandTotalHours.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Hours worked</p>
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-xs text-muted-foreground">Hours worked</p>
+            </div>
+            <div className="mt-2">
+              <RuleBasedTimeSummaryNote />
+            </div>
           </div>
         </Card>
       </div>
