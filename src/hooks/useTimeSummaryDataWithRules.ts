@@ -40,16 +40,16 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
         .from('timesheets')
         .select('*, jobsites(id, name)')
         .eq('company_id', user.companyId)
-        .gte('check_in', filters.dateRange.start.toISOString())
-        .lte('check_in', filters.dateRange.end.toISOString())
-        .not('check_out', 'is', null); // Only completed punches
+        .gte('check_in_time', filters.dateRange.start.toISOString())
+        .lte('check_in_time', filters.dateRange.end.toISOString())
+        .not('check_out_time', 'is', null); // Only completed punches
 
       if (filters.jobsiteIds && filters.jobsiteIds.length > 0) {
         query = query.in('jobsite_id', filters.jobsiteIds);
       }
 
       if (filters.employeeIds && filters.employeeIds.length > 0) {
-        query = query.in('employee_id', filters.employeeIds);
+        query = query.in('user_id', filters.employeeIds); // Use user_id not employee_id
       }
 
       const { data, error } = await query;
@@ -85,11 +85,11 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
         // Calculate rules for each timesheet
         for (const timesheet of rawTimesheets) {
           const result = await calculateWorkedHours({
-            rawIn: timesheet.check_in,
-            rawOut: timesheet.check_out!,
+            rawIn: timesheet.check_in_time,
+            rawOut: timesheet.check_out_time!,
             jobsiteId: timesheet.jobsite_id,
             companyId: user.companyId,
-            date: new Date(timesheet.check_in).toISOString().split('T')[0],
+            date: new Date(timesheet.check_in_time).toISOString().split('T')[0],
           });
 
           const rawHours = result.totalMinutes / 60;
@@ -114,9 +114,9 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
           const calc = timesheetCalculations.get(timesheet.id);
           if (!calc) return;
 
-          const key = `${timesheet.employee_id}-${timesheet.jobsite_id}`;
+          const key = `${timesheet.user_id}-${timesheet.jobsite_id}`; // Use user_id not employee_id
           const existing = employeeAggregations.get(key);
-          const date = new Date(timesheet.check_in).toISOString().split('T')[0];
+          const date = new Date(timesheet.check_in_time).toISOString().split('T')[0];
 
           if (existing) {
             existing.totalRawHours += calc.rawHours;
