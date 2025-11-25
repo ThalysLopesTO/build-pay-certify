@@ -61,21 +61,21 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
           
           if (existing) {
             existing.jobsites.add(jobsite.jobsite_name);
-            existing.rawHours += employee.total_raw_hours;
-            existing.paidHours += employee.total_paid_hours;
-            existing.daysWorked += employee.days_worked;
-            existing.punchCount += employee.total_punches;
-            existing.issueCount += employee.issue_count;
+            existing.rawHours += isNaN(employee.total_raw_hours) ? 0 : employee.total_raw_hours;
+            existing.paidHours += isNaN(employee.total_paid_hours) ? 0 : employee.total_paid_hours;
+            existing.daysWorked += employee.days_worked || 0;
+            existing.punchCount += employee.total_punches || 0;
+            existing.issueCount += employee.issue_count || 0;
           } else {
             employeeMap.set(key, {
               name: employee.employee_name,
               role: employee.employee_position || employee.employee_trade || employee.employee_role || 'Employee',
               jobsites: new Set([jobsite.jobsite_name]),
-              rawHours: employee.total_raw_hours,
-              paidHours: employee.total_paid_hours,
-              daysWorked: employee.days_worked,
-              punchCount: employee.total_punches,
-              issueCount: employee.issue_count,
+              rawHours: isNaN(employee.total_raw_hours) ? 0 : employee.total_raw_hours,
+              paidHours: isNaN(employee.total_paid_hours) ? 0 : employee.total_paid_hours,
+              daysWorked: employee.days_worked || 0,
+              punchCount: employee.total_punches || 0,
+              issueCount: employee.issue_count || 0,
             });
           }
         });

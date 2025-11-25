@@ -1,9 +1,11 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { MapPin, Users } from 'lucide-react';
 import { EmployeeTimeSummaryRow } from './EmployeeTimeSummaryRow';
 import { JobsiteSummary } from '@/hooks/useTimeSummaryData';
 import { RuleBasedTimeSummaryNote } from './RuleBasedTimeSummaryNote';
+import { cn } from '@/lib/utils';
 
 interface TimeSummaryTableProps {
   data: JobsiteSummary[];
@@ -43,25 +45,37 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
     );
   }
 
+  // Helper to safely get numeric value
+  const safeNumber = (value: any): number => {
+    if (value === undefined || value === null || isNaN(value)) return 0;
+    return Number(value);
+  };
+
   // Calculate grand totals with paid hours
   const grandTotalPaidHours = data.reduce((sum, jobsite) => {
     return sum + jobsite.employees.reduce((empSum, emp) => 
-      empSum + (emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours), 0
+      empSum + safeNumber(emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours), 0
     );
   }, 0);
 
   const grandTotalRawHours = data.reduce((sum, jobsite) => {
     return sum + jobsite.employees.reduce((empSum, emp) => 
-      empSum + (emp.total_raw_hours !== undefined ? emp.total_raw_hours : emp.total_hours), 0
+      empSum + safeNumber(emp.total_raw_hours !== undefined ? emp.total_raw_hours : emp.total_hours), 0
     );
   }, 0);
 
   const grandTotalEmployees = data.reduce((sum, jobsite) => sum + jobsite.employees.length, 0);
+  
+  const grandTotalIssues = data.reduce((sum, jobsite) => {
+    return sum + jobsite.employees.reduce((empSum, emp) => 
+      empSum + safeNumber(emp.issue_count), 0
+    );
+  }, 0);
 
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
           <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent p-4 md:p-5">
             <div className="flex items-center justify-between mb-3">
@@ -95,9 +109,6 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Paid Hours</div>
             </div>
             <p className="text-3xl md:text-4xl font-bold text-foreground">{grandTotalPaidHours.toFixed(2)}</p>
-            <div className="flex items-center justify-between mt-1">
-              <p className="text-xs text-muted-foreground">Total paid hours</p>
-            </div>
             {grandTotalRawHours !== grandTotalPaidHours && (
               <p className="text-xs text-muted-foreground/70 mt-1">
                 Raw: {grandTotalRawHours.toFixed(2)} hrs
@@ -108,12 +119,52 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
             </div>
           </div>
         </Card>
+        <Card className={cn(
+          "overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200",
+          grandTotalIssues > 0 ? "border-red-200 dark:border-red-900" : ""
+        )}>
+          <div className={cn(
+            "p-4 md:p-5",
+            grandTotalIssues > 0 
+              ? "bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent" 
+              : "bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent"
+          )}>
+            <div className="flex items-center justify-between mb-3">
+              <div className={cn(
+                "p-2 rounded-lg",
+                grandTotalIssues > 0 ? "bg-red-500/10" : "bg-green-500/10"
+              )}>
+                {grandTotalIssues > 0 ? (
+                  <Users className="h-5 w-5 text-red-600" />
+                ) : (
+                  <Users className="h-5 w-5 text-green-600" />
+                )}
+              </div>
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Issues</div>
+            </div>
+            <p className={cn(
+              "text-3xl md:text-4xl font-bold",
+              grandTotalIssues > 0 ? "text-red-600" : "text-green-600"
+            )}>{grandTotalIssues}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {grandTotalIssues > 0 ? 'Punches needing review' : 'All punches OK'}
+            </p>
+          </div>
+        </Card>
       </div>
 
       {/* Jobsite Groups */}
       {data.map((jobsite) => {
         const jobsiteTotalPaidHours = jobsite.employees.reduce((sum, emp) => 
-          sum + (emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours), 0
+          sum + safeNumber(emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours), 0
+        );
+        
+        const jobsiteTotalRawHours = jobsite.employees.reduce((sum, emp) => 
+          sum + safeNumber(emp.total_raw_hours !== undefined ? emp.total_raw_hours : emp.total_hours), 0
+        );
+        
+        const jobsiteIssueCount = jobsite.employees.reduce((sum, emp) => 
+          sum + safeNumber(emp.issue_count), 0
         );
 
         return (
@@ -133,14 +184,27 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 md:text-right">
-                  <div className="p-2 rounded-lg bg-primary/10 md:hidden">
-                    <MapPin className="h-4 w-4 text-primary" />
-                  </div>
+                <div className="flex flex-col md:items-end gap-2">
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Jobsite Total</p>
-                    <p className="text-2xl md:text-3xl font-bold text-primary mt-0.5">{jobsiteTotalPaidHours.toFixed(2)} <span className="text-sm font-normal text-muted-foreground">hrs</span></p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Jobsite Total Paid Hours</p>
+                    <p className="text-2xl md:text-3xl font-bold text-primary mt-0.5">
+                      {jobsiteTotalPaidHours.toFixed(2)} <span className="text-sm font-normal text-muted-foreground">hrs</span>
+                    </p>
+                    {jobsiteTotalRawHours !== jobsiteTotalPaidHours && (
+                      <p className="text-xs text-muted-foreground/70 mt-1">
+                        Raw: {jobsiteTotalRawHours.toFixed(2)} hrs
+                      </p>
+                    )}
                   </div>
+                  {jobsiteIssueCount > 0 ? (
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800">
+                      {jobsiteIssueCount} {jobsiteIssueCount === 1 ? 'issue' : 'issues'} to review
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+                      All punches OK
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
