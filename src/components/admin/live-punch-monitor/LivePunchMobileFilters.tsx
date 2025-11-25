@@ -104,7 +104,7 @@ const LivePunchMobileFilters: React.FC<LivePunchMobileFiltersProps> = ({
                 </Button>
               )}
             </div>
-            <Popover>
+            <Popover modal={false}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"

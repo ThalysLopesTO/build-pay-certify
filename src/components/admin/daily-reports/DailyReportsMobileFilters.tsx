@@ -133,7 +133,7 @@ export const DailyReportsMobileFilters: React.FC<DailyReportsMobileFiltersProps>
           {/* From Date */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">From Date</Label>
-            <Popover>
+            <Popover modal={false}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -152,6 +152,7 @@ export const DailyReportsMobileFilters: React.FC<DailyReportsMobileFiltersProps>
                   selected={dateFrom}
                   onSelect={handleDateFromChange}
                   initialFocus
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -160,7 +161,7 @@ export const DailyReportsMobileFilters: React.FC<DailyReportsMobileFiltersProps>
           {/* To Date */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">To Date</Label>
-            <Popover>
+            <Popover modal={false}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -179,6 +180,7 @@ export const DailyReportsMobileFilters: React.FC<DailyReportsMobileFiltersProps>
                   selected={dateTo}
                   onSelect={handleDateToChange}
                   initialFocus
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
