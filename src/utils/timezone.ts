@@ -85,6 +85,7 @@ export const TIMEZONE_OPTIONS = [
   
   // Central Time Zone
   { value: 'America/Chicago', label: 'Central Time (Chicago, US)' },
+  { value: 'America/Regina', label: 'Central Time - No DST (Regina, Saskatchewan)' },
   { value: 'America/Winnipeg', label: 'Central Time (Winnipeg, Canada)' },
   
   // Mountain Time Zone
