@@ -3942,62 +3942,24 @@ export type Database = {
         Args: { p_quote_id: string; p_response_message: string }
         Returns: Json
       }
-      rpc_time_summary_details:
-        | {
-            Args: {
-              p_company_id: string
-              p_employee_id: string
-              p_end_date: string
-              p_jobsite_id: string
-              p_start_date: string
-              p_timezone?: string
-            }
-            Returns: {
-              check_in_time: string
-              check_out_time: string
-              edited_note: string
-              employee_id: string
-              id: string
-              jobsite_id: string
-              status: string
-            }[]
-          }
-        | {
-            Args: {
-              p_company_id: string
-              p_employee_id: string
-              p_end_date: string
-              p_jobsite_id: string
-              p_start_date: string
-              p_timezone: string
-            }
-            Returns: {
-              check_in_time: string
-              check_out_time: string
-              hours_worked: number
-              jobsite_name: string
-              punch_date: string
-              status: string
-            }[]
-          }
-        | {
-            Args: {
-              p_company_id: string
-              p_employee_id: string
-              p_end_date: string
-              p_jobsite_id: string
-              p_start_date: string
-              p_timezone: string
-            }
-            Returns: {
-              check_in_time: string
-              check_out_time: string
-              hours_worked: number
-              jobsite_name: string
-              punch_date: string
-              status: string
-            }[]
-          }
+      rpc_time_summary_details: {
+        Args: {
+          p_company_id: string
+          p_employee_id: string
+          p_end_date: string
+          p_jobsite_id: string
+          p_start_date: string
+          p_timezone: string
+        }
+        Returns: {
+          check_in_time: string
+          check_out_time: string
+          hours_worked: number
+          jobsite_name: string
+          punch_date: string
+          status: string
+        }[]
+      }
       rpc_time_summary_headers: {
         Args: {
           p_company_id: string
