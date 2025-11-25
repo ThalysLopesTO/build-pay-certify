@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1226,19 +1226,20 @@ const IncomeExpensesManagement = () => {
         </Card>
       )}
 
-      {/* Create/Edit Dialog/Sheet - Responsive */}
+      {/* Create/Edit Dialog/Drawer - Responsive */}
       {isMobile ? (
-        <Sheet open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <SheetContent side="bottom" className="h-[90vh] overflow-y-auto relative">
-            <SheetHeader>
-              <SheetTitle>
+        <Drawer open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DrawerContent className="max-h-[85vh] overflow-hidden">
+            <DrawerHeader className="border-b pb-4">
+              <DrawerTitle>
                 {editingTransaction 
                   ? `Edit ${transactionType === 'income' ? 'Income' : 'Expense'}` 
                   : `Add New ${transactionType === 'income' ? 'Income' : 'Expense'}`
                 }
-              </SheetTitle>
-            </SheetHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 px-1 mt-4">
+              </DrawerTitle>
+            </DrawerHeader>
+            <div className="overflow-y-auto px-4 pb-4" style={{ maxHeight: 'calc(85vh - 80px)' }}>
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 mt-4">
               {/* Title and Category Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
@@ -1263,6 +1264,7 @@ const IncomeExpensesManagement = () => {
                     onCategoryChange={(categoryId) => setFormData({ ...formData, category_id: categoryId })}
                     transactionType={transactionType}
                     required
+                    insideModal={true}
                   />
                 </div>
               </div>
@@ -1535,9 +1537,10 @@ const IncomeExpensesManagement = () => {
                   {editingTransaction ? 'Update' : 'Create'} {transactionType === 'income' ? 'Income' : 'Expense'}
                 </Button>
               </div>
-            </form>
-          </SheetContent>
-        </Sheet>
+              </form>
+            </div>
+          </DrawerContent>
+        </Drawer>
       ) : (
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="max-w-xl sm:max-w-2xl max-h-[90vh] overflow-y-auto">

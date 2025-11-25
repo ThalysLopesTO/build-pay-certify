@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Drawer,
   DrawerClose,
@@ -19,13 +20,15 @@ interface MobileCategorySelectorProps {
   onCategoryChange: (categoryId: string) => void;
   required?: boolean;
   transactionType?: 'income' | 'expense';
+  insideModal?: boolean;
 }
 
 export const MobileCategorySelector = ({
   selectedCategoryId,
   onCategoryChange,
   required = false,
-  transactionType = 'expense'
+  transactionType = 'expense',
+  insideModal = false
 }: MobileCategorySelectorProps) => {
   const { getParentCategories, getSubcategoriesForParent, getCategoryDisplay } = useHierarchicalCategories();
   const [open, setOpen] = useState(false);
@@ -58,6 +61,53 @@ export const MobileCategorySelector = ({
     ? getCategoryDisplay(selectedCategoryId) 
     : 'Select category';
 
+  // Create a flat list of all categories for the simple Select
+  const allCategoryOptions = useMemo(() => {
+    const options: Array<{ id: string; displayName: string }> = [];
+    
+    parentCategories.forEach(parent => {
+      const subcategories = getSubcategoriesForParent(parent.id);
+      if (subcategories.length > 0) {
+        // Add subcategories with parent prefix
+        subcategories.forEach(subcategory => {
+          options.push({
+            id: subcategory.id,
+            displayName: `${parent.name} > ${subcategory.name}`
+          });
+        });
+      } else {
+        // Add parent category if no subcategories
+        options.push({
+          id: parent.id,
+          displayName: parent.name
+        });
+      }
+    });
+    
+    return options;
+  }, [parentCategories, getSubcategoriesForParent]);
+
+  // When inside a modal, use a simple Select to avoid nested drawer issues
+  if (insideModal) {
+    return (
+      <div>
+        <Select value={selectedCategoryId} onValueChange={onCategoryChange}>
+          <SelectTrigger className="h-11">
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border-border z-50 max-h-[300px] overflow-auto">
+            {allCategoryOptions.map((option) => (
+              <SelectItem key={option.id} value={option.id}>
+                {option.displayName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  }
+
+  // Regular drawer implementation for non-modal contexts
   return (
     <div>
       <Label>

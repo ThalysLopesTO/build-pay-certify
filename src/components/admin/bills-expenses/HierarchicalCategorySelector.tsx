@@ -11,13 +11,15 @@ interface HierarchicalCategorySelectorProps {
   onCategoryChange: (categoryId: string) => void;
   required?: boolean;
   transactionType?: 'income' | 'expense';
+  insideModal?: boolean;
 }
 
 export const HierarchicalCategorySelector = ({
   selectedCategoryId,
   onCategoryChange,
   required = false,
-  transactionType = 'expense'
+  transactionType = 'expense',
+  insideModal = false
 }: HierarchicalCategorySelectorProps) => {
   const isMobile = useIsMobile();
   const { categories, getParentCategories, getSubcategoriesForParent } = useHierarchicalCategories();
@@ -32,6 +34,7 @@ export const HierarchicalCategorySelector = ({
         onCategoryChange={onCategoryChange}
         required={required}
         transactionType={transactionType}
+        insideModal={insideModal}
       />
     );
   }
