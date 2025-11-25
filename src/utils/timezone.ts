@@ -71,12 +71,40 @@ export const getSubmissionDisplayDateTime = (
 
 /**
  * Common timezone options for company settings
+ * 
+ * Uses IANA timezone identifiers (e.g., 'America/New_York') which automatically
+ * handle Daylight Saving Time transitions via date-fns-tz.
+ * 
+ * DO NOT use timezone abbreviations (EST, PST, etc.) as they are ambiguous.
+ * Phoenix uses Mountain Time without DST, hence the separate entry.
  */
 export const TIMEZONE_OPTIONS = [
-  { value: 'America/Toronto', label: 'Eastern Time (Toronto)' },
-  { value: 'America/Vancouver', label: 'Pacific Time (Vancouver)' },
-  { value: 'America/Edmonton', label: 'Mountain Time (Edmonton)' },
-  { value: 'America/Winnipeg', label: 'Central Time (Winnipeg)' },
-  { value: 'America/Halifax', label: 'Atlantic Time (Halifax)' },
-  { value: 'America/St_Johns', label: 'Newfoundland Time (St. Johns)' },
+  // Eastern Time Zone
+  { value: 'America/New_York', label: 'Eastern Time (New York, US)' },
+  { value: 'America/Toronto', label: 'Eastern Time (Toronto, Canada)' },
+  
+  // Central Time Zone
+  { value: 'America/Chicago', label: 'Central Time (Chicago, US)' },
+  { value: 'America/Winnipeg', label: 'Central Time (Winnipeg, Canada)' },
+  
+  // Mountain Time Zone
+  { value: 'America/Denver', label: 'Mountain Time (Denver, US)' },
+  { value: 'America/Phoenix', label: 'Mountain Time - No DST (Phoenix, US)' },
+  { value: 'America/Edmonton', label: 'Mountain Time (Edmonton, Canada)' },
+  
+  // Pacific Time Zone
+  { value: 'America/Los_Angeles', label: 'Pacific Time (Los Angeles, US)' },
+  { value: 'America/Vancouver', label: 'Pacific Time (Vancouver, Canada)' },
+  
+  // Alaska Time Zone
+  { value: 'America/Anchorage', label: 'Alaska Time (Anchorage, US)' },
+  
+  // Hawaii-Aleutian Time Zone
+  { value: 'Pacific/Honolulu', label: 'Hawaii-Aleutian Time (Honolulu, US)' },
+  
+  // Atlantic Time Zone
+  { value: 'America/Halifax', label: 'Atlantic Time (Halifax, Canada)' },
+  
+  // Newfoundland Time Zone
+  { value: 'America/St_Johns', label: 'Newfoundland Time (St. Johns, Canada)' },
 ];
