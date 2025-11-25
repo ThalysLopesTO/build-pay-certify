@@ -139,7 +139,15 @@ export const TimeSummaryPage: React.FC = () => {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.location.href = '/admin/dashboard?tab=timesheets'}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            View raw punches →
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -151,7 +159,6 @@ export const TimeSummaryPage: React.FC = () => {
             <span className="hidden md:inline">Refresh</span>
           </Button>
           <Button
-            variant="outline"
             size="sm"
             onClick={exportPayrollCSV}
             disabled={isLoading || isExporting || !data || data.length === 0}

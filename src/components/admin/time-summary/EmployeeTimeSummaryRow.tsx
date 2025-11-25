@@ -8,6 +8,7 @@ import { EmployeeSummary } from '@/hooks/useTimeSummaryData';
 import { useTimeSummaryDetails } from '@/hooks/useTimeSummaryDetails';
 import { cn } from '@/lib/utils';
 import { RoleBadge } from './RoleBadge';
+import { RuleBasedTimeSummaryNote } from './RuleBasedTimeSummaryNote';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
@@ -98,49 +99,63 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
           </div>
 
           {/* Right Side: Hours and Issues Badge */}
-          <div className="flex flex-col items-end gap-1.5">
-            {/* Paid Hours - Large */}
-            <div className="flex items-center gap-1">
-              <span className="text-base md:text-lg font-bold text-foreground">
-                {(employee.total_paid_hours !== undefined ? employee.total_paid_hours : employee.total_hours).toFixed(2)}
-              </span>
-              <span className="text-xs text-muted-foreground">hrs</span>
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col items-end gap-1.5">
+              {/* Paid Hours Label */}
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Paid hours</p>
+              
+              {/* Paid Hours - Large */}
+              <div className="flex items-center gap-1">
+                <span className="text-xl md:text-2xl font-bold text-primary">
+                  {(() => {
+                    const paidHours = employee.total_paid_hours !== undefined ? employee.total_paid_hours : employee.total_hours;
+                    return isNaN(paidHours) || paidHours === null || paidHours === undefined ? '—' : paidHours.toFixed(2);
+                  })()}
+                </span>
+                {!isNaN(employee.total_paid_hours !== undefined ? employee.total_paid_hours : employee.total_hours) && (
+                  <span className="text-xs text-muted-foreground">hrs</span>
+                )}
+              </div>
+              
+              {/* Raw Hours - Small (only if different) */}
+              {employee.total_raw_hours !== undefined && 
+               employee.total_paid_hours !== undefined && 
+               !isNaN(employee.total_raw_hours) &&
+               !isNaN(employee.total_paid_hours) &&
+               employee.total_raw_hours !== employee.total_paid_hours && (
+                <p className="text-xs text-muted-foreground">
+                  Raw: {employee.total_raw_hours.toFixed(2)} hrs
+                </p>
+              )}
             </div>
             
-            {/* Raw Hours - Small (only if different) */}
-            {employee.total_raw_hours !== undefined && 
-             employee.total_paid_hours !== undefined && 
-             employee.total_raw_hours !== employee.total_paid_hours && (
-              <p className="text-xs text-muted-foreground">
-                Raw: {employee.total_raw_hours.toFixed(2)} hrs
-              </p>
-            )}
-            
             {/* Issues Badge */}
-            {employee.issue_count !== undefined && employee.issue_count > 0 ? (
-              <Badge variant="destructive" className="flex items-center gap-1 text-xs">
-                <AlertTriangle className="h-3 w-3" />
-                <span>{employee.issue_count} {employee.issue_count === 1 ? 'issue' : 'issues'}</span>
-              </Badge>
-            ) : employee.issue_count !== undefined ? (
-              <Badge variant="outline" className="flex items-center gap-1 text-xs bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
-                <CheckCircle className="h-3 w-3" />
-                <span className="hidden sm:inline">No issues</span>
-              </Badge>
-            ) : employee.has_flags ? (
-              <Badge variant="destructive" className="flex items-center gap-1 text-xs">
-                <AlertTriangle className="h-3 w-3" />
-                <span className="hidden sm:inline">Issues</span>
-              </Badge>
-            ) : null}
+            <div className="flex flex-col items-end gap-1.5">
+              {employee.issue_count !== undefined && employee.issue_count > 0 ? (
+                <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>{employee.issue_count} {employee.issue_count === 1 ? 'issue' : 'issues'}</span>
+                </Badge>
+              ) : employee.issue_count !== undefined ? (
+                <Badge variant="outline" className="flex items-center gap-1 text-xs bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+                  <CheckCircle className="h-3 w-3" />
+                  <span className="hidden sm:inline">No issues</span>
+                </Badge>
+              ) : employee.has_flags ? (
+                <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span className="hidden sm:inline">Issues</span>
+                </Badge>
+              ) : null}
 
-            {/* Expand Icon */}
-            <div className="flex-shrink-0">
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              )}
+              {/* Expand Icon */}
+              <div className="flex-shrink-0">
+                {isExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -161,9 +176,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
               </Badge>
             </div>
             <div className="flex items-center gap-2">
-              <div className="text-xs text-muted-foreground hidden sm:block">
-                Hours by time rules
-              </div>
+              <RuleBasedTimeSummaryNote />
               <Button
                 variant="ghost"
                 size="sm"
@@ -231,16 +244,22 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                       )}
                     </div>
                     <div className="text-sm font-medium text-right">
-                      {punch.raw_hours !== undefined ? punch.raw_hours.toFixed(2) : punch.hours_worked.toFixed(2)}
+                      {(() => {
+                        const rawHours = punch.raw_hours !== undefined ? punch.raw_hours : punch.hours_worked;
+                        return isNaN(rawHours) || rawHours === null || rawHours === undefined ? '—' : rawHours.toFixed(2);
+                      })()}
                     </div>
                     <div className="text-sm font-semibold text-right text-primary">
-                      {punch.paid_hours !== undefined ? punch.paid_hours.toFixed(2) : punch.hours_worked.toFixed(2)}
+                      {(() => {
+                        const paidHours = punch.paid_hours !== undefined ? punch.paid_hours : punch.hours_worked;
+                        return isNaN(paidHours) || paidHours === null || paidHours === undefined ? '—' : paidHours.toFixed(2);
+                      })()}
                     </div>
                     <div className="flex items-center gap-1 flex-wrap">
                       {punch.flags && punch.flags.length > 0 ? (
                         punch.flags.map((flag, idx) => (
                           <Badge key={idx} variant="destructive" className="text-xs">
-                            {flag}
+                            ⚠ {flag}
                           </Badge>
                         ))
                       ) : (
@@ -258,7 +277,10 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">Paid:</span>
                         <span className="text-sm font-bold text-primary">
-                          {punch.paid_hours !== undefined ? punch.paid_hours.toFixed(2) : punch.hours_worked.toFixed(2)} hrs
+                          {(() => {
+                            const paidHours = punch.paid_hours !== undefined ? punch.paid_hours : punch.hours_worked;
+                            return isNaN(paidHours) || paidHours === null || paidHours === undefined ? '—' : `${paidHours.toFixed(2)} hrs`;
+                          })()}
                         </span>
                       </div>
                     </div>
@@ -284,13 +306,16 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                     </div>
                     <div className="flex items-center justify-between text-xs pt-1 border-t">
                       <span className="text-muted-foreground">
-                        Raw: {punch.raw_hours !== undefined ? punch.raw_hours.toFixed(2) : punch.hours_worked.toFixed(2)} hrs
+                        Raw: {(() => {
+                          const rawHours = punch.raw_hours !== undefined ? punch.raw_hours : punch.hours_worked;
+                          return isNaN(rawHours) || rawHours === null || rawHours === undefined ? '—' : `${rawHours.toFixed(2)} hrs`;
+                        })()}
                       </span>
                       {punch.flags && punch.flags.length > 0 && (
                         <div className="flex gap-1 flex-wrap">
                           {punch.flags.map((flag, idx) => (
                             <Badge key={idx} variant="destructive" className="text-xs">
-                              {flag}
+                              ⚠ {flag}
                             </Badge>
                           ))}
                         </div>
@@ -301,34 +326,53 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
               ))}
 
               {/* Summary Footer */}
-              {dailyPunches && dailyPunches.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-border/50 bg-muted/20 rounded-lg p-3">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Total Raw Hours</p>
-                      <p className="font-semibold">
-                        {dailyPunches.reduce((sum, p) => sum + (p.raw_hours !== undefined ? p.raw_hours : p.hours_worked), 0).toFixed(2)} hrs
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Total Paid Hours</p>
-                      <p className="font-semibold text-primary">
-                        {dailyPunches.reduce((sum, p) => sum + (p.paid_hours !== undefined ? p.paid_hours : p.hours_worked), 0).toFixed(2)} hrs
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Days Worked</p>
-                      <p className="font-semibold">{dailyPunches.length}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Total Issues</p>
-                      <p className="font-semibold text-destructive">
-                        {dailyPunches.reduce((sum, p) => sum + (p.flags?.length || 0), 0)}
-                      </p>
-                    </div>
+              {dailyPunches && dailyPunches.length > 0 && (() => {
+                const totalRaw = dailyPunches.reduce((sum, p) => {
+                  const val = p.raw_hours !== undefined ? p.raw_hours : p.hours_worked;
+                  return sum + (isNaN(val) ? 0 : val);
+                }, 0);
+                const totalPaid = dailyPunches.reduce((sum, p) => {
+                  const val = p.paid_hours !== undefined ? p.paid_hours : p.hours_worked;
+                  return sum + (isNaN(val) ? 0 : val);
+                }, 0);
+                const totalIssues = dailyPunches.reduce((sum, p) => sum + (p.flags?.length || 0), 0);
+                
+                return (
+                  <div className="mt-4 pt-3 border-t border-border/50 bg-muted/20 rounded-lg p-3">
+                    {totalRaw === totalPaid ? (
+                      <div className="text-center text-sm">
+                        <p className="font-semibold text-primary">
+                          Total Hours: {totalPaid.toFixed(2)} hrs
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          (No adjustments made by time rules)
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Total Raw Hours</p>
+                          <p className="font-semibold">{totalRaw.toFixed(2)} hrs</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Total Paid Hours</p>
+                          <p className="font-semibold text-primary">{totalPaid.toFixed(2)} hrs</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Days Worked</p>
+                          <p className="font-semibold">{dailyPunches.length}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Total Issues</p>
+                          <p className={cn("font-semibold", totalIssues > 0 ? "text-destructive" : "text-green-600")}>
+                            {totalIssues}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           )}
         </div>
