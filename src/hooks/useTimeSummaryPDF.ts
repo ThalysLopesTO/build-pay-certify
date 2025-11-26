@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { fetchLogoAsBase64 } from '@/utils/logoUtils';
 import { useToast } from './use-toast';
@@ -205,7 +205,7 @@ export const useTimeSummaryPDF = () => {
           jobsiteTotals.issueCount.toString(),
         ]);
 
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: yPos,
           head: [['Employee', 'Role', 'Days', 'Raw Hrs', 'Paid Hrs', 'Punches', 'Issues']],
           body: tableData,
