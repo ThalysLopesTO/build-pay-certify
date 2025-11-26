@@ -66,6 +66,7 @@ export interface CalculateWorkedHoursResult {
   totalMinutes: number;
   paidMinutes: number;
   paidHours: number;
+  breakMinutes: number;
   flags: string[];
 }
 
@@ -97,6 +98,7 @@ export async function calculateWorkedHours({
       totalMinutes: 0,
       paidMinutes: 0,
       paidHours: 0,
+      breakMinutes: 0,
       flags: ['INVALID'],
     };
   }
@@ -113,6 +115,7 @@ export async function calculateWorkedHours({
       totalMinutes,
       paidMinutes: totalMinutes,
       paidHours: totalMinutes / 60,
+      breakMinutes: 0,
       flags: [], // No schedule-based flags for free schedule
     };
   }
@@ -167,12 +170,16 @@ export async function calculateWorkedHours({
     paidMinutes,
   });
 
+  // Calculate break deduction
+  const breakMinutes = timeRule.break_is_paid ? 0 : timeRule.break_minutes;
+
   return {
     effectiveStart: formatISO(effectiveStart),
     effectiveEnd: formatISO(effectiveEnd),
     totalMinutes,
     paidMinutes,
     paidHours: paidMinutes / 60,
+    breakMinutes,
     flags,
   };
 }

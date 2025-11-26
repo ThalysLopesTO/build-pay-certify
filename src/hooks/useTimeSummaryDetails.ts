@@ -75,6 +75,7 @@ export const useTimeSummaryDetails = ({
           location: null,
           status: row.status,
           jobsite_id: jobsiteId,
+          timesheet_id: row.id,
         };
 
         // Calculate time rules if punch is complete
@@ -96,6 +97,7 @@ export const useTimeSummaryDetails = ({
               ...base,
               raw_hours: result.totalMinutes / 60,
               paid_hours: result.paidMinutes / 60,
+              break_minutes: result.breakMinutes,
               flags: result.flags || [],
             };
           } catch (error) {
@@ -106,6 +108,7 @@ export const useTimeSummaryDetails = ({
               ...base,
               raw_hours: fallbackHours,
               paid_hours: fallbackHours,
+              break_minutes: 0,
               flags: [],
             };
           }
@@ -116,6 +119,7 @@ export const useTimeSummaryDetails = ({
           ...base,
           raw_hours: 0,
           paid_hours: 0,
+          break_minutes: 0,
           flags: [],
         };
       }));
