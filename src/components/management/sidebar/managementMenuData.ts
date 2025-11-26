@@ -50,6 +50,11 @@ export const managementMenuItems = {
       id: 'live-punch-monitor',
     },
     {
+      title: 'Time Summary',
+      icon: BarChart3,
+      id: 'time-summary',
+    },
+    {
       title: 'My Timesheet',
       icon: Clock,
       id: 'my-timesheet',
