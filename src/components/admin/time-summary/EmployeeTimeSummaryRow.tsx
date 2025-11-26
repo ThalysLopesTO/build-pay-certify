@@ -56,9 +56,11 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
     enabled: true,
   });
 
-  // Calculate totals from loaded data
+  // Calculate totals from loaded data - return 0 values when no punches found
   const calculatedTotals = useMemo(() => {
-    if (!dailyPunches || dailyPunches.length === 0) return null;
+    if (!dailyPunches || dailyPunches.length === 0) {
+      return { totalRaw: 0, totalPaid: 0, totalBreak: 0, issueCount: 0, daysWorked: 0 };
+    }
     
     const totalRaw = dailyPunches.reduce((sum, p) => {
       const val = p.raw_hours !== undefined ? p.raw_hours : p.hours_worked;
@@ -74,8 +76,8 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
     return { totalRaw, totalPaid, totalBreak, issueCount, daysWorked: dailyPunches.length };
   }, [dailyPunches]);
 
-  // Display calculated totals when expanded, otherwise use header estimate
-  const displayPaidHours = calculatedTotals?.totalPaid ?? employee.total_hours;
+  // Always prefer calculated totals when loaded, show 0 if no punches found
+  const displayPaidHours = isLoading ? employee.total_hours : calculatedTotals.totalPaid;
 
   // Manual refresh handler
   const handleRefresh = async (e: React.MouseEvent) => {

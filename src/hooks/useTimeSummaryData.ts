@@ -87,8 +87,15 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
       const startDate = format(dateRange.start, 'yyyy-MM-dd');
       const endDate = format(dateRange.end, 'yyyy-MM-dd');
 
-      // Get browser timezone
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      // Fetch company timezone from settings
+      const { data: companySettings } = await supabase
+        .from('company_settings')
+        .select('timezone')
+        .eq('company_id', user.companyId)
+        .single();
+
+      // Use company timezone, fallback to browser timezone
+      const timezone = companySettings?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       // Normalize filter values to uuid[] or null (ALL)
       const jobsiteFilter = toIdArray(jobsiteIds.length > 0 ? jobsiteIds : null);
