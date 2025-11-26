@@ -12,6 +12,20 @@ import { RuleBasedTimeSummaryNote } from './RuleBasedTimeSummaryNote';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
+// Convert 24-hour time string (HH:mm) to 12-hour AM/PM format
+const formatTimeToAmPm = (timeString: string | null): string => {
+  if (!timeString) return "—";
+  
+  try {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12; // Convert 0 to 12, and 13-23 to 1-11
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  } catch {
+    return timeString; // Return original if parsing fails
+  }
+};
+
 interface EmployeeTimeSummaryRowProps {
   employee: EmployeeSummary;
   jobsiteId: string;
@@ -229,12 +243,12 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                     </div>
                     <div className="text-sm flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5 text-green-600" />
-                      {punch.check_in_time || "—"}
+                      {formatTimeToAmPm(punch.check_in_time)}
                     </div>
                     <div className="text-sm flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5 text-red-600" />
                       {punch.check_out_time ? (
-                        punch.check_out_time
+                        formatTimeToAmPm(punch.check_out_time)
                       ) : punch.status === "active" ? (
                         <Badge variant="secondary" className="text-xs">
                           Active
@@ -291,12 +305,12 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5 text-green-600" />
-                        <span>{punch.check_in_time || "—"}</span>
+                        <span>{formatTimeToAmPm(punch.check_in_time)}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5 text-red-600" />
                         {punch.check_out_time ? (
-                          <span>{punch.check_out_time}</span>
+                          <span>{formatTimeToAmPm(punch.check_out_time)}</span>
                         ) : punch.status === "active" ? (
                           <Badge variant="secondary" className="text-xs">Active</Badge>
                         ) : (
