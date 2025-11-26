@@ -5,8 +5,8 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface UpdateTimesheetParams {
   timesheetId: string;
-  checkInTime: string;
-  checkOutTime: string;
+  checkInTime: string | null;
+  checkOutTime: string | null;
   breakMinutes?: number | null;
   adminNote?: string;
 }
@@ -17,18 +17,23 @@ export const useUpdateTimesheet = () => {
 
   return useMutation({
     mutationFn: async ({ timesheetId, checkInTime, checkOutTime, breakMinutes, adminNote }: UpdateTimesheetParams) => {
-      const { error } = await supabase
+      console.log('Updating timesheet:', { timesheetId, checkInTime, checkOutTime, breakMinutes, adminNote });
+      
+      const { data, error } = await supabase
         .from('timesheets')
         .update({
           check_in_time: checkInTime,
-          check_out_time: checkOutTime || null,
+          check_out_time: checkOutTime,
           break_minutes: breakMinutes,
           admin_note: adminNote || null,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', timesheetId);
+        .eq('id', timesheetId)
+        .select();
 
+      console.log('Update result:', { data, error });
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       // Invalidate all time summary queries to refresh data
