@@ -2,10 +2,13 @@ import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { JobsiteSummaryWithRules } from './useTimeSummaryDataWithRules';
+import { useTimeSummaryPDF } from './useTimeSummaryPDF';
+import { useCompanySettings } from './useCompanySettings';
 
 interface ExportParams {
   companyId: string;
   companyName: string;
+  companyLogo?: string | null;
   dateRange: { start: Date; end: Date };
   jobsiteFilter?: string[];
   employeeFilter?: string[];
@@ -15,6 +18,7 @@ interface ExportParams {
 interface ExportResult {
   isExporting: boolean;
   exportPayrollCSV: () => Promise<void>;
+  exportPayrollPDF: () => Promise<void>;
   error: Error | null;
 }
 
@@ -65,6 +69,8 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
+  const { generateTimeSummaryPDF } = useTimeSummaryPDF();
+  const { settings } = useCompanySettings();
 
   const exportPayrollCSV = useCallback(async () => {
     setIsExporting(true);
@@ -217,6 +223,34 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
       setIsExporting(false);
     }
   }, [params, toast]);
+
+  const exportPayrollPDF = useCallback(async () => {
+    setIsExporting(true);
+    setError(null);
+
+    try {
+      await generateTimeSummaryPDF({
+        data: params.data,
+        companyName: params.companyName,
+        companyLogo: params.companyLogo,
+        periodStart: params.dateRange.start,
+        periodEnd: params.dateRange.end,
+        timezone: settings?.timezone || 'America/Toronto',
+      });
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('PDF export failed');
+      setError(error);
+      console.error('PDF Export Error:', error);
+
+      toast({
+        title: 'Export Failed',
+        description: 'Unable to generate PDF report. Please try again or contact support.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [params, toast, generateTimeSummaryPDF, settings]);
   
-  return { isExporting, exportPayrollCSV, error };
+  return { isExporting, exportPayrollCSV, exportPayrollPDF, error };
 }

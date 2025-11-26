@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, RefreshCw, X, Calendar, Building, Users, Filter as FilterIcon, Download } from 'lucide-react';
+import { BarChart3, RefreshCw, X, Calendar, Building, Users, Filter as FilterIcon, Download, ChevronDown, FileText, FileSpreadsheet } from 'lucide-react';
 import { TimeSummaryFilters } from './TimeSummaryFilters';
 import { TimeSummaryTable } from './TimeSummaryTable';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useTimeSummaryDataWithRules } from '@/hooks/useTimeSummaryDataWithRules';
 import { useTimeSummaryExport } from '@/hooks/useTimeSummaryExport';
 import { TimeSummaryFilters as Filters } from '@/hooks/useTimeSummaryData';
@@ -49,9 +55,10 @@ export const TimeSummaryPage: React.FC = () => {
   const { data, isLoading } = useTimeSummaryDataWithRules(filters);
 
   // Initialize export hook
-  const { isExporting, exportPayrollCSV } = useTimeSummaryExport({
+  const { isExporting, exportPayrollCSV, exportPayrollPDF } = useTimeSummaryExport({
     companyId: user?.companyId || '',
     companyName: companySettings?.company_name || 'Company',
+    companyLogo: companySettings?.company_logo_url,
     dateRange: filters.dateRange,
     jobsiteFilter: filters.jobsiteIds,
     employeeFilter: filters.employeeIds,
@@ -158,17 +165,31 @@ export const TimeSummaryPage: React.FC = () => {
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''} md:mr-2`} />
             <span className="hidden md:inline">Refresh</span>
           </Button>
-          <Button
-            size="sm"
-            onClick={exportPayrollCSV}
-            disabled={isLoading || isExporting || !data || data.length === 0}
-            className="min-h-[44px]"
-          >
-            <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''} md:mr-2`} />
-            <span className="hidden md:inline">
-              {isExporting ? 'Exporting...' : 'Download Report'}
-            </span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                disabled={isLoading || isExporting || !data || data.length === 0}
+                className="min-h-[44px]"
+              >
+                <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''} md:mr-2`} />
+                <span className="hidden md:inline">
+                  {isExporting ? 'Exporting...' : 'Download Report'}
+                </span>
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={exportPayrollCSV} disabled={isExporting}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Download CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportPayrollPDF} disabled={isExporting}>
+                <FileText className="h-4 w-4 mr-2" />
+                Download PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
