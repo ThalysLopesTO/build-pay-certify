@@ -65,10 +65,24 @@ export const TimeSummaryPage: React.FC = () => {
     data: data || [],
   });
 
-  // Invalidate detail caches when date filters change
+  // Invalidate caches when filters change to prevent stale data
   useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ['timeSummaryDetails'] });
-  }, [filters.dateRange.start, filters.dateRange.end, queryClient]);
+    queryClient.invalidateQueries({ 
+      queryKey: ['time-summary'],
+      refetchType: 'all' 
+    });
+    queryClient.invalidateQueries({ 
+      queryKey: ['timeSummaryDetails'],
+      refetchType: 'all' 
+    });
+  }, [
+    filters.dateRange.start, 
+    filters.dateRange.end, 
+    filters.jobsiteIds, 
+    filters.employeeIds, 
+    filters.status,
+    queryClient
+  ]);
 
   // Set up real-time subscription for timesheet changes
   useEffect(() => {
