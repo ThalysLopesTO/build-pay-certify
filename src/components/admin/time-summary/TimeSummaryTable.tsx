@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Users, Clock, AlertCircle, CheckCircle } from 'lucide-react';
@@ -20,6 +20,26 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
   startDate,
   endDate 
 }) => {
+  // Track accumulated totals from employee rows for accurate calculations
+  const [employeeTotals, setEmployeeTotals] = useState<Map<string, {
+    paidHours: number;
+    rawHours: number;
+    issueCount: number;
+  }>>(new Map());
+
+  // Callback to receive calculated totals from employee rows
+  const handleEmployeeTotals = useCallback((
+    employeeId: string,
+    jobsiteId: string,
+    totals: { paidHours: number; rawHours: number; issueCount: number }
+  ) => {
+    const key = `${employeeId}-${jobsiteId}`;
+    setEmployeeTotals(prev => {
+      const newMap = new Map(prev);
+      newMap.set(key, totals);
+      return newMap;
+    });
+  }, []);
   if (isLoading) {
     return (
       <Card className="p-8">
@@ -51,26 +71,36 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
     return Number(value);
   };
 
-  // Calculate grand totals with paid hours
-  const grandTotalPaidHours = data.reduce((sum, jobsite) => {
-    return sum + jobsite.employees.reduce((empSum, emp) => 
-      empSum + safeNumber(emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours), 0
-    );
-  }, 0);
+  // Count unique employees across all jobsites
+  const uniqueEmployeeIds = new Set<string>();
+  data.forEach(jobsite => {
+    jobsite.employees.forEach(emp => uniqueEmployeeIds.add(emp.employee_id));
+  });
+  const grandTotalEmployees = uniqueEmployeeIds.size;
 
-  const grandTotalRawHours = data.reduce((sum, jobsite) => {
-    return sum + jobsite.employees.reduce((empSum, emp) => 
-      empSum + safeNumber(emp.total_raw_hours !== undefined ? emp.total_raw_hours : emp.total_hours), 0
-    );
-  }, 0);
+  // Calculate grand totals using accumulated employee data when available
+  let grandTotalPaidHours = 0;
+  let grandTotalRawHours = 0;
+  let grandTotalIssues = 0;
 
-  const grandTotalEmployees = data.reduce((sum, jobsite) => sum + jobsite.employees.length, 0);
-  
-  const grandTotalIssues = data.reduce((sum, jobsite) => {
-    return sum + jobsite.employees.reduce((empSum, emp) => 
-      empSum + safeNumber(emp.issue_count), 0
-    );
-  }, 0);
+  data.forEach(jobsite => {
+    jobsite.employees.forEach(emp => {
+      const key = `${emp.employee_id}-${jobsite.jobsite_id}`;
+      const accumulated = employeeTotals.get(key);
+      
+      if (accumulated) {
+        // Use accurate accumulated data from employee rows
+        grandTotalPaidHours += accumulated.paidHours;
+        grandTotalRawHours += accumulated.rawHours;
+        grandTotalIssues += accumulated.issueCount;
+      } else {
+        // Fallback to pre-calculated data if not yet loaded
+        grandTotalPaidHours += safeNumber(emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours);
+        grandTotalRawHours += safeNumber(emp.total_raw_hours !== undefined ? emp.total_raw_hours : emp.total_hours);
+        grandTotalIssues += safeNumber(emp.issue_count);
+      }
+    });
+  });
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -171,17 +201,27 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
 
       {/* Jobsite Groups */}
       {data.map((jobsite) => {
-        const jobsiteTotalPaidHours = jobsite.employees.reduce((sum, emp) => 
-          sum + safeNumber(emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours), 0
-        );
-        
-        const jobsiteTotalRawHours = jobsite.employees.reduce((sum, emp) => 
-          sum + safeNumber(emp.total_raw_hours !== undefined ? emp.total_raw_hours : emp.total_hours), 0
-        );
-        
-        const jobsiteIssueCount = jobsite.employees.reduce((sum, emp) => 
-          sum + safeNumber(emp.issue_count), 0
-        );
+        // Calculate jobsite totals using accumulated data when available
+        let jobsiteTotalPaidHours = 0;
+        let jobsiteTotalRawHours = 0;
+        let jobsiteIssueCount = 0;
+
+        jobsite.employees.forEach(emp => {
+          const key = `${emp.employee_id}-${jobsite.jobsite_id}`;
+          const accumulated = employeeTotals.get(key);
+          
+          if (accumulated) {
+            // Use accurate accumulated data
+            jobsiteTotalPaidHours += accumulated.paidHours;
+            jobsiteTotalRawHours += accumulated.rawHours;
+            jobsiteIssueCount += accumulated.issueCount;
+          } else {
+            // Fallback to pre-calculated data
+            jobsiteTotalPaidHours += safeNumber(emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours);
+            jobsiteTotalRawHours += safeNumber(emp.total_raw_hours !== undefined ? emp.total_raw_hours : emp.total_hours);
+            jobsiteIssueCount += safeNumber(emp.issue_count);
+          }
+        });
 
         return (
           <Card key={jobsite.jobsite_id} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-border/50">
@@ -239,6 +279,7 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
                   jobsiteId={jobsite.jobsite_id}
                   startDate={startDate}
                   endDate={endDate}
+                  onTotalsCalculated={handleEmployeeTotals}
                 />
               ))}
             </div>
