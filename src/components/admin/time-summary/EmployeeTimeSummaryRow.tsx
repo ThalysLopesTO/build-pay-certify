@@ -33,13 +33,19 @@ interface EmployeeTimeSummaryRowProps {
   jobsiteId: string;
   startDate: Date;
   endDate: Date;
+  onTotalsCalculated?: (employeeId: string, jobsiteId: string, totals: {
+    paidHours: number;
+    rawHours: number;
+    issueCount: number;
+  }) => void;
 }
 
 export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({ 
   employee,
   jobsiteId,
   startDate,
-  endDate 
+  endDate,
+  onTotalsCalculated
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -59,7 +65,18 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
   // Calculate totals from loaded data - return 0 values when no punches found
   const calculatedTotals = useMemo(() => {
     if (!dailyPunches || dailyPunches.length === 0) {
-      return { totalRaw: 0, totalPaid: 0, totalBreak: 0, issueCount: 0, daysWorked: 0 };
+      const totals = { totalRaw: 0, totalPaid: 0, totalBreak: 0, issueCount: 0, daysWorked: 0 };
+      
+      // Notify parent of calculated totals
+      if (onTotalsCalculated) {
+        onTotalsCalculated(employee.employee_id, jobsiteId, {
+          paidHours: totals.totalPaid,
+          rawHours: totals.totalRaw,
+          issueCount: totals.issueCount
+        });
+      }
+      
+      return totals;
     }
     
     const totalRaw = dailyPunches.reduce((sum, p) => {
@@ -73,8 +90,19 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
     const totalBreak = (totalRaw - totalPaid) * 60; // in minutes
     const issueCount = dailyPunches.reduce((sum, p) => sum + (p.flags?.length || 0), 0);
     
-    return { totalRaw, totalPaid, totalBreak, issueCount, daysWorked: dailyPunches.length };
-  }, [dailyPunches]);
+    const totals = { totalRaw, totalPaid, totalBreak, issueCount, daysWorked: dailyPunches.length };
+    
+    // Notify parent of calculated totals
+    if (onTotalsCalculated) {
+      onTotalsCalculated(employee.employee_id, jobsiteId, {
+        paidHours: totals.totalPaid,
+        rawHours: totals.totalRaw,
+        issueCount: totals.issueCount
+      });
+    }
+    
+    return totals;
+  }, [dailyPunches, employee.employee_id, jobsiteId, onTotalsCalculated]);
 
   // Always prefer calculated totals when loaded, show 0 if no punches found
   const displayPaidHours = isLoading ? employee.total_hours : calculatedTotals.totalPaid;
