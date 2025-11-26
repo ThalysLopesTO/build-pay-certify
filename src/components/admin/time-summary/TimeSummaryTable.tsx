@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Users } from 'lucide-react';
+import { MapPin, Users, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { EmployeeTimeSummaryRow } from './EmployeeTimeSummaryRow';
 import { JobsiteSummary } from '@/hooks/useTimeSummaryData';
 import { RuleBasedTimeSummaryNote } from './RuleBasedTimeSummaryNote';
@@ -73,81 +73,97 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
   }, 0);
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-5 md:space-y-6">
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
-          <div className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent p-4 md:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <MapPin className="h-5 w-5 text-blue-600" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {/* Locations Card */}
+        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-border/50 group">
+          <div className="relative bg-gradient-to-br from-blue-500/5 via-transparent to-blue-500/5 p-5 md:p-6">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -z-10 group-hover:bg-blue-500/10 transition-colors" />
+            <div className="flex items-start justify-between mb-4">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500/15 to-blue-500/5 shadow-sm group-hover:scale-110 transition-transform">
+                <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Locations</div>
             </div>
-            <p className="text-3xl md:text-4xl font-bold text-foreground">{data.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">Active locations</p>
+            <p className="text-4xl md:text-5xl font-bold text-foreground mb-1 group-hover:scale-105 transition-transform origin-left">{data.length}</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Locations</p>
           </div>
         </Card>
-        <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
-          <div className="bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent p-4 md:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <Users className="h-5 w-5 text-green-600" />
+
+        {/* Team Card */}
+        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-border/50 group">
+          <div className="relative bg-gradient-to-br from-green-500/5 via-transparent to-green-500/5 p-5 md:p-6">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-3xl -z-10 group-hover:bg-green-500/10 transition-colors" />
+            <div className="flex items-start justify-between mb-4">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-green-500/15 to-green-500/5 shadow-sm group-hover:scale-110 transition-transform">
+                <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Team</div>
             </div>
-            <p className="text-3xl md:text-4xl font-bold text-foreground">{grandTotalEmployees}</p>
-            <p className="text-xs text-muted-foreground mt-1">Team members</p>
+            <p className="text-4xl md:text-5xl font-bold text-foreground mb-1 group-hover:scale-105 transition-transform origin-left">{grandTotalEmployees}</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Team Members</p>
           </div>
         </Card>
-        <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
-          <div className="bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent p-4 md:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 rounded-lg bg-purple-500/10">
-                <MapPin className="h-5 w-5 text-purple-600" />
+
+        {/* Paid Hours Card */}
+        <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-border/50 group">
+          <div className="relative bg-gradient-to-br from-purple-500/5 via-transparent to-purple-500/5 p-5 md:p-6">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl -z-10 group-hover:bg-purple-500/10 transition-colors" />
+            <div className="flex items-start justify-between mb-4">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500/15 to-purple-500/5 shadow-sm group-hover:scale-110 transition-transform">
+                <Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Paid Hours</div>
             </div>
-            <p className="text-3xl md:text-4xl font-bold text-foreground">{grandTotalPaidHours.toFixed(2)}</p>
+            <div className="flex items-baseline gap-1 mb-1">
+              <p className="text-4xl md:text-5xl font-bold text-foreground group-hover:scale-105 transition-transform origin-left">
+                {grandTotalPaidHours.toFixed(2)}
+              </p>
+              <span className="text-sm font-medium text-muted-foreground">hrs</span>
+            </div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Paid Hours</p>
             {grandTotalRawHours !== grandTotalPaidHours && (
-              <p className="text-xs text-muted-foreground/70 mt-1">
+              <p className="text-xs text-muted-foreground/60 mt-2">
                 Raw: {grandTotalRawHours.toFixed(2)} hrs
               </p>
             )}
-            <div className="mt-2">
+            <div className="mt-3">
               <RuleBasedTimeSummaryNote />
             </div>
           </div>
         </Card>
+
+        {/* Issues Card */}
         <Card className={cn(
-          "overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200",
-          grandTotalIssues > 0 ? "border-red-200 dark:border-red-900" : ""
+          "overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group",
+          grandTotalIssues > 0 ? "border-red-500/30" : "border-green-500/30"
         )}>
           <div className={cn(
-            "p-4 md:p-5",
+            "relative p-5 md:p-6",
             grandTotalIssues > 0 
-              ? "bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent" 
-              : "bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent"
+              ? "bg-gradient-to-br from-red-500/5 via-transparent to-red-500/5" 
+              : "bg-gradient-to-br from-green-500/5 via-transparent to-green-500/5"
           )}>
-            <div className="flex items-center justify-between mb-3">
+            <div className={cn(
+              "absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -z-10 transition-colors",
+              grandTotalIssues > 0 ? "bg-red-500/5 group-hover:bg-red-500/10" : "bg-green-500/5 group-hover:bg-green-500/10"
+            )} />
+            <div className="flex items-start justify-between mb-4">
               <div className={cn(
-                "p-2 rounded-lg",
-                grandTotalIssues > 0 ? "bg-red-500/10" : "bg-green-500/10"
+                "p-2.5 rounded-xl shadow-sm group-hover:scale-110 transition-transform",
+                grandTotalIssues > 0 ? "bg-gradient-to-br from-red-500/15 to-red-500/5" : "bg-gradient-to-br from-green-500/15 to-green-500/5"
               )}>
                 {grandTotalIssues > 0 ? (
-                  <Users className="h-5 w-5 text-red-600" />
+                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                 ) : (
-                  <Users className="h-5 w-5 text-green-600" />
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                 )}
               </div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Issues</div>
             </div>
             <p className={cn(
-              "text-3xl md:text-4xl font-bold",
-              grandTotalIssues > 0 ? "text-red-600" : "text-green-600"
+              "text-4xl md:text-5xl font-bold mb-1 group-hover:scale-105 transition-transform origin-left",
+              grandTotalIssues > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"
             )}>{grandTotalIssues}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {grandTotalIssues > 0 ? 'Punches needing review' : 'All punches OK'}
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {grandTotalIssues > 0 ? 'Needs Review' : 'All Clear'}
             </p>
           </div>
         </Card>
@@ -168,41 +184,46 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
         );
 
         return (
-          <Card key={jobsite.jobsite_id} className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-200">
+          <Card key={jobsite.jobsite_id} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-border/50">
             {/* Jobsite Header */}
-            <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 md:p-5 border-b">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 md:p-6 border-b">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-primary/15 shadow-sm">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-sm">
                     <MapPin className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-lg md:text-xl font-bold text-foreground">{jobsite.jobsite_name}</h3>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Users className="h-3.5 w-3.5" />
+                    <h3 className="text-xl md:text-2xl font-bold text-foreground">{jobsite.jobsite_name}</h3>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
+                      <Users className="h-4 w-4" />
                       {jobsite.employees.length} {jobsite.employees.length === 1 ? 'employee' : 'employees'}
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col md:items-end gap-2">
+                <div className="flex flex-col md:items-end gap-2.5">
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Jobsite Total Paid Hours</p>
-                    <p className="text-2xl md:text-3xl font-bold text-primary mt-0.5">
-                      {jobsiteTotalPaidHours.toFixed(2)} <span className="text-sm font-normal text-muted-foreground">hrs</span>
-                    </p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Total Paid Hours</p>
+                    <div className="flex items-baseline gap-1.5">
+                      <p className="text-3xl md:text-4xl font-bold text-primary">
+                        {jobsiteTotalPaidHours.toFixed(2)}
+                      </p>
+                      <span className="text-sm font-medium text-muted-foreground">hrs</span>
+                    </div>
                     {jobsiteTotalRawHours !== jobsiteTotalPaidHours && (
-                      <p className="text-xs text-muted-foreground/70 mt-1">
+                      <p className="text-xs text-muted-foreground/60 mt-1.5">
                         Raw: {jobsiteTotalRawHours.toFixed(2)} hrs
                       </p>
                     )}
                   </div>
                   {jobsiteIssueCount > 0 ? (
-                    <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800">
-                      {jobsiteIssueCount} {jobsiteIssueCount === 1 ? 'issue' : 'issues'} to review
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800 px-3 py-1">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {jobsiteIssueCount} {jobsiteIssueCount === 1 ? 'issue' : 'issues'}
                     </Badge>
                   ) : (
-                    <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
-                      All punches OK
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 px-3 py-1">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      All clear
                     </Badge>
                   )}
                 </div>
@@ -210,7 +231,7 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
             </div>
 
             {/* Employee Rows */}
-            <div className="p-3 md:p-4 space-y-2">
+            <div className="p-4 md:p-5 space-y-2">
               {jobsite.employees.map((employee) => (
                 <EmployeeTimeSummaryRow 
                   key={`${employee.employee_id}-${startDate.toISOString()}-${endDate.toISOString()}`}

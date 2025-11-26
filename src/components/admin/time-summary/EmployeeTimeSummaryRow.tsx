@@ -103,7 +103,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
     <div className="mb-2">
       {/* Main Row */}
       <div
-        className="flex items-center gap-2 md:gap-3 p-3 md:p-4 bg-gradient-to-r from-card to-card/50 rounded-lg border border-border shadow-sm hover:shadow-md active:scale-[0.99] transition-all duration-200 cursor-pointer min-h-[60px]"
+        className="flex items-center gap-3 md:gap-4 p-4 md:p-5 bg-gradient-to-r from-card via-card to-card/80 rounded-xl border border-border/50 shadow-sm hover:shadow-lg hover:border-primary/20 active:scale-[0.99] transition-all duration-300 cursor-pointer min-h-[72px] group"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {/* Avatar */}
@@ -113,14 +113,15 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
             firstName={firstName}
             lastName={lastName}
             size="md"
+            className="ring-2 ring-border group-hover:ring-primary/20 transition-all"
           />
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h3 className="text-sm md:text-base font-semibold text-foreground truncate">
+              <h3 className="text-base md:text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                 {employee.employee_name}
               </h3>
               <RoleBadge 
@@ -137,26 +138,26 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
           </div>
 
           {/* Right Side: Hours and Issues Badge */}
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col items-end gap-1.5">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col items-end gap-2">
               {/* Paid Hours Label */}
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Paid hours</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Paid hours</p>
               
               {/* Paid Hours - Large */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-baseline gap-1.5">
                 {isLoading ? (
-                  <span className="text-xl md:text-2xl font-bold text-muted-foreground animate-pulse">
+                  <span className="text-2xl md:text-3xl font-bold text-muted-foreground animate-pulse">
                     ...
                   </span>
                 ) : (
                   <>
-                    <span className="text-xl md:text-2xl font-bold text-primary">
+                    <span className="text-2xl md:text-3xl font-bold text-primary group-hover:scale-105 transition-transform origin-right">
                       {(() => {
                         return isNaN(displayPaidHours) || displayPaidHours === null || displayPaidHours === undefined ? '—' : displayPaidHours.toFixed(2);
                       })()}
                     </span>
                     {!isNaN(displayPaidHours) && (
-                      <span className="text-xs text-muted-foreground">hrs</span>
+                      <span className="text-sm font-medium text-muted-foreground">hrs</span>
                     )}
                   </>
                 )}
@@ -167,37 +168,37 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                !isNaN(calculatedTotals.totalRaw) &&
                !isNaN(calculatedTotals.totalPaid) &&
                calculatedTotals.totalRaw !== calculatedTotals.totalPaid && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground/70">
                   Raw: {calculatedTotals.totalRaw.toFixed(2)} hrs
                 </p>
               )}
             </div>
             
             {/* Issues Badge */}
-            <div className="flex flex-col items-end gap-1.5">
+            <div className="flex flex-col items-end gap-2">
               {calculatedTotals?.issueCount !== undefined && calculatedTotals.issueCount > 0 ? (
-                <Badge variant="destructive" className="flex items-center gap-1 text-xs">
-                  <AlertTriangle className="h-3 w-3" />
+                <Badge variant="destructive" className="flex items-center gap-1.5 text-xs px-2.5 py-1 shadow-sm">
+                  <AlertTriangle className="h-3.5 w-3.5" />
                   <span>{calculatedTotals.issueCount} {calculatedTotals.issueCount === 1 ? 'issue' : 'issues'}</span>
                 </Badge>
               ) : calculatedTotals?.issueCount !== undefined ? (
-                <Badge variant="outline" className="flex items-center gap-1 text-xs bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
-                  <CheckCircle className="h-3 w-3" />
-                  <span className="hidden sm:inline">No issues</span>
+                <Badge variant="outline" className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 shadow-sm">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">All clear</span>
                 </Badge>
               ) : employee.has_flags ? (
-                <Badge variant="destructive" className="flex items-center gap-1 text-xs">
-                  <AlertTriangle className="h-3 w-3" />
+                <Badge variant="destructive" className="flex items-center gap-1.5 text-xs px-2.5 py-1 shadow-sm">
+                  <AlertTriangle className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Issues</span>
                 </Badge>
               ) : null}
 
               {/* Expand Icon */}
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 ml-1">
                 {isExpanded ? (
-                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  <ChevronUp className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 ) : (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  <ChevronDown className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 )}
               </div>
             </div>
