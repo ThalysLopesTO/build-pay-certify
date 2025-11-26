@@ -93,11 +93,17 @@ export const useTimeSummaryDetails = ({
               date: row.punch_date,
             });
 
+            // Use stored break_minutes override if available, otherwise use calculated
+            const storedBreakMinutes = row.break_minutes;
+            const finalBreakMinutes = storedBreakMinutes !== null && storedBreakMinutes !== undefined 
+              ? storedBreakMinutes 
+              : result.breakMinutes;
+
             return {
               ...base,
               raw_hours: result.totalMinutes / 60,
               paid_hours: result.paidMinutes / 60,
-              break_minutes: result.breakMinutes,
+              break_minutes: finalBreakMinutes,
               flags: result.flags || [],
             };
           } catch (error) {

@@ -7,6 +7,7 @@ interface UpdateTimesheetParams {
   timesheetId: string;
   checkInTime: string;
   checkOutTime: string;
+  breakMinutes?: number | null;
   adminNote?: string;
 }
 
@@ -15,12 +16,13 @@ export const useUpdateTimesheet = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ timesheetId, checkInTime, checkOutTime, adminNote }: UpdateTimesheetParams) => {
+    mutationFn: async ({ timesheetId, checkInTime, checkOutTime, breakMinutes, adminNote }: UpdateTimesheetParams) => {
       const { error } = await supabase
         .from('timesheets')
         .update({
           check_in_time: checkInTime,
           check_out_time: checkOutTime,
+          break_minutes: breakMinutes,
           admin_note: adminNote || null,
           updated_at: new Date().toISOString(),
         })

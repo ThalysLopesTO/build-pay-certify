@@ -3140,6 +3140,8 @@ export type Database = {
       }
       timesheets: {
         Row: {
+          admin_note: string | null
+          break_minutes: number | null
           check_in_location: string | null
           check_in_time: string | null
           check_out_location: string | null
@@ -3155,6 +3157,8 @@ export type Database = {
           work_note: string | null
         }
         Insert: {
+          admin_note?: string | null
+          break_minutes?: number | null
           check_in_location?: string | null
           check_in_time?: string | null
           check_out_location?: string | null
@@ -3170,6 +3174,8 @@ export type Database = {
           work_note?: string | null
         }
         Update: {
+          admin_note?: string | null
+          break_minutes?: number | null
           check_in_location?: string | null
           check_in_time?: string | null
           check_out_location?: string | null
