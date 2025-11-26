@@ -80,9 +80,13 @@ export const useTimeSummaryDetails = ({
         // Calculate time rules if punch is complete
         if (row.check_in_time && row.check_out_time) {
           try {
+            // Construct full ISO timestamps from date + time
+            const rawInISO = `${row.punch_date}T${row.check_in_time}:00`;
+            const rawOutISO = `${row.punch_date}T${row.check_out_time}:00`;
+            
             const result = await calculateWorkedHours({
-              rawIn: row.check_in_time,
-              rawOut: row.check_out_time,
+              rawIn: rawInISO,
+              rawOut: rawOutISO,
               jobsiteId: jobsiteId,
               companyId: user.companyId,
               date: row.punch_date,
@@ -96,11 +100,12 @@ export const useTimeSummaryDetails = ({
             };
           } catch (error) {
             console.error('Error calculating time rules for punch:', error);
-            // Fallback to raw hours
+            // Use hours_worked from RPC as fallback
+            const fallbackHours = parseFloat(row.hours_worked) || 0;
             return {
               ...base,
-              raw_hours: base.hours_worked,
-              paid_hours: base.hours_worked,
+              raw_hours: fallbackHours,
+              paid_hours: fallbackHours,
               flags: [],
             };
           }
