@@ -18,6 +18,49 @@ interface ExportResult {
   error: Error | null;
 }
 
+interface PayrollDataRow {
+  employeeName: string;
+  employeeRole: string;
+  jobsiteName: string;
+  periodStart: string;
+  periodEnd: string;
+  totalRawHours: number;
+  totalPaidHours: number;
+  daysWorked: number;
+  punchCount: number;
+  issueCount: number;
+}
+
+/**
+ * Escapes and quotes a CSV field if necessary
+ */
+function escapeCsvField(value: string | number): string {
+  const str = String(value);
+  
+  // If the field contains comma, quote, or newline, wrap it in quotes and escape internal quotes
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  
+  return str;
+}
+
+/**
+ * Converts an array of values to a CSV row
+ */
+function arrayToCsvRow(values: (string | number)[]): string {
+  return values.map(escapeCsvField).join(',');
+}
+
+/**
+ * Safely converts a value to a number, returning 0 if NaN or invalid
+ */
+function safeNumber(value: any): number {
+  if (value === null || value === undefined) return 0;
+  const num = Number(value);
+  return isNaN(num) ? 0 : num;
+}
+
 export function useTimeSummaryExport(params: ExportParams): ExportResult {
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -29,97 +72,127 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
     
     try {
       const rows: string[] = [];
+      const periodStartStr = format(params.dateRange.start, 'yyyy-MM-dd');
+      const periodEndStr = format(params.dateRange.end, 'yyyy-MM-dd');
+      const generatedAtStr = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+      const timezoneStr = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
-      // Header metadata
-      rows.push(`Company Name,${params.companyName}`);
-      rows.push('Report Type,Payroll Summary');
-      rows.push(`Period Start,${format(params.dateRange.start, 'yyyy-MM-dd')}`);
-      rows.push(`Period End,${format(params.dateRange.end, 'yyyy-MM-dd')}`);
-      rows.push(`Generated,${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}`);
-      rows.push(`Timezone,${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
-      rows.push(''); // Empty row
+      // ========== HEADER SECTION (Rows 1-7) ==========
+      rows.push(arrayToCsvRow(['Company', params.companyName]));
+      rows.push(arrayToCsvRow(['Report Type', 'Payroll Summary']));
+      rows.push(arrayToCsvRow(['Period Start', periodStartStr]));
+      rows.push(arrayToCsvRow(['Period End', periodEndStr]));
+      rows.push(arrayToCsvRow(['Generated At', generatedAtStr]));
+      rows.push(arrayToCsvRow(['Timezone', timezoneStr]));
+      rows.push(''); // Blank row
       
-      // Column headers
-      rows.push('Employee Name,Employee Role,Jobsite(s),Period Start,Period End,Total Raw Hours,Total Paid Hours,Days Worked,Punch Count,Issue Count');
+      // ========== MAIN TABLE HEADER (Row 8) ==========
+      const headerColumns = [
+        'Employee Name',
+        'Employee Role',
+        'Jobsite',
+        'Period Start',
+        'Period End',
+        'Total Raw Hours',
+        'Total Paid Hours',
+        'Days Worked',
+        'Punch Count',
+        'Issue Count'
+      ];
+      rows.push(arrayToCsvRow(headerColumns));
       
-      // Aggregate by employee across all jobsites
-      const employeeMap = new Map<string, {
-        name: string;
-        role: string;
-        jobsites: Set<string>;
-        rawHours: number;
-        paidHours: number;
-        daysWorked: number;
-        punchCount: number;
-        issueCount: number;
-      }>();
+      // ========== BUILD DATA ROWS ==========
+      const dataRows: PayrollDataRow[] = [];
       
       params.data.forEach(jobsite => {
         jobsite.employees.forEach(employee => {
-          const key = employee.employee_id;
-          const existing = employeeMap.get(key);
+          // Determine the best role label
+          const role = employee.employee_position || 
+                      employee.employee_trade || 
+                      employee.employee_role || 
+                      'Employee';
           
-          if (existing) {
-            existing.jobsites.add(jobsite.jobsite_name);
-            existing.rawHours += isNaN(employee.total_raw_hours) ? 0 : employee.total_raw_hours;
-            existing.paidHours += isNaN(employee.total_paid_hours) ? 0 : employee.total_paid_hours;
-            existing.daysWorked += employee.days_worked || 0;
-            existing.punchCount += employee.total_punches || 0;
-            existing.issueCount += employee.issue_count || 0;
-          } else {
-            employeeMap.set(key, {
-              name: employee.employee_name,
-              role: employee.employee_position || employee.employee_trade || employee.employee_role || 'Employee',
-              jobsites: new Set([jobsite.jobsite_name]),
-              rawHours: isNaN(employee.total_raw_hours) ? 0 : employee.total_raw_hours,
-              paidHours: isNaN(employee.total_paid_hours) ? 0 : employee.total_paid_hours,
-              daysWorked: employee.days_worked || 0,
-              punchCount: employee.total_punches || 0,
-              issueCount: employee.issue_count || 0,
-            });
-          }
+          dataRows.push({
+            employeeName: employee.employee_name,
+            employeeRole: role,
+            jobsiteName: jobsite.jobsite_name,
+            periodStart: periodStartStr,
+            periodEnd: periodEndStr,
+            totalRawHours: safeNumber(employee.total_raw_hours),
+            totalPaidHours: safeNumber(employee.total_paid_hours),
+            daysWorked: safeNumber(employee.days_worked),
+            punchCount: safeNumber(employee.total_punches),
+            issueCount: safeNumber(employee.issue_count),
+          });
         });
       });
       
-      // Sort by employee name
-      const employees = Array.from(employeeMap.values()).sort((a, b) => 
-        a.name.localeCompare(b.name)
-      );
-      
-      // Totals
-      let totalRawHours = 0;
-      let totalPaidHours = 0;
-      let totalDays = 0;
-      let totalPunches = 0;
-      let totalIssues = 0;
-      
-      // Add employee rows
-      employees.forEach(emp => {
-        const jobsitesStr = Array.from(emp.jobsites).join(', ');
-        rows.push(
-          `"${emp.name}","${emp.role}","${jobsitesStr}",${format(params.dateRange.start, 'yyyy-MM-dd')},${format(params.dateRange.end, 'yyyy-MM-dd')},${emp.rawHours.toFixed(2)},${emp.paidHours.toFixed(2)},${emp.daysWorked},${emp.punchCount},${emp.issueCount}`
-        );
-        
-        totalRawHours += emp.rawHours;
-        totalPaidHours += emp.paidHours;
-        totalDays += emp.daysWorked;
-        totalPunches += emp.punchCount;
-        totalIssues += emp.issueCount;
+      // ========== SORT DATA ROWS ==========
+      // First by jobsite name (ascending), then by employee name (ascending)
+      dataRows.sort((a, b) => {
+        const jobsiteCompare = a.jobsiteName.localeCompare(b.jobsiteName);
+        if (jobsiteCompare !== 0) return jobsiteCompare;
+        return a.employeeName.localeCompare(b.employeeName);
       });
       
-      // Totals row
-      rows.push('');
-      rows.push(
-        `TOTALS,,,,,${totalRawHours.toFixed(2)},${totalPaidHours.toFixed(2)},${totalDays},${totalPunches},${totalIssues}`
-      );
+      // ========== CALCULATE TOTALS ==========
+      let totalRawHours = 0;
+      let totalPaidHours = 0;
+      let totalDaysWorked = 0;
+      let totalPunchCount = 0;
+      let totalIssueCount = 0;
       
-      // Download
+      // ========== WRITE DATA ROWS ==========
+      dataRows.forEach(row => {
+        const rowValues = [
+          row.employeeName,
+          row.employeeRole,
+          row.jobsiteName,
+          row.periodStart,
+          row.periodEnd,
+          row.totalRawHours.toFixed(2),
+          row.totalPaidHours.toFixed(2),
+          row.daysWorked.toString(),
+          row.punchCount.toString(),
+          row.issueCount.toString()
+        ];
+        
+        rows.push(arrayToCsvRow(rowValues));
+        
+        // Accumulate totals
+        totalRawHours += row.totalRawHours;
+        totalPaidHours += row.totalPaidHours;
+        totalDaysWorked += row.daysWorked;
+        totalPunchCount += row.punchCount;
+        totalIssueCount += row.issueCount;
+      });
+      
+      // ========== TOTALS ROW ==========
+      rows.push(''); // Blank row before totals
+      
+      const totalsRowValues = [
+        'TOTALS',
+        '', // Empty for Employee Role
+        '', // Empty for Jobsite
+        '', // Empty for Period Start
+        '', // Empty for Period End
+        totalRawHours.toFixed(2),
+        totalPaidHours.toFixed(2),
+        totalDaysWorked.toString(),
+        totalPunchCount.toString(),
+        totalIssueCount.toString()
+      ];
+      rows.push(arrayToCsvRow(totalsRowValues));
+      
+      // ========== DOWNLOAD CSV ==========
       const csvContent = rows.join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
+      const filename = `stackbuild-payroll-${periodStartStr}_to_${periodEndStr}.csv`;
+      
       link.setAttribute('href', url);
-      link.setAttribute('download', `stackbuild-payroll-${format(params.dateRange.start, 'yyyy-MM-dd')}_to_${format(params.dateRange.end, 'yyyy-MM-dd')}.csv`);
+      link.setAttribute('download', filename);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -128,7 +201,7 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
       
       toast({
         title: 'Export Complete',
-        description: 'Payroll report downloaded successfully.',
+        description: `Payroll report downloaded successfully: ${filename}`,
       });
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Export failed');
