@@ -32,9 +32,11 @@ export interface DailyPunch {
   jobsite_name: string;
   location: string | null;
   status: string;
+  timesheet_id?: string;
   // Extended for rules-based calculations
   raw_hours?: number;
   paid_hours?: number;
+  break_minutes?: number;
   flags?: string[];
   jobsite_id?: string;
 }

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, AlertTriangle, Clock, Briefcase, Calendar, RefreshCw, CheckCircle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ChevronDown, ChevronUp, AlertTriangle, Clock, Briefcase, Calendar, RefreshCw, CheckCircle, Pencil } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import { RoleBadge } from './RoleBadge';
 import { RuleBasedTimeSummaryNote } from './RuleBasedTimeSummaryNote';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { EditPunchDialog } from './EditPunchDialog';
+import type { DailyPunch } from '@/hooks/useTimeSummaryData';
 
 // Convert 24-hour time string (HH:mm) to 12-hour AM/PM format
 const formatTimeToAmPm = (timeString: string | null): string => {
@@ -41,6 +43,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [editingPunch, setEditingPunch] = useState<DailyPunch | null>(null);
   const queryClient = useQueryClient();
   const { user } = useAuth();
   
@@ -52,6 +55,27 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
     endDate,
     enabled: isExpanded,
   });
+
+  // Calculate totals from loaded data
+  const calculatedTotals = useMemo(() => {
+    if (!dailyPunches || dailyPunches.length === 0) return null;
+    
+    const totalRaw = dailyPunches.reduce((sum, p) => {
+      const val = p.raw_hours !== undefined ? p.raw_hours : p.hours_worked;
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+    const totalPaid = dailyPunches.reduce((sum, p) => {
+      const val = p.paid_hours !== undefined ? p.paid_hours : p.hours_worked;
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+    const totalBreak = (totalRaw - totalPaid) * 60; // in minutes
+    const issueCount = dailyPunches.reduce((sum, p) => sum + (p.flags?.length || 0), 0);
+    
+    return { totalRaw, totalPaid, totalBreak, issueCount, daysWorked: dailyPunches.length };
+  }, [dailyPunches]);
+
+  // Display calculated totals when expanded, otherwise use header estimate
+  const displayPaidHours = calculatedTotals?.totalPaid ?? employee.total_hours;
 
   // Manual refresh handler
   const handleRefresh = async (e: React.MouseEvent) => {
@@ -122,35 +146,33 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
               <div className="flex items-center gap-1">
                 <span className="text-xl md:text-2xl font-bold text-primary">
                   {(() => {
-                    const paidHours = employee.total_paid_hours !== undefined ? employee.total_paid_hours : employee.total_hours;
-                    return isNaN(paidHours) || paidHours === null || paidHours === undefined ? '—' : paidHours.toFixed(2);
+                    return isNaN(displayPaidHours) || displayPaidHours === null || displayPaidHours === undefined ? '—' : displayPaidHours.toFixed(2);
                   })()}
                 </span>
-                {!isNaN(employee.total_paid_hours !== undefined ? employee.total_paid_hours : employee.total_hours) && (
+                {!isNaN(displayPaidHours) && (
                   <span className="text-xs text-muted-foreground">hrs</span>
                 )}
               </div>
               
               {/* Raw Hours - Small (only if different) */}
-              {employee.total_raw_hours !== undefined && 
-               employee.total_paid_hours !== undefined && 
-               !isNaN(employee.total_raw_hours) &&
-               !isNaN(employee.total_paid_hours) &&
-               employee.total_raw_hours !== employee.total_paid_hours && (
+              {calculatedTotals && 
+               !isNaN(calculatedTotals.totalRaw) &&
+               !isNaN(calculatedTotals.totalPaid) &&
+               calculatedTotals.totalRaw !== calculatedTotals.totalPaid && (
                 <p className="text-xs text-muted-foreground">
-                  Raw: {employee.total_raw_hours.toFixed(2)} hrs
+                  Raw: {calculatedTotals.totalRaw.toFixed(2)} hrs
                 </p>
               )}
             </div>
             
             {/* Issues Badge */}
             <div className="flex flex-col items-end gap-1.5">
-              {employee.issue_count !== undefined && employee.issue_count > 0 ? (
+              {calculatedTotals?.issueCount !== undefined && calculatedTotals.issueCount > 0 ? (
                 <Badge variant="destructive" className="flex items-center gap-1 text-xs">
                   <AlertTriangle className="h-3 w-3" />
-                  <span>{employee.issue_count} {employee.issue_count === 1 ? 'issue' : 'issues'}</span>
+                  <span>{calculatedTotals.issueCount} {calculatedTotals.issueCount === 1 ? 'issue' : 'issues'}</span>
                 </Badge>
-              ) : employee.issue_count !== undefined ? (
+              ) : calculatedTotals?.issueCount !== undefined ? (
                 <Badge variant="outline" className="flex items-center gap-1 text-xs bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
                   <CheckCircle className="h-3 w-3" />
                   <span className="hidden sm:inline">No issues</span>
@@ -219,43 +241,48 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
           ) : (
             <div className="space-y-2">
               {/* Table Header - Hidden on mobile */}
-              <div className="hidden md:grid grid-cols-[120px_1fr_100px_100px_90px_90px_120px] gap-3 px-3 py-2 bg-background/50 rounded-md text-xs font-medium text-muted-foreground border">
+              <div className="hidden md:grid grid-cols-[110px_1fr_90px_90px_60px_70px_70px_100px_40px] gap-2 px-3 py-2 bg-background/50 rounded-md text-xs font-medium text-muted-foreground border">
                 <div>Date</div>
                 <div>Project</div>
                 <div>Time In</div>
                 <div>Time Out</div>
+                <div>Break</div>
                 <div className="text-right">Raw</div>
                 <div className="text-right">Paid</div>
                 <div>Issues</div>
+                <div></div>
               </div>
 
               {/* Table Rows */}
               {dailyPunches.map((punch, index) => (
                 <div key={index}>
                   {/* Desktop View */}
-                  <div className="hidden md:grid grid-cols-[120px_1fr_100px_100px_90px_90px_120px] gap-3 px-3 py-3 bg-background rounded-md border hover:bg-accent/50 transition-colors">
+                  <div className="hidden md:grid grid-cols-[110px_1fr_90px_90px_60px_70px_70px_100px_40px] gap-2 px-3 py-3 bg-background rounded-md border hover:bg-accent/50 transition-colors items-center">
                     <div className="text-sm font-medium">
-                      {format(parseISO(punch.date), "MMM dd, yyyy")}
+                      {format(parseISO(punch.date), "MMM dd")}
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                    <div className="flex items-center gap-2 text-sm min-w-0">
+                      <Briefcase className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                       <span className="truncate">{punch.jobsite_name}</span>
                     </div>
                     <div className="text-sm flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5 text-green-600" />
-                      {formatTimeToAmPm(punch.check_in_time)}
+                      <Clock className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+                      <span className="text-xs">{formatTimeToAmPm(punch.check_in_time)}</span>
                     </div>
                     <div className="text-sm flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5 text-red-600" />
+                      <Clock className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
                       {punch.check_out_time ? (
-                        formatTimeToAmPm(punch.check_out_time)
+                        <span className="text-xs">{formatTimeToAmPm(punch.check_out_time)}</span>
                       ) : punch.status === "active" ? (
                         <Badge variant="secondary" className="text-xs">
                           Active
                         </Badge>
                       ) : (
-                        "—"
+                        <span className="text-xs">—</span>
                       )}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {punch.break_minutes ? `${punch.break_minutes}m` : "—"}
                     </div>
                     <div className="text-sm font-medium text-right">
                       {(() => {
@@ -273,7 +300,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                       {punch.flags && punch.flags.length > 0 ? (
                         punch.flags.map((flag, idx) => (
                           <Badge key={idx} variant="destructive" className="text-xs">
-                            ⚠ {flag}
+                            ⚠
                           </Badge>
                         ))
                       ) : (
@@ -281,6 +308,19 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                           ✓ OK
                         </Badge>
                       )}
+                    </div>
+                    <div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingPunch(punch);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                   
@@ -296,6 +336,17 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                             return isNaN(paidHours) || paidHours === null || paidHours === undefined ? '—' : `${paidHours.toFixed(2)} hrs`;
                           })()}
                         </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 ml-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingPunch(punch);
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -319,12 +370,19 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                       </div>
                     </div>
                     <div className="flex items-center justify-between text-xs pt-1 border-t">
-                      <span className="text-muted-foreground">
-                        Raw: {(() => {
-                          const rawHours = punch.raw_hours !== undefined ? punch.raw_hours : punch.hours_worked;
-                          return isNaN(rawHours) || rawHours === null || rawHours === undefined ? '—' : `${rawHours.toFixed(2)} hrs`;
-                        })()}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-muted-foreground">
+                          Raw: {(() => {
+                            const rawHours = punch.raw_hours !== undefined ? punch.raw_hours : punch.hours_worked;
+                            return isNaN(rawHours) || rawHours === null || rawHours === undefined ? '—' : `${rawHours.toFixed(2)} hrs`;
+                          })()}
+                        </span>
+                        {punch.break_minutes ? (
+                          <span className="text-muted-foreground">
+                            Break: {punch.break_minutes}m
+                          </span>
+                        ) : null}
+                      </div>
                       {punch.flags && punch.flags.length > 0 && (
                         <div className="flex gap-1 flex-wrap">
                           {punch.flags.map((flag, idx) => (
@@ -340,57 +398,44 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
               ))}
 
               {/* Summary Footer */}
-              {dailyPunches && dailyPunches.length > 0 && (() => {
-                const totalRaw = dailyPunches.reduce((sum, p) => {
-                  const val = p.raw_hours !== undefined ? p.raw_hours : p.hours_worked;
-                  return sum + (isNaN(val) ? 0 : val);
-                }, 0);
-                const totalPaid = dailyPunches.reduce((sum, p) => {
-                  const val = p.paid_hours !== undefined ? p.paid_hours : p.hours_worked;
-                  return sum + (isNaN(val) ? 0 : val);
-                }, 0);
-                const totalIssues = dailyPunches.reduce((sum, p) => sum + (p.flags?.length || 0), 0);
-                
-                return (
-                  <div className="mt-4 pt-3 border-t border-border/50 bg-muted/20 rounded-lg p-3">
-                    {totalRaw === totalPaid ? (
-                      <div className="text-center text-sm">
-                        <p className="font-semibold text-primary">
-                          Total Hours: {totalPaid.toFixed(2)} hrs
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          (No adjustments made by time rules)
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Total Raw Hours</p>
-                          <p className="font-semibold">{totalRaw.toFixed(2)} hrs</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Total Paid Hours</p>
-                          <p className="font-semibold text-primary">{totalPaid.toFixed(2)} hrs</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Days Worked</p>
-                          <p className="font-semibold">{dailyPunches.length}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Total Issues</p>
-                          <p className={cn("font-semibold", totalIssues > 0 ? "text-destructive" : "text-green-600")}>
-                            {totalIssues}
-                          </p>
-                        </div>
-                      </div>
-                    )}
+              {calculatedTotals && (
+                <div className="mt-4 pt-3 border-t border-border/50 bg-muted/20 rounded-lg p-3">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total Raw</p>
+                      <p className="font-semibold">{calculatedTotals.totalRaw.toFixed(2)} hrs</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total Break</p>
+                      <p className="font-semibold text-orange-600">{calculatedTotals.totalBreak.toFixed(0)} min</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total Paid</p>
+                      <p className="font-semibold text-primary">{calculatedTotals.totalPaid.toFixed(2)} hrs</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Days Worked</p>
+                      <p className="font-semibold">{calculatedTotals.daysWorked}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total Issues</p>
+                      <p className={cn("font-semibold", calculatedTotals.issueCount > 0 ? "text-destructive" : "text-green-600")}>
+                        {calculatedTotals.issueCount}
+                      </p>
+                    </div>
                   </div>
-                );
-              })()}
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <EditPunchDialog 
+        punch={editingPunch} 
+        onClose={() => setEditingPunch(null)} 
+      />
     </div>
   );
 };
