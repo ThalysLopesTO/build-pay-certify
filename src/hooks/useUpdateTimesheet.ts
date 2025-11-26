@@ -21,7 +21,7 @@ export const useUpdateTimesheet = () => {
         .from('timesheets')
         .update({
           check_in_time: checkInTime,
-          check_out_time: checkOutTime,
+          check_out_time: checkOutTime || null,
           break_minutes: breakMinutes,
           admin_note: adminNote || null,
           updated_at: new Date().toISOString(),
