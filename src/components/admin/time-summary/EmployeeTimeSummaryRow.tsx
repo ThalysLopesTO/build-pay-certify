@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, AlertTriangle, Clock, Briefcase, Calendar, Refr
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { EmployeeSummary } from '@/hooks/useTimeSummaryData';
 import { useTimeSummaryDetails } from '@/hooks/useTimeSummaryDetails';
 import { cn } from '@/lib/utils';
@@ -221,7 +221,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                   {/* Desktop View */}
                   <div className="hidden md:grid grid-cols-[120px_1fr_100px_100px_90px_90px_120px] gap-3 px-3 py-3 bg-background rounded-md border hover:bg-accent/50 transition-colors">
                     <div className="text-sm font-medium">
-                      {format(new Date(punch.date), "MMM dd, yyyy")}
+                      {format(parseISO(punch.date), "MMM dd, yyyy")}
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
@@ -273,7 +273,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                   {/* Mobile View */}
                   <div className="md:hidden bg-background rounded-lg border p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold">{format(new Date(punch.date), "MMM dd, yyyy")}</span>
+                      <span className="text-sm font-semibold">{format(parseISO(punch.date), "MMM dd, yyyy")}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">Paid:</span>
                         <span className="text-sm font-bold text-primary">
