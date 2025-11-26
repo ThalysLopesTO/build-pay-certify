@@ -152,6 +152,11 @@ export const groupedForemanItems = {
       id: 'live-punch-monitor',
     },
     {
+      title: 'Time Summary',
+      icon: BarChart3,
+      id: 'time-summary',
+    },
+    {
       title: 'Jobsite Progress',
       icon: Building,
       id: 'jobsite-progress',

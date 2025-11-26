@@ -24,6 +24,7 @@ import EquipmentManagement from '../components/admin/inventory/EquipmentManageme
 import { JobsiteSelectionScreen } from '../components/admin/tasks/JobsiteSelectionScreen';
 import { DailyTaskScreen } from '../components/admin/tasks/DailyTaskScreen';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
 
 const ForemanDashboard = () => {
   const params = useParams();
@@ -61,6 +62,8 @@ const ForemanDashboard = () => {
         return <EmployeeRegistration />;
       case 'live-punch-monitor':
         return <LivePunchMonitor />;
+      case 'time-summary':
+        return <TimeSummaryPage />;
       case 'my-timesheet-history':
         return <MyTimesheetHistory />;
       case 'daily-reports':
