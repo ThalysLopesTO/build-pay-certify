@@ -93,12 +93,22 @@ export const CompanySettingsTab = () => {
   }, [settings, form]);
 
   const onSubmit = (data: Partial<CompanySettingsType>) => {
+    // Prevent submission if settings aren't loaded
+    if (!settings) {
+      toast({
+        title: "Error",
+        description: "Company settings not loaded. Please refresh the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Filter out empty strings and convert them to null for timestamp fields
     const cleanedData = {
       ...data,
       start_date: data.start_date === "" ? null : data.start_date
     };
-    updateSettings.mutate({id: settings.id, ...cleanedData});
+    updateSettings.mutate({id: settings?.id, ...cleanedData});
   };
 
   function handleDateSelect(e: Date) {
