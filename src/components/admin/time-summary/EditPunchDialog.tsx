@@ -25,12 +25,14 @@ export const EditPunchDialog: React.FC<EditPunchDialogProps> = ({ punch, onClose
   const [checkOutTime, setCheckOutTime] = useState('');
   const [breakMinutes, setBreakMinutes] = useState('');
   const [adminNote, setAdminNote] = useState('');
+  const [punchDate, setPunchDate] = useState('');
   
   const { mutate: updateTimesheet, isPending } = useUpdateTimesheet();
 
   // Sync state when punch changes
   useEffect(() => {
     if (punch) {
+      setPunchDate(punch.date);
       setCheckInTime(punch.check_in_time || '');
       setCheckOutTime(punch.check_out_time || '');
       setBreakMinutes(punch.break_minutes?.toString() || '');
@@ -39,12 +41,20 @@ export const EditPunchDialog: React.FC<EditPunchDialogProps> = ({ punch, onClose
   }, [punch]);
 
   const handleSave = () => {
-    if (!punch?.timesheet_id) return;
+    if (!punch?.timesheet_id || !punchDate) return;
+    
+    // Convert HH:MM times to full ISO timestamps
+    const fullCheckInTime = checkInTime 
+      ? new Date(`${punchDate}T${checkInTime}:00`).toISOString()
+      : null;
+    const fullCheckOutTime = checkOutTime 
+      ? new Date(`${punchDate}T${checkOutTime}:00`).toISOString()
+      : null;
     
     updateTimesheet({
       timesheetId: punch.timesheet_id,
-      checkInTime: checkInTime,
-      checkOutTime: checkOutTime,
+      checkInTime: fullCheckInTime,
+      checkOutTime: fullCheckOutTime,
       breakMinutes: breakMinutes ? parseInt(breakMinutes) : null,
       adminNote: adminNote.trim() || undefined,
     }, {
@@ -58,7 +68,7 @@ export const EditPunchDialog: React.FC<EditPunchDialogProps> = ({ punch, onClose
 
   return (
     <Dialog open={!!punch} onOpenChange={() => onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
@@ -69,7 +79,7 @@ export const EditPunchDialog: React.FC<EditPunchDialogProps> = ({ punch, onClose
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
           {/* Check-in Time */}
           <div className="space-y-2">
             <Label htmlFor="check-in" className="text-sm font-medium">
