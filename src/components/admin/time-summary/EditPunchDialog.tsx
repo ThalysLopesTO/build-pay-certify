@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,11 +21,22 @@ interface EditPunchDialogProps {
 }
 
 export const EditPunchDialog: React.FC<EditPunchDialogProps> = ({ punch, onClose }) => {
-  const [checkInTime, setCheckInTime] = useState(punch?.check_in_time || '');
-  const [checkOutTime, setCheckOutTime] = useState(punch?.check_out_time || '');
+  const [checkInTime, setCheckInTime] = useState('');
+  const [checkOutTime, setCheckOutTime] = useState('');
+  const [breakMinutes, setBreakMinutes] = useState('');
   const [adminNote, setAdminNote] = useState('');
   
   const { mutate: updateTimesheet, isPending } = useUpdateTimesheet();
+
+  // Sync state when punch changes
+  useEffect(() => {
+    if (punch) {
+      setCheckInTime(punch.check_in_time || '');
+      setCheckOutTime(punch.check_out_time || '');
+      setBreakMinutes(punch.break_minutes?.toString() || '');
+      setAdminNote('');
+    }
+  }, [punch]);
 
   const handleSave = () => {
     if (!punch?.timesheet_id) return;
@@ -34,6 +45,7 @@ export const EditPunchDialog: React.FC<EditPunchDialogProps> = ({ punch, onClose
       timesheetId: punch.timesheet_id,
       checkInTime: checkInTime,
       checkOutTime: checkOutTime,
+      breakMinutes: breakMinutes ? parseInt(breakMinutes) : null,
       adminNote: adminNote.trim() || undefined,
     }, {
       onSuccess: () => {
@@ -89,6 +101,26 @@ export const EditPunchDialog: React.FC<EditPunchDialogProps> = ({ punch, onClose
             />
             <p className="text-xs text-muted-foreground">
               Original: {punch.check_out_time || '—'}
+            </p>
+          </div>
+
+          {/* Break Time */}
+          <div className="space-y-2">
+            <Label htmlFor="break-minutes" className="text-sm font-medium">
+              Break Time (minutes)
+            </Label>
+            <Input
+              id="break-minutes"
+              type="number"
+              min="0"
+              max="120"
+              placeholder={`Default: ${punch.break_minutes || 0} min (from time rules)`}
+              value={breakMinutes}
+              onChange={(e) => setBreakMinutes(e.target.value)}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave empty to use time rules default
             </p>
           </div>
 
