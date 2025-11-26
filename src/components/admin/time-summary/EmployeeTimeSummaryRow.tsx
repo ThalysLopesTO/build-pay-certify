@@ -47,13 +47,13 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   
-  // Fetch daily details when row is expanded
+  // Fetch daily details immediately to ensure accurate totals
   const { data: dailyPunches, isLoading, refetch } = useTimeSummaryDetails({
     employeeId: employee.employee_id,
     jobsiteId,
     startDate,
     endDate,
-    enabled: isExpanded,
+    enabled: true,
   });
 
   // Calculate totals from loaded data
@@ -144,13 +144,21 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
               
               {/* Paid Hours - Large */}
               <div className="flex items-center gap-1">
-                <span className="text-xl md:text-2xl font-bold text-primary">
-                  {(() => {
-                    return isNaN(displayPaidHours) || displayPaidHours === null || displayPaidHours === undefined ? '—' : displayPaidHours.toFixed(2);
-                  })()}
-                </span>
-                {!isNaN(displayPaidHours) && (
-                  <span className="text-xs text-muted-foreground">hrs</span>
+                {isLoading ? (
+                  <span className="text-xl md:text-2xl font-bold text-muted-foreground animate-pulse">
+                    ...
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-xl md:text-2xl font-bold text-primary">
+                      {(() => {
+                        return isNaN(displayPaidHours) || displayPaidHours === null || displayPaidHours === undefined ? '—' : displayPaidHours.toFixed(2);
+                      })()}
+                    </span>
+                    {!isNaN(displayPaidHours) && (
+                      <span className="text-xs text-muted-foreground">hrs</span>
+                    )}
+                  </>
                 )}
               </div>
               
