@@ -23,6 +23,45 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
   const [dataWithRules, setDataWithRules] = useState<JobsiteSummaryWithRules[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
 
+  // Track filter changes to clear stale data
+  const filtersKey = useMemo(
+    () =>
+      JSON.stringify({
+        dateRange: filters.dateRange,
+        jobsiteIds: filters.jobsiteIds,
+        employeeIds: filters.employeeIds,
+      }),
+    [filters.dateRange, filters.jobsiteIds, filters.employeeIds]
+  );
+
+  // Clear dataWithRules when filters change
+  useEffect(() => {
+    setDataWithRules([]);
+  }, [filtersKey]);
+
+  // Immediately derive data from baseData (without rules), then enhance with rules
+  useEffect(() => {
+    if (!baseData || baseData.length === 0) {
+      setDataWithRules([]);
+      return;
+    }
+
+    // Immediately set data with fallback values
+    const immediateData: JobsiteSummaryWithRules[] = baseData.map((jobsite) => ({
+      ...jobsite,
+      employees: jobsite.employees.map((employee): EmployeeSummaryWithRules => ({
+        ...employee,
+        total_raw_hours: employee.total_hours,
+        total_paid_hours: employee.total_hours,
+        issue_flags: [],
+        issue_count: 0,
+        days_worked: employee.total_punches,
+      })),
+    }));
+    
+    setDataWithRules(immediateData);
+  }, [baseData]);
+
   // Fetch raw timesheet data to calculate with rules
   const { data: rawTimesheets, isLoading: isTimesheetsLoading } = useQuery({
     queryKey: [
