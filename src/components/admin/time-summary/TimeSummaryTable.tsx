@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Users, Clock, AlertCircle, CheckCircle } from 'lucide-react';
@@ -26,6 +26,11 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
     rawHours: number;
     issueCount: number;
   }>>(new Map());
+
+  // Clear accumulated totals when data changes (filters applied)
+  useEffect(() => {
+    setEmployeeTotals(new Map());
+  }, [data]);
 
   // Callback to receive calculated totals from employee rows
   const handleEmployeeTotals = useCallback((
