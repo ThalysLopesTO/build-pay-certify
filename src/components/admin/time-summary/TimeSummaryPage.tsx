@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { BarChart3, RefreshCw, X, Calendar, Building, Users, Filter as FilterIcon, Download, ChevronDown, FileText, FileSpreadsheet } from 'lucide-react';
 import { TimeSummaryFilters } from './TimeSummaryFilters';
 import { TimeSummaryTable } from './TimeSummaryTable';
@@ -14,7 +15,7 @@ import {
 import { useTimeSummaryDataWithRules } from '@/hooks/useTimeSummaryDataWithRules';
 import { useTimeSummaryExport } from '@/hooks/useTimeSummaryExport';
 import { TimeSummaryFilters as Filters } from '@/hooks/useTimeSummaryData';
-import { startOfWeek, endOfWeek, format } from 'date-fns';
+import { startOfWeek, endOfWeek, format, parseISO } from 'date-fns';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,17 +25,31 @@ export const TimeSummaryPage: React.FC = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { subscribe } = useRealtime();
+  const [searchParams, setSearchParams] = useSearchParams();
   const now = new Date();
+  
+  // Initialize filters from URL or defaults
+  const getInitialFilters = (): Filters => {
+    const startDateParam = searchParams.get('startDate');
+    const endDateParam = searchParams.get('endDate');
+    const employeeIdsParam = searchParams.get('employees');
+    const jobsiteIdsParam = searchParams.get('jobsites');
+    const statusParam = searchParams.get('status');
 
-  const [filters, setFilters] = useState<Filters>({
-    dateRange: {
-      start: startOfWeek(now, { weekStartsOn: 1 }),
-      end: endOfWeek(now, { weekStartsOn: 1 })
-    },
-    jobsiteIds: [],
-    employeeIds: [],
-    status: 'all'
-  });
+    console.log('[Time Summary] Initializing filters from URL:', { startDateParam, endDateParam, employeeIdsParam, jobsiteIdsParam, statusParam });
+
+    return {
+      dateRange: {
+        start: startDateParam ? parseISO(startDateParam) : startOfWeek(now, { weekStartsOn: 1 }),
+        end: endDateParam ? parseISO(endDateParam) : endOfWeek(now, { weekStartsOn: 1 })
+      },
+      jobsiteIds: jobsiteIdsParam ? jobsiteIdsParam.split(',').filter(Boolean) : [],
+      employeeIds: employeeIdsParam ? employeeIdsParam.split(',').filter(Boolean) : [],
+      status: (statusParam === 'active' || statusParam === 'complete') ? statusParam : 'all'
+    };
+  };
+
+  const [filters, setFilters] = useState<Filters>(getInitialFilters);
 
   // Track recent filter changes to prevent real-time race conditions
   const recentFilterChangeRef = useRef(false);
@@ -47,11 +62,48 @@ export const TimeSummaryPage: React.FC = () => {
     currentFiltersRef.current = filters;
   }, [filters]);
 
-  // Clear any stale cache on mount to ensure fresh data
+  // Update URL when filters change
   useEffect(() => {
-    queryClient.removeQueries({ queryKey: ['time-summary'], exact: false });
-    queryClient.removeQueries({ queryKey: ['timeSummaryDetails'], exact: false });
-  }, []); // Only on mount
+    const params = new URLSearchParams(searchParams);
+    
+    // Always preserve the tab parameter
+    const currentTab = searchParams.get('tab');
+    if (currentTab) {
+      params.set('tab', currentTab);
+    }
+
+    // Update filter parameters
+    params.set('startDate', format(filters.dateRange.start, 'yyyy-MM-dd'));
+    params.set('endDate', format(filters.dateRange.end, 'yyyy-MM-dd'));
+    
+    if (filters.employeeIds && filters.employeeIds.length > 0) {
+      params.set('employees', filters.employeeIds.join(','));
+    } else {
+      params.delete('employees');
+    }
+    
+    if (filters.jobsiteIds && filters.jobsiteIds.length > 0) {
+      params.set('jobsites', filters.jobsiteIds.join(','));
+    } else {
+      params.delete('jobsites');
+    }
+    
+    if (filters.status !== 'all') {
+      params.set('status', filters.status);
+    } else {
+      params.delete('status');
+    }
+
+    console.log('[Time Summary] Updating URL with filters:', {
+      startDate: format(filters.dateRange.start, 'yyyy-MM-dd'),
+      endDate: format(filters.dateRange.end, 'yyyy-MM-dd'),
+      employees: filters.employeeIds,
+      jobsites: filters.jobsiteIds,
+      status: filters.status
+    });
+
+    setSearchParams(params, { replace: true });
+  }, [filters, setSearchParams]);
 
   // Set grace period after filter changes
   useEffect(() => {
@@ -299,12 +351,15 @@ export const TimeSummaryPage: React.FC = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setFilters({
-                dateRange: { start: startOfWeek(new Date(), { weekStartsOn: 1 }), end: endOfWeek(new Date(), { weekStartsOn: 1 }) },
-                jobsiteIds: [],
-                employeeIds: [],
-                status: 'all'
-              })}
+              onClick={() => {
+                console.log('[Time Summary] Clearing all filters');
+                setFilters({
+                  dateRange: { start: startOfWeek(new Date(), { weekStartsOn: 1 }), end: endOfWeek(new Date(), { weekStartsOn: 1 }) },
+                  jobsiteIds: [],
+                  employeeIds: [],
+                  status: 'all'
+                });
+              }}
               className="h-7 px-2 text-xs gap-1 ml-auto"
             >
               <X className="h-3 w-3" />
