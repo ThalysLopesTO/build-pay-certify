@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BarChart3, RefreshCw, X, Calendar, Building, Users, Filter as FilterIcon, Download, ChevronDown, FileText, FileSpreadsheet } from 'lucide-react';
 import { TimeSummaryFilters } from './TimeSummaryFilters';
 import { TimeSummaryTable } from './TimeSummaryTable';
@@ -37,12 +37,12 @@ export const TimeSummaryPage: React.FC = () => {
   });
 
   // Track recent filter changes to prevent real-time race conditions
-  const [recentFilterChange, setRecentFilterChange] = useState(false);
+  const recentFilterChangeRef = useRef(false);
 
   // Set grace period after filter changes
   useEffect(() => {
-    setRecentFilterChange(true);
-    const timeout = setTimeout(() => setRecentFilterChange(false), 2000); // 2 second grace period
+    recentFilterChangeRef.current = true;
+    const timeout = setTimeout(() => { recentFilterChangeRef.current = false; }, 2000); // 2 second grace period
     return () => clearTimeout(timeout);
   }, [filters.jobsiteIds, filters.employeeIds, filters.dateRange, filters.status]);
 
@@ -98,7 +98,7 @@ export const TimeSummaryPage: React.FC = () => {
         });
         
         // Skip invalidation if user just changed filters (prevent race condition)
-        if (recentFilterChange) {
+        if (recentFilterChangeRef.current) {
           console.log('[Time Summary] Skipping real-time invalidation - recent filter change');
           return;
         }
