@@ -53,6 +53,51 @@ const MARGINS = {
   BOTTOM: 20,
 };
 
+// Global totals helper - counts unique employees and locations
+interface GlobalTotals {
+  totalEmployees: number;
+  totalLocations: number;
+  totalDaysWorked: number;
+  totalRawHours: number;
+  totalPaidHours: number;
+  totalPunches: number;
+  totalIssues: number;
+}
+
+const computeGlobalTotals = (data: JobsiteSummaryWithRules[]): GlobalTotals => {
+  const uniqueEmployees = new Set<string>();
+  const uniqueLocations = new Set<string>();
+  
+  let totalDaysWorked = 0;
+  let totalRawHours = 0;
+  let totalPaidHours = 0;
+  let totalPunches = 0;
+  let totalIssues = 0;
+
+  data.forEach((jobsite) => {
+    uniqueLocations.add(jobsite.jobsite_id || jobsite.jobsite_name);
+    
+    jobsite.employees.forEach((emp) => {
+      uniqueEmployees.add(emp.employee_id || emp.employee_name);
+      totalDaysWorked += emp.days_worked || 0;
+      totalRawHours += emp.total_raw_hours || 0;
+      totalPaidHours += emp.total_paid_hours || 0;
+      totalPunches += emp.total_punches || 0;
+      totalIssues += emp.issue_count || 0;
+    });
+  });
+
+  return {
+    totalEmployees: uniqueEmployees.size,
+    totalLocations: uniqueLocations.size,
+    totalDaysWorked,
+    totalRawHours,
+    totalPaidHours,
+    totalPunches,
+    totalIssues,
+  };
+};
+
 // Helper function: Draw professional header with logo and company info
 const drawHeader = async (
   doc: ExtendedJsPDF,
@@ -60,22 +105,26 @@ const drawHeader = async (
 ): Promise<number> => {
   const pageWidth = doc.internal.pageSize.getWidth();
   let yPos = MARGINS.TOP;
-  const logoWidth = 50;
-  const logoHeight = 25;
+  
+  const logoWidth = 30;
+  const logoHeight = 15;
+  let logoBottom = yPos;
+  let companyInfoBottom = yPos;
 
-  // Add company logo on left
+  // === STEP 1: Logo on the LEFT ===
   if (params.companyLogo) {
     try {
       const logoBase64 = await fetchLogoAsBase64(params.companyLogo);
       if (logoBase64) {
         doc.addImage(logoBase64, 'PNG', MARGINS.LEFT, yPos, logoWidth, logoHeight);
+        logoBottom = yPos + logoHeight;
       }
     } catch (error) {
       console.warn('Failed to load logo for PDF:', error);
     }
   }
 
-  // Right side: Company information block
+  // === STEP 2: Company info block on the RIGHT ===
   const rightX = pageWidth - MARGINS.RIGHT;
   let rightY = yPos;
 
@@ -99,23 +148,29 @@ const drawHeader = async (
   if (params.companyEmail) contactLine.push(params.companyEmail);
   if (contactLine.length > 0) {
     doc.text(contactLine.join(' | '), rightX, rightY, { align: 'right' });
+    rightY += 4;
   }
 
-  // Center: Report title
-  const centerY = yPos + logoHeight / 2;
+  companyInfoBottom = rightY;
+
+  // === STEP 3: Calculate header bottom (max of logo and company info) ===
+  const headerBottom = Math.max(logoBottom, companyInfoBottom);
+  yPos = headerBottom + 8;
+
+  // === STEP 4: Centered TITLE below the header ===
   doc.setFontSize(FONTS.TITLE);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...COLORS.PRIMARY_ACCENT);
-  doc.text('PAYROLL SUMMARY REPORT', pageWidth / 2, centerY - 3, { align: 'center' });
+  doc.text('PAYROLL SUMMARY REPORT', pageWidth / 2, yPos, { align: 'center' });
+  yPos += 6;
 
   doc.setFontSize(FONTS.BODY);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 100, 100);
-  doc.text(params.companyName, pageWidth / 2, centerY + 5, { align: 'center' });
+  doc.text(params.companyName, pageWidth / 2, yPos, { align: 'center' });
+  yPos += 6;
 
-  yPos += logoHeight + 8;
-
-  // Horizontal rule
+  // === STEP 5: Horizontal rule ===
   doc.setDrawColor(...COLORS.MEDIUM_GREY);
   doc.setLineWidth(0.5);
   doc.line(MARGINS.LEFT, yPos, pageWidth - MARGINS.RIGHT, yPos);
@@ -212,27 +267,17 @@ const drawSummaryStatistics = (
   const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - MARGINS.LEFT - MARGINS.RIGHT;
 
-  const totalJobsites = data.length;
-  const totalEmployees = data.reduce((sum, jobsite) => sum + jobsite.employees.length, 0);
-  const totalPaidHours = data.reduce(
-    (sum, jobsite) =>
-      sum + jobsite.employees.reduce((empSum, emp) => empSum + (emp.total_paid_hours || 0), 0),
-    0
-  );
-  const totalIssues = data.reduce(
-    (sum, jobsite) =>
-      sum + jobsite.employees.reduce((empSum, emp) => empSum + (emp.issue_count || 0), 0),
-    0
-  );
+  // Use the helper for accurate counts
+  const totals = computeGlobalTotals(data);
 
   const boxWidth = contentWidth / 4 - 3;
   const boxHeight = 20;
 
   const stats = [
-    { label: 'Locations', value: totalJobsites.toString() },
-    { label: 'Employees', value: totalEmployees.toString() },
-    { label: 'Paid Hours', value: totalPaidHours.toFixed(2) },
-    { label: 'Issues', value: totalIssues.toString() },
+    { label: 'Locations', value: totals.totalLocations.toString() },
+    { label: 'Employees', value: totals.totalEmployees.toString() },
+    { label: 'Paid Hours', value: totals.totalPaidHours.toFixed(2) },
+    { label: 'Issues', value: totals.totalIssues.toString() },
   ];
 
   stats.forEach((stat, i) => {
@@ -380,32 +425,8 @@ const drawGrandTotals = (
 
   yPos += 5;
 
-  // Calculate grand totals
-  const totalJobsites = data.length;
-  const totalEmployees = data.reduce((sum, jobsite) => sum + jobsite.employees.length, 0);
-
-  const grandTotals = data.reduce(
-    (acc, jobsite) => {
-      const jobsiteTotals = jobsite.employees.reduce(
-        (jAcc, emp) => ({
-          daysWorked: jAcc.daysWorked + (emp.days_worked || 0),
-          rawHours: jAcc.rawHours + (emp.total_raw_hours || 0),
-          paidHours: jAcc.paidHours + (emp.total_paid_hours || 0),
-          punchCount: jAcc.punchCount + (emp.total_punches || 0),
-          issueCount: jAcc.issueCount + (emp.issue_count || 0),
-        }),
-        { daysWorked: 0, rawHours: 0, paidHours: 0, punchCount: 0, issueCount: 0 }
-      );
-      return {
-        daysWorked: acc.daysWorked + jobsiteTotals.daysWorked,
-        rawHours: acc.rawHours + jobsiteTotals.rawHours,
-        paidHours: acc.paidHours + jobsiteTotals.paidHours,
-        punchCount: acc.punchCount + jobsiteTotals.punchCount,
-        issueCount: acc.issueCount + jobsiteTotals.issueCount,
-      };
-    },
-    { daysWorked: 0, rawHours: 0, paidHours: 0, punchCount: 0, issueCount: 0 }
-  );
+  // Use the helper for accurate counts
+  const totals = computeGlobalTotals(data);
 
   // Draw section header with background
   const contentWidth = pageWidth - MARGINS.LEFT - MARGINS.RIGHT;
@@ -424,13 +445,13 @@ const drawGrandTotals = (
 
   // Totals data in 2 columns
   const totalsData = [
-    ['Total Employees:', totalEmployees.toString()],
-    ['Total Locations:', totalJobsites.toString()],
-    ['Total Days Worked:', grandTotals.daysWorked.toString()],
-    ['Total Raw Hours:', grandTotals.rawHours.toFixed(2)],
-    ['Total Paid Hours:', grandTotals.paidHours.toFixed(2)],
-    ['Total Punches:', grandTotals.punchCount.toString()],
-    ['Total Issues:', grandTotals.issueCount.toString()],
+    ['Total Employees:', totals.totalEmployees.toString()],
+    ['Total Locations:', totals.totalLocations.toString()],
+    ['Total Days Worked:', totals.totalDaysWorked.toString()],
+    ['Total Raw Hours:', totals.totalRawHours.toFixed(2)],
+    ['Total Paid Hours:', totals.totalPaidHours.toFixed(2)],
+    ['Total Punches:', totals.totalPunches.toString()],
+    ['Total Issues:', totals.totalIssues.toString()],
   ];
 
   doc.setFontSize(FONTS.BODY);
