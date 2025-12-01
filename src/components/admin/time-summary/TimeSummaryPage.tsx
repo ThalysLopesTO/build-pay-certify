@@ -47,6 +47,12 @@ export const TimeSummaryPage: React.FC = () => {
     currentFiltersRef.current = filters;
   }, [filters]);
 
+  // Clear any stale cache on mount to ensure fresh data
+  useEffect(() => {
+    queryClient.removeQueries({ queryKey: ['time-summary'], exact: false });
+    queryClient.removeQueries({ queryKey: ['timeSummaryDetails'], exact: false });
+  }, []); // Only on mount
+
   // Set grace period after filter changes
   useEffect(() => {
     recentFilterChangeRef.current = true;
