@@ -65,6 +65,18 @@ export interface JobsiteSummary {
   employees: EmployeeSummary[];
 }
 
+export interface TimeSummaryResult {
+  summaries: JobsiteSummary[];
+  fetchedFilters: {
+    employeeIds: string[];
+    jobsiteIds: string[];
+    startDate: string;
+    endDate: string;
+    status: string;
+  };
+  filterHash: string;
+}
+
 export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
   const { user } = useAuth();
 
@@ -185,7 +197,26 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
 
       console.log(`Returning ${summaries.length} jobsite summaries`);
 
-      return summaries;
+      // Create filter hash for validation
+      const filterHash = JSON.stringify({
+        employeeIds: employeeFilter || [],
+        jobsiteIds: jobsiteFilter || [],
+        startDate,
+        endDate,
+        status: filters.status,
+      });
+
+      return {
+        summaries,
+        fetchedFilters: {
+          employeeIds: employeeFilter || [],
+          jobsiteIds: jobsiteFilter || [],
+          startDate,
+          endDate,
+          status: filters.status,
+        },
+        filterHash,
+      };
     },
     enabled: !!user?.companyId,
     refetchOnMount: true,

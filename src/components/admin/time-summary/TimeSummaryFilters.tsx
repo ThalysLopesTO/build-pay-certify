@@ -76,7 +76,7 @@ export const TimeSummaryFilters: React.FC<TimeSummaryFiltersProps> = ({
     },
     enabled: !!user?.companyId,
     staleTime: 1 * 60 * 1000, // 1 minute
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     retry: 3,
   });
 
