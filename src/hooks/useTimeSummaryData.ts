@@ -190,7 +190,8 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
     enabled: !!user?.companyId,
     refetchOnMount: true,
     refetchOnWindowFocus: false, // Disabled - prevents old cached queries from refetching
-    staleTime: 60000, // 1 minute - data considered fresh longer
-    gcTime: 60000, // 1 minute - old queries are garbage collected faster
+    staleTime: 30000, // 30 seconds - reduced to prevent stale data display
+    gcTime: 30000, // 30 seconds - old queries are garbage collected faster
+    placeholderData: undefined, // Don't show previous data while fetching new
   });
 };
