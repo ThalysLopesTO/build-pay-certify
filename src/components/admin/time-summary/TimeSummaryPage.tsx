@@ -119,13 +119,43 @@ export const TimeSummaryPage: React.FC = () => {
       if (!user?.companyId) return null;
       const { data, error } = await supabase
         .from('company_settings')
-        .select('company_name, company_logo_url')
+        .select('company_name, company_logo_url, company_address, company_phone, company_email, timezone')
         .eq('company_id', user.companyId)
         .single();
       if (error) throw error;
       return data;
     },
     enabled: !!user?.companyId,
+  });
+
+  // Fetch employee names for filters
+  const { data: employeeNames } = useQuery({
+    queryKey: ['employee-names', filters.employeeIds],
+    queryFn: async () => {
+      if (!filters.employeeIds || filters.employeeIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', filters.employeeIds);
+      if (error) throw error;
+      return data.map(emp => `${emp.first_name} ${emp.last_name}`);
+    },
+    enabled: !!(filters.employeeIds && filters.employeeIds.length > 0),
+  });
+
+  // Fetch jobsite names for filters
+  const { data: jobsiteNames } = useQuery({
+    queryKey: ['jobsite-names', filters.jobsiteIds],
+    queryFn: async () => {
+      if (!filters.jobsiteIds || filters.jobsiteIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from('jobsites')
+        .select('id, name')
+        .in('id', filters.jobsiteIds);
+      if (error) throw error;
+      return data.map(job => job.name);
+    },
+    enabled: !!(filters.jobsiteIds && filters.jobsiteIds.length > 0),
   });
 
   const { data, isLoading } = useTimeSummaryDataWithRules(filters);
@@ -135,10 +165,19 @@ export const TimeSummaryPage: React.FC = () => {
     companyId: user?.companyId || '',
     companyName: companySettings?.company_name || 'Company',
     companyLogo: companySettings?.company_logo_url,
+    companyAddress: companySettings?.company_address,
+    companyPhone: companySettings?.company_phone,
+    companyEmail: companySettings?.company_email,
     dateRange: filters.dateRange,
     jobsiteFilter: filters.jobsiteIds,
     employeeFilter: filters.employeeIds,
+    timezone: companySettings?.timezone || 'America/Toronto',
     data: data || [],
+    filters: {
+      employeeNames: employeeNames || [],
+      jobsiteNames: jobsiteNames || [],
+      status: filters.status,
+    },
   });
 
   // Set up real-time subscription for timesheet changes
