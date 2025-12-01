@@ -180,8 +180,7 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
     enabled: !!user?.companyId,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    staleTime: 10000, // 10 seconds - more aggressive for real-time updates
+    staleTime: 60000, // 1 minute - data considered fresh longer
     gcTime: 300000,
-    refetchInterval: 30000, // Auto-refresh every 30 seconds as fallback
   });
 };
