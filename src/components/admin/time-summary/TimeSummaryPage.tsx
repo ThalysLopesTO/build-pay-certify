@@ -124,12 +124,12 @@ export const TimeSummaryPage: React.FC = () => {
     };
   }, [user?.companyId, subscribe, queryClient]);
 
-  const handleManualRefresh = () => {
+  const handleManualRefresh = async () => {
     console.log('[Time Summary] Manual refresh triggered');
     
     // Cancel any in-flight queries first to abort ongoing requests
-    queryClient.cancelQueries({ queryKey: ['time-summary'] });
-    queryClient.cancelQueries({ queryKey: ['timeSummaryDetails'] });
+    await queryClient.cancelQueries({ queryKey: ['time-summary'] });
+    await queryClient.cancelQueries({ queryKey: ['timeSummaryDetails'] });
     
     // Remove all inactive/stale queries to prevent race conditions
     queryClient.removeQueries({ 

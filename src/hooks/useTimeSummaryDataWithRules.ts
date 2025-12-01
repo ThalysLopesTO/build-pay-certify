@@ -35,15 +35,12 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
     [filters.dateRange, filters.jobsiteIds, filters.employeeIds]
   );
 
-  // Clear dataWithRules AND cancel + remove stale cached queries when filters change
+  // Clear dataWithRules and remove stale cached queries when filters change
   useEffect(() => {
     setDataWithRules([]);
     
-    // CANCEL all time-summary queries first - this aborts in-flight requests
-    queryClient.cancelQueries({ queryKey: ['time-summary'] });
-    queryClient.cancelQueries({ queryKey: ['time-summary-raw-timesheets'] });
-    
-    // Then remove inactive queries from cache to ensure clean state
+    // Only remove INACTIVE queries from cache (old filter results)
+    // Don't cancel the new query we want to run!
     queryClient.removeQueries({ 
       queryKey: ['time-summary'],
       type: 'inactive'
