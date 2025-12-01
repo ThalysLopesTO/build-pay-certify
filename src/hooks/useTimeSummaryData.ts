@@ -78,8 +78,13 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
       filters.employeeIds,
       filters.status
     ],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (!user?.companyId) return [];
+      
+      // Check if query was cancelled
+      if (signal?.aborted) {
+        throw new Error('Query cancelled');
+      }
 
       const { dateRange, jobsiteIds, employeeIds, status } = filters;
 
@@ -122,6 +127,11 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
         p_statuses: statusFilter,
         p_tz: timezone,
       });
+      
+      // Check if query was cancelled after async operation
+      if (signal?.aborted) {
+        throw new Error('Query cancelled');
+      }
 
       if (error) {
         console.error('Error fetching time summary headers:', error);
