@@ -30,7 +30,13 @@ export const useConnectionMonitor = () => {
       
       // Resume queries when back online
       queryClient.resumePausedMutations();
-      queryClient.invalidateQueries();
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          // Skip time-summary queries - they have dedicated real-time subscriptions
+          return key !== 'time-summary' && key !== 'time-summary-raw-timesheets' && key !== 'timeSummaryDetails';
+        }
+      });
     };
 
     const handleOffline = () => {
@@ -71,7 +77,13 @@ export const useConnectionMonitor = () => {
 
         // If connection restored, invalidate queries
         if (isConnected && !connectionState.isSupabaseConnected) {
-          queryClient.invalidateQueries();
+          queryClient.invalidateQueries({
+            predicate: (query) => {
+              const key = query.queryKey[0];
+              // Skip time-summary queries - they have dedicated real-time subscriptions
+              return key !== 'time-summary' && key !== 'time-summary-raw-timesheets' && key !== 'timeSummaryDetails';
+            }
+          });
         }
       } catch (error) {
         setConnectionState(prev => ({
