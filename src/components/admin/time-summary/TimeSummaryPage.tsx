@@ -36,6 +36,16 @@ export const TimeSummaryPage: React.FC = () => {
     status: 'all'
   });
 
+  // Track recent filter changes to prevent real-time race conditions
+  const [recentFilterChange, setRecentFilterChange] = useState(false);
+
+  // Set grace period after filter changes
+  useEffect(() => {
+    setRecentFilterChange(true);
+    const timeout = setTimeout(() => setRecentFilterChange(false), 2000); // 2 second grace period
+    return () => clearTimeout(timeout);
+  }, [filters.jobsiteIds, filters.employeeIds, filters.dateRange, filters.status]);
+
   // Fetch company settings for branding
   const { data: companySettings } = useQuery({
     queryKey: ['company-settings', user?.companyId],
@@ -87,6 +97,12 @@ export const TimeSummaryPage: React.FC = () => {
           newData: payload.new
         });
         
+        // Skip invalidation if user just changed filters (prevent race condition)
+        if (recentFilterChange) {
+          console.log('[Time Summary] Skipping real-time invalidation - recent filter change');
+          return;
+        }
+        
         // Remove inactive/stale queries first to prevent race conditions
         queryClient.removeQueries({ 
           queryKey: ['time-summary'],
@@ -111,7 +127,11 @@ export const TimeSummaryPage: React.FC = () => {
   const handleManualRefresh = () => {
     console.log('[Time Summary] Manual refresh triggered');
     
-    // Remove all inactive/stale queries first to prevent race conditions
+    // Cancel any in-flight queries first to abort ongoing requests
+    queryClient.cancelQueries({ queryKey: ['time-summary'] });
+    queryClient.cancelQueries({ queryKey: ['timeSummaryDetails'] });
+    
+    // Remove all inactive/stale queries to prevent race conditions
     queryClient.removeQueries({ 
       queryKey: ['time-summary'],
       type: 'inactive'
@@ -124,7 +144,7 @@ export const TimeSummaryPage: React.FC = () => {
     // Invalidate only the current query (will auto-refetch because it's active)
     queryClient.invalidateQueries({ 
       queryKey: ['time-summary', user?.companyId],
-      exact: false // Allow matching the rest of the query key
+      exact: false
     });
   };
 
