@@ -36,9 +36,8 @@ export const useUpdateTimesheet = () => {
       return data;
     },
     onSuccess: () => {
-      // Invalidate all time summary queries to refresh data
+      // Invalidate time summary details only - time-summary is handled by real-time subscription
       queryClient.invalidateQueries({ queryKey: ['timeSummaryDetails'] });
-      queryClient.invalidateQueries({ queryKey: ['time-summary'] });
       
       toast({
         title: "Time Updated",
