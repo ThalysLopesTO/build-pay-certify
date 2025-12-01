@@ -3958,9 +3958,11 @@ export type Database = {
           p_timezone: string
         }
         Returns: {
+          break_minutes: number
           check_in_time: string
           check_out_time: string
           hours_worked: number
+          id: string
           jobsite_name: string
           punch_date: string
           status: string
