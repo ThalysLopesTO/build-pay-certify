@@ -17,8 +17,15 @@ export function AppProviders({ children }: PropsWithChildren) {
     const softInvalidate = () => {
       if (timer) window.clearTimeout(timer);
       timer = window.setTimeout(() => {
-        // Refresh ONLY active (mounted) queries to avoid noisy network traffic
-        queryClient.invalidateQueries({ refetchType: "active" });
+        // Refresh active queries EXCEPT time-summary (has its own real-time handling)
+        queryClient.invalidateQueries({ 
+          refetchType: "active",
+          predicate: (query) => {
+            const key = query.queryKey[0];
+            // Skip time-summary queries - they have dedicated real-time subscriptions
+            return key !== 'time-summary' && key !== 'time-summary-raw-timesheets' && key !== 'timeSummaryDetails';
+          }
+        });
       }, 300);
     };
 
