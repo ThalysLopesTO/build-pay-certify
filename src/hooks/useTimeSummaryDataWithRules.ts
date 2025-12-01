@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { JobsiteSummary, EmployeeSummary, useTimeSummaryData, TimeSummaryFilters } from './useTimeSummaryData';
 import { calculateWorkedHours } from '@/lib/timeRules/calculateWorkedHours';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,9 +20,12 @@ export interface JobsiteSummaryWithRules extends Omit<JobsiteSummary, 'employees
 export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data: baseData, isLoading: isBaseLoading, ...rest } = useTimeSummaryData(filters);
+  const { data: baseData, isLoading: isBaseLoading, isFetching: isBaseFetching, ...rest } = useTimeSummaryData(filters);
   const [dataWithRules, setDataWithRules] = useState<JobsiteSummaryWithRules[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
+  
+  // Track which filters the current baseData was fetched with
+  const lastFetchedFiltersRef = useRef<string | null>(null);
 
   // Track filter changes to clear stale data
   const filtersKey = useMemo(
@@ -37,7 +40,9 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
 
   // Clear dataWithRules and remove stale cached queries when filters change
   useEffect(() => {
+    console.log('[Time Summary Rules] Filters changed, clearing stale data');
     setDataWithRules([]);
+    lastFetchedFiltersRef.current = null; // Invalidate last fetched filters
     
     // Only remove INACTIVE queries from cache (old filter results)
     // Don't cancel the new query we want to run!
@@ -49,16 +54,36 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
       queryKey: ['time-summary-raw-timesheets'],
       type: 'inactive'
     });
-  }, [filtersKey]); // queryClient is stable, no need in deps
+  }, [filtersKey, queryClient]);
+
+  // Update lastFetchedFiltersRef when fetch completes successfully
+  useEffect(() => {
+    if (!isBaseFetching && baseData) {
+      lastFetchedFiltersRef.current = filtersKey;
+      console.log('[Time Summary Rules] Filters fetched successfully:', filtersKey);
+    }
+  }, [isBaseFetching, baseData, filtersKey]);
 
   // Immediately derive data from baseData (without rules), then enhance with rules
   useEffect(() => {
+    // Skip if data is still fetching with new filters
+    if (isBaseFetching) {
+      console.log('[Time Summary Rules] Skipping update - still fetching');
+      return;
+    }
+    
+    // Skip if baseData doesn't match current filters
+    if (filtersKey !== lastFetchedFiltersRef.current) {
+      console.log('[Time Summary Rules] Waiting for data matching current filters');
+      return;
+    }
+    
     if (!baseData || baseData.length === 0) {
       setDataWithRules([]);
       return;
     }
 
-    // Immediately set data with fallback values
+    // Safe to use baseData now - it matches current filters
     const immediateData: JobsiteSummaryWithRules[] = baseData.map((jobsite) => ({
       ...jobsite,
       employees: jobsite.employees.map((employee): EmployeeSummaryWithRules => ({
@@ -72,7 +97,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
     }));
     
     setDataWithRules(immediateData);
-  }, [baseData]);
+  }, [baseData, filtersKey, isBaseFetching]);
 
   // Fetch raw timesheet data to calculate with rules
   const { data: rawTimesheets, isLoading: isTimesheetsLoading } = useQuery({
@@ -117,6 +142,18 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
 
   // Calculate rules when data is available
   useEffect(() => {
+    // Don't calculate rules with stale data - wait until fetching is complete
+    if (isBaseFetching || isTimesheetsLoading) {
+      console.log('[Time Summary Rules] Waiting for data to finish loading before calculating rules');
+      return;
+    }
+    
+    // Skip if baseData doesn't match current filters
+    if (filtersKey !== lastFetchedFiltersRef.current) {
+      console.log('[Time Summary Rules] Skipping rule calculation - waiting for matching data');
+      return;
+    }
+    
     if (!baseData || baseData.length === 0 || !rawTimesheets || !user?.companyId) {
       setDataWithRules([]);
       return;
@@ -236,11 +273,12 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
     };
 
     calculateRules();
-  }, [baseData, rawTimesheets, user?.companyId]);
+  }, [baseData, rawTimesheets, user?.companyId, isBaseFetching, isTimesheetsLoading, filtersKey]);
 
   return {
     data: dataWithRules,
-    isLoading: isBaseLoading || isTimesheetsLoading || isCalculating,
+    isLoading: isBaseLoading || isTimesheetsLoading || isCalculating || isBaseFetching,
+    isFetching: isBaseFetching,
     ...rest,
   };
 };
