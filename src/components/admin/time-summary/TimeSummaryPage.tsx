@@ -38,6 +38,14 @@ export const TimeSummaryPage: React.FC = () => {
 
   // Track recent filter changes to prevent real-time race conditions
   const recentFilterChangeRef = useRef(false);
+  
+  // Track current filters for use in real-time callback
+  const currentFiltersRef = useRef(filters);
+
+  // Keep currentFiltersRef in sync with filters
+  useEffect(() => {
+    currentFiltersRef.current = filters;
+  }, [filters]);
 
   // Set grace period after filter changes
   useEffect(() => {
@@ -103,16 +111,42 @@ export const TimeSummaryPage: React.FC = () => {
           return;
         }
         
-        // Remove inactive/stale queries first to prevent race conditions
-        queryClient.removeQueries({ 
-          queryKey: ['time-summary'],
-          type: 'inactive'
+        // Use exact query key invalidation to prevent stale unfiltered data from being refetched
+        const currentFilters = currentFiltersRef.current;
+        const startDateStr = format(currentFilters.dateRange.start, 'yyyy-MM-dd');
+        const endDateStr = format(currentFilters.dateRange.end, 'yyyy-MM-dd');
+        
+        console.log('[Time Summary] Invalidating exact query with filters:', {
+          startDate: startDateStr,
+          endDate: endDateStr,
+          jobsiteIds: currentFilters.jobsiteIds,
+          employeeIds: currentFilters.employeeIds,
+          status: currentFilters.status
         });
         
-        // Then invalidate current query
+        // Invalidate ONLY the exact current query - not all time-summary queries
         queryClient.invalidateQueries({ 
-          queryKey: ['time-summary', user.companyId],
-          exact: false
+          queryKey: [
+            'time-summary',
+            user.companyId,
+            startDateStr,
+            endDateStr,
+            currentFilters.jobsiteIds,
+            currentFilters.employeeIds,
+            currentFilters.status
+          ]
+        });
+        
+        // Also invalidate the raw timesheets query with same filters
+        queryClient.invalidateQueries({
+          queryKey: [
+            'time-summary-raw-timesheets',
+            user.companyId,
+            currentFilters.dateRange.start.toISOString(),
+            currentFilters.dateRange.end.toISOString(),
+            currentFilters.jobsiteIds,
+            currentFilters.employeeIds,
+          ]
         });
       },
       { companyId: user.companyId }
