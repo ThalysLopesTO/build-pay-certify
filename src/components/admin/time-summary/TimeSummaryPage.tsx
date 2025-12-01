@@ -110,9 +110,22 @@ export const TimeSummaryPage: React.FC = () => {
 
   const handleManualRefresh = () => {
     console.log('[Time Summary] Manual refresh triggered');
-    queryClient.invalidateQueries({ queryKey: ['time-summary'] });
-    queryClient.invalidateQueries({ queryKey: ['timeSummaryDetails'] });
-    queryClient.refetchQueries({ queryKey: ['time-summary'] });
+    
+    // Remove all inactive/stale queries first to prevent race conditions
+    queryClient.removeQueries({ 
+      queryKey: ['time-summary'],
+      type: 'inactive'
+    });
+    queryClient.removeQueries({ 
+      queryKey: ['timeSummaryDetails'],
+      type: 'inactive'
+    });
+    
+    // Invalidate only the current query (will auto-refetch because it's active)
+    queryClient.invalidateQueries({ 
+      queryKey: ['time-summary', user?.companyId],
+      exact: false // Allow matching the rest of the query key
+    });
   };
 
   // Count active filters

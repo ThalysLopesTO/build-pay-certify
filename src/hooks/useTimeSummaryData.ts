@@ -179,8 +179,8 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
     },
     enabled: !!user?.companyId,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Disabled - prevents old cached queries from refetching
     staleTime: 60000, // 1 minute - data considered fresh longer
-    gcTime: 300000,
+    gcTime: 60000, // 1 minute - old queries are garbage collected faster
   });
 };

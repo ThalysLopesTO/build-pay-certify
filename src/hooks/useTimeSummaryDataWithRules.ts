@@ -3,7 +3,7 @@ import { JobsiteSummary, EmployeeSummary, useTimeSummaryData, TimeSummaryFilters
 import { calculateWorkedHours } from '@/lib/timeRules/calculateWorkedHours';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface EmployeeSummaryWithRules extends EmployeeSummary {
   total_raw_hours: number;
@@ -19,6 +19,7 @@ export interface JobsiteSummaryWithRules extends Omit<JobsiteSummary, 'employees
 
 export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: baseData, isLoading: isBaseLoading, ...rest } = useTimeSummaryData(filters);
   const [dataWithRules, setDataWithRules] = useState<JobsiteSummaryWithRules[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -34,10 +35,21 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
     [filters.dateRange, filters.jobsiteIds, filters.employeeIds]
   );
 
-  // Clear dataWithRules when filters change
+  // Clear dataWithRules AND remove stale cached queries when filters change
   useEffect(() => {
     setDataWithRules([]);
-  }, [filtersKey]);
+    
+    // Remove all inactive time-summary queries to prevent them from being refetched
+    // This is critical to prevent old unfiltered queries from overwriting filtered results
+    queryClient.removeQueries({ 
+      queryKey: ['time-summary'],
+      type: 'inactive' // Only remove queries that aren't currently being used
+    });
+    queryClient.removeQueries({ 
+      queryKey: ['time-summary-raw-timesheets'],
+      type: 'inactive'
+    });
+  }, [filtersKey, queryClient]);
 
   // Immediately derive data from baseData (without rules), then enhance with rules
   useEffect(() => {
