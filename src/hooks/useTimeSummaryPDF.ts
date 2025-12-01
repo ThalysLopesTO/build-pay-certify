@@ -15,9 +15,17 @@ interface TimeSummaryPDFParams {
   data: JobsiteSummaryWithRules[];
   companyName: string;
   companyLogo?: string | null;
+  companyAddress?: string | null;
+  companyPhone?: string | null;
+  companyEmail?: string | null;
   periodStart: Date;
   periodEnd: Date;
   timezone: string;
+  filters?: {
+    employeeNames?: string[];
+    jobsiteNames?: string[];
+    status?: string;
+  };
 }
 
 export const useTimeSummaryPDF = () => {
@@ -27,9 +35,13 @@ export const useTimeSummaryPDF = () => {
     data,
     companyName,
     companyLogo,
+    companyAddress,
+    companyPhone,
+    companyEmail,
     periodStart,
     periodEnd,
     timezone,
+    filters,
   }: TimeSummaryPDFParams) => {
     try {
       const doc = new jsPDF() as ExtendedJsPDF;
@@ -40,56 +52,112 @@ export const useTimeSummaryPDF = () => {
       const contentWidth = pageWidth - leftMargin - rightMargin;
 
       // ========== Header Section ==========
-      // Add company logo if available
+      const headerHeight = 45;
+      
+      // Add company logo on left
       if (companyLogo) {
         try {
           const logoBase64 = await fetchLogoAsBase64(companyLogo);
           if (logoBase64) {
-            doc.addImage(logoBase64, 'PNG', leftMargin, yPos, 30, 15);
+            doc.addImage(logoBase64, 'PNG', leftMargin, yPos, 40, 20);
           }
         } catch (error) {
           console.warn('Failed to load logo for PDF:', error);
         }
       }
 
-      // Company name
-      doc.setFontSize(18);
+      // Center - Report title
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text(companyName, pageWidth / 2, yPos + 10, { align: 'center' });
-      yPos += 20;
-
-      // Report title
-      doc.setFontSize(14);
-      doc.setTextColor(37, 99, 235); // Primary blue
-      doc.text('PAYROLL SUMMARY REPORT', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 3;
+      doc.setTextColor(37, 99, 235);
+      doc.text('PAYROLL SUMMARY REPORT', pageWidth / 2, yPos + 8, { align: 'center' });
       
-      // Underline
-      doc.setDrawColor(37, 99, 235);
-      doc.setLineWidth(0.5);
-      doc.line(pageWidth / 2 - 50, yPos, pageWidth / 2 + 50, yPos);
-      yPos += 10;
-
-      // Period and metadata
       doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
       doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
       doc.text(
         `Period: ${format(periodStart, 'MMM dd, yyyy')} → ${format(periodEnd, 'MMM dd, yyyy')}`,
         pageWidth / 2,
-        yPos,
+        yPos + 15,
         { align: 'center' }
       );
-      yPos += 5;
+
+      // Right - Company information block
+      const rightX = pageWidth - rightMargin;
+      let rightY = yPos;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text(companyName, rightX, rightY, { align: 'right' });
+      rightY += 5;
+      
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      
+      if (companyAddress) {
+        doc.text(companyAddress, rightX, rightY, { align: 'right' });
+        rightY += 4;
+      }
+      if (companyPhone) {
+        doc.text(companyPhone, rightX, rightY, { align: 'right' });
+        rightY += 4;
+      }
+      if (companyEmail) {
+        doc.text(companyEmail, rightX, rightY, { align: 'right' });
+      }
+
+      yPos += headerHeight;
+      
+      // Separator line
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.line(leftMargin, yPos, pageWidth - rightMargin, yPos);
+      yPos += 10;
+
+      // Metadata and filter indicators
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.setFont('helvetica', 'normal');
+      
       doc.text(
-        `Generated: ${format(new Date(), 'MMM dd, yyyy \'at\' h:mm a')}`,
-        pageWidth / 2,
-        yPos,
-        { align: 'center' }
+        `Generated: ${format(new Date(), 'MMM dd, yyyy \'at\' h:mm a')} • Times shown in ${timezone}`,
+        leftMargin,
+        yPos
       );
-      yPos += 5;
-      doc.text(`Timezone: ${timezone}`, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
+      yPos += 6;
+
+      // Active filters
+      if (filters) {
+        const filterTexts: string[] = [];
+        
+        if (filters.employeeNames && filters.employeeNames.length > 0) {
+          const empText = filters.employeeNames.length === 1 
+            ? filters.employeeNames[0] 
+            : `${filters.employeeNames.length} employees selected`;
+          filterTexts.push(`Employees: ${empText}`);
+        }
+        
+        if (filters.jobsiteNames && filters.jobsiteNames.length > 0) {
+          const jobText = filters.jobsiteNames.length === 1 
+            ? filters.jobsiteNames[0] 
+            : `${filters.jobsiteNames.length} projects selected`;
+          filterTexts.push(`Projects: ${jobText}`);
+        }
+        
+        if (filters.status && filters.status !== 'all') {
+          filterTexts.push(`Status: ${filters.status}`);
+        }
+        
+        if (filterTexts.length > 0) {
+          doc.setFont('helvetica', 'italic');
+          doc.text(`Filters: ${filterTexts.join(' • ')}`, leftMargin, yPos);
+          yPos += 6;
+        }
+      }
+      
+      yPos += 8;
 
       // ========== Summary Statistics ==========
       const totalJobsites = data.length;
@@ -308,24 +376,36 @@ export const useTimeSummaryPDF = () => {
       });
 
       // ========== Footer ==========
-      const addFooter = (pageNum: number) => {
+      const addFooter = (pageNum: number, totalPages: number) => {
         const pageHeight = doc.internal.pageSize.getHeight();
+        const footerY = pageHeight - 10;
+        
         doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
+        doc.setTextColor(120, 120, 120);
+        doc.setFont('helvetica', 'normal');
+        
+        // Left: Company name
+        doc.text(companyName, leftMargin, footerY);
+        
+        // Center: Generated date and timezone
         doc.text(
-          `Page ${pageNum} of ${doc.getNumberOfPages()}`,
-          pageWidth - rightMargin,
-          pageHeight - 10,
-          { align: 'right' }
+          `Generated ${format(new Date(), 'MMM dd, yyyy')} • Times shown in ${timezone}`,
+          pageWidth / 2,
+          footerY,
+          { align: 'center' }
         );
-        doc.text(companyName, leftMargin, pageHeight - 10);
+        
+        // Right: Page numbers
+        doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - rightMargin, footerY, {
+          align: 'right',
+        });
       };
 
       // Add footer to all pages
       const totalPages = doc.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
-        addFooter(i);
+        addFooter(i, totalPages);
       }
 
       // ========== Save PDF ==========

@@ -9,10 +9,19 @@ interface ExportParams {
   companyId: string;
   companyName: string;
   companyLogo?: string | null;
+  companyAddress?: string | null;
+  companyPhone?: string | null;
+  companyEmail?: string | null;
   dateRange: { start: Date; end: Date };
   jobsiteFilter?: string[];
   employeeFilter?: string[];
+  timezone: string;
   data: JobsiteSummaryWithRules[];
+  filters?: {
+    employeeNames?: string[];
+    jobsiteNames?: string[];
+    status?: string;
+  };
 }
 
 interface ExportResult {
@@ -233,9 +242,13 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
         data: params.data,
         companyName: params.companyName,
         companyLogo: params.companyLogo,
+        companyAddress: params.companyAddress,
+        companyPhone: params.companyPhone,
+        companyEmail: params.companyEmail,
         periodStart: params.dateRange.start,
         periodEnd: params.dateRange.end,
-        timezone: settings?.timezone || 'America/Toronto',
+        timezone: params.timezone,
+        filters: params.filters,
       });
     } catch (err) {
       const error = err instanceof Error ? err : new Error('PDF export failed');
