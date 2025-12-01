@@ -49,7 +49,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
       queryKey: ['time-summary-raw-timesheets'],
       type: 'inactive'
     });
-  }, [filtersKey, queryClient]);
+  }, [filtersKey]); // queryClient is stable, no need in deps
 
   // Immediately derive data from baseData (without rules), then enhance with rules
   useEffect(() => {

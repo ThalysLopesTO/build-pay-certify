@@ -156,7 +156,7 @@ export const TimeSummaryPage: React.FC = () => {
       console.log('[Time Summary] Cleaning up real-time subscription');
       unsubscribe.then(unsub => unsub?.());
     };
-  }, [user?.companyId, subscribe, queryClient]);
+  }, [user?.companyId, subscribe]); // queryClient is stable, no need in deps
 
   const handleManualRefresh = async () => {
     console.log('[Time Summary] Manual refresh triggered');
