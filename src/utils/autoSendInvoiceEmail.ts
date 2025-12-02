@@ -13,7 +13,8 @@ interface AutoSendEmailResult {
 export const autoSendInvoiceEmail = async (
   invoice: Invoice,
   settings: CompanySettings | null,
-  logoUrl: string | null
+  logoUrl: string | null,
+  portalUrl?: string
 ): Promise<AutoSendEmailResult> => {
   try {
     console.log('📧 Auto-sending invoice email:', {
@@ -58,6 +59,7 @@ export const autoSendInvoiceEmail = async (
       dueDate: format(new Date(invoice.due_date), 'MMM dd, yyyy'),
       companyLogoUrl: logoUrl || undefined,
       customMessage: invoice.notes || undefined,
+      portalUrl: portalUrl,
     });
 
     // Fallback plain text (for email clients that don't support HTML)
