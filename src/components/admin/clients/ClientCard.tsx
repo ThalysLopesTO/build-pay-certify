@@ -24,10 +24,22 @@ export function ClientCard({ client }: ClientCardProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isPortalLinkOpen, setIsPortalLinkOpen] = useState(false);
   const deleteClient = useDeleteClient();
+  
+  const isDeleting = deleteClient.isPending;
 
-  const handleDelete = () => {
-    deleteClient.mutate(client.id);
-    setIsDeleteOpen(false);
+  const handleDelete = async () => {
+    try {
+      await deleteClient.mutateAsync(client.id);
+      setIsDeleteOpen(false);
+    } catch (error) {
+      console.error('Failed to delete client:', error);
+    }
+  };
+
+  const handleDeleteDialogChange = (open: boolean) => {
+    if (!open && !isDeleting) {
+      setIsDeleteOpen(false);
+    }
   };
 
   return (
@@ -121,7 +133,7 @@ export function ClientCard({ client }: ClientCardProps) {
         client={client}
       />
 
-      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+      <AlertDialog open={isDeleteOpen} onOpenChange={handleDeleteDialogChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Client</AlertDialogTitle>
@@ -131,8 +143,10 @@ export function ClientCard({ client }: ClientCardProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
