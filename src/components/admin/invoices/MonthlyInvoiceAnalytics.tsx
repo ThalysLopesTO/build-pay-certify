@@ -200,7 +200,7 @@ export const MonthlyInvoiceAnalytics: React.FC<MonthlyInvoiceAnalyticsProps> = (
               <BarChart3 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-xl font-semibold">Monthly Analytics</CardTitle>
+              <CardTitle className="text-xl font-semibold"></CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Track invoice trends and revenue patterns
               </p>
