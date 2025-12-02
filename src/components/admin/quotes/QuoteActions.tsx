@@ -91,8 +91,8 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
 
   return (
     <div className="flex items-center gap-1">
-      {/* Convert to Invoice - Prominent placement for accepted quotes */}
-      {quote.status === 'accepted' && !quote.invoice_id && (
+      {/* Convert to Invoice - Prominent placement for accepted/approved quotes */}
+      {(quote.status === 'accepted' || quote.public_status === 'approved') && !quote.invoice_id && (
         <Button 
           variant="default" 
           size="sm"
@@ -184,8 +184,8 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
             </>
           )}
 
-          {/* Convert option for sent quotes */}
-          {quote.status === 'sent' && !quote.invoice_id && (
+          {/* Convert option for sent/accepted/approved quotes */}
+          {(quote.status === 'sent' || quote.status === 'accepted' || quote.public_status === 'approved') && !quote.invoice_id && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleConvertToInvoice}>
@@ -195,7 +195,7 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
             </>
           )}
           
-          {quote.status !== 'accepted' && (
+          {quote.status !== 'accepted' && quote.public_status !== 'approved' && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
