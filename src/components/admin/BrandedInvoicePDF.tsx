@@ -271,14 +271,15 @@ const generateInvoiceHTML = (
           </div>
         </div>
 
+        ${invoice.notes ? `
         <!-- TERMS -->
         <div style="font-size:11px; color:#6B7280; margin-bottom:16px;">
           <div style="font-weight:600; margin-bottom:4px;">Terms &amp; Conditions</div>
-          <div>
-            All claims relating to quantity or billing errors must be submitted in writing within 30 days of the invoice date.
-            Payment is due by the due date indicated above. Late payments may be subject to additional charges.
+          <div style="white-space:pre-line;">
+            ${invoice.notes}
           </div>
         </div>
+        ` : ''}
 
         <div style="text-align:center; font-size:11px; color:#6B7280; margin-top:8px;">
           <div style="font-weight:600; margin-bottom:2px;">Thank you for your business!</div>
