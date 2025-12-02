@@ -2,6 +2,7 @@ import { Invoice } from '@/components/admin/types/invoice';
 import { CompanySettings } from '@/hooks/useCompanySettings';
 import { sendEmail } from '@/utils/sendEmail';
 import { generateBrandedInvoicePDFBlob, blobToBase64 } from '@/components/admin/BrandedInvoicePDF';
+import { createInvoiceEmailHTML, getInvoiceEmailSubject } from '@/utils/invoiceEmailTemplate';
 import { format } from 'date-fns';
 
 interface AutoSendEmailResult {
@@ -45,8 +46,21 @@ export const autoSendInvoiceEmail = async (
       };
     }
 
-    // Generate email content
-    const subject = `Invoice #${invoice.invoice_number} from ${settings.company_name}`;
+    // Generate email content with branded HTML template
+    const subject = getInvoiceEmailSubject(settings.company_name, invoice.invoice_number);
+    
+    const html = createInvoiceEmailHTML({
+      clientName: invoice.client_company,
+      companyName: settings.company_name,
+      invoiceNumber: invoice.invoice_number,
+      invoiceTitle: invoice.title,
+      totalAmount: invoice.total_amount.toFixed(2),
+      dueDate: format(new Date(invoice.due_date), 'MMM dd, yyyy'),
+      companyLogoUrl: logoUrl || undefined,
+      customMessage: invoice.notes || undefined,
+    });
+
+    // Fallback plain text (for email clients that don't support HTML)
     const bodyText = `
 Dear ${invoice.client_company},
 
@@ -54,6 +68,7 @@ Please find attached Invoice #${invoice.invoice_number} for your review.
 
 Invoice Details:
 - Invoice Number: ${invoice.invoice_number}
+- Project: ${invoice.title}
 - Due Date: ${format(new Date(invoice.due_date), 'MMM dd, yyyy')}
 - Total Amount: $${invoice.total_amount.toFixed(2)}
 
@@ -72,11 +87,12 @@ ${settings.company_name}
     const { blob, filename } = await generateBrandedInvoicePDFBlob(invoice, settings, logoUrl);
     const base64Content = await blobToBase64(blob);
 
-    // Send email with PDF attachment
+    // Send email with branded HTML and PDF attachment
     const emailResult = await sendEmail({
       to: invoice.client_email,
       subject,
       bodyText,
+      customHtml: html,
       companyData: {
         name: settings.company_name,
         address: settings.company_address,

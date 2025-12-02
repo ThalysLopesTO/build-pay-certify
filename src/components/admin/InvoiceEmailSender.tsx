@@ -71,6 +71,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
       clientName: invoice.client_company,
       companyName: settings.company_name,
       invoiceNumber: invoice.invoice_number,
+      invoiceTitle: invoice.title,
       totalAmount: invoice.total_amount.toFixed(2),
       dueDate: format(new Date(invoice.due_date), 'MMM dd, yyyy'),
       portalUrl: portalUrl || undefined,
