@@ -117,7 +117,7 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
         <DropdownMenuContent align="end" className="w-48">
           {quote.status === 'invoiced' && quote.invoice_id && (
             <DropdownMenuItem onClick={() => {
-              window.location.href = `/admin?tab=invoices&invoice=${quote.invoice_id}`;
+              window.location.href = `/admin/dashboard?tab=invoices&invoice=${quote.invoice_id}`;
             }}>
               <FileText className="mr-2 h-4 w-4" />
               View Invoice

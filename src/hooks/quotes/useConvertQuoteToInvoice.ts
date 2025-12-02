@@ -112,7 +112,7 @@ export const useConvertQuoteToInvoice = () => {
       }
       
       // Navigate to invoice management with the new invoice
-      window.location.href = `/admin?tab=invoices&invoice=${result.invoiceId}`;
+      window.location.href = `/admin/dashboard?tab=invoices&invoice=${result.invoiceId}`;
     },
     onError: (error) => {
       toast({
