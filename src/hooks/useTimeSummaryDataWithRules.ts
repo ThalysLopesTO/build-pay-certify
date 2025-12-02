@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { JobsiteSummary, EmployeeSummary, useTimeSummaryData, TimeSummaryFilters } from './useTimeSummaryData';
 import { calculateWorkedHours } from '@/lib/timeRules/calculateWorkedHours';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +24,9 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
   const { data: queryResult, isLoading: isBaseLoading, isFetching: isBaseFetching, ...rest } = useTimeSummaryData(filters);
   const [dataWithRules, setDataWithRules] = useState<JobsiteSummaryWithRules[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
+  
+  // Track which filterHash the dataWithRules state was computed for
+  const lastValidatedHashRef = useRef<string | null>(null);
 
   // Create current filter hash for comparison
   const currentFilterHash = useMemo(() => {
@@ -109,6 +112,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
     }));
     
     setDataWithRules(immediateData);
+    lastValidatedHashRef.current = currentFilterHash;
   }, [baseData, isBaseFetching]);
 
   // Fetch raw timesheet data to calculate with rules
@@ -258,6 +262,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
         }));
 
         setDataWithRules(enhancedData);
+        lastValidatedHashRef.current = currentFilterHash;
       } catch (error) {
         console.error('Error calculating time rules:', error);
         // Fallback to base data
@@ -281,8 +286,37 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
     calculateRules();
   }, [baseData, rawTimesheets, user?.companyId, isBaseFetching, isTimesheetsLoading]);
 
+  // CRITICAL: Return validated data synchronously to prevent stale data exports
+  const validatedData = useMemo(() => {
+    // If baseData is null (filters don't match), return empty array
+    if (!baseData) {
+      console.log('[Time Summary Rules] No validated baseData - returning empty array');
+      return [];
+    }
+    
+    // If we have enhanced data with rules that matches current filters, use it
+    if (dataWithRules.length > 0 && currentFilterHash === lastValidatedHashRef.current) {
+      console.log('[Time Summary Rules] Returning enhanced data with rules');
+      return dataWithRules;
+    }
+    
+    // Otherwise return baseData transformed to WithRules format (immediate data)
+    console.log('[Time Summary Rules] Returning immediate baseData (rules not yet calculated)');
+    return baseData.map((jobsite) => ({
+      ...jobsite,
+      employees: jobsite.employees.map((employee): EmployeeSummaryWithRules => ({
+        ...employee,
+        total_raw_hours: employee.total_hours,
+        total_paid_hours: employee.total_hours,
+        issue_flags: [],
+        issue_count: 0,
+        days_worked: employee.total_punches,
+      })),
+    }));
+  }, [baseData, dataWithRules, currentFilterHash]);
+
   return {
-    data: dataWithRules,
+    data: validatedData,  // Always returns filter-validated data
     isLoading: isBaseLoading || isTimesheetsLoading || isCalculating || isBaseFetching,
     isFetching: isBaseFetching,
     ...rest,

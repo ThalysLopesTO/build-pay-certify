@@ -326,6 +326,7 @@ export const TimeSummaryPage: React.FC = () => {
                 size="sm"
                 disabled={isLoading || isExporting || !data || data.length === 0}
                 className="min-h-[44px]"
+                title={isLoading ? 'Loading data...' : !data || data.length === 0 ? 'No data to export' : 'Download report'}
               >
                 <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''} md:mr-2`} />
                 <span className="hidden md:inline">
