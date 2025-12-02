@@ -16,6 +16,9 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
   const { user } = useAuth();
   const createClient = useCreateClient();
   const updateClient = useUpdateClient();
+  
+  const isSubmitting = createClient.isPending || updateClient.isPending;
+  
   const [formData, setFormData] = useState({
     client_name: '',
     client_company: '',
@@ -47,24 +50,34 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (client) {
-      await updateClient.mutateAsync({
-        id: client.id,
-        ...formData,
-      });
-    } else {
-      if (!user?.companyId) return;
-      await createClient.mutateAsync({
-        company_id: user.companyId,
-        ...formData,
-      });
+    try {
+      if (client) {
+        await updateClient.mutateAsync({
+          id: client.id,
+          ...formData,
+        });
+      } else {
+        if (!user?.companyId) return;
+        await createClient.mutateAsync({
+          company_id: user.companyId,
+          ...formData,
+        });
+      }
+      onClose();
+    } catch (error) {
+      // Error handled by mutation's onError callback
+      console.error('Failed to save client:', error);
     }
+  };
 
-    onClose();
+  const handleOpenChange = (open: boolean) => {
+    if (!open && !isSubmitting) {
+      onClose();
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{client ? 'Edit Client' : 'New Client'}</DialogTitle>
@@ -122,11 +135,11 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit">
-              {client ? 'Update Client' : 'Create Client'}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : (client ? 'Update Client' : 'Create Client')}
             </Button>
           </div>
         </form>
