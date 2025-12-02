@@ -38,6 +38,7 @@ const QuoteTotalsDisplay: React.FC<QuoteTotalsDisplayProps> = ({
               type="number"
               value={formData.discount}
               onChange={(e) => handleInputChange('discount', Number(e.target.value))}
+              onFocus={(e) => e.target.select()}
               min="0"
               step="0.01"
               className="w-24"
@@ -54,6 +55,7 @@ const QuoteTotalsDisplay: React.FC<QuoteTotalsDisplayProps> = ({
               type="number"
               value={formData.tax}
               onChange={(e) => handleInputChange('tax', Number(e.target.value))}
+              onFocus={(e) => e.target.select()}
               min="0"
               max="100"
               step="0.01"
