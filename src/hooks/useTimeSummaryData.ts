@@ -152,7 +152,25 @@ export const useTimeSummaryData = (filters: TimeSummaryFilters) => {
 
       if (!headers || headers.length === 0) {
         console.log('No data returned from RPC');
-        return [];
+        // Return proper format with empty summaries but correct filterHash
+        const filterHash = JSON.stringify({
+          employeeIds: employeeFilter || [],
+          jobsiteIds: jobsiteFilter || [],
+          startDate,
+          endDate,
+          status: filters.status,
+        });
+        return {
+          summaries: [],
+          fetchedFilters: {
+            employeeIds: employeeFilter || [],
+            jobsiteIds: jobsiteFilter || [],
+            startDate,
+            endDate,
+            status: filters.status,
+          },
+          filterHash,
+        };
       }
 
       console.log(`Received ${headers.length} header rows from RPC`);
