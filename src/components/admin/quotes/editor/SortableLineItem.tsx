@@ -108,6 +108,7 @@ const SortableLineItem: React.FC<SortableLineItemProps> = ({
                 step="0.01"
                 required
                 autoComplete="off"
+                onFocus={(e) => e.target.select()}
                 className="h-11"
               />
             </div>
@@ -121,6 +122,7 @@ const SortableLineItem: React.FC<SortableLineItemProps> = ({
                 step="0.01"
                 required
                 autoComplete="off"
+                onFocus={(e) => e.target.select()}
                 className="h-11"
               />
             </div>
@@ -183,6 +185,7 @@ const SortableLineItem: React.FC<SortableLineItemProps> = ({
           step="0.01"
           required
           autoComplete="off"
+          onFocus={(e) => e.target.select()}
           className="h-9 text-right"
         />
       </div>
@@ -197,6 +200,7 @@ const SortableLineItem: React.FC<SortableLineItemProps> = ({
           step="0.01"
           required
           autoComplete="off"
+          onFocus={(e) => e.target.select()}
           className="h-9 text-right"
         />
       </div>

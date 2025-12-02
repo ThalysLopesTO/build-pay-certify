@@ -434,6 +434,7 @@ const CreateInvoiceForm = () => {
                               placeholder="1"
                               className="h-11 border-2 border-border/50 focus:border-purple-500 rounded-lg transition-all duration-200"
                               {...field}
+                              onFocus={(e) => e.target.select()}
                               onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                             />
                           </FormControl>
@@ -455,6 +456,7 @@ const CreateInvoiceForm = () => {
                               placeholder="0.00"
                               className="h-11 border-2 border-border/50 focus:border-purple-500 rounded-lg transition-all duration-200"
                               {...field}
+                              onFocus={(e) => e.target.select()}
                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             />
                           </FormControl>
@@ -542,6 +544,7 @@ const CreateInvoiceForm = () => {
                             placeholder="0"
                             className="h-11 border-2 border-border/50 focus:border-amber-500 rounded-xl transition-all duration-200 bg-background/50"
                             {...field}
+                            onFocus={(e) => e.target.select()}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           />
                         </FormControl>
@@ -563,6 +566,7 @@ const CreateInvoiceForm = () => {
                             placeholder="13"
                             className="h-11 border-2 border-border/50 focus:border-amber-500 rounded-xl transition-all duration-200 bg-background/50"
                             {...field}
+                            onFocus={(e) => e.target.select()}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           />
                         </FormControl>
