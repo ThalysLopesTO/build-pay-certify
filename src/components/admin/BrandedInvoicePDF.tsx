@@ -12,204 +12,257 @@ const generateInvoiceHTML = (
   logoBase64?: string | null,
 ): string => {
   const subtotal = invoice.subtotal ?? 0;
+  const discountPercent = invoice.discount ?? 0;
+  const taxPercent = invoice.tax ?? 0;
 
-  const discountPercent = invoice.discount || 0;
-  const discountAmount = discountPercent ? (subtotal * discountPercent) / 100 : 0;
+  const discountAmount = discountPercent > 0 ? subtotal * (discountPercent / 100) : 0;
 
-  const taxPercent = invoice.tax || 0;
   const taxableBase = subtotal - discountAmount;
-  const taxAmount = taxPercent ? (taxableBase * taxPercent) / 100 : 0;
+  const taxAmount = taxPercent > 0 ? taxableBase * (taxPercent / 100) : 0;
 
-  const total = invoice.total_amount ?? Number((taxableBase + taxAmount).toFixed(2));
+  const total = invoice.total_amount ?? taxableBase + taxAmount;
 
-  const status = (invoice.status || "draft").toLowerCase();
+  // Status badge styling
+  let statusLabel = "";
+  let statusBg = "";
+  let statusColor = "";
 
-  let statusLabel = "DRAFT";
-  let statusBg = "#e5e7eb";
-  let statusColor = "#374151";
-
-  if (status === "paid") {
-    statusLabel = "PAID";
-    statusBg = "#dcfce7";
-    statusColor = "#16a34a";
-  } else if (status === "sent") {
-    statusLabel = "SENT";
-    statusBg = "#dbeafe";
-    statusColor = "#1d4ed8";
-  } else if (status === "overdue") {
-    statusLabel = "OVERDUE";
-    statusBg = "#fee2e2";
-    statusColor = "#dc2626";
+  switch (invoice.status) {
+    case "paid":
+      statusLabel = "PAID";
+      statusBg = "#DCFCE7";
+      statusColor = "#166534";
+      break;
+    case "overdue":
+      statusLabel = "OVERDUE";
+      statusBg = "#FEE2E2";
+      statusColor = "#B91C1C";
+      break;
+    case "sent":
+      statusLabel = "SENT";
+      statusBg = "#DBEAFE";
+      statusColor = "#1D4ED8";
+      break;
+    case "draft":
+    default:
+      if (invoice.status) {
+        statusLabel = invoice.status.toUpperCase();
+        statusBg = "#E5E7EB";
+        statusColor = "#374151";
+      }
+      break;
   }
 
   return `
-    <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f3f4f6; padding:32px;">
-      <div style="max-width:900px; margin:0 auto; background:#ffffff; border-radius:16px; padding:32px 40px; box-shadow:0 10px 30px rgba(15,23,42,0.1);">
-        
+    <div style="
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background:#f3f4f6;
+      padding:32px 0;
+    ">
+      <div style="
+        max-width: 900px;
+        margin: 0 auto;
+        background:#ffffff;
+        border-radius:16px;
+        padding:32px 40px 40px;
+        box-shadow:0 10px 25px rgba(15,23,42,0.06);
+      ">
         <!-- HEADER -->
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:24px; margin-bottom:28px;">
-          <div style="display:flex; align-items:flex-start; gap:16px;">
-            ${logoBase64 ? `<img src="${logoBase64}" style="max-height:56px; object-fit:contain;"/>` : ""}
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:24px; margin-bottom:24px;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            ${logoBase64 ? `<img src="${logoBase64}" style="max-height:40px; width:auto; object-fit:contain;" />` : ""}
             <div>
-              <div style="font-size:22px; font-weight:700; color:#0f172a;">
+              <div style="font-size:22px; font-weight:700; color:#111827;">
                 ${companySettings.company_name}
-              </div>
-              <div style="font-size:11px; color:#6b7280; margin-top:4px; line-height:1.4;">
-                ${companySettings.company_address || ""}
-                ${companySettings.company_email ? `<br/>${companySettings.company_email}` : ""}
-                ${companySettings.company_phone ? `<br/>${companySettings.company_phone}` : ""}
-                ${companySettings.hst_number ? `<br/>HST: ${companySettings.hst_number}` : ""}
               </div>
             </div>
           </div>
-
           <div style="text-align:right;">
-            <div style="letter-spacing:0.25em; font-size:10px; text-transform:uppercase; color:#9ca3af; margin-bottom:4px;">
+            <div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:#9CA3AF; margin-bottom:4px;">
               Invoice
             </div>
-            <div style="font-size:22px; font-weight:800; color:#111827; margin-bottom:4px;">
+            <div style="font-size:20px; font-weight:700; color:#111827; margin-bottom:4px;">
               #${invoice.invoice_number}
             </div>
-            <div style="font-size:11px; color:#6b7280; margin-bottom:8px;">
+            <div style="font-size:12px; color:#6B7280;">
               <div>Date: <strong>${format(new Date(invoice.created_at), "MMM dd, yyyy")}</strong></div>
               <div>Due: <strong>${format(new Date(invoice.due_date), "MMM dd, yyyy")}</strong></div>
             </div>
-            <div style="display:inline-block; padding:4px 10px; border-radius:999px; font-size:10px; font-weight:600; background:${statusBg}; color:${statusColor}; text-transform:uppercase;">
-              ${statusLabel}
-            </div>
+            ${
+              statusLabel
+                ? `<div style="
+                      margin-top:8px;
+                      display:inline-block;
+                      padding:3px 10px;
+                      border-radius:999px;
+                      font-size:10px;
+                      font-weight:600;
+                      text-transform:uppercase;
+                      background:${statusBg};
+                      color:${statusColor};
+                    ">
+                      ${statusLabel}
+                   </div>`
+                : ""
+            }
           </div>
         </div>
 
-        <div style="height:1px; background:linear-gradient(to right, #e5e7eb, #f3f4f6); margin-bottom:20px;"></div>
+        <div style="height:1px; background:#E5E7EB; margin:8px 0 24px;"></div>
 
-        <!-- BILL TO / PAY TO / PROJECT -->
-        <div style="display:flex; justify-content:space-between; gap:24px; margin-bottom:24px; font-size:12px; color:#111827;">
-          <div style="flex:1;">
-            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:#9ca3af; margin-bottom:4px;">
+        <!-- INFO ROW -->
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          gap:24px;
+          font-size:12px;
+          color:#374151;
+          margin-bottom:24px;
+        ">
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#9CA3AF; margin-bottom:4px;">
               Invoice To
             </div>
-            <div style="font-weight:600; margin-bottom:2px;">${invoice.client_company || ""}</div>
-            <div style="color:#4b5563; line-height:1.4;">
-              ${invoice.client_address || ""}<br/>
-              ${invoice.client_phone || ""}<br/>
-              ${invoice.client_email || ""}
+            <div style="font-weight:600; margin-bottom:2px;">${invoice.client_company}</div>
+            <div style="white-space:pre-line;">
+              ${invoice.client_address || ""}
             </div>
+            <div>${invoice.client_phone || ""}</div>
+            <div>${invoice.client_email || ""}</div>
           </div>
-          <div style="flex:1;">
-            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:#9ca3af; margin-bottom:4px;">
+
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#9CA3AF; margin-bottom:4px;">
               Pay To
             </div>
             <div style="font-weight:600; margin-bottom:2px;">${companySettings.company_name}</div>
-            <div style="color:#4b5563; line-height:1.4;">
-              ${companySettings.company_address || ""}<br/>
-              ${companySettings.company_email || ""}<br/>
-              ${companySettings.company_phone || ""}
+            <div style="white-space:pre-line;">
+              ${companySettings.company_address || ""}
             </div>
+            <div>${companySettings.company_phone || ""}</div>
+            <div>${companySettings.company_email || ""}</div>
+            ${companySettings.hst_number ? `<div style="margin-top:2px;">HST: ${companySettings.hst_number}</div>` : ""}
           </div>
-          <div style="flex:0.9;">
-            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:#9ca3af; margin-bottom:4px;">
+
+          <div style="flex:0.8; min-width:0;">
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#9CA3AF; margin-bottom:4px;">
               Project
             </div>
-            <div style="color:#4b5563; line-height:1.4;">
+            <div style="font-weight:500;">
               ${invoice.jobsites?.name || "-"}
             </div>
           </div>
         </div>
 
         <!-- ITEMS TABLE -->
-        <div style="border-radius:12px; overflow:hidden; border:1px solid #e5e7eb; margin-bottom:24px;">
+        <div style="border-radius:10px; overflow:hidden; border:1px solid #E5E7EB; margin-bottom:24px;">
           <table style="width:100%; border-collapse:collapse; font-size:12px;">
             <thead>
-              <tr style="background:#020617; color:#f9fafb;">
-                <th style="padding:10px 14px; text-align:left; font-weight:600; width:45%;">Item Details</th>
-                <th style="padding:10px 14px; text-align:right; font-weight:600; width:18%;">Unit Price</th>
-                <th style="padding:10px 14px; text-align:center; font-weight:600; width:10%;">Qty</th>
-                <th style="padding:10px 14px; text-align:right; font-weight:600; width:18%;">Total</th>
+              <tr style="background:#111827; color:#ffffff;">
+                <th style="text-align:left; padding:10px 12px; font-weight:600;">Item Details</th>
+                <th style="text-align:right; padding:10px 12px; font-weight:600; width:90px;">Unit Price</th>
+                <th style="text-align:center; padding:10px 12px; font-weight:600; width:60px;">Qty</th>
+                <th style="text-align:right; padding:10px 12px; font-weight:600; width:110px;">Total</th>
               </tr>
             </thead>
             <tbody>
               ${
-                invoice.invoice_line_items && invoice.invoice_line_items.length
+                invoice.invoice_line_items && invoice.invoice_line_items.length > 0
                   ? invoice.invoice_line_items
                       .map(
                         (item, index) => `
-                  <tr style="background:${index % 2 === 0 ? "#ffffff" : "#f9fafb"}; color:#111827;">
-                    <td style="padding:9px 14px; border-top:1px solid #e5e7eb;">
-                      <div style="font-weight:500;">${item.description || "Item"}</div>
-                    </td>
-                    <td style="padding:9px 14px; border-top:1px solid #e5e7eb; text-align:right;">
-                      $${item.unit_price.toFixed(2)}
-                    </td>
-                    <td style="padding:9px 14px; border-top:1px solid #e5e7eb; text-align:center;">
-                      ${item.quantity}
-                    </td>
-                    <td style="padding:9px 14px; border-top:1px solid #e5e7eb; text-align:right;">
-                      $${item.amount.toFixed(2)}
-                    </td>
-                  </tr>
-                `,
+                      <tr style="background:${index % 2 === 0 ? "#FFFFFF" : "#F9FAFB"};">
+                        <td style="padding:9px 12px; border-top:1px solid #E5E7EB;">
+                          ${item.description}
+                        </td>
+                        <td style="padding:9px 12px; border-top:1px solid #E5E7EB; text-align:right;">
+                          $${item.unit_price.toFixed(2)}
+                        </td>
+                        <td style="padding:9px 12px; border-top:1px solid #E5E7EB; text-align:center;">
+                          ${item.quantity}
+                        </td>
+                        <td style="padding:9px 12px; border-top:1px solid #E5E7EB; text-align:right;">
+                          $${item.amount.toFixed(2)}
+                        </td>
+                      </tr>
+                    `,
                       )
                       .join("")
                   : `
-                  <tr>
-                    <td colspan="4" style="padding:12px 14px; text-align:center; color:#6b7280;">
-                      No items
-                    </td>
-                  </tr>
-                `
+                    <tr>
+                      <td colspan="4" style="padding:12px; text-align:center; color:#9CA3AF; border-top:1px solid #E5E7EB;">
+                        No items
+                      </td>
+                    </tr>
+                  `
               }
             </tbody>
           </table>
         </div>
 
-        <!-- PAYMENT + SUMMARY -->
-        <div style="display:flex; justify-content:space-between; gap:24px; margin-bottom:24px; font-size:12px;">
-          <div style="flex:1; border-radius:10px; border:1px solid #e5e7eb; padding:12px 14px; background:#f9fafb;">
-            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:#9ca3af; margin-bottom:4px;">
+        <!-- PAYMENT + TOTALS -->
+        <div style="display:flex; gap:24px; align-items:flex-start; margin-bottom:28px;">
+          <div style="
+            flex:1;
+            min-width:0;
+            border-radius:12px;
+            border:1px solid #E5E7EB;
+            background:#F9FAFB;
+            padding:14px 16px;
+            font-size:12px;
+            color:#374151;
+          ">
+            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.12em; color:#9CA3AF; margin-bottom:6px;">
               Payment Info
             </div>
-            <div style="color:#111827; line-height:1.5;">
-              <div>Please make payment to:</div>
-              <div style="font-weight:600;">${companySettings.company_name}</div>
-              ${companySettings.company_email ? `<div>${companySettings.company_email}</div>` : ""}
-              ${companySettings.company_phone ? `<div>${companySettings.company_phone}</div>` : ""}
-            </div>
+            <div>Please make payment to:</div>
+            <div style="font-weight:600;">${companySettings.company_name}</div>
+            <div>${companySettings.company_email || ""}</div>
+            <div>${companySettings.company_phone || ""}</div>
           </div>
 
-          <div style="flex:0.9;">
-            <table style="width:100%; font-size:12px; color:#111827;">
+          <div style="flex:0.9; min-width:0;">
+            <table style="width:100%; font-size:12px; color:#374151;">
               <tbody>
                 <tr>
                   <td style="padding:3px 0;">Subtotal</td>
-                  <td style="padding:3px 0; text-align:right;">$${subtotal.toFixed(2)}</td>
+                  <td style="padding:3px 0; text-align:right;">
+                    $${subtotal.toFixed(2)}
+                  </td>
                 </tr>
                 ${
-                  discountPercent
+                  discountPercent > 0
                     ? `
                   <tr>
-                    <td style="padding:3px 0;">Discount <span style="color:#6b7280;">(${discountPercent.toFixed(
-                      2,
-                    )}%)</span></td>
-                    <td style="padding:3px 0; text-align:right;">- $${discountAmount.toFixed(2)}</td>
+                    <td style="padding:3px 0;">
+                      Discount <span style="color:#9CA3AF;">(${discountPercent.toFixed(2)}%)</span>
+                    </td>
+                    <td style="padding:3px 0; text-align:right;">
+                      - $${discountAmount.toFixed(2)}
+                    </td>
                   </tr>
                   `
                     : ""
                 }
                 ${
-                  taxPercent
+                  taxPercent > 0
                     ? `
                   <tr>
-                    <td style="padding:3px 0;">Tax <span style="color:#6b7280;">(${taxPercent.toFixed(2)}%)</span></td>
-                    <td style="padding:3px 0; text-align:right;">+ $${taxAmount.toFixed(2)}</td>
+                    <td style="padding:3px 0;">
+                      Tax <span style="color:#9CA3AF;">(${taxPercent.toFixed(2)}%)</span>
+                    </td>
+                    <td style="padding:3px 0; text-align:right;">
+                      + $${taxAmount.toFixed(2)}
+                    </td>
                   </tr>
                   `
                     : ""
                 }
                 <tr>
-                  <td style="padding-top:8px; border-top:1px solid #e5e7eb; font-weight:700;">
+                  <td style="padding-top:8px; border-top:1px solid #E5E7EB; font-weight:600;">
                     Grand Total
                   </td>
-                  <td style="padding-top:8px; border-top:1px solid #e5e7eb; text-align:right; font-weight:700;">
+                  <td style="padding-top:8px; border-top:1px solid #E5E7EB; font-weight:700; text-align:right;">
                     $${total.toFixed(2)}
                   </td>
                 </tr>
@@ -219,17 +272,16 @@ const generateInvoiceHTML = (
         </div>
 
         <!-- TERMS -->
-        <div style="border-top:1px solid #e5e7eb; padding-top:14px; margin-top:8px; font-size:11px; color:#4b5563;">
+        <div style="font-size:11px; color:#6B7280; margin-bottom:16px;">
           <div style="font-weight:600; margin-bottom:4px;">Terms &amp; Conditions</div>
-          <div style="line-height:1.5;">
+          <div>
             All claims relating to quantity or billing errors must be submitted in writing within 30 days of the invoice date.
             Payment is due by the due date indicated above. Late payments may be subject to additional charges.
           </div>
         </div>
 
-        <!-- FOOTER -->
-        <div style="margin-top:18px; text-align:center; font-size:11px; color:#6b7280;">
-          <div style="font-weight:600; color:#111827;">Thank you for your business!</div>
+        <div style="text-align:center; font-size:11px; color:#6B7280; margin-top:8px;">
+          <div style="font-weight:600; margin-bottom:2px;">Thank you for your business!</div>
           <div>
             ${companySettings.company_email || ""}${
               companySettings.company_email && companySettings.company_phone ? " | " : ""
