@@ -65,6 +65,7 @@ const QuoteEditorTotalsCard: React.FC<QuoteEditorTotalsCardProps> = ({
               type="number" 
               value={formData.discount}
               onChange={(e) => handleInputChange('discount', Number(e.target.value))}
+              onFocus={(e) => e.target.select()}
               className="w-24 h-8 text-right"
               min="0"
               step="0.01"
@@ -82,6 +83,7 @@ const QuoteEditorTotalsCard: React.FC<QuoteEditorTotalsCardProps> = ({
               type="number" 
               value={formData.tax}
               onChange={(e) => handleInputChange('tax', Number(e.target.value))}
+              onFocus={(e) => e.target.select()}
               className="w-20 h-8 text-right"
               min="0"
               max="100"
