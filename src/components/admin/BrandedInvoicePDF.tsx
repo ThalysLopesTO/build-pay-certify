@@ -112,7 +112,7 @@ const generateInvoiceHTML = (
               ">
                 ✓ Paid
               </div>`
-                : invoice.status === "overdue"
+                : invoice.status === "expired"
                   ? `
               <div style="
                 margin-top:10px;
