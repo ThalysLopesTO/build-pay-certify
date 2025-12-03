@@ -13,6 +13,13 @@ interface RuleBasedHoursProps {
   date: string;
 }
 
+// Convert decimal hours to hours and minutes format
+const formatDecimalHours = (decimalHours: number): string => {
+  const hours = Math.floor(decimalHours);
+  const minutes = Math.round((decimalHours - hours) * 60);
+  return `${hours}h ${minutes}m`;
+};
+
 // Flag descriptions for user-friendly display
 const FLAG_DESCRIPTIONS: Record<string, string> = {
   EARLY_PUNCH: 'Punched before jobsite start time',
@@ -95,7 +102,7 @@ export const RuleBasedHours: React.FC<RuleBasedHoursProps> = ({
         <div className="flex items-center gap-1">
           <Clock className="h-3 w-3 text-primary" />
           <span className="text-xs text-muted-foreground">
-            By rules: <span className="font-semibold text-foreground">{calculated.paidHours.toFixed(2)} h</span>
+            By rules: <span className="font-semibold text-foreground">{formatDecimalHours(calculated.paidHours)}</span>
           </span>
         </div>
         
@@ -176,7 +183,7 @@ export const RuleBasedHoursCell: React.FC<RuleBasedHoursProps> = (props) => {
   return (
     <TooltipProvider>
       <div className="flex items-center gap-2">
-        <span className="font-semibold">{calculated.paidHours.toFixed(2)} h</span>
+        <span className="font-semibold">{formatDecimalHours(calculated.paidHours)}</span>
         {calculated.flags.length > 0 && (
           <Tooltip>
             <TooltipTrigger asChild>
