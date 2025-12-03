@@ -78,13 +78,13 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{client ? 'Edit Client' : 'New Client'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="client_name">Client Name *</Label>
               <Input
@@ -92,6 +92,7 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
                 value={formData.client_name}
                 onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
                 required
+                className="h-11"
               />
             </div>
 
@@ -101,6 +102,7 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
                 id="client_company"
                 value={formData.client_company}
                 onChange={(e) => setFormData({ ...formData, client_company: e.target.value })}
+                className="h-11"
               />
             </div>
           </div>
@@ -113,6 +115,7 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
               value={formData.client_email}
               onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
               required
+              className="h-11"
             />
           </div>
 
@@ -122,6 +125,7 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
               id="client_phone"
               value={formData.client_phone}
               onChange={(e) => setFormData({ ...formData, client_phone: e.target.value })}
+              className="h-11"
             />
           </div>
 
@@ -131,14 +135,25 @@ export function ClientFormModal({ isOpen, onClose, client }: ClientFormModalProp
               id="client_address"
               value={formData.client_address}
               onChange={(e) => setFormData({ ...formData, client_address: e.target.value })}
+              className="h-11"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+          <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end md:gap-2 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose} 
+              disabled={isSubmitting}
+              className="w-full md:w-auto h-11"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="w-full md:w-auto h-11"
+            >
               {isSubmitting ? 'Saving...' : (client ? 'Update Client' : 'Create Client')}
             </Button>
           </div>
