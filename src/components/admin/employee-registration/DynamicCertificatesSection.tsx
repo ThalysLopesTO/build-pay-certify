@@ -58,17 +58,17 @@ const DynamicCertificatesSection: React.FC<DynamicCertificatesSectionProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between border-b pb-2">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b pb-3">
         <div className="flex items-center space-x-2">
           <Shield className="h-4 w-4 text-blue-600" />
-          <h3 className="text-lg font-semibold">Certificates</h3>
+          <h3 className="text-base md:text-lg font-semibold">Certificates</h3>
         </div>
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={addCertificate}
-          className="flex items-center space-x-1"
+          className="flex items-center justify-center space-x-1 w-full md:w-auto"
         >
           <Plus className="h-4 w-4" />
           <span>Add Certificate</span>
@@ -83,10 +83,10 @@ const DynamicCertificatesSection: React.FC<DynamicCertificatesSectionProps> = ({
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         {fields.map((field, index) => (
-          <Card key={field.id} className="p-4">
-            <div className="space-y-4">
+          <Card key={field.id} className="p-3 md:p-4">
+            <div className="space-y-3 md:space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-medium text-sm text-slate-700">Certificate #{index + 1}</h4>
                 <Button
@@ -94,13 +94,13 @@ const DynamicCertificatesSection: React.FC<DynamicCertificatesSectionProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => remove(index)}
-                  className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-800 hover:bg-red-50 h-8 w-8 p-0"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <FormField
                   control={form.control}
                   name={`certificates.${index}.name`}
@@ -186,9 +186,9 @@ const DynamicCertificatesSection: React.FC<DynamicCertificatesSectionProps> = ({
       </div>
 
       {fields.length > 0 && (
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <p className="text-sm text-blue-700">
-            <Shield className="h-4 w-4 inline mr-1" />
+        <div className="bg-blue-50 p-3 md:p-4 rounded-lg">
+          <p className="text-xs md:text-sm text-blue-700">
+            <Shield className="h-3 w-3 md:h-4 md:w-4 inline mr-1" />
             Certificate expiry alerts will be triggered 30 days before any certificate expires (certificates with "No Expiry" will be excluded from alerts).
           </p>
         </div>

@@ -150,48 +150,48 @@ const PhotoUploadField: React.FC<PhotoUploadFieldProps> = ({ form }) => {
               ) : (
                 <div className="space-y-3">
                   {/* Camera capture options */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 md:gap-3">
+                    {/* Mobile Camera Capture - shown first on mobile */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleMobileCameraClick}
+                      className="h-14 md:h-16 border-dashed border-2 hover:border-green-400 hover:bg-green-50 sm:hidden"
+                    >
+                      <div className="flex flex-col items-center space-y-0.5 md:space-y-1">
+                        <Smartphone className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
+                        <span className="text-xs md:text-sm font-medium">Camera</span>
+                        <span className="text-[10px] md:text-xs text-muted-foreground">Take Photo</span>
+                      </div>
+                    </Button>
+                    
                     {/* Desktop/Webcam Capture */}
                     {isCameraSupported && (
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setShowCameraModal(true)}
-                        className="h-16 border-dashed border-2 hover:border-blue-400 hover:bg-blue-50"
+                        className="h-14 md:h-16 border-dashed border-2 hover:border-blue-400 hover:bg-blue-50 hidden sm:flex"
                       >
-                        <div className="flex flex-col items-center space-y-1">
-                          <Camera className="h-5 w-5 text-blue-600" />
-                          <span className="text-sm font-medium">Take Photo</span>
-                          <span className="text-xs text-muted-foreground">Use camera</span>
+                        <div className="flex flex-col items-center space-y-0.5 md:space-y-1">
+                          <Camera className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
+                          <span className="text-xs md:text-sm font-medium">Take Photo</span>
+                          <span className="text-[10px] md:text-xs text-muted-foreground">Use camera</span>
                         </div>
                       </Button>
                     )}
-                    
-                    {/* Mobile Camera Capture */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleMobileCameraClick}
-                      className="h-16 border-dashed border-2 hover:border-green-400 hover:bg-green-50 sm:hidden"
-                    >
-                      <div className="flex flex-col items-center space-y-1">
-                        <Smartphone className="h-5 w-5 text-green-600" />
-                        <span className="text-sm font-medium">Camera</span>
-                        <span className="text-xs text-muted-foreground">Mobile</span>
-                      </div>
-                    </Button>
                     
                     {/* File Upload */}
                     <Button
                       type="button"
                       variant="outline"
                       onClick={handleButtonClick}
-                      className="h-16 border-dashed border-2 hover:border-orange-400 hover:bg-orange-50"
+                      className="h-14 md:h-16 border-dashed border-2 hover:border-orange-400 hover:bg-orange-50"
                     >
-                      <div className="flex flex-col items-center space-y-1">
-                        <Upload className="h-5 w-5 text-orange-600" />
-                        <span className="text-sm font-medium">Upload File</span>
-                        <span className="text-xs text-muted-foreground">JPG, PNG up to 2MB</span>
+                      <div className="flex flex-col items-center space-y-0.5 md:space-y-1">
+                        <Upload className="h-4 w-4 md:h-5 md:w-5 text-orange-600" />
+                        <span className="text-xs md:text-sm font-medium">Upload</span>
+                        <span className="text-[10px] md:text-xs text-muted-foreground">JPG, PNG</span>
                       </div>
                     </Button>
                   </div>
