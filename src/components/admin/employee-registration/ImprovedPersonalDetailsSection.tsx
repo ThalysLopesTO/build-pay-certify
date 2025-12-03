@@ -38,17 +38,17 @@ const ImprovedPersonalDetailsSection: React.FC<ImprovedPersonalDetailsSectionPro
   const availableRoles = getAvailableRoles();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Personal Information Card */}
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center space-x-2 text-lg">
-            <User className="h-5 w-5 text-blue-600" />
+        <CardHeader className="pb-2 md:pb-4 p-4 md:p-6">
+          <CardTitle className="flex items-center space-x-2 text-base md:text-lg">
+            <User className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
             <span>Personal Information</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CardContent className="space-y-3 md:space-y-4 p-4 md:p-6 pt-0 md:pt-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <FormField
               control={form.control}
               name="firstName"
@@ -87,13 +87,13 @@ const ImprovedPersonalDetailsSection: React.FC<ImprovedPersonalDetailsSectionPro
 
       {/* Contact Information Card */}
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center space-x-2 text-lg">
-            <Mail className="h-5 w-5 text-green-600" />
+        <CardHeader className="pb-2 md:pb-4 p-4 md:p-6">
+          <CardTitle className="flex items-center space-x-2 text-base md:text-lg">
+            <Mail className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
             <span>Contact Information</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 md:space-y-4 p-4 md:p-6 pt-0 md:pt-0">
           <FormField
             control={form.control}
             name="email"
@@ -134,7 +134,7 @@ const ImprovedPersonalDetailsSection: React.FC<ImprovedPersonalDetailsSectionPro
             )}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 pt-2">
             <FormField
               control={form.control}
               name="phoneNumber"
@@ -174,14 +174,14 @@ const ImprovedPersonalDetailsSection: React.FC<ImprovedPersonalDetailsSectionPro
 
       {/* Work Details Card */}
       <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center space-x-2 text-lg">
-            <Briefcase className="h-5 w-5 text-orange-600" />
+        <CardHeader className="pb-2 md:pb-4 p-4 md:p-6">
+          <CardTitle className="flex items-center space-x-2 text-base md:text-lg">
+            <Briefcase className="h-4 w-4 md:h-5 md:w-5 text-orange-600" />
             <span>Work Details</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <CardContent className="p-4 md:p-6 pt-0 md:pt-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <FormField
               control={form.control}
               name="workerType"
