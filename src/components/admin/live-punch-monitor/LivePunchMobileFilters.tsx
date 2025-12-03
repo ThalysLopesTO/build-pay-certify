@@ -4,9 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Filter, Calendar as CalendarIcon, Briefcase, Users, CheckCircle, X } from 'lucide-react';
+import { Filter, Calendar as CalendarIcon, Briefcase, Users, CheckCircle, X, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/hooks/new/useUsers';
@@ -39,6 +38,7 @@ const LivePunchMobileFilters: React.FC<LivePunchMobileFiltersProps> = ({
   hasActiveFilters,
 }) => {
   const [open, setOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const { data } = useEmployees();
   const employees = data?.activeEmployees ?? [];
 
@@ -97,36 +97,49 @@ const LivePunchMobileFilters: React.FC<LivePunchMobileFiltersProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setSelectedDate(null)}
+                  onClick={() => {
+                    setSelectedDate(null);
+                    setIsCalendarOpen(false);
+                  }}
                   className="h-7 px-2 text-xs"
                 >
                   Clear
                 </Button>
               )}
             </div>
-            <Popover modal={false}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full h-12 justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, 'PPP') : 'All Dates'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+            {/* Date button that toggles calendar visibility */}
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full h-12 justify-between text-left font-normal",
+                !selectedDate && "text-muted-foreground"
+              )}
+              onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+            >
+              <span className="flex items-center">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, 'PPP') : 'All Dates'}
+              </span>
+              <ChevronDown className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                isCalendarOpen && "rotate-180"
+              )} />
+            </Button>
+            
+            {/* Inline calendar - shown when expanded */}
+            {isCalendarOpen && (
+              <div className="border rounded-lg mt-2 bg-background overflow-hidden">
                 <Calendar
                   mode="single"
                   selected={selectedDate || undefined}
-                  onSelect={(date) => setSelectedDate(date || null)}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
+                  onSelect={(date) => {
+                    setSelectedDate(date || null);
+                    setIsCalendarOpen(false);
+                  }}
+                  className="p-3 pointer-events-auto"
                 />
-              </PopoverContent>
-            </Popover>
+              </div>
+            )}
           </div>
 
           {/* Jobsite Filter */}
