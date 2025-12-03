@@ -21,6 +21,9 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { InvoiceEmailSender } from './InvoiceEmailSender';
 import { InvoiceDeleteConfirmDialog } from './InvoiceDeleteConfirmDialog';
 import { MonthlyInvoiceAnalytics } from './invoices/MonthlyInvoiceAnalytics';
+import { useIsMobile } from '@/hooks/use-mobile';
+import InvoiceTrackerMobileCard from './invoices/InvoiceTrackerMobileCard';
+import InvoiceTrackerMobileFilters from './invoices/InvoiceTrackerMobileFilters';
 
 const InvoiceTracker = () => {
   const navigate = useNavigate();
@@ -30,6 +33,7 @@ const InvoiceTracker = () => {
   const { settings: companySettings } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [jobsiteFilter, setJobsiteFilter] = useState('all');
@@ -205,76 +209,97 @@ const InvoiceTracker = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 overflow-x-hidden">
       {/* Enhanced Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="invoice-summary-card rounded-xl border-0">
-          <CardContent className="p-6">
+      <div className={`grid gap-4 md:gap-6 ${isMobile ? 'grid-cols-2 px-4' : 'grid-cols-1 md:grid-cols-4'}`}>
+        <Card className={`invoice-summary-card rounded-xl border-0 ${isMobile ? '' : ''}`}>
+          <CardContent className={isMobile ? 'p-3' : 'p-6'}>
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Total Invoices</p>
-                <p className="text-3xl font-bold text-foreground">{filteredInvoices.length}</p>
+              <div className={isMobile ? 'space-y-1' : 'space-y-2'}>
+                <p className={`font-medium text-muted-foreground uppercase tracking-wide ${isMobile ? 'text-xs' : 'text-sm'}`}>Total</p>
+                <p className={`font-bold text-foreground ${isMobile ? 'text-xl' : 'text-3xl'}`}>{filteredInvoices.length}</p>
               </div>
-              <div className="p-3 rounded-full bg-primary/10">
-                <FileText className="h-6 w-6 text-primary" />
+              <div className={`rounded-full bg-primary/10 ${isMobile ? 'p-2' : 'p-3'}`}>
+                <FileText className={`text-primary ${isMobile ? 'h-4 w-4' : 'h-6 w-6'}`} />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="invoice-summary-card rounded-xl border-0">
-          <CardContent className="p-6">
+          <CardContent className={isMobile ? 'p-3' : 'p-6'}>
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Total Paid</p>
-                <p className="text-3xl font-bold text-emerald-600">${summaryStats.paid.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
+              <div className={isMobile ? 'space-y-1' : 'space-y-2'}>
+                <p className={`font-medium text-muted-foreground uppercase tracking-wide ${isMobile ? 'text-xs' : 'text-sm'}`}>Paid</p>
+                <p className={`font-bold text-emerald-600 ${isMobile ? 'text-lg' : 'text-3xl'}`}>${summaryStats.paid.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
               </div>
-              <div className="p-3 rounded-full bg-emerald-100">
-                <DollarSign className="h-6 w-6 text-emerald-600" />
+              <div className={`rounded-full bg-emerald-100 ${isMobile ? 'p-2' : 'p-3'}`}>
+                <DollarSign className={`text-emerald-600 ${isMobile ? 'h-4 w-4' : 'h-6 w-6'}`} />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="invoice-summary-card rounded-xl border-0">
-          <CardContent className="p-6">
+          <CardContent className={isMobile ? 'p-3' : 'p-6'}>
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Pending</p>
-                <p className="text-3xl font-bold text-amber-600">${summaryStats.pending.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
+              <div className={isMobile ? 'space-y-1' : 'space-y-2'}>
+                <p className={`font-medium text-muted-foreground uppercase tracking-wide ${isMobile ? 'text-xs' : 'text-sm'}`}>Pending</p>
+                <p className={`font-bold text-amber-600 ${isMobile ? 'text-lg' : 'text-3xl'}`}>${summaryStats.pending.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
               </div>
-              <div className="p-3 rounded-full bg-amber-100">
-                <Clock className="h-6 w-6 text-amber-600" />
+              <div className={`rounded-full bg-amber-100 ${isMobile ? 'p-2' : 'p-3'}`}>
+                <Clock className={`text-amber-600 ${isMobile ? 'h-4 w-4' : 'h-6 w-6'}`} />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="invoice-summary-card rounded-xl border-0">
-          <CardContent className="p-6">
+          <CardContent className={isMobile ? 'p-3' : 'p-6'}>
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Overdue</p>
-                <p className="text-3xl font-bold text-red-600">${summaryStats.overdue.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
+              <div className={isMobile ? 'space-y-1' : 'space-y-2'}>
+                <p className={`font-medium text-muted-foreground uppercase tracking-wide ${isMobile ? 'text-xs' : 'text-sm'}`}>Overdue</p>
+                <p className={`font-bold text-red-600 ${isMobile ? 'text-lg' : 'text-3xl'}`}>${summaryStats.overdue.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
               </div>
-              <div className="p-3 rounded-full bg-red-100">
-                <Bell className="h-6 w-6 text-red-600" />
+              <div className={`rounded-full bg-red-100 ${isMobile ? 'p-2' : 'p-3'}`}>
+                <Bell className={`text-red-600 ${isMobile ? 'h-4 w-4' : 'h-6 w-6'}`} />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Monthly Invoice Analytics */}
-      <MonthlyInvoiceAnalytics 
-        invoices={filteredInvoices}
-        statusFilter={statusFilter}
-        dateFrom={dateFrom}
-        dateTo={dateTo}
-      />
+      {/* Monthly Invoice Analytics - Hide on mobile for cleaner UI */}
+      {!isMobile && (
+        <MonthlyInvoiceAnalytics 
+          invoices={filteredInvoices}
+          statusFilter={statusFilter}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+        />
+      )}
 
-      {/* Enhanced Filters and Actions */}
-      <Card className="invoice-filter-toolbar rounded-xl border-0">
+      {/* Mobile Filters */}
+      {isMobile && (
+        <InvoiceTrackerMobileFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          jobsiteFilter={jobsiteFilter}
+          onJobsiteFilterChange={setJobsiteFilter}
+          dateFrom={dateFrom}
+          onDateFromChange={setDateFrom}
+          dateTo={dateTo}
+          onDateToChange={setDateTo}
+          jobsites={jobsites}
+          onClearFilters={clearFilters}
+        />
+      )}
+
+      {/* Desktop Filters and Table */}
+      {!isMobile && (
+        <Card className="invoice-filter-toolbar rounded-xl border-0">
         <CardHeader className="pb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <div className="flex items-center space-x-3">
@@ -562,12 +587,37 @@ const InvoiceTracker = () => {
                 {searchTerm || statusFilter !== 'all' || jobsiteFilter !== 'all' || dateFrom || dateTo
                   ? 'Try adjusting your filters to see more results.'
                   : 'Create your first invoice to get started with tracking your billing.'
-                }
-              </p>
-            </div>
-          )}
+              }
+            </p>
+          </div>
+        )}
         </CardContent>
       </Card>
+      )}
+
+      {/* Mobile Invoice List */}
+      {isMobile && (
+        <div className="px-4 space-y-3">
+          {filteredInvoices.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">No invoices found</p>
+            </div>
+          ) : (
+            filteredInvoices.map((invoice) => (
+              <InvoiceTrackerMobileCard
+                key={invoice.id}
+                invoice={invoice}
+                onView={handleViewInvoice}
+                onEmail={handleSendEmail}
+                onStatusChange={handleStatusUpdate}
+                onDownload={handleDownloadPDF}
+                onDelete={canDeleteInvoices ? handleDeleteInvoice : undefined}
+              />
+            ))
+          )}
+        </div>
+      )}
 
       {/* Invoice Email Dialog */}
       {emailInvoice && (
