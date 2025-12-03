@@ -1251,7 +1251,7 @@ const IncomeExpensesManagement = () => {
 
       {/* Create/Edit Dialog/Drawer - Responsive */}
       {isMobile ? (
-        <Drawer open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Drawer open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} shouldScaleBackground={false}>
           <DrawerContent className="max-h-[85vh] overflow-hidden">
             <DrawerHeader className="border-b pb-4">
               <DrawerTitle>
