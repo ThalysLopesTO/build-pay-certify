@@ -269,6 +269,29 @@ const IncomeExpensesManagement = () => {
     }
   };
 
+  // Prepare form for new transaction without affecting dialog state
+  const prepareNewTransaction = (type: 'income' | 'expense') => {
+    setFormData({
+      expense_title: '',
+      category_id: '',
+      vendor_payee: '',
+      expense_date: new Date(),
+      amount: '',
+      payment_status: 'unpaid',
+      payment_method: '',
+      notes: '',
+      is_recurring: false,
+      recurrence_frequency: 'monthly',
+      start_date: null,
+      end_date: null,
+      attachmentFile: null,
+      existingAttachmentUrl: null
+    });
+    setEditingTransaction(null);
+    setTransactionType(type);
+  };
+
+  // Reset form and close dialog (for cancel button)
   const resetForm = () => {
     setFormData({
       expense_title: '',
@@ -583,14 +606,14 @@ const IncomeExpensesManagement = () => {
               onCategoriesChange={fetchCategories}
             />
             <Button 
-              onClick={() => { setTransactionType('income'); resetForm(); setIsCreateDialogOpen(true); }} 
+              onClick={() => { prepareNewTransaction('income'); setIsCreateDialogOpen(true); }} 
               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Income
             </Button>
             <Button 
-              onClick={() => { setTransactionType('expense'); resetForm(); setIsCreateDialogOpen(true); }} 
+              onClick={() => { prepareNewTransaction('expense'); setIsCreateDialogOpen(true); }} 
               className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -631,14 +654,14 @@ const IncomeExpensesManagement = () => {
           {/* Mobile Action Buttons - Full Width */}
           <div className="space-y-2">
             <Button 
-              onClick={() => { setTransactionType('income'); resetForm(); setIsCreateDialogOpen(true); }}
+              onClick={() => { prepareNewTransaction('income'); setIsCreateDialogOpen(true); }}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all duration-200 h-11"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Income
             </Button>
             <Button 
-              onClick={() => { setTransactionType('expense'); resetForm(); setIsCreateDialogOpen(true); }}
+              onClick={() => { prepareNewTransaction('expense'); setIsCreateDialogOpen(true); }}
               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200 h-11"
             >
               <Plus className="h-4 w-4 mr-2" />
