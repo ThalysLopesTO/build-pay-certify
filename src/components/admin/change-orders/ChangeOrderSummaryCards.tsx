@@ -65,21 +65,21 @@ const ChangeOrderSummaryCards: React.FC<ChangeOrderSummaryCardsProps> = ({ order
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
       {summaryCards.map((card, index) => (
         <Card key={index} className="hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">
+          <CardContent className="p-3 md:p-6">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs md:text-sm font-medium text-muted-foreground mb-0.5 md:mb-1 truncate">
                   {card.title}
                 </p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-lg md:text-2xl font-bold text-foreground truncate">
                   {card.value}
                 </p>
               </div>
-              <div className={`p-3 rounded-lg ${card.bgColor}`}>
-                <card.icon className={`h-5 w-5 ${card.color}`} />
+              <div className={`p-2 md:p-3 rounded-lg ${card.bgColor} shrink-0`}>
+                <card.icon className={`h-4 w-4 md:h-5 md:w-5 ${card.color}`} />
               </div>
             </div>
           </CardContent>
