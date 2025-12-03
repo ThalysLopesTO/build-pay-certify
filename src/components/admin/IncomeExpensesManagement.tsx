@@ -47,6 +47,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { usePrintIncomeExpenses, PrintOption } from '@/hooks/usePrintIncomeExpenses';
 import * as XLSX from 'xlsx';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsPWAStandalone } from '@/hooks/useIsPWAStandalone';
 import { TransactionMobileList } from './income-expenses/TransactionMobileList';
 import PullToRefresh from 'react-simple-pull-to-refresh';
 
@@ -54,6 +55,7 @@ import PullToRefresh from 'react-simple-pull-to-refresh';
 const IncomeExpensesManagement = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const isPWAStandalone = useIsPWAStandalone();
   const [transactions, setTransactions] = useState<TransactionWithHierarchy[]>([]);
   
   const { 
@@ -1250,7 +1252,8 @@ const IncomeExpensesManagement = () => {
       )}
 
       {/* Create/Edit Dialog/Drawer - Responsive */}
-      {isMobile ? (
+      {/* Use Dialog in PWA standalone mode to avoid vaul drawer bug */}
+      {isMobile && !isPWAStandalone ? (
         <Drawer open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} shouldScaleBackground={false}>
           <DrawerContent className="max-h-[85vh] overflow-hidden">
             <DrawerHeader className="border-b pb-4">
@@ -1566,7 +1569,10 @@ const IncomeExpensesManagement = () => {
         </Drawer>
       ) : (
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="max-w-xl sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className={cn(
+            "max-w-xl sm:max-w-2xl max-h-[90vh] overflow-y-auto",
+            isMobile && isPWAStandalone && "w-[95vw] h-[85vh] max-w-none"
+          )}>
             <DialogHeader>
               <DialogTitle>
                 {editingTransaction 
