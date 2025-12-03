@@ -18,6 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, X, Calendar, MapPin, User, Building, Mail, Phone, Hash, FileText, DollarSign, Save, Send, Download, Paperclip } from 'lucide-react';
 import ClientSelector from './quotes/editor/ClientSelector';
 import type { Client } from '@/hooks/useClients';
+import { useIsMobile } from '@/hooks/use-mobile';
+import InvoiceMobileLineItem from './invoices/InvoiceMobileLineItem';
 
 interface InvoiceFormData {
   title: string;
@@ -49,6 +51,7 @@ const CreateInvoiceForm = () => {
   const [isDraft, setIsDraft] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const isMobile = useIsMobile();
   
   const form = useForm<InvoiceFormData>({
     defaultValues: {
@@ -198,23 +201,23 @@ const CreateInvoiceForm = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto p-6">
+    <div className={`space-y-4 md:space-y-8 max-w-7xl mx-auto ${isMobile ? 'px-0 pb-32' : 'p-6'}`}>
       {/* Client Details Section */}
-      <Card className="shadow-xl border-0 bg-gradient-to-r from-background to-muted/20 overflow-hidden">
+      <Card className={`shadow-xl border-0 bg-gradient-to-r from-background to-muted/20 overflow-hidden ${isMobile ? 'rounded-none border-x-0' : ''}`}>
         <div className="bg-gradient-to-r from-blue-500/10 to-blue-600/10 border-b border-blue-200/30">
-          <CardHeader className="pb-4">
+          <CardHeader className={`pb-4 ${isMobile ? 'px-4 py-3' : ''}`}>
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-blue-500 rounded-lg">
                 <User className="h-5 w-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-xl font-semibold text-foreground">Client Details</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">Enter your client's information for billing purposes</p>
+                <CardTitle className={`font-semibold text-foreground ${isMobile ? 'text-base' : 'text-xl'}`}>Client Details</CardTitle>
+                {!isMobile && <p className="text-sm text-muted-foreground mt-1">Enter your client's information for billing purposes</p>}
               </div>
             </div>
           </CardHeader>
         </div>
-        <CardContent className="p-8">
+        <CardContent className={isMobile ? 'p-4' : 'p-8'}>
           <ClientSelector
             selectedClientId={form.watch('client_id')}
             onClientSelect={handleClientChange}
@@ -223,23 +226,23 @@ const CreateInvoiceForm = () => {
       </Card>
 
       {/* Invoice Metadata Section */}
-      <Card className="shadow-xl border-0 bg-gradient-to-r from-background to-muted/20 overflow-hidden">
+      <Card className={`shadow-xl border-0 bg-gradient-to-r from-background to-muted/20 overflow-hidden ${isMobile ? 'rounded-none border-x-0' : ''}`}>
         <div className="bg-gradient-to-r from-green-500/10 to-green-600/10 border-b border-green-200/30">
-          <CardHeader className="pb-4">
+          <CardHeader className={`pb-4 ${isMobile ? 'px-4 py-3' : ''}`}>
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-green-500 rounded-lg">
                 <FileText className="h-5 w-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-xl font-semibold text-foreground">Invoice Metadata</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">Configure invoice details and project information</p>
+                <CardTitle className={`font-semibold text-foreground ${isMobile ? 'text-base' : 'text-xl'}`}>Invoice Metadata</CardTitle>
+                {!isMobile && <p className="text-sm text-muted-foreground mt-1">Configure invoice details and project information</p>}
               </div>
             </div>
           </CardHeader>
         </div>
-        <CardContent className="p-8">
+        <CardContent className={isMobile ? 'p-4' : 'p-8'}>
           <Form {...form}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className={`grid grid-cols-1 lg:grid-cols-2 ${isMobile ? 'gap-4' : 'gap-8'}`}>
               <FormField
                 control={form.control}
                 name="title"
@@ -344,46 +347,72 @@ const CreateInvoiceForm = () => {
       </Card>
 
       {/* Line Items Section */}
-      <Card className="shadow-xl border-0 bg-gradient-to-r from-background to-muted/20 overflow-hidden">
+      <Card className={`shadow-xl border-0 bg-gradient-to-r from-background to-muted/20 overflow-hidden ${isMobile ? 'rounded-none border-x-0' : ''}`}>
         <div className="bg-gradient-to-r from-purple-500/10 to-purple-600/10 border-b border-purple-200/30">
-          <CardHeader className="pb-4">
+          <CardHeader className={`pb-4 ${isMobile ? 'px-4 py-3' : ''}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-purple-500 rounded-lg">
                   <DollarSign className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-semibold text-foreground">Line Items</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">Add products or services to invoice</p>
+                  <CardTitle className={`font-semibold text-foreground ${isMobile ? 'text-base' : 'text-xl'}`}>Line Items</CardTitle>
+                  {!isMobile && <p className="text-sm text-muted-foreground mt-1">Add products or services to invoice</p>}
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="h-12 px-6 bg-white hover:bg-purple-50 border-2 border-purple-200 hover:border-purple-400 rounded-xl transition-all duration-200 shadow-md"
-                onClick={() => append({ name: '', description: '', quantity: 1, unit_price: 0 })}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
+              {!isMobile && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="h-12 px-6 bg-white hover:bg-purple-50 border-2 border-purple-200 hover:border-purple-400 rounded-xl transition-all duration-200 shadow-md"
+                  onClick={() => append({ name: '', description: '', quantity: 1, unit_price: 0 })}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              )}
             </div>
           </CardHeader>
         </div>
-        <CardContent className="p-8">
+        <CardContent className={isMobile ? 'p-4' : 'p-8'}>
           <Form {...form}>
-            <div className="space-y-6">
-              {/* Table Header */}
-              <div className="hidden md:grid md:grid-cols-12 gap-6 pb-4 border-b-2 border-border/30 text-sm font-semibold text-foreground">
-                <div className="col-span-2">Item Name</div>
-                <div className="col-span-4">Description</div>
-                <div className="col-span-2">Quantity</div>
-                <div className="col-span-2">Unit Price</div>
-                <div className="col-span-2">Total</div>
-              </div>
+            <div className="space-y-4 md:space-y-6">
+              {/* Mobile Line Items */}
+              {isMobile ? (
+                <>
+                  {fields.map((field, index) => (
+                    <InvoiceMobileLineItem
+                      key={field.id}
+                      index={index}
+                      form={form}
+                      onRemove={() => remove(index)}
+                      canRemove={fields.length > 1}
+                    />
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => append({ name: '', description: '', quantity: 1, unit_price: 0 })}
+                    className="w-full h-12 border-2 border-purple-200 hover:border-purple-400 hover:bg-purple-50"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Item
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* Desktop Table Header */}
+                  <div className="hidden md:grid md:grid-cols-12 gap-6 pb-4 border-b-2 border-border/30 text-sm font-semibold text-foreground">
+                    <div className="col-span-2">Item Name</div>
+                    <div className="col-span-4">Description</div>
+                    <div className="col-span-2">Quantity</div>
+                    <div className="col-span-2">Unit Price</div>
+                    <div className="col-span-2">Total</div>
+                  </div>
 
-              {fields.map((field, index) => (
-                <Card key={field.id} className="p-6 bg-gradient-to-r from-background to-muted/10 border-2 border-border/20 shadow-lg rounded-xl hover:shadow-xl transition-all duration-200">
+                  {fields.map((field, index) => (
+                    <Card key={field.id} className="p-6 bg-gradient-to-r from-background to-muted/10 border-2 border-border/20 shadow-lg rounded-xl hover:shadow-xl transition-all duration-200">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
                     <FormField
                       control={form.control}
@@ -485,30 +514,32 @@ const CreateInvoiceForm = () => {
                     </div>
                   </div>
                 </Card>
-              ))}
+                  ))}
+                </>
+              )}
             </div>
           </Form>
         </CardContent>
       </Card>
 
       {/* Notes and Summary Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className={`grid grid-cols-1 lg:grid-cols-2 ${isMobile ? 'gap-4' : 'gap-8'}`}>
         {/* Notes */}
-        <Card className="shadow-xl border-0 bg-gradient-to-br from-background to-muted/20 overflow-hidden">
+        <Card className={`shadow-xl border-0 bg-gradient-to-br from-background to-muted/20 overflow-hidden ${isMobile ? 'rounded-none border-x-0' : ''}`}>
           <div className="bg-gradient-to-r from-amber-500/10 to-amber-600/10 border-b border-amber-200/30">
-            <CardHeader className="pb-4">
+            <CardHeader className={`pb-4 ${isMobile ? 'px-4 py-3' : ''}`}>
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-amber-500 rounded-lg">
                   <FileText className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-semibold text-foreground">Additional Information</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">Notes and adjustments</p>
+                  <CardTitle className={`font-semibold text-foreground ${isMobile ? 'text-base' : 'text-xl'}`}>Additional Info</CardTitle>
+                  {!isMobile && <p className="text-sm text-muted-foreground mt-1">Notes and adjustments</p>}
                 </div>
               </div>
             </CardHeader>
           </div>
-          <CardContent className="p-6">
+          <CardContent className={isMobile ? 'p-4' : 'p-6'}>
             <Form {...form}>
               <div className="space-y-6">
                 <FormField
@@ -581,21 +612,21 @@ const CreateInvoiceForm = () => {
         </Card>
 
         {/* Invoice Summary */}
-        <Card className="shadow-xl border-0 bg-slate-50 dark:bg-slate-100 overflow-hidden">
+        <Card className={`shadow-xl border-0 bg-slate-50 dark:bg-slate-100 overflow-hidden ${isMobile ? 'rounded-none border-x-0' : ''}`}>
           <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border-b border-emerald-200/50">
-            <CardHeader className="pb-4">
+            <CardHeader className={`pb-4 ${isMobile ? 'px-4 py-3' : ''}`}>
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-emerald-500 rounded-lg">
                   <DollarSign className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-semibold text-foreground">Invoice Summary</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">Review totals and calculations</p>
+                  <CardTitle className={`font-semibold text-foreground ${isMobile ? 'text-base' : 'text-xl'}`}>Invoice Summary</CardTitle>
+                  {!isMobile && <p className="text-sm text-muted-foreground mt-1">Review totals and calculations</p>}
                 </div>
               </div>
             </CardHeader>
           </div>
-          <CardContent className="p-6 bg-slate-50 dark:bg-slate-100">
+          <CardContent className={`bg-slate-50 dark:bg-slate-100 ${isMobile ? 'p-4' : 'p-6'}`}>
             <div className="space-y-4">
               <div className="flex justify-between text-base">
                 <span>Subtotal:</span>
@@ -620,59 +651,99 @@ const CreateInvoiceForm = () => {
         </Card>
       </div>
 
-      {/* Action Buttons */}
-      <Card className="shadow-xl border-0 bg-gradient-to-r from-background to-muted/10 overflow-hidden">
-        <CardContent className="p-8">
-          <Form {...form}>
-            <div className="flex flex-col sm:flex-row gap-6">
-              {/* Secondary Actions */}
-              <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSaveAsDraft}
-                  disabled={isCreating}
-                  className="flex-1 h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
-                >
-                  <Save className="h-5 w-5 mr-3" />
-                  Save as Draft
-                </Button>
+      {/* Desktop Action Buttons */}
+      {!isMobile && (
+        <Card className="shadow-xl border-0 bg-gradient-to-r from-background to-muted/10 overflow-hidden">
+          <CardContent className="p-8">
+            <Form {...form}>
+              <div className="flex flex-col sm:flex-row gap-6">
+                {/* Secondary Actions */}
+                <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSaveAsDraft}
+                    disabled={isCreating}
+                    className="flex-1 h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
+                  >
+                    <Save className="h-5 w-5 mr-3" />
+                    Save as Draft
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled
+                    className="flex-1 h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
+                  >
+                    <Download className="h-5 w-5 mr-3" />
+                    Download PDF
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled
+                    className="flex-1 h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
+                  >
+                    <Paperclip className="h-5 w-5 mr-3" />
+                    Attach Files
+                  </Button>
+                </div>
                 
+                {/* Primary Action */}
                 <Button
                   type="button"
-                  variant="outline"
-                  disabled
-                  className="flex-1 h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
+                  onClick={handleSendInvoice}
+                  disabled={isCreating || isSendingEmail}
+                  className="sm:flex-1 sm:max-w-xs h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                 >
-                  <Download className="h-5 w-5 mr-3" />
-                  Download PDF
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled
-                  className="flex-1 h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
-                >
-                  <Paperclip className="h-5 w-5 mr-3" />
-                  Attach Files
+                  <Send className="h-5 w-5 mr-3" />
+                  {isCreating ? 'Creating Invoice...' : isSendingEmail ? 'Sending Email...' : 'Send Invoice'}
                 </Button>
               </div>
-              
-              {/* Primary Action */}
+            </Form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Mobile Sticky Action Buttons */}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 z-20 bg-background border-t shadow-lg safe-bottom">
+          <div className="px-4 py-3 space-y-2">
+            <Button
+              type="button"
+              onClick={handleSendInvoice}
+              disabled={isCreating || isSendingEmail}
+              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
+            >
+              <Send className="h-5 w-5 mr-2" />
+              {isCreating ? 'Creating...' : isSendingEmail ? 'Sending...' : 'Send Invoice'}
+            </Button>
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
-                onClick={handleSendInvoice}
-                disabled={isCreating || isSendingEmail}
-                className="sm:flex-1 sm:max-w-xs h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                variant="outline"
+                onClick={handleSaveAsDraft}
+                disabled={isCreating}
+                className="h-11"
               >
-                <Send className="h-5 w-5 mr-3" />
-                {isCreating ? 'Creating Invoice...' : isSendingEmail ? 'Sending Email...' : 'Send Invoice'}
+                <Save className="h-4 w-4 mr-2" />
+                Save Draft
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled
+                className="h-11"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                PDF
               </Button>
             </div>
-          </Form>
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
