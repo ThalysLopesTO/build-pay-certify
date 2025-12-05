@@ -6,13 +6,11 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/components/ui/drawer';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useHierarchicalCategories } from '@/hooks/useHierarchicalCategories';
 
 interface MobileCategorySelectorProps {
@@ -87,7 +85,7 @@ export const MobileCategorySelector = ({
     return options;
   }, [parentCategories, getSubcategoriesForParent]);
 
-  // When inside a modal, use a simple Select to avoid nested drawer issues
+  // When inside a modal, use a simple Select to avoid nested dialog issues
   if (insideModal) {
     return (
       <div>
@@ -107,27 +105,27 @@ export const MobileCategorySelector = ({
     );
   }
 
-  // Regular drawer implementation for non-modal contexts
+  // Use Dialog instead of Drawer to avoid iOS PWA issues with vaul
   return (
     <div>
       <Label>
         Category {required && <span className="text-destructive">*</span>}
       </Label>
-      <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>
-          <Button
-            variant="outline"
-            className="w-full justify-start text-left font-normal h-11"
-          >
-            <span className={!selectedCategoryId ? "text-muted-foreground" : ""}>
-              {displayValue}
-            </span>
-          </Button>
-        </DrawerTrigger>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader>
-            <DrawerTitle>Select Category</DrawerTitle>
-          </DrawerHeader>
+      <Button
+        variant="outline"
+        onClick={() => setOpen(true)}
+        className="w-full justify-start text-left font-normal h-11"
+      >
+        <span className={!selectedCategoryId ? "text-muted-foreground" : ""}>
+          {displayValue}
+        </span>
+      </Button>
+      
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[85vh] w-[95vw] max-w-md p-0">
+          <DialogHeader className="px-4 pt-4 pb-2">
+            <DialogTitle>Select Category</DialogTitle>
+          </DialogHeader>
           
           <div className="px-4 pb-4">
             <div className="relative mb-4">
@@ -196,14 +194,12 @@ export const MobileCategorySelector = ({
           </div>
           
           <div className="px-4 pb-4 border-t pt-4">
-            <DrawerClose asChild>
-              <Button variant="outline" className="w-full">
-                Cancel
-              </Button>
-            </DrawerClose>
+            <Button variant="outline" className="w-full" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
           </div>
-        </DrawerContent>
-      </Drawer>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
