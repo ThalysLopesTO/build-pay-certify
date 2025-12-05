@@ -191,7 +191,20 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
           });
 
           const rawHours = result.totalMinutes / 60;
-          const paidHours = result.paidMinutes / 60;
+          
+          // Check for manually stored break_minutes and use it if available
+          const storedBreakMinutes = timesheet.break_minutes;
+          let paidMinutes: number;
+          
+          if (storedBreakMinutes !== null && storedBreakMinutes !== undefined) {
+            // Stored break takes priority - recalculate paid from raw totalMinutes
+            paidMinutes = Math.max(0, result.totalMinutes - storedBreakMinutes);
+          } else {
+            // No stored break - use calculated values from time rules
+            paidMinutes = result.paidMinutes;
+          }
+          
+          const paidHours = paidMinutes / 60;
 
           timesheetCalculations.set(timesheet.id, {
             rawHours,
