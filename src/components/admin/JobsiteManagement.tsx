@@ -100,6 +100,16 @@ const JobsiteManagement = () => {
             sortOrder={sortOrder}
             onSortOrderChange={setSortOrder}
           />
+          {/* Add Jobsite Button for Mobile */}
+          <div className="px-4 pb-4">
+            <Button 
+              onClick={() => setShowForm(true)} 
+              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-200 h-11"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add New Jobsite
+            </Button>
+          </div>
         </>
       )}
 
