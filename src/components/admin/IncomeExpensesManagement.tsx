@@ -25,7 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown, Paperclip, Eye } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown, Paperclip, Eye, RefreshCw } from 'lucide-react';
 import ExpenseAttachmentField from './income-expenses/ExpenseAttachmentField';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -46,6 +46,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { usePrintIncomeExpenses, PrintOption } from '@/hooks/usePrintIncomeExpenses';
 import * as XLSX from 'xlsx';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsPWAStandalone } from '@/hooks/useIsPWAStandalone';
 import { TransactionMobileList } from './income-expenses/TransactionMobileList';
 import PullToRefresh from 'react-simple-pull-to-refresh';
 
@@ -53,6 +54,7 @@ import PullToRefresh from 'react-simple-pull-to-refresh';
 const IncomeExpensesManagement = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const isPWAStandalone = useIsPWAStandalone();
   const [transactions, setTransactions] = useState<TransactionWithHierarchy[]>([]);
   
   const { 
@@ -985,19 +987,20 @@ const IncomeExpensesManagement = () => {
 
       {/* Transactions Section - Mobile Cards or Desktop Table */}
       {isMobile ? (
-        /* Mobile View with Pull-to-Refresh */
-        <PullToRefresh
-          onRefresh={async () => {
-            await fetchTransactions();
-          }}
-          pullingContent=""
-          refreshingContent={
-            <div className="flex justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            </div>
-          }
-        >
+        /* Mobile View - Conditionally disable PullToRefresh for PWA standalone to avoid iOS touch issues */
+        isPWAStandalone ? (
           <div className="space-y-3" data-print="table">
+            {/* Manual Refresh Button for PWA */}
+            <Button
+              variant="outline"
+              onClick={fetchTransactions}
+              disabled={isLoading}
+              className="w-full mb-4 h-11"
+            >
+              <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+              Refresh Transactions
+            </Button>
+
             {/* Header with transaction count */}
             <div className="flex items-center justify-between px-1 mb-4">
               <h3 className="text-lg font-semibold text-slate-900">
@@ -1050,7 +1053,74 @@ const IncomeExpensesManagement = () => {
               </div>
             )}
           </div>
-        </PullToRefresh>
+        ) : (
+          /* Regular Mobile - With Pull-to-Refresh */
+          <PullToRefresh
+            onRefresh={async () => {
+              await fetchTransactions();
+            }}
+            pullingContent=""
+            refreshingContent={
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              </div>
+            }
+          >
+            <div className="space-y-3" data-print="table">
+              {/* Header with transaction count */}
+              <div className="flex items-center justify-between px-1 mb-4">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Transactions
+                </h3>
+                <Badge variant="outline" className="text-slate-600">
+                  {filteredTransactions.length} total
+                </Badge>
+              </div>
+              
+              {/* Mobile transaction cards */}
+              <TransactionMobileList
+                transactions={paginatedTransactions}
+                isLoading={isLoading}
+                onEdit={startEdit}
+                onDelete={handleDelete}
+                getCategoryDisplay={getCategoryDisplay}
+              />
+              
+              {/* Mobile Pagination */}
+              {totalPages > 1 && (
+                <div className="flex flex-col items-center gap-3 mt-6 pb-4">
+                  <div className="text-sm text-slate-600 font-medium">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                  <div className="flex items-center gap-2 w-full max-w-sm">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="flex-1 h-11 font-medium"
+                    >
+                      Previous
+                    </Button>
+                    <div className="px-4 py-2 bg-slate-100 rounded-md text-sm font-semibold text-slate-700 min-w-[60px] text-center">
+                      {currentPage}
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="flex-1 h-11 font-medium"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    Showing {startItem} to {endItem} of {filteredTransactions.length}
+                  </div>
+                </div>
+              )}
+            </div>
+          </PullToRefresh>
+        )
       ) : (
         /* Desktop View - Table */
         <Card className="bg-white shadow-sm border-slate-200" data-print="table">
