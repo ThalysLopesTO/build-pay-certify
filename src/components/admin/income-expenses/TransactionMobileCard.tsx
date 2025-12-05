@@ -18,6 +18,7 @@ import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { formatDateFromDB } from '@/utils/dateUtils';
 import { getCategoryColor } from '@/utils/categoryColors';
 import { motion, PanInfo } from 'framer-motion';
+import { useIsPWAStandalone } from '@/hooks/useIsPWAStandalone';
 
 interface TransactionMobileCardProps {
   transaction: TransactionWithHierarchy;
@@ -34,6 +35,7 @@ export const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const isPWAStandalone = useIsPWAStandalone();
   const DELETE_THRESHOLD = -120; // Pixels to swipe left before deleting
 
   const handleDragEnd = (_event: any, info: PanInfo) => {
@@ -161,15 +163,15 @@ export const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
         </div>
       </div>
 
-      {/* Swipeable Card */}
+      {/* Swipeable Card - Disable drag in PWA standalone mode to avoid iOS touch issues */}
       <motion.div
-        drag="x"
+        drag={isPWAStandalone ? false : "x"}
         dragConstraints={{ left: -150, right: 0 }}
         dragElastic={0.1}
-        onDragEnd={handleDragEnd}
+        onDragEnd={isPWAStandalone ? undefined : handleDragEnd}
         className={`relative ${isDeleting ? "opacity-0" : ""}`}
         transition={{ type: "spring", damping: 20, stiffness: 300 }}
-        whileTap={{ cursor: "grabbing" }}
+        whileTap={isPWAStandalone ? undefined : { cursor: "grabbing" }}
         style={{ zIndex: 10 }}
       >
         <Card className="bg-white shadow-sm border-slate-200 hover:shadow-md transition-shadow duration-200">
