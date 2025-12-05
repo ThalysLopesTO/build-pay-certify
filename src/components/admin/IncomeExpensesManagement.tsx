@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +46,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { usePrintIncomeExpenses, PrintOption } from '@/hooks/usePrintIncomeExpenses';
 import * as XLSX from 'xlsx';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useIsPWAStandalone } from '@/hooks/useIsPWAStandalone';
 import { TransactionMobileList } from './income-expenses/TransactionMobileList';
 import PullToRefresh from 'react-simple-pull-to-refresh';
 
@@ -55,7 +53,6 @@ import PullToRefresh from 'react-simple-pull-to-refresh';
 const IncomeExpensesManagement = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const isPWAStandalone = useIsPWAStandalone();
   const [transactions, setTransactions] = useState<TransactionWithHierarchy[]>([]);
   
   const { 
@@ -1251,21 +1248,21 @@ const IncomeExpensesManagement = () => {
         </Card>
       )}
 
-      {/* Create/Edit Dialog/Drawer - Responsive */}
-      {/* Use Dialog in PWA standalone mode to avoid vaul drawer bug */}
-      {isMobile && !isPWAStandalone ? (
-        <Drawer open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} shouldScaleBackground={false}>
-          <DrawerContent className="max-h-[85vh] overflow-hidden">
-            <DrawerHeader className="border-b pb-4">
-              <DrawerTitle>
-                {editingTransaction 
-                  ? `Edit ${transactionType === 'income' ? 'Income' : 'Expense'}` 
-                  : `Add New ${transactionType === 'income' ? 'Income' : 'Expense'}`
-                }
-              </DrawerTitle>
-            </DrawerHeader>
-            <div className="overflow-y-auto px-4 pb-4" style={{ maxHeight: 'calc(85vh - 80px)' }}>
-              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 mt-4">
+      {/* Create/Edit Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className={cn(
+          "max-w-xl sm:max-w-2xl max-h-[90vh] overflow-y-auto",
+          isMobile && "w-[95vw] h-[85vh] max-w-none p-4"
+        )}>
+          <DialogHeader>
+            <DialogTitle>
+              {editingTransaction 
+                ? `Edit ${transactionType === 'income' ? 'Income' : 'Expense'}` 
+                : `Add New ${transactionType === 'income' ? 'Income' : 'Expense'}`
+              }
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 px-1">
               {/* Title and Category Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
@@ -1563,336 +1560,9 @@ const IncomeExpensesManagement = () => {
                   {editingTransaction ? 'Update' : 'Create'} {transactionType === 'income' ? 'Income' : 'Expense'}
                 </Button>
               </div>
-              </form>
-            </div>
-          </DrawerContent>
-        </Drawer>
-      ) : (
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className={cn(
-            "max-w-xl sm:max-w-2xl max-h-[90vh] overflow-y-auto",
-            isMobile && isPWAStandalone && "w-[95vw] h-[85vh] max-w-none"
-          )}>
-            <DialogHeader>
-              <DialogTitle>
-                {editingTransaction 
-                  ? `Edit ${transactionType === 'income' ? 'Income' : 'Expense'}` 
-                  : `Add New ${transactionType === 'income' ? 'Income' : 'Expense'}`
-                }
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 px-1">
-              {/* Title and Category Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="expense_title" className="text-sm font-medium text-slate-700">
-                    {transactionType === 'income' ? 'Income' : 'Expense'} Title *
-                  </Label>
-                  <Input
-                    id="expense_title"
-                    value={formData.expense_title}
-                    onChange={(e) => setFormData({ ...formData, expense_title: e.target.value })}
-                    placeholder={`Enter ${transactionType} title`}
-                    className="h-11"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">
-                    Category *
-                  </Label>
-                  <HierarchicalCategorySelector
-                    selectedCategoryId={formData.category_id}
-                    onCategoryChange={(categoryId) => setFormData({ ...formData, category_id: categoryId })}
-                    transactionType={transactionType}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Vendor/Payee and Amount Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="vendor_payee" className="text-sm font-medium text-slate-700">
-                    {transactionType === 'income' ? 'Payer' : 'Vendor / Payee'} *
-                  </Label>
-                  <Input
-                    id="vendor_payee"
-                    value={formData.vendor_payee}
-                    onChange={(e) => setFormData({ ...formData, vendor_payee: e.target.value })}
-                    placeholder={`Enter ${transactionType === 'income' ? 'payer' : 'vendor/payee'} name`}
-                    className="h-11"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="amount" className="text-sm font-medium text-slate-700">
-                    Amount (CAD) *
-                  </Label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                      placeholder="0.00"
-                      className="h-11 pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Date and Status Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-slate-700">
-                    Date of {transactionType === 'income' ? 'Income' : 'Expense'} *
-                  </Label>
-                  <Popover modal={true}>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        className={cn(
-                          "w-full h-11 justify-start text-left font-normal border-slate-300",
-                          !formData.expense_date && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.expense_date ? format(formData.expense_date, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent 
-                      className="w-auto p-0 z-[9999]" 
-                      align="start" 
-                      side="bottom"
-                      sideOffset={8}
-                      avoidCollisions={true}
-                      sticky="always"
-                      style={{
-                        touchAction: 'pan-y',
-                        WebkitOverflowScrolling: 'touch'
-                      } as any}
-                    >
-                      <Calendar
-                        mode="single"
-                        selected={formData.expense_date}
-                        onSelect={(date) => date && setFormData({ ...formData, expense_date: date })}
-                        initialFocus
-                        className="pointer-events-auto"
-                        style={{
-                          WebkitOverflowScrolling: 'touch',
-                          touchAction: 'pan-y'
-                        } as any}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="payment_status" className="text-sm font-medium text-slate-700">
-                    Payment Status
-                  </Label>
-                  <Select 
-                    value={formData.payment_status} 
-                    onValueChange={(value: 'paid' | 'unpaid' | 'pending') => setFormData({ ...formData, payment_status: value })}
-                  >
-                    <SelectTrigger className="h-11 border-slate-300">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="paid">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <span>Paid</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="unpaid">
-                        <div className="flex items-center gap-2">
-                          <AlertCircle className="h-4 w-4 text-yellow-600" />
-                          <span>Unpaid</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="pending">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-blue-600" />
-                          <span>Pending</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Payment Method */}
-              <div className="space-y-2">
-                <Label htmlFor="payment_method" className="text-sm font-medium text-slate-700">
-                  Payment Method
-                </Label>
-                <Select 
-                  value={formData.payment_method} 
-                  onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
-                >
-                  <SelectTrigger className="h-11 border-slate-300">
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">
-                      <div className="flex items-center gap-2">
-                        <Banknote className="h-4 w-4 text-green-600" />
-                        <span>Cash</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="credit_card">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-blue-600" />
-                        <span>Credit Card</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="bank_transfer">
-                      <div className="flex items-center gap-2">
-                        <ArrowRightLeft className="h-4 w-4 text-purple-600" />
-                        <span>Bank Transfer</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="cheque">
-                      <div className="flex items-center gap-2">
-                        <Receipt className="h-4 w-4 text-orange-600" />
-                        <span>Cheque</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Notes */}
-              <div className="space-y-2">
-                <Label htmlFor="notes" className="text-sm font-medium text-slate-700">
-                  Notes
-                </Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Enter any additional notes..."
-                  rows={3}
-                  className="border-slate-300 resize-none"
-                />
-              </div>
-
-              {/* Attachment Upload */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-slate-700">
-                  Attach Receipt/Document (Optional)
-                </Label>
-                <ExpenseAttachmentField
-                  value={formData.attachmentFile}
-                  existingUrl={formData.existingAttachmentUrl}
-                  onChange={(file) => setFormData({ ...formData, attachmentFile: file })}
-                  disabled={false}
-                />
-                <p className="text-xs text-slate-500">
-                  Upload a photo or PDF of your receipt/invoice for record keeping
-                </p>
-              </div>
-
-              {/* Recurring Expense Toggle */}
-              {transactionType === 'expense' && (
-                <div className="space-y-4 border-t pt-4">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      id="is_recurring"
-                      checked={formData.is_recurring}
-                      onCheckedChange={(checked) => setFormData({ 
-                        ...formData, 
-                        is_recurring: checked as boolean,
-                        start_date: checked ? formData.expense_date : null
-                      })}
-                    />
-                    <Label htmlFor="is_recurring" className="text-sm font-medium text-slate-700">
-                      Make this a recurring expense
-                    </Label>
-                  </div>
-
-                  {formData.is_recurring && (
-                    <div className="pl-6 space-y-4 border-l-2 border-slate-200">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-slate-600">
-                            Frequency
-                          </Label>
-                          <Select 
-                            value={formData.recurrence_frequency} 
-                            onValueChange={(value) => setFormData({ ...formData, recurrence_frequency: value })}
-                          >
-                            <SelectTrigger className="h-10 border-slate-300">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="weekly">Weekly</SelectItem>
-                              <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
-                              <SelectItem value="monthly">Monthly</SelectItem>
-                              <SelectItem value="quarterly">Quarterly</SelectItem>
-                              <SelectItem value="yearly">Yearly</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-slate-600">
-                            End Date (Optional)
-                          </Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                className={cn(
-                                  "w-full h-10 justify-start text-left font-normal border-slate-300",
-                                  !formData.end_date && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {formData.end_date ? format(formData.end_date, "PPP") : "No end date"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
-                              <Calendar
-                                mode="single"
-                                selected={formData.end_date || undefined}
-                                onSelect={(date) => setFormData({ ...formData, end_date: date || null })}
-                                initialFocus
-                                className="pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={resetForm}
-                  className="w-full sm:w-auto px-6 h-11 border-slate-300 hover:bg-slate-50"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  className="w-full sm:w-auto px-6 h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm"
-                >
-                  {editingTransaction ? 'Update' : 'Create'} {transactionType === 'income' ? 'Income' : 'Expense'}
-                </Button>
-              </div>
             </form>
           </DialogContent>
         </Dialog>
-      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
