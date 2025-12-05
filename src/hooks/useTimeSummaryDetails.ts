@@ -95,14 +95,25 @@ export const useTimeSummaryDetails = ({
 
             // Use stored break_minutes override if available, otherwise use calculated
             const storedBreakMinutes = row.break_minutes;
-            const finalBreakMinutes = storedBreakMinutes !== null && storedBreakMinutes !== undefined 
-              ? storedBreakMinutes 
-              : result.breakMinutes;
+            
+            // Calculate paid hours with proper break deduction
+            let paidMinutes: number;
+            let finalBreakMinutes: number;
+
+            if (storedBreakMinutes !== null && storedBreakMinutes !== undefined) {
+              // Stored break takes priority - recalculate paid from raw totalMinutes
+              finalBreakMinutes = storedBreakMinutes;
+              paidMinutes = Math.max(0, result.totalMinutes - storedBreakMinutes);
+            } else {
+              // No stored break - use calculated values from time rules
+              finalBreakMinutes = result.breakMinutes;
+              paidMinutes = result.paidMinutes;
+            }
 
             return {
               ...base,
               raw_hours: result.totalMinutes / 60,
-              paid_hours: result.paidMinutes / 60,
+              paid_hours: paidMinutes / 60,
               break_minutes: finalBreakMinutes,
               flags: result.flags || [],
             };
