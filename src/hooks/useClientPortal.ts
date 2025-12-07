@@ -23,6 +23,14 @@ interface PortalQuote {
   client_change_requested_at: string | null;
 }
 
+interface PortalInvoiceLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  amount: number;
+}
+
 interface PortalInvoice {
   id: string;
   invoice_number: string;
@@ -34,8 +42,10 @@ interface PortalInvoice {
   notes: string | null;
   client_address: string | null;
   subtotal: number;
-  tax: number | null;
+  tax_rate: number;
+  tax_amount: number;
   discount: number | null;
+  line_items: PortalInvoiceLineItem[];
 }
 
 interface ClientPortalData {

@@ -16,7 +16,8 @@ interface PortalInvoiceCardProps {
     notes: string | null;
     client_address: string | null;
     subtotal: number;
-    tax: number | null;
+    tax_rate: number;
+    tax_amount: number;
     discount: number | null;
   };
 }
@@ -87,10 +88,10 @@ export function PortalInvoiceCard({ invoice }: PortalInvoiceCardProps) {
             <span className="font-medium text-green-600">-${invoice.discount.toFixed(2)}</span>
           </div>
         )}
-        {invoice.tax && invoice.tax > 0 && (
+        {invoice.tax_amount > 0 && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Tax</span>
-            <span className="font-medium">${invoice.tax.toFixed(2)}</span>
+            <span className="text-muted-foreground">Tax ({invoice.tax_rate.toFixed(2)}%)</span>
+            <span className="font-medium">+${invoice.tax_amount.toFixed(2)}</span>
           </div>
         )}
         <div className="flex items-center justify-between pt-2 border-t">
