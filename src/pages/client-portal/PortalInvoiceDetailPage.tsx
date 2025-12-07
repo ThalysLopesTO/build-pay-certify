@@ -88,6 +88,35 @@ export default function PortalInvoiceDetailPage() {
             )}
           </div>
 
+          {/* Line Items Table */}
+          {invoice.line_items && invoice.line_items.length > 0 && (
+            <div className="pt-4 border-t">
+              <h3 className="font-semibold mb-3">Item Details</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="text-left p-3 font-semibold">Description</th>
+                      <th className="text-right p-3 font-semibold">Unit Price</th>
+                      <th className="text-right p-3 font-semibold">Qty</th>
+                      <th className="text-right p-3 font-semibold">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoice.line_items.map((item, index) => (
+                      <tr key={item.id} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                        <td className="p-3">{item.description}</td>
+                        <td className="text-right p-3">${item.unit_price.toFixed(2)}</td>
+                        <td className="text-right p-3">{item.quantity}</td>
+                        <td className="text-right p-3 font-medium">${item.amount.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Financial Breakdown */}
           <div className="pt-4 border-t space-y-3">
             {invoice.subtotal > 0 && (
@@ -104,10 +133,10 @@ export default function PortalInvoiceDetailPage() {
                 </span>
               </div>
             )}
-            {invoice.tax && invoice.tax > 0 && (
+            {invoice.tax_amount > 0 && (
               <div className="flex justify-between text-sm md:text-base">
-                <span className="text-muted-foreground">Tax</span>
-                <span className="font-medium">${invoice.tax.toFixed(2)}</span>
+                <span className="text-muted-foreground">Tax ({invoice.tax_rate.toFixed(2)}%)</span>
+                <span className="font-medium">+${invoice.tax_amount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between pt-3 border-t">
