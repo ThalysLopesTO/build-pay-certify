@@ -8,7 +8,7 @@ import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { DateRangeType } from '@/hooks/useDateRangeFilter';
 // Removed TransactionTypeFilter import as it no longer exists
 import { getCategoryColor, getSubcategoryColor } from '@/utils/categoryColors';
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfMonth, parseISO } from 'date-fns';
 
 interface CategoryBreakdownChartProps {
   transactions: TransactionWithHierarchy[];
@@ -54,7 +54,7 @@ export const CategoryBreakdownChart: React.FC<CategoryBreakdownChartProps> = ({
     // Group transactions by month and category
     const monthlyData = last4Months.map(month => {
       const monthTransactions = typeFilteredTransactions.filter(transaction => {
-        const transactionMonth = format(startOfMonth(new Date(transaction.expense_date)), 'yyyy-MM');
+        const transactionMonth = format(startOfMonth(parseISO(transaction.expense_date)), 'yyyy-MM');
         return transactionMonth === month.key;
       });
 

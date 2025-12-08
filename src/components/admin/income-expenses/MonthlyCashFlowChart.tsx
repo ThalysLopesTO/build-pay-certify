@@ -6,7 +6,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { DateRangeType, DateRange } from '@/hooks/useDateRangeFilter';
@@ -56,7 +56,7 @@ export const MonthlyCashFlowChart: React.FC<MonthlyCashFlowChartProps> = ({
 
     // Aggregate data by month
     transactions.forEach(transaction => {
-      const monthKey = format(new Date(transaction.expense_date), 'MMM yyyy');
+      const monthKey = format(parseISO(transaction.expense_date), 'MMM yyyy');
       if (monthMap.has(monthKey)) {
         const monthData = monthMap.get(monthKey)!;
         if (transaction.transaction_type === 'income') {
