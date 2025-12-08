@@ -689,8 +689,11 @@ const IncomeExpensesManagement = () => {
         >
           <MonthlyCashFlowChart 
             transactions={filteredTransactions}
-            dateRangeType={filters.dateRangeType}
-            onDateRangeChange={dateRange.setSelectedRange}
+            dateRangeType={dateRange.selectedRange}
+            onDateRangeChange={(value) => {
+              dateRange.setSelectedRange(value);
+              filters.setDateRangeType(value);
+            }}
             transactionTypeFilter={filters.transactionTypeFilter}
             onTransactionTypeChange={filters.setTransactionTypeFilter}
             customRange={dateRange.customRange}
@@ -698,8 +701,11 @@ const IncomeExpensesManagement = () => {
           />
           <CategoryBreakdownChart 
             transactions={filteredTransactions}
-            dateRangeType={filters.dateRangeType}
-            onDateRangeChange={dateRange.setSelectedRange}
+            dateRangeType={dateRange.selectedRange}
+            onDateRangeChange={(value) => {
+              dateRange.setSelectedRange(value);
+              filters.setDateRangeType(value);
+            }}
             transactionTypeFilter={filters.transactionTypeFilter}
             onTransactionTypeChange={filters.setTransactionTypeFilter}
             getCategoryDisplay={getCategoryDisplay}
@@ -709,8 +715,11 @@ const IncomeExpensesManagement = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4" data-print="charts">
           <MonthlyCashFlowChart 
             transactions={filteredTransactions}
-            dateRangeType={filters.dateRangeType}
-            onDateRangeChange={dateRange.setSelectedRange}
+            dateRangeType={dateRange.selectedRange}
+            onDateRangeChange={(value) => {
+              dateRange.setSelectedRange(value);
+              filters.setDateRangeType(value);
+            }}
             transactionTypeFilter={filters.transactionTypeFilter}
             onTransactionTypeChange={filters.setTransactionTypeFilter}
             customRange={dateRange.customRange}
@@ -718,8 +727,11 @@ const IncomeExpensesManagement = () => {
           />
           <CategoryBreakdownChart 
             transactions={filteredTransactions}
-            dateRangeType={filters.dateRangeType}
-            onDateRangeChange={dateRange.setSelectedRange}
+            dateRangeType={dateRange.selectedRange}
+            onDateRangeChange={(value) => {
+              dateRange.setSelectedRange(value);
+              filters.setDateRangeType(value);
+            }}
             transactionTypeFilter={filters.transactionTypeFilter}
             onTransactionTypeChange={filters.setTransactionTypeFilter}
             getCategoryDisplay={getCategoryDisplay}
@@ -801,7 +813,10 @@ const IncomeExpensesManagement = () => {
                 </div>
                 <Select 
                   value={dateRange.selectedRange} 
-                  onValueChange={(value: DateRangeType) => dateRange.setSelectedRange(value)}
+                  onValueChange={(value: DateRangeType) => {
+                    dateRange.setSelectedRange(value);
+                    filters.setDateRangeType(value);
+                  }}
                 >
                   <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 bg-white">
                     <SelectValue placeholder="Select date range" />
