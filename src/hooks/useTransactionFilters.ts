@@ -46,7 +46,7 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     searchParams.get('payee')?.split(',').filter(Boolean) || []
   );
   const [dateRangeType, setDateRangeType] = useState<DateRangeType>(
-    (searchParams.get('range') as DateRangeType) || 'year-to-date'
+    (searchParams.get('range') as DateRangeType) || 'this-month'
   );
 
   // Sync filters to URL
@@ -58,7 +58,7 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     if (searchTerm) params.set('search', searchTerm);
     if (categoryFilter.length > 0) params.set('category', categoryFilter.join(','));
     if (payeeFilter.length > 0) params.set('payee', payeeFilter.join(','));
-    if (dateRangeType !== 'year-to-date') params.set('range', dateRangeType);
+    if (dateRangeType !== 'this-month') params.set('range', dateRangeType);
     
     setSearchParams(params);
   };
