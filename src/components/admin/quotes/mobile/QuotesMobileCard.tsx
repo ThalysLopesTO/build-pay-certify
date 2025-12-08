@@ -3,22 +3,45 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { Eye, Edit, MoreVertical, FileText, MessageSquare } from 'lucide-react';
-import { Quote } from '@/hooks/quotes';
+import { Eye, Edit, MoreVertical, FileText, MessageSquare, Trash2 } from 'lucide-react';
+import { Quote, useDeleteQuote } from '@/hooks/quotes';
 import QuoteStatusBadge from '../QuoteStatusBadge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
 interface QuotesMobileCardProps {
   quote: Quote;
   onEdit: (quote: Quote) => void;
+  onRefresh: () => void;
 }
 
-const QuotesMobileCard: React.FC<QuotesMobileCardProps> = ({ quote, onEdit }) => {
+const QuotesMobileCard: React.FC<QuotesMobileCardProps> = ({ quote, onEdit, onRefresh }) => {
+  const deleteQuote = useDeleteQuote();
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const message = quote.status === 'invoiced' 
+      ? 'This quote has been converted to an invoice. Are you sure you want to delete it? This will not delete the invoice.'
+      : 'Are you sure you want to delete this quote?';
+      
+    if (window.confirm(message)) {
+      try {
+        await deleteQuote.mutateAsync(quote.id);
+        onRefresh();
+      } catch (error) {
+        console.error('Failed to delete quote:', error);
+      }
+    }
+  };
+
+  const canDelete = quote.status !== 'accepted' && quote.public_status !== 'approved';
+
   return (
     <Card 
       className={cn(
@@ -73,6 +96,18 @@ const QuotesMobileCard: React.FC<QuotesMobileCardProps> = ({ quote, onEdit }) =>
                 <Eye className="h-4 w-4 mr-2" />
                 View Details
               </DropdownMenuItem>
+              {canDelete && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={handleDelete} 
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Quote
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

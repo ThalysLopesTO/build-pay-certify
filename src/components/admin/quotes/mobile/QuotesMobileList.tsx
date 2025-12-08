@@ -6,9 +6,10 @@ import { FileText } from 'lucide-react';
 interface QuotesMobileListProps {
   quotes: Quote[];
   onEdit: (quote: Quote) => void;
+  onRefresh: () => void;
 }
 
-const QuotesMobileList: React.FC<QuotesMobileListProps> = ({ quotes, onEdit }) => {
+const QuotesMobileList: React.FC<QuotesMobileListProps> = ({ quotes, onEdit, onRefresh }) => {
   if (quotes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -24,7 +25,7 @@ const QuotesMobileList: React.FC<QuotesMobileListProps> = ({ quotes, onEdit }) =
   return (
     <div className="space-y-3">
       {quotes.map((quote) => (
-        <QuotesMobileCard key={quote.id} quote={quote} onEdit={onEdit} />
+        <QuotesMobileCard key={quote.id} quote={quote} onEdit={onEdit} onRefresh={onRefresh} />
       ))}
     </div>
   );
