@@ -19,7 +19,7 @@ export interface UseDateRangeFilterReturn {
 }
 
 export const useDateRangeFilter = (
-  initialRange: DateRangeType = 'year-to-date'
+  initialRange: DateRangeType = 'this-month'
 ): UseDateRangeFilterReturn => {
   const [selectedRange, setSelectedRange] = useState<DateRangeType>(initialRange);
   const [customRange, setCustomRange] = useState<DateRange>({ start: null, end: null });
