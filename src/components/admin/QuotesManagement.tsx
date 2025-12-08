@@ -120,6 +120,7 @@ const QuotesManagement = () => {
             <QuotesMobileList
               quotes={quotes}
               onEdit={handleEditQuote}
+              onRefresh={refetch}
             />
           </>
         ) : (

@@ -50,7 +50,9 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click from opening editor
+    
     const message = quote.status === 'invoiced' 
       ? 'This quote has been converted to an invoice. Are you sure you want to delete it? This will not delete the invoice.'
       : 'Are you sure you want to delete this quote?';
@@ -198,7 +200,7 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
           {quote.status !== 'accepted' && quote.public_status !== 'approved' && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+              <DropdownMenuItem onClick={(e) => handleDelete(e)} className="text-destructive focus:text-destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Quote{quote.status === 'invoiced' && ' (Already Invoiced)'}
               </DropdownMenuItem>
