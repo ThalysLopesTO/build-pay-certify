@@ -1335,7 +1335,7 @@ const IncomeExpensesManagement = () => {
 
       {/* Create/Edit Dialog - Single Dialog for both mobile and desktop */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-xl sm:max-w-2xl max-h-[85vh] overflow-y-auto bg-background">
+        <DialogContent className="w-[95vw] max-w-xl sm:max-w-2xl max-h-[85vh] overflow-y-auto !bg-white">
             <DialogHeader>
               <DialogTitle>
                 {editingTransaction 
