@@ -1335,16 +1335,17 @@ const IncomeExpensesManagement = () => {
 
       {/* Create/Edit Dialog - Single Dialog for both mobile and desktop */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-xl sm:max-w-2xl max-h-[85vh] overflow-y-auto !bg-white">
-            <DialogHeader>
-              <DialogTitle>
-                {editingTransaction 
-                  ? `Edit ${transactionType === 'income' ? 'Income' : 'Expense'}` 
-                  : `Add New ${transactionType === 'income' ? 'Income' : 'Expense'}`
-                }
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 px-1">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>
+              {editingTransaction 
+                ? `Edit ${transactionType === 'income' ? 'Income' : 'Expense'}` 
+                : `Add New ${transactionType === 'income' ? 'Income' : 'Expense'}`
+              }
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-1">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 {/* Title and Category Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
@@ -1643,8 +1644,9 @@ const IncomeExpensesManagement = () => {
                   </Button>
                 </div>
               </form>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
