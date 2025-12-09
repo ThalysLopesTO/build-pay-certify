@@ -148,11 +148,10 @@ const QuoteEditorTotalsCard: React.FC<QuoteEditorTotalsCardProps> = ({
         <div className="pt-3 border-t">
           <Button
             type="button"
-            variant="link"
-            className="p-0 h-auto text-sm text-primary hover:underline"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium"
             onClick={onPaymentScheduleClick}
           >
-            <Calculator className="w-4 h-4 mr-1" />
+            <Calculator className="w-4 h-4 mr-2" />
             Deposit or payment schedule
           </Button>
 
