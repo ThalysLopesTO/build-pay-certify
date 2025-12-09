@@ -2349,6 +2349,7 @@ export type Database = {
           created_by: string | null
           declined_date: string | null
           discount: number | null
+          discount_type: string | null
           expiry_date: string | null
           id: string
           internal_notes: string | null
@@ -2393,6 +2394,7 @@ export type Database = {
           created_by?: string | null
           declined_date?: string | null
           discount?: number | null
+          discount_type?: string | null
           expiry_date?: string | null
           id?: string
           internal_notes?: string | null
@@ -2437,6 +2439,7 @@ export type Database = {
           created_by?: string | null
           declined_date?: string | null
           discount?: number | null
+          discount_type?: string | null
           expiry_date?: string | null
           id?: string
           internal_notes?: string | null

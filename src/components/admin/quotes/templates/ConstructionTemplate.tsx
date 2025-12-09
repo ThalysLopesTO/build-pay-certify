@@ -8,9 +8,16 @@ interface ClassicTemplateProps {
 }
 
 export const generateConstructionTemplate = ({ quote, lineItems, settings, logoUrl }: ClassicTemplateProps) => {
-  const discountAmount = quote.discount || 0;
+  const discountType = quote.discount_type || 'fixed';
+  const discountAmount = discountType === 'percentage'
+    ? (quote.subtotal * (quote.discount || 0)) / 100
+    : (quote.discount || 0);
   const taxAmount = (quote.subtotal - discountAmount) * (quote.tax / 100);
   const total = quote.subtotal - discountAmount + taxAmount;
+
+  const discountLabel = discountType === 'percentage' 
+    ? `Discount (${quote.discount}%)` 
+    : 'Discount';
 
   const logoSection = logoUrl
     ? `<img src="${logoUrl}" alt="Company Logo" style="max-height: 60px;" />`
@@ -143,7 +150,7 @@ export const generateConstructionTemplate = ({ quote, lineItems, settings, logoU
 
       <div class="summary">
         <p>Subtotal: $${quote.subtotal.toFixed(2)}</p>
-        <p>Discount: -$${discountAmount.toFixed(2)}</p>
+        ${discountAmount > 0 ? `<p>${discountLabel}: -$${discountAmount.toFixed(2)}</p>` : ''}
         <p>Tax: $${taxAmount.toFixed(2)}</p>
         <p><strong>Total: $${total.toFixed(2)}</strong></p>
       </div>

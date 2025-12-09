@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator';
 interface QuoteTotalsBreakdownProps {
   subtotal: number;
   discount: number;
+  discountType?: 'percentage' | 'fixed';
   tax: number;
   total: number;
   taxPercentage?: number;
@@ -12,12 +13,15 @@ interface QuoteTotalsBreakdownProps {
 export const QuoteTotalsBreakdown = ({ 
   subtotal, 
   discount, 
+  discountType = 'fixed',
   tax, 
   total,
   taxPercentage 
 }: QuoteTotalsBreakdownProps) => {
-  const discountAmount = (subtotal * discount) / 100;
-  const afterDiscount = subtotal - discountAmount;
+  // Calculate discount amount based on type
+  const discountAmount = discountType === 'percentage'
+    ? (subtotal * discount) / 100
+    : discount;
 
   return (
     <Card>
@@ -30,7 +34,9 @@ export const QuoteTotalsBreakdown = ({
           
           {discount > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Discount ({discount}%):</span>
+              <span className="text-muted-foreground">
+                Discount{discountType === 'percentage' ? ` (${discount}%)` : ''}:
+              </span>
               <span className="font-medium text-green-600">-${discountAmount.toFixed(2)}</span>
             </div>
           )}

@@ -6,14 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Calculator } from 'lucide-react';
 import { PaymentConfig } from '@/hooks/quotes/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface QuoteEditorTotalsCardProps {
   formData: {
     discount: number;
+    discount_type: 'percentage' | 'fixed';
     tax: number;
   };
   calculateSubtotal: () => number;
-  handleInputChange: (field: string, value: number) => void;
+  handleInputChange: (field: string, value: string | number) => void;
   paymentConfig: PaymentConfig;
   onPaymentScheduleClick: () => void;
 }
@@ -26,7 +34,13 @@ const QuoteEditorTotalsCard: React.FC<QuoteEditorTotalsCardProps> = ({
   onPaymentScheduleClick,
 }) => {
   const subtotal = calculateSubtotal();
-  const discountAmount = Math.min(Number(formData.discount) || 0, subtotal);
+  const discountType = formData.discount_type || 'fixed';
+  
+  // Calculate discount amount based on type
+  const discountAmount = discountType === 'percentage'
+    ? Math.min((subtotal * (Number(formData.discount) || 0)) / 100, subtotal)
+    : Math.min(Number(formData.discount) || 0, subtotal);
+  
   const taxAmount = (subtotal - discountAmount) * (Number(formData.tax) / 100);
   const total = subtotal - discountAmount + taxAmount;
 
@@ -56,24 +70,46 @@ const QuoteEditorTotalsCard: React.FC<QuoteEditorTotalsCardProps> = ({
           <span className="font-medium">${subtotal.toFixed(2)}</span>
         </div>
 
-        {/* Discount Input */}
+        {/* Discount Input with Type Toggle */}
         <div className="flex justify-between items-center text-sm">
           <span className="text-muted-foreground">Discount</span>
           <div className="flex items-center gap-2">
-            <span>$</span>
+            <Select
+              value={discountType}
+              onValueChange={(value) => handleInputChange('discount_type', value)}
+            >
+              <SelectTrigger className="w-16 h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fixed">$</SelectItem>
+                <SelectItem value="percentage">%</SelectItem>
+              </SelectContent>
+            </Select>
             <Input 
               type="number" 
               value={formData.discount}
               onChange={(e) => handleInputChange('discount', Number(e.target.value))}
               onFocus={(e) => e.target.select()}
-              className="w-24 h-8 text-right"
+              className="w-20 h-8 text-right"
               min="0"
+              max={discountType === 'percentage' ? 100 : undefined}
               step="0.01"
-              placeholder="0.00"
+              placeholder="0"
               autoComplete="off"
             />
           </div>
         </div>
+        
+        {/* Show calculated discount amount */}
+        {formData.discount > 0 && (
+          <div className="flex justify-between text-sm pl-4">
+            <span className="text-muted-foreground">
+              {discountType === 'percentage' ? `(${formData.discount}% off)` : ''}
+            </span>
+            <span className="text-emerald-600 font-medium">-${discountAmount.toFixed(2)}</span>
+          </div>
+        )}
 
         {/* Tax Input */}
         <div className="flex justify-between items-center text-sm">
