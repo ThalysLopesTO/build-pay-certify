@@ -443,14 +443,25 @@ const addTotalsSection = (
   y += 5;
 
   if (quote.discount > 0) {
-    pdf.text("Discount", labelX, y, { align: "right" });
-    pdf.text(`-${formatCurrency(quote.discount)}`, valueX, y, {
+    const discountType = (quote as any).discount_type || 'fixed';
+    const discountAmount = discountType === 'percentage'
+      ? (quote.subtotal * quote.discount) / 100
+      : quote.discount;
+    const discountLabel = discountType === 'percentage' 
+      ? `Discount (${quote.discount}%)` 
+      : "Discount";
+    pdf.text(discountLabel, labelX, y, { align: "right" });
+    pdf.text(`-${formatCurrency(discountAmount)}`, valueX, y, {
       align: "right",
     });
     y += 5;
   }
 
-  const taxAmount = (quote.subtotal - (quote.discount || 0)) * (quote.tax / 100);
+  const discountType = (quote as any).discount_type || 'fixed';
+  const discountAmountForTax = discountType === 'percentage'
+    ? (quote.subtotal * (quote.discount || 0)) / 100
+    : (quote.discount || 0);
+  const taxAmount = (quote.subtotal - discountAmountForTax) * (quote.tax / 100);
   pdf.text(`Tax (${quote.tax}%)`, labelX, y, { align: "right" });
   pdf.text(formatCurrency(taxAmount), valueX, y, { align: "right" });
   y += 7;

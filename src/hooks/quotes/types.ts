@@ -31,6 +31,7 @@ export interface Quote {
   subtotal: number;
   tax: number;
   discount: number;
+  discount_type?: 'percentage' | 'fixed';
   total_amount: number;
   notes?: string;
   sent_date?: string;

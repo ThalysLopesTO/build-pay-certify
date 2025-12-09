@@ -167,7 +167,10 @@ const PublicQuotePage: React.FC = () => {
 
   const { quote, line_items, company_settings, company_logo } = data;
   const subtotal = line_items.reduce((sum, item) => sum + item.amount, 0);
-  const discountAmount = quote.discount || 0;
+  const discountType = (quote as any).discount_type || 'fixed';
+  const discountAmount = discountType === 'percentage'
+    ? (subtotal * (quote.discount || 0)) / 100
+    : (quote.discount || 0);
   const taxableAmount = subtotal - discountAmount;
   const taxAmount = (taxableAmount * quote.tax) / 100;
   const total = taxableAmount + taxAmount;
@@ -377,7 +380,7 @@ const PublicQuotePage: React.FC = () => {
                 {quote.discount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      Discount:
+                      Discount{discountType === 'percentage' ? ` (${quote.discount}%)` : ''}:
                     </span>
                     <span className="font-medium text-emerald-600">
                       -${discountAmount.toFixed(2)}

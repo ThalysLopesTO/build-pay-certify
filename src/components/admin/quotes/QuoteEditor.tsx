@@ -54,6 +54,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
     status: 'draft' as 'draft' | 'sent' | 'accepted' | 'declined' | 'invoiced',
     tax: settings?.tax_percentage || 0,
     discount: 0,
+    discount_type: 'fixed' as 'percentage' | 'fixed',
     notes: '',
     template: 'classic',
     client_message: '',
@@ -100,6 +101,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
         status: quote.status || 'draft',
         tax: quote.tax || 0,
         discount: quote.discount || 0,
+        discount_type: quote.discount_type || 'fixed',
         notes: quote.notes || '',
         template: quote.template || 'classic',
         client_message: quote.client_message || '',
@@ -129,6 +131,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
         status: 'draft',
         tax: settings?.tax_percentage || 0,
         discount: 0,
+        discount_type: 'fixed',
         notes: '',
         template: 'classic',
         client_message: '',
@@ -221,7 +224,10 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
     
     try {
       const subtotal = calculateSubtotal();
-      const discountAmount = Math.min(Number(formData.discount) || 0, subtotal);
+      const discountType = formData.discount_type || 'fixed';
+      const discountAmount = discountType === 'percentage'
+        ? Math.min((subtotal * (Number(formData.discount) || 0)) / 100, subtotal)
+        : Math.min(Number(formData.discount) || 0, subtotal);
       const taxAmount = (subtotal - discountAmount) * (Number(formData.tax) / 100);
       const total = subtotal - discountAmount + taxAmount;
 
