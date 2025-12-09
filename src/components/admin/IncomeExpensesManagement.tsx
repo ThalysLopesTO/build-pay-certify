@@ -1336,9 +1336,13 @@ const IncomeExpensesManagement = () => {
 
       {/* Create/Edit Dialog - Use Drawer for mobile, Dialog for desktop */}
       {isMobile ? (
-        <Drawer open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DrawerContent className="h-[90vh] bg-white">
-            <DrawerHeader className="border-b pb-4">
+        <Drawer 
+          open={isCreateDialogOpen} 
+          onOpenChange={setIsCreateDialogOpen}
+          shouldScaleBackground={false}
+        >
+          <DrawerContent className="max-h-[90vh] flex flex-col bg-background z-[60]">
+            <DrawerHeader className="border-b pb-4 flex-shrink-0">
               <DrawerTitle>
                 {editingTransaction 
                   ? `Edit ${transactionType === 'income' ? 'Income' : 'Expense'}` 
@@ -1346,7 +1350,7 @@ const IncomeExpensesManagement = () => {
                 }
               </DrawerTitle>
             </DrawerHeader>
-            <div className="overflow-y-auto flex-1 px-4 pb-4">
+            <div className="overflow-y-auto flex-1 px-4 pb-8">
               <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                 {/* Title and Category Row */}
                 <div className="grid grid-cols-1 gap-4">
