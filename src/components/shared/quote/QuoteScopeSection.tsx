@@ -10,7 +10,16 @@ export const QuoteScopeSection = ({
   clientMessage, 
   title = 'Scope of Work' 
 }: QuoteScopeSectionProps) => {
-  if (!clientMessage) {
+  // Filter out trivial content like "Plus 13% HST" or very short messages
+  const isTrivialContent = (content: string) => {
+    const trimmed = content.trim();
+    if (trimmed.length < 15) return true;
+    // Check if it's just tax-related text
+    const taxPattern = /^(plus\s+)?\d+(\.\d+)?%?\s*(hst|gst|tax|vat)?\.?$/i;
+    return taxPattern.test(trimmed);
+  };
+
+  if (!clientMessage || isTrivialContent(clientMessage)) {
     return null;
   }
 
