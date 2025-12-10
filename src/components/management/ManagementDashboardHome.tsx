@@ -20,6 +20,7 @@ import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import WeatherCard from '../admin/dashboard/WeatherCard';
+import BirthdayWidget from '@/components/common/BirthdayWidget';
 
 interface ManagementDashboardHomeProps {
   setActiveTab: (tab: string) => void;
@@ -178,7 +179,10 @@ const ManagementDashboardHome: React.FC<ManagementDashboardHomeProps> = ({ setAc
         </div>
 
         {/* Weather Today Card (right) */}
-        <WeatherCard variant="orange" locationStrategy="company-first" />
+        <div className="flex flex-col gap-4">
+          <WeatherCard variant="orange" locationStrategy="company-first" />
+          <BirthdayWidget variant="orange" />
+        </div>
       </div>
 
       {/* Quick Actions Grid */}

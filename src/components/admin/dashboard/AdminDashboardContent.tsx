@@ -24,6 +24,7 @@ import EmployeeLimitCard from './EmployeeLimitCard';
 import ProjectsProgressOverview from './ProjectsProgressOverview';
 import LiveActiveEmployees from './LiveActiveEmployees';
 import WeatherCard from './WeatherCard';
+import BirthdayWidget from '@/components/common/BirthdayWidget';
 import { useEmployees, useUserProfile } from '@/hooks/new/useUsers';
 interface AdminDashboardContentProps {
   setActiveTab: (tab: string) => void;
@@ -300,7 +301,10 @@ function HeroCard({ onClick }:{ onClick: () => void }) {
       </div>
 
       {/* Weather Today Card (right) */}
-      <WeatherCard />
+      <div className="flex flex-col gap-4">
+        <WeatherCard />
+        <BirthdayWidget variant="orange" />
+      </div>
     </div >
   )
 }
