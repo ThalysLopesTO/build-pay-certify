@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useInventory, InventoryItem } from '@/hooks/useInventory';
+import { useInventoryPhotos, getInventoryPhotoUrl } from '@/hooks/useInventoryPhotos';
 import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useIsMobile } from '@/hooks/use-mobile';
 import InventoryForm from '../InventoryForm';
@@ -28,9 +29,110 @@ import UsageTracker from './UsageTracker';
 import EquipmentMobileStats from './mobile/EquipmentMobileStats';
 import EquipmentMobileFilters from './mobile/EquipmentMobileFilters';
 import EquipmentMobileList from './mobile/EquipmentMobileList';
+import EquipmentPhotoGallery from './EquipmentPhotoGallery';
 import { Button } from '@/components/ui/button';
-import { Plus, Package, ClipboardList } from 'lucide-react';
+import { Plus, Package, ClipboardList, Camera, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Separate component for View Equipment content to use hooks
+const ViewEquipmentContent: React.FC<{
+  item: InventoryItem;
+  canManage: boolean;
+  onOpenGallery: () => void;
+}> = ({ item, canManage, onOpenGallery }) => {
+  const { photos, isLoading } = useInventoryPhotos(item.id);
+
+  return (
+    <div className="mt-6 space-y-6">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Equipment Name</p>
+          <p className="font-medium">{item.equipment_name}</p>
+        </div>
+        
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Brand</p>
+          <p className="font-medium">{item.brand}</p>
+        </div>
+        
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">SKU</p>
+          <p className="font-medium">{item.sku}</p>
+        </div>
+        
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Assigned to</p>
+          <p className="font-medium">
+            {item.jobsites?.name || 'Not assigned'}
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Start Date</p>
+          <p className="font-medium">
+            {format(new Date(item.start_date), 'MMM dd, yyyy')}
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Return Date</p>
+          <p className="font-medium">
+            {item.return_date 
+              ? format(new Date(item.return_date), 'MMM dd, yyyy')
+              : 'Not set'
+            }
+          </p>
+        </div>
+      </div>
+
+      {/* Photos Section */}
+      <div className="space-y-3 pt-4 border-t">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium flex items-center gap-2">
+            <Camera className="h-4 w-4" />
+            Photos ({photos.length})
+          </p>
+          <Button variant="outline" size="sm" onClick={onOpenGallery}>
+            {canManage ? 'Manage Photos' : 'View All'}
+          </Button>
+        </div>
+        
+        {isLoading ? (
+          <div className="flex gap-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 w-16 bg-muted animate-pulse rounded" />
+            ))}
+          </div>
+        ) : photos.length > 0 ? (
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {photos.slice(0, 4).map((photo) => (
+              <img
+                key={photo.id}
+                src={getInventoryPhotoUrl(photo.file_path)}
+                alt={photo.file_name}
+                className="h-16 w-16 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={onOpenGallery}
+              />
+            ))}
+            {photos.length > 4 && (
+              <div 
+                className="h-16 w-16 rounded border bg-muted flex items-center justify-center cursor-pointer hover:bg-muted/80"
+                onClick={onOpenGallery}
+              >
+                <span className="text-sm text-muted-foreground">+{photos.length - 4}</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+            <ImageIcon className="h-4 w-4" />
+            <span>No photos yet</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const EquipmentManagement = () => {
   const { user } = useAuth();
@@ -56,6 +158,7 @@ const EquipmentManagement = () => {
   const [deletingItem, setDeletingItem] = useState<InventoryItem | null>(null);
   const [returningItem, setReturningItem] = useState<InventoryItem | null>(null);
   const [viewingItem, setViewingItem] = useState<InventoryItem | null>(null);
+  const [showPhotoGallery, setShowPhotoGallery] = useState(false);
   
   // Mobile filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -347,52 +450,25 @@ const EquipmentManagement = () => {
           </SheetHeader>
           
           {viewingItem && (
-            <div className="mt-6 space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Equipment Name</p>
-                  <p className="font-medium">{viewingItem.equipment_name}</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Brand</p>
-                  <p className="font-medium">{viewingItem.brand}</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">SKU</p>
-                  <p className="font-medium">{viewingItem.sku}</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Assigned to</p>
-                  <p className="font-medium">
-                    {viewingItem.jobsites?.name || 'Not assigned'}
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Start Date</p>
-                  <p className="font-medium">
-                    {format(new Date(viewingItem.start_date), 'MMM dd, yyyy')}
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Return Date</p>
-                  <p className="font-medium">
-                    {viewingItem.return_date 
-                      ? format(new Date(viewingItem.return_date), 'MMM dd, yyyy')
-                      : 'Not set'
-                    }
-                  </p>
-                </div>
-              </div>
-              
-            </div>
+            <ViewEquipmentContent 
+              item={viewingItem} 
+              canManage={canManageInventory}
+              onOpenGallery={() => setShowPhotoGallery(true)}
+            />
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Photo Gallery for View Sheet */}
+      {viewingItem && (
+        <EquipmentPhotoGallery
+          isOpen={showPhotoGallery}
+          onClose={() => setShowPhotoGallery(false)}
+          inventoryId={viewingItem.id}
+          equipmentName={viewingItem.equipment_name}
+          canManage={canManageInventory}
+        />
+      )}
     </div>
   );
 };

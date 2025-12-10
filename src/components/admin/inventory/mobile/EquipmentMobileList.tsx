@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import PullToRefresh from 'react-simple-pull-to-refresh';
 import { InventoryItem } from '@/hooks/useInventory';
+import { useInventoryPhotoCounts } from '@/hooks/useInventoryPhotos';
 import EquipmentCard from './EquipmentCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +42,15 @@ const EquipmentMobileList: React.FC<EquipmentMobileListProps> = ({
   const [openSections, setOpenSections] = React.useState<Set<string>>(
     new Set(groupedEquipment.map(([key]) => key))
   );
+
+  // Get all inventory IDs for photo counts
+  const allInventoryIds = useMemo(() => {
+    return groupedEquipment.flatMap(([_, group]) => 
+      group.equipment.map(item => item.id)
+    );
+  }, [groupedEquipment]);
+
+  const { data: photoCounts = {} } = useInventoryPhotoCounts(allInventoryIds);
 
   const toggleSection = (key: string) => {
     const newOpenSections = new Set(openSections);
@@ -127,6 +137,7 @@ const EquipmentMobileList: React.FC<EquipmentMobileListProps> = ({
                       onView={onView}
                       onReturn={onReturn}
                       isReturning={isReturning}
+                      photoCount={photoCounts[item.id] || 0}
                     />
                   ))}
                 </CardContent>

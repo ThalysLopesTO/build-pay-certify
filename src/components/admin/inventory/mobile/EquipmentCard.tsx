@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Eye, RotateCcw } from 'lucide-react';
+import { Edit, Trash2, Eye, RotateCcw, Camera } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { InventoryItem } from '@/hooks/useInventory';
 import { motion } from 'framer-motion';
+import EquipmentPhotoGallery from '../EquipmentPhotoGallery';
 
 interface EquipmentCardProps {
   item: InventoryItem;
@@ -16,6 +17,7 @@ interface EquipmentCardProps {
   onView: (item: InventoryItem) => void;
   onReturn: (item: InventoryItem) => void;
   isReturning: boolean;
+  photoCount?: number;
 }
 
 const EquipmentCard: React.FC<EquipmentCardProps> = ({
@@ -27,8 +29,10 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
   onView,
   onReturn,
   isReturning,
+  photoCount = 0,
 }) => {
   const [swipeX, setSwipeX] = useState(0);
+  const [showPhotoGallery, setShowPhotoGallery] = useState(false);
   const isAssigned = status === 'assigned' || status === 'overdue';
 
   const getStatusColor = () => {
@@ -157,6 +161,23 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => setShowPhotoGallery(true)}
+                  className="flex-1 h-8 relative"
+                >
+                  <Camera className="h-3.5 w-3.5 mr-1" />
+                  Photos
+                  {photoCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 h-4 px-1 text-[10px] bg-primary text-primary-foreground"
+                    >
+                      {photoCount}
+                    </Badge>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => onView(item)}
                   className="flex-1 h-8"
                 >
@@ -186,6 +207,15 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Photo Gallery */}
+      <EquipmentPhotoGallery
+        isOpen={showPhotoGallery}
+        onClose={() => setShowPhotoGallery(false)}
+        inventoryId={item.id}
+        equipmentName={item.equipment_name}
+        canManage={canManageInventory}
+      />
     </motion.div>
   );
 };

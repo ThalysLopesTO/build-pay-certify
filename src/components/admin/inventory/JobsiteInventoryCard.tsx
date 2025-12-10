@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,11 +29,14 @@ import {
   Edit,
   Trash2,
   Eye,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Camera
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { InventoryItem } from '@/hooks/useInventory';
+import { useInventoryPhotoCounts } from '@/hooks/useInventoryPhotos';
 import { cn } from '@/lib/utils';
+import EquipmentPhotoGallery from './EquipmentPhotoGallery';
 
 interface JobsiteInventoryCardProps {
   jobsiteName: string;
@@ -63,6 +66,11 @@ const JobsiteInventoryCard: React.FC<JobsiteInventoryCardProps> = ({
   isReturning
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [photoGalleryItem, setPhotoGalleryItem] = useState<InventoryItem | null>(null);
+
+  // Get photo counts for all equipment in this jobsite
+  const inventoryIds = useMemo(() => equipment.map(item => item.id), [equipment]);
+  const { data: photoCounts = {} } = useInventoryPhotoCounts(inventoryIds);
 
   // Calculate stats for this jobsite
   const totalEquipment = equipment.length;
@@ -174,7 +182,34 @@ const JobsiteInventoryCard: React.FC<JobsiteInventoryCardProps> = ({
                           </TableCell>
                           {canManageInventory && (
                             <TableCell className="text-right">
-                              <div className="flex justify-end space-x-2">
+                              <div className="flex justify-end space-x-1">
+                                {/* Photos button */}
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 relative transition-all hover:scale-110"
+                                        onClick={() => setPhotoGalleryItem(item)}
+                                      >
+                                        <Camera className="h-4 w-4 text-muted-foreground" />
+                                        {(photoCounts[item.id] || 0) > 0 && (
+                                          <Badge
+                                            variant="secondary"
+                                            className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-primary text-primary-foreground"
+                                          >
+                                            {photoCounts[item.id] > 9 ? '9+' : photoCounts[item.id]}
+                                          </Badge>
+                                        )}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Photos {photoCounts[item.id] ? `(${photoCounts[item.id]})` : ''}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -263,6 +298,17 @@ const JobsiteInventoryCard: React.FC<JobsiteInventoryCardProps> = ({
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Photo Gallery Dialog */}
+      {photoGalleryItem && (
+        <EquipmentPhotoGallery
+          isOpen={!!photoGalleryItem}
+          onClose={() => setPhotoGalleryItem(null)}
+          inventoryId={photoGalleryItem.id}
+          equipmentName={photoGalleryItem.equipment_name}
+          canManage={canManageInventory}
+        />
+      )}
     </Card>
   );
 };
