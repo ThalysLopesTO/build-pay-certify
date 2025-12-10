@@ -1,58 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Email wrapper function (moved from utils to avoid import issues)
-interface EmailWrapperData {
-  bodyText: string;
-  companyName?: string;
-  companyAddress?: string;
-  companyPhone?: string;
-  companyLogo?: string;
-}
-
-function createEmailWrapper(data: EmailWrapperData): string {
-  const {
-    bodyText,
-    companyName = 'StackBuild',
-    companyAddress = '',
-    companyPhone = '',
-    companyLogo = ''
-  } = data;
-
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Email from ${companyName}</title>
-    </head>
-    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
-        <!-- Header -->
-        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px;">
-          ${companyLogo ? `<img src="${companyLogo}" alt="${companyName}" style="max-height: 60px; margin-bottom: 10px;" />` : ''}
-          <h1 style="color: #333; margin: 0; font-size: 24px;">${companyName}</h1>
-        </div>
-        
-        <!-- Body Content -->
-        <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
-          ${bodyText.replace(/\n/g, '<br>')}
-        </div>
-        
-        <!-- Footer -->
-        <div style="border-top: 2px solid #eee; padding-top: 20px; text-align: center; color: #888; font-size: 12px;">
-          <p style="margin: 0;"><strong>${companyName}</strong></p>
-          ${companyAddress ? `<p style="margin: 5px 0;">${companyAddress}</p>` : ''}
-          ${companyPhone ? `<p style="margin: 5px 0;">${companyPhone}</p>` : ''}
-          <p style="margin: 10px 0 0;">This is an automated message from ${companyName}</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-}
-
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -64,6 +12,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization'
 };
 
+// ============= INTERFACES =============
 interface Company {
   id: string;
   name: string;
@@ -91,6 +40,7 @@ interface Invoice {
   title: string;
   client_company: string;
   client_email: string;
+  client_id?: string;
   total_amount: number;
   due_date: string;
   status: string;
@@ -103,6 +53,7 @@ interface Quote {
   project_name: string;
   client_name: string;
   client_email: string;
+  client_id?: string;
   total_amount: number;
   quote_date: string;
   expiry_date?: string;
@@ -112,10 +63,556 @@ interface Quote {
   company_id: string;
 }
 
-interface EmailTemplate {
-  subject: string;
-  body_text: string;
+// ============= PROFESSIONAL EMAIL TEMPLATES =============
+
+function createInvoiceBeforeDueReminderHTML(data: {
+  clientName: string;
+  companyName: string;
+  invoiceNumber: string;
+  invoiceTitle: string;
+  totalAmount: string;
+  dueDate: string;
+  daysUntilDue: number;
+  portalUrl?: string;
+  companyLogoUrl?: string;
+}): string {
+  const { clientName, companyName, invoiceNumber, invoiceTitle, totalAmount, dueDate, daysUntilDue, portalUrl, companyLogoUrl } = data;
+  
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Reminder from ${companyName}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
+    
+    <!-- Header with Gradient -->
+    <div style="text-align: center; padding: 40px 20px 20px 20px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+      ${companyLogoUrl ? `<img src="${companyLogoUrl}" alt="${companyName}" style="max-width: 180px; max-height: 60px; margin-bottom: 20px;" />` : ''}
+      <h1 style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0;">📅 Payment Reminder</h1>
+    </div>
+
+    <!-- Main Content -->
+    <div style="padding: 40px 30px;">
+      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+        Hi ${clientName},
+      </p>
+      
+      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+        This is a friendly reminder that your invoice for <strong>${invoiceTitle}</strong> is due in <strong>${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}</strong>. Please arrange payment at your convenience to avoid any late fees.
+      </p>
+
+      <!-- Invoice Details Card -->
+      <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 30px 0;">
+        <div style="display: table; width: 100%; border-spacing: 0;">
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Invoice Number:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${invoiceNumber}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Project:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${invoiceTitle}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Amount Due:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #3b82f6; font-weight: 700; font-size: 18px;">$${totalAmount}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Due Date:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${dueDate}</div>
+          </div>
+        </div>
+      </div>
+
+      ${portalUrl ? `
+        <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 30px 0 20px 0; text-align: center;">
+          Click the button below to view your invoice and make a payment:
+        </p>
+
+        <!-- Primary CTA Button -->
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${portalUrl}" 
+             style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; 
+                    padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 700; 
+                    font-size: 16px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);">
+            💳 View Invoice & Pay
+          </a>
+        </div>
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 20px 0 10px 0;">
+          Or copy this link to your browser:
+        </p>
+        <p style="font-size: 12px; color: #9ca3af; text-align: center; word-break: break-all; margin: 0 0 30px 0;">
+          <a href="${portalUrl}" style="color: #10b981; text-decoration: none;">${portalUrl}</a>
+        </p>
+      ` : ''}
+
+      <!-- What happens next -->
+      <div style="border-top: 1px solid #e5e7eb; margin-top: 40px; padding-top: 30px;">
+        <h3 style="font-size: 16px; color: #1f2937; font-weight: 600; margin: 0 0 15px 0;">
+          📌 What happens next?
+        </h3>
+        <ul style="font-size: 14px; color: #6b7280; line-height: 1.8; margin: 0; padding-left: 20px;">
+          <li>Access your client portal to view invoice details</li>
+          <li>Download a PDF copy for your records</li>
+          <li>Make a payment before the due date</li>
+          <li>Contact us if you have any questions</li>
+        </ul>
+      </div>
+
+      <p style="font-size: 14px; color: #6b7280; line-height: 1.6; margin: 30px 0 0 0;">
+        If you've already made payment, please disregard this reminder. Thank you for your business!
+      </p>
+
+      <p style="font-size: 14px; color: #1f2937; margin: 20px 0 0 0;">
+        Best regards,<br/>
+        <strong>${companyName}</strong>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        © ${new Date().getFullYear()} ${companyName}. All rights reserved.
+      </p>
+      <p style="font-size: 11px; color: #d1d5db; margin: 10px 0 0 0;">
+        This is an automated payment reminder
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
+  `;
 }
+
+function createInvoiceOverdueReminderHTML(data: {
+  clientName: string;
+  companyName: string;
+  invoiceNumber: string;
+  invoiceTitle: string;
+  totalAmount: string;
+  dueDate: string;
+  daysOverdue: number;
+  portalUrl?: string;
+  companyLogoUrl?: string;
+}): string {
+  const { clientName, companyName, invoiceNumber, invoiceTitle, totalAmount, dueDate, daysOverdue, portalUrl, companyLogoUrl } = data;
+  
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overdue Invoice from ${companyName}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
+    
+    <!-- Header with Urgent Gradient -->
+    <div style="text-align: center; padding: 40px 20px 20px 20px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+      ${companyLogoUrl ? `<img src="${companyLogoUrl}" alt="${companyName}" style="max-width: 180px; max-height: 60px; margin-bottom: 20px;" />` : ''}
+      <h1 style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0;">⚠️ Payment Overdue</h1>
+    </div>
+
+    <!-- Main Content -->
+    <div style="padding: 40px 30px;">
+      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+        Hi ${clientName},
+      </p>
+      
+      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+        Your invoice for <strong>${invoiceTitle}</strong> is now <strong style="color: #ef4444;">${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue</strong>. Please arrange payment as soon as possible to avoid any additional late fees.
+      </p>
+
+      <!-- Alert Box -->
+      <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="font-size: 14px; color: #991b1b; margin: 0; line-height: 1.5;">
+          <strong>Important:</strong> To maintain your account in good standing, please settle this invoice at your earliest convenience.
+        </p>
+      </div>
+
+      <!-- Invoice Details Card -->
+      <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 30px 0;">
+        <div style="display: table; width: 100%; border-spacing: 0;">
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Invoice Number:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${invoiceNumber}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Project:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${invoiceTitle}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Amount Overdue:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #ef4444; font-weight: 700; font-size: 18px;">$${totalAmount}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Original Due Date:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${dueDate}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Days Overdue:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #ef4444; font-weight: 600; font-size: 14px;">${daysOverdue} day${daysOverdue !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+      </div>
+
+      ${portalUrl ? `
+        <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 30px 0 20px 0; text-align: center;">
+          Click the button below to pay now and bring your account current:
+        </p>
+
+        <!-- Primary CTA Button -->
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${portalUrl}" 
+             style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; 
+                    padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 700; 
+                    font-size: 16px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);">
+            💳 Pay Now
+          </a>
+        </div>
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 20px 0 10px 0;">
+          Or copy this link to your browser:
+        </p>
+        <p style="font-size: 12px; color: #9ca3af; text-align: center; word-break: break-all; margin: 0 0 30px 0;">
+          <a href="${portalUrl}" style="color: #10b981; text-decoration: none;">${portalUrl}</a>
+        </p>
+      ` : ''}
+
+      <!-- What happens next -->
+      <div style="border-top: 1px solid #e5e7eb; margin-top: 40px; padding-top: 30px;">
+        <h3 style="font-size: 16px; color: #1f2937; font-weight: 600; margin: 0 0 15px 0;">
+          📌 What happens next?
+        </h3>
+        <ul style="font-size: 14px; color: #6b7280; line-height: 1.8; margin: 0; padding-left: 20px;">
+          <li>Access your client portal to view invoice details</li>
+          <li>Make a payment to settle your balance</li>
+          <li>Late fees may apply after 30 days</li>
+          <li>Contact us if you need payment arrangements</li>
+        </ul>
+      </div>
+
+      <p style="font-size: 14px; color: #6b7280; line-height: 1.6; margin: 30px 0 0 0;">
+        If you've already made payment, please disregard this reminder. If you're experiencing any difficulties, please reach out to us—we're happy to discuss payment options.
+      </p>
+
+      <p style="font-size: 14px; color: #1f2937; margin: 20px 0 0 0;">
+        Best regards,<br/>
+        <strong>${companyName}</strong>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        © ${new Date().getFullYear()} ${companyName}. All rights reserved.
+      </p>
+      <p style="font-size: 11px; color: #d1d5db; margin: 10px 0 0 0;">
+        This is an automated overdue payment notice
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
+  `;
+}
+
+function createQuoteFollowUpReminderHTML(data: {
+  clientName: string;
+  companyName: string;
+  quoteNumber: string;
+  projectName: string;
+  totalAmount: string;
+  quoteDate: string;
+  daysSinceSent: number;
+  portalUrl?: string;
+  companyLogoUrl?: string;
+}): string {
+  const { clientName, companyName, quoteNumber, projectName, totalAmount, quoteDate, daysSinceSent, portalUrl, companyLogoUrl } = data;
+  
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Following Up on Your Quote from ${companyName}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
+    
+    <!-- Header with Gradient -->
+    <div style="text-align: center; padding: 40px 20px 20px 20px; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+      ${companyLogoUrl ? `<img src="${companyLogoUrl}" alt="${companyName}" style="max-width: 180px; max-height: 60px; margin-bottom: 20px;" />` : ''}
+      <h1 style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0;">👋 Following Up on Your Quote</h1>
+    </div>
+
+    <!-- Main Content -->
+    <div style="padding: 40px 30px;">
+      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+        Hi ${clientName},
+      </p>
+      
+      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+        We wanted to follow up on the quote we sent ${daysSinceSent} day${daysSinceSent !== 1 ? 's' : ''} ago for <strong>${projectName}</strong>. We'd love to help bring your project to life!
+      </p>
+
+      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+        If you have any questions or would like to discuss adjustments to the scope, we're here to help.
+      </p>
+
+      <!-- Quote Details Card -->
+      <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 30px 0;">
+        <div style="display: table; width: 100%; border-spacing: 0;">
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Quote Number:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${quoteNumber}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Project:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${projectName}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Total Amount:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #10b981; font-weight: 700; font-size: 18px;">$${totalAmount}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Quote Date:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${quoteDate}</div>
+          </div>
+        </div>
+      </div>
+
+      ${portalUrl ? `
+        <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 30px 0 20px 0; text-align: center;">
+          Click the button below to review your quote and take the next step:
+        </p>
+
+        <!-- Primary CTA Button -->
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${portalUrl}" 
+             style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; 
+                    padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 700; 
+                    font-size: 16px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);">
+            📋 Review Quote
+          </a>
+        </div>
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 20px 0 10px 0;">
+          Or copy this link to your browser:
+        </p>
+        <p style="font-size: 12px; color: #9ca3af; text-align: center; word-break: break-all; margin: 0 0 30px 0;">
+          <a href="${portalUrl}" style="color: #10b981; text-decoration: none;">${portalUrl}</a>
+        </p>
+      ` : ''}
+
+      <!-- What happens next -->
+      <div style="border-top: 1px solid #e5e7eb; margin-top: 40px; padding-top: 30px;">
+        <h3 style="font-size: 16px; color: #1f2937; font-weight: 600; margin: 0 0 15px 0;">
+          📌 What happens next?
+        </h3>
+        <ul style="font-size: 14px; color: #6b7280; line-height: 1.8; margin: 0; padding-left: 20px;">
+          <li>Review the detailed quote online</li>
+          <li>Approve the quote with your digital signature</li>
+          <li>Request changes if you need adjustments</li>
+          <li>We'll schedule the work once you approve</li>
+        </ul>
+      </div>
+
+      <p style="font-size: 14px; color: #6b7280; line-height: 1.6; margin: 30px 0 0 0;">
+        We're excited about the opportunity to work with you. Please don't hesitate to reach out if you have any questions!
+      </p>
+
+      <p style="font-size: 14px; color: #1f2937; margin: 20px 0 0 0;">
+        Best regards,<br/>
+        <strong>${companyName}</strong>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        © ${new Date().getFullYear()} ${companyName}. All rights reserved.
+      </p>
+      <p style="font-size: 11px; color: #d1d5db; margin: 10px 0 0 0;">
+        This is an automated quote follow-up
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
+  `;
+}
+
+function createQuoteExpiryReminderHTML(data: {
+  clientName: string;
+  companyName: string;
+  quoteNumber: string;
+  projectName: string;
+  totalAmount: string;
+  expiryDate: string;
+  daysUntilExpiry: number;
+  portalUrl?: string;
+  companyLogoUrl?: string;
+}): string {
+  const { clientName, companyName, quoteNumber, projectName, totalAmount, expiryDate, daysUntilExpiry, portalUrl, companyLogoUrl } = data;
+  
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Quote Expires Soon - ${companyName}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
+    
+    <!-- Header with Urgent Gradient -->
+    <div style="text-align: center; padding: 40px 20px 20px 20px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+      ${companyLogoUrl ? `<img src="${companyLogoUrl}" alt="${companyName}" style="max-width: 180px; max-height: 60px; margin-bottom: 20px;" />` : ''}
+      <h1 style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0;">⏰ Your Quote Expires Soon!</h1>
+    </div>
+
+    <!-- Main Content -->
+    <div style="padding: 40px 30px;">
+      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+        Hi ${clientName},
+      </p>
+      
+      <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0;">
+        This is a friendly reminder that your quote for <strong>${projectName}</strong> expires in <strong style="color: #f59e0b;">${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''}</strong>. Don't miss out on locking in this price!
+      </p>
+
+      <!-- Alert Box -->
+      <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="font-size: 14px; color: #92400e; margin: 0; line-height: 1.5;">
+          <strong>Act now:</strong> After the expiry date, we may need to requote based on current pricing and availability.
+        </p>
+      </div>
+
+      <!-- Quote Details Card -->
+      <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 30px 0;">
+        <div style="display: table; width: 100%; border-spacing: 0;">
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Quote Number:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${quoteNumber}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Project:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #1f2937; font-weight: 600; font-size: 14px;">${projectName}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Total Amount:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #10b981; font-weight: 700; font-size: 18px;">$${totalAmount}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Expires On:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #f59e0b; font-weight: 600; font-size: 14px;">${expiryDate}</div>
+          </div>
+          <div style="display: table-row;">
+            <div style="display: table-cell; padding: 8px 0; color: #6b7280; font-size: 14px;">Time Remaining:</div>
+            <div style="display: table-cell; padding: 8px 0; text-align: right; color: #f59e0b; font-weight: 600; font-size: 14px;">${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+      </div>
+
+      ${portalUrl ? `
+        <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 30px 0 20px 0; text-align: center;">
+          Click the button below to review and accept your quote before it expires:
+        </p>
+
+        <!-- Primary CTA Button -->
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${portalUrl}" 
+             style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; 
+                    padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 700; 
+                    font-size: 16px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);">
+            ✅ Accept Quote Now
+          </a>
+        </div>
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 20px 0 10px 0;">
+          Or copy this link to your browser:
+        </p>
+        <p style="font-size: 12px; color: #9ca3af; text-align: center; word-break: break-all; margin: 0 0 30px 0;">
+          <a href="${portalUrl}" style="color: #10b981; text-decoration: none;">${portalUrl}</a>
+        </p>
+      ` : ''}
+
+      <!-- What happens next -->
+      <div style="border-top: 1px solid #e5e7eb; margin-top: 40px; padding-top: 30px;">
+        <h3 style="font-size: 16px; color: #1f2937; font-weight: 600; margin: 0 0 15px 0;">
+          📌 What happens next?
+        </h3>
+        <ul style="font-size: 14px; color: #6b7280; line-height: 1.8; margin: 0; padding-left: 20px;">
+          <li>Review the quote details in your client portal</li>
+          <li>Accept with your digital signature to lock in pricing</li>
+          <li>We'll reach out to schedule your project</li>
+          <li>Need changes? Request them before expiry</li>
+        </ul>
+      </div>
+
+      <p style="font-size: 14px; color: #6b7280; line-height: 1.6; margin: 30px 0 0 0;">
+        If you need more time or have questions, please reach out to us. We're happy to discuss your options!
+      </p>
+
+      <p style="font-size: 14px; color: #1f2937; margin: 20px 0 0 0;">
+        Best regards,<br/>
+        <strong>${companyName}</strong>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        © ${new Date().getFullYear()} ${companyName}. All rights reserved.
+      </p>
+      <p style="font-size: 11px; color: #d1d5db; margin: 10px 0 0 0;">
+        This is an automated quote expiry reminder
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
+  `;
+}
+
+// ============= HELPER FUNCTIONS =============
+
+async function getClientPortalToken(clientId: string): Promise<string | null> {
+  if (!clientId) return null;
+  
+  const { data, error } = await supabase
+    .from('clients')
+    .select('portal_token')
+    .eq('id', clientId)
+    .single();
+  
+  if (error || !data) {
+    console.log(`⚠️ Could not fetch portal token for client ${clientId}`);
+    return null;
+  }
+  
+  return data.portal_token;
+}
+
+function getPortalUrl(portalToken: string | null, section: string = ''): string | null {
+  if (!portalToken) return null;
+  const baseUrl = 'https://app.stackbuild.ca/client';
+  return section ? `${baseUrl}/${portalToken}/${section}` : `${baseUrl}/${portalToken}`;
+}
+
+// ============= MAIN HANDLER =============
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -138,6 +635,8 @@ const handler = async (req: Request): Promise<Response> => {
           invoice_overdue_reminder_days,
           enable_quote_reminders,
           quote_reminder_days,
+          enable_quote_expiry_reminders,
+          quote_expiry_reminder_days_before,
           company_email,
           company_name,
           company_address,
@@ -201,7 +700,8 @@ async function processCompanyReminders(company: Company) {
   }
 }
 
-/* -------------------- INVOICE REMINDERS -------------------- */
+// ============= INVOICE REMINDERS =============
+
 async function processInvoiceReminders(company: Company, settings: any) {
   const today = new Date();
   const beforeDueDate = new Date(today);
@@ -212,7 +712,7 @@ async function processInvoiceReminders(company: Company, settings: any) {
 
   const { data: invoices, error } = await supabase
     .from('invoices')
-    .select('*')
+    .select('*, client_id')
     .eq('company_id', company.id)
     .in('status', ['pending', 'sent'])
     .or(`due_date.eq.${beforeDueDate.toISOString().split('T')[0]},due_date.eq.${overdueDateCheck.toISOString().split('T')[0]}`);
@@ -239,7 +739,8 @@ async function processInvoiceReminders(company: Company, settings: any) {
   }
 }
 
-/* -------------------- QUOTE REMINDERS -------------------- */
+// ============= QUOTE REMINDERS =============
+
 async function processQuoteReminders(company: Company, settings: any) {
   const today = new Date();
   const reminderDate = new Date(today);
@@ -247,7 +748,7 @@ async function processQuoteReminders(company: Company, settings: any) {
 
   const { data: quotes, error } = await supabase
     .from('quotes')
-    .select('*')
+    .select('*, client_id')
     .eq('company_id', company.id)
     .eq('status', 'sent')
     .eq('quote_date', reminderDate.toISOString().split('T')[0]);
@@ -267,7 +768,8 @@ async function processQuoteReminders(company: Company, settings: any) {
   }
 }
 
-/* -------------------- QUOTE EXPIRY REMINDERS -------------------- */
+// ============= QUOTE EXPIRY REMINDERS =============
+
 async function processQuoteExpiryReminders(company: Company, settings: any) {
   const today = new Date();
   const expiryReminderDate = new Date(today);
@@ -277,7 +779,7 @@ async function processQuoteExpiryReminders(company: Company, settings: any) {
 
   const { data: quotes, error } = await supabase
     .from('quotes')
-    .select('*')
+    .select('*, client_id')
     .eq('company_id', company.id)
     .eq('status', 'sent')
     .in('public_status', ['awaiting_response', 'changes_requested'])
@@ -301,7 +803,8 @@ async function processQuoteExpiryReminders(company: Company, settings: any) {
   }
 }
 
-/* -------------------- CHECK REMINDER -------------------- */
+// ============= CHECK REMINDER =============
+
 async function checkReminderSent(companyId: string, type: string, recordId: string, reminderType: string): Promise<boolean> {
   const today = new Date().toISOString().split('T')[0];
   
@@ -323,176 +826,150 @@ async function checkReminderSent(companyId: string, type: string, recordId: stri
   return (data?.length || 0) > 0;
 }
 
-/* -------------------- SEND REMINDERS -------------------- */
+// ============= SEND INVOICE REMINDER =============
+
 async function sendInvoiceReminder(company: Company, invoice: Invoice, reminderType: string, settings: any) {
   try {
-    const reminderStage = reminderType === 'overdue' ? 'overdue' : 'before_due';
-    const template = await getEmailTemplate(company.id, 'invoice', reminderStage);
-
-    // Replace placeholders in plain text template
-    const bodyText = template.body_text
-      .replace(/{{client_name}}/g, invoice.client_company)
-      .replace(/{{invoice_number}}/g, invoice.invoice_number)
-      .replace(/{{total_amount}}/g, invoice.total_amount.toFixed(2))
-      .replace(/{{due_date}}/g, new Date(invoice.due_date).toLocaleDateString());
-
-    const html = createEmailWrapper({
-      subject: template.subject,
-      bodyText,
-      companyName: settings.company_name,
-      companyAddress: settings.company_address,
-      companyPhone: settings.company_phone,
-      companyLogo: settings.company_logo_url
-    });
+    console.log(`📧 Sending ${reminderType} reminder for invoice ${invoice.invoice_number}...`);
+    
+    // Get client portal token
+    const portalToken = invoice.client_id ? await getClientPortalToken(invoice.client_id) : null;
+    const portalUrl = getPortalUrl(portalToken, 'invoices');
+    
+    const today = new Date();
+    const dueDate = new Date(invoice.due_date);
+    const diffTime = dueDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const companyName = settings.company_name || company.name;
+    
+    let html: string;
+    let subject: string;
+    
+    if (reminderType === 'overdue') {
+      const daysOverdue = Math.abs(diffDays);
+      html = createInvoiceOverdueReminderHTML({
+        clientName: invoice.client_company,
+        companyName,
+        invoiceNumber: invoice.invoice_number,
+        invoiceTitle: invoice.title,
+        totalAmount: invoice.total_amount.toFixed(2),
+        dueDate: dueDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        daysOverdue,
+        portalUrl: portalUrl || undefined,
+        companyLogoUrl: settings.company_logo_url || undefined
+      });
+      subject = `⚠️ URGENT: Invoice ${invoice.invoice_number} is ${daysOverdue} Day${daysOverdue !== 1 ? 's' : ''} Overdue`;
+    } else {
+      const daysUntilDue = diffDays;
+      html = createInvoiceBeforeDueReminderHTML({
+        clientName: invoice.client_company,
+        companyName,
+        invoiceNumber: invoice.invoice_number,
+        invoiceTitle: invoice.title,
+        totalAmount: invoice.total_amount.toFixed(2),
+        dueDate: dueDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        daysUntilDue,
+        portalUrl: portalUrl || undefined,
+        companyLogoUrl: settings.company_logo_url || undefined
+      });
+      subject = `📅 Payment Reminder: Invoice ${invoice.invoice_number} Due in ${daysUntilDue} Day${daysUntilDue !== 1 ? 's' : ''}`;
+    }
 
     await supabase.functions.invoke('send-email', {
-      body: { to: invoice.client_email, subject: template.subject, html }
+      body: { to: invoice.client_email, subject, html }
     });
 
     await logReminder(company.id, 'invoice', invoice.id);
-    console.log(`✅ Invoice reminder sent for ${invoice.invoice_number}`);
+    console.log(`✅ Invoice ${reminderType} reminder sent for ${invoice.invoice_number} to ${invoice.client_email}`);
 
   } catch (error) {
     console.error(`❌ Error sending invoice reminder for ${invoice.invoice_number}:`, error);
   }
 }
 
+// ============= SEND QUOTE REMINDER =============
+
 async function sendQuoteReminder(company: Company, quote: Quote, settings: any) {
   try {
-    const template = await getEmailTemplate(company.id, 'quote', 'follow_up');
+    console.log(`📧 Sending follow-up reminder for quote ${quote.quote_number}...`);
+    
+    // Get client portal token
+    const portalToken = quote.client_id ? await getClientPortalToken(quote.client_id) : null;
+    const portalUrl = getPortalUrl(portalToken);
+    
+    const companyName = settings.company_name || company.name;
+    const quoteDate = new Date(quote.quote_date);
+    const daysSinceSent = settings.quote_reminder_days;
 
-    const bodyText = template.body_text
-      .replace(/{{client_name}}/g, quote.client_name)
-      .replace(/{{quote_number}}/g, quote.quote_number)
-      .replace(/{{total_amount}}/g, quote.total_amount.toFixed(2));
-
-    const html = createEmailWrapper({
-      bodyText,
-      companyName: settings.company_name,
-      companyAddress: settings.company_address,
-      companyPhone: settings.company_phone,
-      companyLogo: settings.company_logo_url
+    const html = createQuoteFollowUpReminderHTML({
+      clientName: quote.client_name,
+      companyName,
+      quoteNumber: quote.quote_number,
+      projectName: quote.project_name,
+      totalAmount: quote.total_amount.toFixed(2),
+      quoteDate: quoteDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      daysSinceSent,
+      portalUrl: portalUrl || undefined,
+      companyLogoUrl: settings.company_logo_url || undefined
     });
+    
+    const subject = `👋 Following Up: Quote ${quote.quote_number} for ${quote.project_name}`;
 
     await supabase.functions.invoke('send-email', {
-      body: { to: quote.client_email, subject: template.subject, html }
+      body: { to: quote.client_email, subject, html }
     });
 
     await logReminder(company.id, 'quote', quote.id);
-    console.log(`✅ Quote reminder sent for ${quote.quote_number}`);
+    console.log(`✅ Quote follow-up reminder sent for ${quote.quote_number} to ${quote.client_email}`);
 
   } catch (error) {
     console.error(`❌ Error sending quote reminder for ${quote.quote_number}:`, error);
   }
 }
 
+// ============= SEND QUOTE EXPIRY REMINDER =============
+
 async function sendQuoteExpiryReminder(company: Company, quote: Quote, settings: any) {
   try {
     console.log(`📧 Sending expiry reminder for quote ${quote.quote_number}...`);
     
-    const template = await getEmailTemplate(company.id, 'quote_expiry', 'expiry_reminder');
+    // Get client portal token
+    const portalToken = quote.client_id ? await getClientPortalToken(quote.client_id) : null;
+    const portalUrl = getPortalUrl(portalToken);
+    
+    const companyName = settings.company_name || company.name;
+    const expiryDate = quote.expiry_date ? new Date(quote.expiry_date) : null;
     const daysUntilExpiry = settings.quote_expiry_reminder_days_before;
-    const quoteLink = quote.public_token 
-      ? `https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/public-quote?token=${quote.public_token}`
-      : '';
 
-    const bodyText = template.body_text
-      .replace(/{{client_name}}/g, quote.client_name)
-      .replace(/{{quote_number}}/g, quote.quote_number)
-      .replace(/{{project_name}}/g, quote.project_name)
-      .replace(/{{total_amount}}/g, quote.total_amount.toFixed(2))
-      .replace(/{{expiry_date}}/g, quote.expiry_date ? new Date(quote.expiry_date).toLocaleDateString() : 'N/A')
-      .replace(/{{days_until_expiry}}/g, daysUntilExpiry.toString())
-      .replace(/{{company_name}}/g, settings.company_name || company.name)
-      .replace(/{{quote_link}}/g, quoteLink);
-
-    const subject = template.subject
-      .replace(/{{quote_number}}/g, quote.quote_number)
-      .replace(/{{days_until_expiry}}/g, daysUntilExpiry.toString());
-
-    const html = createEmailWrapper({
-      bodyText,
-      companyName: settings.company_name || company.name,
-      companyAddress: settings.company_address,
-      companyPhone: settings.company_phone,
-      companyLogo: settings.company_logo_url
+    const html = createQuoteExpiryReminderHTML({
+      clientName: quote.client_name,
+      companyName,
+      quoteNumber: quote.quote_number,
+      projectName: quote.project_name,
+      totalAmount: quote.total_amount.toFixed(2),
+      expiryDate: expiryDate ? expiryDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A',
+      daysUntilExpiry,
+      portalUrl: portalUrl || undefined,
+      companyLogoUrl: settings.company_logo_url || undefined
     });
+    
+    const subject = `⏰ Your Quote ${quote.quote_number} Expires in ${daysUntilExpiry} Day${daysUntilExpiry !== 1 ? 's' : ''} - Don't Miss Out!`;
 
     await supabase.functions.invoke('send-email', {
       body: { to: quote.client_email, subject, html }
     });
 
     await logReminder(company.id, 'quote_expiry', quote.id);
-    console.log(`✅ Expiry reminder sent for quote ${quote.quote_number} to ${quote.client_email}`);
+    console.log(`✅ Quote expiry reminder sent for ${quote.quote_number} to ${quote.client_email}`);
 
   } catch (error) {
     console.error(`❌ Error sending quote expiry reminder for ${quote.quote_number}:`, error);
   }
 }
 
-/* -------------------- EMAIL TEMPLATE HANDLING -------------------- */
-async function getEmailTemplate(companyId: string, templateType: string, reminderStage: string = 'general'): Promise<EmailTemplate> {
-  const { data: stageTemplate } = await supabase
-    .from('email_templates')
-    .select('subject, body_text')
-    .eq('company_id', companyId)
-    .eq('template_type', templateType)
-    .eq('reminder_stage', reminderStage)
-    .single();
+// ============= LOG REMINDER =============
 
-  if (stageTemplate) return stageTemplate;
-
-  const { data: generalTemplate } = await supabase
-    .from('email_templates')
-    .select('subject, body_text')
-    .eq('company_id', companyId)
-    .eq('template_type', templateType)
-    .eq('reminder_stage', 'general')
-    .single();
-
-  if (generalTemplate) return generalTemplate;
-
-  return getDefaultTemplate(templateType, reminderStage);
-}
-
-function getDefaultTemplate(templateType: string, reminderStage: string = 'general'): EmailTemplate {
-  if (templateType === 'invoice') {
-    return {
-      subject: reminderStage === 'overdue' ? 'URGENT: Overdue Invoice {{invoice_number}}' : 'Invoice {{invoice_number}} Due Soon',
-      body_text: reminderStage === 'overdue'
-        ? 'Dear {{client_name}}, your invoice {{invoice_number}} is overdue. Amount due: ${{total_amount}}. Please make payment immediately.'
-        : 'Dear {{client_name}}, this is a friendly reminder that your invoice {{invoice_number}} is due soon. Amount: ${{total_amount}}.'
-    };
-  } else if (templateType === 'quote_expiry' && reminderStage === 'expiry_reminder') {
-    return {
-      subject: 'Quote {{quote_number}} Expires in {{days_until_expiry}} Days',
-      body_text: `Dear {{client_name}},
-
-This is a friendly reminder that your quote for {{project_name}} (Quote #{{quote_number}}) will expire in {{days_until_expiry}} days.
-
-Quote Details:
-- Quote Number: {{quote_number}}
-- Project: {{project_name}}
-- Amount: ${{total_amount}}
-- Expiry Date: {{expiry_date}}
-
-To review and accept this quote before it expires, please visit:
-{{quote_link}}
-
-If you have any questions or need an extension, please don't hesitate to reach out.
-
-Best regards,
-{{company_name}}`
-    };
-  } else {
-    return {
-      subject: 'Following up on Quote {{quote_number}}',
-      body_text: 'Dear {{client_name}}, just following up on your quote {{quote_number}} for ${{total_amount}}. Let us know if you have questions.'
-    };
-  }
-}
-
-/* -------------------- LOG REMINDER -------------------- */
 async function logReminder(companyId: string, type: string, recordId: string) {
   const { error } = await supabase
     .from('reminder_logs')
