@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User, Lock, X } from 'lucide-react';
+import { Settings, User, Lock, Award, CreditCard } from 'lucide-react';
 import ProfileTab from './user-settings/ProfileTab';
 import PasswordTab from './user-settings/PasswordTab';
 import PlanTab from './user-settings/PlanTab';
+import CertificatesTab from './user-settings/CertificatesTab';
 
 const UserSettings = () => {
   return (
@@ -15,7 +15,7 @@ const UserSettings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile" className="flex items-center space-x-2">
             <User className="h-4 w-4" />
             <span>Profile</span>
@@ -24,8 +24,12 @@ const UserSettings = () => {
             <Lock className="h-4 w-4" />
             <span>Password</span>
           </TabsTrigger>
+          <TabsTrigger value="certificates" className="flex items-center space-x-2">
+            <Award className="h-4 w-4" />
+            <span>Certificates</span>
+          </TabsTrigger>
           <TabsTrigger value="plan" className="flex items-center space-x-2">
-            <X className="h-4 w-4" />
+            <CreditCard className="h-4 w-4" />
             <span>Plan</span>
           </TabsTrigger>
         </TabsList>
@@ -36,6 +40,10 @@ const UserSettings = () => {
 
         <TabsContent value="password">
           <PasswordTab />
+        </TabsContent>
+
+        <TabsContent value="certificates">
+          <CertificatesTab />
         </TabsContent>
 
         <TabsContent value="plan">
