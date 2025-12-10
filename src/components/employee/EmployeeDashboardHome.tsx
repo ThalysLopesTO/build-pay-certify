@@ -12,6 +12,7 @@ import { useTimesheets } from '@/hooks/useTimesheets';
 import DashboardHero from '@/components/dashboard/DashboardHero';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { isMenuItemVisible } from '@/utils/menuPermissions';
+import BirthdayWidget from '@/components/common/BirthdayWidget';
 
 interface EmployeeDashboardHomeProps {
   onNavigateToTab: (tab: string) => void;
@@ -114,38 +115,41 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
   />
 </div>
 
-        {/* Weekly Hours Card */}
-        <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-600 to-blue-700 text-white">
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-white/20 rounded-full">
-                  <Clock className="h-5 w-5" />
+        {/* Weekly Hours Card + Birthday Widget */}
+        <div className="flex flex-col gap-4">
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-600 to-blue-700 text-white">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-white/20 rounded-full">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium opacity-90">This Week's Hours</h3>
+                    <div className="text-2xl font-bold">
+                      {hoursLoading ? 'Loading...' : `${totalWeeklyHours.toFixed(1)} hrs`}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-medium opacity-90">This Week's Hours</h3>
-                  <div className="text-2xl font-bold">
-                    {hoursLoading ? 'Loading...' : `${totalWeeklyHours.toFixed(1)} hrs`}
+
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs opacity-90">
+                    <span>Progress to 40 hrs</span>
+                    <span>{progressPercentage.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full bg-white/20 rounded-full h-2">
+                    <div 
+                      className="bg-white h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${progressPercentage}%` }}
+                    ></div>
                   </div>
                 </div>
               </div>
-
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs opacity-90">
-                  <span>Progress to 40 hrs</span>
-                  <span>{progressPercentage.toFixed(0)}%</span>
-                </div>
-                <div className="w-full bg-white/20 rounded-full h-2">
-                  <div 
-                    className="bg-white h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${progressPercentage}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+          <BirthdayWidget variant="blue" />
+        </div>
       </div>
 
       {/* Quick Actions */}

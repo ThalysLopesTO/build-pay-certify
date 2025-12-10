@@ -15,6 +15,7 @@ import TodayPunchesCard from './TodayPunchesCard';
 import ForemanJobProgressCard from './ForemanJobProgressCard';
 import { DashboardCard } from '@/components/common/DashboardCard';
 import WeatherCard from '../../admin/dashboard/WeatherCard';
+import BirthdayWidget from '@/components/common/BirthdayWidget';
 
 
 interface TimesheetSummary {
@@ -141,7 +142,10 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
       statusText="Ready to Work"
     />
   </div>
-  <WeatherCard variant="green" locationStrategy="jobsite-first" />
+  <div className="flex flex-col gap-4">
+    <WeatherCard variant="green" locationStrategy="jobsite-first" />
+    <BirthdayWidget variant="green" />
+  </div>
 </div>
 
 {/* Quick Actions */}
