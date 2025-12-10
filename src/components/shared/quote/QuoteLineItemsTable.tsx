@@ -1,5 +1,6 @@
 import { QuoteLineItem } from '@/hooks/quotes/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatCurrency } from '@/utils/formatters';
 
 interface QuoteLineItemsTableProps {
   lineItems: QuoteLineItem[];
@@ -26,10 +27,10 @@ export const QuoteLineItemsTable = ({ lineItems, isMobile }: QuoteLineItemsTable
               )}
               <div className="flex justify-between mt-2 text-sm">
                 <span>Qty: {item.quantity}</span>
-                <span>Unit Price: ${item.unit_price.toFixed(2)}</span>
+                <span>Unit Price: {formatCurrency(item.unit_price)}</span>
               </div>
-              <div className="text-right font-medium mt-1">
-                ${item.amount.toFixed(2)}
+              <div className="text-right font-medium mt-1 tabular-nums">
+                {formatCurrency(item.amount)}
               </div>
             </div>
           ))}
@@ -63,9 +64,9 @@ export const QuoteLineItemsTable = ({ lineItems, isMobile }: QuoteLineItemsTable
                       <div className="text-sm text-muted-foreground">Vendor: {item.vendor}</div>
                     )}
                   </td>
-                  <td className="text-right py-3 px-2">{item.quantity}</td>
-                  <td className="text-right py-3 px-2">${item.unit_price.toFixed(2)}</td>
-                  <td className="text-right py-3 px-2 font-medium">${item.amount.toFixed(2)}</td>
+                  <td className="text-right py-3 px-2 tabular-nums">{item.quantity}</td>
+                  <td className="text-right py-3 px-2 tabular-nums">{formatCurrency(item.unit_price)}</td>
+                  <td className="text-right py-3 px-2 font-medium tabular-nums">{formatCurrency(item.amount)}</td>
                 </tr>
               ))}
             </tbody>
