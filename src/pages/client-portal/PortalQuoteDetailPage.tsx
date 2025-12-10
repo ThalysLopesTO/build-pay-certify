@@ -3,7 +3,7 @@ import { useClientPortalContext } from '@/contexts/ClientPortalContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, MapPin, DollarSign, CheckCircle, XCircle, MessageCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, DollarSign, CheckCircle, XCircle, MessageCircle, Loader2, AlertCircle } from 'lucide-react';
 import { formatInCompanyTimezone, getReportDisplayDate, DEFAULT_TIMEZONE } from '@/utils/timezone';
 import { ApproveQuoteDialog, DeclineQuoteDialog, RequestChangesDialog } from '@/components/client-portal/QuoteActionDialogs';
 import { useState } from 'react';
@@ -11,7 +11,7 @@ import { useApproveQuote, useRequestChanges, useDeclineQuote, usePublicQuote } f
 import { useToast } from '@/hooks/use-toast';
 import { QuoteLineItemsTable, QuoteTotalsBreakdown, QuotePaymentSchedule, QuoteContractSection, QuoteScopeSection } from '@/components/shared/quote';
 import { useIsMobile } from '@/hooks/use-mobile';
-
+import { formatCurrency } from '@/utils/formatters';
 export default function PortalQuoteDetailPage() {
   const { quoteId } = useParams();
   const { quotes, token, company_settings } = useClientPortalContext();
@@ -189,8 +189,8 @@ export default function PortalQuoteDetailPage() {
                 <DollarSign className="w-5 h-5 text-primary" />
                 <span className="text-base md:text-lg font-medium">Total Amount</span>
               </div>
-              <span className="text-2xl md:text-3xl font-bold text-primary">
-                ${quote.total_amount.toFixed(2)}
+              <span className="text-2xl md:text-3xl font-bold text-primary tabular-nums">
+                {formatCurrency(quote.total_amount)}
               </span>
             </div>
           </div>
@@ -207,6 +207,36 @@ export default function PortalQuoteDetailPage() {
         </CardContent>
       </Card>
 
+      {/* Deposit Notice Banner */}
+      {fullQuoteData?.quote?.payment_config && 
+       fullQuoteData.quote.payment_config.mode !== 'full' && 
+       canTakeAction && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-primary flex-shrink-0" />
+              <p className="text-sm font-medium">
+                An outstanding deposit of{' '}
+                <span className="font-bold text-primary tabular-nums">
+                  {formatCurrency(
+                    fullQuoteData.quote.payment_config.mode === 'deposit' && fullQuoteData.quote.payment_config.deposit_value
+                      ? fullQuoteData.quote.payment_config.deposit_type === 'percentage'
+                        ? (fullQuoteData.quote.total_amount * fullQuoteData.quote.payment_config.deposit_value) / 100
+                        : fullQuoteData.quote.payment_config.deposit_value
+                      : fullQuoteData.quote.payment_config.mode === 'schedule' && fullQuoteData.quote.payment_config.schedule_items?.[0]
+                        ? fullQuoteData.quote.payment_config.schedule_items[0].amount_type === 'percentage'
+                          ? (fullQuoteData.quote.total_amount * fullQuoteData.quote.payment_config.schedule_items[0].amount_value) / 100
+                          : fullQuoteData.quote.payment_config.schedule_items[0].amount_value
+                        : 0
+                  )}
+                </span>{' '}
+                will be required to begin.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Scope of Work */}
       {fullQuoteData?.quote?.client_message && (
         <QuoteScopeSection clientMessage={fullQuoteData.quote.client_message} />
@@ -218,14 +248,33 @@ export default function PortalQuoteDetailPage() {
       )}
 
       {/* Totals Breakdown */}
-      {fullQuoteData?.quote && (
-        <QuoteTotalsBreakdown
-          subtotal={fullQuoteData.quote.subtotal}
-          discount={fullQuoteData.quote.discount}
-          tax={fullQuoteData.quote.tax}
-          total={fullQuoteData.quote.total_amount}
-        />
-      )}
+      {fullQuoteData?.quote && (() => {
+        const paymentConfig = fullQuoteData.quote.payment_config;
+        let depositAmount = 0;
+        
+        if (paymentConfig && paymentConfig.mode !== 'full') {
+          if (paymentConfig.mode === 'deposit' && paymentConfig.deposit_value) {
+            depositAmount = paymentConfig.deposit_type === 'percentage'
+              ? (fullQuoteData.quote.total_amount * paymentConfig.deposit_value) / 100
+              : paymentConfig.deposit_value;
+          } else if (paymentConfig.mode === 'schedule' && paymentConfig.schedule_items?.[0]) {
+            const firstItem = paymentConfig.schedule_items[0];
+            depositAmount = firstItem.amount_type === 'percentage'
+              ? (fullQuoteData.quote.total_amount * firstItem.amount_value) / 100
+              : firstItem.amount_value;
+          }
+        }
+        
+        return (
+          <QuoteTotalsBreakdown
+            subtotal={fullQuoteData.quote.subtotal}
+            discount={fullQuoteData.quote.discount}
+            tax={fullQuoteData.quote.tax}
+            total={fullQuoteData.quote.total_amount}
+            depositAmount={depositAmount}
+          />
+        );
+      })()}
 
       {/* Payment Schedule */}
       {fullQuoteData?.quote?.payment_config && (

@@ -1,6 +1,8 @@
 import { PaymentConfig } from '@/hooks/quotes/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { DollarSign } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatters';
 
 interface QuotePaymentScheduleProps {
   paymentConfig: PaymentConfig;
@@ -22,9 +24,14 @@ export const QuotePaymentSchedule = ({ paymentConfig, total }: QuotePaymentSched
     return 0;
   };
 
+  const depositAmount = getDepositAmount();
+  const depositPercentage = paymentConfig.deposit_type === 'percentage' 
+    ? paymentConfig.deposit_value 
+    : (depositAmount / total) * 100;
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <DollarSign className="h-5 w-5" />
           Payment Schedule
@@ -32,38 +39,87 @@ export const QuotePaymentSchedule = ({ paymentConfig, total }: QuotePaymentSched
       </CardHeader>
       <CardContent>
         {paymentConfig.mode === 'deposit' && (
-          <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-              <span className="font-medium">Deposit Required</span>
-              <span className="text-lg font-bold text-primary">
-                ${getDepositAmount().toFixed(2)}
-              </span>
+          <div className="border rounded-lg overflow-hidden">
+            {/* Table Header */}
+            <div className="grid grid-cols-[80px_1fr_120px] bg-muted/50 border-b text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="px-4 py-3">% of Job</div>
+              <div className="px-4 py-3">Description</div>
+              <div className="px-4 py-3 text-right">Total</div>
             </div>
-            <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-              <span className="font-medium">Balance Due on Completion</span>
-              <span className="text-lg font-bold">
-                ${(total - getDepositAmount()).toFixed(2)}
-              </span>
+            
+            {/* Deposit Row */}
+            <div className="grid grid-cols-[80px_1fr_120px] border-b last:border-0">
+              <div className="px-4 py-4 font-semibold text-primary">
+                {depositPercentage?.toFixed(0)}%
+              </div>
+              <div className="px-4 py-4">
+                <div className="font-medium">DEPOSIT</div>
+                <Badge variant="secondary" className="mt-1 text-xs bg-primary/10 text-primary border-0">
+                  Required quote deposit
+                </Badge>
+              </div>
+              <div className="px-4 py-4 text-right font-bold tabular-nums">
+                {formatCurrency(depositAmount)}
+              </div>
+            </div>
+
+            {/* Balance Row */}
+            <div className="grid grid-cols-[80px_1fr_120px] bg-muted/30">
+              <div className="px-4 py-4 font-semibold">
+                {(100 - (depositPercentage || 0)).toFixed(0)}%
+              </div>
+              <div className="px-4 py-4">
+                <div className="font-medium">BALANCE DUE ON COMPLETION</div>
+              </div>
+              <div className="px-4 py-4 text-right font-bold tabular-nums">
+                {formatCurrency(total - depositAmount)}
+              </div>
             </div>
           </div>
         )}
 
         {paymentConfig.mode === 'schedule' && paymentConfig.schedule_items && (
-          <div className="space-y-3">
+          <div className="border rounded-lg overflow-hidden">
+            {/* Table Header */}
+            <div className="grid grid-cols-[80px_1fr_120px] bg-muted/50 border-b text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="px-4 py-3">% of Job</div>
+              <div className="px-4 py-3">Description</div>
+              <div className="px-4 py-3 text-right">Total</div>
+            </div>
+            
+            {/* Schedule Items */}
             {paymentConfig.schedule_items.map((item, index) => {
               const amount = item.amount_type === 'percentage'
                 ? (total * item.amount_value) / 100
                 : item.amount_value;
               
+              const percentage = item.amount_type === 'percentage'
+                ? item.amount_value
+                : (amount / total) * 100;
+
+              const isDeposit = index === 0;
+              
               return (
-                <div key={item.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="font-medium">Payment {index + 1}</div>
-                    <div className="text-sm text-muted-foreground">{item.description}</div>
+                <div 
+                  key={item.id} 
+                  className={`grid grid-cols-[80px_1fr_120px] border-b last:border-0 ${
+                    isDeposit ? '' : 'bg-muted/30'
+                  }`}
+                >
+                  <div className={`px-4 py-4 font-semibold ${isDeposit ? 'text-primary' : ''}`}>
+                    {percentage.toFixed(0)}%
                   </div>
-                  <span className="text-lg font-bold text-primary ml-4">
-                    ${amount.toFixed(2)}
-                  </span>
+                  <div className="px-4 py-4">
+                    <div className="font-medium uppercase">{item.description}</div>
+                    {isDeposit && (
+                      <Badge variant="secondary" className="mt-1 text-xs bg-primary/10 text-primary border-0">
+                        Required quote deposit
+                      </Badge>
+                    )}
+                  </div>
+                  <div className={`px-4 py-4 text-right font-bold tabular-nums ${isDeposit ? 'text-primary' : ''}`}>
+                    {formatCurrency(amount)}
+                  </div>
                 </div>
               );
             })}
