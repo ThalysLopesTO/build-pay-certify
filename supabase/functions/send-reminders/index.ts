@@ -698,6 +698,9 @@ async function processCompanyReminders(company: Company) {
   if (settings.enable_quote_expiry_reminders) {
     await processQuoteExpiryReminders(company, settings);
   }
+
+  // Always process birthday emails
+  await processBirthdayEmails(company, settings);
 }
 
 // ============= INVOICE REMINDERS =============
@@ -982,6 +985,166 @@ async function logReminder(companyId: string, type: string, recordId: string) {
 
   if (error) {
     console.error('❌ Error logging reminder:', error);
+  }
+}
+
+// ============= BIRTHDAY EMAIL TEMPLATE =============
+
+function createBirthdayEmailHTML(data: {
+  employeeName: string;
+  companyName: string;
+  companyLogoUrl?: string;
+}): string {
+  const { employeeName, companyName, companyLogoUrl } = data;
+  
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Happy Birthday from ${companyName}!</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
+    
+    <!-- Header with Festive Gradient -->
+    <div style="text-align: center; padding: 50px 20px 30px 20px; background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #3b82f6 100%);">
+      ${companyLogoUrl ? `<img src="${companyLogoUrl}" alt="${companyName}" style="max-width: 140px; max-height: 50px; margin-bottom: 20px; border-radius: 8px;" />` : ''}
+      <div style="font-size: 60px; margin-bottom: 10px;">🎂</div>
+      <h1 style="color: #ffffff; font-size: 32px; font-weight: 700; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        Happy Birthday!
+      </h1>
+    </div>
+
+    <!-- Confetti Banner -->
+    <div style="text-align: center; padding: 15px; background: linear-gradient(90deg, #fef3c7 0%, #fde68a 50%, #fef3c7 100%);">
+      <span style="font-size: 24px;">🎉 🎈 🎁 🎊 🥳 🎉</span>
+    </div>
+
+    <!-- Main Content -->
+    <div style="padding: 40px 30px;">
+      <p style="font-size: 18px; color: #1f2937; line-height: 1.6; margin: 0 0 20px 0; text-align: center;">
+        Dear <strong>${employeeName}</strong>,
+      </p>
+      
+      <p style="font-size: 16px; color: #4b5563; line-height: 1.8; margin: 0 0 20px 0; text-align: center;">
+        On behalf of everyone at <strong style="color: #7c3aed;">${companyName}</strong>, we wanted to take a moment to wish you a very <strong>Happy Birthday!</strong>
+      </p>
+
+      <!-- Birthday Message Card -->
+      <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 12px; padding: 25px; margin: 30px 0; border: 2px solid #86efac;">
+        <p style="font-size: 16px; color: #166534; line-height: 1.7; margin: 0; text-align: center;">
+          🌟 Thank you for being such a <strong>valuable part of our team</strong>. Your hard work, dedication, and positive attitude make a real difference every day.
+        </p>
+      </div>
+
+      <p style="font-size: 16px; color: #4b5563; line-height: 1.8; margin: 20px 0; text-align: center;">
+        We hope your special day is filled with <strong>joy, laughter, and celebration!</strong> May the year ahead bring you success, happiness, and all the things you wish for. 🎁
+      </p>
+
+      <!-- Celebration Icons -->
+      <div style="text-align: center; margin: 30px 0; font-size: 36px;">
+        🎂 🍰 🎈 🎁 🥳
+      </div>
+
+      <p style="font-size: 16px; color: #1f2937; margin: 30px 0 10px 0; text-align: center;">
+        Best wishes,<br/>
+        <strong style="color: #7c3aed;">The ${companyName} Team</strong>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background: linear-gradient(135deg, #fdf4ff 0%, #faf5ff 100%); padding: 25px; text-align: center; border-top: 1px solid #e9d5ff;">
+      <p style="font-size: 14px; color: #7c3aed; margin: 0 0 5px 0; font-weight: 600;">
+        🎉 Have a wonderful birthday! 🎉
+      </p>
+      <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+        © ${new Date().getFullYear()} ${companyName}
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>
+  `;
+}
+
+// ============= BIRTHDAY EMAIL PROCESSING =============
+
+async function processBirthdayEmails(company: Company, settings: any) {
+  try {
+    const today = new Date();
+    const todayMonth = today.getMonth() + 1; // JavaScript months are 0-indexed
+    const todayDay = today.getDate();
+    
+    console.log(`🎂 Checking for birthdays today (${todayMonth}/${todayDay}) for ${company.name}...`);
+
+    // Query employees with birthdays today
+    const { data: birthdayEmployees, error } = await supabase
+      .from('user_profiles')
+      .select('user_id, first_name, last_name, email, date_of_birth')
+      .eq('company_id', company.id)
+      .eq('is_active', true)
+      .not('date_of_birth', 'is', null)
+      .not('email', 'is', null);
+
+    if (error) {
+      console.error(`❌ Error fetching employees for birthday check:`, error);
+      return;
+    }
+
+    // Filter employees whose birthday matches today
+    const employeesWithBirthdayToday = (birthdayEmployees || []).filter(emp => {
+      if (!emp.date_of_birth) return false;
+      const dob = new Date(emp.date_of_birth);
+      return dob.getMonth() + 1 === todayMonth && dob.getDate() === todayDay;
+    });
+
+    console.log(`🎈 Found ${employeesWithBirthdayToday.length} employees with birthdays today`);
+
+    for (const employee of employeesWithBirthdayToday) {
+      // Check if we already sent a birthday email today
+      const alreadySent = await checkReminderSent(company.id, 'birthday', employee.user_id, 'birthday_email');
+      if (alreadySent) {
+        console.log(`⏩ Birthday email already sent to ${employee.email} today`);
+        continue;
+      }
+
+      await sendBirthdayEmail(company, employee, settings);
+    }
+
+  } catch (error) {
+    console.error(`❌ Error processing birthday emails for ${company.name}:`, error);
+  }
+}
+
+// ============= SEND BIRTHDAY EMAIL =============
+
+async function sendBirthdayEmail(company: Company, employee: any, settings: any) {
+  try {
+    const companyName = settings.company_name || company.name;
+    const employeeName = `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || 'Team Member';
+
+    console.log(`🎂 Sending birthday email to ${employee.email} (${employeeName})...`);
+
+    const html = createBirthdayEmailHTML({
+      employeeName,
+      companyName,
+      companyLogoUrl: settings.company_logo_url || undefined
+    });
+
+    const subject = `🎂 Happy Birthday, ${employee.first_name || employeeName}! From ${companyName}`;
+
+    await supabase.functions.invoke('send-email', {
+      body: { to: employee.email, subject, html }
+    });
+
+    await logReminder(company.id, 'birthday', employee.user_id);
+    console.log(`✅ Birthday email sent to ${employee.email}`);
+
+  } catch (error) {
+    console.error(`❌ Error sending birthday email to ${employee.email}:`, error);
   }
 }
 

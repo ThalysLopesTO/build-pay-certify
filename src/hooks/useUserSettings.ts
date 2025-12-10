@@ -10,6 +10,7 @@ interface UpdateProfileData {
   trade?: string;
   position?: string;
   hourly_rate?: number;
+  date_of_birth?: string | null;
   photo?: File;
   removePhoto?: boolean;
 }
@@ -61,6 +62,7 @@ export const useUpdateProfile = () => {
         trade: data.trade,
         position: data.position,
         hourly_rate: data.hourly_rate,
+        date_of_birth: data.date_of_birth,
         updated_at: new Date().toISOString()
       };
 

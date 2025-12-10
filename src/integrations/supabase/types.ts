@@ -3223,6 +3223,7 @@ export type Database = {
           company_id: string | null
           cpp_rate: number | null
           created_at: string
+          date_of_birth: string | null
           ei_rate: number | null
           email: string | null
           first_name: string | null
@@ -3248,6 +3249,7 @@ export type Database = {
           company_id?: string | null
           cpp_rate?: number | null
           created_at?: string
+          date_of_birth?: string | null
           ei_rate?: number | null
           email?: string | null
           first_name?: string | null
@@ -3273,6 +3275,7 @@ export type Database = {
           company_id?: string | null
           cpp_rate?: number | null
           created_at?: string
+          date_of_birth?: string | null
           ei_rate?: number | null
           email?: string | null
           first_name?: string | null
@@ -3799,6 +3802,7 @@ export type Database = {
       check_invoices_due_soon: { Args: never; Returns: undefined }
       check_invoices_overdue: { Args: never; Returns: undefined }
       check_overdue_jobsites: { Args: never; Returns: undefined }
+      check_upcoming_birthdays: { Args: never; Returns: undefined }
       cleanup_expired_password_reset_tokens: { Args: never; Returns: undefined }
       cleanup_old_notifications: { Args: never; Returns: undefined }
       convert_quote_to_invoice: {

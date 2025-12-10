@@ -88,7 +88,8 @@ export const useAuthState = () => {
                 lastName: profile.last_name || '',
                 pendingApproval: profile.pending_approval || false,
                 workerType: (profile.worker_type as 'employee' | 'subcontractor') || 'subcontractor',
-                photo_url: profile.photo_url || null
+                photo_url: profile.photo_url || null,
+                dateOfBirth: profile.date_of_birth || null
               };
 
               console.log('✅ Setting auth user:', {
