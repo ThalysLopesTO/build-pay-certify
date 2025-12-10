@@ -159,6 +159,7 @@ const EquipmentManagement = () => {
   const [returningItem, setReturningItem] = useState<InventoryItem | null>(null);
   const [viewingItem, setViewingItem] = useState<InventoryItem | null>(null);
   const [showPhotoGallery, setShowPhotoGallery] = useState(false);
+  const [pendingPhotos, setPendingPhotos] = useState<File[]>([]);
   
   // Mobile filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -254,8 +255,22 @@ const EquipmentManagement = () => {
     return { total, assigned, available, overdue };
   }, [inventory]);
 
+  // Hook for uploading photos - we'll use null initially and create after item is made
+  const { uploadPhotos } = useInventoryPhotos(null);
+
   const handleCreateItem = async (data: any) => {
-    await createItem(data);
+    const createdItem = await createItem(data);
+    
+    // Upload pending photos if any
+    if (pendingPhotos.length > 0 && createdItem?.id) {
+      try {
+        await uploadPhotos({ inventoryId: createdItem.id, files: pendingPhotos });
+      } catch (error) {
+        console.error('Failed to upload photos:', error);
+      }
+    }
+    
+    setPendingPhotos([]);
     setIsFormOpen(false);
   };
 
@@ -403,6 +418,7 @@ const EquipmentManagement = () => {
         onSubmit={editingItem ? handleUpdateItem : handleCreateItem}
         initialData={editingItem}
         isSubmitting={isCreating || isUpdating}
+        onPhotosSelected={setPendingPhotos}
       />
 
       {/* Delete Confirmation Dialog */}
