@@ -19,6 +19,14 @@ const ProfileTab = () => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
 
+  // Parse date string safely to avoid timezone shift (e.g., "1997-04-19" → April 19, not 18)
+  const parseDateOfBirth = (dateStr: string | null | undefined): Date | null => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    // Create date at noon to prevent timezone shift
+    return new Date(year, month - 1, day, 12, 0, 0);
+  };
+
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -27,7 +35,7 @@ const ProfileTab = () => {
       trade: user?.trade || '',
       position: user?.position || '',
       hourly_rate: user?.hourlyRate || 25,
-      date_of_birth: user?.dateOfBirth ? new Date(user.dateOfBirth) : null,
+      date_of_birth: parseDateOfBirth(user?.dateOfBirth),
     },
   });
 
