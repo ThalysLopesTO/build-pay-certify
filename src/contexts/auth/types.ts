@@ -14,6 +14,7 @@ export interface AuthUser extends User {
   pendingApproval?: boolean;
   workerType?: 'employee' | 'subcontractor';
   photo_url?: string;
+  dateOfBirth?: string;
 }
 
 export interface AuthContextType {

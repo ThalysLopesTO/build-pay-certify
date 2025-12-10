@@ -2,11 +2,16 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { format } from 'date-fns';
+import { CalendarIcon, Cake } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useUpdateProfile } from '@/hooks/useUserSettings';
 import { profileSchema, ProfileFormData } from './schemas';
@@ -26,6 +31,7 @@ const ProfileTab = () => {
       trade: user?.trade || '',
       position: user?.position || '',
       hourly_rate: user?.hourlyRate || 25,
+      date_of_birth: user?.dateOfBirth ? new Date(user.dateOfBirth) : null,
     },
   });
 
@@ -50,6 +56,7 @@ const ProfileTab = () => {
       trade: data.trade || undefined,
       position: data.position || undefined,
       hourly_rate: data.hourly_rate || undefined,
+      date_of_birth: data.date_of_birth ? format(data.date_of_birth, 'yyyy-MM-dd') : null,
       photo: photoFile || undefined,
       removePhoto: removePhoto,
     };
@@ -107,6 +114,55 @@ const ProfileTab = () => {
               />
             </div>
 
+            {/* Birthday Field */}
+            <FormField
+              control={profileForm.control}
+              name="date_of_birth"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel className="flex items-center gap-2">
+                    <Cake className="h-4 w-4" />
+                    Date of Birth
+                  </FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "MMMM d, yyyy")
+                          ) : (
+                            <span>Select your birthday</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value || undefined}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                        captionLayout="dropdown-buttons"
+                        fromYear={1940}
+                        toYear={new Date().getFullYear()}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={profileForm.control}
@@ -119,7 +175,7 @@ const ProfileTab = () => {
                         {...field} 
                         placeholder="e.g. Electrician, Plumber" 
                         disabled={!isCompanyAdmin}
-                        className={!isCompanyAdmin ? "bg-gray-50 text-gray-600 cursor-not-allowed" : ""}
+                        className={!isCompanyAdmin ? "bg-muted text-muted-foreground cursor-not-allowed" : ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -138,7 +194,7 @@ const ProfileTab = () => {
                         {...field} 
                         placeholder="e.g. Lead, Helper" 
                         disabled={!isCompanyAdmin}
-                        className={!isCompanyAdmin ? "bg-gray-50 text-gray-600 cursor-not-allowed" : ""}
+                        className={!isCompanyAdmin ? "bg-muted text-muted-foreground cursor-not-allowed" : ""}
                       />
                     </FormControl>
                     <FormMessage />
@@ -161,7 +217,7 @@ const ProfileTab = () => {
                       {...field}
                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       disabled={!isCompanyAdmin}
-                      className={!isCompanyAdmin ? "bg-gray-50 text-gray-600 cursor-not-allowed" : ""}
+                      className={!isCompanyAdmin ? "bg-muted text-muted-foreground cursor-not-allowed" : ""}
                     />
                   </FormControl>
                   <FormMessage />

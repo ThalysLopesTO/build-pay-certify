@@ -532,6 +532,7 @@ serve(async (req) => {
       hourly_rate: parseFloat(employeeData.hourlyRate) || null,
       photo_url: employeeData.photoUrl || null,
       phone: employeeData.phoneNumber || null,
+      date_of_birth: employeeData.dateOfBirth || null,
       pending_approval: false,
       worker_type: employeeData.workerType || 'subcontractor',
       is_active: true, // Ensure new employees are active by default
