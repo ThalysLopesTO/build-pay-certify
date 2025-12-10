@@ -22,6 +22,7 @@ export type Employee = {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  date_of_birth?: string | null;
   companies?: {
     name: string;
   };

@@ -7,13 +7,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Mail, Phone, MapPin, User, Briefcase, DollarSign, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { Mail, Phone, MapPin, User, Briefcase, DollarSign, AlertCircle, RefreshCw, Loader2, Cake } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import PhotoUploadField from './employee-registration/PhotoUploadField';
+import BirthdayDatePicker from '@/components/common/BirthdayDatePicker';
 import { editEmployeeSchema, EditEmployeeFormData } from '@/components/admin/employee-edit-modal-schema';
 import { useUpdateEmployee } from '@/hooks/new/useUsers';
 import { useSyncAuthEmail } from '@/hooks/new/useSyncAuthEmail';
 import { toast } from 'sonner';
+
+// Parse date string safely to avoid timezone shift (e.g., "1997-04-19" → April 19, not 18)
+const parseDateOfBirth = (dateStr: string | null | undefined): Date | null => {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  // Create date at noon to prevent timezone shift
+  return new Date(year, month - 1, day, 12, 0, 0);
+};
+
 interface Employee {
   id: string;
   user_id: string;
@@ -28,6 +38,7 @@ interface Employee {
   hourly_rate: number;
   worker_type: string;
   photo_url?: string | null;
+  date_of_birth?: string | null;
 }
 interface EmployeeEditModalProps {
   onClose: () => void;
@@ -52,7 +63,8 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
       trade: '',
       role: 'employee',
       hourly_rate: 0,
-      worker_type: 'employee'
+      worker_type: 'employee',
+      date_of_birth: null
     }
   });
   useEffect(() => {
@@ -72,7 +84,8 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
         trade: employee.trade || '',
         role: employee.role as any,
         hourly_rate: employee.hourly_rate || 0,
-        worker_type: employee.worker_type as any
+        worker_type: employee.worker_type as any,
+        date_of_birth: parseDateOfBirth(employee.date_of_birth)
       });
     }
   }, [employee, form]);
@@ -102,6 +115,11 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
     const photoFile = data.photo instanceof File ? data.photo : undefined;
 
     // Trigger mutation
+    // Format date_of_birth as YYYY-MM-DD for database
+    const formattedDateOfBirth = data.date_of_birth 
+      ? `${data.date_of_birth.getFullYear()}-${String(data.date_of_birth.getMonth() + 1).padStart(2, '0')}-${String(data.date_of_birth.getDate()).padStart(2, '0')}`
+      : null;
+
     mutation.mutate({
       id: employee.id,
       updates: {
@@ -114,7 +132,8 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
         trade: data.trade || undefined,
         role: data.role,
         hourly_rate: data.hourly_rate || undefined,
-        worker_type: data.worker_type
+        worker_type: data.worker_type,
+        date_of_birth: formattedDateOfBirth
       },
       newPhoto: photoFile,
       isEmailChanged: (employee?.email ?? "") !== (data?.email ?? "")
@@ -172,6 +191,26 @@ const EmployeeEditModal: React.FC<EmployeeEditModalProps> = ({
                       <FormMessage />
                     </FormItem>} />
               </div>
+
+              <FormField
+                control={form.control}
+                name="date_of_birth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Cake className="h-4 w-4" />
+                      Date of Birth
+                    </FormLabel>
+                    <FormControl>
+                      <BirthdayDatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             {/* Contact Information */}
