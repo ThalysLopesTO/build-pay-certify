@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Upload, X, Camera } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -57,13 +57,24 @@ type InventoryFormData = z.infer<typeof inventorySchema>;
 interface InventoryFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateInventoryItem) => Promise<void>;
+  onSubmit: (data: CreateInventoryItem) => Promise<any>;
   initialData?: InventoryItem | null;
   isSubmitting: boolean;
+  onPhotosSelected?: (files: File[]) => void;
 }
 
-const InventoryForm = ({ isOpen, onClose, onSubmit, initialData, isSubmitting }: InventoryFormProps) => {
+const InventoryForm = ({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  initialData, 
+  isSubmitting,
+  onPhotosSelected 
+}: InventoryFormProps) => {
   const { data: jobsites = [] } = useActiveJobsites();
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const form = useForm<InventoryFormData>({
     resolver: zodResolver(inventorySchema),
@@ -77,7 +88,15 @@ const InventoryForm = ({ isOpen, onClose, onSubmit, initialData, isSubmitting }:
     },
   });
 
-  React.useEffect(() => {
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
+
+  // Reset form and photos when dialog opens/closes or initialData changes
+  useEffect(() => {
     if (initialData) {
       form.reset({
         jobsite_id: initialData.jobsite_id,
@@ -97,10 +116,69 @@ const InventoryForm = ({ isOpen, onClose, onSubmit, initialData, isSubmitting }:
         return_date: '',
       });
     }
-  }, [initialData, form]);
+    // Clear photos when switching between add/edit or when dialog closes
+    clearPhotos();
+  }, [initialData, form, isOpen]);
+
+  const clearPhotos = useCallback(() => {
+    previewUrls.forEach(url => URL.revokeObjectURL(url));
+    setSelectedFiles([]);
+    setPreviewUrls([]);
+    onPhotosSelected?.([]);
+  }, [previewUrls, onPhotosSelected]);
+
+  const handleFileSelect = useCallback((files: FileList | null) => {
+    if (!files) return;
+
+    const validFiles: File[] = [];
+    const newPreviews: string[] = [];
+
+    Array.from(files).forEach(file => {
+      // Validate file type
+      if (!file.type.startsWith('image/')) return;
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) return;
+
+      validFiles.push(file);
+      newPreviews.push(URL.createObjectURL(file));
+    });
+
+    const allFiles = [...selectedFiles, ...validFiles];
+    const allPreviews = [...previewUrls, ...newPreviews];
+
+    setSelectedFiles(allFiles);
+    setPreviewUrls(allPreviews);
+    onPhotosSelected?.(allFiles);
+  }, [selectedFiles, previewUrls, onPhotosSelected]);
+
+  const handleRemoveFile = useCallback((index: number) => {
+    URL.revokeObjectURL(previewUrls[index]);
+    
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    const newPreviews = previewUrls.filter((_, i) => i !== index);
+    
+    setSelectedFiles(newFiles);
+    setPreviewUrls(newPreviews);
+    onPhotosSelected?.(newFiles);
+  }, [selectedFiles, previewUrls, onPhotosSelected]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    handleFileSelect(e.dataTransfer.files);
+  }, [handleFileSelect]);
 
   const handleSubmit = async (data: InventoryFormData) => {
-    // Ensure all required fields are present
     const submitData: CreateInventoryItem = {
       jobsite_id: data.jobsite_id,
       equipment_name: data.equipment_name,
@@ -110,12 +188,13 @@ const InventoryForm = ({ isOpen, onClose, onSubmit, initialData, isSubmitting }:
       return_date: data.return_date || null,
     };
     await onSubmit(submitData);
+    clearPhotos();
     onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { clearPhotos(); onClose(); } }}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initialData ? 'Edit' : 'Add'} Inventory Item</DialogTitle>
           <DialogDescription>
@@ -274,8 +353,73 @@ const InventoryForm = ({ isOpen, onClose, onSubmit, initialData, isSubmitting }:
               )}
             />
 
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onClose}>
+            {/* Photo Upload Section - Only show for new items */}
+            {!initialData && (
+              <div className="space-y-3">
+                <FormLabel className="flex items-center gap-2">
+                  <Camera className="h-4 w-4" />
+                  Equipment Photos (Optional)
+                </FormLabel>
+                
+                {/* Dropzone */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={cn(
+                    "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                    isDragOver 
+                      ? "border-primary bg-primary/5" 
+                      : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                  )}
+                  onClick={() => document.getElementById('photo-upload')?.click()}
+                >
+                  <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleFileSelect(e.target.files)}
+                  />
+                  <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Click to upload or drag and drop
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PNG, JPG up to 10MB each
+                  </p>
+                </div>
+
+                {/* Preview Grid */}
+                {selectedFiles.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2">
+                    {previewUrls.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Preview ${index + 1}`}
+                          className="h-16 w-16 object-cover rounded border"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveFile(index);
+                          }}
+                          className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => { clearPhotos(); onClose(); }}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>

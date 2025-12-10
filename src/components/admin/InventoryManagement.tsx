@@ -32,6 +32,7 @@ import { Plus, Edit, Trash2, Search, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useInventory, InventoryItem } from '@/hooks/useInventory';
+import { useInventoryPhotos } from '@/hooks/useInventoryPhotos';
 import { useActiveJobsites } from '@/hooks/useJobsites';
 import InventoryForm from './InventoryForm';
 
@@ -39,12 +40,14 @@ const InventoryManagement = () => {
   const { user } = useAuth();
   const { inventory, isLoading, createItem, updateItem, deleteItem, isCreating, isUpdating, isDeleting } = useInventory();
   const { data: jobsites = [] } = useActiveJobsites();
+  const { uploadPhotos } = useInventoryPhotos(null);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [deletingItem, setDeletingItem] = useState<InventoryItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [jobsiteFilter, setJobsiteFilter] = useState<string>('all');
+  const [pendingPhotos, setPendingPhotos] = useState<File[]>([]);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const canManageInventory = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management' || user?.role === 'foreman';
@@ -62,7 +65,18 @@ const InventoryManagement = () => {
   });
 
   const handleCreateItem = async (data: any) => {
-    await createItem(data);
+    const createdItem = await createItem(data);
+    
+    // Upload pending photos if any
+    if (pendingPhotos.length > 0 && createdItem?.id) {
+      try {
+        await uploadPhotos({ inventoryId: createdItem.id, files: pendingPhotos });
+      } catch (error) {
+        console.error('Failed to upload photos:', error);
+      }
+    }
+    
+    setPendingPhotos([]);
     setIsFormOpen(false);
   };
 
@@ -222,6 +236,7 @@ const InventoryManagement = () => {
         onSubmit={editingItem ? handleUpdateItem : handleCreateItem}
         initialData={editingItem}
         isSubmitting={isCreating || isUpdating}
+        onPhotosSelected={setPendingPhotos}
       />
 
       {/* Delete Confirmation Dialog */}
