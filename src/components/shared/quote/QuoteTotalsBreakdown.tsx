@@ -38,39 +38,39 @@ export const QuoteTotalsBreakdown = ({
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Subtotal */}
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between items-center py-2">
             <span className="text-muted-foreground">Subtotal</span>
             <span className="font-medium tabular-nums">{formatCurrency(subtotal)}</span>
           </div>
           
           {/* Discount */}
           {discount > 0 && (
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between items-center py-2">
               <span className="text-muted-foreground">
                 Discount{discountType === 'percentage' ? ` (${discount}%)` : ''}
               </span>
               <span className="font-medium text-green-600 tabular-nums">
-                - {formatCurrency(discountAmount)}
+                -{formatCurrency(discountAmount)}
               </span>
             </div>
           )}
           
           {/* HST/Tax */}
           {tax > 0 && (
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between items-center py-2">
               <span className="text-muted-foreground">
-                HST{hstNumber ? ` ${hstNumber}` : ''} ({calculatedTaxPercentage.toFixed(1)}%)
+                HST{hstNumber ? ` (${hstNumber})` : ''} ({calculatedTaxPercentage.toFixed(1)}%)
               </span>
               <span className="font-medium tabular-nums">{formatCurrency(tax)}</span>
             </div>
           )}
           
-          <Separator className="my-3" />
+          <Separator />
           
           {/* Total */}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center pt-3 pb-2">
             <span className="text-lg font-bold">Total</span>
             <span className="text-2xl font-bold text-primary tabular-nums">
               {formatCurrency(total)}
@@ -79,15 +79,14 @@ export const QuoteTotalsBreakdown = ({
 
           {/* Deposit Required */}
           {depositAmount && depositAmount > 0 && (
-            <>
-              <Separator className="my-3" />
-              <div className="flex justify-between items-center bg-primary/5 -mx-6 px-6 py-3 rounded-b-lg">
+            <div className="flex justify-between items-center bg-primary/10 -mx-6 px-6 py-4 mt-3 border-t border-primary/20">
+              <div className="flex items-center gap-2">
                 <span className="font-semibold text-primary">Deposit Required</span>
-                <span className="text-xl font-bold text-primary tabular-nums">
-                  {formatCurrency(depositAmount)}
-                </span>
               </div>
-            </>
+              <span className="text-xl font-bold text-primary tabular-nums">
+                {formatCurrency(depositAmount)}
+              </span>
+            </div>
           )}
         </div>
       </CardContent>

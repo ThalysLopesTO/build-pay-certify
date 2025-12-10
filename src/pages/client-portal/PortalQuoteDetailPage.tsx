@@ -182,19 +182,6 @@ export default function PortalQuoteDetailPage() {
             )}
           </div>
 
-          {/* Total Amount */}
-          <div className="pt-4 border-t">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-primary" />
-                <span className="text-base md:text-lg font-medium">Total Amount</span>
-              </div>
-              <span className="text-2xl md:text-3xl font-bold text-primary tabular-nums">
-                {formatCurrency(quote.total_amount)}
-              </span>
-            </div>
-          </div>
-
           {/* Notes */}
           {quote.notes && (
             <div className="pt-4 border-t">
