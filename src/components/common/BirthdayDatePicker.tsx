@@ -74,14 +74,16 @@ const BirthdayDatePicker: React.FC<BirthdayDatePickerProps> = ({ value, onChange
       day = maxDays;
     }
     
-    onChange(new Date(year, month, day));
+    // Use noon to prevent timezone shift issues
+    onChange(new Date(year, month, day, 12, 0, 0));
   };
 
   const handleDayChange = (dayStr: string) => {
     const day = parseInt(dayStr, 10);
     const month = selectedMonth ?? 0;
     const year = selectedYear ?? currentYear;
-    onChange(new Date(year, month, day));
+    // Use noon to prevent timezone shift issues
+    onChange(new Date(year, month, day, 12, 0, 0));
   };
 
   const handleYearChange = (yearStr: string) => {
@@ -95,7 +97,8 @@ const BirthdayDatePicker: React.FC<BirthdayDatePickerProps> = ({ value, onChange
       day = maxDays;
     }
     
-    onChange(new Date(year, month, day));
+    // Use noon to prevent timezone shift issues
+    onChange(new Date(year, month, day, 12, 0, 0));
   };
 
   return (
