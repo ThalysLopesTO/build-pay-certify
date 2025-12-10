@@ -12,6 +12,7 @@ export const editEmployeeSchema = z.object({
   hourly_rate: z.number().min(0, 'Hourly rate must be positive').optional(),
   worker_type: z.enum(['employee', 'subcontractor']).default('employee'),
   photo: z.instanceof(File).optional(),
+  date_of_birth: z.date().nullable().optional(),
 });
 
 export type EditEmployeeFormData = z.infer<typeof editEmployeeSchema>;
