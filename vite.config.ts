@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
+        maximumFileSizeToCacheInBytes: 12 * 1024 * 1024, // 12MB limit
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         globIgnores: [
           '**/lovable-uploads/**', // Exclude large user uploads
