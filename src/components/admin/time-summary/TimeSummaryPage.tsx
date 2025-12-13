@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { BarChart3, RefreshCw, X, Calendar, Building, Users, Filter as FilterIcon, Download, ChevronDown, FileText, FileSpreadsheet } from 'lucide-react';
+import { BarChart3, RefreshCw, X, Calendar, Building, Users, Filter as FilterIcon, Download, ChevronDown, FileText, FileSpreadsheet, Sheet } from 'lucide-react';
 import { TimeSummaryFilters } from './TimeSummaryFilters';
 import { TimeSummaryTable } from './TimeSummaryTable';
 import { Button } from '@/components/ui/button';
@@ -161,7 +161,7 @@ export const TimeSummaryPage: React.FC = () => {
   const { data, isLoading } = useTimeSummaryDataWithRules(filters);
 
   // Initialize export hook
-  const { isExporting, exportPayrollCSV, exportPayrollPDF } = useTimeSummaryExport({
+  const { isExporting, exportPayrollCSV, exportPayrollExcel, exportPayrollPDF } = useTimeSummaryExport({
     companyId: user?.companyId || '',
     companyName: companySettings?.company_name || 'Company',
     companyLogo: companySettings?.company_logo_url,
@@ -336,6 +336,11 @@ export const TimeSummaryPage: React.FC = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={exportPayrollExcel} disabled={isExporting}>
+                <Sheet className="h-4 w-4 mr-2" />
+                Download Excel
+                <span className="ml-auto text-xs text-muted-foreground">Pro</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={exportPayrollCSV} disabled={isExporting}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Download CSV
