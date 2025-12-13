@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { JobsiteSummaryWithRules } from './useTimeSummaryDataWithRules';
 import { useTimeSummaryPDF } from './useTimeSummaryPDF';
 import { useCompanySettings } from './useCompanySettings';
+import * as XLSX from 'xlsx';
 
 interface ExportParams {
   companyId: string;
@@ -27,21 +28,21 @@ interface ExportParams {
 interface ExportResult {
   isExporting: boolean;
   exportPayrollCSV: () => Promise<void>;
+  exportPayrollExcel: () => Promise<void>;
   exportPayrollPDF: () => Promise<void>;
   error: Error | null;
 }
 
-interface PayrollDataRow {
-  employeeName: string;
-  employeeRole: string;
+interface JobsiteGroup {
   jobsiteName: string;
-  periodStart: string;
-  periodEnd: string;
-  totalRawHours: number;
-  totalPaidHours: number;
-  daysWorked: number;
-  punchCount: number;
-  issueCount: number;
+  employees: {
+    employeeName: string;
+    employeeRole: string;
+    totalPaidHours: number;
+    daysWorked: number;
+  }[];
+  subtotalPaidHours: number;
+  subtotalDaysWorked: number;
 }
 
 /**
@@ -49,12 +50,9 @@ interface PayrollDataRow {
  */
 function escapeCsvField(value: string | number): string {
   const str = String(value);
-  
-  // If the field contains comma, quote, or newline, wrap it in quotes and escape internal quotes
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`;
   }
-  
   return str;
 }
 
@@ -74,6 +72,46 @@ function safeNumber(value: any): number {
   return isNaN(num) ? 0 : num;
 }
 
+/**
+ * Groups data by jobsite with subtotals
+ */
+function groupDataByJobsite(data: JobsiteSummaryWithRules[]): JobsiteGroup[] {
+  const groups: JobsiteGroup[] = [];
+
+  data.forEach(jobsite => {
+    const employees = jobsite.employees.map(employee => {
+      const role = employee.employee_position || 
+                   employee.employee_trade || 
+                   employee.employee_role || 
+                   'Employee';
+      return {
+        employeeName: employee.employee_name,
+        employeeRole: role,
+        totalPaidHours: safeNumber(employee.total_paid_hours),
+        daysWorked: safeNumber(employee.days_worked),
+      };
+    });
+
+    // Sort employees by name
+    employees.sort((a, b) => a.employeeName.localeCompare(b.employeeName));
+
+    const subtotalPaidHours = employees.reduce((sum, e) => sum + e.totalPaidHours, 0);
+    const subtotalDaysWorked = employees.reduce((sum, e) => sum + e.daysWorked, 0);
+
+    groups.push({
+      jobsiteName: jobsite.jobsite_name,
+      employees,
+      subtotalPaidHours,
+      subtotalDaysWorked,
+    });
+  });
+
+  // Sort groups by jobsite name
+  groups.sort((a, b) => a.jobsiteName.localeCompare(b.jobsiteName));
+
+  return groups;
+}
+
 export function useTimeSummaryExport(params: ExportParams): ExportResult {
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -87,124 +125,67 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
     
     try {
       const rows: string[] = [];
-      const periodStartStr = format(params.dateRange.start, 'yyyy-MM-dd');
-      const periodEndStr = format(params.dateRange.end, 'yyyy-MM-dd');
-      const generatedAtStr = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-      const timezoneStr = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const periodStartStr = format(params.dateRange.start, 'MMMM dd, yyyy');
+      const periodEndStr = format(params.dateRange.end, 'MMMM dd, yyyy');
+      const generatedAtStr = format(new Date(), 'MMMM dd, yyyy hh:mm a');
+      const timezoneStr = params.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
       
-      // ========== HEADER SECTION (Rows 1-7) ==========
-      rows.push(arrayToCsvRow(['Company', params.companyName]));
-      rows.push(arrayToCsvRow(['Report Type', 'Payroll Summary']));
-      rows.push(arrayToCsvRow(['Period Start', periodStartStr]));
-      rows.push(arrayToCsvRow(['Period End', periodEndStr]));
-      rows.push(arrayToCsvRow(['Generated At', generatedAtStr]));
-      rows.push(arrayToCsvRow(['Timezone', timezoneStr]));
-      rows.push(''); // Blank row
+      // ========== HEADER SECTION ==========
+      rows.push(arrayToCsvRow([params.companyName]));
+      rows.push(arrayToCsvRow(['Payroll Summary Report']));
+      rows.push(arrayToCsvRow(['']));
+      rows.push(arrayToCsvRow(['Period Start:', periodStartStr]));
+      rows.push(arrayToCsvRow(['Period End:', periodEndStr]));
+      rows.push(arrayToCsvRow(['Generated:', generatedAtStr]));
+      rows.push(arrayToCsvRow(['Timezone:', timezoneStr]));
+      rows.push('');
       
-      // ========== MAIN TABLE HEADER (Row 8) ==========
-      const headerColumns = [
-        'Employee Name',
-        'Employee Role',
-        'Jobsite',
-        'Period Start',
-        'Period End',
-        'Total Raw Hours',
-        'Total Paid Hours',
-        'Days Worked',
-        'Punch Count',
-        'Issue Count'
-      ];
-      rows.push(arrayToCsvRow(headerColumns));
+      // ========== GROUP DATA BY JOBSITE ==========
+      const groups = groupDataByJobsite(params.data);
       
-      // ========== BUILD DATA ROWS ==========
-      const dataRows: PayrollDataRow[] = [];
+      let grandTotalPaidHours = 0;
+      let grandTotalDaysWorked = 0;
       
-      params.data.forEach(jobsite => {
-        jobsite.employees.forEach(employee => {
-          // Determine the best role label
-          const role = employee.employee_position || 
-                      employee.employee_trade || 
-                      employee.employee_role || 
-                      'Employee';
-          
-          dataRows.push({
-            employeeName: employee.employee_name,
-            employeeRole: role,
-            jobsiteName: jobsite.jobsite_name,
-            periodStart: periodStartStr,
-            periodEnd: periodEndStr,
-            totalRawHours: safeNumber(employee.total_raw_hours),
-            totalPaidHours: safeNumber(employee.total_paid_hours),
-            daysWorked: safeNumber(employee.days_worked),
-            punchCount: safeNumber(employee.total_punches),
-            issueCount: safeNumber(employee.issue_count),
-          });
+      // ========== WRITE GROUPED DATA ==========
+      groups.forEach((group, idx) => {
+        // Jobsite header row
+        rows.push(arrayToCsvRow([`>>> JOBSITE: ${group.jobsiteName} <<<`, '', '', '']));
+        
+        // Column headers for this group
+        rows.push(arrayToCsvRow(['Employee Name', 'Role', 'Paid Hours', 'Days Worked']));
+        
+        // Employee rows
+        group.employees.forEach(emp => {
+          rows.push(arrayToCsvRow([
+            emp.employeeName,
+            emp.employeeRole,
+            emp.totalPaidHours.toFixed(2),
+            emp.daysWorked.toString()
+          ]));
         });
-      });
-      
-      // ========== SORT DATA ROWS ==========
-      // First by jobsite name (ascending), then by employee name (ascending)
-      dataRows.sort((a, b) => {
-        const jobsiteCompare = a.jobsiteName.localeCompare(b.jobsiteName);
-        if (jobsiteCompare !== 0) return jobsiteCompare;
-        return a.employeeName.localeCompare(b.employeeName);
-      });
-      
-      // ========== CALCULATE TOTALS ==========
-      let totalRawHours = 0;
-      let totalPaidHours = 0;
-      let totalDaysWorked = 0;
-      let totalPunchCount = 0;
-      let totalIssueCount = 0;
-      
-      // ========== WRITE DATA ROWS ==========
-      dataRows.forEach(row => {
-        const rowValues = [
-          row.employeeName,
-          row.employeeRole,
-          row.jobsiteName,
-          row.periodStart,
-          row.periodEnd,
-          row.totalRawHours.toFixed(2),
-          row.totalPaidHours.toFixed(2),
-          row.daysWorked.toString(),
-          row.punchCount.toString(),
-          row.issueCount.toString()
-        ];
         
-        rows.push(arrayToCsvRow(rowValues));
+        // Jobsite subtotal
+        rows.push(arrayToCsvRow([
+          `Subtotal - ${group.jobsiteName}`,
+          '',
+          group.subtotalPaidHours.toFixed(2),
+          group.subtotalDaysWorked.toString()
+        ]));
+        rows.push('');
         
-        // Accumulate totals
-        totalRawHours += row.totalRawHours;
-        totalPaidHours += row.totalPaidHours;
-        totalDaysWorked += row.daysWorked;
-        totalPunchCount += row.punchCount;
-        totalIssueCount += row.issueCount;
+        grandTotalPaidHours += group.subtotalPaidHours;
+        grandTotalDaysWorked += group.subtotalDaysWorked;
       });
       
-      // ========== TOTALS ROW ==========
-      rows.push(''); // Blank row before totals
-      
-      const totalsRowValues = [
-        'TOTALS',
-        '', // Empty for Employee Role
-        '', // Empty for Jobsite
-        '', // Empty for Period Start
-        '', // Empty for Period End
-        totalRawHours.toFixed(2),
-        totalPaidHours.toFixed(2),
-        totalDaysWorked.toString(),
-        totalPunchCount.toString(),
-        totalIssueCount.toString()
-      ];
-      rows.push(arrayToCsvRow(totalsRowValues));
+      // ========== GRAND TOTALS ==========
+      rows.push(arrayToCsvRow(['GRAND TOTAL', '', grandTotalPaidHours.toFixed(2), grandTotalDaysWorked.toString()]));
       
       // ========== DOWNLOAD CSV ==========
       const csvContent = rows.join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      const filename = `stackbuild-payroll-${periodStartStr}_to_${periodEndStr}.csv`;
+      const filename = `payroll-summary-${format(params.dateRange.start, 'yyyy-MM-dd')}_to_${format(params.dateRange.end, 'yyyy-MM-dd')}.csv`;
       
       link.setAttribute('href', url);
       link.setAttribute('download', filename);
@@ -215,8 +196,8 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
       URL.revokeObjectURL(url);
       
       toast({
-        title: 'Export Complete',
-        description: `Payroll report downloaded successfully: ${filename}`,
+        title: 'CSV Export Complete',
+        description: `Payroll report downloaded: ${filename}`,
       });
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Export failed');
@@ -225,7 +206,148 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
       
       toast({
         title: 'Export Failed',
-        description: 'Unable to generate report. Please try again or contact support.',
+        description: 'Unable to generate CSV report. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [params, toast]);
+
+  const exportPayrollExcel = useCallback(async () => {
+    setIsExporting(true);
+    setError(null);
+    
+    try {
+      const periodStartStr = format(params.dateRange.start, 'MMMM dd, yyyy');
+      const periodEndStr = format(params.dateRange.end, 'MMMM dd, yyyy');
+      const generatedAtStr = format(new Date(), 'MMMM dd, yyyy hh:mm a');
+      const timezoneStr = params.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
+      // Build worksheet data
+      const wsData: (string | number)[][] = [];
+      const merges: XLSX.Range[] = [];
+      const jobsiteRows: number[] = [];
+      const headerRows: number[] = [];
+      const subtotalRows: number[] = [];
+      let grandTotalRow = 0;
+      
+      // ========== HEADER SECTION ==========
+      wsData.push([params.companyName, '', '', '']);
+      merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } });
+      
+      wsData.push(['Payroll Summary Report', '', '', '']);
+      merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: 3 } });
+      
+      wsData.push(['', '', '', '']);
+      
+      wsData.push(['Period Start:', periodStartStr, '', '']);
+      wsData.push(['Period End:', periodEndStr, '', '']);
+      wsData.push(['Generated:', generatedAtStr, '', '']);
+      wsData.push(['Timezone:', timezoneStr, '', '']);
+      wsData.push(['', '', '', '']);
+      
+      // ========== GROUP DATA BY JOBSITE ==========
+      const groups = groupDataByJobsite(params.data);
+      
+      let grandTotalPaidHours = 0;
+      let grandTotalDaysWorked = 0;
+      
+      // ========== WRITE GROUPED DATA ==========
+      groups.forEach((group) => {
+        // Jobsite header row - track for orange styling
+        const jobsiteRowIdx = wsData.length;
+        jobsiteRows.push(jobsiteRowIdx);
+        wsData.push([group.jobsiteName, '', '', '']);
+        merges.push({ s: { r: jobsiteRowIdx, c: 0 }, e: { r: jobsiteRowIdx, c: 3 } });
+        
+        // Column headers
+        const headerRowIdx = wsData.length;
+        headerRows.push(headerRowIdx);
+        wsData.push(['Employee Name', 'Role', 'Paid Hours', 'Days Worked']);
+        
+        // Employee rows
+        group.employees.forEach(emp => {
+          wsData.push([
+            emp.employeeName,
+            emp.employeeRole,
+            emp.totalPaidHours,
+            emp.daysWorked
+          ]);
+        });
+        
+        // Subtotal row
+        const subtotalRowIdx = wsData.length;
+        subtotalRows.push(subtotalRowIdx);
+        wsData.push([
+          `Subtotal`,
+          '',
+          group.subtotalPaidHours,
+          group.subtotalDaysWorked
+        ]);
+        
+        // Empty row
+        wsData.push(['', '', '', '']);
+        
+        grandTotalPaidHours += group.subtotalPaidHours;
+        grandTotalDaysWorked += group.subtotalDaysWorked;
+      });
+      
+      // ========== GRAND TOTALS ==========
+      grandTotalRow = wsData.length;
+      wsData.push(['GRAND TOTAL', '', grandTotalPaidHours, grandTotalDaysWorked]);
+      
+      // Create worksheet
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 30 }, // Employee Name
+        { wch: 20 }, // Role
+        { wch: 12 }, // Paid Hours
+        { wch: 12 }, // Days Worked
+      ];
+      
+      // Apply merges
+      ws['!merges'] = merges;
+      
+      // Apply styles (using cell formatting)
+      // Note: xlsx library has limited styling in basic mode
+      // We use cell-level formatting where possible
+      
+      // Format number cells
+      for (let row = 0; row < wsData.length; row++) {
+        const cellC = XLSX.utils.encode_cell({ r: row, c: 2 });
+        const cellD = XLSX.utils.encode_cell({ r: row, c: 3 });
+        
+        if (ws[cellC] && typeof ws[cellC].v === 'number') {
+          ws[cellC].z = '0.00';
+        }
+        if (ws[cellD] && typeof ws[cellD].v === 'number') {
+          ws[cellD].z = '0';
+        }
+      }
+      
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Payroll Summary');
+      
+      // Generate file
+      const filename = `payroll-summary-${format(params.dateRange.start, 'yyyy-MM-dd')}_to_${format(params.dateRange.end, 'yyyy-MM-dd')}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      
+      toast({
+        title: 'Excel Export Complete',
+        description: `Professional report downloaded: ${filename}`,
+      });
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Export failed');
+      setError(error);
+      console.error('Excel Export Error:', error);
+      
+      toast({
+        title: 'Export Failed',
+        description: 'Unable to generate Excel report. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -257,7 +379,7 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
 
       toast({
         title: 'Export Failed',
-        description: 'Unable to generate PDF report. Please try again or contact support.',
+        description: 'Unable to generate PDF report. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -265,5 +387,5 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
     }
   }, [params, toast, generateTimeSummaryPDF, settings]);
   
-  return { isExporting, exportPayrollCSV, exportPayrollPDF, error };
+  return { isExporting, exportPayrollCSV, exportPayrollExcel, exportPayrollPDF, error };
 }
