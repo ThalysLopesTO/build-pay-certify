@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { JobsiteSummaryWithRules } from './useTimeSummaryDataWithRules';
 import { useTimeSummaryPDF } from './useTimeSummaryPDF';
 import { useCompanySettings } from './useCompanySettings';
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx-js-style';
 
 interface ExportParams {
   companyId: string;
@@ -44,6 +44,74 @@ interface JobsiteGroup {
   subtotalPaidHours: number;
   subtotalDaysWorked: number;
 }
+
+// Style definitions
+const STYLES = {
+  companyName: {
+    font: { bold: true, sz: 16, color: { rgb: "000000" } },
+    alignment: { horizontal: "left" as const, vertical: "center" as const },
+  },
+  reportTitle: {
+    font: { bold: true, sz: 12, color: { rgb: "666666" } },
+    alignment: { horizontal: "left" as const, vertical: "center" as const },
+  },
+  jobsiteHeader: {
+    fill: { fgColor: { rgb: "F97316" } },
+    font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+    alignment: { horizontal: "left" as const, vertical: "center" as const },
+  },
+  columnHeader: {
+    fill: { fgColor: { rgb: "F3F4F6" } },
+    font: { bold: true, sz: 10, color: { rgb: "374151" } },
+    alignment: { horizontal: "left" as const, vertical: "center" as const },
+    border: {
+      top: { style: "thin" as const, color: { rgb: "D1D5DB" } },
+      bottom: { style: "thin" as const, color: { rgb: "D1D5DB" } },
+      left: { style: "thin" as const, color: { rgb: "D1D5DB" } },
+      right: { style: "thin" as const, color: { rgb: "D1D5DB" } },
+    },
+  },
+  dataCell: {
+    font: { sz: 10, color: { rgb: "374151" } },
+    alignment: { horizontal: "left" as const, vertical: "center" as const },
+    border: {
+      top: { style: "thin" as const, color: { rgb: "E5E7EB" } },
+      bottom: { style: "thin" as const, color: { rgb: "E5E7EB" } },
+      left: { style: "thin" as const, color: { rgb: "E5E7EB" } },
+      right: { style: "thin" as const, color: { rgb: "E5E7EB" } },
+    },
+  },
+  subtotalRow: {
+    fill: { fgColor: { rgb: "FED7AA" } },
+    font: { bold: true, sz: 10, color: { rgb: "9A3412" } },
+    alignment: { horizontal: "left" as const, vertical: "center" as const },
+    border: {
+      top: { style: "thin" as const, color: { rgb: "FDBA74" } },
+      bottom: { style: "thin" as const, color: { rgb: "FDBA74" } },
+      left: { style: "thin" as const, color: { rgb: "FDBA74" } },
+      right: { style: "thin" as const, color: { rgb: "FDBA74" } },
+    },
+  },
+  grandTotal: {
+    fill: { fgColor: { rgb: "F97316" } },
+    font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+    alignment: { horizontal: "left" as const, vertical: "center" as const },
+    border: {
+      top: { style: "medium" as const, color: { rgb: "EA580C" } },
+      bottom: { style: "medium" as const, color: { rgb: "EA580C" } },
+      left: { style: "medium" as const, color: { rgb: "EA580C" } },
+      right: { style: "medium" as const, color: { rgb: "EA580C" } },
+    },
+  },
+  labelCell: {
+    font: { bold: true, sz: 10, color: { rgb: "6B7280" } },
+    alignment: { horizontal: "left" as const, vertical: "center" as const },
+  },
+  valueCell: {
+    font: { sz: 10, color: { rgb: "111827" } },
+    alignment: { horizontal: "left" as const, vertical: "center" as const },
+  },
+};
 
 /**
  * Escapes and quotes a CSV field if necessary
@@ -147,9 +215,9 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
       let grandTotalDaysWorked = 0;
       
       // ========== WRITE GROUPED DATA ==========
-      groups.forEach((group, idx) => {
-        // Jobsite header row
-        rows.push(arrayToCsvRow([`>>> JOBSITE: ${group.jobsiteName} <<<`, '', '', '']));
+      groups.forEach((group) => {
+        // Jobsite header row - clean format matching Excel
+        rows.push(arrayToCsvRow([group.jobsiteName, '', '', '']));
         
         // Column headers for this group
         rows.push(arrayToCsvRow(['Employee Name', 'Role', 'Paid Hours', 'Days Worked']));
@@ -166,7 +234,7 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
         
         // Jobsite subtotal
         rows.push(arrayToCsvRow([
-          `Subtotal - ${group.jobsiteName}`,
+          'Subtotal',
           '',
           group.subtotalPaidHours.toFixed(2),
           group.subtotalDaysWorked.toString()
@@ -224,27 +292,46 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
       const generatedAtStr = format(new Date(), 'MMMM dd, yyyy hh:mm a');
       const timezoneStr = params.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
       
-      // Build worksheet data
-      const wsData: (string | number)[][] = [];
-      const merges: XLSX.Range[] = [];
+      // Track row indices for styling
       const jobsiteRows: number[] = [];
       const headerRows: number[] = [];
       const subtotalRows: number[] = [];
+      const dataRows: number[] = [];
       let grandTotalRow = 0;
       
+      // Build worksheet data
+      const wsData: any[][] = [];
+      const merges: XLSX.Range[] = [];
+      
       // ========== HEADER SECTION ==========
-      wsData.push([params.companyName, '', '', '']);
+      wsData.push([{ v: params.companyName, s: STYLES.companyName }, '', '', '']);
       merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } });
       
-      wsData.push(['Payroll Summary Report', '', '', '']);
+      wsData.push([{ v: 'Payroll Summary Report', s: STYLES.reportTitle }, '', '', '']);
       merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: 3 } });
       
       wsData.push(['', '', '', '']);
       
-      wsData.push(['Period Start:', periodStartStr, '', '']);
-      wsData.push(['Period End:', periodEndStr, '', '']);
-      wsData.push(['Generated:', generatedAtStr, '', '']);
-      wsData.push(['Timezone:', timezoneStr, '', '']);
+      wsData.push([
+        { v: 'Period Start:', s: STYLES.labelCell },
+        { v: periodStartStr, s: STYLES.valueCell },
+        '', ''
+      ]);
+      wsData.push([
+        { v: 'Period End:', s: STYLES.labelCell },
+        { v: periodEndStr, s: STYLES.valueCell },
+        '', ''
+      ]);
+      wsData.push([
+        { v: 'Generated:', s: STYLES.labelCell },
+        { v: generatedAtStr, s: STYLES.valueCell },
+        '', ''
+      ]);
+      wsData.push([
+        { v: 'Timezone:', s: STYLES.labelCell },
+        { v: timezoneStr, s: STYLES.valueCell },
+        '', ''
+      ]);
       wsData.push(['', '', '', '']);
       
       // ========== GROUP DATA BY JOBSITE ==========
@@ -255,35 +342,47 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
       
       // ========== WRITE GROUPED DATA ==========
       groups.forEach((group) => {
-        // Jobsite header row - track for orange styling
+        // Jobsite header row - ORANGE background
         const jobsiteRowIdx = wsData.length;
         jobsiteRows.push(jobsiteRowIdx);
-        wsData.push([group.jobsiteName, '', '', '']);
+        wsData.push([
+          { v: group.jobsiteName, s: STYLES.jobsiteHeader },
+          { v: '', s: STYLES.jobsiteHeader },
+          { v: '', s: STYLES.jobsiteHeader },
+          { v: '', s: STYLES.jobsiteHeader }
+        ]);
         merges.push({ s: { r: jobsiteRowIdx, c: 0 }, e: { r: jobsiteRowIdx, c: 3 } });
         
-        // Column headers
+        // Column headers - GRAY background
         const headerRowIdx = wsData.length;
         headerRows.push(headerRowIdx);
-        wsData.push(['Employee Name', 'Role', 'Paid Hours', 'Days Worked']);
+        wsData.push([
+          { v: 'Employee Name', s: STYLES.columnHeader },
+          { v: 'Role', s: STYLES.columnHeader },
+          { v: 'Paid Hours', s: STYLES.columnHeader },
+          { v: 'Days Worked', s: STYLES.columnHeader }
+        ]);
         
-        // Employee rows
+        // Employee rows - data cells with borders
         group.employees.forEach(emp => {
+          const rowIdx = wsData.length;
+          dataRows.push(rowIdx);
           wsData.push([
-            emp.employeeName,
-            emp.employeeRole,
-            emp.totalPaidHours,
-            emp.daysWorked
+            { v: emp.employeeName, s: STYLES.dataCell },
+            { v: emp.employeeRole, s: STYLES.dataCell },
+            { v: emp.totalPaidHours, s: { ...STYLES.dataCell, numFmt: '0.00' } },
+            { v: emp.daysWorked, s: { ...STYLES.dataCell, numFmt: '0' } }
           ]);
         });
         
-        // Subtotal row
+        // Subtotal row - LIGHT ORANGE background
         const subtotalRowIdx = wsData.length;
         subtotalRows.push(subtotalRowIdx);
         wsData.push([
-          `Subtotal`,
-          '',
-          group.subtotalPaidHours,
-          group.subtotalDaysWorked
+          { v: 'Subtotal', s: STYLES.subtotalRow },
+          { v: '', s: STYLES.subtotalRow },
+          { v: group.subtotalPaidHours, s: { ...STYLES.subtotalRow, numFmt: '0.00' } },
+          { v: group.subtotalDaysWorked, s: { ...STYLES.subtotalRow, numFmt: '0' } }
         ]);
         
         // Empty row
@@ -293,11 +392,16 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
         grandTotalDaysWorked += group.subtotalDaysWorked;
       });
       
-      // ========== GRAND TOTALS ==========
+      // ========== GRAND TOTALS - ORANGE background ==========
       grandTotalRow = wsData.length;
-      wsData.push(['GRAND TOTAL', '', grandTotalPaidHours, grandTotalDaysWorked]);
+      wsData.push([
+        { v: 'GRAND TOTAL', s: STYLES.grandTotal },
+        { v: '', s: STYLES.grandTotal },
+        { v: grandTotalPaidHours, s: { ...STYLES.grandTotal, numFmt: '0.00' } },
+        { v: grandTotalDaysWorked, s: { ...STYLES.grandTotal, numFmt: '0' } }
+      ]);
       
-      // Create worksheet
+      // Create worksheet from styled data
       const ws = XLSX.utils.aoa_to_sheet(wsData);
       
       // Set column widths
@@ -305,28 +409,20 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
         { wch: 30 }, // Employee Name
         { wch: 20 }, // Role
         { wch: 12 }, // Paid Hours
-        { wch: 12 }, // Days Worked
+        { wch: 14 }, // Days Worked
       ];
+      
+      // Set row heights for better spacing
+      ws['!rows'] = wsData.map((_, idx) => {
+        if (idx === 0) return { hpt: 24 }; // Company name
+        if (idx === 1) return { hpt: 20 }; // Report title
+        if (jobsiteRows.includes(idx)) return { hpt: 22 }; // Jobsite headers
+        if (idx === grandTotalRow) return { hpt: 22 }; // Grand total
+        return { hpt: 18 }; // Default
+      });
       
       // Apply merges
       ws['!merges'] = merges;
-      
-      // Apply styles (using cell formatting)
-      // Note: xlsx library has limited styling in basic mode
-      // We use cell-level formatting where possible
-      
-      // Format number cells
-      for (let row = 0; row < wsData.length; row++) {
-        const cellC = XLSX.utils.encode_cell({ r: row, c: 2 });
-        const cellD = XLSX.utils.encode_cell({ r: row, c: 3 });
-        
-        if (ws[cellC] && typeof ws[cellC].v === 'number') {
-          ws[cellC].z = '0.00';
-        }
-        if (ws[cellD] && typeof ws[cellD].v === 'number') {
-          ws[cellD].z = '0';
-        }
-      }
       
       // Create workbook
       const wb = XLSX.utils.book_new();
