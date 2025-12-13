@@ -21,8 +21,13 @@ export const useJobsites = (status?: 'active' | 'completed' | 'all') => {
         .select('*')
         .eq('company_id', user.companyId);
 
-      if (status && status !== 'all') {
-        query = query.eq('status', status);
+      if (status === 'active') {
+        query = query.eq('status', 'active');
+      } else if (status === 'completed') {
+        query = query.eq('status', 'completed');
+      } else {
+        // 'all' means active + completed, exclude archived
+        query = query.in('status', ['active', 'completed']);
       }
 
       const { data, error } = await query.order('name');
