@@ -1,17 +1,43 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useClientPortalContext } from '@/contexts/ClientPortalContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import { generatePortalInvoicePDF } from '@/utils/portalInvoicePDFGenerator';
+import { toast } from '@/hooks/use-toast';
 
 export default function PortalInvoiceDetailPage() {
   const { invoiceId } = useParams();
-  const { invoices, token } = useClientPortalContext();
+  const { invoices, token, company_settings } = useClientPortalContext();
   const navigate = useNavigate();
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const invoice = invoices.find(i => i.id === invoiceId);
+
+  const handleDownloadPDF = async () => {
+    if (!invoice) return;
+    
+    setIsDownloading(true);
+    try {
+      await generatePortalInvoicePDF(invoice, company_settings);
+      toast({
+        title: "PDF Downloaded",
+        description: `Invoice ${invoice.invoice_number} has been downloaded.`,
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error generating the PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!invoice) {
     return (
@@ -48,7 +74,16 @@ export default function PortalInvoiceDetailPage() {
                 {invoice.title}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleDownloadPDF}
+                disabled={isDownloading}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {isDownloading ? 'Generating...' : 'Download PDF'}
+              </Button>
               <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
                 {invoice.status}
               </Badge>
