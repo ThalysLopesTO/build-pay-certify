@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { sendTrialWelcomeEmail } from './email-service.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -265,57 +266,24 @@ const handler = async (req: Request): Promise<Response> => {
         payment_verified: false
       });
 
-    // Send welcome email
+    // Send welcome email using branded template
     try {
-      await supabaseAdmin.functions.invoke('send-email', {
-        body: {
-          to: body.adminEmail,
-          subject: `Welcome to StackBuild - ${trialDays} Day FREE Trial!`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #333;">Welcome to StackBuild, ${body.adminFirstName}!</h2>
-              <p>Your <strong>FREE trial account</strong> has been created for <strong>${body.companyName}</strong>.</p>
-              
-              <div style="background: #28a745; color: white; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">✨ FREE Trial Details:</h3>
-                <ul style="list-style: none; padding: 0;">
-                  <li><strong>Trial Period:</strong> ${trialDays} days</li>
-                  <li><strong>Trial Ends:</strong> ${trialEndDate.toLocaleDateString()}</li>
-                  <li><strong>Employee Limit:</strong> ${employeeLimit} employees</li>
-                  <li><strong>Payment Required:</strong> NO - This is a free trial!</li>
-                </ul>
-              </div>
-
-              <div style="background: #007bff; color: white; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
-                <h3 style="margin-top: 0;">Login Credentials</h3>
-                <p style="margin: 5px 0;"><strong>Email:</strong> ${body.adminEmail}</p>
-                <p style="margin: 5px 0;"><strong>Password:</strong> (as provided during setup)</p>
-                <a href="${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app') || 'https://stackbuild.lovable.app'}" 
-                   style="display: inline-block; margin-top: 15px; padding: 10px 30px; background: white; color: #007bff; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                  Login Now
-                </a>
-              </div>
-
-              <h3 style="color: #333;">Getting Started:</h3>
-              <ol>
-                <li>Log in to your account using the credentials above</li>
-                <li>Set up your company profile</li>
-                <li>Add employees and jobsites</li>
-                <li>Start tracking time and managing projects</li>
-              </ol>
-
-              <p><strong>Note:</strong> This is a completely free trial account. You will not be charged or asked to subscribe during the trial period.</p>
-
-              <p>If you have any questions, please don't hesitate to reach out to our support team.</p>
-              
-              <p style="color: #666; font-size: 12px; margin-top: 30px;">
-                This is an automated message. Please do not reply to this email.
-              </p>
-            </div>
-          `
-        }
+      const emailResult = await sendTrialWelcomeEmail({
+        email: body.adminEmail,
+        firstName: body.adminFirstName,
+        lastName: body.adminLastName,
+        companyName: body.companyName,
+        password: body.adminPassword,
+        trialDays,
+        trialEndDate,
+        employeeLimit,
       });
-      console.log('Welcome email sent successfully');
+      
+      if (emailResult.success) {
+        console.log('Welcome email sent successfully');
+      } else {
+        console.error('Failed to send welcome email:', emailResult.error);
+      }
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);
       // Don't fail the request if email fails
