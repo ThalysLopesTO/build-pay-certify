@@ -39,9 +39,11 @@ interface JobsiteGroup {
     employeeName: string;
     employeeRole: string;
     totalPaidHours: number;
+    totalBreakMinutes: number;
     daysWorked: number;
   }[];
   subtotalPaidHours: number;
+  subtotalBreakMinutes: number;
   subtotalDaysWorked: number;
 }
 
@@ -156,6 +158,7 @@ function groupDataByJobsite(data: JobsiteSummaryWithRules[]): JobsiteGroup[] {
         employeeName: employee.employee_name,
         employeeRole: role,
         totalPaidHours: safeNumber(employee.total_paid_hours),
+        totalBreakMinutes: safeNumber(employee.total_break_minutes),
         daysWorked: safeNumber(employee.days_worked),
       };
     });
@@ -164,12 +167,14 @@ function groupDataByJobsite(data: JobsiteSummaryWithRules[]): JobsiteGroup[] {
     employees.sort((a, b) => a.employeeName.localeCompare(b.employeeName));
 
     const subtotalPaidHours = employees.reduce((sum, e) => sum + e.totalPaidHours, 0);
+    const subtotalBreakMinutes = employees.reduce((sum, e) => sum + e.totalBreakMinutes, 0);
     const subtotalDaysWorked = employees.reduce((sum, e) => sum + e.daysWorked, 0);
 
     groups.push({
       jobsiteName: jobsite.jobsite_name,
       employees,
       subtotalPaidHours,
+      subtotalBreakMinutes,
       subtotalDaysWorked,
     });
   });
@@ -212,15 +217,16 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
       const groups = groupDataByJobsite(params.data);
       
       let grandTotalPaidHours = 0;
+      let grandTotalBreakMinutes = 0;
       let grandTotalDaysWorked = 0;
       
       // ========== WRITE GROUPED DATA ==========
       groups.forEach((group) => {
         // Jobsite header row - clean format matching Excel
-        rows.push(arrayToCsvRow([group.jobsiteName, '', '', '']));
+        rows.push(arrayToCsvRow([group.jobsiteName, '', '', '', '']));
         
         // Column headers for this group
-        rows.push(arrayToCsvRow(['Employee Name', 'Role', 'Paid Hours', 'Days Worked']));
+        rows.push(arrayToCsvRow(['Employee Name', 'Role', 'Paid Hours', 'Break (min)', 'Days Worked']));
         
         // Employee rows
         group.employees.forEach(emp => {
@@ -228,6 +234,7 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
             emp.employeeName,
             emp.employeeRole,
             emp.totalPaidHours.toFixed(2),
+            emp.totalBreakMinutes.toString(),
             emp.daysWorked.toString()
           ]));
         });
@@ -237,16 +244,18 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
           'Subtotal',
           '',
           group.subtotalPaidHours.toFixed(2),
+          group.subtotalBreakMinutes.toString(),
           group.subtotalDaysWorked.toString()
         ]));
         rows.push('');
         
         grandTotalPaidHours += group.subtotalPaidHours;
+        grandTotalBreakMinutes += group.subtotalBreakMinutes;
         grandTotalDaysWorked += group.subtotalDaysWorked;
       });
       
       // ========== GRAND TOTALS ==========
-      rows.push(arrayToCsvRow(['GRAND TOTAL', '', grandTotalPaidHours.toFixed(2), grandTotalDaysWorked.toString()]));
+      rows.push(arrayToCsvRow(['GRAND TOTAL', '', grandTotalPaidHours.toFixed(2), grandTotalBreakMinutes.toString(), grandTotalDaysWorked.toString()]));
       
       // ========== DOWNLOAD CSV ==========
       const csvContent = rows.join('\n');
@@ -304,40 +313,41 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
       const merges: XLSX.Range[] = [];
       
       // ========== HEADER SECTION ==========
-      wsData.push([{ v: params.companyName, s: STYLES.companyName }, '', '', '']);
-      merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } });
+      wsData.push([{ v: params.companyName, s: STYLES.companyName }, '', '', '', '']);
+      merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
       
-      wsData.push([{ v: 'Payroll Summary Report', s: STYLES.reportTitle }, '', '', '']);
-      merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: 3 } });
+      wsData.push([{ v: 'Payroll Summary Report', s: STYLES.reportTitle }, '', '', '', '']);
+      merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: 4 } });
       
-      wsData.push(['', '', '', '']);
+      wsData.push(['', '', '', '', '']);
       
       wsData.push([
         { v: 'Period Start:', s: STYLES.labelCell },
         { v: periodStartStr, s: STYLES.valueCell },
-        '', ''
+        '', '', ''
       ]);
       wsData.push([
         { v: 'Period End:', s: STYLES.labelCell },
         { v: periodEndStr, s: STYLES.valueCell },
-        '', ''
+        '', '', ''
       ]);
       wsData.push([
         { v: 'Generated:', s: STYLES.labelCell },
         { v: generatedAtStr, s: STYLES.valueCell },
-        '', ''
+        '', '', ''
       ]);
       wsData.push([
         { v: 'Timezone:', s: STYLES.labelCell },
         { v: timezoneStr, s: STYLES.valueCell },
-        '', ''
+        '', '', ''
       ]);
-      wsData.push(['', '', '', '']);
+      wsData.push(['', '', '', '', '']);
       
       // ========== GROUP DATA BY JOBSITE ==========
       const groups = groupDataByJobsite(params.data);
       
       let grandTotalPaidHours = 0;
+      let grandTotalBreakMinutes = 0;
       let grandTotalDaysWorked = 0;
       
       // ========== WRITE GROUPED DATA ==========
@@ -349,9 +359,10 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
           { v: group.jobsiteName, s: STYLES.jobsiteHeader },
           { v: '', s: STYLES.jobsiteHeader },
           { v: '', s: STYLES.jobsiteHeader },
+          { v: '', s: STYLES.jobsiteHeader },
           { v: '', s: STYLES.jobsiteHeader }
         ]);
-        merges.push({ s: { r: jobsiteRowIdx, c: 0 }, e: { r: jobsiteRowIdx, c: 3 } });
+        merges.push({ s: { r: jobsiteRowIdx, c: 0 }, e: { r: jobsiteRowIdx, c: 4 } });
         
         // Column headers - GRAY background
         const headerRowIdx = wsData.length;
@@ -360,6 +371,7 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
           { v: 'Employee Name', s: STYLES.columnHeader },
           { v: 'Role', s: STYLES.columnHeader },
           { v: 'Paid Hours', s: STYLES.columnHeader },
+          { v: 'Break (min)', s: STYLES.columnHeader },
           { v: 'Days Worked', s: STYLES.columnHeader }
         ]);
         
@@ -371,6 +383,7 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
             { v: emp.employeeName, s: STYLES.dataCell },
             { v: emp.employeeRole, s: STYLES.dataCell },
             { v: emp.totalPaidHours, s: { ...STYLES.dataCell, numFmt: '0.00' } },
+            { v: emp.totalBreakMinutes, s: { ...STYLES.dataCell, numFmt: '0' } },
             { v: emp.daysWorked, s: { ...STYLES.dataCell, numFmt: '0' } }
           ]);
         });
@@ -382,13 +395,15 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
           { v: 'Subtotal', s: STYLES.subtotalRow },
           { v: '', s: STYLES.subtotalRow },
           { v: group.subtotalPaidHours, s: { ...STYLES.subtotalRow, numFmt: '0.00' } },
+          { v: group.subtotalBreakMinutes, s: { ...STYLES.subtotalRow, numFmt: '0' } },
           { v: group.subtotalDaysWorked, s: { ...STYLES.subtotalRow, numFmt: '0' } }
         ]);
         
         // Empty row
-        wsData.push(['', '', '', '']);
+        wsData.push(['', '', '', '', '']);
         
         grandTotalPaidHours += group.subtotalPaidHours;
+        grandTotalBreakMinutes += group.subtotalBreakMinutes;
         grandTotalDaysWorked += group.subtotalDaysWorked;
       });
       
@@ -398,6 +413,7 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
         { v: 'GRAND TOTAL', s: STYLES.grandTotal },
         { v: '', s: STYLES.grandTotal },
         { v: grandTotalPaidHours, s: { ...STYLES.grandTotal, numFmt: '0.00' } },
+        { v: grandTotalBreakMinutes, s: { ...STYLES.grandTotal, numFmt: '0' } },
         { v: grandTotalDaysWorked, s: { ...STYLES.grandTotal, numFmt: '0' } }
       ]);
       
@@ -409,6 +425,7 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
         { wch: 30 }, // Employee Name
         { wch: 20 }, // Role
         { wch: 12 }, // Paid Hours
+        { wch: 12 }, // Break (min)
         { wch: 14 }, // Days Worked
       ];
       

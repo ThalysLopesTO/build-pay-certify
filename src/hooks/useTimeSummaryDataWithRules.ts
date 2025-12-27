@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 export interface EmployeeSummaryWithRules extends EmployeeSummary {
   total_raw_hours: number;
   total_paid_hours: number;
+  total_break_minutes: number;
   issue_flags: string[];
   issue_count: number;
   days_worked: number;
@@ -105,6 +106,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
         ...employee,
         total_raw_hours: employee.total_hours,
         total_paid_hours: employee.total_hours,
+        total_break_minutes: 0,
         issue_flags: [],
         issue_count: 0,
         days_worked: employee.total_punches,
@@ -177,6 +179,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
         const timesheetCalculations = new Map<string, {
           rawHours: number;
           paidHours: number;
+          breakMinutes: number;
           flags: string[];
         }>();
 
@@ -205,10 +208,12 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
           }
           
           const paidHours = paidMinutes / 60;
+          const breakMinutes = result.totalMinutes - paidMinutes;
 
           timesheetCalculations.set(timesheet.id, {
             rawHours,
             paidHours,
+            breakMinutes,
             flags: result.flags || [],
           });
         }
@@ -217,6 +222,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
         const employeeAggregations = new Map<string, {
           totalRawHours: number;
           totalPaidHours: number;
+          totalBreakMinutes: number;
           allFlags: string[];
           daysWorked: Set<string>;
         }>();
@@ -232,12 +238,14 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
           if (existing) {
             existing.totalRawHours += calc.rawHours;
             existing.totalPaidHours += calc.paidHours;
+            existing.totalBreakMinutes += calc.breakMinutes;
             existing.allFlags.push(...calc.flags);
             existing.daysWorked.add(date);
           } else {
             employeeAggregations.set(key, {
               totalRawHours: calc.rawHours,
               totalPaidHours: calc.paidHours,
+              totalBreakMinutes: calc.breakMinutes,
               allFlags: [...calc.flags],
               daysWorked: new Set([date]),
             });
@@ -256,6 +264,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
                 ...employee,
                 total_raw_hours: Number(aggregation.totalRawHours.toFixed(2)),
                 total_paid_hours: Number(aggregation.totalPaidHours.toFixed(2)),
+                total_break_minutes: Math.round(aggregation.totalBreakMinutes),
                 issue_flags: Array.from(new Set(aggregation.allFlags)),
                 issue_count: aggregation.allFlags.length,
                 days_worked: aggregation.daysWorked.size,
@@ -267,6 +276,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
               ...employee,
               total_raw_hours: employee.total_hours,
               total_paid_hours: employee.total_hours,
+              total_break_minutes: 0,
               issue_flags: [],
               issue_count: 0,
               days_worked: employee.total_punches, // Approximate
@@ -285,6 +295,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
             ...employee,
             total_raw_hours: employee.total_hours,
             total_paid_hours: employee.total_hours,
+            total_break_minutes: 0,
             issue_flags: [],
             issue_count: 0,
             days_worked: employee.total_punches,
@@ -321,6 +332,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
         ...employee,
         total_raw_hours: employee.total_hours,
         total_paid_hours: employee.total_hours,
+        total_break_minutes: 0,
         issue_flags: [],
         issue_count: 0,
         days_worked: employee.total_punches,
