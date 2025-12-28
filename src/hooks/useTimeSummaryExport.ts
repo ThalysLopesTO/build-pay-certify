@@ -185,6 +185,46 @@ function groupDataByJobsite(data: JobsiteSummaryWithRules[]): JobsiteGroup[] {
   return groups;
 }
 
+interface AggregatedEmployee {
+  employeeName: string;
+  employeeRole: string;
+  totalPaidHours: number;
+  totalBreakMinutes: number;
+  daysWorked: number;
+}
+
+/**
+ * Aggregates employee data across all jobsites (combines hours for employees who worked at multiple sites)
+ */
+function aggregateEmployeeData(data: JobsiteSummaryWithRules[]): AggregatedEmployee[] {
+  const employeeMap = new Map<string, AggregatedEmployee>();
+
+  data.forEach(jobsite => {
+    jobsite.employees.forEach(emp => {
+      const key = emp.employee_name;
+      const role = emp.employee_position || emp.employee_trade || emp.employee_role || 'Employee';
+      
+      if (employeeMap.has(key)) {
+        const existing = employeeMap.get(key)!;
+        existing.totalPaidHours += safeNumber(emp.total_paid_hours);
+        existing.totalBreakMinutes += safeNumber(emp.total_break_minutes);
+        existing.daysWorked += safeNumber(emp.days_worked);
+      } else {
+        employeeMap.set(key, {
+          employeeName: emp.employee_name,
+          employeeRole: role,
+          totalPaidHours: safeNumber(emp.total_paid_hours),
+          totalBreakMinutes: safeNumber(emp.total_break_minutes),
+          daysWorked: safeNumber(emp.days_worked),
+        });
+      }
+    });
+  });
+
+  return Array.from(employeeMap.values())
+    .sort((a, b) => a.employeeName.localeCompare(b.employeeName));
+}
+
 export function useTimeSummaryExport(params: ExportParams): ExportResult {
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -444,6 +484,103 @@ export function useTimeSummaryExport(params: ExportParams): ExportResult {
       // Create workbook
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Payroll Summary');
+      
+      // ========== HOURS BREAKDOWN SHEET ==========
+      const hoursWsData: any[][] = [];
+      const hoursMerges: XLSX.Range[] = [];
+      
+      // Header section
+      hoursWsData.push([{ v: params.companyName, s: STYLES.companyName }, '', '', '', '']);
+      hoursMerges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
+      
+      hoursWsData.push([{ v: 'Hours Breakdown Report', s: STYLES.reportTitle }, '', '', '', '']);
+      hoursMerges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: 4 } });
+      
+      hoursWsData.push(['', '', '', '', '']);
+      
+      hoursWsData.push([
+        { v: 'Period Start:', s: STYLES.labelCell },
+        { v: periodStartStr, s: STYLES.valueCell },
+        '', '', ''
+      ]);
+      hoursWsData.push([
+        { v: 'Period End:', s: STYLES.labelCell },
+        { v: periodEndStr, s: STYLES.valueCell },
+        '', '', ''
+      ]);
+      hoursWsData.push([
+        { v: 'Generated:', s: STYLES.labelCell },
+        { v: generatedAtStr, s: STYLES.valueCell },
+        '', '', ''
+      ]);
+      hoursWsData.push([
+        { v: 'Timezone:', s: STYLES.labelCell },
+        { v: timezoneStr, s: STYLES.valueCell },
+        '', '', ''
+      ]);
+      hoursWsData.push(['', '', '', '', '']);
+      
+      // Column headers
+      hoursWsData.push([
+        { v: 'Employee Name', s: STYLES.columnHeader },
+        { v: 'Role', s: STYLES.columnHeader },
+        { v: 'Total Paid Hours', s: STYLES.columnHeader },
+        { v: 'Total Break (min)', s: STYLES.columnHeader },
+        { v: 'Total Days Worked', s: STYLES.columnHeader }
+      ]);
+      
+      // Aggregate employee data across all jobsites
+      const aggregatedEmployees = aggregateEmployeeData(params.data);
+      
+      // Employee rows
+      aggregatedEmployees.forEach(emp => {
+        hoursWsData.push([
+          { v: emp.employeeName, s: STYLES.dataCell },
+          { v: emp.employeeRole, s: STYLES.dataCell },
+          { v: emp.totalPaidHours, s: { ...STYLES.dataCell, numFmt: '0.00' } },
+          { v: emp.totalBreakMinutes, s: { ...STYLES.dataCell, numFmt: '0' } },
+          { v: emp.daysWorked, s: { ...STYLES.dataCell, numFmt: '0' } }
+        ]);
+      });
+      
+      // Grand total row
+      const breakdownTotalPaidHours = aggregatedEmployees.reduce((sum, e) => sum + e.totalPaidHours, 0);
+      const breakdownTotalBreakMinutes = aggregatedEmployees.reduce((sum, e) => sum + e.totalBreakMinutes, 0);
+      const breakdownTotalDaysWorked = aggregatedEmployees.reduce((sum, e) => sum + e.daysWorked, 0);
+      
+      hoursWsData.push([
+        { v: 'GRAND TOTAL', s: STYLES.grandTotal },
+        { v: '', s: STYLES.grandTotal },
+        { v: breakdownTotalPaidHours, s: { ...STYLES.grandTotal, numFmt: '0.00' } },
+        { v: breakdownTotalBreakMinutes, s: { ...STYLES.grandTotal, numFmt: '0' } },
+        { v: breakdownTotalDaysWorked, s: { ...STYLES.grandTotal, numFmt: '0' } }
+      ]);
+      
+      // Create second worksheet
+      const hoursWs = XLSX.utils.aoa_to_sheet(hoursWsData);
+      
+      // Set column widths
+      hoursWs['!cols'] = [
+        { wch: 30 }, // Employee Name
+        { wch: 20 }, // Role
+        { wch: 16 }, // Total Paid Hours
+        { wch: 16 }, // Total Break (min)
+        { wch: 18 }, // Total Days Worked
+      ];
+      
+      // Set row heights
+      hoursWs['!rows'] = hoursWsData.map((_, idx) => {
+        if (idx === 0) return { hpt: 24 }; // Company name
+        if (idx === 1) return { hpt: 20 }; // Report title
+        if (idx === hoursWsData.length - 1) return { hpt: 22 }; // Grand total
+        return { hpt: 18 }; // Default
+      });
+      
+      // Apply merges
+      hoursWs['!merges'] = hoursMerges;
+      
+      // Add second sheet to workbook
+      XLSX.utils.book_append_sheet(wb, hoursWs, 'Hours Breakdown');
       
       // Generate file
       const filename = `payroll-summary-${format(params.dateRange.start, 'yyyy-MM-dd')}_to_${format(params.dateRange.end, 'yyyy-MM-dd')}.xlsx`;
