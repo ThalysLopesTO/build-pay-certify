@@ -130,12 +130,19 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
     queryFn: async () => {
       if (!user?.companyId) return [];
 
+      // Create proper date boundaries to include the entire end date
+      const startOfStartDate = new Date(filters.dateRange.start);
+      startOfStartDate.setHours(0, 0, 0, 0);
+
+      const endOfEndDate = new Date(filters.dateRange.end);
+      endOfEndDate.setHours(23, 59, 59, 999);
+
       let query = supabase
         .from('timesheets')
         .select('*, jobsites(id, name)')
         .eq('company_id', user.companyId)
-        .gte('check_in_time', filters.dateRange.start.toISOString())
-        .lte('check_in_time', filters.dateRange.end.toISOString())
+        .gte('check_in_time', startOfStartDate.toISOString())
+        .lte('check_in_time', endOfEndDate.toISOString())
         .not('check_out_time', 'is', null); // Only completed punches
 
       if (filters.jobsiteIds && filters.jobsiteIds.length > 0) {
