@@ -176,11 +176,15 @@ const TimeTracker = () => {
                   <SelectTrigger className="h-14 text-lg rounded-xl border-2 border-primary/20 hover:border-primary/40 transition-colors shadow-sm">
                     <SelectValue placeholder="Choose a jobsite" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background z-50">
                     {jobsitesLoading ? (
-                      <SelectItem value="loading" disabled>Loading jobsites...</SelectItem>
+                      <SelectItem value="loading-placeholder" disabled>Loading jobsites...</SelectItem>
+                    ) : !user?.companyId ? (
+                      <SelectItem value="auth-loading-placeholder" disabled>Loading your profile...</SelectItem>
+                    ) : !jobsites || jobsites.length === 0 ? (
+                      <SelectItem value="empty-placeholder" disabled>No jobsites available</SelectItem>
                     ) : (
-                      jobsites?.map((jobsite) => (
+                      jobsites.map((jobsite) => (
                         <SelectItem key={jobsite.id} value={jobsite.id}>
                           {jobsite.name}
                         </SelectItem>
