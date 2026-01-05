@@ -4,15 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 export const useJobsites = (status?: 'active' | 'completed' | 'all') => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   return useQuery({
-    queryKey: ['jobsites', user?.companyId, status],
+    queryKey: ['jobsites', user?.companyId, user?.id, status],
     queryFn: async () => {
       console.log('Fetching jobsites for company:', user?.companyId, 'with status:', status);
       
       if (!user?.companyId) {
-        console.log('No company ID available');
+        console.log('No company ID available - user may still be loading');
         return [];
       }
 
@@ -26,7 +26,6 @@ export const useJobsites = (status?: 'active' | 'completed' | 'all') => {
       } else if (status === 'completed') {
         query = query.eq('status', 'completed');
       } else {
-        // 'all' means active + completed, exclude archived
         query = query.in('status', ['active', 'completed']);
       }
 
@@ -36,10 +35,11 @@ export const useJobsites = (status?: 'active' | 'completed' | 'all') => {
         console.error('Error fetching jobsites:', error);
         throw error;
       }
-      console.log('Jobsites fetched:', data);
-      return data;
+      console.log('Jobsites fetched:', data?.length, 'items');
+      return data || [];
     },
-    enabled: !!user?.companyId,
+    enabled: !!user?.companyId && !authLoading,
+    staleTime: 30000,
   });
 };
 
