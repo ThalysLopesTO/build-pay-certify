@@ -8,6 +8,7 @@ interface InvoiceEmailData {
   portalUrl?: string;
   companyLogoUrl?: string;
   customMessage?: string;
+  invoiceId?: string;
 }
 
 export const createInvoiceEmailHTML = (data: InvoiceEmailData): string => {
@@ -20,8 +21,12 @@ export const createInvoiceEmailHTML = (data: InvoiceEmailData): string => {
     dueDate,
     portalUrl,
     companyLogoUrl,
-    customMessage
+    customMessage,
+    invoiceId
   } = data;
+
+  // Build the direct invoice URL if we have portal URL and invoice ID
+  const invoiceDirectUrl = portalUrl && invoiceId ? `${portalUrl}/invoices/${invoiceId}` : null;
 
   return `
 <!DOCTYPE html>
@@ -82,7 +87,39 @@ export const createInvoiceEmailHTML = (data: InvoiceEmailData): string => {
         </div>
       </div>
 
-      ${portalUrl ? `
+      ${invoiceDirectUrl ? `
+        <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 30px 0 20px 0; text-align: center;">
+          Ready to pay? Click the button below to view and pay your invoice:
+        </p>
+
+        <!-- Pay Invoice CTA (Primary) -->
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${invoiceDirectUrl}" 
+             style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; 
+                    padding: 18px 50px; text-decoration: none; border-radius: 8px; font-weight: 700; 
+                    font-size: 18px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);">
+            💳 Pay Invoice Now
+          </a>
+        </div>
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 20px 0 10px 0;">
+          or
+        </p>
+
+        <!-- Access Portal CTA (Secondary) -->
+        <div style="text-align: center; margin: 20px 0;">
+          <a href="${portalUrl}" 
+             style="display: inline-block; border: 2px solid #10b981; color: #10b981; 
+                    padding: 12px 30px; text-decoration: none; border-radius: 8px; 
+                    font-weight: 600; font-size: 14px;">
+            🏠 Access Client Portal
+          </a>
+        </div>
+
+        <p style="font-size: 12px; color: #9ca3af; text-align: center; word-break: break-all; margin: 0 0 30px 0;">
+          <a href="${invoiceDirectUrl}" style="color: #10b981; text-decoration: none;">${invoiceDirectUrl}</a>
+        </p>
+      ` : portalUrl ? `
         <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 30px 0 20px 0; text-align: center;">
           Click the button below to access your client portal where you can view this invoice and download a copy:
         </p>
