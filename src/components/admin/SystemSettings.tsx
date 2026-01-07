@@ -8,8 +8,9 @@ import { FinancialDefaultsTab } from './system-settings/FinancialDefaultsTab';
 import { AdvancedControlsTab } from './system-settings/AdvancedControlsTab';
 import { AnalyticsControlTab } from './system-settings/AnalyticsControlTab';
 import { ReminderLogsTab } from './system-settings/ReminderLogsTab';
+import { PaymentsTab } from './system-settings/PaymentsTab';
 import MaterialCatalogManagement from './material-catalog/MaterialCatalogManagement';
-import { Building2, Users, DollarSign, Settings, BarChart3, Bell, Package } from 'lucide-react';
+import { Building2, Users, DollarSign, Settings, BarChart3, Bell, Package, CreditCard } from 'lucide-react';
 const SystemSettings = () => {
   const [activeTab, setActiveTab] = useState('company');
   return <div className="max-w-6xl mx-auto space-y-6">
@@ -24,7 +25,7 @@ const SystemSettings = () => {
       <Card>
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="company" className="flex items-center space-x-2">
                 <Building2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Company</span>
@@ -41,6 +42,11 @@ const SystemSettings = () => {
               <TabsTrigger value="financial" className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4" />
                 <span className="hidden sm:inline">Financial</span>
+              </TabsTrigger>
+              
+              <TabsTrigger value="payments" className="flex items-center space-x-2">
+                <CreditCard className="h-4 w-4" />
+                <span className="hidden sm:inline">Payments</span>
               </TabsTrigger>
               
               <TabsTrigger value="analytics" className="flex items-center space-x-2">
@@ -72,6 +78,10 @@ const SystemSettings = () => {
 
             <TabsContent value="financial" className="mt-6">
               <FinancialDefaultsTab />
+            </TabsContent>
+
+            <TabsContent value="payments" className="mt-6">
+              <PaymentsTab />
             </TabsContent>
 
             <TabsContent value="advanced" className="mt-6">

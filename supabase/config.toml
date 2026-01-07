@@ -68,3 +68,9 @@ verify_jwt = false
 
 [functions.create-trial-subscription-embed]
 verify_jwt = false
+
+[functions.stripe-connect-onboarding]
+verify_jwt = false
+
+[functions.stripe-connect-status]
+verify_jwt = false
