@@ -60,6 +60,7 @@ export const autoSendInvoiceEmail = async (
       companyLogoUrl: logoUrl || undefined,
       customMessage: invoice.notes || undefined,
       portalUrl: portalUrl,
+      invoiceId: invoice.id,
     });
 
     // Fallback plain text (for email clients that don't support HTML)

@@ -68,7 +68,7 @@ export const useConvertQuoteToInvoice = () => {
 
         if (client?.portal_token) {
           const baseUrl = window.location.origin;
-          portalUrl = `${baseUrl}/client/${client.portal_token}/invoices`;
+          portalUrl = `${baseUrl}/client/${client.portal_token}`;
         }
       }
 

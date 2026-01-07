@@ -40,7 +40,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
   const generateClientPortalUrl = (): string | null => {
     const baseUrl = window.location.origin;
     if (client?.portal_token) {
-      return `${baseUrl}/client/${client.portal_token}/invoices`;
+      return `${baseUrl}/client/${client.portal_token}`;
     }
     return null;
   };
@@ -77,6 +77,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
       portalUrl: portalUrl || undefined,
       companyLogoUrl: logoUrl || undefined,
       customMessage: customMessage || undefined,
+      invoiceId: invoice.id,
     });
 
     return {
