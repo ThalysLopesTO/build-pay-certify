@@ -67,17 +67,20 @@ interface ClientPortalContextType {
     company_phone: string | null;
     company_address: string | null;
     timezone?: string;
+    payments_enabled?: boolean;
+    stripe_connect_charges_enabled?: boolean;
   };
   token: string;
   isLoading: boolean;
   error: Error | null;
+  refetch: () => void;
 }
 
 const ClientPortalContext = createContext<ClientPortalContextType | null>(null);
 
 export function ClientPortalProvider({ children }: { children: ReactNode }) {
   const { token } = useParams<{ token: string }>();
-  const { data, isLoading, error } = useClientPortal(token);
+  const { data, isLoading, error, refetch } = useClientPortal(token);
 
   if (isLoading) {
     return (
@@ -111,6 +114,7 @@ export function ClientPortalProvider({ children }: { children: ReactNode }) {
     token: token!,
     isLoading,
     error: error as Error | null,
+    refetch,
   };
 
   return (

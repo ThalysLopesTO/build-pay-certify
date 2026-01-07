@@ -87,6 +87,12 @@ serve(async (req) => {
       case 'invoice.payment_failed':
         await handlePaymentFailed(event.data.object as Stripe.Invoice, supabaseClient);
         break;
+      case 'payment_intent.succeeded':
+        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent, supabaseClient);
+        break;
+      case 'payment_intent.payment_failed':
+        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent, supabaseClient);
+        break;
       default:
         logStep("Unhandled event type", { type: event.type });
     }
@@ -106,9 +112,36 @@ serve(async (req) => {
 });
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session, supabaseClient: any, stripe: Stripe) {
-  logStep("Handling checkout completion", { sessionId: session.id, customerId: session.customer });
+  logStep("Handling checkout completion", { sessionId: session.id, customerId: session.customer, metadata: session.metadata });
   
+  // Check if this is an invoice payment checkout
+  if (session.metadata?.type === 'invoice_payment' && session.metadata?.invoice_id) {
+    logStep("Invoice payment checkout completed", { invoiceId: session.metadata.invoice_id });
+    
+    // Update invoice_payments record
+    const { error: updateError } = await supabaseClient
+      .from('invoice_payments')
+      .update({
+        status: 'processing',
+        stripe_payment_intent_id: session.payment_intent,
+      })
+      .eq('stripe_checkout_session_id', session.id);
+
+    if (updateError) {
+      logStep("Error updating invoice_payments", { error: updateError.message });
+    } else {
+      logStep("Invoice payment updated to processing", { sessionId: session.id });
+    }
+    return;
+  }
+  
+  // Original subscription checkout logic
   const customerId = session.customer as string;
+  
+  if (!customerId) {
+    logStep("No customer ID in session, skipping");
+    return;
+  }
   
   // Get customer details from Stripe
   const customer = await stripe.customers.retrieve(customerId);
@@ -132,6 +165,64 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, supabas
     stripe_customer_id: customerId,
     stripe_session_id: session.id
   }, { onConflict: 'company_email' });
+}
+
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent, supabaseClient: any) {
+  logStep("Handling payment intent succeeded", { 
+    paymentIntentId: paymentIntent.id, 
+    metadata: paymentIntent.metadata 
+  });
+  
+  // Check if this is an invoice payment
+  if (paymentIntent.metadata?.invoice_id) {
+    const invoiceId = paymentIntent.metadata.invoice_id;
+    
+    // Update invoice_payments record
+    const { error: paymentError } = await supabaseClient
+      .from('invoice_payments')
+      .update({
+        status: 'succeeded',
+        paid_at: new Date().toISOString(),
+      })
+      .eq('stripe_payment_intent_id', paymentIntent.id);
+
+    if (paymentError) {
+      logStep("Error updating invoice_payments to succeeded", { error: paymentError.message });
+    }
+
+    // Update invoice status to paid
+    const { error: invoiceError } = await supabaseClient
+      .from('invoices')
+      .update({ status: 'paid' })
+      .eq('id', invoiceId);
+
+    if (invoiceError) {
+      logStep("Error updating invoice to paid", { error: invoiceError.message });
+    } else {
+      logStep("Invoice marked as paid", { invoiceId });
+    }
+  }
+}
+
+async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent, supabaseClient: any) {
+  logStep("Handling payment intent failed", { 
+    paymentIntentId: paymentIntent.id, 
+    metadata: paymentIntent.metadata 
+  });
+  
+  // Check if this is an invoice payment
+  if (paymentIntent.metadata?.invoice_id) {
+    const { error } = await supabaseClient
+      .from('invoice_payments')
+      .update({ status: 'failed' })
+      .eq('stripe_payment_intent_id', paymentIntent.id);
+
+    if (error) {
+      logStep("Error updating invoice_payments to failed", { error: error.message });
+    } else {
+      logStep("Invoice payment marked as failed", { paymentIntentId: paymentIntent.id });
+    }
+  }
 }
 
 async function handleSubscriptionChange(subscription: Stripe.Subscription, supabaseClient: any, stripe: Stripe) {

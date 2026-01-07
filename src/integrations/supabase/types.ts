@@ -1347,6 +1347,66 @@ export type Database = {
           },
         ]
       }
+      invoice_payments: {
+        Row: {
+          amount_total_cents: number
+          application_fee_cents: number
+          company_id: string
+          created_at: string
+          currency: string
+          id: string
+          invoice_id: string
+          paid_at: string | null
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_total_cents: number
+          application_fee_cents: number
+          company_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_id: string
+          paid_at?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_total_cents?: number
+          application_fee_cents?: number
+          company_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_id?: string
+          paid_at?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           client_address: string | null

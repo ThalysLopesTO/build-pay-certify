@@ -66,6 +66,8 @@ interface ClientPortalData {
     company_phone: string | null;
     company_address: string | null;
     timezone?: string;
+    payments_enabled?: boolean;
+    stripe_connect_charges_enabled?: boolean;
   };
 }
 
