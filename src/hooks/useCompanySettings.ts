@@ -34,6 +34,12 @@ export interface CompanySettings {
   weather_longitude: number | null; // Longitude for company weather location
   weather_location_name: string | null; // Human-readable weather location name
   start_date?: string;
+  // Stripe Connect fields
+  stripe_connect_account_id: string | null;
+  stripe_connect_onboarding_complete: boolean;
+  stripe_connect_charges_enabled: boolean;
+  stripe_connect_payouts_enabled: boolean;
+  payments_enabled: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -690,10 +690,15 @@ export type Database = {
           id: string
           invoice_overdue_reminder_days: number | null
           invoice_reminder_days_before: number | null
+          payments_enabled: boolean | null
           quote_expiry_reminder_days_before: number | null
           quote_reminder_days: number | null
           show_tax_breakdown_to_employees: boolean | null
           start_date: string | null
+          stripe_connect_account_id: string | null
+          stripe_connect_charges_enabled: boolean | null
+          stripe_connect_onboarding_complete: boolean | null
+          stripe_connect_payouts_enabled: boolean | null
           tax_percentage: number | null
           timesheet_frequency: string
           timezone: string
@@ -722,10 +727,15 @@ export type Database = {
           id?: string
           invoice_overdue_reminder_days?: number | null
           invoice_reminder_days_before?: number | null
+          payments_enabled?: boolean | null
           quote_expiry_reminder_days_before?: number | null
           quote_reminder_days?: number | null
           show_tax_breakdown_to_employees?: boolean | null
           start_date?: string | null
+          stripe_connect_account_id?: string | null
+          stripe_connect_charges_enabled?: boolean | null
+          stripe_connect_onboarding_complete?: boolean | null
+          stripe_connect_payouts_enabled?: boolean | null
           tax_percentage?: number | null
           timesheet_frequency?: string
           timezone?: string
@@ -754,10 +764,15 @@ export type Database = {
           id?: string
           invoice_overdue_reminder_days?: number | null
           invoice_reminder_days_before?: number | null
+          payments_enabled?: boolean | null
           quote_expiry_reminder_days_before?: number | null
           quote_reminder_days?: number | null
           show_tax_breakdown_to_employees?: boolean | null
           start_date?: string | null
+          stripe_connect_account_id?: string | null
+          stripe_connect_charges_enabled?: boolean | null
+          stripe_connect_onboarding_complete?: boolean | null
+          stripe_connect_payouts_enabled?: boolean | null
           tax_percentage?: number | null
           timesheet_frequency?: string
           timezone?: string
