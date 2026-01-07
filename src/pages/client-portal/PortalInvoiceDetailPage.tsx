@@ -1,23 +1,77 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useClientPortalContext } from '@/contexts/ClientPortalContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, MapPin, Download, Lock } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Download, Lock, Loader2, CreditCard, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { generatePortalInvoicePDF } from '@/utils/portalInvoicePDFGenerator';
 import { toast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function PortalInvoiceDetailPage() {
   const { invoiceId } = useParams();
-  const { invoices, token, company_settings } = useClientPortalContext();
+  const { invoices, token, company_settings, refetch } = useClientPortalContext();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'processing' | 'success' | null>(null);
   const isMobile = useIsMobile();
 
   const invoice = invoices.find(i => i.id === invoiceId);
+
+  // Check URL params for payment return
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    
+    if (payment === 'success') {
+      setPaymentStatus('processing');
+      // Clear the URL parameter
+      setSearchParams({});
+      
+      // Poll for invoice status update
+      const pollInterval = setInterval(async () => {
+        await refetch();
+      }, 3000);
+
+      // Stop polling after 30 seconds
+      const timeout = setTimeout(() => {
+        clearInterval(pollInterval);
+        if (paymentStatus === 'processing') {
+          toast({
+            title: "Payment Processing",
+            description: "Your payment is being processed. The invoice status will update shortly.",
+          });
+        }
+      }, 30000);
+
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(timeout);
+      };
+    } else if (payment === 'cancelled') {
+      setSearchParams({});
+      toast({
+        title: "Payment Cancelled",
+        description: "You cancelled the payment. You can try again anytime.",
+        variant: "destructive",
+      });
+    }
+  }, [searchParams, setSearchParams, refetch]);
+
+  // Check if invoice status changed to paid
+  useEffect(() => {
+    if (paymentStatus === 'processing' && invoice?.status === 'paid') {
+      setPaymentStatus('success');
+      toast({
+        title: "Payment Successful",
+        description: "Thank you! Your payment has been processed successfully.",
+      });
+    }
+  }, [invoice?.status, paymentStatus]);
 
   const handleDownloadPDF = async () => {
     if (!invoice) return;
@@ -41,6 +95,41 @@ export default function PortalInvoiceDetailPage() {
     }
   };
 
+  const handlePayInvoice = async () => {
+    if (!invoice) return;
+    
+    setIsProcessingPayment(true);
+    try {
+      const successUrl = `${window.location.origin}/client/${token}/invoices/${invoiceId}?payment=success`;
+      const cancelUrl = `${window.location.origin}/client/${token}/invoices/${invoiceId}?payment=cancelled`;
+
+      const { data, error } = await supabase.functions.invoke('stripe-create-invoice-checkout', {
+        body: {
+          invoice_id: invoice.id,
+          portal_token: token,
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      toast({
+        title: "Payment Error",
+        description: error instanceof Error ? error.message : "Unable to start payment. Please try again.",
+        variant: "destructive",
+      });
+      setIsProcessingPayment(false);
+    }
+  };
+
   if (!invoice) {
     return (
       <div className="text-center py-12 pt-16 lg:pt-12">
@@ -53,6 +142,12 @@ export default function PortalInvoiceDetailPage() {
   }
 
   const isOverdue = new Date(invoice.due_date) < new Date() && invoice.status === 'pending';
+  
+  // Check if payment is available
+  const canPay = 
+    invoice.status === 'pending' && 
+    company_settings.payments_enabled === true && 
+    company_settings.stripe_connect_charges_enabled === true;
 
   const InvoiceSummaryCard = () => (
     <Card className={isMobile ? '' : 'sticky top-6'}>
@@ -64,10 +159,20 @@ export default function PortalInvoiceDetailPage() {
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">Status</p>
           <div className="flex gap-2">
-            <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
-              {invoice.status}
-            </Badge>
-            {isOverdue && <Badge variant="destructive">Overdue</Badge>}
+            {paymentStatus === 'processing' ? (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Processing
+              </Badge>
+            ) : invoice.status === 'paid' ? (
+              <Badge variant="default" className="flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" />
+                Paid
+              </Badge>
+            ) : (
+              <Badge variant="secondary">{invoice.status}</Badge>
+            )}
+            {isOverdue && invoice.status !== 'paid' && <Badge variant="destructive">Overdue</Badge>}
           </div>
         </div>
 
@@ -84,23 +189,71 @@ export default function PortalInvoiceDetailPage() {
         {/* Due Date */}
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">Due Date</p>
-          <p className={`font-medium ${isOverdue ? 'text-destructive' : ''}`}>
+          <p className={`font-medium ${isOverdue && invoice.status !== 'paid' ? 'text-destructive' : ''}`}>
             {format(new Date(invoice.due_date), 'MMM d, yyyy')}
           </p>
         </div>
 
         {/* Pay Invoice Button */}
         <div className="pt-2 space-y-2">
-          <Button className="w-full" size="lg" disabled>
-            <Lock className="w-4 h-4 mr-2" />
-            Pay Invoice
-          </Button>
-          <p className="text-xs text-muted-foreground text-center">
-            Payments are not enabled by this company.
-          </p>
-          <p className="text-xs text-muted-foreground text-center opacity-70">
-            Secure payments powered by Stripe.
-          </p>
+          {paymentStatus === 'processing' ? (
+            <>
+              <Button className="w-full" size="lg" disabled>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processing Payment...
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Please wait while we confirm your payment.
+              </p>
+            </>
+          ) : invoice.status === 'paid' ? (
+            <>
+              <div className="w-full py-3 px-4 bg-primary/10 rounded-md flex items-center justify-center gap-2">
+                <CheckCircle className="w-5 h-5 text-primary" />
+                <span className="font-medium text-primary">Paid in Full</span>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Thank you for your payment!
+              </p>
+            </>
+          ) : canPay ? (
+            <>
+              <Button 
+                className="w-full" 
+                size="lg" 
+                onClick={handlePayInvoice}
+                disabled={isProcessingPayment}
+              >
+                {isProcessingPayment ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Redirecting...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Pay Invoice
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center opacity-70">
+                Secure payments powered by Stripe.
+              </p>
+            </>
+          ) : (
+            <>
+              <Button className="w-full" size="lg" disabled>
+                <Lock className="w-4 h-4 mr-2" />
+                Pay Invoice
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Payments are not enabled by this company.
+              </p>
+              <p className="text-xs text-muted-foreground text-center opacity-70">
+                Secure payments powered by Stripe.
+              </p>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -162,7 +315,7 @@ export default function PortalInvoiceDetailPage() {
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground">Due:</span>
-                  <span className={`font-medium ${isOverdue ? 'text-destructive' : ''}`}>
+                  <span className={`font-medium ${isOverdue && invoice.status !== 'paid' ? 'text-destructive' : ''}`}>
                     {format(new Date(invoice.due_date), 'MMM d, yyyy')}
                   </span>
                 </div>
