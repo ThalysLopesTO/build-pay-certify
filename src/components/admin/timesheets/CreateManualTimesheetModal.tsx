@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, DollarSign } from 'lucide-react';
-import { format, startOfWeek, addDays, getDay } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
@@ -137,9 +137,8 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
       return;
     }
 
-    // Get the Monday of the selected week
-    const weekStart = getFriday(formData.selectedDate);
-    const weekStartDateString = format(weekStart, 'yyyy-MM-dd');
+    // Use the selected date directly as the week start (no automatic adjustment for manual timesheets)
+    const weekStartDateString = format(formData.selectedDate, 'yyyy-MM-dd');
 
     const tax = calculateTax({
       tax_included: formData.taxIncluded,
@@ -232,11 +231,6 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
     }
   }, [isOpen]);
 
-  function getFriday(date: Date) {
-    const day = getDay(date); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
-    const diff = day <= 5 ? 5 - day : -(day - 5);
-    return addDays(date, diff);
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -347,7 +341,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.selectedDate ? (
-                      format(getFriday(formData.selectedDate), "PPP")
+                      format(formData.selectedDate, "PPP")
                     ) : (
                       <span>Pick a date</span>
                     )}
