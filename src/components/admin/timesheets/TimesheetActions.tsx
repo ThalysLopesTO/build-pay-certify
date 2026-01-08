@@ -36,7 +36,10 @@ const TimesheetActions: React.FC<TimesheetActionsProps> = ({
   const canManageTimesheets = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management';
   
   // Check if this is the current user's own timesheet (managers can't approve their own)
-  const isOwnTimesheet = timesheet.user_id === user?.id || timesheet.submitted_by === user?.id;
+  // Exception: Manual entries can always be approved by the creator since they're creating for OTHER employees
+  const isOwnTimesheet = timesheet.is_manual_entry 
+    ? false 
+    : (timesheet.user_id === user?.id || timesheet.submitted_by === user?.id);
 
   const handleDownloadPDF = async (timesheet: any) => {
     // This will be handled by the TimesheetPDFGenerator component
