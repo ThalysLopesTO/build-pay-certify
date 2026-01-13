@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getStripeConnectConfig, logConnectMode } from "../_shared/stripeConnectConfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +21,10 @@ serve(async (req) => {
   try {
     logStep("Starting invoice checkout creation");
 
+    // Get Stripe Connect configuration (TEST or LIVE mode)
+    const connectConfig = getStripeConnectConfig();
+    logConnectMode(connectConfig, "STRIPE-INVOICE-CHECKOUT");
+
     const { invoice_id, portal_token, success_url, cancel_url } = await req.json();
 
     if (!invoice_id || !portal_token || !success_url || !cancel_url) {
@@ -30,10 +35,9 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
 
-    if (!supabaseUrl || !supabaseServiceKey || !stripeKey) {
-      throw new Error("Missing environment variables");
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error("Missing Supabase environment variables");
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -99,7 +103,8 @@ serve(async (req) => {
 
     logStep("Company settings validated", { 
       paymentsEnabled: settings.payments_enabled,
-      chargesEnabled: settings.stripe_connect_charges_enabled 
+      chargesEnabled: settings.stripe_connect_charges_enabled,
+      connectMode: connectConfig.mode
     });
 
     // Calculate amounts
@@ -112,8 +117,8 @@ serve(async (req) => {
       originalAmount: invoice.total_amount 
     });
 
-    // Initialize Stripe
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    // Initialize Stripe with Connect configuration
+    const stripe = new Stripe(connectConfig.stripeSecretKey, { apiVersion: "2023-10-16" });
 
     // Create Stripe Checkout session
     const session = await stripe.checkout.sessions.create({
@@ -149,12 +154,13 @@ serve(async (req) => {
         invoice_number: invoice.invoice_number,
         company_id: clientData.company_id,
         type: 'invoice_payment',
+        connect_mode: connectConfig.mode,
       },
       success_url: success_url,
       cancel_url: cancel_url,
     });
 
-    logStep("Stripe session created", { sessionId: session.id });
+    logStep("Stripe session created", { sessionId: session.id, mode: connectConfig.mode });
 
     // Insert invoice_payments record
     const { error: paymentError } = await supabase
