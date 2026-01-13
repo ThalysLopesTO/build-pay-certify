@@ -13,6 +13,95 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[verify-invoice-payment] ${step}${detailsStr}`);
 };
 
+// Extract fee breakdown from Stripe objects
+const extractFeeBreakdown = async (
+  stripe: Stripe, 
+  paymentIntentId: string
+): Promise<{
+  stripe_payment_intent_id: string;
+  stripe_charge_id: string | null;
+  stripe_balance_transaction_id: string | null;
+  stripe_transfer_id: string | null;
+  stripe_processing_fee_cents: number | null;
+  stackbuild_fee_cents: number | null;
+  net_to_company_cents: number | null;
+  payment_currency: string | null;
+  payment_method_type: string | null;
+}> => {
+  const result = {
+    stripe_payment_intent_id: paymentIntentId,
+    stripe_charge_id: null as string | null,
+    stripe_balance_transaction_id: null as string | null,
+    stripe_transfer_id: null as string | null,
+    stripe_processing_fee_cents: null as number | null,
+    stackbuild_fee_cents: null as number | null,
+    net_to_company_cents: null as number | null,
+    payment_currency: null as string | null,
+    payment_method_type: null as string | null,
+  };
+
+  try {
+    // Retrieve PaymentIntent with charges expanded
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+      expand: ['charges.data.balance_transaction']
+    });
+
+    logStep("Retrieved PaymentIntent for fee extraction", { 
+      id: paymentIntent.id,
+      application_fee_amount: paymentIntent.application_fee_amount 
+    });
+
+    // Get application fee (StackBuild 1% fee)
+    if (paymentIntent.application_fee_amount) {
+      result.stackbuild_fee_cents = paymentIntent.application_fee_amount;
+    }
+
+    // Get the charge
+    const charges = paymentIntent.charges?.data;
+    if (charges && charges.length > 0) {
+      const charge = charges[0];
+      result.stripe_charge_id = charge.id;
+      result.payment_currency = charge.currency;
+      
+      logStep("Found charge", { 
+        charge_id: charge.id, 
+        currency: charge.currency,
+        transfer: charge.transfer 
+      });
+
+      // Get payment method type
+      if (charge.payment_method_details?.type) {
+        result.payment_method_type = charge.payment_method_details.type;
+      }
+
+      // Get transfer ID if present
+      if (charge.transfer) {
+        result.stripe_transfer_id = typeof charge.transfer === 'string' 
+          ? charge.transfer 
+          : charge.transfer.id;
+      }
+
+      // Get balance transaction for fees
+      const balanceTx = charge.balance_transaction;
+      if (balanceTx && typeof balanceTx !== 'string') {
+        result.stripe_balance_transaction_id = balanceTx.id;
+        result.stripe_processing_fee_cents = balanceTx.fee;
+        result.net_to_company_cents = balanceTx.net;
+        
+        logStep("Found balance transaction", { 
+          id: balanceTx.id, 
+          fee: balanceTx.fee, 
+          net: balanceTx.net 
+        });
+      }
+    }
+  } catch (err) {
+    logStep("Error extracting fee breakdown", { error: String(err) });
+  }
+
+  return result;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -125,27 +214,43 @@ serve(async (req) => {
     if (session.status === "complete" && session.payment_status === "paid") {
       logStep("Payment confirmed as successful, updating records");
 
+      const paymentIntentId = session.payment_intent as string;
+      
+      // Extract fee breakdown from Stripe
+      const feeBreakdown = await extractFeeBreakdown(stripe, paymentIntentId);
+      logStep("Extracted fee breakdown", feeBreakdown);
+
       // Update invoice_payments record
       await supabaseAdmin
         .from("invoice_payments")
         .update({
           status: "completed",
           paid_at: new Date().toISOString(),
-          stripe_payment_intent_id: session.payment_intent as string,
+          stripe_payment_intent_id: paymentIntentId,
           updated_at: new Date().toISOString(),
         })
         .eq("id", payment.id);
 
-      // Update invoice status
+      // Update invoice status with full fee breakdown
       await supabaseAdmin
         .from("invoices")
         .update({
           status: "paid",
+          paid_at: new Date().toISOString(),
+          stripe_payment_intent_id: feeBreakdown.stripe_payment_intent_id,
+          stripe_charge_id: feeBreakdown.stripe_charge_id,
+          stripe_balance_transaction_id: feeBreakdown.stripe_balance_transaction_id,
+          stripe_transfer_id: feeBreakdown.stripe_transfer_id,
+          stripe_processing_fee_cents: feeBreakdown.stripe_processing_fee_cents,
+          stackbuild_fee_cents: feeBreakdown.stackbuild_fee_cents,
+          net_to_company_cents: feeBreakdown.net_to_company_cents,
+          payment_currency: feeBreakdown.payment_currency,
+          payment_method_type: feeBreakdown.payment_method_type,
           updated_at: new Date().toISOString(),
         })
         .eq("id", invoice_id);
 
-      logStep("Records updated successfully");
+      logStep("Records updated successfully with fee breakdown");
 
       return new Response(JSON.stringify({ status: "succeeded", invoice_status: "paid" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -167,25 +272,44 @@ serve(async (req) => {
 
     // If we have a payment intent, check its status directly
     if (session.payment_intent) {
-      const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent as string);
+      const paymentIntentId = session.payment_intent as string;
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       logStep("Retrieved PaymentIntent", { status: paymentIntent.status });
 
       if (paymentIntent.status === "succeeded") {
-        // Payment succeeded but we missed it, update now
+        // Payment succeeded but we missed it, update now with fee breakdown
+        const feeBreakdown = await extractFeeBreakdown(stripe, paymentIntentId);
+        logStep("Extracted fee breakdown for missed payment", feeBreakdown);
+
         await supabaseAdmin
           .from("invoice_payments")
           .update({
             status: "completed",
             paid_at: new Date().toISOString(),
-            stripe_payment_intent_id: paymentIntent.id,
+            stripe_payment_intent_id: paymentIntentId,
             updated_at: new Date().toISOString(),
           })
           .eq("id", payment.id);
 
         await supabaseAdmin
           .from("invoices")
-          .update({ status: "paid", updated_at: new Date().toISOString() })
+          .update({
+            status: "paid",
+            paid_at: new Date().toISOString(),
+            stripe_payment_intent_id: feeBreakdown.stripe_payment_intent_id,
+            stripe_charge_id: feeBreakdown.stripe_charge_id,
+            stripe_balance_transaction_id: feeBreakdown.stripe_balance_transaction_id,
+            stripe_transfer_id: feeBreakdown.stripe_transfer_id,
+            stripe_processing_fee_cents: feeBreakdown.stripe_processing_fee_cents,
+            stackbuild_fee_cents: feeBreakdown.stackbuild_fee_cents,
+            net_to_company_cents: feeBreakdown.net_to_company_cents,
+            payment_currency: feeBreakdown.payment_currency,
+            payment_method_type: feeBreakdown.payment_method_type,
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", invoice_id);
+
+        logStep("Records updated successfully with fee breakdown (missed payment)");
 
         return new Response(JSON.stringify({ status: "succeeded", invoice_status: "paid" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
