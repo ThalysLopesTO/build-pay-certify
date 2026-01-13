@@ -684,6 +684,7 @@ export type Database = {
           company_rules_text: string | null
           created_at: string
           enable_invoice_reminders: boolean | null
+          enable_live_invoice_payments: boolean | null
           enable_quote_expiry_reminders: boolean | null
           enable_quote_reminders: boolean | null
           hst_number: string | null
@@ -721,6 +722,7 @@ export type Database = {
           company_rules_text?: string | null
           created_at?: string
           enable_invoice_reminders?: boolean | null
+          enable_live_invoice_payments?: boolean | null
           enable_quote_expiry_reminders?: boolean | null
           enable_quote_reminders?: boolean | null
           hst_number?: string | null
@@ -758,6 +760,7 @@ export type Database = {
           company_rules_text?: string | null
           created_at?: string
           enable_invoice_reminders?: boolean | null
+          enable_live_invoice_payments?: boolean | null
           enable_quote_expiry_reminders?: boolean | null
           enable_quote_reminders?: boolean | null
           hst_number?: string | null

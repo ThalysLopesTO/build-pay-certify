@@ -209,17 +209,27 @@ export default function PortalInvoiceDetailPage() {
     } catch (error) {
       console.error('Error creating checkout session:', error);
       
-      // Check if it might be a CSP/script blocking issue
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Check if it might be a CSP/script blocking issue
       if (errorMessage.includes('blocked') || errorMessage.includes('CSP') || errorMessage.includes('script')) {
         setStripeLoadError(true);
       }
       
-      toast({
-        title: "Payment Error",
-        description: error instanceof Error ? error.message : "Unable to start payment. Please try again.",
-        variant: "destructive",
-      });
+      // Check for live payments not enabled error
+      if (errorMessage.includes('Live invoice payments are not enabled')) {
+        toast({
+          title: "Payments Unavailable",
+          description: "Live payments have not been enabled for this company yet. Please contact support.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Payment Error",
+          description: errorMessage || "Unable to start payment. Please try again.",
+          variant: "destructive",
+        });
+      }
       setIsProcessingPayment(false);
     }
   };

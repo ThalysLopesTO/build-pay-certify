@@ -84,7 +84,7 @@ serve(async (req) => {
     // Get company settings and verify payments are enabled
     const { data: settings, error: settingsError } = await supabase
       .from('company_settings')
-      .select('payments_enabled, stripe_connect_account_id, stripe_connect_charges_enabled, company_name')
+      .select('payments_enabled, stripe_connect_account_id, stripe_connect_charges_enabled, company_name, enable_live_invoice_payments')
       .eq('company_id', clientData.company_id)
       .single();
 
@@ -101,10 +101,21 @@ serve(async (req) => {
       throw new Error("Stripe Connect is not properly configured for this company");
     }
 
+    // LIVE MODE GUARDRAIL: Check if live payments are enabled for this company
+    if (connectConfig.mode === 'live' && !settings.enable_live_invoice_payments) {
+      logStep("Live payments not enabled for company", { 
+        companyId: clientData.company_id,
+        mode: connectConfig.mode,
+        enableLivePayments: settings.enable_live_invoice_payments
+      });
+      throw new Error("Live invoice payments are not enabled for this company. Please contact support.");
+    }
+
     logStep("Company settings validated", { 
       paymentsEnabled: settings.payments_enabled,
       chargesEnabled: settings.stripe_connect_charges_enabled,
-      connectMode: connectConfig.mode
+      connectMode: connectConfig.mode,
+      livePaymentsEnabled: settings.enable_live_invoice_payments
     });
 
     // Calculate amounts
