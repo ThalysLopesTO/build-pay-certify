@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getStripeConnectConfig, logConnectMode } from "../_shared/stripeConnectConfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,10 +15,9 @@ serve(async (req) => {
   }
 
   try {
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      throw new Error("STRIPE_SECRET_KEY not configured");
-    }
+    // Get Stripe Connect configuration (TEST or LIVE mode)
+    const connectConfig = getStripeConnectConfig();
+    logConnectMode(connectConfig, "STRIPE-CONNECT-STATUS");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -83,14 +83,14 @@ serve(async (req) => {
       );
     }
 
-    const stripe = new Stripe(stripeSecretKey, {
+    const stripe = new Stripe(connectConfig.stripeSecretKey, {
       apiVersion: "2023-10-16",
     });
 
     // Retrieve account from Stripe
     const account = await stripe.accounts.retrieve(settings.stripe_connect_account_id);
     
-    console.log("Stripe account status:", {
+    console.log(`Stripe account status (mode: ${connectConfig.mode}):`, {
       id: account.id,
       charges_enabled: account.charges_enabled,
       payouts_enabled: account.payouts_enabled,

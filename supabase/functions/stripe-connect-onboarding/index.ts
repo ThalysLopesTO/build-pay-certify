@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getStripeConnectConfig, logConnectMode } from "../_shared/stripeConnectConfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,10 +15,9 @@ serve(async (req) => {
   }
 
   try {
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      throw new Error("STRIPE_SECRET_KEY not configured");
-    }
+    // Get Stripe Connect configuration (TEST or LIVE mode)
+    const connectConfig = getStripeConnectConfig();
+    logConnectMode(connectConfig, "STRIPE-CONNECT-ONBOARDING");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -67,7 +67,7 @@ serve(async (req) => {
       throw new Error("Company settings not found");
     }
 
-    const stripe = new Stripe(stripeSecretKey, {
+    const stripe = new Stripe(connectConfig.stripeSecretKey, {
       apiVersion: "2023-10-16",
     });
 
@@ -75,7 +75,7 @@ serve(async (req) => {
 
     // Create new Stripe Connect account if doesn't exist
     if (!accountId) {
-      console.log("Creating new Stripe Connect account for company:", profile.company_id);
+      console.log(`Creating new Stripe Connect account for company: ${profile.company_id} (mode: ${connectConfig.mode})`);
       
       const account = await stripe.accounts.create({
         type: "express",
@@ -92,7 +92,7 @@ serve(async (req) => {
       });
 
       accountId = account.id;
-      console.log("Created Stripe Connect account:", accountId);
+      console.log(`Created Stripe Connect account: ${accountId} (mode: ${connectConfig.mode})`);
 
       // Save account ID to company settings
       const { error: updateError } = await supabaseClient
@@ -118,7 +118,7 @@ serve(async (req) => {
       type: "account_onboarding",
     });
 
-    console.log("Created account link for:", accountId);
+    console.log(`Created account link for: ${accountId} (mode: ${connectConfig.mode})`);
 
     return new Response(
       JSON.stringify({ url: accountLink.url }),
