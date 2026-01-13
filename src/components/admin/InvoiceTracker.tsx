@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
 import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2 } from 'lucide-react';
+import { PaymentBreakdownSection } from './invoices/PaymentBreakdownSection';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { InvoiceEmailSender } from './InvoiceEmailSender';
@@ -505,6 +506,9 @@ const InvoiceTracker = () => {
                                     <p className="text-sm text-muted-foreground">{selectedInvoice.notes}</p>
                                   </div>
                                 )}
+                                
+                                {/* Payment Breakdown Section - Only shows for paid Stripe payments */}
+                                <PaymentBreakdownSection invoice={selectedInvoice} />
                               </div>
                             )}
                           </DialogContent>

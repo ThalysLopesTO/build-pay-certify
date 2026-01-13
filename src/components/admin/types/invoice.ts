@@ -25,6 +25,17 @@ export interface Invoice {
     address: string | null;  
   } | null;
   invoice_line_items?: InvoiceLineItem[];
+  // Stripe payment breakdown fields
+  stripe_payment_intent_id?: string | null;
+  stripe_charge_id?: string | null;
+  stripe_transfer_id?: string | null;
+  stripe_balance_transaction_id?: string | null;
+  stripe_processing_fee_cents?: number | null;
+  stackbuild_fee_cents?: number | null;
+  net_to_company_cents?: number | null;
+  payment_currency?: string | null;
+  payment_method_type?: string | null;
+  paid_at?: string | null;
 }
 
 export interface InvoiceLineItem {

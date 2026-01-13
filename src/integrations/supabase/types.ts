@@ -1421,10 +1421,20 @@ export type Database = {
           id: string
           invoice_number: string
           jobsite_id: string | null
+          net_to_company_cents: number | null
           notes: string | null
+          paid_at: string | null
+          payment_currency: string | null
+          payment_method_type: string | null
           receipt_file_url: string | null
           sent_date: string | null
+          stackbuild_fee_cents: number | null
           status: string
+          stripe_balance_transaction_id: string | null
+          stripe_charge_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_processing_fee_cents: number | null
+          stripe_transfer_id: string | null
           subtotal: number
           tax: number | null
           title: string
@@ -1444,10 +1454,20 @@ export type Database = {
           id?: string
           invoice_number: string
           jobsite_id?: string | null
+          net_to_company_cents?: number | null
           notes?: string | null
+          paid_at?: string | null
+          payment_currency?: string | null
+          payment_method_type?: string | null
           receipt_file_url?: string | null
           sent_date?: string | null
+          stackbuild_fee_cents?: number | null
           status?: string
+          stripe_balance_transaction_id?: string | null
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_processing_fee_cents?: number | null
+          stripe_transfer_id?: string | null
           subtotal?: number
           tax?: number | null
           title: string
@@ -1467,10 +1487,20 @@ export type Database = {
           id?: string
           invoice_number?: string
           jobsite_id?: string | null
+          net_to_company_cents?: number | null
           notes?: string | null
+          paid_at?: string | null
+          payment_currency?: string | null
+          payment_method_type?: string | null
           receipt_file_url?: string | null
           sent_date?: string | null
+          stackbuild_fee_cents?: number | null
           status?: string
+          stripe_balance_transaction_id?: string | null
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_processing_fee_cents?: number | null
+          stripe_transfer_id?: string | null
           subtotal?: number
           tax?: number | null
           title?: string
