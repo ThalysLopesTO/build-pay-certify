@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle2, AlertCircle, XCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, XCircle, ExternalLink, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useCompanySettings, useUpdateSettingsMutation } from '@/hooks/useCompanySettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface StripeStatus {
   connected: boolean;
@@ -23,10 +24,14 @@ export const PaymentsTab = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+
+  // Check if user is super_admin for live payments toggle
+  const isSuperAdmin = user?.role === 'super_admin';
 
   // Check status on mount and when returning from Stripe
   useEffect(() => {
@@ -131,6 +136,33 @@ export const PaymentsTab = () => {
       toast({
         title: "Error",
         description: "Failed to update payment settings.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Super-admin only: Toggle live invoice payments
+  const handleToggleLivePayments = async (enabled: boolean) => {
+    if (!settings?.id || !isSuperAdmin) return;
+    
+    try {
+      await updateSettings.mutateAsync({
+        id: settings.id,
+        enable_live_invoice_payments: enabled,
+      });
+      
+      toast({
+        title: enabled ? "Live Payments Enabled" : "Live Payments Disabled",
+        description: enabled 
+          ? "⚠️ This company can now process REAL charges." 
+          : "Live invoice payments have been disabled for this company.",
+        variant: enabled ? "default" : "destructive",
+      });
+    } catch (error) {
+      console.error('Error toggling live payments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update live payment settings.",
         variant: "destructive",
       });
     }
@@ -310,6 +342,49 @@ export const PaymentsTab = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Section 4: Live Payments (Super Admin Only) */}
+      {isSuperAdmin && (
+        <Card className="border-orange-500/50 bg-orange-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-600">
+              <AlertTriangle className="h-5 w-5" />
+              Live Payments (Internal Only)
+            </CardTitle>
+            <CardDescription>
+              Super Admin: Enable REAL payment processing for this company.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="live-payments-toggle" className="text-base">
+                  Enable Live Invoice Payments
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {settings?.enable_live_invoice_payments
+                    ? "⚠️ LIVE: This company will process real charges."
+                    : "Currently in TEST mode. No real charges will be made."}
+                </p>
+              </div>
+              <Switch
+                id="live-payments-toggle"
+                checked={settings?.enable_live_invoice_payments ?? false}
+                onCheckedChange={handleToggleLivePayments}
+                disabled={!canEnablePayments || updateSettings.isPending}
+              />
+            </div>
+            
+            {settings?.enable_live_invoice_payments && (
+              <div className="p-3 rounded-md bg-orange-500/20 border border-orange-500/30">
+                <p className="text-sm font-medium text-orange-700">
+                  ⚠️ Live payments are ENABLED for this company. All invoice payments will result in real charges.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

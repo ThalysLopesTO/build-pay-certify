@@ -40,6 +40,7 @@ export interface CompanySettings {
   stripe_connect_charges_enabled: boolean;
   stripe_connect_payouts_enabled: boolean;
   payments_enabled: boolean;
+  enable_live_invoice_payments: boolean; // Safety guardrail - only super-admin can toggle
   created_at: string;
   updated_at: string;
 }
