@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useClientPortalContext } from '@/contexts/ClientPortalContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, MapPin, Download, Lock, Loader2, CreditCard, CheckCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, Calendar, MapPin, Download, Lock, Loader2, CreditCard, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { generatePortalInvoicePDF } from '@/utils/portalInvoicePDFGenerator';
 import { toast } from '@/hooks/use-toast';
@@ -18,53 +19,107 @@ export default function PortalInvoiceDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isDownloading, setIsDownloading] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<'processing' | 'success' | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<'processing' | 'success' | 'failed' | null>(null);
+  const [pollingAttempt, setPollingAttempt] = useState(0);
+  const [canCancel, setCanCancel] = useState(false);
+  const [stripeLoadError, setStripeLoadError] = useState(false);
   const isMobile = useIsMobile();
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const maxPollingAttempts = 15; // 30 seconds total (15 * 2s)
 
   const invoice = invoices.find(i => i.id === invoiceId);
 
-  // Check URL params for payment return
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, []);
+
+  // Verify payment status via edge function
+  const verifyPaymentStatus = useCallback(async (): Promise<'succeeded' | 'failed' | 'processing' | 'expired'> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-invoice-payment', {
+        body: { invoice_id: invoiceId, portal_token: token }
+      });
+
+      if (error) {
+        console.error('Error verifying payment:', error);
+        return 'processing';
+      }
+
+      return data?.status || 'processing';
+    } catch (err) {
+      console.error('Exception verifying payment:', err);
+      return 'processing';
+    }
+  }, [invoiceId, token]);
+
+  // Handle return from Stripe checkout
   useEffect(() => {
     const payment = searchParams.get('payment');
     
     if (payment === 'success') {
       setPaymentStatus('processing');
-      // Clear the URL parameter
-      setSearchParams({});
-      
-      // Poll for invoice status update
-      const pollInterval = setInterval(async () => {
-        await refetch();
-      }, 3000);
+      setPollingAttempt(0);
+      setCanCancel(false);
+      // Clear the URL parameter immediately
+      setSearchParams({}, { replace: true });
 
-      // Stop polling after 30 seconds
-      const timeout = setTimeout(() => {
-        clearInterval(pollInterval);
-        if (paymentStatus === 'processing') {
-          toast({
-            title: "Payment Processing",
-            description: "Your payment is being processed. The invoice status will update shortly.",
-          });
-        }
-      }, 30000);
+      // Start polling for payment verification
+      const startPolling = async () => {
+        let attempts = 0;
+        
+        pollingRef.current = setInterval(async () => {
+          attempts++;
+          setPollingAttempt(attempts);
 
-      return () => {
-        clearInterval(pollInterval);
-        clearTimeout(timeout);
+          const status = await verifyPaymentStatus();
+
+          if (status === 'succeeded') {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            setPaymentStatus('success');
+            await refetch();
+            toast({
+              title: "Payment Successful",
+              description: "Thank you! Your payment has been processed successfully.",
+            });
+          } else if (status === 'failed' || status === 'expired') {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            setPaymentStatus('failed');
+            toast({
+              title: "Payment Failed",
+              description: "There was an issue with your payment. Please try again.",
+              variant: "destructive",
+            });
+          } else if (attempts >= maxPollingAttempts) {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            setCanCancel(true);
+            toast({
+              title: "Payment Verification Delayed",
+              description: "We're still confirming your payment. You can wait or try refreshing the page.",
+            });
+          }
+        }, 2000);
       };
+
+      startPolling();
     } else if (payment === 'cancelled') {
-      setSearchParams({});
+      setSearchParams({}, { replace: true });
       toast({
         title: "Payment Cancelled",
         description: "You cancelled the payment. You can try again anytime.",
         variant: "destructive",
       });
     }
-  }, [searchParams, setSearchParams, refetch]);
+  }, [searchParams, setSearchParams, refetch, verifyPaymentStatus]);
 
-  // Check if invoice status changed to paid
+  // Check if invoice status changed to paid (backup check)
   useEffect(() => {
     if (paymentStatus === 'processing' && invoice?.status === 'paid') {
+      if (pollingRef.current) clearInterval(pollingRef.current);
       setPaymentStatus('success');
       toast({
         title: "Payment Successful",
@@ -72,6 +127,36 @@ export default function PortalInvoiceDetailPage() {
       });
     }
   }, [invoice?.status, paymentStatus]);
+
+  // Check for Stripe script load errors
+  useEffect(() => {
+    const checkStripeLoad = () => {
+      // If we're on the page and window.Stripe doesn't exist after a reasonable time
+      const timeout = setTimeout(() => {
+        if (typeof window !== 'undefined' && !(window as any).Stripe) {
+          // Check if there are CSP violations in console
+          console.warn('Stripe.js may not have loaded - checking for CSP issues');
+        }
+      }, 5000);
+
+      return () => clearTimeout(timeout);
+    };
+
+    checkStripeLoad();
+  }, []);
+
+  const handleCancelPolling = () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+    }
+    setPaymentStatus(null);
+    setPollingAttempt(0);
+    setCanCancel(false);
+    toast({
+      title: "Verification Cancelled",
+      description: "You can check your invoice status later or try paying again.",
+    });
+  };
 
   const handleDownloadPDF = async () => {
     if (!invoice) return;
@@ -99,6 +184,8 @@ export default function PortalInvoiceDetailPage() {
     if (!invoice) return;
     
     setIsProcessingPayment(true);
+    setStripeLoadError(false);
+    
     try {
       const successUrl = `${window.location.origin}/client/${token}/invoices/${invoiceId}?payment=success`;
       const cancelUrl = `${window.location.origin}/client/${token}/invoices/${invoiceId}?payment=cancelled`;
@@ -121,6 +208,13 @@ export default function PortalInvoiceDetailPage() {
       }
     } catch (error) {
       console.error('Error creating checkout session:', error);
+      
+      // Check if it might be a CSP/script blocking issue
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('blocked') || errorMessage.includes('CSP') || errorMessage.includes('script')) {
+        setStripeLoadError(true);
+      }
+      
       toast({
         title: "Payment Error",
         description: error instanceof Error ? error.message : "Unable to start payment. Please try again.",
@@ -155,6 +249,16 @@ export default function PortalInvoiceDetailPage() {
         <CardTitle className="text-lg">Invoice Summary</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Stripe Load Error Alert */}
+        {stripeLoadError && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Payment screen blocked by browser security settings. Try using Incognito mode or disable browser extensions.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Status */}
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">Status</p>
@@ -164,22 +268,29 @@ export default function PortalInvoiceDetailPage() {
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Processing
               </Badge>
-            ) : invoice.status === 'paid' ? (
-              <Badge variant="default" className="flex items-center gap-1">
+            ) : paymentStatus === 'success' || invoice.status === 'paid' ? (
+              <Badge variant="default" className="flex items-center gap-1 bg-green-600">
                 <CheckCircle className="w-3 h-3" />
                 Paid
+              </Badge>
+            ) : paymentStatus === 'failed' ? (
+              <Badge variant="destructive" className="flex items-center gap-1">
+                <XCircle className="w-3 h-3" />
+                Failed
               </Badge>
             ) : (
               <Badge variant="secondary">{invoice.status}</Badge>
             )}
-            {isOverdue && invoice.status !== 'paid' && <Badge variant="destructive">Overdue</Badge>}
+            {isOverdue && invoice.status !== 'paid' && paymentStatus !== 'success' && (
+              <Badge variant="destructive">Overdue</Badge>
+            )}
           </div>
         </div>
 
         {/* Amount Due */}
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">
-            {invoice.status === 'paid' ? 'Amount Paid' : 'Amount Due'}
+            {invoice.status === 'paid' || paymentStatus === 'success' ? 'Amount Paid' : 'Amount Due'}
           </p>
           <p className="text-3xl font-bold text-primary">
             ${invoice.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -189,32 +300,88 @@ export default function PortalInvoiceDetailPage() {
         {/* Due Date */}
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">Due Date</p>
-          <p className={`font-medium ${isOverdue && invoice.status !== 'paid' ? 'text-destructive' : ''}`}>
+          <p className={`font-medium ${isOverdue && invoice.status !== 'paid' && paymentStatus !== 'success' ? 'text-destructive' : ''}`}>
             {format(new Date(invoice.due_date), 'MMM d, yyyy')}
           </p>
         </div>
 
-        {/* Pay Invoice Button */}
+        {/* Pay Invoice Button / Status */}
         <div className="pt-2 space-y-2">
           {paymentStatus === 'processing' ? (
-            <>
+            <div className="space-y-3">
               <Button className="w-full" size="lg" disabled>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processing Payment...
+                Confirming Payment...
               </Button>
+              
+              {/* Progress indicator */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Verifying with payment processor</span>
+                  <span>{pollingAttempt}/{maxPollingAttempts}</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div 
+                    className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${(pollingAttempt / maxPollingAttempts) * 100}%` }}
+                  />
+                </div>
+              </div>
+
               <p className="text-xs text-muted-foreground text-center">
-                Please wait while we confirm your payment.
+                Please do not refresh or close this page.
               </p>
-            </>
-          ) : invoice.status === 'paid' ? (
+
+              {canCancel && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCancelPolling}
+                  className="w-full"
+                >
+                  Cancel and check later
+                </Button>
+              )}
+            </div>
+          ) : paymentStatus === 'success' || invoice.status === 'paid' ? (
             <>
-              <div className="w-full py-3 px-4 bg-primary/10 rounded-md flex items-center justify-center gap-2">
-                <CheckCircle className="w-5 h-5 text-primary" />
-                <span className="font-medium text-primary">Paid in Full</span>
+              <div className="w-full py-3 px-4 bg-green-500/10 rounded-md flex items-center justify-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <span className="font-medium text-green-600">Paid in Full</span>
               </div>
               <p className="text-xs text-muted-foreground text-center">
                 Thank you for your payment!
               </p>
+            </>
+          ) : paymentStatus === 'failed' ? (
+            <>
+              <div className="w-full py-3 px-4 bg-destructive/10 rounded-md flex items-center justify-center gap-2">
+                <XCircle className="w-5 h-5 text-destructive" />
+                <span className="font-medium text-destructive">Payment Failed</span>
+              </div>
+              {canPay && (
+                <Button 
+                  className="w-full" 
+                  size="lg" 
+                  onClick={() => {
+                    setPaymentStatus(null);
+                    handlePayInvoice();
+                  }}
+                  disabled={isProcessingPayment}
+                >
+                  {isProcessingPayment ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Redirecting...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Try Again
+                    </>
+                  )}
+                </Button>
+              )}
             </>
           ) : canPay ? (
             <>
