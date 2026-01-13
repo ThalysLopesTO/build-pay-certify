@@ -34,16 +34,15 @@ export const PaymentsTab = () => {
 
   // Handle return from Stripe onboarding
   useEffect(() => {
-    const success = searchParams.get('success');
-    const refresh = searchParams.get('refresh');
+    const stripeParam = searchParams.get('stripe');
     
-    if (success === 'true') {
+    if (stripeParam === 'return') {
       toast({
         title: "Stripe Setup",
         description: "Checking your account status...",
       });
       checkStripeStatus();
-    } else if (refresh === 'true') {
+    } else if (stripeParam === 'refresh') {
       checkStripeStatus();
     }
   }, [searchParams]);
