@@ -1,5 +1,5 @@
 // ✅ FINAL CLEAN VERSION
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { generateBrandedInvoicePDFBlob, blobToBase64 } from './BrandedInvoicePDF
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
-import { Mail, AlertTriangle } from 'lucide-react';
+import { Mail, AlertTriangle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClient } from '@/hooks/useClient';
 import { createInvoiceEmailHTML } from '@/utils/invoiceEmailTemplate';
@@ -33,9 +33,12 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
   const { settings, isSettingsComplete } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
   const { template } = useEmailTemplate('invoice');
-  const { data: client } = useClient(invoice.client_id);
+  const { data: client, isLoading: isClientLoading } = useClient(invoice.client_id);
   const [isLoading, setIsLoading] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
+
+  // Check if client portal URL is available (needed for Pay button)
+  const hasPortalUrl = !!client?.portal_token;
 
   const generateClientPortalUrl = (): string | null => {
     const baseUrl = window.location.origin;
@@ -45,8 +48,8 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
     return null;
   };
 
-  // ✅ Generate subject & body text from template or fallback
-  const generateEmailContent = () => {
+  // ✅ Generate subject & body text from template or fallback - memoized to react to client data changes
+  const emailContent = useMemo(() => {
     if (!settings) return { subject: '', bodyText: '', html: '' };
 
     const emailTemplate = template || getDefaultTemplate('invoice');
@@ -85,7 +88,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
       bodyText: replacePlaceholders(emailTemplate.body_html, templateData),
       html,
     };
-  };
+  }, [settings, template, client, customMessage, invoice, logoUrl]);
 
   const handleSendEmail = async () => {
     if (!isSettingsComplete()) {
@@ -105,8 +108,6 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
 
     setIsLoading(true);
     try {
-      const emailContent = generateEmailContent();
-
       // ✅ Generate PDF attachment using professional template
       const { blob, filename } = await generateBrandedInvoicePDFBlob(invoice, settings, logoUrl);
       const base64Content = await blobToBase64(blob);
@@ -167,6 +168,24 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
+          {isClientLoading && (
+            <Alert>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertDescription>
+                Loading client portal information for payment link...
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {!isClientLoading && !hasPortalUrl && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Warning: Client portal token is missing. The "Pay Invoice" button won't appear in the email.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {!isSettingsComplete() && (
             <Alert>
               <AlertTriangle className="h-4 w-4" />
@@ -213,19 +232,27 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
               <div>
                 <Label className="text-sm font-medium">Subject:</Label>
                 <div className="mt-1 p-2 bg-muted rounded text-sm">
-                  {generateEmailContent().subject}
+                  {emailContent.subject}
                 </div>
               </div>
               
               <div>
                 <Label className="text-sm font-medium">Body (Preview):</Label>
                 <div className="mt-1 p-2 bg-muted rounded text-sm max-h-32 overflow-y-auto">
-                  {generateEmailContent().bodyText}
+                  {emailContent.bodyText}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  This text will be automatically wrapped in your company’s branded email template when sent.
+                  This text will be automatically wrapped in your company's branded email template when sent.
                 </p>
               </div>
+
+              {hasPortalUrl && (
+                <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                  <p className="text-xs text-green-700 dark:text-green-300 flex items-center gap-1">
+                    ✓ "Pay Invoice Now" button will be included in the email
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -236,9 +263,9 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
           </Button>
           <Button 
             onClick={handleSendEmail} 
-            disabled={isLoading || !isSettingsComplete()}
+            disabled={isLoading || !isSettingsComplete() || isClientLoading}
           >
-            {isLoading ? 'Sending Invoice...' : 'Send Invoice with PDF'}
+            {isLoading ? 'Sending Invoice...' : isClientLoading ? 'Loading...' : 'Send Invoice with PDF'}
           </Button>
         </DialogFooter>
       </DialogContent>
