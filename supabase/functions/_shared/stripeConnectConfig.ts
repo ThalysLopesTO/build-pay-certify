@@ -16,6 +16,7 @@
 export interface StripeConnectConfig {
   stripeSecretKey: string;
   webhookSecret?: string;
+  webhookSecretAlt?: string; // Alternate secret for thin payloads (TEST mode)
   mode: 'test' | 'live';
 }
 
@@ -31,6 +32,7 @@ export function getStripeConnectConfig(): StripeConnectConfig {
   const testKey = Deno.env.get("STRIPE_SECRET_KEY_TEST");
   const liveKey = Deno.env.get("STRIPE_SECRET_KEY_LIVE");
   const testWebhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET_CONNECT_TEST");
+  const testWebhookSecretAlt = Deno.env.get("STRIPE_WEBHOOK_SECRET_CONNECT_TEST_ALT");
   const liveWebhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET_CONNECT_LIVE");
   
   if (mode === "test") {
@@ -39,7 +41,8 @@ export function getStripeConnectConfig(): StripeConnectConfig {
     }
     return { 
       stripeSecretKey: testKey, 
-      webhookSecret: testWebhookSecret, 
+      webhookSecret: testWebhookSecret,
+      webhookSecretAlt: testWebhookSecretAlt,
       mode 
     };
   } else {
