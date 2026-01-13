@@ -8,7 +8,7 @@ import { Loader2, CheckCircle2, AlertCircle, XCircle, ExternalLink, RefreshCw } 
 import { useCompanySettings, useUpdateSettingsMutation } from '@/hooks/useCompanySettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface StripeStatus {
   connected: boolean;
@@ -22,6 +22,7 @@ export const PaymentsTab = () => {
   const updateSettings = useUpdateSettingsMutation();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
@@ -41,11 +42,15 @@ export const PaymentsTab = () => {
         title: "Stripe Setup",
         description: "Checking your account status...",
       });
-      checkStripeStatus();
+      checkStripeStatus().then(() => {
+        navigate('/admin/dashboard?tab=company-settings', { replace: true });
+      });
     } else if (stripeParam === 'refresh') {
-      checkStripeStatus();
+      checkStripeStatus().then(() => {
+        navigate('/admin/dashboard?tab=company-settings', { replace: true });
+      });
     }
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   const checkStripeStatus = async () => {
     setIsCheckingStatus(true);
@@ -85,6 +90,8 @@ export const PaymentsTab = () => {
       
       if (data?.url) {
         window.location.href = data.url;
+      } else {
+        throw new Error('No onboarding URL returned');
       }
     } catch (error) {
       console.error('Error connecting Stripe:', error);
@@ -96,6 +103,13 @@ export const PaymentsTab = () => {
       setIsConnecting(false);
     }
   };
+
+  // Check if Stripe setup needs to be completed
+  const needsSetupCompletion = stripeStatus?.connected && (
+    !stripeStatus.onboarding_complete ||
+    !stripeStatus.payouts_enabled ||
+    !stripeStatus.charges_enabled
+  );
 
   const handleTogglePayments = async (enabled: boolean) => {
     if (!settings?.id) return;
@@ -224,42 +238,45 @@ export const PaymentsTab = () => {
                 </>
               )}
             </Button>
-          ) : !stripeStatus.onboarding_complete ? (
-            <Button 
-              onClick={handleConnectStripe} 
-              disabled={isConnecting}
-              variant="outline"
-              className="w-full sm:w-auto"
-            >
-              {isConnecting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                <>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Finish Stripe Setup
-                </>
-              )}
-            </Button>
           ) : (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span>Stripe account connected</span>
-            </div>
-          )}
-          
-          {stripeStatus?.connected && !stripeStatus.charges_enabled && (
-            <p className="text-sm text-yellow-600">
-              Your account cannot accept charges yet. Please complete the Stripe verification process.
-            </p>
-          )}
-          
-          {stripeStatus?.connected && !stripeStatus.payouts_enabled && (
-            <p className="text-sm text-yellow-600">
-              Payouts are not enabled. Please complete your Stripe account setup to receive funds.
-            </p>
+            <>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span>Stripe account connected</span>
+              </div>
+              
+              {!stripeStatus.charges_enabled && (
+                <p className="text-sm text-orange-600">
+                  Your account cannot accept charges yet. Please complete the Stripe verification process.
+                </p>
+              )}
+              
+              {!stripeStatus.payouts_enabled && (
+                <p className="text-sm text-orange-600">
+                  Payouts are not enabled. Please complete your Stripe account setup to receive funds.
+                </p>
+              )}
+              
+              {needsSetupCompletion && (
+                <Button 
+                  onClick={handleConnectStripe} 
+                  disabled={isConnecting}
+                  className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  {isConnecting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Finish Stripe Setup
+                    </>
+                  )}
+                </Button>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
