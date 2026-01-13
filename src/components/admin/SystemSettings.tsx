@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CompanySettingsTab } from './system-settings/CompanySettingsTab';
@@ -11,8 +12,18 @@ import { ReminderLogsTab } from './system-settings/ReminderLogsTab';
 import { PaymentsTab } from './system-settings/PaymentsTab';
 import MaterialCatalogManagement from './material-catalog/MaterialCatalogManagement';
 import { Building2, Users, DollarSign, Settings, BarChart3, Bell, Package, CreditCard } from 'lucide-react';
+
 const SystemSettings = () => {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('company');
+
+  // Auto-select payments tab when returning from Stripe
+  useEffect(() => {
+    const stripeParam = searchParams.get('stripe');
+    if (stripeParam === 'return' || stripeParam === 'refresh') {
+      setActiveTab('payments');
+    }
+  }, [searchParams]);
   return <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center space-x-3 mb-6">
         <Settings className="h-8 w-8 text-orange-600" />
