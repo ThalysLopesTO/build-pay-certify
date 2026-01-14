@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { getStripeConnectConfig, logConnectMode } from "../_shared/stripeConnectConfig.ts";
+import { getStripeConnectConfig, logConnectMode, logSecretDiagnostics } from "../_shared/stripeConnectConfig.ts";
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -144,6 +144,9 @@ async function extractFeeBreakdown(
 }
 
 serve(async (req) => {
+  // Log startup diagnostics on every invocation
+  logSecretDiagnostics("stripe-connect-webhook");
+  
   try {
     const connectConfig = getStripeConnectConfig();
     logConnectMode(connectConfig, "stripe-connect-webhook");
@@ -210,6 +213,18 @@ serve(async (req) => {
       if (!invoiceId) {
         logStep("No invoice_id in metadata");
         return new Response(JSON.stringify({ received: true, error: "No invoice_id" }), { status: 200 });
+      }
+
+      // IDEMPOTENCY CHECK: Skip if invoice is already paid
+      const { data: existingInvoice } = await supabaseAdmin
+        .from("invoices")
+        .select("status")
+        .eq("id", invoiceId)
+        .single();
+
+      if (existingInvoice?.status === "paid") {
+        logStep("Invoice already paid (idempotent skip)", { invoice_id: invoiceId });
+        return new Response(JSON.stringify({ received: true, already_paid: true }), { status: 200 });
       }
 
       // Extract fee breakdown from Stripe
