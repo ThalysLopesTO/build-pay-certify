@@ -28,20 +28,20 @@ interface TimesheetFormData {
   workerType: 'employee' | 'subcontractor';
   jobsiteId: string;
   selectedDate: Date | undefined;
-  mondayHours: number;
-  tuesdayHours: number;
-  wednesdayHours: number;
-  thursdayHours: number;
-  fridayHours: number;
-  saturdayHours: number;
-  sundayHours: number;
-  mondayHours2?: number;
-  tuesdayHours2?: number;
-  wednesdayHours2?: number;
-  thursdayHours2?: number;
-  fridayHours2?: number;
-  saturdayHours2?: number;
-  sundayHours2?: number;
+  mondayHours: string;
+  tuesdayHours: string;
+  wednesdayHours: string;
+  thursdayHours: string;
+  fridayHours: string;
+  saturdayHours: string;
+  sundayHours: string;
+  mondayHours2?: string;
+  tuesdayHours2?: string;
+  wednesdayHours2?: string;
+  thursdayHours2?: string;
+  fridayHours2?: string;
+  saturdayHours2?: string;
+  sundayHours2?: string;
   hourlyRate: number;
   additionalExpense: number;
   taxIncluded: boolean;
@@ -68,13 +68,13 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
     workerType: 'subcontractor',
     jobsiteId: '',
     selectedDate: undefined,
-    mondayHours: 0,
-    tuesdayHours: 0,
-    wednesdayHours: 0,
-    thursdayHours: 0,
-    fridayHours: 0,
-    saturdayHours: 0,
-    sundayHours: 0,
+    mondayHours: '',
+    tuesdayHours: '',
+    wednesdayHours: '',
+    thursdayHours: '',
+    fridayHours: '',
+    saturdayHours: '',
+    sundayHours: '',
     hourlyRate: 25,
     additionalExpense: 0,
     taxIncluded: false,
@@ -84,23 +84,26 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
     notes: '',
   });
 
+  // Helper to parse hours from string, treating empty as 0
+  const getHours = (val: string | undefined) => parseFloat(val || '0') || 0;
+
   // Calculate totals
   const totalHours =
-    formData.mondayHours +
-    formData.tuesdayHours +
-    formData.wednesdayHours +
-    formData.thursdayHours +
-    formData.fridayHours +
-    formData.saturdayHours +
-    formData.sundayHours +
+    getHours(formData.mondayHours) +
+    getHours(formData.tuesdayHours) +
+    getHours(formData.wednesdayHours) +
+    getHours(formData.thursdayHours) +
+    getHours(formData.fridayHours) +
+    getHours(formData.saturdayHours) +
+    getHours(formData.sundayHours) +
     (formData.frequency === "bi-weekly"
-      ? (formData.mondayHours2 || 0) +
-      (formData.tuesdayHours2 || 0) +
-      (formData.wednesdayHours2 || 0) +
-      (formData.thursdayHours2 || 0) +
-      (formData.fridayHours2 || 0) +
-      (formData.saturdayHours2 || 0) +
-      (formData.sundayHours2 || 0)
+      ? getHours(formData.mondayHours2) +
+        getHours(formData.tuesdayHours2) +
+        getHours(formData.wednesdayHours2) +
+        getHours(formData.thursdayHours2) +
+        getHours(formData.fridayHours2) +
+        getHours(formData.saturdayHours2) +
+        getHours(formData.sundayHours2)
       : 0);
 
   const grossPay = (totalHours * formData.hourlyRate) + formData.additionalExpense;
@@ -124,8 +127,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
   };
 
   const handleHoursChange = (day: string, value: string) => {
-    const numValue = parseFloat(value) || 0;
-    handleInputChange(day as keyof TimesheetFormData, numValue);
+    handleInputChange(day as keyof TimesheetFormData, value);
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -160,7 +162,8 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
         const fieldName = weekNum === 1 ? fieldNames[dayIndex] : `${fieldNames[dayIndex]}2`;
         const dayKey = dayKeys[dayIndex];
         
-        days.push({ [dayKey]: formData[fieldName as keyof TimesheetFormData] as number || 0 });
+        const hourValue = parseFloat(String(formData[fieldName as keyof TimesheetFormData]) || '0') || 0;
+        days.push({ [dayKey]: hourValue });
       }
       return days;
     };
@@ -210,13 +213,13 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
       workerType: 'subcontractor',
       jobsiteId: '',
       selectedDate: undefined,
-      mondayHours: 0,
-      tuesdayHours: 0,
-      wednesdayHours: 0,
-      thursdayHours: 0,
-      fridayHours: 0,
-      saturdayHours: 0,
-      sundayHours: 0,
+      mondayHours: '',
+      tuesdayHours: '',
+      wednesdayHours: '',
+      thursdayHours: '',
+      fridayHours: '',
+      saturdayHours: '',
+      sundayHours: '',
       hourlyRate: 25,
       additionalExpense: 0,
       taxIncluded: false,
@@ -437,7 +440,7 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
                           min="0"
                           max="24"
                           placeholder="0"
-                          value={formData[day as keyof TimesheetFormData] as number || 0}
+                          value={(formData[day as keyof TimesheetFormData] as string) ?? ''}
                           onChange={(e) => handleHoursChange(day, e.target.value)}
                           className="text-center"
                         />
