@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, DollarSign } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays, getDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
@@ -147,31 +147,33 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
       gross_pay: grossPay,
     })
 
+    // Build periods based on the actual days in the selected week
+    const buildWeekDays = (weekNum: number) => {
+      const days = [];
+      const fieldNames = ['sundayHours', 'mondayHours', 'tuesdayHours', 'wednesdayHours', 'thursdayHours', 'fridayHours', 'saturdayHours'];
+      const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      
+      for (let i = 0; i < 7; i++) {
+        const weekOffset = (weekNum - 1) * 7;
+        const currentDate = addDays(formData.selectedDate!, weekOffset + i);
+        const dayIndex = getDay(currentDate); // 0 = Sunday, 6 = Saturday
+        const fieldName = weekNum === 1 ? fieldNames[dayIndex] : `${fieldNames[dayIndex]}2`;
+        const dayKey = dayKeys[dayIndex];
+        
+        days.push({ [dayKey]: formData[fieldName as keyof TimesheetFormData] as number || 0 });
+      }
+      return days;
+    };
+
     const periods = [{
       week: "week1",
-      days: [
-        { friday: formData.fridayHours },
-        { saturday: formData.saturdayHours },
-        { sunday: formData.sundayHours },
-        { monday: formData.mondayHours },
-        { tuesday: formData.tuesdayHours },
-        { wednesday: formData.wednesdayHours },
-        { thursday: formData.thursdayHours },
-      ]
-    }]
+      days: buildWeekDays(1)
+    }];
 
     if (formData.frequency === 'bi-weekly') {
       periods.push({
         week: "week2",
-        days: [
-          { friday: formData.fridayHours2 ?? 0 },
-          { saturday: formData.saturdayHours2 ?? 0 },
-          { sunday: formData.sundayHours2 ?? 0 },
-          { monday: formData.mondayHours2 ?? 0 },
-          { tuesday: formData.tuesdayHours2 ?? 0 },
-          { wednesday: formData.wednesdayHours2 ?? 0 },
-          { thursday: formData.thursdayHours2 ?? 0 },
-        ],
+        days: buildWeekDays(2),
       });
     }
 
@@ -397,45 +399,58 @@ const CreateManualTimesheetModal: React.FC<CreateManualTimesheetModalProps> = ({
               {formData.frequency === 'bi-weekly' ? 'Bi-Weekly Hours' : 'Weekly Hours'}
             </h3>
 
-            {Array.from({ length: formData.frequency === 'bi-weekly' ? 2 : 1 }, (_, i) => i + 1).map((weekNum) => (
-              <div key={weekNum} className="space-y-3 border p-4 rounded-lg">
-                {formData.frequency === 'bi-weekly' && (
-                  <p className="text-sm font-bold text-gray-700">Week {weekNum}</p>
-                )}
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                  {(() => {
-                    const weekEndingDay = settings?.week_ending_day ?? 0;
-                    const weekStartDay = (weekEndingDay + 1) % 7;
-                    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                    const fieldNames = ['sundayHours', 'mondayHours', 'tuesdayHours', 'wednesdayHours', 'thursdayHours', 'fridayHours', 'saturdayHours'];
+            {formData.selectedDate ? (
+              Array.from({ length: formData.frequency === 'bi-weekly' ? 2 : 1 }, (_, i) => i + 1).map((weekNum) => (
+                <div key={weekNum} className="space-y-3 border p-4 rounded-lg">
+                  {formData.frequency === 'bi-weekly' && (
+                    <p className="text-sm font-bold text-gray-700">Week {weekNum}</p>
+                  )}
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                    {(() => {
+                      const fieldNames = ['sundayHours', 'mondayHours', 'tuesdayHours', 'wednesdayHours', 'thursdayHours', 'fridayHours', 'saturdayHours'];
 
-                    const orderedDays = [];
-                    for (let i = 0; i < 7; i++) {
-                      const dayIndex = (weekStartDay + i) % 7;
-                      orderedDays.push({
-                        day: weekNum === 1 ? fieldNames[dayIndex] : `${fieldNames[dayIndex]}2`,
-                        label: dayNames[dayIndex].substring(0, 3)
-                      });
-                    }
-                    return orderedDays;
-                  })().map(({ day, label }) => (
-                    <div key={day} className="space-y-1">
-                      <Label className="text-sm font-medium text-gray-700">{label}</Label>
-                      <Input
-                        type="number"
-                        step="0.25"
-                        min="0"
-                        max="24"
-                        placeholder="0"
-                        value={formData[day as keyof TimesheetFormData] as number || 0}
-                        onChange={(e) => handleHoursChange(day, e.target.value)}
-                        className="text-center"
-                      />
-                    </div>
-                  ))}
+                      const orderedDays = [];
+                      for (let i = 0; i < 7; i++) {
+                        // Calculate the actual date for this day slot based on selected week start
+                        const weekOffset = (weekNum - 1) * 7;
+                        const currentDate = addDays(formData.selectedDate!, weekOffset + i);
+                        
+                        // Get the day of week for this date (0 = Sunday, 6 = Saturday)
+                        const dayIndex = getDay(currentDate);
+                        
+                        orderedDays.push({
+                          day: weekNum === 1 ? fieldNames[dayIndex] : `${fieldNames[dayIndex]}2`,
+                          dayLabel: format(currentDate, "EEE"),      // "Sun"
+                          dateLabel: format(currentDate, "MMM d")    // "Jan 4"
+                        });
+                      }
+                      return orderedDays;
+                    })().map(({ day, dayLabel, dateLabel }) => (
+                      <div key={day} className="space-y-1">
+                        <div className="flex flex-col items-center">
+                          <span className="text-sm font-medium text-gray-700">{dayLabel}</span>
+                          <span className="text-xs text-muted-foreground">{dateLabel}</span>
+                        </div>
+                        <Input
+                          type="number"
+                          step="0.25"
+                          min="0"
+                          max="24"
+                          placeholder="0"
+                          value={formData[day as keyof TimesheetFormData] as number || 0}
+                          onChange={(e) => handleHoursChange(day, e.target.value)}
+                          className="text-center"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                Please select a Week Starting Date above to enter hours
               </div>
-            ))}
+            )}
             <hr />
           </div>
 
