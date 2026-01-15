@@ -44,13 +44,13 @@ export const calculateSubcontractorTax = (grossPay: number, taxPercentage: numbe
   let netPay: number;
 
   if (taxIncluded) {
-    // HST is included in the gross pay
-    hst = grossPay * (taxPercentage / (100 + taxPercentage));
-    netPay = grossPay - hst;
-  } else {
-    // HST is added to gross pay
+    // HST is ADDED to gross pay when toggle is ON
     hst = grossPay * (taxPercentage / 100);
     netPay = grossPay + hst;
+  } else {
+    // No HST when toggle is OFF
+    hst = 0;
+    netPay = grossPay;
   }
 
   return {
@@ -105,11 +105,13 @@ export const calculateTax = ({
 
   if (type === 'subcontractor') {
     if (tax_included) {
-      calculatedTax = gross_pay * (tax_percentage / (100 + tax_percentage));
-      totalPay = gross_pay;
-    } else {
+      // Tax IS selected - add HST on top
       calculatedTax = gross_pay * (tax_percentage / 100);
       totalPay = gross_pay + calculatedTax;
+    } else {
+      // Tax NOT selected - no HST applied
+      calculatedTax = 0;
+      totalPay = gross_pay;
     }
   } else {
     incomeTax = gross_pay * (income_tax_rate / 100);
