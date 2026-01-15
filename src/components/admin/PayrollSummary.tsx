@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DollarSign, Users, Search, Filter, RefreshCw, Download, ChevronDown, ChevronUp, Clock, FileText, Package } from 'lucide-react';
+import { DollarSign, Users, Search, Filter, RefreshCw, Download, ChevronDown, ChevronUp, Clock, FileText, Package, Eye } from 'lucide-react';
 import { useWeeklyTimesheets } from '@/hooks/new/useWeeklyTimesheets';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useWorkWeek } from '@/hooks/useWorkWeek';
@@ -15,6 +15,7 @@ import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useTimesheetPDF } from '@/hooks/useTimesheetPDF';
 import { MonthlyPayrollAnalytics } from '@/components/admin/payroll/MonthlyPayrollAnalytics';
+import BiWeeklyPreview from '@/components/admin/timesheets/BiWeeklyPreview';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
@@ -38,6 +39,20 @@ const PayrollSummary = () => {
   const [selectedTimesheets, setSelectedTimesheets] = useState<Set<number>>(new Set());
   const [bulkAction, setBulkAction] = useState<'pdf' | 'xlsx' | ''>('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+  // Toggle row expansion for viewing timesheet breakdown
+  const toggleRowExpand = (id: number) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
   // Get data from hooks
   const workWeeks = useWorkWeek();
@@ -648,7 +663,8 @@ const PayrollSummary = () => {
                         onCheckedChange={handleSelectAll}
                       />
                     </th>
-                     <th className="text-left p-4 font-semibold bg-slate-50">Employee</th>
+                    <th className="text-center p-4 font-semibold bg-slate-50 w-12"></th>
+                    <th className="text-left p-4 font-semibold bg-slate-50">Employee</th>
                      <th className="text-left p-4 font-semibold bg-slate-50">Type</th>
                      <th className="text-left p-4 font-semibold bg-slate-50">Trade</th>
                      <th className="text-left p-4 font-semibold bg-slate-50">Jobsite</th>
@@ -663,13 +679,25 @@ const PayrollSummary = () => {
                 </thead>
                 <tbody>
                   {filteredEntries.map((entry) => (
-                    <tr key={entry.id} className="border-b hover:bg-slate-50 transition-colors">
-                      <td className="p-4">
-                        <Checkbox
-                          checked={selectedTimesheets.has(entry.id)}
-                          onCheckedChange={(checked) => handleSelectTimesheet(entry.id, checked === true)}
-                        />
-                      </td>
+                    <React.Fragment key={entry.id}>
+                      <tr className="border-b hover:bg-slate-50 transition-colors">
+                        <td className="p-4">
+                          <Checkbox
+                            checked={selectedTimesheets.has(entry.id)}
+                            onCheckedChange={(checked) => handleSelectTimesheet(entry.id, checked === true)}
+                          />
+                        </td>
+                        <td className="p-4 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleRowExpand(entry.id)}
+                            className="h-8 w-8 p-0"
+                            title="View breakdown"
+                          >
+                            <Eye className={`h-4 w-4 ${expandedRows.has(entry.id) ? 'text-orange-600' : 'text-slate-600'}`} />
+                          </Button>
+                        </td>
                         <td className="p-4 font-medium">
                           <div className="flex items-center space-x-2">
                             <span>{entry.employeeName}</span>
@@ -708,7 +736,18 @@ const PayrollSummary = () => {
                           ${entry.workerType === 'employee' ? entry.netPay.toFixed(2) : 
                             (entry.originalTimesheet.tax_included ? entry.totalPayWithTax.toFixed(2) : entry.grossPay.toFixed(2))}
                         </td>
-                    </tr>
+                      </tr>
+                      {expandedRows.has(entry.id) && (
+                        <tr className="bg-slate-50/50">
+                          <td colSpan={13} className="p-4">
+                            <BiWeeklyPreview 
+                              timesheet={entry.originalTimesheet} 
+                              frequency="bi-weekly" 
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
