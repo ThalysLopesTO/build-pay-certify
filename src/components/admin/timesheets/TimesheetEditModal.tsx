@@ -146,7 +146,10 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
   //   );
   // }
 
-  const start = timesheet.week_start_date ? new Date(timesheet.week_start_date) : new Date();
+  // Parse at noon to avoid timezone boundary issues (off-by-one day)
+  const start = timesheet.week_start_date 
+    ? new Date(`${timesheet.week_start_date}T12:00:00`) 
+    : new Date();
 
   const handleChange = (weekIndex: number, dayIndex: number, value: number) => {
     setNewTimesheet((prev) => {
