@@ -58,7 +58,9 @@ const TimesheetEditModal: React.FC<TimesheetEditModalProps> = ({
       return { periodStart: new Date(), periodEnd: new Date() };
     }
 
-    const start = new Date(timesheet.week_start_date);
+    // Parse date at noon to avoid timezone boundary issues (off-by-one day)
+    const dateStr = timesheet.week_start_date;
+    const start = new Date(`${dateStr}T12:00:00`);
     const totalDays = timesheet.periods.length * 7; // each period = 7 days
     const end = addDays(start, totalDays - 1);
 
