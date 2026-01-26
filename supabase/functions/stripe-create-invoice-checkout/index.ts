@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { getStripeConnectConfig, logConnectMode, logSecretDiagnostics } from "../_shared/stripeConnectConfig.ts";
+import { getStripeConnectConfig, logConnectMode, logSecretDiagnostics, getAccountIdColumn } from "../_shared/stripeConnectConfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,10 +84,14 @@ serve(async (req) => {
 
     logStep("Invoice validated", { invoiceNumber: invoice.invoice_number, total: invoice.total_amount });
 
-    // Get company settings and verify payments are enabled
+    // Determine which column to use based on mode
+    const accountIdColumn = getAccountIdColumn(connectConfig.mode);
+    logStep("Reading account ID from column", { column: accountIdColumn, mode: connectConfig.mode });
+
+    // Get company settings and verify payments are enabled - fetch mode-specific columns
     const { data: settings, error: settingsError } = await supabase
       .from('company_settings')
-      .select('payments_enabled, stripe_connect_account_id, stripe_connect_charges_enabled, company_name, enable_live_invoice_payments')
+      .select('payments_enabled, stripe_connect_account_id_test, stripe_connect_account_id_live, stripe_connect_charges_enabled, company_name, enable_live_invoice_payments')
       .eq('company_id', clientData.company_id)
       .single();
 
@@ -100,8 +104,18 @@ serve(async (req) => {
       throw new Error("Payments are not enabled for this company");
     }
 
-    if (!settings.stripe_connect_account_id || !settings.stripe_connect_charges_enabled) {
-      throw new Error("Stripe Connect is not properly configured for this company");
+    // Get the mode-specific account ID
+    const stripeConnectAccountId = connectConfig.mode === 'live' 
+      ? settings.stripe_connect_account_id_live 
+      : settings.stripe_connect_account_id_test;
+
+    logStep("Account ID retrieved", { 
+      accountId: stripeConnectAccountId ? stripeConnectAccountId.substring(0, 12) + '...' : 'null',
+      mode: connectConfig.mode 
+    });
+
+    if (!stripeConnectAccountId || !settings.stripe_connect_charges_enabled) {
+      throw new Error(`Stripe Connect is not properly configured for this company in ${connectConfig.mode.toUpperCase()} mode`);
     }
 
     // LIVE MODE GUARDRAIL: Check if live payments are enabled for this company
@@ -154,12 +168,13 @@ serve(async (req) => {
       payment_intent_data: {
         application_fee_amount: applicationFeeCents,
         transfer_data: {
-          destination: settings.stripe_connect_account_id,
+          destination: stripeConnectAccountId,
         },
         metadata: {
           invoice_id: invoice.id,
           invoice_number: invoice.invoice_number,
           company_id: clientData.company_id,
+          type: 'invoice_payment',
         },
       },
       customer_email: clientData.client_email,

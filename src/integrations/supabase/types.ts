@@ -697,6 +697,8 @@ export type Database = {
           show_tax_breakdown_to_employees: boolean | null
           start_date: string | null
           stripe_connect_account_id: string | null
+          stripe_connect_account_id_live: string | null
+          stripe_connect_account_id_test: string | null
           stripe_connect_charges_enabled: boolean | null
           stripe_connect_onboarding_complete: boolean | null
           stripe_connect_payouts_enabled: boolean | null
@@ -735,6 +737,8 @@ export type Database = {
           show_tax_breakdown_to_employees?: boolean | null
           start_date?: string | null
           stripe_connect_account_id?: string | null
+          stripe_connect_account_id_live?: string | null
+          stripe_connect_account_id_test?: string | null
           stripe_connect_charges_enabled?: boolean | null
           stripe_connect_onboarding_complete?: boolean | null
           stripe_connect_payouts_enabled?: boolean | null
@@ -773,6 +777,8 @@ export type Database = {
           show_tax_breakdown_to_employees?: boolean | null
           start_date?: string | null
           stripe_connect_account_id?: string | null
+          stripe_connect_account_id_live?: string | null
+          stripe_connect_account_id_test?: string | null
           stripe_connect_charges_enabled?: boolean | null
           stripe_connect_onboarding_complete?: boolean | null
           stripe_connect_payouts_enabled?: boolean | null
