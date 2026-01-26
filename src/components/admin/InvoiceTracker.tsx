@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
 import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2 } from 'lucide-react';
-import { PaymentBreakdownSection } from './invoices/PaymentBreakdownSection';
+import { InvoiceDetailsDialogContent } from './invoices/InvoiceDetailsDialogContent';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { InvoiceEmailSender } from './InvoiceEmailSender';
@@ -479,37 +479,11 @@ const InvoiceTracker = () => {
                               </DialogDescription>
                             </DialogHeader>
                             {selectedInvoice && (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="text-sm font-medium">Client Company</label>
-                                    <p className="text-sm text-muted-foreground">{selectedInvoice.client_company}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Email</label>
-                                    <p className="text-sm text-muted-foreground">{selectedInvoice.client_email}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Amount</label>
-                                    <p className="text-sm font-semibold">${selectedInvoice.total_amount.toFixed(2)}</p>
-                                  </div>
-                                  <div>
-                                     <label className="text-sm font-medium">Status</label>
-                                     <Badge className={getStatusBadgeClass(selectedInvoice.status, isOverdue(selectedInvoice.due_date, selectedInvoice.status))}>
-                                       {isOverdue(selectedInvoice.due_date, selectedInvoice.status) ? 'OVERDUE' : selectedInvoice.status.charAt(0).toUpperCase() + selectedInvoice.status.slice(1)}
-                                     </Badge>
-                                  </div>
-                                </div>
-                                {selectedInvoice.notes && (
-                                  <div>
-                                    <label className="text-sm font-medium">Notes</label>
-                                    <p className="text-sm text-muted-foreground">{selectedInvoice.notes}</p>
-                                  </div>
-                                )}
-                                
-                                {/* Payment Breakdown Section - Only shows for paid Stripe payments */}
-                                <PaymentBreakdownSection invoice={selectedInvoice} />
-                              </div>
+                              <InvoiceDetailsDialogContent 
+                                invoice={selectedInvoice}
+                                getStatusBadgeClass={getStatusBadgeClass}
+                                isOverdue={isOverdue}
+                              />
                             )}
                           </DialogContent>
                         </Dialog>
