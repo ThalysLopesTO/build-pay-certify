@@ -35,6 +35,7 @@ interface ClientsTableProps {
 
 export function ClientsTable({ clients }: ClientsTableProps) {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
   const [portalClient, setPortalClient] = useState<Client | null>(null);
   const deleteClient = useDeleteClient();
@@ -120,7 +121,10 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditingClient(client)}>
+                      <DropdownMenuItem onClick={() => {
+                        setEditingClient(client);
+                        setIsEditModalOpen(true);
+                      }}>
                         <Edit className="w-4 h-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
@@ -144,13 +148,14 @@ export function ClientsTable({ clients }: ClientsTableProps) {
         </Table>
       </div>
 
-      {editingClient && (
-        <ClientFormModal
-          isOpen={!!editingClient}
-          onClose={() => setEditingClient(null)}
-          client={editingClient}
-        />
-      )}
+      <ClientFormModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setTimeout(() => setEditingClient(null), 200);
+        }}
+        client={editingClient || undefined}
+      />
 
       {portalClient && (
         <ClientPortalLinkDialog
