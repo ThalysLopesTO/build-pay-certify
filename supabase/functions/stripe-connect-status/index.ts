@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { getStripeConnectConfig, logConnectMode, logSecretDiagnostics } from "../_shared/stripeConnectConfig.ts";
+import { getStripeConnectConfig, logConnectMode, logSecretDiagnostics, getAccountIdColumn } from "../_shared/stripeConnectConfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -59,10 +59,14 @@ serve(async (req) => {
       throw new Error("Access denied: Admin role required");
     }
 
-    // Get company settings
+    // Determine which column to use based on mode
+    const accountIdColumn = getAccountIdColumn(connectConfig.mode);
+    console.log(`[STRIPE-CONNECT-STATUS] Reading from column: ${accountIdColumn}`);
+
+    // Get company settings - fetch both mode-specific columns and status fields
     const { data: settings, error: settingsError } = await supabaseClient
       .from("company_settings")
-      .select("stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_payouts_enabled, stripe_connect_onboarding_complete")
+      .select("stripe_connect_account_id_test, stripe_connect_account_id_live, stripe_connect_charges_enabled, stripe_connect_payouts_enabled, stripe_connect_onboarding_complete")
       .eq("company_id", profile.company_id)
       .single();
 
@@ -70,14 +74,23 @@ serve(async (req) => {
       throw new Error("Company settings not found");
     }
 
-    // If no account, return not connected status
-    if (!settings?.stripe_connect_account_id) {
+    // Get the mode-specific account ID
+    const accountId = connectConfig.mode === 'live' 
+      ? settings?.stripe_connect_account_id_live 
+      : settings?.stripe_connect_account_id_test;
+
+    console.log(`[STRIPE-CONNECT-STATUS] Account ID for ${connectConfig.mode.toUpperCase()} mode: ${accountId ? accountId.substring(0, 12) + '...' : 'null'}`);
+
+    // If no account for this mode, return not connected status
+    if (!accountId) {
+      console.log(`[STRIPE-CONNECT-STATUS] No account ID found for ${connectConfig.mode.toUpperCase()} mode`);
       return new Response(
         JSON.stringify({
           connected: false,
           charges_enabled: false,
           payouts_enabled: false,
           onboarding_complete: false,
+          mode: connectConfig.mode,
         }),
         { 
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -90,48 +103,90 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    // Retrieve account from Stripe
-    const account = await stripe.accounts.retrieve(settings.stripe_connect_account_id);
-    
-    console.log(`Stripe account status (mode: ${connectConfig.mode}):`, {
-      id: account.id,
-      charges_enabled: account.charges_enabled,
-      payouts_enabled: account.payouts_enabled,
-      details_submitted: account.details_submitted,
-    });
-
-    // Update database with current status
-    const { error: updateError } = await supabaseClient
-      .from("company_settings")
-      .update({
-        stripe_connect_charges_enabled: account.charges_enabled,
-        stripe_connect_payouts_enabled: account.payouts_enabled,
-        stripe_connect_onboarding_complete: account.details_submitted,
-      })
-      .eq("company_id", profile.company_id);
-
-    if (updateError) {
-      console.error("Failed to update status:", updateError);
-    }
-
-    return new Response(
-      JSON.stringify({
-        connected: true,
+    // Try to retrieve account from Stripe - with graceful error handling
+    try {
+      const account = await stripe.accounts.retrieve(accountId);
+      
+      console.log(`[STRIPE-CONNECT-STATUS] Stripe account status (mode: ${connectConfig.mode}):`, {
+        id: account.id,
         charges_enabled: account.charges_enabled,
         payouts_enabled: account.payouts_enabled,
-        onboarding_complete: account.details_submitted,
-        account_id: account.id,
-      }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200 
+        details_submitted: account.details_submitted,
+      });
+
+      // Update database with current status
+      const { error: updateError } = await supabaseClient
+        .from("company_settings")
+        .update({
+          stripe_connect_charges_enabled: account.charges_enabled,
+          stripe_connect_payouts_enabled: account.payouts_enabled,
+          stripe_connect_onboarding_complete: account.details_submitted,
+        })
+        .eq("company_id", profile.company_id);
+
+      if (updateError) {
+        console.error("[STRIPE-CONNECT-STATUS] Failed to update status:", updateError);
       }
-    );
+
+      return new Response(
+        JSON.stringify({
+          connected: true,
+          charges_enabled: account.charges_enabled,
+          payouts_enabled: account.payouts_enabled,
+          onboarding_complete: account.details_submitted,
+          account_id: account.id,
+          mode: connectConfig.mode,
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200 
+        }
+      );
+    } catch (stripeError) {
+      // Handle case where account doesn't exist in Stripe (e.g., mode mismatch or deleted)
+      const errorMessage = stripeError instanceof Error ? stripeError.message : String(stripeError);
+      
+      if (errorMessage.includes("No such account") || errorMessage.includes("account_invalid")) {
+        console.log(`[STRIPE-CONNECT-STATUS] Account ${accountId.substring(0, 12)}... not found in ${connectConfig.mode.toUpperCase()} Stripe. Returning not connected.`);
+        
+        // Clear the invalid account ID from the database
+        const updateData: Record<string, null | boolean> = {};
+        updateData[accountIdColumn] = null;
+        updateData.stripe_connect_charges_enabled = false;
+        updateData.stripe_connect_payouts_enabled = false;
+        updateData.stripe_connect_onboarding_complete = false;
+
+        await supabaseClient
+          .from("company_settings")
+          .update(updateData)
+          .eq("company_id", profile.company_id);
+
+        console.log(`[STRIPE-CONNECT-STATUS] Cleared invalid account ID from ${accountIdColumn}`);
+
+        return new Response(
+          JSON.stringify({
+            connected: false,
+            charges_enabled: false,
+            payouts_enabled: false,
+            onboarding_complete: false,
+            mode: connectConfig.mode,
+            error_reason: "account_not_found_in_stripe",
+          }),
+          { 
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200 
+          }
+        );
+      }
+
+      // Re-throw other Stripe errors
+      throw stripeError;
+    }
 
   } catch (error) {
-    console.error("Error in stripe-connect-status:", error);
+    console.error("[STRIPE-CONNECT-STATUS] Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400 

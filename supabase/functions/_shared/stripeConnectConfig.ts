@@ -29,6 +29,18 @@ export interface StripeConnectConfig {
 }
 
 /**
+ * Get the database column name for the environment-specific Stripe Connect account ID.
+ * 
+ * @param mode - The Stripe Connect mode ('test' or 'live')
+ * @returns The column name to use for reading/writing the account ID
+ */
+export function getAccountIdColumn(mode: 'test' | 'live'): string {
+  return mode === 'live' 
+    ? 'stripe_connect_account_id_live' 
+    : 'stripe_connect_account_id_test';
+}
+
+/**
  * Log which secrets are detected (presence only, never values).
  * Call this at the start of each Connect function for diagnostics.
  */

@@ -35,7 +35,9 @@ export interface CompanySettings {
   weather_location_name: string | null; // Human-readable weather location name
   start_date?: string;
   // Stripe Connect fields
-  stripe_connect_account_id: string | null;
+  stripe_connect_account_id: string | null; // Legacy - kept for backward compatibility
+  stripe_connect_account_id_test: string | null; // TEST mode Connect account ID
+  stripe_connect_account_id_live: string | null; // LIVE mode Connect account ID
   stripe_connect_onboarding_complete: boolean;
   stripe_connect_charges_enabled: boolean;
   stripe_connect_payouts_enabled: boolean;
