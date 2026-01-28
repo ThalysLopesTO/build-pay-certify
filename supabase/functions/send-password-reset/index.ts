@@ -46,12 +46,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Then verify they have admin/super_admin/management role in user_profiles
+    // Get user profile (all users can reset their password)
     const { data: userProfile, error: profileError } = await supabaseClient
       .from('user_profiles')
       .select('user_id, first_name, last_name, role, company_id')
       .eq('user_id', authUserData.user.id)
-      .in('role', ['admin', 'super_admin', 'management'])
       .single();
 
     if (profileError || !userProfile) {
