@@ -30,24 +30,40 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Query user_profiles directly by email (no auth admin API needed)
-    const { data: userProfile, error: profileError } = await supabaseClient
-      .from('user_profiles')
-      .select('user_id, first_name, last_name, role, company_id, email')
-      .eq('email', email.toLowerCase())
-      .single();
+    // Use Admin API to find user by email in auth.users (always has email)
+    const { data: authUsers, error: listError } = await supabaseClient.auth.admin.listUsers();
 
-    if (profileError || !userProfile) {
-      console.log('User not found in user_profiles:', email);
-      // Return success regardless to prevent account enumeration
+    if (listError) {
+      console.error('Error listing users:', listError);
+      throw new Error('Failed to look up user');
+    }
+
+    // Find user by email (case-insensitive)
+    const authUser = authUsers.users.find(
+      u => u.email?.toLowerCase() === email.toLowerCase()
+    );
+
+    if (!authUser) {
+      console.log('User not found in auth.users:', email);
+      // Return success to prevent enumeration
       return new Response(
         JSON.stringify({ success: true, message: "If an account exists, a reset link has been sent" }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+
+    // Get additional profile data for personalization (optional)
+    const { data: userProfile } = await supabaseClient
+      .from('user_profiles')
+      .select('first_name, last_name, company_id')
+      .eq('user_id', authUser.id)
+      .single();
+
+    // Use auth user ID and profile data for the reset
+    const userId = authUser.id;
+    const firstName = userProfile?.first_name || authUser.user_metadata?.first_name || 'there';
+    const lastName = userProfile?.last_name || authUser.user_metadata?.last_name || '';
+    const companyId = userProfile?.company_id || null;
 
     // Generate secure reset token
     const resetToken = crypto.randomUUID();
@@ -57,7 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { error: tokenError } = await supabaseClient
       .from('password_reset_tokens')
       .insert({
-        user_id: userProfile.user_id,
+        user_id: userId,
         token: resetToken,
         expires_at: expiresAt.toISOString(),
         used: false
@@ -99,7 +115,7 @@ const handler = async (req: Request): Promise<Response> => {
             <!-- Content -->
             <div style="padding: 40px 30px;">
               <p style="color: #2D3748; font-size: 18px; margin: 0 0 20px 0; font-weight: 600;">
-                Hi ${userProfile.first_name || 'there'},
+                Hi ${firstName},
               </p>
               
               <p style="color: #4A5568; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
@@ -149,10 +165,10 @@ const handler = async (req: Request): Promise<Response> => {
     await supabaseClient
       .from('password_reset_logs')
       .insert({
-        target_user_id: userProfile.user_id,
+        target_user_id: userId,
         target_user_email: email,
-        target_user_name: `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim(),
-        company_id: userProfile.company_id || null
+        target_user_name: `${firstName} ${lastName}`.trim() || 'Unknown',
+        company_id: companyId
       });
 
     return new Response(
