@@ -1,119 +1,145 @@
 
 
-# Improve Invoice Details Modal - Complete Payment Breakdown
+# Fix Password Reset - Custom Email via Resend
 
-## Overview
+## Problem Analysis
 
-Update the Invoice Details dialog to show a clear, complete financial breakdown including:
+The "Forgot Password" feature is failing with error **"Failed to send reset email"** because:
 
-1. **Subtotal** - Pre-tax amount
-2. **Tax** - Tax percentage and calculated amount
-3. **Total Invoice** - Full invoice amount
-4. **Stripe Fee** - Processing fee (for paid invoices)
-5. **StackBuild Fee** - 1% platform fee (for paid invoices)
-6. **Total Received** - Net amount after all deductions
+1. **Current Implementation**: `ForgotPasswordForm.tsx` uses `supabase.auth.resetPasswordForEmail()` - Supabase's built-in email service
+2. **Error**: Supabase's SMTP returns `535 Authentication credentials invalid` - their default email service is not configured/working
+3. **Good News**: A complete custom solution already exists but isn't connected:
+   - `send-password-reset` edge function (sends branded emails via Resend)
+   - `password_reset_tokens` table (stores secure tokens)
+   - `reset-password` edge function (verifies token and updates password)
 
 ---
 
-## Visual Layout
+## Solution
 
-```text
-+----------------------------------------+
-| Invoice Details                    [X] |
-| Complete information for INV-0020      |
-+----------------------------------------+
-| Client Company          | Email        |
-| Caroline Borba Da Silva | thalys@...   |
-+----------------------------------------+
-| INVOICE BREAKDOWN                      |
-|                                        |
-| Subtotal                      $100.00  |
-| Tax (13%)                      $13.00  |
-| ─────────────────────────────────────  |
-| Total Invoice                 $113.00  |
-+----------------------------------------+
-| PAYMENT DETAILS (paid invoices only)   |
-|                                        |
-| Stripe Processing Fee          -$3.58  |
-| StackBuild Fee (1%)            -$1.13  |
-| ─────────────────────────────────────  |
-| You Received                  $108.29  |
-+----------------------------------------+
-| Status: [Paid Badge]                   |
-+----------------------------------------+
-```
+Connect the existing custom password reset system to the frontend. Two files need updates:
 
 ---
 
 ## Changes Required
 
-### File: `src/components/admin/InvoiceTracker.tsx`
+### 1. Update `ForgotPasswordForm.tsx`
 
-**Replace lines 482-512** with a new structured breakdown:
-
-**Section 1: Client Info** (keep existing)
-- Client Company
-- Email
-
-**Section 2: Invoice Breakdown** (new)
-- Subtotal: `invoice.subtotal`
-- Tax row: Shows `invoice.tax`% and calculated amount
-- Separator line
-- Total Invoice: `invoice.total_amount` (emphasized)
-
-**Section 3: Payment Details** (only for paid invoices with Stripe data)
-- Stripe Processing Fee: `-$X.XX` (from `stripe_processing_fee_cents / 100`)
-- StackBuild Fee (1%): `-$X.XX` (from `stackbuild_fee_cents / 100`)
-- Separator line
-- **You Received**: `net_to_company_cents / 100` (highlighted in green)
-
-**Section 4: Status** (keep existing)
-- Status badge
-
-**Section 5: Notes** (keep if present)
-
----
-
-## Technical Details
-
-### Data Fields Used
-
-| Field | Source | Format |
-|-------|--------|--------|
-| `subtotal` | invoice.subtotal | Dollars |
-| `tax` | invoice.tax | Percentage (e.g., 13) |
-| `total_amount` | invoice.total_amount | Dollars |
-| `stripe_processing_fee_cents` | invoice.stripe_processing_fee_cents | Cents → divide by 100 |
-| `stackbuild_fee_cents` | invoice.stackbuild_fee_cents | Cents → divide by 100 |
-| `net_to_company_cents` | invoice.net_to_company_cents | Cents → divide by 100 |
-
-### Calculations
+**Current**: Calls `supabase.auth.resetPasswordForEmail()` (Supabase's native email)
+**New**: Calls the `send-password-reset` edge function (custom Resend email)
 
 ```typescript
-// Tax amount
-const taxAmount = invoice.subtotal * (invoice.tax / 100);
+// BEFORE
+const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase(), {
+  redirectTo: `${window.location.origin}/reset-password`
+});
 
-// Fee amounts (convert cents to dollars)
-const stripeFee = (invoice.stripe_processing_fee_cents || 0) / 100;
-const stackbuildFee = (invoice.stackbuild_fee_cents || 0) / 100;
-const netReceived = (invoice.net_to_company_cents || 0) / 100;
+// AFTER
+const { data, error } = await supabase.functions.invoke('send-password-reset', {
+  body: { email: email.toLowerCase() }
+});
 ```
 
-### Conditional Rendering
-
-- Payment Details section only shows when:
-  - `invoice.status === 'paid'`
-  - AND `invoice.net_to_company_cents` exists (indicates Stripe payment)
+This will send a beautifully branded StackBuild email via Resend with a custom reset link.
 
 ---
 
-## PaymentBreakdownSection Cleanup
+### 2. Update `ResetPassword.tsx`
 
-Since we're now showing fees inline, we have two options:
-1. **Keep PaymentBreakdownSection** for Technical Details only (Stripe IDs, timestamps, dashboard link)
-2. **Remove it entirely** to avoid duplication
+**Current**: Uses Supabase session-based flow (checks for recovery session)
+**New**: Uses custom token-based flow (reads `?token=` from URL, calls `reset-password` edge function)
 
-**Recommendation**: Keep `PaymentBreakdownSection` but it will now serve as the "Technical Details" expandable section for IDs and Stripe dashboard link. The main breakdown will be shown inline in the dialog.
+Changes needed:
+- Read `token` from URL search params instead of checking for Supabase session
+- Call `reset-password` edge function with `{ token, newPassword }` instead of `supabase.auth.updateUser()`
+- Handle token validation errors gracefully
+
+**Key code change**:
+```typescript
+// BEFORE
+const { error } = await supabase.auth.updateUser({ password });
+
+// AFTER
+const { data, error } = await supabase.functions.invoke('reset-password', {
+  body: { token, newPassword: password }
+});
+```
+
+---
+
+### 3. Expand Role Access in Edge Function
+
+The current `send-password-reset` function only allows admin/super_admin/management roles. Need to expand to allow ALL users (employees, foremen) to reset their passwords.
+
+**Change line 54**:
+```typescript
+// BEFORE
+.in('role', ['admin', 'super_admin', 'management'])
+
+// AFTER
+// Remove role filter - all users can reset their password
+.eq('user_id', authUserData.user.id)
+```
+
+---
+
+## Flow After Fix
+
+```text
+User clicks "Forgot Password"
+        │
+        ▼
+Enters email → ForgotPasswordForm
+        │
+        ▼
+Calls send-password-reset edge function
+        │
+        ▼
+Edge function:
+  ├── Looks up user in auth.users
+  ├── Checks user_profiles (any role allowed)
+  ├── Creates token in password_reset_tokens
+  └── Sends branded email via Resend
+        │
+        ▼
+User clicks link in email
+  → https://app.stackbuild.ca/reset-password?token=abc123
+        │
+        ▼
+ResetPassword page reads token from URL
+        │
+        ▼
+User enters new password → Calls reset-password edge function
+        │
+        ▼
+Edge function:
+  ├── Validates token (not expired, not used)
+  ├── Updates password via admin API
+  └── Marks token as used
+        │
+        ▼
+Success → Redirects to login
+```
+
+---
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/components/ForgotPasswordForm.tsx` | Call `send-password-reset` edge function instead of Supabase native |
+| `src/pages/ResetPassword.tsx` | Use token-based flow with `reset-password` edge function |
+| `supabase/functions/send-password-reset/index.ts` | Remove role restriction to allow all users |
+
+---
+
+## What Already Works
+
+These components are already built and working:
+- `send-password-reset` edge function (beautiful branded email template)
+- `reset-password` edge function (token validation, password update)
+- `password_reset_tokens` table (secure token storage)
+- `RESEND_API_KEY` secret (already configured)
 
 ---
 
@@ -121,7 +147,8 @@ Since we're now showing fees inline, we have two options:
 
 | Before | After |
 |--------|-------|
-| Single "Amount: $113.00" line | Full breakdown: Subtotal, Tax, Total |
-| Fees shown separately in PaymentBreakdownSection | Stripe Fee + StackBuild Fee shown inline |
-| Unclear what company receives | Clear "You Received" amount highlighted |
+| Uses Supabase's broken SMTP | Uses Resend (already configured) |
+| Generic email (if it worked) | Beautiful StackBuild branded email |
+| Only admin/management roles | All users can reset password |
+| Session-based flow | Secure token-based flow |
 
