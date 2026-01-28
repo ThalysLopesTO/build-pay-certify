@@ -23,9 +23,9 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onBack }) => {
     setEmailError('');
 
     try {
-      // Use Supabase's native password reset
-      const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase(), {
-        redirectTo: `${window.location.origin}/reset-password`
+      // Call custom edge function that sends branded email via Resend
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email: email.toLowerCase() }
       });
 
       if (error) {

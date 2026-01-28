@@ -5,30 +5,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { Lock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Lock, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
-  const [validSession, setValidSession] = useState(false);
+  const [validToken, setValidToken] = useState(false);
+  const [checkingToken, setCheckingToken] = useState(true);
+
+  // Get token from URL
+  const token = searchParams.get('token');
 
   useEffect(() => {
-    // Check if we have a valid recovery session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError('Invalid or expired reset link. Please request a new password reset.');
-      } else {
-        setValidSession(true);
-      }
-    };
-    checkSession();
-  }, []);
+    // Check if we have a valid token in URL
+    if (!token) {
+      setError('Invalid or expired reset link. Please request a new password reset.');
+      setCheckingToken(false);
+    } else {
+      setValidToken(true);
+      setCheckingToken(false);
+    }
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,26 +57,34 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      // Use Supabase's native password update
-      const { error } = await supabase.auth.updateUser({
-        password: password
+      // Call custom edge function with token
+      const { data, error: resetError } = await supabase.functions.invoke('reset-password', {
+        body: { token, newPassword: password }
       });
 
-      if (error) {
-        console.error('Password reset error:', error);
-        setError('Failed to reset password. Please try again.');
-      } else {
-        setSuccess(true);
-        toast({
-          title: "Password Reset Successful",
-          description: "Your password has been updated. You can now log in with your new password.",
-        });
-        
-        // Redirect to login after 3 seconds
-        setTimeout(() => {
-          navigate('/admin/login');
-        }, 3000);
+      if (resetError) {
+        console.error('Password reset error:', resetError);
+        setError('Failed to reset password. Please try again or request a new reset link.');
+        return;
       }
+
+      // Check if the response indicates failure
+      if (data && !data.success) {
+        console.error('Password reset failed:', data.error);
+        setError(data.error || 'Failed to reset password. Please request a new reset link.');
+        return;
+      }
+
+      setSuccess(true);
+      toast({
+        title: "Password Reset Successful",
+        description: "Your password has been updated. You can now log in with your new password.",
+      });
+      
+      // Redirect to login after 3 seconds
+      setTimeout(() => {
+        navigate('/admin/login');
+      }, 3000);
     } catch (error) {
       console.error('Password reset error:', error);
       setError('An unexpected error occurred. Please try again.');
@@ -81,6 +92,17 @@ const ResetPassword = () => {
       setLoading(false);
     }
   };
+
+  if (checkingToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-slate-50 to-orange-100 px-6 py-12">
+        <div className="flex items-center space-x-2 text-slate-600">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Validating reset link...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
