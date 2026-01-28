@@ -30,30 +30,15 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // First, get user from auth.users by email
-    const { data: authUserData, error: authError } = await supabaseClient.auth.admin.getUserByEmail(email);
-    
-    if (authError || !authUserData?.user) {
-      console.log('User not found in auth.users:', email);
-      // Return success regardless to prevent account enumeration
-      return new Response(
-        JSON.stringify({ success: true, message: "If an account exists, a reset link has been sent" }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
-
-    // Get user profile (all users can reset their password)
+    // Query user_profiles directly by email (no auth admin API needed)
     const { data: userProfile, error: profileError } = await supabaseClient
       .from('user_profiles')
-      .select('user_id, first_name, last_name, role, company_id')
-      .eq('user_id', authUserData.user.id)
+      .select('user_id, first_name, last_name, role, company_id, email')
+      .eq('email', email.toLowerCase())
       .single();
 
     if (profileError || !userProfile) {
-      console.log('User not found or not authorized for password reset:', email);
+      console.log('User not found in user_profiles:', email);
       // Return success regardless to prevent account enumeration
       return new Response(
         JSON.stringify({ success: true, message: "If an account exists, a reset link has been sent" }),
