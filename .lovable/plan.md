@@ -1,99 +1,106 @@
 
-
-# Fix Password Reset CORS Headers
+# Fix Password Reset - getUserByEmail Error
 
 ## Problem Identified
 
-The password reset is still failing because **both edge functions have incorrect CORS headers**. The Supabase JavaScript client sends additional headers (`x-client-info`, `apikey`) that are being rejected by the edge functions.
-
-### Current CORS Headers (Broken)
-```typescript
-'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+The edge function is failing with:
+```
+TypeError: supabaseClient.auth.admin.getUserByEmail is not a function
 ```
 
-### Required CORS Headers
-```typescript
-'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
-```
+The method `getUserByEmail` does **not exist** in the Supabase Admin Auth API. This was causing the 500 Internal Server Error.
 
 ---
 
-## Root Cause
+## Solution
 
-When calling `supabase.functions.invoke()`, the Supabase client automatically adds:
-- `apikey` - The anon/public key
-- `x-client-info` - Client library version info
-- `authorization` - Auth token (if logged in)
-- `content-type` - For the JSON body
-
-The edge functions are rejecting these headers in the CORS preflight response, causing the browser to block the actual request.
+Replace the non-existent `getUserByEmail` call with a direct query to the `user_profiles` table, which already has an `email` column.
 
 ---
 
 ## Changes Required
 
-### 1. Update `supabase/functions/send-password-reset/index.ts`
+### File: `supabase/functions/send-password-reset/index.ts`
 
-**Lines 5-9:** Replace the CORS headers:
+**Replace lines 33-53** - Change from using auth.admin API to querying user_profiles directly:
 
 ```typescript
-// BEFORE
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-};
+// BEFORE (broken)
+const { data: authUserData, error: authError } = await supabaseClient.auth.admin.getUserByEmail(email);
 
-// AFTER
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+if (authError || !authUserData?.user) {
+  console.log('User not found in auth.users:', email);
+  return new Response(
+    JSON.stringify({ success: true, message: "If an account exists, a reset link has been sent" }),
+    { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+  );
+}
+
+const { data: userProfile, error: profileError } = await supabaseClient
+  .from('user_profiles')
+  .select('user_id, first_name, last_name, role, company_id')
+  .eq('user_id', authUserData.user.id)
+  .single();
+```
+
+```typescript
+// AFTER (working)
+// Query user_profiles directly by email (no auth admin API needed)
+const { data: userProfile, error: profileError } = await supabaseClient
+  .from('user_profiles')
+  .select('user_id, first_name, last_name, role, company_id, email')
+  .eq('email', email.toLowerCase())
+  .single();
+
+if (profileError || !userProfile) {
+  console.log('User not found in user_profiles:', email);
+  // Return success regardless to prevent account enumeration
+  return new Response(
+    JSON.stringify({ success: true, message: "If an account exists, a reset link has been sent" }),
+    { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+  );
+}
 ```
 
 ---
 
-### 2. Update `supabase/functions/reset-password/index.ts`
+## Why This Works
 
-**Lines 4-8:** Replace the CORS headers:
+1. The `user_profiles` table already stores user emails
+2. We can look up users directly by email without needing the Admin Auth API
+3. The `user_id` in `user_profiles` corresponds to the auth user ID, which we can use to update the password
+4. This is simpler and avoids the problematic admin API call
 
-```typescript
-// BEFORE
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-};
+---
 
-// AFTER
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+## Flow After Fix
+
+```text
+User enters email in "Forgot Password"
+        │
+        ▼
+send-password-reset edge function
+        │
+        ▼
+Query user_profiles by email
+        │
+    ┌───┴───┐
+    │       │
+  Found   Not Found
+    │       │
+    ▼       ▼
+Generate   Return "success"
+token      (prevent enumeration)
+    │
+    ▼
+Store in password_reset_tokens
+    │
+    ▼
+Send branded email via Resend
+    │
+    ▼
+Return success
 ```
-
----
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `supabase/functions/send-password-reset/index.ts` | Update CORS headers (lines 5-9) |
-| `supabase/functions/reset-password/index.ts` | Update CORS headers (lines 4-8) |
-
----
-
-## After Deployment
-
-Once these changes are deployed:
-
-1. User clicks "Forgot Password"
-2. Enters email address
-3. `send-password-reset` edge function accepts the request (CORS passes)
-4. Branded email sent via Resend
-5. User clicks link in email
-6. `reset-password` edge function accepts the new password (CORS passes)
-7. Password updated successfully
 
 ---
 
@@ -101,6 +108,6 @@ Once these changes are deployed:
 
 | Before | After |
 |--------|-------|
-| CORS blocking Supabase client headers | All required headers allowed |
-| 500 error on password reset | Successful password reset flow |
-
+| Uses non-existent `getUserByEmail` method | Queries `user_profiles` table directly |
+| 500 Internal Server Error | Working password reset flow |
+| Two database calls (auth + profiles) | Single database call |
