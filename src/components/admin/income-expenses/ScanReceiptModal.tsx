@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Upload, Camera, Loader2, CheckCircle, Calendar as CalendarIcon, Save, TrendingDown, TrendingUp } from 'lucide-react';
+import { Upload, Camera, Loader2, CheckCircle, Calendar as CalendarIcon, Save, TrendingDown, TrendingUp, FileCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,7 +70,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   companyId,
   onOpenTransaction
 }) => {
-  const [activeTab, setActiveTab] = useState<'upload' | 'review'>('upload');
+  const [activeTab, setActiveTab] = useState<'select-type' | 'upload' | 'review'>('select-type');
   const [isUploading, setIsUploading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [uploadedPath, setUploadedPath] = useState<string | null>(null);
@@ -85,8 +85,8 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
   const [duplicateDecision, setDuplicateDecision] = useState<DuplicateDecision | null>(null);
 
-  // Transaction type state
-  const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
+  // Transaction type state - now set BEFORE upload
+  const [transactionType, setTransactionType] = useState<'income' | 'expense' | null>(null);
   const [transactionTypeConfidence, setTransactionTypeConfidence] = useState<'high' | 'medium' | 'low' | null>(null);
 
   // Form state for review step
@@ -111,7 +111,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   });
 
   const resetState = useCallback(() => {
-    setActiveTab('upload');
+    setActiveTab('select-type');
     setIsUploading(false);
     setIsExtracting(false);
     setUploadedPath(null);
@@ -121,7 +121,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     setReceiptHash(null);
     setDuplicateCandidates([]);
     setDuplicateDecision(null);
-    setTransactionType('expense');
+    setTransactionType(null);
     setTransactionTypeConfidence(null);
     setFormData({
       expense_title: '',
@@ -140,6 +140,12 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     onClose();
   };
 
+  // Handler for type selection in step 1
+  const handleTypeSelectAndContinue = (type: 'income' | 'expense') => {
+    setTransactionType(type);
+    setActiveTab('upload');
+  };
+
   // Check for duplicates when form data changes
   const checkForDuplicates = useCallback(async (
     amount: number,
@@ -147,7 +153,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     vendor: string,
     hash: string | null
   ) => {
-    if (!companyId || amount <= 0) return;
+    if (!companyId || amount <= 0 || !transactionType) return;
 
     setIsCheckingDuplicates(true);
     try {
@@ -302,7 +308,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
         body: {
           company_id: companyId,
           attachment_path: attachmentPath,
-          transaction_type: 'expense'
+          transaction_type: transactionType // Pass pre-selected type
         }
       });
 
@@ -314,10 +320,11 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
 
       setExtractionResult(data);
 
-      // Set transaction type from AI detection
-      const detectedType = data.transaction_type || 'expense';
-      setTransactionType(detectedType);
-      setTransactionTypeConfidence(data.transaction_type_confidence || null);
+      // Keep the user-selected transaction type, but note AI's detection
+      // Don't override the user's selection - they chose before upload
+      if (data.transaction_type_confidence) {
+        setTransactionTypeConfidence(data.transaction_type_confidence);
+      }
 
       // Pre-fill form with extracted data
       setFormData({
@@ -413,7 +420,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     setIsSaving(true);
     toast({
       title: 'Saving...',
-      description: 'Creating expense from receipt'
+      description: `Creating ${transactionType} from receipt`
     });
 
     try {
@@ -452,14 +459,14 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
         duplicateCandidates: duplicateCandidates
       };
 
-      onSaveExpense(saveData, receiptMetadata, duplicateInfo, transactionType);
+      onSaveExpense(saveData, receiptMetadata, duplicateInfo, transactionType || 'expense');
       handleClose();
 
     } catch (error) {
       console.error('Save error:', error);
       toast({
         title: 'Save Failed',
-        description: 'Failed to save expense. Please try again.',
+        description: 'Failed to save. Please try again.',
         variant: 'destructive'
       });
     } finally {
@@ -471,7 +478,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) handleFileUpload(file);
-  }, [companyId]);
+  }, [companyId, transactionType]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -488,20 +495,110 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'upload' | 'review')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upload" className="flex items-center gap-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'select-type' | 'upload' | 'review')}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="select-type" className="flex items-center gap-2">
+              <FileCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">Select Type</span>
+              <span className="sm:hidden">Type</span>
+            </TabsTrigger>
+            <TabsTrigger value="upload" disabled={!transactionType} className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
-              Upload Receipt
+              Upload
             </TabsTrigger>
             <TabsTrigger value="review" disabled={!extractionResult} className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4" />
-              Review Details
+              Review
             </TabsTrigger>
           </TabsList>
 
-          {/* Upload Tab */}
+          {/* Step 1: Select Type Tab */}
+          <TabsContent value="select-type" className="space-y-6 mt-4">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-foreground">
+                What are you scanning?
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Select the type of document to help with processing
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Expense Card */}
+              <button
+                type="button"
+                onClick={() => handleTypeSelectAndContinue('expense')}
+                className={cn(
+                  "flex flex-col items-center p-6 rounded-xl border-2 transition-all group",
+                  "border-border hover:border-destructive hover:bg-destructive/5"
+                )}
+              >
+                <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/20 transition-colors">
+                  <TrendingDown className="h-7 w-7 text-destructive" />
+                </div>
+                <span className="font-semibold text-lg mt-3 text-foreground">Expense</span>
+                <span className="text-sm text-muted-foreground text-center mt-1">
+                  Receipt, bill, purchase
+                </span>
+                <div className="mt-3 text-xs text-muted-foreground/70 text-center">
+                  Store receipts, utility bills, supplier invoices
+                </div>
+              </button>
+
+              {/* Income Card */}
+              <button
+                type="button"
+                onClick={() => handleTypeSelectAndContinue('income')}
+                className={cn(
+                  "flex flex-col items-center p-6 rounded-xl border-2 transition-all group",
+                  "border-border hover:border-green-500 hover:bg-green-50/50"
+                )}
+              >
+                <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                  <TrendingUp className="h-7 w-7 text-green-600" />
+                </div>
+                <span className="font-semibold text-lg mt-3 text-foreground">Income</span>
+                <span className="text-sm text-muted-foreground text-center mt-1">
+                  Invoice sent, payment received
+                </span>
+                <div className="mt-3 text-xs text-muted-foreground/70 text-center">
+                  Client invoices, payment slips, sales receipts
+                </div>
+              </button>
+            </div>
+
+            <p className="text-xs text-center text-muted-foreground">
+              Click to select and continue
+            </p>
+          </TabsContent>
+
+          {/* Step 2: Upload Tab */}
           <TabsContent value="upload" className="space-y-4 mt-4">
+            {/* Type indicator at top */}
+            {transactionType && (
+              <div className="flex items-center justify-center gap-2 mb-4 p-2 rounded-lg bg-muted">
+                {transactionType === 'expense' ? (
+                  <>
+                    <TrendingDown className="h-4 w-4 text-destructive" />
+                    <span className="text-sm font-medium">Scanning an Expense</span>
+                  </>
+                ) : (
+                  <>
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium">Scanning an Income</span>
+                  </>
+                )}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setActiveTab('select-type')}
+                  className="text-xs h-6 px-2"
+                >
+                  Change
+                </Button>
+              </div>
+            )}
+
             <div
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
@@ -509,7 +606,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                 "border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer",
                 isUploading || isExtracting
                   ? "border-amber-300 bg-amber-50"
-                  : "border-slate-300 hover:border-amber-400 hover:bg-amber-50/50"
+                  : "border-border hover:border-amber-400 hover:bg-amber-50/50"
               )}
               onClick={() => !isUploading && !isExtracting && document.getElementById('receipt-upload')?.click()}
             >
@@ -532,18 +629,18 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                 <div className="flex flex-col items-center gap-3">
                   <Loader2 className="h-10 w-10 text-amber-500 animate-spin" />
                   <p className="text-sm font-medium text-amber-700">Analyzing receipt with AI...</p>
-                  <p className="text-xs text-slate-500">This may take a few seconds</p>
+                  <p className="text-xs text-muted-foreground">This may take a few seconds</p>
                 </div>
               ) : (
                 <>
-                  <Camera className="h-12 w-12 mx-auto text-slate-400 mb-3" />
-                  <p className="text-lg font-medium text-slate-700 mb-1">
+                  <Camera className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-lg font-medium text-foreground mb-1">
                     Drop receipt here or click to upload
                   </p>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-muted-foreground">
                     Supports JPG, PNG, HEIC • Max 10MB
                   </p>
-                  <p className="text-xs text-slate-400 mt-2">
+                  <p className="text-xs text-muted-foreground/70 mt-2">
                     On mobile, you can take a photo directly
                   </p>
                 </>
@@ -552,33 +649,33 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
 
             {uploadedUrl && !isExtracting && (
               <div className="mt-4">
-                <p className="text-sm font-medium text-slate-700 mb-2">Uploaded Receipt:</p>
+                <p className="text-sm font-medium text-foreground mb-2">Uploaded Receipt:</p>
                 <img 
                   src={uploadedUrl} 
                   alt="Receipt preview" 
-                  className="max-h-48 rounded-lg border border-slate-200 shadow-sm"
+                  className="max-h-48 rounded-lg border border-border shadow-sm"
                 />
               </div>
             )}
           </TabsContent>
 
-          {/* Review Tab */}
+          {/* Step 3: Review Tab */}
           <TabsContent value="review" className="space-y-4 mt-4">
             {extractionResult && (
               <>
                 {/* Receipt Thumbnail */}
                 {uploadedUrl && (
-                  <div className="flex items-start gap-4 p-3 bg-slate-50 rounded-lg">
+                  <div className="flex items-start gap-4 p-3 bg-muted rounded-lg">
                     <img 
                       src={uploadedUrl} 
                       alt="Receipt" 
-                      className="h-20 w-auto rounded border border-slate-200"
+                      className="h-20 w-auto rounded border border-border"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-700 truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {formData.expense_title}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Review and edit the extracted data below
                       </p>
                     </div>
@@ -589,7 +686,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                 {(duplicateCandidates.length > 0 || isCheckingDuplicates) && (
                   <div className="relative">
                     {isCheckingDuplicates && (
-                      <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
+                      <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10 rounded-lg">
                         <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
                       </div>
                     )}
@@ -686,7 +783,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                         )}
                       </div>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                         <Input
                           id="amount"
                           type="number"
@@ -750,7 +847,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                     <HierarchicalCategorySelector
                       selectedCategoryId={formData.category_id}
                       onCategoryChange={(id) => setFormData(prev => ({ ...prev, category_id: id }))}
-                      transactionType="expense"
+                      transactionType={transactionType || 'expense'}
                       insideModal={true}
                     />
                     {extractionResult.category_guess && !formData.category_id && (
@@ -792,7 +889,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                     ) : (
                       <>
                         <Save className="h-4 w-4 mr-2" />
-                        Save Expense
+                        Save {transactionType === 'income' ? 'Income' : 'Expense'}
                       </>
                     )}
                   </Button>
