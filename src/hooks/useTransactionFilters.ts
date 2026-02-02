@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { DateRange, DateRangeType } from './useDateRangeFilter';
-import { isWithinInterval, parseISO, format } from 'date-fns';
+import { isWithinInterval, parseISO, format, startOfMonth, endOfMonth, startOfYear, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
 import { parseLocalDate } from '@/utils/dateUtils';
 
 export interface UseTransactionFiltersReturn {
@@ -18,7 +18,7 @@ export interface UseTransactionFiltersReturn {
   payeeFilter: string[];
   setPayeeFilter: (payees: string[]) => void;
   
-  // Date range integration
+  // Date range integration - single source of truth
   dateRangeType: DateRangeType;
   setDateRangeType: (range: DateRangeType) => void;
   customStartDate: Date | null;
@@ -26,8 +26,11 @@ export interface UseTransactionFiltersReturn {
   customEndDate: Date | null;
   setCustomEndDate: (date: Date | null) => void;
   
-  // Filtered data
-  getFilteredTransactions: (transactions: TransactionWithHierarchy[], dateRange: DateRange) => TransactionWithHierarchy[];
+  // Computed effective range based on dateRangeType
+  effectiveRange: DateRange;
+  
+  // Filtered data - no longer requires dateRange parameter
+  getFilteredTransactions: (transactions: TransactionWithHierarchy[]) => TransactionWithHierarchy[];
   
   // URL sync
   syncToUrl: () => void;
@@ -60,6 +63,31 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     searchParams.get('end') ? parseLocalDate(searchParams.get('end')!) : null
   );
 
+  // Compute effective date range based on dateRangeType - SINGLE SOURCE OF TRUTH
+  const effectiveRange = useMemo((): DateRange => {
+    const now = new Date();
+    
+    switch (dateRangeType) {
+      case 'today':
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case 'this-week':
+        return { start: startOfWeek(now), end: endOfWeek(now) };
+      case 'this-month':
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      case 'last-month':
+        const lastMonth = subMonths(now, 1);
+        return { start: startOfMonth(lastMonth), end: endOfMonth(lastMonth) };
+      case 'year-to-date':
+        return { start: startOfYear(now), end: now };
+      case 'all-time':
+        return { start: null, end: null }; // No date filter - shows ALL transactions
+      case 'custom':
+        return { start: customStartDate, end: customEndDate };
+      default:
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+    }
+  }, [dateRangeType, customStartDate, customEndDate]);
+
   // Sync filters to URL
   const syncToUrl = () => {
     const params = new URLSearchParams();
@@ -86,8 +114,9 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     return () => clearTimeout(timeoutId);
   }, [transactionTypeFilter, statusFilter, searchTerm, categoryFilter, payeeFilter, dateRangeType, customStartDate, customEndDate]);
 
+  // Filter function now uses internal effectiveRange
   const getFilteredTransactions = useMemo(() => {
-    return (transactions: TransactionWithHierarchy[], dateRange: DateRange): TransactionWithHierarchy[] => {
+    return (transactions: TransactionWithHierarchy[]): TransactionWithHierarchy[] => {
       return transactions.filter(transaction => {
         // Search filter
         const matchesSearch = !searchTerm || 
@@ -106,20 +135,21 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
         // Payee filter - if empty array, show all
         const matchesPayee = payeeFilter.length === 0 || payeeFilter.includes(transaction.vendor_payee);
         
-        // Date range filter
+        // Date range filter - uses internal effectiveRange
+        // If both start and end are null (all-time), skip date filtering
         let matchesDateRange = true;
-        if (dateRange.start && dateRange.end) {
+        if (effectiveRange.start && effectiveRange.end) {
           const transactionDate = parseISO(transaction.expense_date);
           matchesDateRange = isWithinInterval(transactionDate, {
-            start: dateRange.start,
-            end: dateRange.end
+            start: effectiveRange.start,
+            end: effectiveRange.end
           });
         }
         
         return matchesSearch && matchesStatus && matchesType && matchesCategory && matchesPayee && matchesDateRange;
       });
     };
-  }, [searchTerm, statusFilter, transactionTypeFilter, categoryFilter, payeeFilter]);
+  }, [searchTerm, statusFilter, transactionTypeFilter, categoryFilter, payeeFilter, effectiveRange]);
 
   return {
     transactionTypeFilter,
@@ -138,6 +168,7 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     setCustomStartDate,
     customEndDate,
     setCustomEndDate,
+    effectiveRange,
     getFilteredTransactions,
     syncToUrl,
   };
