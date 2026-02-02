@@ -25,8 +25,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown, Paperclip, Eye, RefreshCw } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown, Paperclip, Eye, RefreshCw, Camera } from 'lucide-react';
 import ExpenseAttachmentField from './income-expenses/ExpenseAttachmentField';
+import { ScanReceiptModal } from './income-expenses/ScanReceiptModal';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { formatDateFromDB, formatDateForDB, parseLocalDate } from '@/utils/dateUtils';
@@ -78,6 +79,7 @@ const IncomeExpensesManagement = () => {
   const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
+  const [isScanReceiptOpen, setIsScanReceiptOpen] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -213,6 +215,56 @@ const IncomeExpensesManagement = () => {
       toast({
         title: "Error",
         description: errorMessage,
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle save from scan receipt modal
+  const handleSaveScannedReceipt = async (
+    scannedFormData: typeof formData, 
+    receiptMetadata?: { raw: object; confidence: object }
+  ) => {
+    try {
+      const transactionData: Record<string, unknown> = {
+        company_id: user?.companyId,
+        expense_title: scannedFormData.expense_title,
+        category_id: scannedFormData.category_id || null,
+        vendor_payee: scannedFormData.vendor_payee,
+        expense_date: formatDateForDB(scannedFormData.expense_date),
+        amount: parseFloat(scannedFormData.amount),
+        payment_status: scannedFormData.payment_status,
+        payment_method: scannedFormData.payment_method || null,
+        notes: scannedFormData.notes || null,
+        created_by: user?.id,
+        transaction_type: 'expense',
+        attachment_url: scannedFormData.existingAttachmentUrl,
+        extraction_status: 'completed'
+      };
+
+      // Add receipt metadata if available
+      if (receiptMetadata) {
+        transactionData.receipt_raw = receiptMetadata.raw;
+        transactionData.receipt_confidence = receiptMetadata.confidence;
+      }
+
+      const { error } = await supabase
+        .from('bills_expenses')
+        .insert(transactionData);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Expense from receipt saved successfully"
+      });
+      
+      fetchTransactions();
+    } catch (error) {
+      console.error('Error saving scanned receipt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save expense from receipt",
         variant: "destructive"
       });
     }
@@ -620,6 +672,13 @@ const IncomeExpensesManagement = () => {
               <Plus className="h-4 w-4 mr-2" />
               Add Expense
             </Button>
+            <Button 
+              onClick={() => setIsScanReceiptOpen(true)} 
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold"
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              Scan Receipt
+            </Button>
           </div>
         </div>
       )}
@@ -667,6 +726,13 @@ const IncomeExpensesManagement = () => {
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Expense
+            </Button>
+            <Button 
+              onClick={() => setIsScanReceiptOpen(true)}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md hover:shadow-lg transition-all duration-200 h-11"
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              Scan Receipt
             </Button>
           </div>
         </div>
@@ -1671,6 +1737,14 @@ const IncomeExpensesManagement = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Scan Receipt Modal */}
+      <ScanReceiptModal
+        isOpen={isScanReceiptOpen}
+        onClose={() => setIsScanReceiptOpen(false)}
+        onSaveExpense={handleSaveScannedReceipt}
+        companyId={user?.companyId || ''}
+      />
     </div>
   );
 };

@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.stripe-connect-webhook]
 verify_jwt = false
+
+[functions.receipt-extract]
+verify_jwt = true

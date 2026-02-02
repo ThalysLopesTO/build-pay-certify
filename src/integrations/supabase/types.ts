@@ -207,12 +207,15 @@ export type Database = {
           end_date: string | null
           expense_date: string
           expense_title: string
+          extraction_status: string | null
           id: string
           is_recurring: boolean | null
           notes: string | null
           parent_recurring_bill_id: string | null
           payment_method: string | null
           payment_status: string
+          receipt_confidence: Json | null
+          receipt_raw: Json | null
           recurrence_frequency: string | null
           start_date: string | null
           transaction_type: string
@@ -229,12 +232,15 @@ export type Database = {
           end_date?: string | null
           expense_date: string
           expense_title: string
+          extraction_status?: string | null
           id?: string
           is_recurring?: boolean | null
           notes?: string | null
           parent_recurring_bill_id?: string | null
           payment_method?: string | null
           payment_status?: string
+          receipt_confidence?: Json | null
+          receipt_raw?: Json | null
           recurrence_frequency?: string | null
           start_date?: string | null
           transaction_type?: string
@@ -251,12 +257,15 @@ export type Database = {
           end_date?: string | null
           expense_date?: string
           expense_title?: string
+          extraction_status?: string | null
           id?: string
           is_recurring?: boolean | null
           notes?: string | null
           parent_recurring_bill_id?: string | null
           payment_method?: string | null
           payment_status?: string
+          receipt_confidence?: Json | null
+          receipt_raw?: Json | null
           recurrence_frequency?: string | null
           start_date?: string | null
           transaction_type?: string
