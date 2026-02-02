@@ -76,7 +76,7 @@ export const useHierarchicalCategories = () => {
         .from('bills_expenses')
         .select(`
           *,
-          expense_categories!inner (
+          expense_categories (
             id,
             name,
             category_level,
@@ -97,6 +97,30 @@ export const useHierarchicalCategories = () => {
       const expensesWithHierarchy = await Promise.all(
         (data || []).map(async (expense: any) => {
           const category = expense.expense_categories;
+          
+          // Handle uncategorized transactions (null category)
+          if (!category) {
+            return {
+              id: expense.id,
+              expense_title: expense.expense_title,
+              vendor_payee: expense.vendor_payee,
+              expense_date: expense.expense_date,
+              amount: expense.amount,
+              payment_status: expense.payment_status,
+              payment_method: expense.payment_method,
+              notes: expense.notes,
+              attachment_url: expense.attachment_url,
+              is_recurring: expense.is_recurring,
+              recurrence_frequency: expense.recurrence_frequency,
+              parent_recurring_bill_id: expense.parent_recurring_bill_id,
+              category_id: expense.category_id,
+              parent_category_name: 'Uncategorized',
+              subcategory_name: null,
+              category_level: 'parent' as const,
+              transaction_type: expense.transaction_type,
+            };
+          }
+          
           let parentCategoryName = category.name;
           let subcategoryName = null;
 

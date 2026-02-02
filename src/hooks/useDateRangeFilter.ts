@@ -19,10 +19,13 @@ export interface UseDateRangeFilterReturn {
 }
 
 export const useDateRangeFilter = (
-  initialRange: DateRangeType = 'this-month'
+  initialRange: DateRangeType = 'this-month',
+  initialCustomRange?: DateRange
 ): UseDateRangeFilterReturn => {
   const [selectedRange, setSelectedRange] = useState<DateRangeType>(initialRange);
-  const [customRange, setCustomRange] = useState<DateRange>({ start: null, end: null });
+  const [customRange, setCustomRange] = useState<DateRange>(
+    initialCustomRange || { start: null, end: null }
+  );
   const [isCustomRangeOpen, setIsCustomRangeOpen] = useState(false);
 
   const effectiveRange = useMemo((): DateRange => {
