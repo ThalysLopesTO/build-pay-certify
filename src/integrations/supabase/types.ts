@@ -199,11 +199,17 @@ export type Database = {
       bills_expenses: {
         Row: {
           amount: number
+          amount_detected: number | null
           attachment_url: string | null
+          category_detected_id: string | null
           category_id: string | null
           company_id: string
           created_at: string
           created_by: string | null
+          date_detected: string | null
+          duplicate_candidates: Json | null
+          duplicate_of_id: string | null
+          duplicate_status: string | null
           end_date: string | null
           expense_date: string
           expense_title: string
@@ -215,20 +221,28 @@ export type Database = {
           payment_method: string | null
           payment_status: string
           receipt_confidence: Json | null
+          receipt_hash: string | null
           receipt_raw: Json | null
           recurrence_frequency: string | null
           start_date: string | null
           transaction_type: string
           updated_at: string
+          vendor_detected: string | null
           vendor_payee: string
         }
         Insert: {
           amount: number
+          amount_detected?: number | null
           attachment_url?: string | null
+          category_detected_id?: string | null
           category_id?: string | null
           company_id: string
           created_at?: string
           created_by?: string | null
+          date_detected?: string | null
+          duplicate_candidates?: Json | null
+          duplicate_of_id?: string | null
+          duplicate_status?: string | null
           end_date?: string | null
           expense_date: string
           expense_title: string
@@ -240,20 +254,28 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string
           receipt_confidence?: Json | null
+          receipt_hash?: string | null
           receipt_raw?: Json | null
           recurrence_frequency?: string | null
           start_date?: string | null
           transaction_type?: string
           updated_at?: string
+          vendor_detected?: string | null
           vendor_payee: string
         }
         Update: {
           amount?: number
+          amount_detected?: number | null
           attachment_url?: string | null
+          category_detected_id?: string | null
           category_id?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null
+          date_detected?: string | null
+          duplicate_candidates?: Json | null
+          duplicate_of_id?: string | null
+          duplicate_status?: string | null
           end_date?: string | null
           expense_date?: string
           expense_title?: string
@@ -265,14 +287,23 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string
           receipt_confidence?: Json | null
+          receipt_hash?: string | null
           receipt_raw?: Json | null
           recurrence_frequency?: string | null
           start_date?: string | null
           transaction_type?: string
           updated_at?: string
+          vendor_detected?: string | null
           vendor_payee?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bills_expenses_category_detected_id_fkey"
+            columns: ["category_detected_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bills_expenses_category_id_fkey"
             columns: ["category_id"]
@@ -293,6 +324,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bills_expenses_duplicate_of_id_fkey"
+            columns: ["duplicate_of_id"]
+            isOneToOne: false
+            referencedRelation: "bills_expenses"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bills_expenses_parent_recurring_bill_id_fkey"

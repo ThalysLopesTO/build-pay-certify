@@ -223,7 +223,17 @@ const IncomeExpensesManagement = () => {
   // Handle save from scan receipt modal
   const handleSaveScannedReceipt = async (
     scannedFormData: typeof formData, 
-    receiptMetadata?: { raw: object; confidence: object }
+    receiptMetadata?: { raw: object; confidence: object },
+    duplicateInfo?: {
+      receiptHash: string | null;
+      vendorDetected: string;
+      dateDetected: string;
+      amountDetected: number;
+      categoryDetectedId: string | null;
+      duplicateStatus: 'none' | 'confirmed' | 'ignored';
+      duplicateOfId: string | null;
+      duplicateCandidates: object[];
+    }
   ) => {
     try {
       const transactionData: Record<string, unknown> = {
@@ -246,6 +256,20 @@ const IncomeExpensesManagement = () => {
       if (receiptMetadata) {
         transactionData.receipt_raw = receiptMetadata.raw;
         transactionData.receipt_confidence = receiptMetadata.confidence;
+      }
+
+      // Add duplicate detection metadata if available
+      if (duplicateInfo) {
+        transactionData.receipt_hash = duplicateInfo.receiptHash;
+        transactionData.vendor_detected = duplicateInfo.vendorDetected || null;
+        transactionData.date_detected = duplicateInfo.dateDetected || null;
+        transactionData.amount_detected = duplicateInfo.amountDetected || null;
+        transactionData.category_detected_id = duplicateInfo.categoryDetectedId || null;
+        transactionData.duplicate_status = duplicateInfo.duplicateStatus || 'none';
+        transactionData.duplicate_of_id = duplicateInfo.duplicateOfId || null;
+        transactionData.duplicate_candidates = duplicateInfo.duplicateCandidates?.length > 0 
+          ? duplicateInfo.duplicateCandidates 
+          : null;
       }
 
       const { error } = await supabase

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,32 +8,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Upload, Camera, Loader2, CheckCircle, AlertCircle, Calendar as CalendarIcon, ArrowRight, Save } from 'lucide-react';
+import { Upload, Camera, Loader2, CheckCircle, Calendar as CalendarIcon, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, subDays, addDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { HierarchicalCategory } from '@/hooks/useHierarchicalCategories';
 import { HierarchicalCategorySelector } from '../bills-expenses/HierarchicalCategorySelector';
-import { parseLocalDate } from '@/utils/dateUtils';
-
-interface ExtractionResult {
-  vendor_payee: string;
-  expense_date: string;
-  amount: number;
-  category_id: string | null;
-  category_guess: string;
-  subcategory_guess: string | null;
-  confidence: {
-    vendor: 'high' | 'medium' | 'low';
-    date: 'high' | 'medium' | 'low';
-    amount: 'high' | 'medium' | 'low';
-    category: 'high' | 'medium' | 'low';
-  };
-  expense_title: string;
-  line_items?: Array<{ description: string; amount: number }>;
-  raw: object;
-}
+import { parseLocalDate, formatDateForDB } from '@/utils/dateUtils';
+import { DuplicateWarningPanel } from './DuplicateWarningPanel';
+import { DuplicateCandidate, DuplicateDecision, DuplicateInfo, ExtractionResultWithDetected } from '@/types/duplicate-detection';
+import { computeFileHash, calculateDuplicateScore, DUPLICATE_SCORE_THRESHOLD, BLOCKING_SCORE_THRESHOLD } from '@/utils/duplicateDetection';
 
 interface FormData {
   expense_title: string;
@@ -55,8 +39,13 @@ interface FormData {
 interface ScanReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSaveExpense: (formData: FormData, receiptMetadata?: { raw: object; confidence: object }) => void;
+  onSaveExpense: (
+    formData: FormData, 
+    receiptMetadata?: { raw: object; confidence: object },
+    duplicateInfo?: DuplicateInfo
+  ) => void;
   companyId: string;
+  onOpenTransaction?: (id: string) => void;
 }
 
 const ConfidenceBadge = ({ level }: { level: 'high' | 'medium' | 'low' }) => {
@@ -77,16 +66,23 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   isOpen,
   onClose,
   onSaveExpense,
-  companyId
+  companyId,
+  onOpenTransaction
 }) => {
   const [activeTab, setActiveTab] = useState<'upload' | 'review'>('upload');
   const [isUploading, setIsUploading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [uploadedPath, setUploadedPath] = useState<string | null>(null);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
-  const [extractionResult, setExtractionResult] = useState<ExtractionResult | null>(null);
+  const [extractionResult, setExtractionResult] = useState<ExtractionResultWithDetected | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+  // Duplicate detection state
+  const [receiptHash, setReceiptHash] = useState<string | null>(null);
+  const [duplicateCandidates, setDuplicateCandidates] = useState<DuplicateCandidate[]>([]);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
+  const [duplicateDecision, setDuplicateDecision] = useState<DuplicateDecision | null>(null);
 
   // Form state for review step
   const [formData, setFormData] = useState<{
@@ -117,6 +113,9 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     setUploadedUrl(null);
     setExtractionResult(null);
     setIsSaving(false);
+    setReceiptHash(null);
+    setDuplicateCandidates([]);
+    setDuplicateDecision(null);
     setFormData({
       expense_title: '',
       vendor_payee: '',
@@ -134,6 +133,104 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     onClose();
   };
 
+  // Check for duplicates when form data changes
+  const checkForDuplicates = useCallback(async (
+    amount: number,
+    date: string,
+    vendor: string,
+    hash: string | null
+  ) => {
+    if (!companyId || amount <= 0) return;
+
+    setIsCheckingDuplicates(true);
+    try {
+      // Calculate date range for heuristic matching
+      const targetDate = parseLocalDate(date);
+      const startDate = formatDateForDB(subDays(targetDate, 1));
+      const endDate = formatDateForDB(addDays(targetDate, 1));
+
+      // Build query for potential duplicates
+      let query = supabase
+        .from('bills_expenses')
+        .select('id, expense_title, vendor_payee, expense_date, amount, category_id, attachment_url, created_at, receipt_hash')
+        .eq('company_id', companyId)
+        .eq('transaction_type', 'expense');
+
+      // Add date range filter
+      query = query.gte('expense_date', startDate).lte('expense_date', endDate);
+
+      // Also check for hash match if available
+      if (hash) {
+        // We need to do an OR query, but supabase doesn't support complex OR well
+        // So we'll do two queries and merge results
+        const { data: hashMatches } = await supabase
+          .from('bills_expenses')
+          .select('id, expense_title, vendor_payee, expense_date, amount, category_id, attachment_url, created_at, receipt_hash')
+          .eq('company_id', companyId)
+          .eq('transaction_type', 'expense')
+          .eq('receipt_hash', hash)
+          .limit(5);
+
+        const { data: heuristicMatches } = await query.limit(10);
+
+        // Merge and deduplicate
+        const allMatches = [...(hashMatches || []), ...(heuristicMatches || [])];
+        const uniqueMatches = allMatches.reduce((acc, item) => {
+          if (!acc.find(x => x.id === item.id)) {
+            acc.push(item);
+          }
+          return acc;
+        }, [] as typeof allMatches);
+
+        // Score and filter candidates
+        const scoredCandidates: DuplicateCandidate[] = uniqueMatches
+          .map(candidate => ({
+            ...candidate,
+            score: calculateDuplicateScore(candidate, amount, date, vendor, hash)
+          }))
+          .filter(c => c.score > DUPLICATE_SCORE_THRESHOLD)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 5);
+
+        setDuplicateCandidates(scoredCandidates);
+      } else {
+        const { data } = await query.limit(10);
+
+        // Score and filter candidates
+        const scoredCandidates: DuplicateCandidate[] = (data || [])
+          .map(candidate => ({
+            ...candidate,
+            score: calculateDuplicateScore(candidate, amount, date, vendor, hash)
+          }))
+          .filter(c => c.score > DUPLICATE_SCORE_THRESHOLD)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 5);
+
+        setDuplicateCandidates(scoredCandidates);
+      }
+    } catch (error) {
+      console.error('Error checking for duplicates:', error);
+    } finally {
+      setIsCheckingDuplicates(false);
+    }
+  }, [companyId]);
+
+  // Check for duplicates when extraction completes or form fields change
+  useEffect(() => {
+    if (activeTab === 'review' && extractionResult) {
+      const amount = parseFloat(formData.amount) || 0;
+      const date = formatDateForDB(formData.expense_date);
+      const vendor = formData.vendor_payee;
+
+      // Debounce the check
+      const timer = setTimeout(() => {
+        checkForDuplicates(amount, date, vendor, receiptHash);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, formData.amount, formData.expense_date, formData.vendor_payee, receiptHash, extractionResult, checkForDuplicates]);
+
   const handleFileUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       toast({
@@ -147,6 +244,10 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     setIsUploading(true);
 
     try {
+      // Compute file hash for duplicate detection
+      const hash = await computeFileHash(file);
+      setReceiptHash(hash);
+
       // Upload to storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${companyId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -240,7 +341,35 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     }
   };
 
+  // Duplicate decision handlers
+  const handleOpenExisting = (id: string) => {
+    if (onOpenTransaction) {
+      onOpenTransaction(id);
+      handleClose();
+    }
+  };
+
+  const handleMarkAsDuplicate = (candidateId: string) => {
+    setDuplicateDecision({
+      status: 'confirmed',
+      duplicateOfId: candidateId
+    });
+  };
+
+  const handleNotADuplicate = () => {
+    setDuplicateDecision({
+      status: 'ignored',
+      duplicateOfId: null
+    });
+  };
+
+  // Check if save should be blocked
+  const isSaveBlocked = duplicateCandidates.some(c => c.score >= BLOCKING_SCORE_THRESHOLD) && !duplicateDecision;
+
   const handleSave = async () => {
+    // Prevent double-click
+    if (isSaving) return;
+
     if (!formData.expense_title || !formData.amount) {
       toast({
         title: 'Missing Fields',
@@ -250,7 +379,21 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
       return;
     }
 
+    // Block save if there's a high-confidence duplicate without decision
+    if (isSaveBlocked) {
+      toast({
+        title: 'Duplicate Decision Required',
+        description: 'Please review the duplicate warning and make a decision before saving.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsSaving(true);
+    toast({
+      title: 'Saving...',
+      description: 'Creating expense from receipt'
+    });
 
     try {
       // Build formData for parent's handleSubmit
@@ -276,7 +419,19 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
         confidence: extractionResult.confidence
       } : undefined;
 
-      onSaveExpense(saveData, receiptMetadata);
+      // Build duplicate info
+      const duplicateInfo: DuplicateInfo = {
+        receiptHash: receiptHash,
+        vendorDetected: extractionResult?.vendor_detected || extractionResult?.vendor_payee || '',
+        dateDetected: extractionResult?.date_detected || extractionResult?.expense_date || formatDateForDB(new Date()),
+        amountDetected: extractionResult?.amount_detected || extractionResult?.amount || 0,
+        categoryDetectedId: extractionResult?.category_detected_id || extractionResult?.category_id || null,
+        duplicateStatus: duplicateDecision?.status || 'none',
+        duplicateOfId: duplicateDecision?.duplicateOfId || null,
+        duplicateCandidates: duplicateCandidates
+      };
+
+      onSaveExpense(saveData, receiptMetadata, duplicateInfo);
       handleClose();
 
     } catch (error) {
@@ -406,6 +561,24 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                         Review and edit the extracted data below
                       </p>
                     </div>
+                  </div>
+                )}
+
+                {/* Duplicate Warning Panel */}
+                {(duplicateCandidates.length > 0 || isCheckingDuplicates) && (
+                  <div className="relative">
+                    {isCheckingDuplicates && (
+                      <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-lg">
+                        <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
+                      </div>
+                    )}
+                    <DuplicateWarningPanel
+                      candidates={duplicateCandidates}
+                      onOpenExisting={handleOpenExisting}
+                      onMarkAsDuplicate={handleMarkAsDuplicate}
+                      onNotADuplicate={handleNotADuplicate}
+                      decision={duplicateDecision}
+                    />
                   </div>
                 )}
 
@@ -546,7 +719,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                   </Button>
                   <Button 
                     onClick={handleSave} 
-                    disabled={isSaving || !formData.expense_title || !formData.amount}
+                    disabled={isSaving || !formData.expense_title || !formData.amount || isSaveBlocked}
                     className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                   >
                     {isSaving ? (
