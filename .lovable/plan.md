@@ -1,276 +1,250 @@
 
-# Enhance Scan Receipt Feature - Duplicate Detection & Protection
+# Add Transaction Type Selection to Scan Receipt
 
 ## Overview
-Add professional duplicate detection to prevent double-entry of receipts while preserving all existing functionality (KPIs, charts, filters, printing, CRUD operations).
+Enhance the Scan Receipt feature so the AI can automatically detect whether a scanned document is an **Income** (invoice, payment received) or **Expense** (receipt, bill paid), and allow the user to manually select/change the transaction type in the Review step.
 
 ---
 
-## Architecture Flow
+## Changes Required
+
+### 1. Edge Function: Add Transaction Type Detection
+
+**File: `supabase/functions/receipt-extract/index.ts`**
+
+Update the AI prompt to also analyze and return the transaction type:
+
+| Field | Value |
+|-------|-------|
+| `transaction_type` | `"expense"` or `"income"` |
+| `transaction_type_confidence` | `"high"`, `"medium"`, or `"low"` |
+
+**AI Prompt Enhancement:**
+```
+Also determine if this document represents:
+- An EXPENSE (receipt, bill paid, purchase made BY the company)
+- An INCOME (invoice to customer, payment received, sale made TO a customer)
+
+Return:
+{
+  ...existing fields...,
+  "transaction_type": "expense|income",
+  "transaction_type_confidence": "high|medium|low"
+}
+```
+
+**Detection Heuristics:**
+- Keywords like "INVOICE", "Bill To", "Payment Due" suggest income (document sent to customer)
+- Keywords like "RECEIPT", "Thank you for your purchase", "Change due" suggest expense
+- Presence of company's own name as vendor suggests income
+
+---
+
+### 2. Frontend: Add Transaction Type Selector
+
+**File: `src/components/admin/income-expenses/ScanReceiptModal.tsx`**
+
+#### New State
+```typescript
+const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
+```
+
+#### New UI Element (in Review Step)
+Add a transaction type selector at the top of the form using visually distinct cards:
 
 ```text
-User uploads receipt image
-        │
-        ▼
-Step 1: Upload Receipt
-        │ 1. Compute SHA-256 hash (client-side) → receipt_hash
-        │ 2. Upload to storage
-        │ 3. Call receipt-extract edge function
-        ▼
-Step 2: Review Details (same tab, enhanced)
-        │ After extraction completes:
-        │ 1. Run duplicate detection query
-        │ 2. Score each candidate (0-100)
-        │ 3. Show warning panel if duplicates found
-        ▼
-User chooses action:
-        ├─► "Not a Duplicate" → Save with duplicate_status='ignored'
-        ├─► "Mark as Duplicate" → Save with duplicate_status='confirmed', duplicate_of_id set
-        └─► "Save Anyway" (heuristic only) → Save with duplicate_status='none'
-        ▼
-Transaction saved with all metadata
+┌──────────────────────────────────────────────────────────────┐
+│  Transaction Type                                   [Medium] │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌────────────────────┐    ┌─────────────────────┐          │
+│  │ ↓ EXPENSE          │    │ ↑ INCOME            │          │
+│  │ Money spent        │    │ Money received      │          │
+│  │ (Receipt, Bill)    │    │ (Invoice, Payment)  │          │
+│  └────────────────────┘    └─────────────────────┘          │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+- Use `TrendingDown` icon for Expense (red accent)
+- Use `TrendingUp` icon for Income (green accent)
+- Show AI confidence badge if transaction type was detected
+
+#### Update Form State Initialization
+When extraction completes, set `transactionType` from AI response:
+```typescript
+setTransactionType(data.transaction_type || 'expense');
+```
+
+#### Update Save Flow
+Pass `transactionType` to the parent handler so it's saved correctly:
+```typescript
+const saveData = {
+  ...existingFields,
+  transaction_type: transactionType
+};
 ```
 
 ---
 
-## Database Migration
+### 3. Update Save Handler
 
-**New columns for `bills_expenses` table:**
+**File: `src/components/admin/IncomeExpensesManagement.tsx`**
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| `receipt_hash` | TEXT | SHA-256 hash of uploaded image |
-| `vendor_detected` | TEXT | Original AI-extracted vendor |
-| `date_detected` | DATE | Original AI-extracted date |
-| `amount_detected` | NUMERIC | Original AI-extracted amount |
-| `category_detected_id` | UUID | Original AI-matched category |
-| `duplicate_status` | TEXT | Status: none, possible, confirmed, ignored |
-| `duplicate_of_id` | UUID | FK reference to the original transaction |
-| `duplicate_candidates` | JSONB | Stored candidates at time of save |
+Update `handleSaveScannedReceipt` to accept and use the transaction type:
 
-**Indexes to add:**
-- `idx_bills_expenses_receipt_hash` on `(company_id, receipt_hash)`
-- `idx_bills_expenses_duplicate_lookup` on `(company_id, transaction_type, expense_date, amount)`
-- `idx_bills_expenses_vendor` on `(company_id, vendor_payee)`
-
----
-
-## Component Changes
-
-### 1. ScanReceiptModal.tsx Enhancements
-
-**New State Variables:**
-```typescript
-const [receiptHash, setReceiptHash] = useState<string | null>(null);
-const [duplicateCandidates, setDuplicateCandidates] = useState<DuplicateCandidate[]>([]);
-const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
-const [duplicateDecision, setDuplicateDecision] = useState<{
-  status: 'none' | 'confirmed' | 'ignored';
-  duplicateOfId: string | null;
-} | null>(null);
-```
-
-**File Hashing (before upload):**
-```typescript
-const computeFileHash = async (file: File): Promise<string> => {
-  const buffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-};
-```
-
-**Duplicate Detection Query:**
-```typescript
-const checkForDuplicates = async (
-  amount: number,
-  date: string,
-  vendor: string,
-  hash: string | null
-) => {
-  // Query for exact hash match OR heuristic match
-  const { data } = await supabase
-    .from('bills_expenses')
-    .select('id, expense_title, vendor_payee, expense_date, amount, category_id, attachment_url, created_at, receipt_hash')
-    .eq('company_id', companyId)
-    .eq('transaction_type', 'expense')
-    .or(`receipt_hash.eq.${hash},and(amount.gte.${amount - 0.01},amount.lte.${amount + 0.01})`)
-    .gte('expense_date', subDays(parseISO(date), 1).toISOString().split('T')[0])
-    .lte('expense_date', addDays(parseISO(date), 1).toISOString().split('T')[0])
-    .limit(5);
-  
-  // Score each candidate in client
-  return (data || []).map(candidate => ({
-    ...candidate,
-    score: calculateDuplicateScore(candidate, amount, date, vendor, hash)
-  })).filter(c => c.score > 20).sort((a, b) => b.score - a.score);
-};
-```
-
-**Scoring Algorithm:**
-```typescript
-const calculateDuplicateScore = (
-  candidate: Transaction,
-  amount: number,
-  date: string,
-  vendor: string,
-  hash: string | null
-): number => {
-  let score = 0;
-  
-  // +60 for exact receipt hash match
-  if (hash && candidate.receipt_hash === hash) score += 60;
-  
-  // +25 for exact amount match (within $0.01)
-  if (Math.abs(candidate.amount - amount) <= 0.01) score += 25;
-  
-  // +10 for date within 1 day
-  const daysDiff = Math.abs(differenceInDays(parseISO(date), parseISO(candidate.expense_date)));
-  if (daysDiff <= 1) score += 10;
-  
-  // +5 for vendor match (normalized, case-insensitive)
-  const normalizedVendor = vendor.toLowerCase().trim();
-  const normalizedCandidate = candidate.vendor_payee.toLowerCase().trim();
-  if (normalizedVendor.includes(normalizedCandidate) || normalizedCandidate.includes(normalizedVendor)) {
-    score += 5;
-  }
-  
-  return score;
-};
-```
-
-**UI: Duplicate Warning Panel (in Review step):**
-- Yellow/orange warning card when candidates exist
-- Shows list of potential duplicates with: title, vendor, date, amount, created_at
-- Three action buttons:
-  - "Open Existing" → Navigate to edit that transaction
-  - "Mark as Duplicate" → Select which one; sets duplicate_status='confirmed'
-  - "Not a Duplicate" → Sets duplicate_status='ignored', allows save
-
-**Blocking Behavior:**
-- If score >= 90 (hash match): Block Save until user makes a decision
-- If score < 90 (heuristic only): Show warning but allow Save
-
----
-
-### 2. IncomeExpensesManagement.tsx Updates
-
-**Enhanced handleSaveScannedReceipt function:**
 ```typescript
 const handleSaveScannedReceipt = async (
-  scannedFormData: FormData,
-  receiptMetadata?: ReceiptMetadata,
-  duplicateInfo?: {
-    receiptHash: string | null;
-    vendorDetected: string;
-    dateDetected: string;
-    amountDetected: number;
-    categoryDetectedId: string | null;
-    duplicateStatus: 'none' | 'confirmed' | 'ignored';
-    duplicateOfId: string | null;
-    duplicateCandidates: object[];
-  }
+  scannedFormData: typeof formData,
+  receiptMetadata?: { raw: object; confidence: object },
+  duplicateInfo?: DuplicateInfo,
+  transactionType?: 'income' | 'expense'  // NEW
 ) => {
   const transactionData = {
-    // ... existing fields ...
-    
-    // New duplicate protection fields
-    receipt_hash: duplicateInfo?.receiptHash || null,
-    vendor_detected: duplicateInfo?.vendorDetected || null,
-    date_detected: duplicateInfo?.dateDetected || null,
-    amount_detected: duplicateInfo?.amountDetected || null,
-    category_detected_id: duplicateInfo?.categoryDetectedId || null,
-    duplicate_status: duplicateInfo?.duplicateStatus || 'none',
-    duplicate_of_id: duplicateInfo?.duplicateOfId || null,
-    duplicate_candidates: duplicateInfo?.duplicateCandidates || null,
+    ...existingFields,
+    transaction_type: transactionType || 'expense',  // Use passed type
   };
-  
-  // ... insert logic ...
 };
 ```
 
 ---
 
-### 3. Edge Function Enhancement (Optional)
+### 4. Update Category Selector Behavior
 
-Add detected fields to response for clarity:
+**File: `src/components/admin/income-expenses/ScanReceiptModal.tsx`**
+
+When transaction type changes, the category selector should filter to show only categories for that type:
+
 ```typescript
-const result = {
-  // ... existing fields ...
+<HierarchicalCategorySelector
+  selectedCategoryId={formData.category_id}
+  onCategoryChange={(id) => setFormData(prev => ({ ...prev, category_id: id }))}
+  transactionType={transactionType}  // Dynamic based on selection
+  insideModal={true}
+/>
+```
+
+Additionally, when user changes transaction type:
+- Clear the category selection (since income and expense categories differ)
+- Let the user re-select an appropriate category
+
+---
+
+### 5. Update Types
+
+**File: `src/types/duplicate-detection.ts`**
+
+Add transaction type fields to the extraction result interface:
+
+```typescript
+export interface ExtractionResultWithDetected extends ExtractionResult {
+  // Existing fields...
   
-  // Add explicit detected fields
-  vendor_detected: extracted.vendor || 'Unknown Vendor',
-  date_detected: extracted.date || new Date().toISOString().split('T')[0],
-  amount_detected: extractedAmount,
-  category_detected_id: finalCategoryId,
+  // Transaction type detection
+  transaction_type?: 'income' | 'expense';
+  transaction_type_confidence?: 'high' | 'medium' | 'low';
+}
+```
+
+---
+
+## Implementation Details
+
+### Transaction Type Card Component
+Create inline styled cards rather than a separate component:
+
+```tsx
+<div className="grid grid-cols-2 gap-3">
+  <button
+    type="button"
+    onClick={() => handleTransactionTypeChange('expense')}
+    className={cn(
+      "flex flex-col items-center p-4 rounded-lg border-2 transition-all",
+      transactionType === 'expense'
+        ? "border-red-500 bg-red-50 text-red-700"
+        : "border-slate-200 hover:border-slate-300"
+    )}
+  >
+    <TrendingDown className="h-6 w-6 mb-1" />
+    <span className="font-medium">Expense</span>
+    <span className="text-xs text-muted-foreground">Money spent</span>
+  </button>
+  
+  <button
+    type="button"
+    onClick={() => handleTransactionTypeChange('income')}
+    className={cn(
+      "flex flex-col items-center p-4 rounded-lg border-2 transition-all",
+      transactionType === 'income'
+        ? "border-green-500 bg-green-50 text-green-700"
+        : "border-slate-200 hover:border-slate-300"
+    )}
+  >
+    <TrendingUp className="h-6 w-6 mb-1" />
+    <span className="font-medium">Income</span>
+    <span className="text-xs text-muted-foreground">Money received</span>
+  </button>
+</div>
+```
+
+### Handler for Type Change
+```typescript
+const handleTransactionTypeChange = (type: 'income' | 'expense') => {
+  setTransactionType(type);
+  // Clear category when type changes since categories are type-specific
+  setFormData(prev => ({ ...prev, category_id: '' }));
 };
 ```
 
 ---
 
-## Files to Modify
+## Summary of File Changes
 
-| File | Action | Changes |
-|------|--------|---------|
-| `supabase/migrations/[timestamp]_add_duplicate_detection.sql` | CREATE | New columns + indexes |
-| `src/components/admin/income-expenses/ScanReceiptModal.tsx` | MODIFY | File hashing, duplicate detection, warning panel, decision handling |
-| `src/components/admin/IncomeExpensesManagement.tsx` | MODIFY | Pass new fields to save function |
-| `supabase/functions/receipt-extract/index.ts` | MODIFY | Add detected field names to response |
+| File | Changes |
+|------|---------|
+| `supabase/functions/receipt-extract/index.ts` | Add transaction_type detection to AI prompt and response |
+| `src/types/duplicate-detection.ts` | Add transaction_type fields to ExtractionResultWithDetected |
+| `src/components/admin/income-expenses/ScanReceiptModal.tsx` | Add transactionType state, type selector UI, dynamic category filtering, pass type to save |
+| `src/components/admin/IncomeExpensesManagement.tsx` | Update handleSaveScannedReceipt to accept transactionType parameter |
 
 ---
 
-## UI Mockup: Duplicate Warning Panel
+## User Flow After Implementation
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ ⚠️  Possible Duplicate Detected                             │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  This receipt may already exist:                            │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ 📄 Starbucks - Jan 30, 2026                         │    │
-│  │    $24.50 • Created Feb 1, 2026                     │    │
-│  │    [Open] [Mark as Duplicate] [Not a Duplicate]    │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                                                             │
-│  ❌ Save blocked until you choose an action                 │
-│     (or click "Not a Duplicate" to proceed)                 │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+1. User uploads receipt/invoice
+         │
+         ▼
+2. AI analyzes and detects:
+   - Transaction Type: Expense/Income (with confidence)
+   - Vendor, Date, Amount, Category
+         │
+         ▼
+3. Review step shows:
+   ┌─────────────────────────────────────┐
+   │  Transaction Type        [Medium]   │
+   │  [● Expense]  [ Income ]            │  ← User can change
+   │                                     │
+   │  Title: Starbucks - 2025-12-23      │
+   │  Vendor: Starbucks          [High]  │
+   │  Amount: $200               [High]  │
+   │  Date: Dec 23, 2025         [High]  │
+   │  Category: (filtered by type)       │
+   └─────────────────────────────────────┘
+         │
+         ▼
+4. User can manually toggle between
+   Expense ↔ Income if AI was wrong
+         │
+         ▼
+5. Save creates correct transaction type
 ```
 
 ---
 
-## Save Button Protection
+## Edge Cases Handled
 
-**Already Implemented:**
-- `isSaving` state exists (line 88)
-- Save button already disabled when `isSaving` is true (line 549)
-
-**Enhancement:**
-- Add early return if `isSaving` is true in handleSave
-- Add toast "Saving..." before async operation
-- Clear and explicit success/failure feedback
-
----
-
-## Preserved Functionality
-
-The following remain completely unchanged:
-- All KPI calculations and display
-- Monthly Cash Flow Chart
-- Category Breakdown Chart
-- Date range filters
-- Transaction type filters
-- Payment status/method filters
-- Category filters
-- Search functionality
-- Pagination
-- Excel export
-- Print functionality
-- Add Income / Add Expense dialogs
-- Edit transaction flow
-- Delete transaction flow
-- Mobile transaction list
-- Attachment handling
+1. **AI can't determine type**: Default to "expense" with "low" confidence
+2. **User changes type**: Clear category selection since income/expense have different categories
+3. **No AI response**: Default to expense, no confidence badge shown
+4. **Duplicate detection**: Query filters by the selected transaction_type
