@@ -31,7 +31,9 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     // Use Admin API to find user by email in auth.users (always has email)
-    const { data: authUsers, error: listError } = await supabaseClient.auth.admin.listUsers();
+    const { data: authUsers, error: listError } = await supabaseClient.auth.admin.listUsers({
+      perPage: 1000  // Fetch all users to avoid pagination issues
+    });
 
     if (listError) {
       console.error('Error listing users:', listError);
