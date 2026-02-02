@@ -76,7 +76,7 @@ export const useHierarchicalCategories = () => {
         .from('bills_expenses')
         .select(`
           *,
-          expense_categories (
+          expense_categories!category_id (
             id,
             name,
             category_level,
