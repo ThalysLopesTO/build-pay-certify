@@ -83,6 +83,25 @@ const IncomeExpensesManagement = () => {
   });
 
   const filters = useTransactionFilters();
+
+  // Sync custom dates from URL to dateRange hook on initial load
+  useEffect(() => {
+    if (filters.dateRangeType === 'custom' && 
+        (filters.customStartDate || filters.customEndDate)) {
+      dateRange.setCustomRange({
+        start: filters.customStartDate,
+        end: filters.customEndDate
+      });
+    }
+  }, []); // Run once on mount
+
+  // Sync dateRange.customRange changes to filters for URL persistence
+  useEffect(() => {
+    if (dateRange.selectedRange === 'custom') {
+      filters.setCustomStartDate(dateRange.customRange.start);
+      filters.setCustomEndDate(dateRange.customRange.end);
+    }
+  }, [dateRange.customRange, dateRange.selectedRange]);
   
   // Print functionality
   const { generatePrintContent } = usePrintIncomeExpenses();
@@ -957,7 +976,10 @@ const IncomeExpensesManagement = () => {
                         <Calendar
                           mode="single"
                           selected={dateRange.customRange.start || undefined}
-                          onSelect={(date) => dateRange.setCustomRange({ ...dateRange.customRange, start: date || null })}
+                          onSelect={(date) => {
+                            dateRange.setCustomRange({ ...dateRange.customRange, start: date || null });
+                            filters.setCustomStartDate(date || null);
+                          }}
                           initialFocus
                           className="pointer-events-auto"
                         />
@@ -978,7 +1000,10 @@ const IncomeExpensesManagement = () => {
                         <Calendar
                           mode="single"
                           selected={dateRange.customRange.end || undefined}
-                          onSelect={(date) => dateRange.setCustomRange({ ...dateRange.customRange, end: date || null })}
+                          onSelect={(date) => {
+                            dateRange.setCustomRange({ ...dateRange.customRange, end: date || null });
+                            filters.setCustomEndDate(date || null);
+                          }}
                           initialFocus
                           className="pointer-events-auto"
                         />
