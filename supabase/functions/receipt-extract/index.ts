@@ -246,11 +246,16 @@ Important:
     // Use subcategory ID if found, otherwise use parent category ID
     const finalCategoryId = matchedSubcategoryId || matchedCategoryId;
 
+    // Extract amount as number
+    const extractedAmount = typeof extracted.total === 'number' ? extracted.total : parseFloat(extracted.total) || 0;
+    const extractedDate = extracted.date || new Date().toISOString().split('T')[0];
+    const extractedVendor = extracted.vendor || 'Unknown Vendor';
+
     // Build the response
     const result: ExtractionResult = {
-      vendor_payee: extracted.vendor || 'Unknown Vendor',
-      expense_date: extracted.date || new Date().toISOString().split('T')[0],
-      amount: typeof extracted.total === 'number' ? extracted.total : parseFloat(extracted.total) || 0,
+      vendor_payee: extractedVendor,
+      expense_date: extractedDate,
+      amount: extractedAmount,
       category_id: finalCategoryId,
       category_guess: extracted.category || 'General',
       subcategory_guess: extracted.subcategory || null,
@@ -260,15 +265,24 @@ Important:
         amount: extracted.confidence?.amount || 'medium',
         category: extracted.confidence?.category || 'low'
       },
-      expense_title: `${extracted.vendor || 'Receipt'} - ${extracted.date || new Date().toISOString().split('T')[0]}`,
+      expense_title: `${extractedVendor} - ${extractedDate}`,
       line_items: extracted.line_items || [],
       raw: extracted
     };
 
-    console.log('Final extraction result:', result);
+    // Add detected fields for duplicate detection metadata
+    const responseWithDetected = {
+      ...result,
+      vendor_detected: extractedVendor,
+      date_detected: extractedDate,
+      amount_detected: extractedAmount,
+      category_detected_id: finalCategoryId
+    };
+
+    console.log('Final extraction result:', responseWithDetected);
 
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify(responseWithDetected),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
