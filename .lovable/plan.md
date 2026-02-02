@@ -1,48 +1,78 @@
 
-# ✅ COMPLETED: Transaction Filtering Fix
+# Fix: Expenses Not Showing Due to Ambiguous Foreign Key Join
 
-## Problem Summary
-When selecting "All Time" date range, the filter showed 0 transactions even though the database contains 530+ transactions. This was a state synchronization bug between two hooks managing the same date range.
+## Problem Identified
+The database query fails with "Error fetching expenses with hierarchy: Object" because there are **two foreign keys** from `bills_expenses` to `expense_categories`:
+1. `category_id` (primary category assignment)
+2. `category_detected_id` (AI-detected category from receipt scanning)
 
----
+When PostgREST encounters multiple foreign keys to the same table, it cannot automatically determine which relationship to use and throws an error.
 
-## Root Cause (Fixed)
+## Root Cause
+```text
+bills_expenses table:
+├── category_id ─────────────────► expense_categories (FK 1)
+└── category_detected_id ─────────► expense_categories (FK 2)
 
-The application was using **two separate hooks** that both managed date range state independently:
-1. **`useDateRangeFilter`** - UI state for date selection
-2. **`useTransactionFilters`** - URL persistence and filtering
+PostgREST sees: "expense_categories (...)"
+PostgREST error: "Could not determine which FK to use - ambiguous reference"
+```
 
-These hooks would get out of sync, causing filters to use incorrect date values.
+## Solution
+Explicitly specify which foreign key column to use in the Supabase query using the `!column_name` hint syntax.
 
----
+### File Change: `src/hooks/useHierarchicalCategories.ts`
 
-## Solution Implemented
+**Current code (broken):**
+```typescript
+let query = supabase
+  .from('bills_expenses')
+  .select(`
+    *,
+    expense_categories (
+      id,
+      name,
+      category_level,
+      parent_category_id
+    )
+  `)
+```
 
-Consolidated all date range logic into `useTransactionFilters` as the **single source of truth**:
+**Fixed code:**
+```typescript
+let query = supabase
+  .from('bills_expenses')
+  .select(`
+    *,
+    expense_categories!category_id (
+      id,
+      name,
+      category_level,
+      parent_category_id
+    )
+  `)
+```
 
-### Changes Made:
+The `!category_id` hint tells PostgREST to use the `category_id` column for the join, disambiguating the relationship.
 
-**1. `src/hooks/useTransactionFilters.ts`:**
-- Added `effectiveRange` computation based on `dateRangeType`
-- When `dateRangeType === 'all-time'`, returns `{ start: null, end: null }` to skip date filtering
-- Updated `getFilteredTransactions` to use internal `effectiveRange` (no longer requires external parameter)
-- Exposed `effectiveRange` in the hook return
+## Why This Broke
+The `category_detected_id` column was added as part of the receipt scanning feature. This created a second FK to `expense_categories`, making the original query ambiguous.
 
-**2. `src/components/admin/IncomeExpensesManagement.tsx`:**
-- Removed `useDateRangeFilter` hook and all sync effects
-- Replaced all `dateRange.*` references with `filters.*`
-- Updated chart components to use `filters.dateRangeType` and `filters.effectiveRange`
-- Simplified custom date pickers to update `filters.setCustomStartDate/End` directly
+## Technical Details
 
----
+| Change | Description |
+|--------|-------------|
+| File | `src/hooks/useHierarchicalCategories.ts` |
+| Line | ~77-85 |
+| Fix | Add `!category_id` hint to disambiguate FK relationship |
 
-## Result
+## Data Integrity Confirmation
+- All 448+ transactions for Ground Zero exist in the database
+- All 530+ total transactions system-wide are intact
+- This is purely a query syntax issue, not data loss
 
-When user selects "All Time":
-1. `filters.setDateRangeType('all-time')` updates state
-2. `filters.effectiveRange` computes to `{ start: null, end: null }`
-3. `getFilteredTransactions()` skips date filtering (both are null)
-4. All 448+ transactions for the company are displayed
-5. URL updates to `?range=all-time` for persistence
-
-**Data integrity confirmed** - all 530 transactions in database are accessible.
+## Expected Result After Fix
+1. Query uses explicit `category_id` FK for the join
+2. PostgREST successfully executes the join
+3. All transactions load with their category information
+4. "All Time" filter displays all 448+ transactions
