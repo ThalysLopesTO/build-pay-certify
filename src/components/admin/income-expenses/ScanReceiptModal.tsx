@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Upload, Camera, Loader2, CheckCircle, Calendar as CalendarIcon, Save } from 'lucide-react';
+import { Upload, Camera, Loader2, CheckCircle, Calendar as CalendarIcon, Save, TrendingDown, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,7 +42,8 @@ interface ScanReceiptModalProps {
   onSaveExpense: (
     formData: FormData, 
     receiptMetadata?: { raw: object; confidence: object },
-    duplicateInfo?: DuplicateInfo
+    duplicateInfo?: DuplicateInfo,
+    transactionType?: 'income' | 'expense'
   ) => void;
   companyId: string;
   onOpenTransaction?: (id: string) => void;
@@ -84,6 +85,10 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
   const [duplicateDecision, setDuplicateDecision] = useState<DuplicateDecision | null>(null);
 
+  // Transaction type state
+  const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
+  const [transactionTypeConfidence, setTransactionTypeConfidence] = useState<'high' | 'medium' | 'low' | null>(null);
+
   // Form state for review step
   const [formData, setFormData] = useState<{
     expense_title: string;
@@ -116,6 +121,8 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     setReceiptHash(null);
     setDuplicateCandidates([]);
     setDuplicateDecision(null);
+    setTransactionType('expense');
+    setTransactionTypeConfidence(null);
     setFormData({
       expense_title: '',
       vendor_payee: '',
@@ -154,7 +161,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
         .from('bills_expenses')
         .select('id, expense_title, vendor_payee, expense_date, amount, category_id, attachment_url, created_at, receipt_hash')
         .eq('company_id', companyId)
-        .eq('transaction_type', 'expense');
+        .eq('transaction_type', transactionType);
 
       // Add date range filter
       query = query.gte('expense_date', startDate).lte('expense_date', endDate);
@@ -167,7 +174,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
           .from('bills_expenses')
           .select('id, expense_title, vendor_payee, expense_date, amount, category_id, attachment_url, created_at, receipt_hash')
           .eq('company_id', companyId)
-          .eq('transaction_type', 'expense')
+          .eq('transaction_type', transactionType)
           .eq('receipt_hash', hash)
           .limit(5);
 
@@ -213,7 +220,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     } finally {
       setIsCheckingDuplicates(false);
     }
-  }, [companyId]);
+  }, [companyId, transactionType]);
 
   // Check for duplicates when extraction completes or form fields change
   useEffect(() => {
@@ -307,6 +314,11 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
 
       setExtractionResult(data);
 
+      // Set transaction type from AI detection
+      const detectedType = data.transaction_type || 'expense';
+      setTransactionType(detectedType);
+      setTransactionTypeConfidence(data.transaction_type_confidence || null);
+
       // Pre-fill form with extracted data
       setFormData({
         expense_title: data.expense_title || 'Receipt',
@@ -354,6 +366,15 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
       status: 'confirmed',
       duplicateOfId: candidateId
     });
+  };
+
+  const handleTransactionTypeChange = (type: 'income' | 'expense') => {
+    setTransactionType(type);
+    // Clear category when type changes since categories are type-specific
+    setFormData(prev => ({ ...prev, category_id: '' }));
+    // Reset duplicate candidates since they're type-specific
+    setDuplicateCandidates([]);
+    setDuplicateDecision(null);
   };
 
   const handleNotADuplicate = () => {
@@ -431,7 +452,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
         duplicateCandidates: duplicateCandidates
       };
 
-      onSaveExpense(saveData, receiptMetadata, duplicateInfo);
+      onSaveExpense(saveData, receiptMetadata, duplicateInfo, transactionType);
       handleClose();
 
     } catch (error) {
@@ -582,6 +603,47 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                   </div>
                 )}
 
+                {/* Transaction Type Selector */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Transaction Type</Label>
+                    {transactionTypeConfidence && (
+                      <ConfidenceBadge level={transactionTypeConfidence} />
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleTransactionTypeChange('expense')}
+                      className={cn(
+                        "flex flex-col items-center p-4 rounded-lg border-2 transition-all",
+                        transactionType === 'expense'
+                          ? "border-destructive bg-destructive/10 text-destructive"
+                          : "border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      <TrendingDown className="h-6 w-6 mb-1" />
+                      <span className="font-medium">Expense</span>
+                      <span className="text-xs text-muted-foreground">Money spent</span>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => handleTransactionTypeChange('income')}
+                      className={cn(
+                        "flex flex-col items-center p-4 rounded-lg border-2 transition-all",
+                        transactionType === 'income'
+                          ? "border-green-500 bg-green-50 text-green-700"
+                          : "border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      <TrendingUp className="h-6 w-6 mb-1" />
+                      <span className="font-medium">Income</span>
+                      <span className="text-xs text-muted-foreground">Money received</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Form Fields */}
                 <div className="grid gap-4">
                   {/* Title */}
@@ -593,7 +655,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                       id="expense_title"
                       value={formData.expense_title}
                       onChange={(e) => setFormData(prev => ({ ...prev, expense_title: e.target.value }))}
-                      placeholder="Expense title"
+                      placeholder={transactionType === 'income' ? 'Income title' : 'Expense title'}
                     />
                   </div>
 

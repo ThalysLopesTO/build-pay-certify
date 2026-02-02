@@ -50,4 +50,7 @@ export interface ExtractionResultWithDetected {
   date_detected?: string;
   amount_detected?: number;
   category_detected_id?: string | null;
+  // Transaction type detection
+  transaction_type?: 'income' | 'expense';
+  transaction_type_confidence?: 'high' | 'medium' | 'low';
 }

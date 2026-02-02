@@ -233,7 +233,8 @@ const IncomeExpensesManagement = () => {
       duplicateStatus: 'none' | 'confirmed' | 'ignored';
       duplicateOfId: string | null;
       duplicateCandidates: object[];
-    }
+    },
+    scannedTransactionType?: 'income' | 'expense'
   ) => {
     try {
       const transactionData: Record<string, unknown> = {
@@ -247,7 +248,7 @@ const IncomeExpensesManagement = () => {
         payment_method: scannedFormData.payment_method || null,
         notes: scannedFormData.notes || null,
         created_by: user?.id,
-        transaction_type: 'expense',
+        transaction_type: scannedTransactionType || 'expense',
         attachment_url: scannedFormData.existingAttachmentUrl,
         extraction_status: 'completed'
       };
@@ -278,9 +279,10 @@ const IncomeExpensesManagement = () => {
       
       if (error) throw error;
       
+      const typeLabel = scannedTransactionType === 'income' ? 'Income' : 'Expense';
       toast({
         title: "Success",
-        description: "Expense from receipt saved successfully"
+        description: `${typeLabel} from scanned document saved successfully`
       });
       
       fetchTransactions();

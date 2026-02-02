@@ -87,17 +87,20 @@ Deno.serve(async (req) => {
     console.log('Available categories:', categoryNames);
 
     // Build AI prompt
-    const systemPrompt = `You are a receipt data extraction assistant. Analyze receipt images and extract structured data accurately.
+    const systemPrompt = `You are a receipt and invoice data extraction assistant. Analyze document images and extract structured data accurately.
 Always return valid JSON. Be precise with amounts and dates. If information is unclear, provide your best guess with lower confidence.`;
 
-    const userPrompt = `Analyze this receipt image and extract the following information:
+    const userPrompt = `Analyze this document image and extract the following information:
 
-1. Vendor/Store name (the business name on the receipt)
-2. Date of purchase (format: YYYY-MM-DD)
-3. Total amount paid (numeric value only, no currency symbols)
+1. Vendor/Store name (the business name on the document)
+2. Date of transaction (format: YYYY-MM-DD)
+3. Total amount (numeric value only, no currency symbols)
 4. Best category guess from this list: ${categoryNames || 'General, Office Supplies, Travel, Food, Utilities, Equipment, Services'}
 5. Subcategory if applicable
 6. Individual line items if visible (description and amount for each)
+7. Transaction type - determine if this is:
+   - "expense": A receipt, bill, or purchase made BY the company (keywords: RECEIPT, Thank you for your purchase, Change due, Payment received)
+   - "income": An invoice TO a customer, payment received, or sale (keywords: INVOICE, Bill To, Payment Due, Amount Due, Remittance)
 
 Return ONLY valid JSON in this exact format:
 {
@@ -106,11 +109,13 @@ Return ONLY valid JSON in this exact format:
   "total": 123.45,
   "category": "Category Name",
   "subcategory": "Subcategory Name or null",
+  "transaction_type": "expense|income",
   "confidence": {
     "vendor": "high|medium|low",
     "date": "high|medium|low",
     "amount": "high|medium|low",
-    "category": "high|medium|low"
+    "category": "high|medium|low",
+    "transaction_type": "high|medium|low"
   },
   "line_items": [
     {"description": "Item 1", "amount": 10.00},
@@ -123,7 +128,8 @@ Important:
 - Use "medium" when text is partially obscured or unclear
 - Use "low" when you're making an educated guess
 - For dates, try to determine the year from context (current year if unclear)
-- Return null for subcategory if not applicable`;
+- Return null for subcategory if not applicable
+- Default to "expense" if transaction type is unclear`;
 
     // Call Lovable AI Gateway with the image
     console.log('Calling Lovable AI Gateway...');
@@ -251,6 +257,10 @@ Important:
     const extractedDate = extracted.date || new Date().toISOString().split('T')[0];
     const extractedVendor = extracted.vendor || 'Unknown Vendor';
 
+    // Extract transaction type
+    const extractedTransactionType = extracted.transaction_type === 'income' ? 'income' : 'expense';
+    const transactionTypeConfidence = extracted.confidence?.transaction_type || 'low';
+
     // Build the response
     const result: ExtractionResult = {
       vendor_payee: extractedVendor,
@@ -276,7 +286,9 @@ Important:
       vendor_detected: extractedVendor,
       date_detected: extractedDate,
       amount_detected: extractedAmount,
-      category_detected_id: finalCategoryId
+      category_detected_id: finalCategoryId,
+      transaction_type: extractedTransactionType,
+      transaction_type_confidence: transactionTypeConfidence
     };
 
     console.log('Final extraction result:', responseWithDetected);
