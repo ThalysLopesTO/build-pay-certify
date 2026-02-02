@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,7 @@ const IncomeExpensesManagement = () => {
   const isMobile = useIsMobile();
   const isPWAStandalone = useIsPWAStandalone();
   const [transactions, setTransactions] = useState<TransactionWithHierarchy[]>([]);
+  const [searchParams] = useSearchParams();
   
   const { 
     categories, 
@@ -65,8 +67,20 @@ const IncomeExpensesManagement = () => {
     getCategoryDisplay 
   } = useHierarchicalCategories();
 
-  // Date range and filter management
-  const dateRange = useDateRangeFilter();
+  // Read initial date range values from URL for synchronization
+  const initialRange = (searchParams.get('range') as import('@/hooks/useDateRangeFilter').DateRangeType) || 'this-month';
+  const initialCustomStart = searchParams.get('start') 
+    ? parseLocalDate(searchParams.get('start')!) 
+    : null;
+  const initialCustomEnd = searchParams.get('end') 
+    ? parseLocalDate(searchParams.get('end')!) 
+    : null;
+
+  // Date range and filter management - initialize with URL params
+  const dateRange = useDateRangeFilter(initialRange, {
+    start: initialCustomStart,
+    end: initialCustomEnd
+  });
 
   const filters = useTransactionFilters();
   

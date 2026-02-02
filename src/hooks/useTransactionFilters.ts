@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
 import { DateRange, DateRangeType } from './useDateRangeFilter';
-import { isWithinInterval, parseISO } from 'date-fns';
+import { isWithinInterval, parseISO, format } from 'date-fns';
+import { parseLocalDate } from '@/utils/dateUtils';
 
 export interface UseTransactionFiltersReturn {
   // Filter state - now using arrays for multi-select
@@ -20,6 +21,10 @@ export interface UseTransactionFiltersReturn {
   // Date range integration
   dateRangeType: DateRangeType;
   setDateRangeType: (range: DateRangeType) => void;
+  customStartDate: Date | null;
+  setCustomStartDate: (date: Date | null) => void;
+  customEndDate: Date | null;
+  setCustomEndDate: (date: Date | null) => void;
   
   // Filtered data
   getFilteredTransactions: (transactions: TransactionWithHierarchy[], dateRange: DateRange) => TransactionWithHierarchy[];
@@ -48,6 +53,12 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
   const [dateRangeType, setDateRangeType] = useState<DateRangeType>(
     (searchParams.get('range') as DateRangeType) || 'this-month'
   );
+  const [customStartDate, setCustomStartDate] = useState<Date | null>(
+    searchParams.get('start') ? parseLocalDate(searchParams.get('start')!) : null
+  );
+  const [customEndDate, setCustomEndDate] = useState<Date | null>(
+    searchParams.get('end') ? parseLocalDate(searchParams.get('end')!) : null
+  );
 
   // Sync filters to URL
   const syncToUrl = () => {
@@ -60,6 +71,12 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     if (payeeFilter.length > 0) params.set('payee', payeeFilter.join(','));
     if (dateRangeType !== 'this-month') params.set('range', dateRangeType);
     
+    // Persist custom date range start/end dates
+    if (dateRangeType === 'custom') {
+      if (customStartDate) params.set('start', format(customStartDate, 'yyyy-MM-dd'));
+      if (customEndDate) params.set('end', format(customEndDate, 'yyyy-MM-dd'));
+    }
+    
     setSearchParams(params);
   };
 
@@ -67,7 +84,7 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
   useEffect(() => {
     const timeoutId = setTimeout(syncToUrl, 300); // Debounce URL updates
     return () => clearTimeout(timeoutId);
-  }, [transactionTypeFilter, statusFilter, searchTerm, categoryFilter, payeeFilter, dateRangeType]);
+  }, [transactionTypeFilter, statusFilter, searchTerm, categoryFilter, payeeFilter, dateRangeType, customStartDate, customEndDate]);
 
   const getFilteredTransactions = useMemo(() => {
     return (transactions: TransactionWithHierarchy[], dateRange: DateRange): TransactionWithHierarchy[] => {
@@ -117,6 +134,10 @@ export const useTransactionFilters = (): UseTransactionFiltersReturn => {
     setPayeeFilter,
     dateRangeType,
     setDateRangeType,
+    customStartDate,
+    setCustomStartDate,
+    customEndDate,
+    setCustomEndDate,
     getFilteredTransactions,
     syncToUrl,
   };
