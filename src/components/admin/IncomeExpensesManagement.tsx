@@ -35,7 +35,7 @@ import { formatDateFromDB, formatDateForDB, parseLocalDate } from '@/utils/dateU
 import { HierarchicalCategorySelector } from './bills-expenses/HierarchicalCategorySelector';
 import { HierarchicalCategoryManager } from './bills-expenses/HierarchicalCategoryManager';
 import { useHierarchicalCategories, TransactionWithHierarchy } from '@/hooks/useHierarchicalCategories';
-import { useDateRangeFilter, DateRangeType } from '@/hooks/useDateRangeFilter';
+import { DateRangeType } from '@/hooks/useDateRangeFilter';
 import { useTransactionFilters } from '@/hooks/useTransactionFilters';
 import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 import { getCategoryColor } from '@/utils/categoryColors';
@@ -67,41 +67,8 @@ const IncomeExpensesManagement = () => {
     getCategoryDisplay 
   } = useHierarchicalCategories();
 
-  // Read initial date range values from URL for synchronization
-  const initialRange = (searchParams.get('range') as import('@/hooks/useDateRangeFilter').DateRangeType) || 'this-month';
-  const initialCustomStart = searchParams.get('start') 
-    ? parseLocalDate(searchParams.get('start')!) 
-    : null;
-  const initialCustomEnd = searchParams.get('end') 
-    ? parseLocalDate(searchParams.get('end')!) 
-    : null;
-
-  // Date range and filter management - initialize with URL params
-  const dateRange = useDateRangeFilter(initialRange, {
-    start: initialCustomStart,
-    end: initialCustomEnd
-  });
-
+  // Single source of truth for all filters including date range
   const filters = useTransactionFilters();
-
-  // Sync custom dates from URL to dateRange hook on initial load
-  useEffect(() => {
-    if (filters.dateRangeType === 'custom' && 
-        (filters.customStartDate || filters.customEndDate)) {
-      dateRange.setCustomRange({
-        start: filters.customStartDate,
-        end: filters.customEndDate
-      });
-    }
-  }, []); // Run once on mount
-
-  // Sync dateRange.customRange changes to filters for URL persistence
-  useEffect(() => {
-    if (dateRange.selectedRange === 'custom') {
-      filters.setCustomStartDate(dateRange.customRange.start);
-      filters.setCustomEndDate(dateRange.customRange.end);
-    }
-  }, [dateRange.customRange, dateRange.selectedRange]);
   
   // Print functionality
   const { generatePrintContent } = usePrintIncomeExpenses();
@@ -579,7 +546,7 @@ const IncomeExpensesManagement = () => {
   const handlePrint = async (option: PrintOption) => {
     const appliedFilters = {
       search: filters.searchTerm,
-      dateRange: `${dateRange.selectedRange}`,
+      dateRange: `${filters.dateRangeType}`,
       types: filters.transactionTypeFilter,
       statuses: filters.statusFilter,
       categories: filters.categoryFilter,
@@ -593,13 +560,13 @@ const IncomeExpensesManagement = () => {
     });
   };
 
-  // Get filtered transactions (now includes category filtering in the hook)
-  const filteredTransactions = filters.getFilteredTransactions(transactions, dateRange.effectiveRange);
+  // Get filtered transactions - now uses internal effectiveRange from filters hook
+  const filteredTransactions = filters.getFilteredTransactions(transactions);
 
   // Reset to page 1 when filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [filters.searchTerm, filters.statusFilter, filters.transactionTypeFilter, filters.categoryFilter, dateRange.effectiveRange]);
+  }, [filters.searchTerm, filters.statusFilter, filters.transactionTypeFilter, filters.categoryFilter, filters.effectiveRange]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
@@ -814,23 +781,20 @@ const IncomeExpensesManagement = () => {
         >
           <MonthlyCashFlowChart 
             transactions={filteredTransactions}
-            dateRangeType={dateRange.selectedRange}
-            onDateRangeChange={(value) => {
-              dateRange.setSelectedRange(value);
-              filters.setDateRangeType(value);
-            }}
+            dateRangeType={filters.dateRangeType}
+            onDateRangeChange={filters.setDateRangeType}
             transactionTypeFilter={filters.transactionTypeFilter}
             onTransactionTypeChange={filters.setTransactionTypeFilter}
-            customRange={dateRange.customRange}
-            onCustomRangeChange={dateRange.setCustomRange}
+            customRange={filters.effectiveRange}
+            onCustomRangeChange={(range) => {
+              filters.setCustomStartDate(range.start);
+              filters.setCustomEndDate(range.end);
+            }}
           />
           <CategoryBreakdownChart 
             transactions={filteredTransactions}
-            dateRangeType={dateRange.selectedRange}
-            onDateRangeChange={(value) => {
-              dateRange.setSelectedRange(value);
-              filters.setDateRangeType(value);
-            }}
+            dateRangeType={filters.dateRangeType}
+            onDateRangeChange={filters.setDateRangeType}
             transactionTypeFilter={filters.transactionTypeFilter}
             onTransactionTypeChange={filters.setTransactionTypeFilter}
             getCategoryDisplay={getCategoryDisplay}
@@ -840,23 +804,20 @@ const IncomeExpensesManagement = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4" data-print="charts">
           <MonthlyCashFlowChart 
             transactions={filteredTransactions}
-            dateRangeType={dateRange.selectedRange}
-            onDateRangeChange={(value) => {
-              dateRange.setSelectedRange(value);
-              filters.setDateRangeType(value);
-            }}
+            dateRangeType={filters.dateRangeType}
+            onDateRangeChange={filters.setDateRangeType}
             transactionTypeFilter={filters.transactionTypeFilter}
             onTransactionTypeChange={filters.setTransactionTypeFilter}
-            customRange={dateRange.customRange}
-            onCustomRangeChange={dateRange.setCustomRange}
+            customRange={filters.effectiveRange}
+            onCustomRangeChange={(range) => {
+              filters.setCustomStartDate(range.start);
+              filters.setCustomEndDate(range.end);
+            }}
           />
           <CategoryBreakdownChart 
             transactions={filteredTransactions}
-            dateRangeType={dateRange.selectedRange}
-            onDateRangeChange={(value) => {
-              dateRange.setSelectedRange(value);
-              filters.setDateRangeType(value);
-            }}
+            dateRangeType={filters.dateRangeType}
+            onDateRangeChange={filters.setDateRangeType}
             transactionTypeFilter={filters.transactionTypeFilter}
             onTransactionTypeChange={filters.setTransactionTypeFilter}
             getCategoryDisplay={getCategoryDisplay}
@@ -937,9 +898,8 @@ const IncomeExpensesManagement = () => {
                   <label className="text-sm font-medium text-slate-700">Date Range</label>
                 </div>
                 <Select 
-                  value={dateRange.selectedRange} 
+                  value={filters.dateRangeType} 
                   onValueChange={(value: DateRangeType) => {
-                    dateRange.setSelectedRange(value);
                     filters.setDateRangeType(value);
                   }}
                 >
@@ -960,7 +920,7 @@ const IncomeExpensesManagement = () => {
             </div>
 
             {/* Custom Date Range */}
-            {dateRange.selectedRange === 'custom' && (
+            {filters.dateRangeType === 'custom' && (
               <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -969,15 +929,14 @@ const IncomeExpensesManagement = () => {
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full h-11 justify-start text-left font-normal border-slate-300 hover:border-blue-500 bg-white">
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {dateRange.customRange.start ? format(dateRange.customRange.start, "MMM dd, yyyy") : "Select start date"}
+                          {filters.customStartDate ? format(filters.customStartDate, "MMM dd, yyyy") : "Select start date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={dateRange.customRange.start || undefined}
+                          selected={filters.customStartDate || undefined}
                           onSelect={(date) => {
-                            dateRange.setCustomRange({ ...dateRange.customRange, start: date || null });
                             filters.setCustomStartDate(date || null);
                           }}
                           initialFocus
@@ -993,15 +952,14 @@ const IncomeExpensesManagement = () => {
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full h-11 justify-start text-left font-normal border-slate-300 hover:border-blue-500 bg-white">
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {dateRange.customRange.end ? format(dateRange.customRange.end, "MMM dd, yyyy") : "Select end date"}
+                          {filters.customEndDate ? format(filters.customEndDate, "MMM dd, yyyy") : "Select end date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={dateRange.customRange.end || undefined}
+                          selected={filters.customEndDate || undefined}
                           onSelect={(date) => {
-                            dateRange.setCustomRange({ ...dateRange.customRange, end: date || null });
                             filters.setCustomEndDate(date || null);
                           }}
                           initialFocus
