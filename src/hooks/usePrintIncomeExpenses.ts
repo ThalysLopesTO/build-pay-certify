@@ -119,6 +119,152 @@ export const usePrintIncomeExpenses = () => {
           }
         }
 
+        // ---- Expenses by Category Section (Full Report only) ----
+        if (option === "full") {
+          // Filter only expenses
+          const expenseTransactions = transactions.filter(t => t.transaction_type === "expense");
+          
+          if (expenseTransactions.length > 0) {
+            // Group transactions by category
+            const groupedByCategory = expenseTransactions.reduce((acc, t) => {
+              const categoryName = t.parent_category_name || "Uncategorized";
+              if (!acc[categoryName]) {
+                acc[categoryName] = { transactions: [] as TransactionWithHierarchy[], total: 0 };
+              }
+              acc[categoryName].transactions.push(t);
+              acc[categoryName].total += Math.abs(t.amount);
+              return acc;
+            }, {} as Record<string, { transactions: TransactionWithHierarchy[]; total: number }>);
+
+            // Calculate total expenses for percentage
+            const totalExpenses = expenseTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+            // Sort categories by total (descending)
+            const sortedCategories = Object.entries(groupedByCategory).sort(
+              (a, b) => b[1].total - a[1].total
+            );
+
+            // Page break check before section
+            if (cursorY + 80 > pageHeight - 60) {
+              pdf.addPage();
+              cursorY = 48;
+            }
+
+            // Section header
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(14);
+            pdf.setTextColor(30, 41, 59);
+            pdf.text("Expenses by Category", 40, cursorY);
+            cursorY += 20;
+
+            // Category Summary Table
+            const summaryBody = sortedCategories.map(([name, data]) => [
+              name,
+              data.transactions.length.toString(),
+              `$${data.total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+              `${((data.total / totalExpenses) * 100).toFixed(1)}%`,
+            ]);
+
+            autoTable(pdf, {
+              startY: cursorY,
+              head: [["Category", "# Items", "Total Amount", "% of Total"]],
+              body: summaryBody,
+              styles: {
+                font: "helvetica",
+                fontSize: 9,
+                cellPadding: 4,
+                lineColor: [226, 232, 240],
+                lineWidth: 0.5,
+              },
+              headStyles: {
+                fillColor: [241, 245, 249],
+                textColor: [30, 41, 59],
+                fontStyle: "bold",
+                lineColor: [226, 232, 240],
+                lineWidth: 1,
+              },
+              columnStyles: {
+                0: { cellWidth: 180 },
+                1: { cellWidth: 60, halign: "center" },
+                2: { cellWidth: 100, halign: "right" },
+                3: { cellWidth: 80, halign: "center" },
+              },
+              didParseCell: (data) => {
+                if (data.section === "body" && data.column.index === 2) {
+                  data.cell.styles.fontStyle = "bold";
+                  data.cell.styles.textColor = [220, 38, 38]; // red-600 for expenses
+                }
+              },
+              margin: { left: 40, right: 40 },
+            });
+
+            cursorY = (pdf as any).lastAutoTable.finalY + 20;
+
+            // Per-category detail tables
+            for (const [categoryName, categoryData] of sortedCategories) {
+              // Check for page break
+              const estimatedHeight = 30 + categoryData.transactions.length * 20;
+              if (cursorY + Math.min(estimatedHeight, 100) > pageHeight - 60) {
+                pdf.addPage();
+                cursorY = 48;
+              }
+
+              // Category header with bullet
+              pdf.setFont("helvetica", "bold");
+              pdf.setFontSize(11);
+              pdf.setTextColor(30, 41, 59);
+              const categoryTotal = `$${categoryData.total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              pdf.text(`► ${categoryName} (${categoryTotal})`, 40, cursorY);
+              cursorY += 8;
+
+              // Category transactions table
+              const categoryBody = categoryData.transactions.map((t) => [
+                new Date(t.expense_date).toLocaleDateString(),
+                t.expense_title ?? "",
+                t.vendor_payee || "-",
+                `-$${Math.abs(t.amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+              ]);
+
+              autoTable(pdf, {
+                startY: cursorY,
+                head: [["Date", "Title", "Vendor/Payee", "Amount"]],
+                body: categoryBody,
+                styles: {
+                  font: "helvetica",
+                  fontSize: 8,
+                  cellPadding: 3,
+                  lineColor: [226, 232, 240],
+                  lineWidth: 0.3,
+                },
+                headStyles: {
+                  fillColor: [254, 226, 226], // red-100 for expense categories
+                  textColor: [153, 27, 27], // red-800
+                  fontStyle: "bold",
+                  fontSize: 8,
+                },
+                columnStyles: {
+                  0: { cellWidth: 70 },
+                  1: { cellWidth: 160 },
+                  2: { cellWidth: 120 },
+                  3: { cellWidth: 70, halign: "right" },
+                },
+                didParseCell: (data) => {
+                  if (data.section === "body" && data.column.index === 3) {
+                    data.cell.styles.textColor = [220, 38, 38];
+                    data.cell.styles.fontStyle = "bold";
+                  }
+                },
+                margin: { left: 40, right: 40 },
+              });
+
+              cursorY = (pdf as any).lastAutoTable.finalY + 15;
+            }
+
+            // Add spacing before transactions table
+            cursorY += 10;
+          }
+        }
+
         // ---- Transactions table (vector, paginated) ----
         if (option === "table" || option === "full") {
           pdf.setFont("helvetica", "bold");
