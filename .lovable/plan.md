@@ -1,20 +1,24 @@
 
-# Fix Password Reset - Email Not Found in user_profiles
+# Fix Password Reset - Pagination Issue with listUsers()
 
 ## Problem Identified
 
 From the Edge Function logs:
 ```
-User not found in user_profiles: vida6ix@gmail.com
+User not found in auth.users: vida6ix@gmail.com
 ```
 
-**Root Cause**: Out of 164 users in your system, only 90 have their email stored in `user_profiles`. The super_admin user has `email = null` in `user_profiles`, so the password reset silently fails (shows success but doesn't send email).
+**But the user DOES exist** in `auth.users`:
+- Email: `vida6ix@gmail.com`
+- ID: `d3a9d9e0-e3f2-4113-99e9-b535387f90a9`
+
+**Root Cause**: The `auth.admin.listUsers()` method has a default pagination limit (typically 50 or 100 users). With **169 users** in the system, users on later pages aren't being found.
 
 ---
 
 ## Solution
 
-Update the `send-password-reset` Edge Function to use the Supabase Admin API `listUsers` to find users by email in `auth.users` (where emails are always stored), then get profile data from `user_profiles` for personalization.
+Replace `listUsers()` with `listUsers({ perPage: 1000 })` to fetch all users in a single request, or use a loop to paginate through all pages.
 
 ---
 
@@ -22,20 +26,24 @@ Update the `send-password-reset` Edge Function to use the Supabase Admin API `li
 
 ### File: `supabase/functions/send-password-reset/index.ts`
 
-**Replace the user lookup logic (lines 33-50)**:
+**Replace lines 33-44** - Update the listUsers call to handle pagination:
 
 ```typescript
-// BEFORE - Only works if email exists in user_profiles
-const { data: userProfile, error: profileError } = await supabaseClient
-  .from('user_profiles')
-  .select('user_id, first_name, last_name, role, company_id, email')
-  .eq('email', email.toLowerCase())
-  .single();
+// BEFORE - Only gets first page of users
+const { data: authUsers, error: listError } = await supabaseClient.auth.admin.listUsers();
+
+// ...
+
+const authUser = authUsers.users.find(
+  u => u.email?.toLowerCase() === email.toLowerCase()
+);
 ```
 
 ```typescript
-// AFTER - Use Admin API to find user by email in auth.users
-const { data: authUsers, error: listError } = await supabaseClient.auth.admin.listUsers();
+// AFTER - Get all users with higher perPage limit
+const { data: authUsers, error: listError } = await supabaseClient.auth.admin.listUsers({
+  perPage: 1000  // Max allowed, should cover all users
+});
 
 if (listError) {
   console.error('Error listing users:', listError);
@@ -46,42 +54,22 @@ if (listError) {
 const authUser = authUsers.users.find(
   u => u.email?.toLowerCase() === email.toLowerCase()
 );
-
-if (!authUser) {
-  console.log('User not found in auth.users:', email);
-  // Return success to prevent enumeration
-  return new Response(
-    JSON.stringify({ success: true, message: "If an account exists, a reset link has been sent" }),
-    { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-  );
-}
-
-// Get additional profile data for personalization (optional)
-const { data: userProfile } = await supabaseClient
-  .from('user_profiles')
-  .select('first_name, last_name, company_id')
-  .eq('user_id', authUser.id)
-  .single();
-
-// Use auth user ID and profile data for the reset
-const userId = authUser.id;
-const firstName = userProfile?.first_name || authUser.user_metadata?.first_name || 'there';
-const lastName = userProfile?.last_name || authUser.user_metadata?.last_name || '';
-const companyId = userProfile?.company_id || null;
 ```
-
-Then update the rest of the function to use these variables instead of `userProfile.user_id`, etc.
 
 ---
 
 ## Why This Works
 
-| Source | What it contains |
-|--------|-----------------|
-| `auth.users` | All users with their email (always populated) |
-| `user_profiles` | Additional profile data (email sometimes null) |
+| Issue | Fix |
+|-------|-----|
+| `listUsers()` returns ~50 users by default | `perPage: 1000` fetches up to 1000 users |
+| User at position 100+ not found | Now all 169 users will be searched |
 
-By querying `auth.users` via Admin API first, we guarantee we find the user regardless of whether their email is in `user_profiles`.
+---
+
+## Alternative Approach (Even Better)
+
+Instead of listing all users, we could use a filter in the query. However, since Supabase Admin API doesn't support filtering by email directly, the `perPage: 1000` approach is the most reliable fix.
 
 ---
 
@@ -91,13 +79,13 @@ By querying `auth.users` via Admin API first, we guarantee we find the user rega
 User enters email "vida6ix@gmail.com"
         │
         ▼
-Edge function calls auth.admin.listUsers()
+Edge function calls auth.admin.listUsers({ perPage: 1000 })
         │
         ▼
-Finds user in auth.users (always has email)
+Returns all 169 users (instead of first 50)
         │
         ▼
-Gets profile data from user_profiles (for name)
+Finds user at position ~100+
         │
         ▼
 Generates token & sends branded email via Resend
@@ -112,6 +100,6 @@ User receives email with reset link ✓
 
 | Before | After |
 |--------|-------|
-| Looks up by email in `user_profiles` | Looks up by email in `auth.users` |
-| Fails for 74 users with null email | Works for all 164 users |
-| Super admin can't reset password | Super admin can reset password ✓ |
+| `listUsers()` - default ~50 users | `listUsers({ perPage: 1000 })` - all users |
+| vida6ix@gmail.com not found | vida6ix@gmail.com found ✓ |
+| No email sent | Password reset email sent ✓ |
