@@ -86,6 +86,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [extractionResult, setExtractionResult] = useState<ExtractionResult | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   // Form state for review step
   const [formData, setFormData] = useState<{
@@ -472,7 +473,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                           <ConfidenceBadge level={extractionResult.confidence.date} />
                         )}
                       </div>
-                      <Popover>
+                      <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
@@ -489,8 +490,14 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                           <Calendar
                             mode="single"
                             selected={formData.expense_date}
-                            onSelect={(date) => date && setFormData(prev => ({ ...prev, expense_date: date }))}
+                            onSelect={(date) => {
+                              if (date) {
+                                setFormData(prev => ({ ...prev, expense_date: date }));
+                                setIsDatePickerOpen(false);
+                              }
+                            }}
                             initialFocus
+                            className={cn("p-3 pointer-events-auto")}
                           />
                         </PopoverContent>
                       </Popover>
