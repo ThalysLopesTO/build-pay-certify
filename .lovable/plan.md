@@ -1,73 +1,64 @@
 
 
-# Fix: Enable Lovable AI for Receipt Extraction
+# Auto-Close Date Picker After Selection
 
-## Problem Identified
+## Current Behavior
+The Review Details form in the Scan Receipt modal already allows full editing of all fields:
+- Title (text input)
+- Vendor/Payee (text input)
+- Amount (number input)
+- Date (calendar picker)
+- Category (dropdown selector)
+- Notes (textarea)
 
-From the edge function logs:
-```
-LOVABLE_API_KEY not configured
-```
+As shown in the screenshot, the date picker IS working - the calendar popover opens and the user can select any date.
 
-The `receipt-extract` edge function requires access to the Lovable AI Gateway to analyze receipt images, but the `LOVABLE_API_KEY` secret is not configured.
-
-## Current Secrets
-- GOOGLE_MAPS_API_KEY ✓
-- RESEND_API_KEY ✓
-- STRIPE_SECRET_KEY ✓
-- STRIPE_WEBHOOK_SECRET ✓
-- **LOVABLE_API_KEY** ✗ (Missing)
-
----
+## Issue Identified
+When a date is selected, the popover stays open. Users may expect it to close automatically after selection, like most date pickers.
 
 ## Solution
-
-Enable Lovable AI on this project. This will automatically provision the `LOVABLE_API_KEY` secret that the edge function needs.
-
----
-
-## Steps
-
-1. **Enable Lovable AI**: I'll use the connector tool to enable Lovable AI on this project
-2. **No code changes needed**: The edge function is already written correctly to use `LOVABLE_API_KEY`
-3. **Test**: After enabling, the receipt scanning should work
+Add controlled state to the Popover component so it closes automatically when a date is selected.
 
 ---
 
-## What Happens After Enabling
+## File to Modify
 
-```text
-User uploads receipt image
-        │
-        ▼
-Edge function: receipt-extract
-        │ Now has LOVABLE_API_KEY ✓
-        ▼
-Calls Lovable AI Gateway (Gemini)
-        │ Analyzes the receipt image
-        ▼
-Returns extracted data
-        │ vendor, date, amount, category
-        ▼
-Review step shows pre-filled form ✓
-```
+**`src/components/admin/income-expenses/ScanReceiptModal.tsx`**
 
----
+### Changes
 
-## No Code Changes Required
-
-The `receipt-extract` edge function is already implemented correctly:
-
+1. Add state for popover open/close:
 ```typescript
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-if (!LOVABLE_API_KEY) {
-  console.error('LOVABLE_API_KEY not configured');
-  return new Response(
-    JSON.stringify({ error: 'AI service not configured' }),
-    { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
-}
+const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 ```
 
-Once the secret is available, the function will work as designed.
+2. Update the Popover to be controlled:
+```tsx
+<Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+```
+
+3. Close popover on date selection:
+```tsx
+onSelect={(date) => {
+  if (date) {
+    setFormData(prev => ({ ...prev, expense_date: date }));
+    setIsDatePickerOpen(false); // Auto-close
+  }
+}}
+```
+
+---
+
+## Summary
+
+| Field | Status | Editable |
+|-------|--------|----------|
+| Title | Working | Yes |
+| Vendor/Payee | Working | Yes |
+| Amount | Working | Yes |
+| Date | Working (add auto-close) | Yes |
+| Category | Working | Yes |
+| Notes | Working | Yes |
+
+This is a minor UX enhancement - all editing functionality is already working correctly.
 
