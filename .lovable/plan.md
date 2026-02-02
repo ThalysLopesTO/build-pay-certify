@@ -1,251 +1,189 @@
 
-# Add Transaction Type Selection Before Scan
+# Fix Missing Transaction Data in Bills/Expenses Filtering
 
-## Overview
-Modify the Scan Receipt flow to ask users to select Income or Expense **before** taking/uploading the photo. This makes the workflow clearer and helps users focus on the correct document type from the start.
-
----
-
-## Current Flow vs. New Flow
-
-```text
-CURRENT FLOW:
-┌─────────────────────────────────────────┐
-│ Step 1: Upload Receipt                  │
-│ (user uploads any image)                │
-├─────────────────────────────────────────┤
-│ Step 2: Review Details                  │
-│ (AI suggests type, user can change)     │
-└─────────────────────────────────────────┘
-
-NEW FLOW:
-┌─────────────────────────────────────────┐
-│ Step 1: Select Type                     │
-│ "What are you scanning?"                │
-│ [Expense] [Income]                      │
-├─────────────────────────────────────────┤
-│ Step 2: Upload Receipt                  │
-│ (upload area with context message)      │
-├─────────────────────────────────────────┤
-│ Step 3: Review Details                  │
-│ (type pre-selected, editable)           │
-└─────────────────────────────────────────┘
-```
+## Problem Summary
+The user is seeing **0 results** when filtering transactions in the Bills/Expenses page, even though the database contains 448+ transactions for their company. This is a critical data visibility bug.
 
 ---
 
-## UI Design for Step 1 (Type Selection)
+## Root Causes Identified
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  🎯 Scan Receipt                                    [X]      │
-├──────────────────────────────────────────────────────────────┤
-│  ○ Select Type    ○ Upload    ○ Review                       │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│              What are you scanning?                          │
-│                                                              │
-│  ┌─────────────────────────┐  ┌─────────────────────────┐    │
-│  │                         │  │                         │    │
-│  │    ↓ EXPENSE            │  │    ↑ INCOME             │    │
-│  │                         │  │                         │    │
-│  │    Receipt, bill,       │  │    Invoice sent,        │    │
-│  │    purchase receipt     │  │    payment received     │    │
-│  │                         │  │                         │    │
-│  │    Examples:            │  │    Examples:            │    │
-│  │    • Store receipts     │  │    • Client invoices    │    │
-│  │    • Utility bills      │  │    • Payment slips      │    │
-│  │    • Supplier invoices  │  │    • Sales receipts     │    │
-│  │                         │  │                         │    │
-│  └─────────────────────────┘  └─────────────────────────┘    │
-│                                                              │
-│  Click to select and continue                                │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-```
+### 1. Custom Date Range Not Persisted to URL
+When users select "Custom Range" and pick dates:
+- Only `?range=custom` is saved to URL
+- The actual start/end dates are NOT persisted
+- On page refresh, dates reset to `null`, breaking filtering
+
+### 2. State Synchronization Issue
+Two independent hooks manage date range state:
+- `useDateRangeFilter()` - owns the actual `selectedRange` and `customRange` state
+- `useTransactionFilters()` - tracks `dateRangeType` from URL params
+
+These hooks are not synchronized on page load:
+- `useDateRangeFilter` defaults to `'this-month'`, ignoring URL params
+- URL may have `?range=custom` but the hook doesn't read it
+
+### 3. INNER JOIN Excludes Transactions Without Categories  
+The query uses `expense_categories!inner` which excludes transactions where:
+- `category_id` is NULL (9 transactions affected)
+- Category was deleted
 
 ---
 
-## Technical Implementation
+## Solution Plan
 
-### Changes to ScanReceiptModal.tsx
+### Fix 1: Persist Custom Date Range to URL
 
-#### 1. Add New Tab Value
+**File: `src/hooks/useTransactionFilters.ts`**
+
+Add URL parameters for custom start/end dates:
+
 ```typescript
-// Change from 2 tabs to 3 tabs
-const [activeTab, setActiveTab] = useState<'select-type' | 'upload' | 'review'>('select-type');
+// Add new state for custom dates from URL
+const [customStartDate, setCustomStartDate] = useState<Date | null>(
+  searchParams.get('start') ? new Date(searchParams.get('start')!) : null
+);
+const [customEndDate, setCustomEndDate] = useState<Date | null>(
+  searchParams.get('end') ? new Date(searchParams.get('end')!) : null
+);
+
+// Update syncToUrl to include custom dates
+const syncToUrl = () => {
+  const params = new URLSearchParams();
+  // ... existing params
+  if (dateRangeType === 'custom') {
+    if (customStartDate) params.set('start', format(customStartDate, 'yyyy-MM-dd'));
+    if (customEndDate) params.set('end', format(customEndDate, 'yyyy-MM-dd'));
+  }
+  setSearchParams(params);
+};
 ```
 
-#### 2. Update Tabs Component
-```tsx
-<Tabs value={activeTab}>
-  <TabsList className="grid w-full grid-cols-3">
-    <TabsTrigger value="select-type">
-      Select Type
-    </TabsTrigger>
-    <TabsTrigger value="upload" disabled={!transactionType}>
-      Upload
-    </TabsTrigger>
-    <TabsTrigger value="review" disabled={!extractionResult}>
-      Review
-    </TabsTrigger>
-  </TabsList>
+### Fix 2: Synchronize Date Range State
+
+**File: `src/hooks/useDateRangeFilter.ts`**
+
+Update hook to optionally accept initial values from URL:
+
+```typescript
+export const useDateRangeFilter = (
+  initialRange: DateRangeType = 'this-month',
+  initialCustomRange?: DateRange  // NEW: Allow passing custom dates
+): UseDateRangeFilterReturn => {
+  const [selectedRange, setSelectedRange] = useState<DateRangeType>(initialRange);
+  const [customRange, setCustomRange] = useState<DateRange>(
+    initialCustomRange || { start: null, end: null }
+  );
+  // ... rest unchanged
+};
 ```
 
-#### 3. New Select Type Tab Content
-```tsx
-<TabsContent value="select-type" className="space-y-6 mt-4">
-  <div className="text-center">
-    <h3 className="text-lg font-semibold text-slate-700">
-      What are you scanning?
-    </h3>
-    <p className="text-sm text-muted-foreground mt-1">
-      Select the type of document to help with processing
-    </p>
-  </div>
+**File: `src/components/admin/IncomeExpensesManagement.tsx`**
 
-  <div className="grid grid-cols-2 gap-4">
-    {/* Expense Card */}
-    <button
-      onClick={() => handleTypeSelectAndContinue('expense')}
-      className="flex flex-col items-center p-6 rounded-xl border-2 border-slate-200 
-                 hover:border-red-400 hover:bg-red-50/50 transition-all group"
-    >
-      <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center 
-                      group-hover:bg-red-200 transition-colors">
-        <TrendingDown className="h-7 w-7 text-red-600" />
-      </div>
-      <span className="font-semibold text-lg mt-3">Expense</span>
-      <span className="text-sm text-muted-foreground text-center mt-1">
-        Receipt, bill, purchase
-      </span>
-      <div className="mt-3 text-xs text-slate-400 text-center">
-        Store receipts, utility bills, supplier invoices
-      </div>
-    </button>
+Initialize dateRange hook with URL params:
+
+```typescript
+// Read initial values from URL
+const [searchParams] = useSearchParams();
+const initialRange = (searchParams.get('range') as DateRangeType) || 'this-month';
+const initialCustomStart = searchParams.get('start') 
+  ? parseLocalDate(searchParams.get('start')!) 
+  : null;
+const initialCustomEnd = searchParams.get('end') 
+  ? parseLocalDate(searchParams.get('end')!) 
+  : null;
+
+// Initialize with URL values
+const dateRange = useDateRangeFilter(initialRange, {
+  start: initialCustomStart,
+  end: initialCustomEnd
+});
+```
+
+### Fix 3: Use LEFT JOIN for Categories (Show All Transactions)
+
+**File: `src/hooks/useHierarchicalCategories.ts`**
+
+Change from `!inner` to regular join to include uncategorized transactions:
+
+```typescript
+// Before (excludes transactions without categories)
+.select(`
+  *,
+  expense_categories!inner (...)
+`)
+
+// After (includes all transactions)
+.select(`
+  *,
+  expense_categories (...)
+`)
+```
+
+Handle null categories in the transformation:
+
+```typescript
+const expensesWithHierarchy = await Promise.all(
+  (data || []).map(async (expense: any) => {
+    const category = expense.expense_categories;
     
-    {/* Income Card */}
-    <button
-      onClick={() => handleTypeSelectAndContinue('income')}
-      className="..."
-    >
-      ...Income card content...
-    </button>
-  </div>
-</TabsContent>
-```
-
-#### 4. Add Handler for Type Selection
-```typescript
-const handleTypeSelectAndContinue = (type: 'income' | 'expense') => {
-  setTransactionType(type);
-  setActiveTab('upload'); // Move to upload tab
-};
-```
-
-#### 5. Update Upload Tab Context
-Add a small indicator showing what type was selected:
-```tsx
-<TabsContent value="upload">
-  {/* Type indicator at top */}
-  <div className="flex items-center justify-center gap-2 mb-4 p-2 rounded-lg bg-slate-50">
-    {transactionType === 'expense' ? (
-      <>
-        <TrendingDown className="h-4 w-4 text-red-600" />
-        <span className="text-sm font-medium">Scanning an Expense</span>
-      </>
-    ) : (
-      <>
-        <TrendingUp className="h-4 w-4 text-green-600" />
-        <span className="text-sm font-medium">Scanning an Income</span>
-      </>
-    )}
-    <Button 
-      variant="ghost" 
-      size="sm" 
-      onClick={() => setActiveTab('select-type')}
-      className="text-xs"
-    >
-      Change
-    </Button>
-  </div>
-  
-  {/* Existing upload area */}
-  ...
-</TabsContent>
-```
-
-#### 6. Update Reset State
-```typescript
-const resetState = useCallback(() => {
-  setActiveTab('select-type'); // Start at type selection
-  // ... rest of reset
-}, []);
-```
-
-#### 7. Pass Selected Type to Edge Function
-Update the extraction call to pass the pre-selected type:
-```typescript
-const extractReceiptData = async (attachmentPath: string) => {
-  const { data, error } = await supabase.functions.invoke('receipt-extract', {
-    body: {
-      company_id: companyId,
-      attachment_path: attachmentPath,
-      transaction_type: transactionType  // Use pre-selected type
+    // Handle uncategorized transactions
+    if (!category) {
+      return {
+        ...expense,
+        parent_category_name: 'Uncategorized',
+        subcategory_name: null,
+        category_level: 'parent' as const,
+      };
     }
-  });
-  // ...
-};
+    
+    // ... existing category logic
+  })
+);
 ```
 
-#### 8. Keep Type Selector in Review (for changes)
-The existing type selector in the Review tab remains unchanged, allowing users to correct if needed.
+---
+
+## File Changes Summary
+
+| File | Change |
+|------|--------|
+| `src/hooks/useDateRangeFilter.ts` | Accept initial custom range values |
+| `src/hooks/useTransactionFilters.ts` | Persist custom start/end dates to URL |
+| `src/hooks/useHierarchicalCategories.ts` | Remove `!inner` join, handle null categories |
+| `src/components/admin/IncomeExpensesManagement.tsx` | Initialize dateRange with URL params |
 
 ---
 
-## Summary of Changes
+## Data Integrity Notes
 
-| File | Changes |
-|------|---------|
-| `src/components/admin/income-expenses/ScanReceiptModal.tsx` | Add 'select-type' tab, type selection cards, update flow |
+The database contains:
+- **448 total transactions** for Ground Zero company
+- **15 transactions** in December 2025
+- **13 transactions** in January 2026
+- **9 transactions** with missing category_id (will now show as "Uncategorized")
+
+After this fix:
+- All 448 transactions will be visible (vs 439 before)
+- Custom date ranges will persist across page refreshes
+- URL bookmarking/sharing will work correctly
 
 ---
 
-## User Flow After Implementation
+## User Flow After Fix
 
 ```text
-1. User clicks "Scan Receipt"
+User selects Custom Range → picks Dec 1-31, 2025
          │
          ▼
-2. Modal opens at "Select Type" step
-   "What are you scanning?"
-   [Expense Card] [Income Card]
-         │
-         ▼ (user clicks Expense)
-         
-3. Moves to "Upload" step
-   Shows: "Scanning an Expense [Change]"
-   User takes photo or uploads file
+URL updates: ?range=custom&start=2025-12-01&end=2025-12-31
          │
          ▼
-4. AI extracts data (knows it's expense)
+Page shows 15 results for December 2025
          │
          ▼
-5. "Review" step
-   - Type still shown (can change)
-   - All extracted fields editable
-   - Duplicate detection runs
+User refreshes page or shares URL
          │
          ▼
-6. User saves
+Dates are restored from URL → Same 15 results shown
 ```
-
----
-
-## Benefits
-
-1. **Clearer Intent**: User knows what they're scanning before upload
-2. **Better AI Context**: Edge function receives type upfront for better accuracy
-3. **Familiar Pattern**: Follows common "select then act" UX pattern
-4. **Still Flexible**: User can still change type in Review if AI/user made mistake
-5. **No Breaking Changes**: Existing functionality preserved
