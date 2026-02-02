@@ -1,78 +1,199 @@
 
-# Fix: Expenses Not Showing Due to Ambiguous Foreign Key Join
+# Enhanced Full Report PDF with Category Breakdown
 
-## Problem Identified
-The database query fails with "Error fetching expenses with hierarchy: Object" because there are **two foreign keys** from `bills_expenses` to `expense_categories`:
-1. `category_id` (primary category assignment)
-2. `category_detected_id` (AI-detected category from receipt scanning)
+## Overview
 
-When PostgREST encounters multiple foreign keys to the same table, it cannot automatically determine which relationship to use and throws an error.
+Add a professional "Expenses by Category" section to the Full Report PDF that groups and summarizes spending by category, giving users a clear view of where their money is going (e.g., Gas, Marketing, Office Supplies).
 
-## Root Cause
-```text
-bills_expenses table:
-├── category_id ─────────────────► expense_categories (FK 1)
-└── category_detected_id ─────────► expense_categories (FK 2)
+---
 
-PostgREST sees: "expense_categories (...)"
-PostgREST error: "Could not determine which FK to use - ambiguous reference"
+## What You'll Get
+
+### New PDF Section: "Expenses by Category"
+
+The enhanced Full Report will include:
+
+1. **Summary Table by Category** - Shows each category with:
+   - Category name
+   - Number of transactions  
+   - Total amount spent
+   - Percentage of total expenses
+
+2. **Category Detail Tables** - For each category:
+   - Section header with category name and subtotal
+   - Individual transactions within that category (Date, Title, Vendor, Amount)
+
+---
+
+## PDF Structure (Full Report)
+
+```
+Page 1:
+┌─────────────────────────────────────────────────────┐
+│  Company Name - Income & Expenses Report            │
+│  Generated on: 2/2/2026 at 6:44:42 PM              │
+│  Date Range: last-month                            │
+├─────────────────────────────────────────────────────┤
+│  [KPI Cards Screenshot]                             │
+│  Total Inflow | Total Outflow | Net Cash Flow      │
+├─────────────────────────────────────────────────────┤
+│  [Charts Screenshot]                                │
+│  Monthly Cash Flow | Category Breakdown             │
+└─────────────────────────────────────────────────────┘
+
+Page 2:  ← NEW SECTION
+┌─────────────────────────────────────────────────────┐
+│  EXPENSES BY CATEGORY                               │
+├─────────────────────────────────────────────────────┤
+│  Summary:                                           │
+│  ┌──────────────┬───────┬───────────┬───────────┐  │
+│  │ Category     │ Count │ Total     │ % of Total│  │
+│  ├──────────────┼───────┼───────────┼───────────┤  │
+│  │ GAS          │ 5     │ $450.00   │ 12.3%     │  │
+│  │ Office       │ 3     │ $280.00   │ 7.6%      │  │
+│  │ Marketing    │ 8     │ $1,540.00 │ 42.1%     │  │
+│  │ ...          │       │           │           │  │
+│  └──────────────┴───────┴───────────┴───────────┘  │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ► GAS ($450.00)                                   │
+│  ┌────────────┬──────────────┬──────────┬─────────┐│
+│  │ Date       │ Title        │ Vendor   │ Amount  ││
+│  ├────────────┼──────────────┼──────────┼─────────┤│
+│  │ 1/12/2026  │ Shell Canada │ Shell    │ -$123.83││
+│  │ 1/19/2026  │ GAS          │ Petro    │ -$50.00 ││
+│  └────────────┴──────────────┴──────────┴─────────┘│
+│                                                     │
+│  ► Marketing ($1,540.00)                           │
+│  ┌────────────┬──────────────┬──────────┬─────────┐│
+│  │ Date       │ Title        │ Vendor   │ Amount  ││
+│  │ ...        │              │          │         ││
+│  └────────────┴──────────────┴──────────┴─────────┘│
+│                                                     │
+└─────────────────────────────────────────────────────┘
+
+Page 3+:
+┌─────────────────────────────────────────────────────┐
+│  Transactions (13 items)                            │
+│  [Full Transaction Table - existing]                │
+└─────────────────────────────────────────────────────┘
 ```
 
-## Solution
-Explicitly specify which foreign key column to use in the Supabase query using the `!column_name` hint syntax.
+---
 
-### File Change: `src/hooks/useHierarchicalCategories.ts`
+## Technical Implementation
 
-**Current code (broken):**
+### File to Modify
+- `src/hooks/usePrintIncomeExpenses.ts`
+
+### Changes
+
+**1. Add Category Grouping Logic**
+
+Group transactions by their parent category and calculate totals:
+
 ```typescript
-let query = supabase
-  .from('bills_expenses')
-  .select(`
-    *,
-    expense_categories (
-      id,
-      name,
-      category_level,
-      parent_category_id
-    )
-  `)
+// Group transactions by category
+const groupedByCategory = transactions.reduce((acc, t) => {
+  const categoryName = t.parent_category_name || 'Uncategorized';
+  if (!acc[categoryName]) {
+    acc[categoryName] = { transactions: [], total: 0 };
+  }
+  acc[categoryName].transactions.push(t);
+  acc[categoryName].total += Math.abs(t.amount);
+  return acc;
+}, {} as Record<string, { transactions: TransactionWithHierarchy[]; total: number }>);
 ```
 
-**Fixed code:**
+**2. Add Category Summary Table**
+
+Insert after charts section, before main transactions table:
+
 ```typescript
-let query = supabase
-  .from('bills_expenses')
-  .select(`
-    *,
-    expense_categories!category_id (
-      id,
+// Category Summary Table
+if (option === "full") {
+  // Section header
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(14);
+  pdf.text("Expenses by Category", 40, cursorY);
+  cursorY += 20;
+  
+  // Summary table
+  const categoryData = Object.entries(groupedByCategory)
+    .sort((a, b) => b[1].total - a[1].total) // Sort by amount descending
+    .map(([name, data]) => [
       name,
-      category_level,
-      parent_category_id
-    )
-  `)
+      data.transactions.length.toString(),
+      `$${data.total.toFixed(2)}`,
+      `${((data.total / totalExpenses) * 100).toFixed(1)}%`
+    ]);
+
+  autoTable(pdf, {
+    startY: cursorY,
+    head: [["Category", "# Items", "Total Amount", "% of Total"]],
+    body: categoryData,
+    // ... styling
+  });
+}
 ```
 
-The `!category_id` hint tells PostgREST to use the `category_id` column for the join, disambiguating the relationship.
+**3. Add Per-Category Detail Tables**
 
-## Why This Broke
-The `category_detected_id` column was added as part of the receipt scanning feature. This created a second FK to `expense_categories`, making the original query ambiguous.
+For each category, render a mini-table with its transactions:
 
-## Technical Details
+```typescript
+// Per-category detail tables
+Object.entries(groupedByCategory)
+  .sort((a, b) => b[1].total - a[1].total)
+  .forEach(([categoryName, categoryData]) => {
+    // Check for page break
+    if (cursorY + 50 > pageHeight - 60) {
+      pdf.addPage();
+      cursorY = 48;
+    }
+    
+    // Category header
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.text(`${categoryName} ($${categoryData.total.toFixed(2)})`, 40, cursorY);
+    cursorY += 8;
+    
+    // Category transactions table
+    autoTable(pdf, {
+      startY: cursorY,
+      head: [["Date", "Title", "Vendor/Payee", "Amount"]],
+      body: categoryData.transactions.map(t => [
+        new Date(t.expense_date).toLocaleDateString(),
+        t.expense_title,
+        t.vendor_payee || "-",
+        `-$${Math.abs(t.amount).toFixed(2)}`
+      ]),
+      // ... compact styling
+    });
+    
+    cursorY = pdf.lastAutoTable.finalY + 15;
+  });
+```
 
-| Change | Description |
-|--------|-------------|
-| File | `src/hooks/useHierarchicalCategories.ts` |
-| Line | ~77-85 |
-| Fix | Add `!category_id` hint to disambiguate FK relationship |
+**4. Enhanced Color Coding**
 
-## Data Integrity Confirmation
-- All 448+ transactions for Ground Zero exist in the database
-- All 530+ total transactions system-wide are intact
-- This is purely a query syntax issue, not data loss
+Each category section will have subtle color accents for visual distinction.
 
-## Expected Result After Fix
-1. Query uses explicit `category_id` FK for the join
-2. PostgREST successfully executes the join
-3. All transactions load with their category information
-4. "All Time" filter displays all 448+ transactions
+---
+
+## Summary of Changes
+
+| Component | Change |
+|-----------|--------|
+| `usePrintIncomeExpenses.ts` | Add category grouping logic and summary table |
+| `usePrintIncomeExpenses.ts` | Add per-category detail tables with transactions |
+| `usePrintIncomeExpenses.ts` | Add proper page break handling for multi-page reports |
+
+---
+
+## User Benefit
+
+- **Clear spending visibility**: See exactly how much was spent on Gas, Marketing, Office Supplies, etc.
+- **Percentage breakdown**: Understand which categories consume the most budget
+- **Professional layout**: Organized sections with proper headers and formatting
+- **Full transaction detail**: Still includes the complete transaction table at the end
