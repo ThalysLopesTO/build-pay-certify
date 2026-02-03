@@ -119,14 +119,39 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
 
   // iOS PWA viewport recovery - fixes blank screen after camera
   const recoverViewport = useCallback(() => {
-    // Force a repaint/reflow to fix iOS viewport issues
+    // Immediate scroll reset
     window.scrollTo(0, 0);
-    document.body.style.overflow = 'auto';
+    
+    // Reset body styles that iOS may have corrupted
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+    
+    // Force visibility of dialog content using multiple strategies
+    requestAnimationFrame(() => {
+      // Force repaint
+      void document.body.offsetHeight;
+      
+      // Safari-specific: toggle opacity to force repaint
+      const dialogContent = document.querySelector('[data-radix-dialog-content]');
+      if (dialogContent instanceof HTMLElement) {
+        dialogContent.style.opacity = '0.99';
+        requestAnimationFrame(() => {
+          dialogContent.style.opacity = '1';
+        });
+      }
+    });
+    
+    // Additional recovery attempts with delays
     setTimeout(() => {
-      document.body.style.overflow = '';
-      // Force repaint by reading a layout property
+      window.scrollTo(0, 0);
       void document.body.offsetHeight;
     }, 100);
+    
+    setTimeout(() => {
+      void document.body.offsetHeight;
+    }, 300);
   }, []);
 
   const resetState = useCallback(() => {
@@ -520,8 +545,39 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     e.target.value = '';
   };
 
+  // iOS PWA recovery - force visibility when returning from camera during loading states
+  useEffect(() => {
+    if (isOpen && (isUploading || isExtracting) && isMobile) {
+      // Periodic recovery attempts during loading state
+      const recoveryInterval = setInterval(() => {
+        recoverViewport();
+      }, 500);
+      
+      // Stop after 5 seconds to avoid infinite recovery attempts
+      const timeout = setTimeout(() => {
+        clearInterval(recoveryInterval);
+      }, 5000);
+      
+      return () => {
+        clearInterval(recoveryInterval);
+        clearTimeout(timeout);
+      };
+    }
+  }, [isOpen, isUploading, isExtracting, isMobile, recoverViewport]);
+
+  // Recovery when switching to review tab on mobile
+  useEffect(() => {
+    if (activeTab === 'review' && isMobile) {
+      recoverViewport();
+    }
+  }, [activeTab, isMobile, recoverViewport]);
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => !open && handleClose()}
+      modal={!isMobile} // Disable modal behavior on mobile to prevent focus trap issues with iOS camera
+    >
       <DialogContent 
         className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
         onOpenAutoFocus={(e) => {
