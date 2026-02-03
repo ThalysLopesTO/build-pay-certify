@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Upload, Camera, Loader2, CheckCircle, Calendar as CalendarIcon, Save, TrendingDown, TrendingUp, FileCheck, AlertCircle } from 'lucide-react';
+import { Upload, Camera, Loader2, CheckCircle, Calendar as CalendarIcon, Save, TrendingDown, TrendingUp, FileCheck, AlertCircle, RefreshCw } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
@@ -91,6 +91,10 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   
   // Mobile detection
   const isMobile = useIsMobile();
+  
+  // iOS PWA recovery state - force re-render when returning from camera
+  const [renderKey, setRenderKey] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Transaction type state - now set BEFORE upload
   const [transactionType, setTransactionType] = useState<'income' | 'expense' | null>(null);
@@ -119,24 +123,45 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
 
   // iOS PWA viewport recovery - fixes blank screen after camera
   const recoverViewport = useCallback(() => {
+    console.log('[PWA] Running viewport recovery');
+    
     // Immediate scroll reset
     window.scrollTo(0, 0);
     
-    // Reset body styles that iOS may have corrupted
+    // Reset all body styles that iOS may have corrupted
+    document.body.style.cssText = '';
+    document.documentElement.style.cssText = '';
+    
+    // Force the document to be visible
+    document.body.style.visibility = 'visible';
+    document.body.style.opacity = '1';
+    
+    // Remove any iOS-added scroll locks
     document.body.style.overflow = '';
     document.body.style.position = '';
     document.body.style.width = '';
     document.body.style.height = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
     
-    // Force visibility of dialog content using multiple strategies
+    // Force layout recalculation
     requestAnimationFrame(() => {
-      // Force repaint
       void document.body.offsetHeight;
+      void document.documentElement.scrollHeight;
       
-      // Safari-specific: toggle opacity to force repaint
+      // Find and force visibility of dialog elements
+      const dialogOverlay = document.querySelector('[data-radix-dialog-overlay]');
       const dialogContent = document.querySelector('[data-radix-dialog-content]');
+      
+      if (dialogOverlay instanceof HTMLElement) {
+        dialogOverlay.style.visibility = 'visible';
+        dialogOverlay.style.opacity = '1';
+      }
+      
       if (dialogContent instanceof HTMLElement) {
+        dialogContent.style.visibility = 'visible';
         dialogContent.style.opacity = '0.99';
+        
         requestAnimationFrame(() => {
           dialogContent.style.opacity = '1';
         });
@@ -153,6 +178,37 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
       void document.body.offsetHeight;
     }, 300);
   }, []);
+  
+  // Detect when iOS returns from camera using visibilitychange event
+  useEffect(() => {
+    if (!isMobile || !isOpen) return;
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[PWA] Visibility restored, triggering recovery');
+        
+        // Multiple recovery strategies
+        recoverViewport();
+        
+        // Force a complete re-render after a short delay
+        setTimeout(() => {
+          setRenderKey(prev => prev + 1);
+          recoverViewport();
+        }, 100);
+        
+        setTimeout(() => {
+          recoverViewport();
+        }, 300);
+        
+        setTimeout(() => {
+          recoverViewport();
+        }, 500);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isMobile, isOpen, recoverViewport]);
 
   const resetState = useCallback(() => {
     setActiveTab('select-type');
@@ -529,9 +585,15 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     if (file) handleFileUpload(file);
   }, [companyId, transactionType]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // iOS PWA viewport recovery - call immediately when returning from camera
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    // Immediately trigger recovery when file selection completes
+    console.log('[PWA] File selected, triggering recovery');
+    
+    // Force immediate recovery
     recoverViewport();
+    
+    // Force re-render to clear any corrupted state
+    setRenderKey(prev => prev + 1);
     
     // Clear any previous error
     setUploadError(null);
@@ -543,7 +605,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     
     // Reset input to allow re-selecting same file
     e.target.value = '';
-  };
+  }, [handleFileUpload, recoverViewport]);
 
   // iOS PWA recovery - force visibility when returning from camera during loading states
   useEffect(() => {
@@ -573,26 +635,40 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   }, [activeTab, isMobile, recoverViewport]);
 
   return (
-    <Dialog 
-      open={isOpen} 
-      onOpenChange={(open) => !open && handleClose()}
-      modal={!isMobile} // Disable modal behavior on mobile to prevent focus trap issues with iOS camera
-    >
-      <DialogContent 
-        className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
-        onOpenAutoFocus={(e) => {
-          // Prevent auto focus on mobile to avoid keyboard issues and iOS quirks
-          if (isMobile) {
-            e.preventDefault();
-          }
-        }}
-        onInteractOutside={(e) => {
-          // Prevent closing when interacting with camera/file picker
-          if (isUploading || isExtracting) {
-            e.preventDefault();
-          }
-        }}
+    <>
+      {/* File input OUTSIDE dialog to avoid iOS portal corruption when returning from camera */}
+      <input
+        ref={fileInputRef}
+        id="receipt-upload-external"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileSelect}
+        className="hidden"
+        disabled={isUploading || isExtracting}
+      />
+      
+      <Dialog 
+        open={isOpen} 
+        onOpenChange={(open) => !open && handleClose()}
+        modal={!isMobile} // Disable modal behavior on mobile to prevent focus trap issues with iOS camera
       >
+        <DialogContent 
+          key={`dialog-content-${renderKey}`}
+          className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
+          onOpenAutoFocus={(e) => {
+            // Prevent auto focus on mobile to avoid keyboard issues and iOS quirks
+            if (isMobile) {
+              e.preventDefault();
+            }
+          }}
+          onInteractOutside={(e) => {
+            // Prevent closing when interacting with camera/file picker
+            if (isUploading || isExtracting) {
+              e.preventDefault();
+            }
+          }}
+        >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5 text-amber-500" />
@@ -713,8 +789,17 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                   ? "border-amber-300 bg-amber-50"
                   : "border-border hover:border-amber-400 hover:bg-amber-50/50"
               )}
-              onClick={() => !isUploading && !isExtracting && document.getElementById('receipt-upload')?.click()}
+              onClick={() => {
+                if (isUploading || isExtracting) return;
+                // Use external file input on mobile to avoid portal corruption
+                if (isMobile && fileInputRef.current) {
+                  fileInputRef.current.click();
+                } else {
+                  document.getElementById('receipt-upload')?.click();
+                }
+              }}
             >
+              {/* Hidden input inside dialog for desktop fallback */}
               <input
                 id="receipt-upload"
                 type="file"
@@ -762,7 +847,11 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                     onClick={() => {
                       setUploadError(null);
                       recoverViewport();
-                      document.getElementById('receipt-upload')?.click();
+                      if (isMobile && fileInputRef.current) {
+                        fileInputRef.current.click();
+                      } else {
+                        document.getElementById('receipt-upload')?.click();
+                      }
                     }}
                   >
                     Try Again
@@ -778,6 +867,27 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                     alt="Receipt preview" 
                     className="max-h-48 rounded-lg border border-border shadow-sm"
                   />
+                </div>
+              )}
+
+              {/* Mobile recovery fallback button */}
+              {isMobile && !isUploading && !isExtracting && (
+                <div className="text-center mt-4 pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Screen not responding after camera?
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      recoverViewport();
+                      setRenderKey(prev => prev + 1);
+                      toast({ title: 'Screen recovered', description: 'Please try again' });
+                    }}
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Tap to recover
+                  </Button>
                 </div>
               )}
           </TabsContent>
@@ -1023,5 +1133,6 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
         </Tabs>
       </DialogContent>
     </Dialog>
+    </>
   );
 };
