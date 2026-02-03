@@ -3,160 +3,131 @@
 # Fix: Blank Screen After Camera Upload on Mobile (iOS PWA)
 
 ## Problem Summary
-When users take a photo of a bill using the "Scan Receipt" feature on mobile (especially iOS PWA), the app shows a blank white screen after returning from the camera. This is a known issue with iOS PWA camera handling combined with Radix Dialog focus trap behavior.
-
----
+When users take a photo using the "Scan Receipt" feature on mobile (especially iOS PWA), the screen goes completely blank after returning from the camera. This happens even though the upload starts successfully (as seen in your first screenshot showing "Upload Complete - Analyzing receipt...").
 
 ## Root Cause Analysis
 
-The issue is caused by multiple factors working together:
+The issue has three contributing factors:
 
-1. **Radix Dialog Focus Trap**: The Dialog component from Radix UI maintains a focus trap that can interfere with iOS's camera app flow. When the user returns from the camera, focus restoration can fail.
+1. **Radix Dialog Focus Trap** - The Dialog component has `modal={true}` by default, which activates focus trapping. When iOS returns from the camera, the focus trap tries to restore focus but fails, leaving the UI in a corrupted state.
 
-2. **iOS PWA Viewport Issues**: iOS PWA has known quirks where returning from the camera can leave the viewport in a corrupted state (scroll position, zoom, or visibility issues).
+2. **iOS Viewport State Corruption** - iOS PWA has a known bug where returning from the native camera app can leave the viewport in a corrupted state (the page content becomes invisible but the app hasn't crashed).
 
-3. **File Input Inside Modal**: The `capture="environment"` attribute triggers the native camera, but when combined with the modal's focus management, iOS can fail to properly restore the UI.
-
-4. **Missing Error Boundaries**: If any part of the upload/extraction process fails silently, the component could be stuck in a loading state with no visible content.
+3. **Insufficient Recovery** - The current `recoverViewport` function exists but isn't aggressive enough and doesn't include visibility forcing.
 
 ---
 
-## Solution Approach
+## Solution
 
-We'll implement a multi-pronged fix:
+### 1. Disable Modal Behavior on Mobile
+Set `modal={false}` on the Dialog when on mobile to disable the focus trap that causes the issue.
 
-### 1. Add Focus Management Props to Dialog
-Prevent the focus trap from interfering with camera flow by adding `onOpenAutoFocus` and `onInteractOutside` handlers.
+### 2. Enhanced Viewport Recovery
+Create a more aggressive recovery mechanism that:
+- Uses multiple recovery attempts with increasing delays
+- Forces visibility of the dialog content
+- Uses `requestAnimationFrame` for proper rendering
+- Includes Safari-specific fixes
 
-### 2. Add iOS PWA Viewport Recovery
-Implement a viewport recovery mechanism that triggers after returning from the camera to restore proper scroll and visibility.
-
-### 3. Add Error Handling and Loading States
-Ensure there's always visible content even during errors or edge cases.
-
-### 4. Add Mobile-Specific File Input Handling
-Create a more robust file input handling flow for mobile devices.
+### 3. Add Visibility State Tracking
+Track whether the component is visible and force re-render if needed.
 
 ---
 
-## Technical Implementation
+## Technical Details
 
 ### File 1: `src/components/admin/income-expenses/ScanReceiptModal.tsx`
 
 **Changes:**
 
-1. **Add viewport recovery after file selection:**
+1. **Add mobile-specific Dialog modal prop:**
 ```typescript
-// Add iOS PWA viewport recovery
-const recoverViewport = useCallback(() => {
-  // Force a repaint/reflow to fix iOS viewport issues
-  window.scrollTo(0, 0);
-  document.body.style.overflow = 'auto';
-  setTimeout(() => {
-    document.body.style.overflow = '';
-    // Force repaint
-    document.body.offsetHeight;
-  }, 100);
-}, []);
-```
-
-2. **Update file input handler with recovery:**
-```typescript
-const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-  // iOS PWA viewport recovery
-  recoverViewport();
-  
-  const file = e.target.files?.[0];
-  if (file) {
-    handleFileUpload(file);
-  }
-  
-  // Reset input to allow re-selecting same file
-  e.target.value = '';
-};
-```
-
-3. **Add focus management to Dialog:**
-```typescript
-<DialogContent 
-  className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
-  onOpenAutoFocus={(e) => {
-    // Prevent auto focus on mobile to avoid keyboard issues
-    if (isMobile) {
-      e.preventDefault();
-    }
-  }}
-  onInteractOutside={(e) => {
-    // Prevent closing when interacting with camera/file picker
-    if (isUploading || isExtracting) {
-      e.preventDefault();
-    }
-  }}
+<Dialog 
+  open={isOpen} 
+  onOpenChange={(open) => !open && handleClose()}
+  modal={!isMobile} // Disable modal behavior on mobile to prevent focus trap issues
 >
 ```
 
-4. **Add error state with visible fallback:**
+2. **Enhanced viewport recovery function:**
 ```typescript
-// Add error state
-const [uploadError, setUploadError] = useState<string | null>(null);
-
-// In handleFileUpload error catch:
-setUploadError('Failed to upload. Please try again.');
-setIsUploading(false);
-setIsExtracting(false);
+const recoverViewport = useCallback(() => {
+  // Immediate scroll reset
+  window.scrollTo(0, 0);
+  
+  // Reset body styles
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.width = '';
+  document.body.style.height = '';
+  
+  // Force visibility of dialog content using multiple strategies
+  requestAnimationFrame(() => {
+    // Force repaint
+    void document.body.offsetHeight;
+    
+    // Safari-specific: toggle visibility
+    const dialogContent = document.querySelector('[data-radix-dialog-content]');
+    if (dialogContent instanceof HTMLElement) {
+      dialogContent.style.opacity = '0.99';
+      requestAnimationFrame(() => {
+        dialogContent.style.opacity = '1';
+      });
+    }
+  });
+  
+  // Additional recovery after a short delay
+  setTimeout(() => {
+    window.scrollTo(0, 0);
+    void document.body.offsetHeight;
+  }, 100);
+  
+  setTimeout(() => {
+    void document.body.offsetHeight;
+  }, 300);
+}, []);
 ```
 
-5. **Add visible error UI in upload tab:**
+3. **Call recovery in multiple places:**
+- After file selection (existing)
+- When component re-renders while uploading/extracting
+- When tab changes to 'review'
+
+4. **Add useEffect for visibility recovery:**
 ```typescript
-{uploadError && (
-  <div className="text-center py-4">
-    <p className="text-destructive mb-3">{uploadError}</p>
-    <Button 
-      variant="outline" 
-      onClick={() => {
-        setUploadError(null);
-        document.getElementById('receipt-upload')?.click();
-      }}
-    >
-      Try Again
-    </Button>
-  </div>
-)}
+// iOS PWA recovery - force visibility when returning from camera
+useEffect(() => {
+  if (isOpen && (isUploading || isExtracting) && isMobile) {
+    // Recovery when in loading state
+    const recoveryInterval = setInterval(() => {
+      recoverViewport();
+    }, 500);
+    
+    // Clean up after 5 seconds
+    const timeout = setTimeout(() => {
+      clearInterval(recoveryInterval);
+    }, 5000);
+    
+    return () => {
+      clearInterval(recoveryInterval);
+      clearTimeout(timeout);
+    };
+  }
+}, [isOpen, isUploading, isExtracting, isMobile, recoverViewport]);
 ```
 
-### File 2: `src/components/ui/dialog.tsx`
-
-**Changes:**
-
-Update DialogContent to accept and pass through focus management props:
-
+5. **Add visibility check on tab change:**
 ```typescript
-interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
-  onOpenAutoFocus?: (event: Event) => void;
-  onInteractOutside?: (event: Event) => void;
-}
-
-const DialogContent = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Content>,
-  DialogContentProps
->(({ className, children, onOpenAutoFocus, onInteractOutside, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      onOpenAutoFocus={onOpenAutoFocus}
-      onInteractOutside={onInteractOutside}
-      className={cn(
-        // ... existing classes
-      )}
-      {...props}
-    >
-      {children}
-      {/* Close button */}
-    </DialogPrimitive.Content>
-  </DialogPortal>
-))
+useEffect(() => {
+  if (activeTab === 'review' && isMobile) {
+    recoverViewport();
+  }
+}, [activeTab, isMobile, recoverViewport]);
 ```
+
+### File 2: `src/components/ui/dialog.tsx` (Minor update)
+
+**Change:** Update DialogContent to support the modal prop passthrough - though this is already handled by `{...props}`, we'll make the Dialog component accept and pass modal prop explicitly for clarity.
 
 ---
 
@@ -164,27 +135,30 @@ const DialogContent = React.forwardRef<
 
 | File | Change |
 |------|--------|
-| `ScanReceiptModal.tsx` | Add iOS viewport recovery function |
-| `ScanReceiptModal.tsx` | Update file input handler with recovery |
-| `ScanReceiptModal.tsx` | Add error state and visible error UI |
-| `ScanReceiptModal.tsx` | Add `useIsMobile` hook import |
-| `ScanReceiptModal.tsx` | Add focus management props to DialogContent |
-| `dialog.tsx` | Pass through `onOpenAutoFocus` and `onInteractOutside` props |
+| `ScanReceiptModal.tsx` | Set `modal={!isMobile}` on Dialog to disable focus trap on mobile |
+| `ScanReceiptModal.tsx` | Enhanced `recoverViewport` with multiple recovery strategies |
+| `ScanReceiptModal.tsx` | Add useEffect for periodic recovery during upload/extraction |
+| `ScanReceiptModal.tsx` | Add visibility recovery when switching to review tab |
+
+---
+
+## Why This Should Work
+
+1. **`modal={false}` on mobile** - Prevents the focus trap from activating at all, which is the primary cause of the blank screen
+
+2. **Periodic recovery attempts** - Even if iOS corrupts the viewport, the periodic recovery will keep trying to restore visibility
+
+3. **Multiple recovery strategies** - Using `requestAnimationFrame`, opacity toggling, and forced repaints covers different iOS quirks
+
+4. **Safari-specific opacity trick** - Toggling opacity forces Safari to repaint the element
 
 ---
 
 ## Expected Result After Fix
 
-1. **No more blank screen**: Viewport recovery ensures the UI is visible after returning from camera
-2. **Visible error states**: If upload fails, users see a clear error message with retry option
-3. **Stable focus management**: Dialog won't interfere with iOS camera flow
-4. **Better mobile experience**: Input reset allows re-selecting files without issues
-
----
-
-## Additional Notes
-
-- The `capture="environment"` attribute is kept for the back camera preference
-- The solution is non-invasive and doesn't change the core upload/extraction logic
-- Error recovery is user-friendly with clear retry options
+1. Modal opens normally on mobile
+2. User takes a photo with the camera
+3. App returns from camera and continues to show the loading spinner
+4. Upload and analysis complete successfully
+5. Review screen appears with extracted data
 
