@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Upload, Camera, Loader2, CheckCircle, Calendar as CalendarIcon, Save, TrendingDown, TrendingUp, FileCheck } from 'lucide-react';
+import { Upload, Camera, Loader2, CheckCircle, Calendar as CalendarIcon, Save, TrendingDown, TrendingUp, FileCheck, AlertCircle } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -85,6 +86,12 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
   const [duplicateDecision, setDuplicateDecision] = useState<DuplicateDecision | null>(null);
 
+  // Upload error state for mobile recovery
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  
+  // Mobile detection
+  const isMobile = useIsMobile();
+
   // Transaction type state - now set BEFORE upload
   const [transactionType, setTransactionType] = useState<'income' | 'expense' | null>(null);
   const [transactionTypeConfidence, setTransactionTypeConfidence] = useState<'high' | 'medium' | 'low' | null>(null);
@@ -110,6 +117,18 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     payment_method: ''
   });
 
+  // iOS PWA viewport recovery - fixes blank screen after camera
+  const recoverViewport = useCallback(() => {
+    // Force a repaint/reflow to fix iOS viewport issues
+    window.scrollTo(0, 0);
+    document.body.style.overflow = 'auto';
+    setTimeout(() => {
+      document.body.style.overflow = '';
+      // Force repaint by reading a layout property
+      void document.body.offsetHeight;
+    }, 100);
+  }, []);
+
   const resetState = useCallback(() => {
     setActiveTab('select-type');
     setIsUploading(false);
@@ -123,6 +142,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     setDuplicateDecision(null);
     setTransactionType(null);
     setTransactionTypeConfidence(null);
+    setUploadError(null);
     setFormData({
       expense_title: '',
       vendor_payee: '',
@@ -290,11 +310,14 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
 
     } catch (error) {
       console.error('Upload error:', error);
+      setUploadError('Failed to upload receipt. Please try again.');
       toast({
         title: 'Upload Failed',
         description: 'Failed to upload receipt. Please try again.',
         variant: 'destructive'
       });
+      setIsUploading(false);
+      setIsExtracting(false);
     } finally {
       setIsUploading(false);
     }
@@ -350,6 +373,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
 
     } catch (error) {
       console.error('Extraction error:', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to analyze receipt. Please try again.');
       toast({
         title: 'Analysis Failed',
         description: error instanceof Error ? error.message : 'Failed to analyze receipt',
@@ -481,13 +505,38 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   }, [companyId, transactionType]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // iOS PWA viewport recovery - call immediately when returning from camera
+    recoverViewport();
+    
+    // Clear any previous error
+    setUploadError(null);
+    
     const file = e.target.files?.[0];
-    if (file) handleFileUpload(file);
+    if (file) {
+      handleFileUpload(file);
+    }
+    
+    // Reset input to allow re-selecting same file
+    e.target.value = '';
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
+        onOpenAutoFocus={(e) => {
+          // Prevent auto focus on mobile to avoid keyboard issues and iOS quirks
+          if (isMobile) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          // Prevent closing when interacting with camera/file picker
+          if (isUploading || isExtracting) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5 text-amber-500" />
@@ -647,16 +696,34 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
               )}
             </div>
 
-            {uploadedUrl && !isExtracting && (
-              <div className="mt-4">
-                <p className="text-sm font-medium text-foreground mb-2">Uploaded Receipt:</p>
-                <img 
-                  src={uploadedUrl} 
-                  alt="Receipt preview" 
-                  className="max-h-48 rounded-lg border border-border shadow-sm"
-                />
-              </div>
-            )}
+              {/* Error state with retry option */}
+              {uploadError && !isUploading && !isExtracting && (
+                <div className="text-center py-4 border border-destructive/20 rounded-lg bg-destructive/5">
+                  <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
+                  <p className="text-destructive font-medium mb-3">{uploadError}</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setUploadError(null);
+                      recoverViewport();
+                      document.getElementById('receipt-upload')?.click();
+                    }}
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              )}
+
+              {uploadedUrl && !isExtracting && !uploadError && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-foreground mb-2">Uploaded Receipt:</p>
+                  <img 
+                    src={uploadedUrl} 
+                    alt="Receipt preview" 
+                    className="max-h-48 rounded-lg border border-border shadow-sm"
+                  />
+                </div>
+              )}
           </TabsContent>
 
           {/* Step 3: Review Tab */}
