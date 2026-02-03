@@ -1,199 +1,190 @@
 
-# Enhanced Full Report PDF with Category Breakdown
 
-## Overview
+# Fix: Blank Screen After Camera Upload on Mobile (iOS PWA)
 
-Add a professional "Expenses by Category" section to the Full Report PDF that groups and summarizes spending by category, giving users a clear view of where their money is going (e.g., Gas, Marketing, Office Supplies).
-
----
-
-## What You'll Get
-
-### New PDF Section: "Expenses by Category"
-
-The enhanced Full Report will include:
-
-1. **Summary Table by Category** - Shows each category with:
-   - Category name
-   - Number of transactions  
-   - Total amount spent
-   - Percentage of total expenses
-
-2. **Category Detail Tables** - For each category:
-   - Section header with category name and subtotal
-   - Individual transactions within that category (Date, Title, Vendor, Amount)
+## Problem Summary
+When users take a photo of a bill using the "Scan Receipt" feature on mobile (especially iOS PWA), the app shows a blank white screen after returning from the camera. This is a known issue with iOS PWA camera handling combined with Radix Dialog focus trap behavior.
 
 ---
 
-## PDF Structure (Full Report)
+## Root Cause Analysis
 
-```
-Page 1:
-┌─────────────────────────────────────────────────────┐
-│  Company Name - Income & Expenses Report            │
-│  Generated on: 2/2/2026 at 6:44:42 PM              │
-│  Date Range: last-month                            │
-├─────────────────────────────────────────────────────┤
-│  [KPI Cards Screenshot]                             │
-│  Total Inflow | Total Outflow | Net Cash Flow      │
-├─────────────────────────────────────────────────────┤
-│  [Charts Screenshot]                                │
-│  Monthly Cash Flow | Category Breakdown             │
-└─────────────────────────────────────────────────────┘
+The issue is caused by multiple factors working together:
 
-Page 2:  ← NEW SECTION
-┌─────────────────────────────────────────────────────┐
-│  EXPENSES BY CATEGORY                               │
-├─────────────────────────────────────────────────────┤
-│  Summary:                                           │
-│  ┌──────────────┬───────┬───────────┬───────────┐  │
-│  │ Category     │ Count │ Total     │ % of Total│  │
-│  ├──────────────┼───────┼───────────┼───────────┤  │
-│  │ GAS          │ 5     │ $450.00   │ 12.3%     │  │
-│  │ Office       │ 3     │ $280.00   │ 7.6%      │  │
-│  │ Marketing    │ 8     │ $1,540.00 │ 42.1%     │  │
-│  │ ...          │       │           │           │  │
-│  └──────────────┴───────┴───────────┴───────────┘  │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  ► GAS ($450.00)                                   │
-│  ┌────────────┬──────────────┬──────────┬─────────┐│
-│  │ Date       │ Title        │ Vendor   │ Amount  ││
-│  ├────────────┼──────────────┼──────────┼─────────┤│
-│  │ 1/12/2026  │ Shell Canada │ Shell    │ -$123.83││
-│  │ 1/19/2026  │ GAS          │ Petro    │ -$50.00 ││
-│  └────────────┴──────────────┴──────────┴─────────┘│
-│                                                     │
-│  ► Marketing ($1,540.00)                           │
-│  ┌────────────┬──────────────┬──────────┬─────────┐│
-│  │ Date       │ Title        │ Vendor   │ Amount  ││
-│  │ ...        │              │          │         ││
-│  └────────────┴──────────────┴──────────┴─────────┘│
-│                                                     │
-└─────────────────────────────────────────────────────┘
+1. **Radix Dialog Focus Trap**: The Dialog component from Radix UI maintains a focus trap that can interfere with iOS's camera app flow. When the user returns from the camera, focus restoration can fail.
 
-Page 3+:
-┌─────────────────────────────────────────────────────┐
-│  Transactions (13 items)                            │
-│  [Full Transaction Table - existing]                │
-└─────────────────────────────────────────────────────┘
-```
+2. **iOS PWA Viewport Issues**: iOS PWA has known quirks where returning from the camera can leave the viewport in a corrupted state (scroll position, zoom, or visibility issues).
+
+3. **File Input Inside Modal**: The `capture="environment"` attribute triggers the native camera, but when combined with the modal's focus management, iOS can fail to properly restore the UI.
+
+4. **Missing Error Boundaries**: If any part of the upload/extraction process fails silently, the component could be stuck in a loading state with no visible content.
+
+---
+
+## Solution Approach
+
+We'll implement a multi-pronged fix:
+
+### 1. Add Focus Management Props to Dialog
+Prevent the focus trap from interfering with camera flow by adding `onOpenAutoFocus` and `onInteractOutside` handlers.
+
+### 2. Add iOS PWA Viewport Recovery
+Implement a viewport recovery mechanism that triggers after returning from the camera to restore proper scroll and visibility.
+
+### 3. Add Error Handling and Loading States
+Ensure there's always visible content even during errors or edge cases.
+
+### 4. Add Mobile-Specific File Input Handling
+Create a more robust file input handling flow for mobile devices.
 
 ---
 
 ## Technical Implementation
 
-### File to Modify
-- `src/hooks/usePrintIncomeExpenses.ts`
+### File 1: `src/components/admin/income-expenses/ScanReceiptModal.tsx`
 
-### Changes
+**Changes:**
 
-**1. Add Category Grouping Logic**
-
-Group transactions by their parent category and calculate totals:
-
+1. **Add viewport recovery after file selection:**
 ```typescript
-// Group transactions by category
-const groupedByCategory = transactions.reduce((acc, t) => {
-  const categoryName = t.parent_category_name || 'Uncategorized';
-  if (!acc[categoryName]) {
-    acc[categoryName] = { transactions: [], total: 0 };
-  }
-  acc[categoryName].transactions.push(t);
-  acc[categoryName].total += Math.abs(t.amount);
-  return acc;
-}, {} as Record<string, { transactions: TransactionWithHierarchy[]; total: number }>);
+// Add iOS PWA viewport recovery
+const recoverViewport = useCallback(() => {
+  // Force a repaint/reflow to fix iOS viewport issues
+  window.scrollTo(0, 0);
+  document.body.style.overflow = 'auto';
+  setTimeout(() => {
+    document.body.style.overflow = '';
+    // Force repaint
+    document.body.offsetHeight;
+  }, 100);
+}, []);
 ```
 
-**2. Add Category Summary Table**
-
-Insert after charts section, before main transactions table:
-
+2. **Update file input handler with recovery:**
 ```typescript
-// Category Summary Table
-if (option === "full") {
-  // Section header
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(14);
-  pdf.text("Expenses by Category", 40, cursorY);
-  cursorY += 20;
+const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // iOS PWA viewport recovery
+  recoverViewport();
   
-  // Summary table
-  const categoryData = Object.entries(groupedByCategory)
-    .sort((a, b) => b[1].total - a[1].total) // Sort by amount descending
-    .map(([name, data]) => [
-      name,
-      data.transactions.length.toString(),
-      `$${data.total.toFixed(2)}`,
-      `${((data.total / totalExpenses) * 100).toFixed(1)}%`
-    ]);
-
-  autoTable(pdf, {
-    startY: cursorY,
-    head: [["Category", "# Items", "Total Amount", "% of Total"]],
-    body: categoryData,
-    // ... styling
-  });
-}
+  const file = e.target.files?.[0];
+  if (file) {
+    handleFileUpload(file);
+  }
+  
+  // Reset input to allow re-selecting same file
+  e.target.value = '';
+};
 ```
 
-**3. Add Per-Category Detail Tables**
+3. **Add focus management to Dialog:**
+```typescript
+<DialogContent 
+  className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
+  onOpenAutoFocus={(e) => {
+    // Prevent auto focus on mobile to avoid keyboard issues
+    if (isMobile) {
+      e.preventDefault();
+    }
+  }}
+  onInteractOutside={(e) => {
+    // Prevent closing when interacting with camera/file picker
+    if (isUploading || isExtracting) {
+      e.preventDefault();
+    }
+  }}
+>
+```
 
-For each category, render a mini-table with its transactions:
+4. **Add error state with visible fallback:**
+```typescript
+// Add error state
+const [uploadError, setUploadError] = useState<string | null>(null);
+
+// In handleFileUpload error catch:
+setUploadError('Failed to upload. Please try again.');
+setIsUploading(false);
+setIsExtracting(false);
+```
+
+5. **Add visible error UI in upload tab:**
+```typescript
+{uploadError && (
+  <div className="text-center py-4">
+    <p className="text-destructive mb-3">{uploadError}</p>
+    <Button 
+      variant="outline" 
+      onClick={() => {
+        setUploadError(null);
+        document.getElementById('receipt-upload')?.click();
+      }}
+    >
+      Try Again
+    </Button>
+  </div>
+)}
+```
+
+### File 2: `src/components/ui/dialog.tsx`
+
+**Changes:**
+
+Update DialogContent to accept and pass through focus management props:
 
 ```typescript
-// Per-category detail tables
-Object.entries(groupedByCategory)
-  .sort((a, b) => b[1].total - a[1].total)
-  .forEach(([categoryName, categoryData]) => {
-    // Check for page break
-    if (cursorY + 50 > pageHeight - 60) {
-      pdf.addPage();
-      cursorY = 48;
-    }
-    
-    // Category header
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(11);
-    pdf.text(`${categoryName} ($${categoryData.total.toFixed(2)})`, 40, cursorY);
-    cursorY += 8;
-    
-    // Category transactions table
-    autoTable(pdf, {
-      startY: cursorY,
-      head: [["Date", "Title", "Vendor/Payee", "Amount"]],
-      body: categoryData.transactions.map(t => [
-        new Date(t.expense_date).toLocaleDateString(),
-        t.expense_title,
-        t.vendor_payee || "-",
-        `-$${Math.abs(t.amount).toFixed(2)}`
-      ]),
-      // ... compact styling
-    });
-    
-    cursorY = pdf.lastAutoTable.finalY + 15;
-  });
+interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+  onOpenAutoFocus?: (event: Event) => void;
+  onInteractOutside?: (event: Event) => void;
+}
+
+const DialogContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  DialogContentProps
+>(({ className, children, onOpenAutoFocus, onInteractOutside, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      onOpenAutoFocus={onOpenAutoFocus}
+      onInteractOutside={onInteractOutside}
+      className={cn(
+        // ... existing classes
+      )}
+      {...props}
+    >
+      {children}
+      {/* Close button */}
+    </DialogPrimitive.Content>
+  </DialogPortal>
+))
 ```
-
-**4. Enhanced Color Coding**
-
-Each category section will have subtle color accents for visual distinction.
 
 ---
 
 ## Summary of Changes
 
-| Component | Change |
-|-----------|--------|
-| `usePrintIncomeExpenses.ts` | Add category grouping logic and summary table |
-| `usePrintIncomeExpenses.ts` | Add per-category detail tables with transactions |
-| `usePrintIncomeExpenses.ts` | Add proper page break handling for multi-page reports |
+| File | Change |
+|------|--------|
+| `ScanReceiptModal.tsx` | Add iOS viewport recovery function |
+| `ScanReceiptModal.tsx` | Update file input handler with recovery |
+| `ScanReceiptModal.tsx` | Add error state and visible error UI |
+| `ScanReceiptModal.tsx` | Add `useIsMobile` hook import |
+| `ScanReceiptModal.tsx` | Add focus management props to DialogContent |
+| `dialog.tsx` | Pass through `onOpenAutoFocus` and `onInteractOutside` props |
 
 ---
 
-## User Benefit
+## Expected Result After Fix
 
-- **Clear spending visibility**: See exactly how much was spent on Gas, Marketing, Office Supplies, etc.
-- **Percentage breakdown**: Understand which categories consume the most budget
-- **Professional layout**: Organized sections with proper headers and formatting
-- **Full transaction detail**: Still includes the complete transaction table at the end
+1. **No more blank screen**: Viewport recovery ensures the UI is visible after returning from camera
+2. **Visible error states**: If upload fails, users see a clear error message with retry option
+3. **Stable focus management**: Dialog won't interfere with iOS camera flow
+4. **Better mobile experience**: Input reset allows re-selecting files without issues
+
+---
+
+## Additional Notes
+
+- The `capture="environment"` attribute is kept for the back camera preference
+- The solution is non-invasive and doesn't change the core upload/extraction logic
+- Error recovery is user-friendly with clear retry options
+
