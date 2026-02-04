@@ -1,42 +1,48 @@
 
 
-# Fix: Blank Screen After Camera on Mobile (iOS PWA) - Comprehensive Solution
+# Fix: Dialog Disappearing on Successful Receipt Extraction (Mobile)
 
 ## Problem Summary
 
-When users take a photo using the "Scan Receipt" feature on mobile (especially iOS PWA in standalone mode), the screen goes completely blank after returning from the camera. The previous fixes implemented viewport recovery and focus trap disabling, but the issue persists because the root cause is deeper in how iOS handles the PWA lifecycle.
+The user has identified a critical pattern: the blank screen **only happens when the receipt extraction is successful**. When extraction fails with an error, the dialog stays visible. This is the key insight we needed!
 
 ---
 
 ## Root Cause Analysis
 
-After extensive research, this is a **well-documented iOS Safari/PWA bug** that has multiple contributing factors:
+Tracing through the code, I found the difference between success and error paths:
 
-1. **iOS PWA Lifecycle Issue**: When a PWA in `display: standalone` mode launches the native camera app, iOS suspends the PWA. Upon return, iOS sometimes fails to properly restore the WebView state, leaving the viewport blank or frozen.
+**On Success (causes blank screen):**
+```typescript
+// Lines 425-448: extractReceiptData success
+setExtractionResult(data);           // State change 1
+setTransactionTypeConfidence(...);    // State change 2
+setFormData({...});                   // State change 3
+setActiveTab('review');               // State change 4 - TAB SWITCH!
+toast({ title: 'Analysis Complete' });
+```
 
-2. **Dialog Portal Rendering**: The Radix Dialog uses React portals which can become "detached" from the DOM when iOS corrupts the rendering context.
+**On Error (dialog stays visible):**
+```typescript
+// Lines 455-462: extractReceiptData error
+setUploadError(...);  // State change (stays on 'upload' tab)
+toast({ title: 'Analysis Failed' });
+// NO tab switch - dialog stays visible
+```
 
-3. **Focus Trap Conflict**: Even with `modal={false}`, the dialog's internal state and aria-hidden attributes can interfere with iOS's rendering recovery.
+The problem is the **rapid succession of state changes combined with the tab switch** after iOS returns from the camera. When `setActiveTab('review')` is called, React unmounts the upload content and mounts the review content. On iOS PWA, this happens while the WebView is still recovering from the camera app, causing the rendering corruption.
 
-4. **Insufficient Recovery Timing**: The current recovery attempts happen too quickly after file selection - before iOS has fully corrupted the viewport. We need recovery that triggers on `visibilitychange` events when the PWA becomes visible again.
+The existing `useEffect` recovery at lines 631-635 fires when `activeTab === 'review'`, but by then the viewport is already corrupted and the recovery isn't aggressive enough.
 
 ---
 
-## Solution Strategy
+## Solution
 
-We'll implement a multi-layered fix targeting each root cause:
+We need to:
 
-### 1. Add Visibility Change Detection
-Listen for `visibilitychange` events to detect when iOS returns from the camera, then trigger aggressive recovery.
-
-### 2. Force Component Re-render
-Use a state-based key to force React to completely re-render the dialog content when visibility is restored.
-
-### 3. Separate File Input from Dialog
-Move the file input outside the Dialog portal to prevent iOS from corrupting the file picker interaction.
-
-### 4. Add Fallback UI with Recovery Button
-If all else fails, show a recovery button that forces a component reset.
+1. **Delay the tab switch** - Give iOS time to stabilize the viewport before switching tabs
+2. **Force recovery BEFORE the tab switch** - Ensure the dialog is visible before changing content
+3. **Add an intermediate "processing complete" state** - Show success message on upload tab before auto-switching to review
 
 ---
 
@@ -44,215 +50,153 @@ If all else fails, show a recovery button that forces a component reset.
 
 ### File: `src/components/admin/income-expenses/ScanReceiptModal.tsx`
 
-**Change 1: Add visibility change listener with force re-render**
+**Change 1: Add extraction complete state for intermediate UI**
 
 ```typescript
-// Add a render key to force re-render on visibility recovery
-const [renderKey, setRenderKey] = useState(0);
-const [isRecovering, setIsRecovering] = useState(false);
-
-// Detect when iOS returns from camera using visibilitychange
-useEffect(() => {
-  if (!isMobile || !isOpen) return;
-  
-  const handleVisibilityChange = () => {
-    if (document.visibilityState === 'visible') {
-      console.log('[PWA] Visibility restored, triggering recovery');
-      
-      // Multiple recovery strategies
-      recoverViewport();
-      
-      // Force a complete re-render after a short delay
-      setTimeout(() => {
-        setRenderKey(prev => prev + 1);
-        recoverViewport();
-      }, 100);
-      
-      setTimeout(() => {
-        recoverViewport();
-      }, 300);
-      
-      setTimeout(() => {
-        recoverViewport();
-      }, 500);
-    }
-  };
-  
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-}, [isMobile, isOpen, recoverViewport]);
+// Add new state after line 90
+const [extractionComplete, setExtractionComplete] = useState(false);
 ```
 
-**Change 2: Enhanced viewport recovery with more aggressive DOM manipulation**
+**Change 2: Modify the extraction success handler**
+
+Instead of immediately switching tabs, we'll:
+1. Set the extraction result and form data
+2. Set an "extraction complete" flag
+3. Trigger recovery
+4. Delay the tab switch
 
 ```typescript
-const recoverViewport = useCallback(() => {
-  // Immediate scroll reset
-  window.scrollTo(0, 0);
-  
-  // Reset all body styles that iOS may have corrupted
-  document.body.style.cssText = '';
-  document.documentElement.style.cssText = '';
-  
-  // Force the document to be visible
-  document.body.style.visibility = 'visible';
-  document.body.style.opacity = '1';
-  
-  // Remove any iOS-added scroll locks
-  document.body.style.overflow = '';
-  document.body.style.position = '';
-  document.body.style.width = '';
-  document.body.style.height = '';
-  document.body.style.top = '';
-  document.body.style.left = '';
-  
-  // Force layout recalculation
-  requestAnimationFrame(() => {
-    void document.body.offsetHeight;
-    void document.documentElement.scrollHeight;
-    
-    // Find and force visibility of dialog elements
-    const dialogOverlay = document.querySelector('[data-radix-dialog-overlay]');
-    const dialogContent = document.querySelector('[data-radix-dialog-content]');
-    
-    if (dialogOverlay instanceof HTMLElement) {
-      dialogOverlay.style.visibility = 'visible';
-      dialogOverlay.style.opacity = '1';
-    }
-    
-    if (dialogContent instanceof HTMLElement) {
-      dialogContent.style.visibility = 'visible';
-      dialogContent.style.opacity = '0.99';
-      
-      requestAnimationFrame(() => {
-        dialogContent.style.opacity = '1';
-      });
-    }
-  });
-}, []);
-```
+// Replace lines 425-453 in extractReceiptData
+setExtractionResult(data);
 
-**Change 3: Move file input outside the dialog and use refs**
+if (data.transaction_type_confidence) {
+  setTransactionTypeConfidence(data.transaction_type_confidence);
+}
 
-```typescript
-// File input ref - input will be OUTSIDE the dialog portal
-const fileInputRef = useRef<HTMLInputElement>(null);
+// Pre-fill form with extracted data
+setFormData({
+  expense_title: data.expense_title || 'Receipt',
+  vendor_payee: data.vendor_payee || '',
+  expense_date: data.expense_date ? parseLocalDate(data.expense_date) : new Date(),
+  amount: data.amount?.toString() || '',
+  category_id: data.category_id || '',
+  notes: data.line_items?.length > 0 
+    ? `Line Items:\n${data.line_items.map(...).join('\n')}`
+    : '',
+  payment_status: 'paid',
+  payment_method: ''
+});
 
-// In the component JSX, BEFORE the Dialog:
-<>
-  {/* File input OUTSIDE dialog to avoid portal corruption on iOS */}
-  <input
-    ref={fileInputRef}
-    id="receipt-upload"
-    type="file"
-    accept="image/*"
-    capture="environment"
-    onChange={handleFileSelect}
-    className="hidden"
-    disabled={isUploading || isExtracting}
-  />
-  
-  <Dialog ...>
-    {/* Dialog content uses onClick to trigger the external input */}
-  </Dialog>
-</>
-```
-
-**Change 4: Update file select handler with pre-emptive recovery**
-
-```typescript
-const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-  // Immediately trigger recovery when file selection completes
-  console.log('[PWA] File selected, triggering recovery');
+// For mobile: delay tab switch to let iOS viewport stabilize
+if (isMobile) {
+  console.log('[PWA] Extraction complete, delaying tab switch for recovery');
+  setExtractionComplete(true);
   
   // Force immediate recovery
   recoverViewport();
   
-  // Set recovering state to force re-render
-  setIsRecovering(true);
-  setTimeout(() => setIsRecovering(false), 100);
+  // Force re-render to ensure dialog is visible
+  setRenderKey(prev => prev + 1);
   
-  const file = e.target.files?.[0];
-  if (file) {
-    handleFileUpload(file);
-  }
-  
-  // Reset input to allow re-selecting same file
-  e.target.value = '';
-}, [handleFileUpload, recoverViewport]);
+  // Wait for viewport to stabilize, then switch tabs
+  setTimeout(() => {
+    recoverViewport();
+    setTimeout(() => {
+      setActiveTab('review');
+      setExtractionComplete(false);
+      recoverViewport();
+    }, 200);
+  }, 300);
+} else {
+  // Desktop: switch immediately
+  setActiveTab('review');
+}
+
+toast({
+  title: 'Analysis Complete',
+  description: 'Receipt data extracted. Please review and save.'
+});
 ```
 
-**Change 5: Add recovery button as fallback**
+**Change 3: Show intermediate UI on upload tab when extraction is complete (mobile)**
+
+Add this to the upload tab content, showing a "success" state before switching to review:
 
 ```typescript
-// In the upload tab, add a fallback recovery option:
-{isMobile && (
-  <div className="text-center mt-4 pt-4 border-t border-border">
-    <p className="text-xs text-muted-foreground mb-2">
-      Screen not responding after camera?
-    </p>
-    <Button 
-      variant="ghost" 
-      size="sm"
-      onClick={() => {
-        recoverViewport();
-        setRenderKey(prev => prev + 1);
-        toast({ title: 'Screen recovered', description: 'Please try again' });
-      }}
-    >
-      Tap to recover
-    </Button>
+// In TabsContent for "upload", add after the error state block (around line 860)
+{extractionComplete && isMobile && (
+  <div className="text-center py-6 border border-green-200 rounded-lg bg-green-50">
+    <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-3" />
+    <p className="text-green-700 font-medium mb-2">Receipt Analyzed Successfully!</p>
+    <p className="text-sm text-muted-foreground">Loading review form...</p>
+    <Loader2 className="h-5 w-5 animate-spin mx-auto mt-3 text-green-500" />
   </div>
 )}
 ```
 
-**Change 6: Apply render key to force re-render**
+**Change 4: Reset extractionComplete in resetState**
 
 ```typescript
-<DialogContent 
-  key={`dialog-content-${renderKey}`}
-  className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
-  // ... rest of props
->
+// Add to resetState function (around line 226)
+setExtractionComplete(false);
+```
+
+**Change 5: Enhance the review tab recovery effect**
+
+```typescript
+// Replace lines 631-635
+useEffect(() => {
+  if (activeTab === 'review' && isMobile) {
+    // Multiple recovery attempts when review tab becomes active
+    recoverViewport();
+    
+    const recoveryAttempts = [100, 300, 500, 1000];
+    const timeouts = recoveryAttempts.map(delay => 
+      setTimeout(() => {
+        recoverViewport();
+        setRenderKey(prev => prev + 1);
+      }, delay)
+    );
+    
+    return () => timeouts.forEach(clearTimeout);
+  }
+}, [activeTab, isMobile, recoverViewport]);
 ```
 
 ---
 
 ## Summary of Changes
 
-| File | Change |
-|------|--------|
-| `ScanReceiptModal.tsx` | Add `visibilitychange` event listener for iOS recovery |
-| `ScanReceiptModal.tsx` | Add `renderKey` state to force complete re-renders |
-| `ScanReceiptModal.tsx` | Move file input outside Dialog portal |
-| `ScanReceiptModal.tsx` | Enhanced `recoverViewport` with more aggressive DOM fixes |
-| `ScanReceiptModal.tsx` | Add fallback "Tap to recover" button for mobile users |
-| `ScanReceiptModal.tsx` | Update file selection handler with immediate recovery |
+| Location | Change |
+|----------|--------|
+| State declarations | Add `extractionComplete` state |
+| `resetState` function | Reset `extractionComplete` |
+| `extractReceiptData` success | Delay tab switch on mobile, add recovery before switch |
+| Upload tab UI | Show intermediate success state on mobile |
+| Review tab effect | More aggressive recovery when review tab activates |
 
 ---
 
 ## Why This Should Work
 
-1. **`visibilitychange` event**: This is the correct event to detect when iOS returns from the camera - it fires when the PWA becomes visible again, which is the exact moment recovery is needed.
+1. **Delayed tab switch**: Gives iOS 500ms total to stabilize the viewport before the heavy DOM change of switching tabs
 
-2. **External file input**: Moving the input outside the dialog portal prevents iOS from corrupting the file picker when the dialog re-renders.
+2. **Intermediate UI**: The user sees a success state immediately (preventing confusion), while iOS recovers in the background
 
-3. **Force re-render via key**: Changing the key forces React to completely unmount and remount the dialog content, clearing any corrupted state.
+3. **Pre-switch recovery**: We force visibility recovery BEFORE the tab switch happens, so the dialog is guaranteed to be visible
 
-4. **Multiple recovery attempts**: Different iOS versions and devices may recover at different timings, so we attempt recovery at multiple intervals.
+4. **Post-switch recovery**: Multiple attempts after tab switch catch any remaining corruption
 
-5. **Fallback button**: Even if automated recovery fails, users have a visible way to manually recover.
+5. **Matches error behavior**: Now success path has similar timing to error path (stays on upload tab briefly), which we know works
 
 ---
 
 ## Expected Result After Fix
 
-1. User opens "Scan Receipt" modal on mobile
-2. User selects transaction type and taps to take a photo
-3. iOS camera app opens
-4. User takes photo and iOS returns to the PWA
-5. `visibilitychange` fires and triggers recovery
-6. Dialog content re-renders with the uploaded image
-7. Processing continues normally to the review step
-8. If anything fails, user can tap "Tap to recover" button
+1. User takes photo with camera on mobile
+2. iOS returns to the app
+3. Upload progress shows, then "Receipt Analyzed Successfully!" message appears
+4. After ~500ms, dialog smoothly transitions to review tab
+5. User can review and save the extracted data
+6. No blank screen at any point
 
