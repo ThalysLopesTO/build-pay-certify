@@ -89,6 +89,9 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   // Upload error state for mobile recovery
   const [uploadError, setUploadError] = useState<string | null>(null);
   
+  // Extraction complete state for mobile - shows intermediate UI before tab switch
+  const [extractionComplete, setExtractionComplete] = useState(false);
+  
   // Mobile detection
   const isMobile = useIsMobile();
   
@@ -224,6 +227,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     setTransactionType(null);
     setTransactionTypeConfidence(null);
     setUploadError(null);
+    setExtractionComplete(false);
     setFormData({
       expense_title: '',
       vendor_payee: '',
@@ -444,8 +448,30 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
         payment_method: ''
       });
 
-      // Switch to review tab
-      setActiveTab('review');
+      // For mobile: delay tab switch to let iOS viewport stabilize
+      if (isMobile) {
+        console.log('[PWA] Extraction complete, delaying tab switch for recovery');
+        setExtractionComplete(true);
+        
+        // Force immediate recovery
+        recoverViewport();
+        
+        // Force re-render to ensure dialog is visible
+        setRenderKey(prev => prev + 1);
+        
+        // Wait for viewport to stabilize, then switch tabs
+        setTimeout(() => {
+          recoverViewport();
+          setTimeout(() => {
+            setActiveTab('review');
+            setExtractionComplete(false);
+            recoverViewport();
+          }, 200);
+        }, 300);
+      } else {
+        // Desktop: switch immediately
+        setActiveTab('review');
+      }
 
       toast({
         title: 'Analysis Complete',
@@ -627,10 +653,21 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     }
   }, [isOpen, isUploading, isExtracting, isMobile, recoverViewport]);
 
-  // Recovery when switching to review tab on mobile
+  // Recovery when switching to review tab on mobile - more aggressive with multiple attempts
   useEffect(() => {
     if (activeTab === 'review' && isMobile) {
+      // Multiple recovery attempts when review tab becomes active
       recoverViewport();
+      
+      const recoveryAttempts = [100, 300, 500, 1000];
+      const timeouts = recoveryAttempts.map(delay => 
+        setTimeout(() => {
+          recoverViewport();
+          setRenderKey(prev => prev + 1);
+        }, delay)
+      );
+      
+      return () => timeouts.forEach(clearTimeout);
     }
   }, [activeTab, isMobile, recoverViewport]);
 
@@ -836,6 +873,16 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                 </>
               )}
             </div>
+
+              {/* Extraction complete state - intermediate UI for mobile before tab switch */}
+              {extractionComplete && isMobile && (
+                <div className="text-center py-6 border border-green-200 rounded-lg bg-green-50">
+                  <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-3" />
+                  <p className="text-green-700 font-medium mb-2">Receipt Analyzed Successfully!</p>
+                  <p className="text-sm text-muted-foreground">Loading review form...</p>
+                  <Loader2 className="h-5 w-5 animate-spin mx-auto mt-3 text-green-500" />
+                </div>
+              )}
 
               {/* Error state with retry option */}
               {uploadError && !isUploading && !isExtracting && (
