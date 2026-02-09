@@ -117,6 +117,7 @@ const CreateInvoiceForm = () => {
 
     const invoiceData: CreateInvoiceData & { sendEmail?: boolean } = {
       ...data,
+      invoice_number: data.po_number?.trim() || undefined,
       client_id: data.client_id,
       notes: data.notes || null,
       line_items: data.line_items.filter(item => item.description && item.quantity > 0 && item.unit_price > 0).map(item => ({
@@ -296,7 +297,7 @@ const CreateInvoiceForm = () => {
                   <FormItem>
                     <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
                       <Hash className="h-4 w-4 text-green-500" />
-                      <span>PO Number (Optional)</span>
+                      <span>PO / Invoice Number (Optional)</span>
                     </FormLabel>
                     <FormControl>
                       <Input 

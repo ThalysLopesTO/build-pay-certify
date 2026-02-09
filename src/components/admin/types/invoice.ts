@@ -51,6 +51,7 @@ export interface InvoiceLineItem {
 
 export interface CreateInvoiceData {
   title: string;
+  invoice_number?: string;
   client_id?: string;
   client_company: string;
   client_email: string;
