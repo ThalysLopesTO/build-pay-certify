@@ -1423,7 +1423,16 @@ const IncomeExpensesManagement = () => {
       )}
 
       {/* Create/Edit Dialog - Single Dialog for both mobile and desktop */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+      <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) {
+            // Delay clearing editing state so Dialog can complete its closing animation
+            setTimeout(() => {
+              setEditingTransaction(null);
+              resetForm();
+            }, 200);
+          }
+        }}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>
