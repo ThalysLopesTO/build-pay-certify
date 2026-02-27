@@ -231,13 +231,24 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
       const taxAmount = (subtotal - discountAmount) * (Number(formData.tax) / 100);
       const total = subtotal - discountAmount + taxAmount;
 
+      // Sanitize empty strings to null for optional DB fields
+      const sanitizedData = {
+        ...formData,
+        expiry_date: formData.expiry_date || null,
+        client_id: formData.client_id || null,
+        client_company: formData.client_company || null,
+        client_phone: formData.client_phone || null,
+        client_address: formData.client_address || null,
+        quote_number: formData.quote_number || undefined,
+      };
+
       let resultQuote: Quote;
 
       if (quote) {
         await updateQuote.mutateAsync({
           id: quote.id,
           updates: { 
-            ...formData,
+            ...sanitizedData,
             subtotal,
             total_amount: total,
             payment_config: paymentConfig,
@@ -268,11 +279,10 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
         resultQuote = { ...quote, ...formData, subtotal, total_amount: total, payment_config: paymentConfig };
       } else {
         const newQuote = await createQuote.mutateAsync({
-          ...formData,
+          ...sanitizedData,
           status: formData.status,
           subtotal,
           total_amount: total,
-          quote_number: formData.quote_number || undefined,
           payment_config: paymentConfig,
         });
         
