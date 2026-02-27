@@ -1,36 +1,49 @@
 
 
-# Fix: Quote Save Fails Due to Empty Date Strings
+# Fix: Return to Quotes List After Saving
 
-## Root Cause
-Database logs show: `invalid input syntax for type date: ""`
-
-The `formData` has `expiry_date: ''` (empty string) which gets spread directly into the Supabase insert/update. Postgres rejects empty strings for date columns — it needs `null` instead.
+## Problem
+When clicking "Save Quote", the quote saves successfully (toast appears) but the user stays on the editor instead of returning to the quotes list. The `handleSubmit` function never calls `onClose()`.
 
 ## Fix
 
-**File: `src/components/admin/quotes/QuoteEditor.tsx`**
+**File: `src/components/admin/quotes/QuoteEditor.tsx`** (line ~309)
 
-In the `handleSave` function (around lines 236-277), sanitize the formData before sending to Supabase. Convert empty string date fields to `null`:
+After the success toast in `handleSubmit`, add `onClose()` to navigate back:
 
 ```typescript
-// Before spreading formData into the mutation, sanitize empty dates
-const sanitizedData = {
-  ...formData,
-  expiry_date: formData.expiry_date || null,
-  client_id: formData.client_id || null,
-  client_company: formData.client_company || null,
-  client_phone: formData.client_phone || null,
-  client_address: formData.client_address || null,
-  quote_number: formData.quote_number || undefined,
+toast({
+  title: "Success",
+  description: quote ? "Quote updated successfully" : "Quote created successfully",
+});
+
+onClose(); // Return to quotes list
+
+return resultQuote;
+```
+
+Note: `handleSaveAndSend` calls `handleSubmit()` and then opens the email modal, so `onClose()` should only be called when saving without sending. We need to add a parameter to `handleSubmit` to control this:
+
+```typescript
+const handleSubmit = async (returnToList = true) => {
+  // ... existing save logic ...
+  
+  toast({ ... });
+  
+  if (returnToList) {
+    onClose();
+  }
+  
+  return resultQuote;
 };
 ```
 
-Then use `sanitizedData` instead of `formData` in both the create and update mutation calls (lines 240, 270-276).
+Then update `handleSaveAndSend` to pass `false`:
+```typescript
+const result = await handleSubmit(false);
+```
 
-This applies to both code paths:
-1. **Update path** (line 239-244): Replace `...formData` with `...sanitizedData`
-2. **Create path** (line 270-276): Replace `...formData` with `...sanitizedData`
+And update the save button's `onClick` to just call `handleSubmit()` (which defaults to `true`).
 
-Single file change, ~10 lines added.
+Single file change, ~4 lines modified.
 
