@@ -209,8 +209,10 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
     return lineItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleSubmit = async (eOrReturnToList?: React.FormEvent | boolean) => {
+    const returnToList = typeof eOrReturnToList === 'boolean' ? eOrReturnToList : true;
+    if (eOrReturnToList && typeof eOrReturnToList !== 'boolean') eOrReturnToList.preventDefault();
+    
     
     // Validate client is selected
     if (!formData.client_id || !formData.client_name || !formData.client_email) {
@@ -307,6 +309,10 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
         description: quote ? "Quote updated successfully" : "Quote created successfully",
       });
 
+      if (returnToList) {
+        onClose();
+      }
+
       return resultQuote;
     } catch (error) {
       console.error('Failed to save quote:', error);
@@ -321,7 +327,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
 
   const handleSaveAndSend = async () => {
     try {
-      const result = await handleSubmit();
+      const result = await handleSubmit(false);
       if (result) {
         setSavedQuote(result);
         setIsEmailModalOpen(true);
