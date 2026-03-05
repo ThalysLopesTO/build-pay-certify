@@ -208,8 +208,9 @@ const JobsiteEditModal: React.FC<JobsiteEditModalProps> = ({ jobsite, open, onOp
                           {predictions.map((prediction) => (
                             <li
                               key={prediction.place_id}
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={() => {
-                                selectPlace(prediction.place_id);
+                                try { selectPlace(prediction.place_id); } catch (err) { console.error('Selection error:', err); }
                               }}
                               className="px-4 py-2 hover:bg-accent cursor-pointer text-sm transition-colors"
                             >

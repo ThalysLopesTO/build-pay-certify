@@ -86,54 +86,63 @@ export const useGooglePlacesAutocomplete = ({
   }, [input]);
 
   const selectPlace = async (placeId: string) => {
-    if (!placesServiceRef.current) {
-      console.error('PlacesService not available');
-      return;
-    }
-
-    setIsLoading(true);
-
-    const request = {
-      placeId: placeId,
-      fields: ['formatted_address', 'geometry.location']
-    };
-
-    placesServiceRef.current.getDetails(request, async (place: any, status: any) => {
-      if (status === (window as any).google.maps.places.PlacesServiceStatus.OK && place) {
-        const address = place.formatted_address || '';
-        const latitude = place.geometry?.location?.lat();
-        const longitude = place.geometry?.location?.lng();
-
-        if (latitude && longitude) {
-          try {
-            // Try to geocode for consistent results
-            const geocodeResult = await geocodeAddress(address);
-            
-            if ('error' in geocodeResult) {
-              // Fallback to Google's coordinates
-              onPlaceSelect({ address, latitude, longitude });
-            } else {
-              onPlaceSelect({
-                address: geocodeResult.formattedAddress || address,
-                latitude: geocodeResult.latitude,
-                longitude: geocodeResult.longitude
-              });
-            }
-          } catch (error) {
-            // Fallback to Google's coordinates
-            onPlaceSelect({ address, latitude, longitude });
-          }
-        } else {
-          setError('Unable to get coordinates for this address');
-        }
-      } else {
-        console.error('Failed to get place details:', status);
-        setError('Unable to get address details');
+    try {
+      if (!placesServiceRef.current) {
+        console.error('PlacesService not available');
+        return;
       }
 
+      setIsLoading(true);
+
+      const request = {
+        placeId: placeId,
+        fields: ['formatted_address', 'geometry.location']
+      };
+
+      placesServiceRef.current.getDetails(request, async (place: any, status: any) => {
+        try {
+          if (status === (window as any).google.maps.places.PlacesServiceStatus.OK && place) {
+            const address = place.formatted_address || '';
+            const latitude = place.geometry?.location?.lat();
+            const longitude = place.geometry?.location?.lng();
+
+            if (latitude && longitude) {
+              try {
+                const geocodeResult = await geocodeAddress(address);
+                
+                if ('error' in geocodeResult) {
+                  onPlaceSelect({ address, latitude, longitude });
+                } else {
+                  onPlaceSelect({
+                    address: geocodeResult.formattedAddress || address,
+                    latitude: geocodeResult.latitude,
+                    longitude: geocodeResult.longitude
+                  });
+                }
+              } catch (error) {
+                onPlaceSelect({ address, latitude, longitude });
+              }
+            } else {
+              setError('Unable to get coordinates for this address');
+            }
+          } else {
+            console.error('Failed to get place details:', status);
+            setError('Unable to get address details');
+          }
+        } catch (err) {
+          console.error('Error processing place details:', err);
+          setError('An error occurred while processing the address');
+        } finally {
+          setIsLoading(false);
+          setPredictions([]);
+        }
+      });
+    } catch (err) {
+      console.error('Error in selectPlace:', err);
+      setError('An error occurred while selecting the address');
       setIsLoading(false);
       setPredictions([]);
-    });
+    }
   };
 
   return {

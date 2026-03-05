@@ -162,7 +162,10 @@ const JobsiteForm: React.FC<JobsiteFormProps> = ({ onCancel }) => {
                             {predictions.map((prediction) => (
                               <li
                                 key={prediction.place_id}
-                                onClick={() => selectPlace(prediction.place_id)}
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  try { selectPlace(prediction.place_id); } catch (err) { console.error('Selection error:', err); }
+                                }}
                                 className="px-4 py-2.5 hover:bg-accent cursor-pointer text-sm transition-colors truncate"
                               >
                                 {prediction.description}
