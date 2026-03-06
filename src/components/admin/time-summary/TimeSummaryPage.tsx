@@ -158,7 +158,7 @@ export const TimeSummaryPage: React.FC = () => {
     enabled: !!(filters.jobsiteIds && filters.jobsiteIds.length > 0),
   });
 
-  const { data, isLoading } = useTimeSummaryDataWithRules(filters);
+  const { data, isLoading, isRulesReady } = useTimeSummaryDataWithRules(filters);
 
   // Initialize export hook
   const { isExporting, exportPayrollCSV, exportPayrollExcel, exportPayrollPDF } = useTimeSummaryExport({
@@ -324,9 +324,9 @@ export const TimeSummaryPage: React.FC = () => {
             <DropdownMenuTrigger asChild>
               <Button
                 size="sm"
-                disabled={isLoading || isExporting || !data || data.length === 0}
+                disabled={isLoading || !isRulesReady || isExporting || !data || data.length === 0}
                 className="min-h-[44px]"
-                title={isLoading ? 'Loading data...' : !data || data.length === 0 ? 'No data to export' : 'Download report'}
+                title={isLoading ? 'Loading data...' : !isRulesReady ? 'Calculating break rules...' : !data || data.length === 0 ? 'No data to export' : 'Download report'}
               >
                 <Download className={`h-4 w-4 ${isExporting ? 'animate-bounce' : ''} md:mr-2`} />
                 <span className="hidden md:inline">
