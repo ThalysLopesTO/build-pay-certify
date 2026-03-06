@@ -25,6 +25,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
   const { data: queryResult, isLoading: isBaseLoading, isFetching: isBaseFetching, ...rest } = useTimeSummaryData(filters);
   const [dataWithRules, setDataWithRules] = useState<JobsiteSummaryWithRules[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isRulesReady, setIsRulesReady] = useState(false);
   
   // Track which filterHash the dataWithRules state was computed for
   const lastValidatedHashRef = useRef<string | null>(null);
@@ -75,6 +76,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
   useEffect(() => {
     console.log('[Time Summary Rules] Filters changed, clearing stale data');
     setDataWithRules([]);
+    setIsRulesReady(false);
     
     // Only remove INACTIVE queries from cache (old filter results)
     queryClient.removeQueries({ 
@@ -115,6 +117,13 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
     
     setDataWithRules(immediateData);
     lastValidatedHashRef.current = currentFilterHash;
+    
+    // Pre-set isCalculating to true to close the race condition gap
+    // This prevents exports from being enabled before rules are applied
+    if (baseData.length > 0) {
+      setIsCalculating(true);
+      setIsRulesReady(false);
+    }
   }, [baseData, isBaseFetching]);
 
   // Fetch raw timesheet data to calculate with rules
@@ -173,6 +182,11 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
     }
     
     if (!baseData || baseData.length === 0 || !rawTimesheets || !user?.companyId) {
+      // If no raw timesheets or no base data, rules calculation is not needed
+      if (rawTimesheets && rawTimesheets.length === 0 && baseData && baseData.length > 0) {
+        setIsCalculating(false);
+        setIsRulesReady(true);
+      }
       return;
     }
 
@@ -293,6 +307,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
 
         setDataWithRules(enhancedData);
         lastValidatedHashRef.current = currentFilterHash;
+        setIsRulesReady(true);
       } catch (error) {
         console.error('Error calculating time rules:', error);
         // Fallback to base data
@@ -309,6 +324,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
           })),
         }));
         setDataWithRules(fallbackData);
+        setIsRulesReady(true);
       } finally {
         setIsCalculating(false);
       }
@@ -350,6 +366,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
   return {
     data: validatedData,  // Always returns filter-validated data
     isLoading: isBaseLoading || isTimesheetsLoading || isCalculating || isBaseFetching,
+    isRulesReady,
     isFetching: isBaseFetching,
     ...rest,
   };
