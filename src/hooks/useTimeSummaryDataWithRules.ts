@@ -182,6 +182,11 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
     }
     
     if (!baseData || baseData.length === 0 || !rawTimesheets || !user?.companyId) {
+      // If no raw timesheets or no base data, rules calculation is not needed
+      if (rawTimesheets && rawTimesheets.length === 0 && baseData && baseData.length > 0) {
+        setIsCalculating(false);
+        setIsRulesReady(true);
+      }
       return;
     }
 
