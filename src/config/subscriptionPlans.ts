@@ -75,7 +75,7 @@ export const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
     displayName: 'StackBuild Builder Pro',
     price: 129.90,
     priceDisplay: '$129.90 CAD',
-    employeeLimit: 50,
+    employeeLimit: 80,
     stripePriceId: 'price_1SO2ocEuB2J4BS43BYcRT2Zs',
     features: {
       billsExpenses: true,
@@ -84,7 +84,7 @@ export const SUBSCRIPTION_PLANS: Record<string, SubscriptionPlan> = {
       customSupport: true,
     },
     featureList: [
-      '50 Employee accounts (excl. admin)',
+      '80 Employee accounts (excl. admin)',
       'All Builder plan features',
       '✅ Custom Support 24hrs',
       '✅ Priority feature requests',
