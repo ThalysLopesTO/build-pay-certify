@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, AlertTriangle, Clock, Briefcase, Calendar, RefreshCw, CheckCircle, Pencil } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { EmployeeSummary } from '@/hooks/useTimeSummaryData';
@@ -34,6 +35,24 @@ interface EmployeeTimeSummaryRowProps {
   startDate: Date;
   endDate: Date;
 }
+
+const flagLabels: Record<string, string> = {
+  MISSING_CHECKOUT: 'Missing Punch Out — Employee did not clock out',
+  LATE_ARRIVAL: 'Late Arrival — Clocked in after scheduled start',
+  EARLY_PUNCH: 'Early Punch — Clocked in before scheduled start',
+  AFTER_END: 'Stayed Past End — Clocked out after scheduled end',
+  SHORT_DAY: 'Short Day — Worked fewer hours than expected',
+  INVALID: 'Invalid Punch — Could not calculate hours',
+};
+
+const flagShort: Record<string, string> = {
+  MISSING_CHECKOUT: 'No Out',
+  LATE_ARRIVAL: 'Late',
+  EARLY_PUNCH: 'Early',
+  AFTER_END: 'Overtime',
+  SHORT_DAY: 'Short',
+  INVALID: 'Invalid',
+};
 
 export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({ 
   employee,
@@ -256,7 +275,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                           Active
                         </Badge>
                       ) : (
-                        <span className="text-xs">—</span>
+                        <span className="text-xs font-semibold text-destructive">Missing Punch Out!</span>
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -275,17 +294,39 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                       })()}
                     </div>
                     <div className="flex items-center gap-1 flex-wrap">
-                      {punch.flags && punch.flags.length > 0 ? (
-                        punch.flags.map((flag, idx) => (
-                          <Badge key={idx} variant="destructive" className="text-xs">
-                            ⚠
+                      <TooltipProvider>
+                        {punch.flags && punch.flags.length > 0 ? (
+                          punch.flags.map((flag, idx) => {
+                            const label = flagLabels[flag] || flag;
+                            const short = flagShort[flag] || flag;
+                            const isMissing = flag === 'MISSING_CHECKOUT';
+                            return (
+                              <Tooltip key={idx}>
+                                <TooltipTrigger asChild>
+                                  <Badge
+                                    variant={isMissing ? "destructive" : "outline"}
+                                    className={cn(
+                                      "text-xs cursor-default",
+                                      isMissing
+                                        ? "bg-destructive text-destructive-foreground"
+                                        : "border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-700 dark:bg-orange-950/30 dark:text-orange-400"
+                                    )}
+                                  >
+                                    ⚠ {short}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs max-w-[200px]">
+                                  {label}
+                                </TooltipContent>
+                              </Tooltip>
+                            );
+                          })
+                        ) : (
+                          <Badge variant="outline" className="text-xs text-green-600 border-green-200">
+                            ✓ OK
                           </Badge>
-                        ))
-                      ) : (
-                        <Badge variant="outline" className="text-xs text-green-600 border-green-200">
-                          ✓ OK
-                        </Badge>
-                      )}
+                        )}
+                      </TooltipProvider>
                     </div>
                     <div>
                       <Button
@@ -343,7 +384,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                         ) : punch.status === "active" ? (
                           <Badge variant="secondary" className="text-xs">Active</Badge>
                         ) : (
-                          <span>—</span>
+                          <span className="text-xs font-semibold text-destructive">Missing Punch Out!</span>
                         )}
                       </div>
                     </div>
@@ -365,7 +406,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                         <div className="flex gap-1 flex-wrap">
                           {punch.flags.map((flag, idx) => (
                             <Badge key={idx} variant="destructive" className="text-xs">
-                              ⚠ {flag}
+                              ⚠ {flagLabels[flag] || flag}
                             </Badge>
                           ))}
                         </div>
