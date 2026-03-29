@@ -20,31 +20,6 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
   startDate,
   endDate 
 }) => {
-  // Track accumulated totals from employee rows for accurate calculations
-  const [employeeTotals, setEmployeeTotals] = useState<Map<string, {
-    paidHours: number;
-    rawHours: number;
-    issueCount: number;
-  }>>(new Map());
-
-  // Clear accumulated totals when data changes (filters applied)
-  useEffect(() => {
-    setEmployeeTotals(new Map());
-  }, [data]);
-
-  // Callback to receive calculated totals from employee rows
-  const handleEmployeeTotals = useCallback((
-    employeeId: string,
-    jobsiteId: string,
-    totals: { paidHours: number; rawHours: number; issueCount: number }
-  ) => {
-    const key = `${employeeId}-${jobsiteId}`;
-    setEmployeeTotals(prev => {
-      const newMap = new Map(prev);
-      newMap.set(key, totals);
-      return newMap;
-    });
-  }, []);
   if (isLoading) {
     return (
       <Card className="p-8">
@@ -83,27 +58,16 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
   });
   const grandTotalEmployees = uniqueEmployeeIds.size;
 
-  // Calculate grand totals using accumulated employee data when available
+  // Calculate grand totals directly from pre-calculated data (single source of truth)
   let grandTotalPaidHours = 0;
   let grandTotalRawHours = 0;
   let grandTotalIssues = 0;
 
   data.forEach(jobsite => {
     jobsite.employees.forEach(emp => {
-      const key = `${emp.employee_id}-${jobsite.jobsite_id}`;
-      const accumulated = employeeTotals.get(key);
-      
-      if (accumulated) {
-        // Use accurate accumulated data from employee rows
-        grandTotalPaidHours += accumulated.paidHours;
-        grandTotalRawHours += accumulated.rawHours;
-        grandTotalIssues += accumulated.issueCount;
-      } else {
-        // Fallback to pre-calculated data if not yet loaded
-        grandTotalPaidHours += safeNumber(emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours);
-        grandTotalRawHours += safeNumber(emp.total_raw_hours !== undefined ? emp.total_raw_hours : emp.total_hours);
-        grandTotalIssues += safeNumber(emp.issue_count);
-      }
+      grandTotalPaidHours += safeNumber((emp as any).total_paid_hours !== undefined ? (emp as any).total_paid_hours : emp.total_hours);
+      grandTotalRawHours += safeNumber((emp as any).total_raw_hours !== undefined ? (emp as any).total_raw_hours : emp.total_hours);
+      grandTotalIssues += safeNumber((emp as any).issue_count);
     });
   });
 
@@ -206,26 +170,14 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
 
       {/* Jobsite Groups */}
       {data.map((jobsite) => {
-        // Calculate jobsite totals using accumulated data when available
         let jobsiteTotalPaidHours = 0;
         let jobsiteTotalRawHours = 0;
         let jobsiteIssueCount = 0;
 
         jobsite.employees.forEach(emp => {
-          const key = `${emp.employee_id}-${jobsite.jobsite_id}`;
-          const accumulated = employeeTotals.get(key);
-          
-          if (accumulated) {
-            // Use accurate accumulated data
-            jobsiteTotalPaidHours += accumulated.paidHours;
-            jobsiteTotalRawHours += accumulated.rawHours;
-            jobsiteIssueCount += accumulated.issueCount;
-          } else {
-            // Fallback to pre-calculated data
-            jobsiteTotalPaidHours += safeNumber(emp.total_paid_hours !== undefined ? emp.total_paid_hours : emp.total_hours);
-            jobsiteTotalRawHours += safeNumber(emp.total_raw_hours !== undefined ? emp.total_raw_hours : emp.total_hours);
-            jobsiteIssueCount += safeNumber(emp.issue_count);
-          }
+          jobsiteTotalPaidHours += safeNumber((emp as any).total_paid_hours !== undefined ? (emp as any).total_paid_hours : emp.total_hours);
+          jobsiteTotalRawHours += safeNumber((emp as any).total_raw_hours !== undefined ? (emp as any).total_raw_hours : emp.total_hours);
+          jobsiteIssueCount += safeNumber((emp as any).issue_count);
         });
 
         return (
@@ -284,7 +236,6 @@ export const TimeSummaryTable: React.FC<TimeSummaryTableProps> = ({
                   jobsiteId={jobsite.jobsite_id}
                   startDate={startDate}
                   endDate={endDate}
-                  onTotalsCalculated={handleEmployeeTotals}
                 />
               ))}
             </div>

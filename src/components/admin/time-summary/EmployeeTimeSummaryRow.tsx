@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, AlertTriangle, Clock, Briefcase, Calendar, RefreshCw, CheckCircle, Pencil } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Badge } from '@/components/ui/badge';
@@ -21,10 +21,10 @@ const formatTimeToAmPm = (timeString: string | null): string => {
   try {
     const [hours, minutes] = timeString.split(':').map(Number);
     const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12; // Convert 0 to 12, and 13-23 to 1-11
+    const displayHours = hours % 12 || 12;
     return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
   } catch {
-    return timeString; // Return original if parsing fails
+    return timeString;
   }
 };
 
@@ -33,11 +33,6 @@ interface EmployeeTimeSummaryRowProps {
   jobsiteId: string;
   startDate: Date;
   endDate: Date;
-  onTotalsCalculated?: (employeeId: string, jobsiteId: string, totals: {
-    paidHours: number;
-    rawHours: number;
-    issueCount: number;
-  }) => void;
 }
 
 export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({ 
@@ -45,56 +40,29 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
   jobsiteId,
   startDate,
   endDate,
-  onTotalsCalculated
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [editingPunch, setEditingPunch] = useState<DailyPunch | null>(null);
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // Use pre-calculated totals from parent (single source of truth)
+  const empAny = employee as any;
+  const displayPaidHours = empAny.total_paid_hours !== undefined ? empAny.total_paid_hours : employee.total_hours;
+  const displayRawHours = empAny.total_raw_hours !== undefined ? empAny.total_raw_hours : employee.total_hours;
+  const displayBreakMinutes = empAny.total_break_minutes ?? 0;
+  const displayIssueCount = empAny.issue_count ?? 0;
+  const displayDaysWorked = empAny.days_worked ?? employee.total_punches;
   
-  // Fetch daily details immediately to ensure accurate totals
+  // Only fetch daily details when expanded (eliminates N+1 queries)
   const { data: dailyPunches, isLoading, refetch } = useTimeSummaryDetails({
     employeeId: employee.employee_id,
     jobsiteId,
     startDate,
     endDate,
-    enabled: true,
+    enabled: isExpanded,
   });
-
-  // Calculate totals from loaded data - return 0 values when no punches found (pure calculation)
-  const calculatedTotals = useMemo(() => {
-    if (!dailyPunches || dailyPunches.length === 0) {
-      return { totalRaw: 0, totalPaid: 0, totalBreak: 0, issueCount: 0, daysWorked: 0 };
-    }
-    
-    const totalRaw = dailyPunches.reduce((sum, p) => {
-      const val = p.raw_hours !== undefined ? p.raw_hours : p.hours_worked;
-      return sum + (isNaN(val) ? 0 : val);
-    }, 0);
-    const totalPaid = dailyPunches.reduce((sum, p) => {
-      const val = p.paid_hours !== undefined ? p.paid_hours : p.hours_worked;
-      return sum + (isNaN(val) ? 0 : val);
-    }, 0);
-    const totalBreak = (totalRaw - totalPaid) * 60; // in minutes
-    const issueCount = dailyPunches.reduce((sum, p) => sum + (p.flags?.length || 0), 0);
-    
-    return { totalRaw, totalPaid, totalBreak, issueCount, daysWorked: dailyPunches.length };
-  }, [dailyPunches]);
-
-  // Report totals to parent component reliably when they change
-  useEffect(() => {
-    if (onTotalsCalculated) {
-      onTotalsCalculated(employee.employee_id, jobsiteId, {
-        paidHours: calculatedTotals.totalPaid,
-        rawHours: calculatedTotals.totalRaw,
-        issueCount: calculatedTotals.issueCount
-      });
-    }
-  }, [calculatedTotals, employee.employee_id, jobsiteId, onTotalsCalculated]);
-
-  // Always prefer calculated totals when loaded, show 0 if no punches found
-  const displayPaidHours = isLoading ? employee.total_hours : calculatedTotals.totalPaid;
 
   // Manual refresh handler
   const handleRefresh = async (e: React.MouseEvent) => {
@@ -164,53 +132,35 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
               
               {/* Paid Hours - Large */}
               <div className="flex items-baseline gap-1.5">
-                {isLoading ? (
-                  <span className="text-2xl md:text-3xl font-bold text-muted-foreground animate-pulse">
-                    ...
-                  </span>
-                ) : (
-                  <>
-                    <span className="text-2xl md:text-3xl font-bold text-primary group-hover:scale-105 transition-transform origin-right">
-                      {(() => {
-                        return isNaN(displayPaidHours) || displayPaidHours === null || displayPaidHours === undefined ? '—' : displayPaidHours.toFixed(2);
-                      })()}
-                    </span>
-                    {!isNaN(displayPaidHours) && (
-                      <span className="text-sm font-medium text-muted-foreground">hrs</span>
-                    )}
-                  </>
+                <span className="text-2xl md:text-3xl font-bold text-primary group-hover:scale-105 transition-transform origin-right">
+                  {isNaN(displayPaidHours) || displayPaidHours === null || displayPaidHours === undefined ? '—' : displayPaidHours.toFixed(2)}
+                </span>
+                {!isNaN(displayPaidHours) && (
+                  <span className="text-sm font-medium text-muted-foreground">hrs</span>
                 )}
               </div>
               
               {/* Raw Hours - Small (only if different) */}
-              {calculatedTotals && 
-               !isNaN(calculatedTotals.totalRaw) &&
-               !isNaN(calculatedTotals.totalPaid) &&
-               calculatedTotals.totalRaw !== calculatedTotals.totalPaid && (
+              {!isNaN(displayRawHours) && !isNaN(displayPaidHours) && displayRawHours !== displayPaidHours && (
                 <p className="text-xs text-muted-foreground/70">
-                  Raw: {calculatedTotals.totalRaw.toFixed(2)} hrs
+                  Raw: {displayRawHours.toFixed(2)} hrs
                 </p>
               )}
             </div>
             
             {/* Issues Badge */}
             <div className="flex flex-col items-end gap-2">
-              {calculatedTotals?.issueCount !== undefined && calculatedTotals.issueCount > 0 ? (
+              {displayIssueCount > 0 ? (
                 <Badge variant="destructive" className="flex items-center gap-1.5 text-xs px-2.5 py-1 shadow-sm">
                   <AlertTriangle className="h-3.5 w-3.5" />
-                  <span>{calculatedTotals.issueCount} {calculatedTotals.issueCount === 1 ? 'issue' : 'issues'}</span>
+                  <span>{displayIssueCount} {displayIssueCount === 1 ? 'issue' : 'issues'}</span>
                 </Badge>
-              ) : calculatedTotals?.issueCount !== undefined ? (
+              ) : (
                 <Badge variant="outline" className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 shadow-sm">
                   <CheckCircle className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">All clear</span>
                 </Badge>
-              ) : employee.has_flags ? (
-                <Badge variant="destructive" className="flex items-center gap-1.5 text-xs px-2.5 py-1 shadow-sm">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Issues</span>
-                </Badge>
-              ) : null}
+              )}
 
               {/* Expand Icon */}
               <div className="flex-shrink-0 ml-1">
@@ -426,34 +376,32 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
               ))}
 
               {/* Summary Footer */}
-              {calculatedTotals && (
-                <div className="mt-4 pt-3 border-t border-border/50 bg-muted/20 rounded-lg p-3">
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Total Raw</p>
-                      <p className="font-semibold">{calculatedTotals.totalRaw.toFixed(2)} hrs</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Total Break</p>
-                      <p className="font-semibold text-orange-600">{calculatedTotals.totalBreak.toFixed(0)} min</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Total Paid</p>
-                      <p className="font-semibold text-primary">{calculatedTotals.totalPaid.toFixed(2)} hrs</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Days Worked</p>
-                      <p className="font-semibold">{calculatedTotals.daysWorked}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Total Issues</p>
-                      <p className={cn("font-semibold", calculatedTotals.issueCount > 0 ? "text-destructive" : "text-green-600")}>
-                        {calculatedTotals.issueCount}
-                      </p>
-                    </div>
+              <div className="mt-4 pt-3 border-t border-border/50 bg-muted/20 rounded-lg p-3">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Total Raw</p>
+                    <p className="font-semibold">{displayRawHours.toFixed(2)} hrs</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Total Break</p>
+                    <p className="font-semibold text-orange-600">{displayBreakMinutes} min</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Total Paid</p>
+                    <p className="font-semibold text-primary">{displayPaidHours.toFixed(2)} hrs</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Days Worked</p>
+                    <p className="font-semibold">{displayDaysWorked}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Total Issues</p>
+                    <p className={cn("font-semibold", displayIssueCount > 0 ? "text-destructive" : "text-green-600")}>
+                      {displayIssueCount}
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </div>
