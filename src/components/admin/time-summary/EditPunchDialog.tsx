@@ -14,16 +14,26 @@ import { Textarea } from '@/components/ui/textarea';
 import { Clock, Save } from 'lucide-react';
 import { useUpdateTimesheet } from '@/hooks/useUpdateTimesheet';
 import { DailyPunch } from '@/hooks/useTimeSummaryData';
+import { cn } from '@/lib/utils';
 
 interface EditPunchDialogProps {
   punch: DailyPunch | null;
   onClose: () => void;
 }
 
+const BREAK_PRESETS = [
+  { label: '15 min', value: 15 },
+  { label: '30 min', value: 30 },
+  { label: '40 min', value: 40 },
+  { label: '1 hr', value: 60 },
+  { label: '1.5 hr', value: 90 },
+];
+
 export const EditPunchDialog: React.FC<EditPunchDialogProps> = ({ punch, onClose }) => {
   const [checkInTime, setCheckInTime] = useState('');
   const [checkOutTime, setCheckOutTime] = useState('');
   const [breakMinutes, setBreakMinutes] = useState('');
+  const [isCustomBreak, setIsCustomBreak] = useState(false);
   const [adminNote, setAdminNote] = useState('');
   const [punchDate, setPunchDate] = useState('');
   
@@ -35,10 +45,27 @@ export const EditPunchDialog: React.FC<EditPunchDialogProps> = ({ punch, onClose
       setPunchDate(punch.date);
       setCheckInTime(punch.check_in_time || '');
       setCheckOutTime(punch.check_out_time || '');
-      setBreakMinutes(punch.break_minutes?.toString() || '');
+      const bm = punch.break_minutes?.toString() || '';
+      setBreakMinutes(bm);
+      // Check if stored value matches a preset
+      const numVal = parseInt(bm);
+      const isPreset = BREAK_PRESETS.some(p => p.value === numVal);
+      setIsCustomBreak(bm !== '' && !isPreset);
       setAdminNote('');
     }
   }, [punch]);
+
+  const handlePresetClick = (value: number) => {
+    const current = parseInt(breakMinutes);
+    if (current === value) {
+      // Deselect
+      setBreakMinutes('');
+      setIsCustomBreak(false);
+    } else {
+      setBreakMinutes(value.toString());
+      setIsCustomBreak(false);
+    }
+  };
 
   const handleSave = () => {
     if (!punch?.timesheet_id || !punchDate) return;
@@ -65,6 +92,9 @@ export const EditPunchDialog: React.FC<EditPunchDialogProps> = ({ punch, onClose
   };
 
   if (!punch) return null;
+
+  const currentBreakNum = parseInt(breakMinutes);
+  const activePreset = BREAK_PRESETS.find(p => p.value === currentBreakNum);
 
   return (
     <Dialog open={!!punch} onOpenChange={() => onClose()}>
@@ -114,23 +144,53 @@ export const EditPunchDialog: React.FC<EditPunchDialogProps> = ({ punch, onClose
             </p>
           </div>
 
-          {/* Break Time */}
+          {/* Break Time - Presets */}
           <div className="space-y-2">
-            <Label htmlFor="break-minutes" className="text-sm font-medium">
-              Break Time (minutes)
+            <Label className="text-sm font-medium">
+              Break Time
             </Label>
-            <Input
-              id="break-minutes"
-              type="number"
-              min="0"
-              max="120"
-              placeholder={`Default: ${punch.break_minutes || 0} min (from time rules)`}
-              value={breakMinutes}
-              onChange={(e) => setBreakMinutes(e.target.value)}
-              className="w-full"
-            />
+            <div className="flex flex-wrap gap-2">
+              {BREAK_PRESETS.map((preset) => (
+                <Button
+                  key={preset.value}
+                  type="button"
+                  variant={activePreset?.value === preset.value && !isCustomBreak ? "default" : "outline"}
+                  size="sm"
+                  className={cn(
+                    "text-xs",
+                    activePreset?.value === preset.value && !isCustomBreak && "ring-2 ring-primary/30"
+                  )}
+                  onClick={() => handlePresetClick(preset.value)}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+              <Button
+                type="button"
+                variant={isCustomBreak ? "default" : "outline"}
+                size="sm"
+                className="text-xs"
+                onClick={() => {
+                  setIsCustomBreak(true);
+                  if (!isCustomBreak) setBreakMinutes('');
+                }}
+              >
+                Custom
+              </Button>
+            </div>
+            {isCustomBreak && (
+              <Input
+                type="number"
+                min="0"
+                max="180"
+                placeholder="Enter minutes..."
+                value={breakMinutes}
+                onChange={(e) => setBreakMinutes(e.target.value)}
+                className="w-full mt-2"
+              />
+            )}
             <p className="text-xs text-muted-foreground">
-              Leave empty to use time rules default
+              {breakMinutes ? `${breakMinutes} minutes will be deducted from total hours` : 'No break deducted — select a preset or enter custom'}
             </p>
           </div>
 
