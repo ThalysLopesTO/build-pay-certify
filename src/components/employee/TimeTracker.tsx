@@ -44,6 +44,9 @@ const TimeTracker = () => {
   const {
     todayActiveTimesheet,
     totalWeeklyHours,
+    totalRawHours,
+    totalBreakMinutes,
+    totalPaidHours,
     weeklyTimesheets,
     clockIn,
     clockOut,

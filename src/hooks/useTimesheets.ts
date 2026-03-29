@@ -1,5 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -14,16 +15,49 @@ export interface Timesheet {
   check_in_location: string | null;
   check_out_location: string | null;
   hours_worked: number | null;
+  break_minutes: number | null;
+  raw_hours: number;
+  paid_hours: number;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   updated_at: string;
   company_id: string;
 }
 
+const computeRawHours = (checkIn: string | null, checkOut: string | null): number => {
+  if (!checkIn || !checkOut) return 0;
+  return (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60);
+};
+
 export const useTimesheets = (selectedWeek?: Date) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Real-time subscription for admin edits
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`timesheets-employee-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'timesheets',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
 
   // Get timesheets for the selected week (or current week if not specified)
   const { data: weeklyTimesheets, isLoading } = useQuery({
@@ -54,7 +88,16 @@ export const useTimesheets = (selectedWeek?: Date) => {
         throw error;
       }
 
-      return data as Timesheet[];
+      // Compute raw_hours and paid_hours client-side
+      return (data || []).map((t: any) => {
+        const raw = computeRawHours(t.check_in_time, t.check_out_time);
+        const breakHrs = (t.break_minutes || 0) / 60;
+        return {
+          ...t,
+          raw_hours: raw,
+          paid_hours: Math.max(0, raw - breakHrs),
+        } as Timesheet;
+      });
     },
     enabled: !!user?.id,
   });
@@ -87,7 +130,15 @@ export const useTimesheets = (selectedWeek?: Date) => {
         throw error;
       }
 
-      return data as Timesheet | null;
+      if (!data) return null;
+
+      const raw = computeRawHours(data.check_in_time, data.check_out_time);
+      const breakHrs = ((data as any).break_minutes || 0) / 60;
+      return {
+        ...data,
+        raw_hours: raw,
+        paid_hours: Math.max(0, raw - breakHrs),
+      } as Timesheet;
     },
     enabled: !!user?.id,
   });
@@ -178,15 +229,19 @@ export const useTimesheets = (selectedWeek?: Date) => {
     },
   });
 
-  // Calculate total hours for the selected week
-  const totalWeeklyHours = weeklyTimesheets?.reduce((total, timesheet) => {
-    return total + (timesheet.hours_worked || 0);
-  }, 0) || 0;
+  // Calculate totals for the selected week
+  const totalRawHours = weeklyTimesheets?.reduce((total, t) => total + t.raw_hours, 0) || 0;
+  const totalBreakMinutes = weeklyTimesheets?.reduce((total, t) => total + (t.break_minutes || 0), 0) || 0;
+  const totalPaidHours = weeklyTimesheets?.reduce((total, t) => total + t.paid_hours, 0) || 0;
+  const totalWeeklyHours = totalPaidHours;
 
   return {
     weeklyTimesheets,
     todayActiveTimesheet,
     totalWeeklyHours,
+    totalRawHours,
+    totalBreakMinutes,
+    totalPaidHours,
     isLoading,
     clockIn: clockInMutation.mutate,
     clockOut: clockOutMutation.mutate,
