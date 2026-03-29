@@ -66,6 +66,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
   const [editingPunch, setEditingPunch] = useState<DailyPunch | null>(null);
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { mutate: updateTimesheet } = useUpdateTimesheet();
 
   // Use pre-calculated totals from parent (single source of truth)
   const empAny = employee as any;
