@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Download, FileText, Calendar, History } from 'lucide-react';
 import { useJobsites } from '@/hooks/useJobsites';
 import { format } from 'date-fns';
@@ -13,6 +13,15 @@ interface WeeklyHistorySectionProps {
   weeklyTimesheets?: Timesheet[];
   selectedWeek: Date;
 }
+
+const formatBreak = (minutes: number | null): string => {
+  if (!minutes || minutes === 0) return '—';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+};
 
 const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistorySectionProps) => {
   const { data: jobsites } = useJobsites();
@@ -40,24 +49,16 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
       return;
     }
 
-    const csvHeaders = ['Date', 'Jobsite', 'Clock In', 'Clock Out', 'Total Hours', 'Hourly Rate', 'Pay Before Tax', 'Tax (13%)', 'Net Pay'];
+    const csvHeaders = ['Date', 'Jobsite', 'Clock In', 'Clock Out', 'Raw Hours', 'Break', 'Paid Hours'];
     const csvData = weeklyTimesheets.map(timesheet => {
-      const totalHours = timesheet.hours_worked || 0;
-      const hourlyRate = 25; // This should come from user profile - placeholder for now
-      const payBeforeTax = totalHours * hourlyRate;
-      const taxAmount = payBeforeTax * 0.13; // 13% tax
-      const netPay = payBeforeTax - taxAmount;
-
       return [
         format(new Date(timesheet.check_in_time!), 'MM/dd/yyyy'),
         getJobsiteName(timesheet.jobsite_id),
         timesheet.check_in_time ? format(new Date(timesheet.check_in_time), 'h:mm a') : '--',
         timesheet.check_out_time ? format(new Date(timesheet.check_out_time), 'h:mm a') : 'Still Active',
-        timesheet.hours_worked ? timesheet.hours_worked.toFixed(2) : '0.00',
-        `$${hourlyRate.toFixed(2)}`,
-        `$${payBeforeTax.toFixed(2)}`,
-        `$${taxAmount.toFixed(2)}`,
-        `$${netPay.toFixed(2)}`
+        timesheet.raw_hours.toFixed(2),
+        formatBreak(timesheet.break_minutes),
+        timesheet.paid_hours.toFixed(2),
       ];
     });
 
@@ -77,9 +78,14 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
 
     toast({
       title: "CSV Exported",
-      description: "Your timesheet data with tax breakdown has been exported successfully.",
+      description: "Your timesheet data has been exported successfully.",
     });
   };
+
+  // Calculate totals
+  const totalRaw = weeklyTimesheets?.reduce((sum, t) => sum + t.raw_hours, 0) || 0;
+  const totalBreakMin = weeklyTimesheets?.reduce((sum, t) => sum + (t.break_minutes || 0), 0) || 0;
+  const totalPaid = weeklyTimesheets?.reduce((sum, t) => sum + t.paid_hours, 0) || 0;
 
   return (
     <Card className="shadow-xl border-2 border-primary/10 overflow-hidden">
@@ -120,13 +126,15 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
                 <TableHead className="font-bold text-slate-700 py-4">Jobsite</TableHead>
                 <TableHead className="font-bold text-slate-700 py-4">Clock In</TableHead>
                 <TableHead className="font-bold text-slate-700 py-4">Clock Out</TableHead>
-                <TableHead className="text-right font-bold text-slate-700 py-4">Total Hours</TableHead>
+                <TableHead className="text-right font-bold text-slate-700 py-4">Raw Hours</TableHead>
+                <TableHead className="text-right font-bold text-slate-700 py-4">Break</TableHead>
+                <TableHead className="text-right font-bold text-slate-700 py-4">Paid Hours</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {weeklyTimesheets?.length === 0 || !weeklyTimesheets ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-12">
+                  <TableCell colSpan={7} className="text-center py-12">
                     <div className="flex flex-col items-center space-y-3 text-muted-foreground">
                       <Calendar className="h-12 w-12 text-slate-300" />
                       <span className="text-lg font-medium">No timesheet entries for this week</span>
@@ -164,14 +172,42 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
                       }
                     </TableCell>
                     <TableCell className="text-right py-4">
+                      <span className="font-mono font-bold text-slate-600">
+                        {timesheet.raw_hours.toFixed(2)}h
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right py-4">
+                      <span className="font-mono text-orange-700 font-medium">
+                        {formatBreak(timesheet.break_minutes)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right py-4">
                       <span className="font-mono text-lg font-bold text-slate-800">
-                        {timesheet.hours_worked ? timesheet.hours_worked.toFixed(2) : '0.00'}h
+                        {timesheet.paid_hours.toFixed(2)}h
                       </span>
                     </TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
+            {weeklyTimesheets && weeklyTimesheets.length > 0 && (
+              <TableFooter>
+                <TableRow className="bg-gradient-to-r from-slate-100 to-blue-50 border-t-2 border-slate-300">
+                  <TableCell colSpan={4} className="font-bold text-slate-800 py-4 text-right">
+                    Week Totals:
+                  </TableCell>
+                  <TableCell className="text-right py-4">
+                    <span className="font-mono font-bold text-slate-700">{totalRaw.toFixed(2)}h</span>
+                  </TableCell>
+                  <TableCell className="text-right py-4">
+                    <span className="font-mono font-bold text-orange-700">{formatBreak(totalBreakMin)}</span>
+                  </TableCell>
+                  <TableCell className="text-right py-4">
+                    <span className="font-mono text-lg font-black text-slate-900">{totalPaid.toFixed(2)}h</span>
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            )}
           </Table>
         </div>
       </CardContent>

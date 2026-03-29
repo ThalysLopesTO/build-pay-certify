@@ -1,9 +1,18 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Calendar, LogIn, LogOut, Timer } from 'lucide-react';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Calendar, LogIn, LogOut, Timer, Coffee } from 'lucide-react';
 import { useTimesheets } from '@/hooks/useTimesheets';
 import { format } from 'date-fns';
+
+const formatBreakMinutes = (minutes: number): string => {
+  if (minutes === 0) return '0m';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+};
 
 const TodayStatusBox = () => {
   const { weeklyTimesheets, todayActiveTimesheet } = useTimesheets();
@@ -43,16 +52,17 @@ const TodayStatusBox = () => {
       return currentTime > latestTime ? current : latest;
     }, null as typeof allTodayTimesheets[0] | null);
 
-  const totalHoursToday = allTodayTimesheets.reduce((total, timesheet) => {
-    return total + (timesheet.hours_worked || 0);
-  }, 0);
+  // Compute raw hours from timestamps
+  const totalRawHoursToday = allTodayTimesheets.reduce((total, t) => total + t.raw_hours, 0);
+  const totalBreakMinutesToday = allTodayTimesheets.reduce((total, t) => total + (t.break_minutes || 0), 0);
 
   // Calculate current session time if clocked in
   const currentSessionHours = todayActiveTimesheet?.check_in_time 
     ? (new Date().getTime() - new Date(todayActiveTimesheet.check_in_time).getTime()) / (1000 * 60 * 60)
     : 0;
 
-  const displayTotalHours = totalHoursToday + currentSessionHours;
+  const displayRawHours = totalRawHoursToday + currentSessionHours;
+  const displayPaidHours = Math.max(0, displayRawHours - (totalBreakMinutesToday / 60));
 
   return (
     <Card className="shadow-xl border-2 border-primary/10 overflow-hidden">
@@ -63,45 +73,57 @@ const TodayStatusBox = () => {
         </CardTitle>
       </div>
       <CardContent className="p-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-md border border-blue-200/50 hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-center mb-4">
-              <div className="p-3 bg-blue-500 rounded-full shadow-lg">
-                <LogIn className="h-6 w-6 text-white" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="text-center p-4 md:p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-md border border-blue-200/50 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-center mb-3 md:mb-4">
+              <div className="p-2.5 md:p-3 bg-blue-500 rounded-full shadow-lg">
+                <LogIn className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
             </div>
-            <div className="text-sm text-blue-600 font-semibold mb-2 uppercase tracking-wide">First Clock In</div>
-            <div className="text-2xl font-black text-blue-900">
+            <div className="text-xs md:text-sm text-blue-600 font-semibold mb-1 md:mb-2 uppercase tracking-wide">First Clock In</div>
+            <div className="text-xl md:text-2xl font-black text-blue-900">
               {firstClockIn ? format(new Date(firstClockIn.check_in_time!), 'h:mm a') : '--:--'}
             </div>
           </div>
           
-          <div className="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl shadow-md border border-green-200/50 hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-center mb-4">
-              <div className="p-3 bg-green-500 rounded-full shadow-lg">
-                <LogOut className="h-6 w-6 text-white" />
+          <div className="text-center p-4 md:p-6 bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl shadow-md border border-green-200/50 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-center mb-3 md:mb-4">
+              <div className="p-2.5 md:p-3 bg-green-500 rounded-full shadow-lg">
+                <LogOut className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
             </div>
-            <div className="text-sm text-green-600 font-semibold mb-2 uppercase tracking-wide">Last Clock Out</div>
-            <div className="text-2xl font-black text-green-900">
+            <div className="text-xs md:text-sm text-green-600 font-semibold mb-1 md:mb-2 uppercase tracking-wide">Last Clock Out</div>
+            <div className="text-xl md:text-2xl font-black text-green-900">
               {lastClockOut ? format(new Date(lastClockOut.check_out_time!), 'h:mm a') : 
                todayActiveTimesheet ? (
-                 <span className="text-lg bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent animate-pulse">
+                 <span className="text-base md:text-lg bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent animate-pulse">
                    Still Active
                  </span>
                ) : '--:--'}
             </div>
           </div>
-          
-          <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-violet-100 rounded-2xl shadow-md border border-purple-200/50 hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-center mb-4">
-              <div className="p-3 bg-purple-500 rounded-full shadow-lg">
-                <Timer className="h-6 w-6 text-white" />
+
+          <div className="text-center p-4 md:p-6 bg-gradient-to-br from-orange-50 to-amber-100 rounded-2xl shadow-md border border-orange-200/50 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-center mb-3 md:mb-4">
+              <div className="p-2.5 md:p-3 bg-orange-500 rounded-full shadow-lg">
+                <Coffee className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
             </div>
-            <div className="text-sm text-purple-600 font-semibold mb-2 uppercase tracking-wide">Total Time Today</div>
-            <div className="text-2xl font-black text-purple-900">
-              {displayTotalHours.toFixed(1)}h
+            <div className="text-xs md:text-sm text-orange-600 font-semibold mb-1 md:mb-2 uppercase tracking-wide">Breaks</div>
+            <div className="text-xl md:text-2xl font-black text-orange-900">
+              {formatBreakMinutes(totalBreakMinutesToday)}
+            </div>
+          </div>
+          
+          <div className="text-center p-4 md:p-6 bg-gradient-to-br from-purple-50 to-violet-100 rounded-2xl shadow-md border border-purple-200/50 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-center mb-3 md:mb-4">
+              <div className="p-2.5 md:p-3 bg-purple-500 rounded-full shadow-lg">
+                <Timer className="h-5 w-5 md:h-6 md:w-6 text-white" />
+              </div>
+            </div>
+            <div className="text-xs md:text-sm text-purple-600 font-semibold mb-1 md:mb-2 uppercase tracking-wide">Paid Hours</div>
+            <div className="text-xl md:text-2xl font-black text-purple-900">
+              {displayPaidHours.toFixed(1)}h
             </div>
           </div>
         </div>

@@ -44,6 +44,9 @@ const TimeTracker = () => {
   const {
     todayActiveTimesheet,
     totalWeeklyHours,
+    totalRawHours,
+    totalBreakMinutes,
+    totalPaidHours,
     weeklyTimesheets,
     clockIn,
     clockOut,
@@ -220,24 +223,37 @@ const TimeTracker = () => {
           </CardTitle>
         </div>
         <CardContent className="p-8">
-          <div className="text-center space-y-6">
-            <div className="relative">
-              <div className="text-6xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                {totalWeeklyHours.toFixed(1)}
+          <div className="space-y-6">
+            {/* Three stat boxes */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200">
+                <div className="text-sm text-slate-500 font-semibold uppercase tracking-wide mb-1">Raw Hours</div>
+                <div className="text-3xl font-black text-slate-700">{totalRawHours.toFixed(1)}</div>
               </div>
-              <div className="text-lg text-muted-foreground font-medium">Total Hours This Week</div>
+              <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl border border-orange-200">
+                <div className="text-sm text-orange-600 font-semibold uppercase tracking-wide mb-1">Breaks</div>
+                <div className="text-3xl font-black text-orange-800">
+                  {totalBreakMinutes >= 60 
+                    ? `${(totalBreakMinutes / 60).toFixed(1)}h` 
+                    : `${totalBreakMinutes}m`}
+                </div>
+              </div>
+              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl border border-blue-200">
+                <div className="text-sm text-blue-600 font-semibold uppercase tracking-wide mb-1">Paid Hours</div>
+                <div className="text-3xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{totalPaidHours.toFixed(1)}</div>
+              </div>
             </div>
             
             {/* Progress toward 40 hours */}
             <div className="space-y-3">
               <div className="flex justify-between text-sm font-medium">
-                <span>Progress toward 40 hours</span>
-                <span>{Math.min(100, (totalWeeklyHours / 40) * 100).toFixed(0)}%</span>
+                <span>Paid hours toward 40h</span>
+                <span>{Math.min(100, (totalPaidHours / 40) * 100).toFixed(0)}%</span>
               </div>
               <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${Math.min(100, (totalWeeklyHours / 40) * 100)}%` }}
+                  style={{ width: `${Math.min(100, (totalPaidHours / 40) * 100)}%` }}
                 ></div>
               </div>
               <div className="flex justify-between text-xs text-muted-foreground">
