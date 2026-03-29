@@ -143,6 +143,7 @@ export const useTimeSummaryDetails = ({
               paid_hours: fallbackHours,
               break_minutes: 0,
               flags: [],
+              dismissed_flags: dismissedFlagsMap.get(row.id) || [],
             };
           }
         }
@@ -154,6 +155,7 @@ export const useTimeSummaryDetails = ({
           paid_hours: 0,
           break_minutes: 0,
           flags: [],
+          dismissed_flags: dismissedFlagsMap.get(row.id) || [],
         };
       }));
 
