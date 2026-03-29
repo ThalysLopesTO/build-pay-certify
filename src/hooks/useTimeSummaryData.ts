@@ -39,6 +39,7 @@ export interface DailyPunch {
   break_minutes?: number;
   flags?: string[];
   jobsite_id?: string;
+  dismissed_flags?: string[];
 }
 
 export interface EmployeeSummary {

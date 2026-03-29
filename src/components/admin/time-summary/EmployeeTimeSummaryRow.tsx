@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { EmployeeSummary } from '@/hooks/useTimeSummaryData';
 import { useTimeSummaryDetails } from '@/hooks/useTimeSummaryDetails';
+import { useUpdateTimesheet } from '@/hooks/useUpdateTimesheet';
 import { cn } from '@/lib/utils';
 import { RoleBadge } from './RoleBadge';
 import { RuleBasedTimeSummaryNote } from './RuleBasedTimeSummaryNote';
@@ -65,6 +66,7 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
   const [editingPunch, setEditingPunch] = useState<DailyPunch | null>(null);
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { mutate: updateTimesheet } = useUpdateTimesheet();
 
   // Use pre-calculated totals from parent (single source of truth)
   const empAny = employee as any;
@@ -300,23 +302,44 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                             const label = flagLabels[flag] || flag;
                             const short = flagShort[flag] || flag;
                             const isMissing = flag === 'MISSING_CHECKOUT';
+                            const isDismissed = punch.dismissed_flags?.includes(flag);
                             return (
                               <Tooltip key={idx}>
                                 <TooltipTrigger asChild>
                                   <Badge
-                                    variant={isMissing ? "destructive" : "outline"}
+                                    variant={isDismissed ? "outline" : isMissing ? "destructive" : "outline"}
                                     className={cn(
-                                      "text-xs cursor-default",
-                                      isMissing
-                                        ? "bg-destructive text-destructive-foreground"
-                                        : "border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-700 dark:bg-orange-950/30 dark:text-orange-400"
+                                      "text-xs cursor-pointer transition-colors",
+                                      isDismissed
+                                        ? "bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800"
+                                        : isMissing
+                                          ? "bg-destructive text-destructive-foreground"
+                                          : "border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-700 dark:bg-orange-950/30 dark:text-orange-400"
                                     )}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!punch.timesheet_id) return;
+                                      const current = punch.dismissed_flags || [];
+                                      const newFlags = isDismissed
+                                        ? current.filter(f => f !== flag)
+                                        : [...current, flag];
+                                      updateTimesheet({
+                                        timesheetId: punch.timesheet_id,
+                                        checkInTime: undefined as any,
+                                        checkOutTime: undefined as any,
+                                        dismissedFlags: newFlags,
+                                      }, {
+                                        onSuccess: () => {
+                                          queryClient.invalidateQueries({ queryKey: ['timeSummaryDetails'] });
+                                        }
+                                      });
+                                    }}
                                   >
-                                    ⚠ {short}
+                                    {isDismissed ? `✓ ${short}` : `⚠ ${short}`}
                                   </Badge>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="text-xs max-w-[200px]">
-                                  {label}
+                                <TooltipContent side="top" className="text-xs max-w-[220px]">
+                                  {isDismissed ? `Approved — click to undo` : `${label}\nClick to approve`}
                                 </TooltipContent>
                               </Tooltip>
                             );
@@ -402,13 +425,42 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                           </span>
                         ) : null}
                       </div>
-                      {punch.flags && punch.flags.length > 0 && (
+                       {punch.flags && punch.flags.length > 0 && (
                         <div className="flex gap-1 flex-wrap">
-                          {punch.flags.map((flag, idx) => (
-                            <Badge key={idx} variant="destructive" className="text-xs">
-                              ⚠ {flagLabels[flag] || flag}
-                            </Badge>
-                          ))}
+                          {punch.flags.map((flag, idx) => {
+                            const isDismissed = punch.dismissed_flags?.includes(flag);
+                            const short = flagShort[flag] || flag;
+                            return (
+                              <Badge
+                                key={idx}
+                                variant={isDismissed ? "outline" : "destructive"}
+                                className={cn(
+                                  "text-xs cursor-pointer",
+                                  isDismissed && "bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400"
+                                )}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!punch.timesheet_id) return;
+                                  const current = punch.dismissed_flags || [];
+                                  const newFlags = isDismissed
+                                    ? current.filter(f => f !== flag)
+                                    : [...current, flag];
+                                  updateTimesheet({
+                                    timesheetId: punch.timesheet_id,
+                                    checkInTime: undefined as any,
+                                    checkOutTime: undefined as any,
+                                    dismissedFlags: newFlags,
+                                  }, {
+                                    onSuccess: () => {
+                                      queryClient.invalidateQueries({ queryKey: ['timeSummaryDetails'] });
+                                    }
+                                  });
+                                }}
+                              >
+                                {isDismissed ? `✓ ${short}` : `⚠ ${short}`}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

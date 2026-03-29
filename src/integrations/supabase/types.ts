@@ -3350,6 +3350,7 @@ export type Database = {
           check_out_time: string | null
           company_id: string
           created_at: string
+          dismissed_flags: string[] | null
           hours_worked: number | null
           id: string
           jobsite_id: string
@@ -3367,6 +3368,7 @@ export type Database = {
           check_out_time?: string | null
           company_id: string
           created_at?: string
+          dismissed_flags?: string[] | null
           hours_worked?: number | null
           id?: string
           jobsite_id: string
@@ -3384,6 +3386,7 @@ export type Database = {
           check_out_time?: string | null
           company_id?: string
           created_at?: string
+          dismissed_flags?: string[] | null
           hours_worked?: number | null
           id?: string
           jobsite_id?: string
