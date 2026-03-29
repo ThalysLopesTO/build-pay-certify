@@ -18,15 +18,83 @@ interface TimeRule {
   late_grace_minutes: number;
 }
 
+// ── In-memory cache with TTL ──────────────────────────────────────────
+interface CacheEntry {
+  rule: TimeRule | null;
+  fetchedAt: number;
+}
+
+const CACHE_TTL_MS = 60_000; // 60 seconds
+const ruleCache = new Map<string, CacheEntry>();
+
+function getCached(jobsiteId: string): TimeRule | null | undefined {
+  const entry = ruleCache.get(jobsiteId);
+  if (!entry) return undefined; // cache miss
+  if (Date.now() - entry.fetchedAt > CACHE_TTL_MS) {
+    ruleCache.delete(jobsiteId);
+    return undefined; // expired
+  }
+  return entry.rule;
+}
+
+function setCache(jobsiteId: string, rule: TimeRule | null) {
+  ruleCache.set(jobsiteId, { rule, fetchedAt: Date.now() });
+}
+
 /**
- * Fetch the applicable time rule for a jobsite
- * Returns jobsite rule if it exists and time rules are enabled (inherits_company_rule = false)
- * Otherwise returns null (free schedule)
+ * Batch-preload time rules for multiple jobsites in a single query.
+ * Call this before processing a batch of timesheets to eliminate N+1 queries.
+ */
+export async function preloadTimeRules(jobsiteIds: string[]): Promise<void> {
+  // Filter out already-cached IDs
+  const uncachedIds = jobsiteIds.filter((id) => getCached(id) === undefined);
+  if (uncachedIds.length === 0) return;
+
+  const { data, error } = await supabase
+    .from('jobsite_time_rules')
+    .select('*')
+    .in('jobsite_id', uncachedIds);
+
+  if (error) {
+    console.error('Error batch-fetching jobsite time rules:', error);
+    // Cache misses as null so we don't retry immediately
+    uncachedIds.forEach((id) => setCache(id, null));
+    return;
+  }
+
+  // Index results by jobsite_id
+  const ruleMap = new Map<string, any>();
+  (data || []).forEach((row) => ruleMap.set(row.jobsite_id, row));
+
+  // Populate cache for every requested ID
+  uncachedIds.forEach((id) => {
+    const row = ruleMap.get(id);
+    if (row && !row.inherits_company_rule && row.work_start_time && row.work_end_time) {
+      setCache(id, {
+        work_start_time: row.work_start_time,
+        work_end_time: row.work_end_time,
+        break_minutes: row.break_minutes ?? 0,
+        break_is_paid: row.break_is_paid ?? false,
+        early_grace_minutes: row.early_grace_minutes ?? 0,
+        late_grace_minutes: row.late_grace_minutes ?? 0,
+      });
+    } else {
+      setCache(id, null);
+    }
+  });
+}
+
+/**
+ * Fetch the applicable time rule for a jobsite (uses cache)
  */
 async function getApplicableTimeRule(
   jobsiteId: string
 ): Promise<TimeRule | null> {
-  // Fetch jobsite rule
+  // Check cache first
+  const cached = getCached(jobsiteId);
+  if (cached !== undefined) return cached;
+
+  // Single fetch fallback
   const { data: jobsiteRule, error: jobsiteError } = await supabase
     .from('jobsite_time_rules')
     .select('*')
@@ -35,18 +103,18 @@ async function getApplicableTimeRule(
 
   if (jobsiteError) {
     console.error('Error fetching jobsite time rule:', jobsiteError);
+    setCache(jobsiteId, null);
     return null;
   }
 
-  // If jobsite has time rules enabled (inherits_company_rule = false), use them
   if (jobsiteRule && !jobsiteRule.inherits_company_rule) {
-    // Validate that required fields are present
     if (!jobsiteRule.work_start_time || !jobsiteRule.work_end_time) {
       console.warn('Jobsite rule missing required time fields');
+      setCache(jobsiteId, null);
       return null;
     }
     
-    return {
+    const rule: TimeRule = {
       work_start_time: jobsiteRule.work_start_time,
       work_end_time: jobsiteRule.work_end_time,
       break_minutes: jobsiteRule.break_minutes ?? 0,
@@ -54,9 +122,11 @@ async function getApplicableTimeRule(
       early_grace_minutes: jobsiteRule.early_grace_minutes ?? 0,
       late_grace_minutes: jobsiteRule.late_grace_minutes ?? 0,
     };
+    setCache(jobsiteId, rule);
+    return rule;
   }
 
-  // No rule configured or time rules disabled - use free schedule
+  setCache(jobsiteId, null);
   return null;
 }
 
@@ -103,7 +173,7 @@ export async function calculateWorkedHours({
     };
   }
 
-  // Fetch applicable time rule
+  // Fetch applicable time rule (uses cache)
   const timeRule = await getApplicableTimeRule(jobsiteId);
 
   // If no rule exists or time rules disabled, use raw times (free schedule)
@@ -116,7 +186,7 @@ export async function calculateWorkedHours({
       paidMinutes: totalMinutes,
       paidHours: totalMinutes / 60,
       breakMinutes: 0,
-      flags: [], // No schedule-based flags for free schedule
+      flags: [],
     };
   }
 
@@ -134,30 +204,22 @@ export async function calculateWorkedHours({
   // Clamp punch times to rule boundaries with grace periods
   let effectiveStart = rawInDate;
   
-  // If punched in early (before start - early grace), clamp to scheduled start
   if (rawInDate < startWithEarlyGrace) {
     effectiveStart = ruleStartTime;
-  }
-  // If punched in within grace period, use scheduled start
-  else if (rawInDate >= startWithEarlyGrace && rawInDate <= startWithLateGrace) {
+  } else if (rawInDate >= startWithEarlyGrace && rawInDate <= startWithLateGrace) {
     effectiveStart = ruleStartTime;
   }
-  // Otherwise use actual punch time
-  
-  // Clamp end time to rule end (if needed)
+
   const effectiveEnd = clamp(rawOutDate, ruleStartTime, ruleEndTime);
 
-  // Calculate total minutes worked
   const totalMinutes = diffInMinutes(effectiveStart, effectiveEnd);
 
-  // Apply unpaid break deduction if applicable
   const paidMinutes = applyBreak(
     totalMinutes,
     timeRule.break_minutes,
     timeRule.break_is_paid
   );
 
-  // Generate flags
   const flags = generateFlags({
     rawIn: rawInDate,
     rawOut: rawOutDate,
@@ -170,7 +232,6 @@ export async function calculateWorkedHours({
     paidMinutes,
   });
 
-  // Calculate break deduction
   const breakMinutes = timeRule.break_is_paid ? 0 : timeRule.break_minutes;
 
   return {
