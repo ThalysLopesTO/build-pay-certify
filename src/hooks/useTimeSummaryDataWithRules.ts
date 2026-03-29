@@ -120,7 +120,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
 
       let query = supabase
         .from('timesheets')
-        .select('*, jobsites(id, name)')
+        .select('*, jobsites(id, name), dismissed_flags')
         .eq('company_id', user.companyId)
         .gte('check_in_time', startOfStartDate.toISOString())
         .lte('check_in_time', endOfEndDate.toISOString());

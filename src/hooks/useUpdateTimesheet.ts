@@ -17,18 +17,23 @@ export const useUpdateTimesheet = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ timesheetId, checkInTime, checkOutTime, breakMinutes, adminNote }: UpdateTimesheetParams) => {
-      console.log('Updating timesheet:', { timesheetId, checkInTime, checkOutTime, breakMinutes, adminNote });
+    mutationFn: async ({ timesheetId, checkInTime, checkOutTime, breakMinutes, adminNote, dismissedFlags }: UpdateTimesheetParams) => {
+      console.log('Updating timesheet:', { timesheetId, checkInTime, checkOutTime, breakMinutes, adminNote, dismissedFlags });
       
+      const updatePayload: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Only include fields that are explicitly provided
+      if (checkInTime !== undefined) updatePayload.check_in_time = checkInTime;
+      if (checkOutTime !== undefined) updatePayload.check_out_time = checkOutTime;
+      if (breakMinutes !== undefined) updatePayload.break_minutes = breakMinutes;
+      if (adminNote !== undefined) updatePayload.admin_note = adminNote || null;
+      if (dismissedFlags !== undefined) updatePayload.dismissed_flags = dismissedFlags;
+
       const { data, error } = await supabase
         .from('timesheets')
-        .update({
-          check_in_time: checkInTime,
-          check_out_time: checkOutTime,
-          break_minutes: breakMinutes,
-          admin_note: adminNote || null,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', timesheetId)
         .select();
 
