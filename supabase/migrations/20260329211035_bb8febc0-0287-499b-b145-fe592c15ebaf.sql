@@ -1,0 +1,1 @@
+ALTER TABLE public.timesheets ADD COLUMN IF NOT EXISTS dismissed_flags text[] DEFAULT '{}';

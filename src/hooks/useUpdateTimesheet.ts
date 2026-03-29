@@ -9,6 +9,7 @@ interface UpdateTimesheetParams {
   checkOutTime: string | null;
   breakMinutes?: number | null;
   adminNote?: string;
+  dismissedFlags?: string[];
 }
 
 export const useUpdateTimesheet = () => {
