@@ -1,0 +1,1 @@
+UPDATE public.companies SET employee_limit = 80 WHERE plan = 'builder_pro' AND employee_limit = 50;
