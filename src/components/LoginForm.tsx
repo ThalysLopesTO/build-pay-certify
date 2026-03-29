@@ -19,6 +19,7 @@ const LoginForm = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const {
     login,
+    logout,
     isAuthenticated,
     user
   } = useAuth();
@@ -43,8 +44,13 @@ const LoginForm = () => {
           navigate('/foreman/dashboard', { replace: true });
           break;
         case 'employee':
-          navigate('/employee/dashboard', { replace: true });
-          break;
+          toast({
+            title: "Access Denied",
+            description: "This login page is for company/admin users only. Please use the Employee Login page.",
+            variant: "destructive"
+          });
+          logout();
+          return;
         default:
           navigate('/', { replace: true });
       }
