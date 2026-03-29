@@ -64,6 +64,21 @@ export const useTimeSummaryDetails = ({
         throw error;
       }
 
+      // Fetch dismissed_flags for each timesheet
+      const timesheetIds = (data || []).map((row: any) => row.id).filter(Boolean);
+      let dismissedFlagsMap = new Map<string, string[]>();
+      if (timesheetIds.length > 0) {
+        const { data: flagsData } = await supabase
+          .from('timesheets')
+          .select('id, dismissed_flags')
+          .in('id', timesheetIds);
+        if (flagsData) {
+          flagsData.forEach((row: any) => {
+            dismissedFlagsMap.set(row.id, row.dismissed_flags || []);
+          });
+        }
+      }
+
       // Transform the data and apply time rules
       const dailyPunches: DailyPunch[] = await Promise.all((data || []).map(async (row: any) => {
         const base: DailyPunch = {
@@ -116,6 +131,7 @@ export const useTimeSummaryDetails = ({
               paid_hours: paidMinutes / 60,
               break_minutes: finalBreakMinutes,
               flags: result.flags || [],
+              dismissed_flags: dismissedFlagsMap.get(row.id) || [],
             };
           } catch (error) {
             console.error('Error calculating time rules for punch:', error);
