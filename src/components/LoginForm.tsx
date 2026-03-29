@@ -19,6 +19,7 @@ const LoginForm = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const {
     login,
+    logout,
     isAuthenticated,
     user
   } = useAuth();
