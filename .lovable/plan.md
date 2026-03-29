@@ -1,49 +1,14 @@
 
 
-# Fix: Return to Quotes List After Saving
+# Increase Builder Pro Employee Limit to 80
 
-## Problem
-When clicking "Save Quote", the quote saves successfully (toast appears) but the user stays on the editor instead of returning to the quotes list. The `handleSubmit` function never calls `onClose()`.
+## Change
+Update the `builder_pro` plan's `employeeLimit` from 50 to 80 in `src/config/subscriptionPlans.ts`, and update the corresponding `featureList` text from "50 Employee accounts" to "80 Employee accounts".
 
-## Fix
+## File
+**`src/config/subscriptionPlans.ts`** — 2 line changes:
+- Line with `employeeLimit: 50` → `employeeLimit: 80`
+- Line with `'50 Employee accounts (excl. admin)'` → `'80 Employee accounts (excl. admin)'`
 
-**File: `src/components/admin/quotes/QuoteEditor.tsx`** (line ~309)
-
-After the success toast in `handleSubmit`, add `onClose()` to navigate back:
-
-```typescript
-toast({
-  title: "Success",
-  description: quote ? "Quote updated successfully" : "Quote created successfully",
-});
-
-onClose(); // Return to quotes list
-
-return resultQuote;
-```
-
-Note: `handleSaveAndSend` calls `handleSubmit()` and then opens the email modal, so `onClose()` should only be called when saving without sending. We need to add a parameter to `handleSubmit` to control this:
-
-```typescript
-const handleSubmit = async (returnToList = true) => {
-  // ... existing save logic ...
-  
-  toast({ ... });
-  
-  if (returnToList) {
-    onClose();
-  }
-  
-  return resultQuote;
-};
-```
-
-Then update `handleSaveAndSend` to pass `false`:
-```typescript
-const result = await handleSubmit(false);
-```
-
-And update the save button's `onClick` to just call `handleSubmit()` (which defaults to `true`).
-
-Single file change, ~4 lines modified.
+Note: Existing companies on this plan will also need their `employee_limit` column updated in the database (from 50 to 80) via a migration.
 
