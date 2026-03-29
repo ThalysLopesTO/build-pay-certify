@@ -309,12 +309,12 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                                   <Badge
                                     variant={isDismissed ? "outline" : isMissing ? "destructive" : "outline"}
                                     className={cn(
-                                      "text-xs cursor-pointer transition-colors",
+                                      "text-xs cursor-pointer transition-colors font-semibold",
                                       isDismissed
-                                        ? "bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800"
+                                        ? "bg-green-100 text-green-800 border-green-400 dark:bg-green-900/50 dark:text-green-300 dark:border-green-600"
                                         : isMissing
-                                          ? "bg-destructive text-destructive-foreground"
-                                          : "border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-700 dark:bg-orange-950/30 dark:text-orange-400"
+                                          ? "bg-red-600 text-white border-red-600 dark:bg-red-700 dark:border-red-700"
+                                          : "border-orange-400 bg-orange-100 text-orange-800 dark:border-orange-600 dark:bg-orange-900/50 dark:text-orange-300"
                                     )}
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -435,8 +435,10 @@ export const EmployeeTimeSummaryRow: React.FC<EmployeeTimeSummaryRowProps> = ({
                                 key={idx}
                                 variant={isDismissed ? "outline" : "destructive"}
                                 className={cn(
-                                  "text-xs cursor-pointer",
-                                  isDismissed && "bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400"
+                                  "text-xs cursor-pointer font-semibold",
+                                  isDismissed
+                                    ? "bg-green-100 text-green-800 border-green-400 dark:bg-green-900/50 dark:text-green-300 dark:border-green-600"
+                                    : "bg-orange-100 text-orange-800 border-orange-400 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-600"
                                 )}
                                 onClick={(e) => {
                                   e.stopPropagation();
