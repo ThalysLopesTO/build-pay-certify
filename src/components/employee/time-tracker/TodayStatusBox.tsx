@@ -96,7 +96,7 @@ const TodayStatusBox = () => {
             </div>
             <div className="text-xs md:text-sm text-green-600 font-semibold mb-1 md:mb-2 uppercase tracking-wide">Last Clock Out</div>
             <div className="text-xl md:text-2xl font-black text-green-900">
-              {lastClockOut ? format(new Date(lastClockOut.check_out_time!), 'h:mm a') : 
+              {lastClockOut?.check_out_time ? format(new Date(lastClockOut.check_out_time), 'h:mm a') : 
                todayActiveTimesheet ? (
                  <span className="text-base md:text-lg bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent animate-pulse">
                    Still Active

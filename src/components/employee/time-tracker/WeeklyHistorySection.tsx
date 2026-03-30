@@ -152,7 +152,7 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
                     `}
                   >
                     <TableCell className="font-semibold py-4 text-slate-700">
-                      {format(new Date(timesheet.check_in_time!), 'EEE, MMM d')}
+                      {timesheet.check_in_time ? format(new Date(timesheet.check_in_time), 'EEE, MMM d') : '--'}
                     </TableCell>
                     <TableCell className="py-4">
                       <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">

@@ -66,7 +66,9 @@ const EmployeeDashboard = () => {
         <div className="max-w-4xl mx-auto px-2 md:px-4 py-4 max-w-full">
           <LicenseWarningBanner />
           <div className="space-y-6">
-            {renderContent()}
+            <ErrorBoundary>
+              {renderContent()}
+            </ErrorBoundary>
           </div>
         </div>
       </div>
