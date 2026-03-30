@@ -17,6 +17,7 @@ import EmployeeDesktopNav from '../components/employee/EmployeeDesktopNav';
 import { JobsiteSelectionScreen } from '../components/admin/tasks/JobsiteSelectionScreen';
 import { DailyTaskScreen } from '../components/admin/tasks/DailyTaskScreen';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 
 const EmployeeDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
