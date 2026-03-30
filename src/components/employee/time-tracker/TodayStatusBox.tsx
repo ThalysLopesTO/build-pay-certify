@@ -36,10 +36,11 @@ const TodayStatusBox = () => {
   }
 
   // Calculate today's totals
-  const firstClockIn = allTodayTimesheets.length > 0 
-    ? allTodayTimesheets.reduce((earliest, current) => {
-        const currentTime = new Date(current.check_in_time!);
-        const earliestTime = new Date(earliest.check_in_time!);
+  const validTimesheets = allTodayTimesheets.filter(t => t.check_in_time);
+  const firstClockIn = validTimesheets.length > 0 
+    ? validTimesheets.reduce((earliest, current) => {
+        const currentTime = new Date(current.check_in_time);
+        const earliestTime = new Date(earliest.check_in_time);
         return currentTime < earliestTime ? current : earliest;
       })
     : null;
