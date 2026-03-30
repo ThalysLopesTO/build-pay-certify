@@ -84,7 +84,7 @@ const TodayStatusBox = () => {
             </div>
             <div className="text-xs md:text-sm text-blue-600 font-semibold mb-1 md:mb-2 uppercase tracking-wide">First Clock In</div>
             <div className="text-xl md:text-2xl font-black text-blue-900">
-              {firstClockIn ? format(new Date(firstClockIn.check_in_time!), 'h:mm a') : '--:--'}
+              {firstClockIn?.check_in_time ? format(new Date(firstClockIn.check_in_time), 'h:mm a') : '--:--'}
             </div>
           </div>
           
