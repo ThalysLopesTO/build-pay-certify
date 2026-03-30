@@ -1,41 +1,37 @@
-export const registerServiceWorker = () => {
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('SW registered: ', registration);
-          
-          // Check for updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New content is available, notify user
-                  if (confirm('A new version is available. Reload to update?')) {
-                    window.location.reload();
-                  }
-                }
-              });
-            }
-          });
-        })
-        .catch((registrationError) => {
-          console.log('SW registration failed: ', registrationError);
-        });
-    });
+const clearAllCaches = async () => {
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((key) => caches.delete(key)));
+  } catch (e) {
+    // Caches API not available
   }
 };
 
-export const unregisterServiceWorker = () => {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.ready
-      .then((registration) => {
-        registration.unregister();
-      })
-      .catch((error) => {
-        console.error(error.message);
-      });
+export const registerServiceWorker = async () => {
+  if (!('serviceWorker' in navigator)) return;
+
+  // Clear any stale caches from the old aggressive SW
+  await clearAllCaches();
+
+  // Unregister all existing service workers first
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  for (const reg of registrations) {
+    await reg.unregister();
   }
+
+  // Register the new minimal SW
+  try {
+    await navigator.serviceWorker.register('/sw.js');
+  } catch (e) {
+    console.log('SW registration failed:', e);
+  }
+};
+
+export const unregisterServiceWorker = async () => {
+  if (!('serviceWorker' in navigator)) return;
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  for (const reg of registrations) {
+    await reg.unregister();
+  }
+  await clearAllCaches();
 };
