@@ -24,7 +24,8 @@ const TodayStatusBox = () => {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const todayTimesheets = weeklyTimesheets?.filter(timesheet => {
-    const checkInDate = new Date(timesheet.check_in_time!);
+    if (!timesheet.check_in_time) return false;
+    const checkInDate = new Date(timesheet.check_in_time);
     return checkInDate >= today && checkInDate < tomorrow;
   }) || [];
 
