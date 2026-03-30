@@ -1,57 +1,43 @@
 
 
-# Real-Time Employee Hours with Break & Paid Hours Breakdown
+# Fix: Blank Page When Employees Click Time Tracker
 
-## Problem
-1. When admins edit check-in/out times or breaks, the employee panel still shows stale `hours_worked` values — it doesn't recalculate from the updated times
-2. Employees see no breakdown of breaks, raw hours, or paid hours
-3. The weekly summary only shows a single "Total Hours" number with no context
+## Root Cause
 
-## Solution
+There is **no Error Boundary** anywhere in the app. When any component throws a runtime error, the entire React tree unmounts — resulting in a blank page.
 
-### 1. Recalculate hours client-side instead of relying on stored `hours_worked`
+The most likely crash points are **force-unwrapped null values** (`check_in_time!`) throughout the time tracker components. If a timesheet record has a null `check_in_time` (e.g., from a manual admin insert or data issue), calling `format(new Date(null!), ...)` from date-fns **throws an exception**, which crashes the entire page.
 
-**File: `src/hooks/useTimesheets.ts`**
-- After fetching weekly timesheets, compute `raw_hours` from `check_in_time` / `check_out_time` diff for each entry
-- Compute `paid_hours` as `raw_hours - (break_minutes / 60)`
-- Include `break_minutes` in the returned data (already exists in DB, just not selected/used)
-- Update `totalWeeklyHours` to sum paid hours, and add new totals: `totalRawHours`, `totalBreakMinutes`
-- Enable **real-time subscription** on the `timesheets` table filtered by `user_id` so admin edits push updates instantly
+Identified crash points:
+- `TimeTracker.tsx` line 153: `todayActiveTimesheet.check_in_time!`
+- `TodayStatusBox.tsx` lines 27, 40, 41, 85: multiple `check_in_time!` force unwraps
+- `WeeklyHistorySection.tsx` lines 55, 155: `check_in_time!` in table rendering
 
-### 2. Show break and paid hours in Weekly History table
+## Fix (3 changes)
 
-**File: `src/components/employee/time-tracker/WeeklyHistorySection.tsx`**
-- Add columns: **Break** and **Paid Hours**
-- "Break" shows `30m`, `1h`, etc. (formatted from `break_minutes`)
-- "Total Hours" column renamed to "Raw Hours" showing clock-in to clock-out duration
-- New "Paid Hours" column = raw minus break
-- Add a **summary footer row** at the bottom of the table showing:
-  - Total Raw Hours | Total Break | Total Paid Hours
+### 1. Add a global Error Boundary component
 
-### 3. Update "This Week's Summary" card with breakdown
+**New file: `src/components/common/ErrorBoundary.tsx`**
 
-**File: `src/components/employee/TimeTracker.tsx`** (lines 214-250)
-- Replace the single "Total Hours" display with three stats:
-  - **Raw Hours** (total clock-in to clock-out)
-  - **Total Breaks** (sum of all break_minutes for the week)
-  - **Paid Hours** (raw minus breaks)
-- Progress bar tracks **Paid Hours** toward 40h
+A React class component that catches render errors and shows a recovery UI with a "Reload" button instead of a blank page. Wrap the `EmployeeDashboard` content (and ideally the whole app's route content) with this boundary.
 
-### 4. Update Today's Status with break info
+### 2. Remove all `!` force unwraps — add null guards
 
-**File: `src/components/employee/time-tracker/TodayStatusBox.tsx`**
-- Recalculate today's hours from timestamps instead of stored `hours_worked`
-- Add a 4th stat box showing today's total break time
+**Files: `TimeTracker.tsx`, `TodayStatusBox.tsx`, `WeeklyHistorySection.tsx`**
 
-### 5. Real-time updates via Supabase subscription
+Replace every `timesheet.check_in_time!` with a null check:
+- Filter out timesheets with null `check_in_time` before processing
+- Use optional chaining: `timesheet.check_in_time ? format(...) : '--:--'`
+- Guard `todayActiveTimesheet.check_in_time` before formatting
 
-**File: `src/hooks/useTimesheets.ts`**
-- Add a `useEffect` with `supabase.channel()` listening to `timesheets` table changes filtered by `user_id`
-- On any INSERT/UPDATE/DELETE, invalidate the `['timesheets']` query cache
-- This ensures admin edits to times/breaks appear on the employee panel within seconds
+### 3. Wrap EmployeeDashboard content with ErrorBoundary
+
+**File: `EmployeeDashboard.tsx`**
+
+Wrap `{renderContent()}` with `<ErrorBoundary>` so if any child component crashes, employees see a "Something went wrong — tap to reload" message instead of a blank page.
 
 ## Scope
-- 4 files modified
-- No database changes (break_minutes already exists on timesheets table)
-- No new dependencies
+- 1 new file (ErrorBoundary)
+- 4 files modified (null guards + boundary wrap)
+- No database changes, no new dependencies
 
