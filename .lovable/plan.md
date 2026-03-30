@@ -1,46 +1,57 @@
 
 
-# Fix Blank Page Issue on Mobile & Shared Links
+# Real-Time Employee Hours with Break & Paid Hours Breakdown
 
-## Root Cause
+## Problem
+1. When admins edit check-in/out times or breaks, the employee panel still shows stale `hours_worked` values — it doesn't recalculate from the updated times
+2. Employees see no breakdown of breaks, raw hours, or paid hours
+3. The weekly summary only shows a single "Total Hours" number with no context
 
-The **service worker** (`public/sw.js`) is the primary culprit. It aggressively caches the app shell (`/`, JS bundles, CSS) using a **cache-first** strategy. When a new version is deployed:
+## Solution
 
-1. Old cached HTML references old JS/CSS bundle filenames (Vite hashes change on every build)
-2. The SW serves the stale HTML from cache
-3. The browser tries to load JS files that no longer exist on the server
-4. Result: **blank white page** — especially on mobile PWA where the SW persists across sessions
+### 1. Recalculate hours client-side instead of relying on stored `hours_worked`
 
-Additionally, the SW has no guard against running in Lovable preview iframes, which can cause issues during development.
+**File: `src/hooks/useTimesheets.ts`**
+- After fetching weekly timesheets, compute `raw_hours` from `check_in_time` / `check_out_time` diff for each entry
+- Compute `paid_hours` as `raw_hours - (break_minutes / 60)`
+- Include `break_minutes` in the returned data (already exists in DB, just not selected/used)
+- Update `totalWeeklyHours` to sum paid hours, and add new totals: `totalRawHours`, `totalBreakMinutes`
+- Enable **real-time subscription** on the `timesheets` table filtered by `user_id` so admin edits push updates instantly
 
-## Fix
+### 2. Show break and paid hours in Weekly History table
 
-### 1. Replace aggressive service worker with a safe minimal version
+**File: `src/components/employee/time-tracker/WeeklyHistorySection.tsx`**
+- Add columns: **Break** and **Paid Hours**
+- "Break" shows `30m`, `1h`, etc. (formatted from `break_minutes`)
+- "Total Hours" column renamed to "Raw Hours" showing clock-in to clock-out duration
+- New "Paid Hours" column = raw minus break
+- Add a **summary footer row** at the bottom of the table showing:
+  - Total Raw Hours | Total Break | Total Paid Hours
 
-**File: `public/sw.js`**
-- Remove all caching logic (cache-first, stale-while-revalidate, navigation interception)
-- Replace with a minimal SW that only exists to support PWA installability
-- The SW will be essentially a no-op: no fetch interception, no caching
-- Add a version bump so existing cached SWs get replaced via `skipWaiting()`
+### 3. Update "This Week's Summary" card with breakdown
 
-### 2. Force-unregister stale service workers on app load
+**File: `src/components/employee/TimeTracker.tsx`** (lines 214-250)
+- Replace the single "Total Hours" display with three stats:
+  - **Raw Hours** (total clock-in to clock-out)
+  - **Total Breaks** (sum of all break_minutes for the week)
+  - **Paid Hours** (raw minus breaks)
+- Progress bar tracks **Paid Hours** toward 40h
 
-**File: `src/utils/serviceWorker.ts`**
-- Before registering the new minimal SW, unregister all existing service workers
-- Clear all caches (`caches.keys()` → `caches.delete()`) to flush stale content
-- This ensures users who already have the broken SW cached will recover on next visit
+### 4. Update Today's Status with break info
 
-### 3. Add iframe/preview guard
+**File: `src/components/employee/time-tracker/TodayStatusBox.tsx`**
+- Recalculate today's hours from timestamps instead of stored `hours_worked`
+- Add a 4th stat box showing today's total break time
 
-**File: `src/main.tsx`**
-- Add a guard before `registerServiceWorker()`: if the app is in an iframe or on a Lovable preview domain, skip SW registration entirely and unregister any existing ones
+### 5. Real-time updates via Supabase subscription
 
-## Why this works
-- The `manifest.json` alone is sufficient for "Add to Home Screen" / PWA installability — no service worker caching needed
-- Removing fetch interception means the browser always loads fresh content from the server
-- Force-clearing old caches fixes the blank page for users who already have stale data cached
+**File: `src/hooks/useTimesheets.ts`**
+- Add a `useEffect` with `supabase.channel()` listening to `timesheets` table changes filtered by `user_id`
+- On any INSERT/UPDATE/DELETE, invalidate the `['timesheets']` query cache
+- This ensures admin edits to times/breaks appear on the employee panel within seconds
 
 ## Scope
-- 3 files modified (`public/sw.js`, `src/utils/serviceWorker.ts`, `src/main.tsx`)
-- No database changes
+- 4 files modified
+- No database changes (break_minutes already exists on timesheets table)
+- No new dependencies
 
