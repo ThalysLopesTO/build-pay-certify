@@ -52,7 +52,7 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
     const csvHeaders = ['Date', 'Jobsite', 'Clock In', 'Clock Out', 'Raw Hours', 'Break', 'Paid Hours'];
     const csvData = weeklyTimesheets.map(timesheet => {
       return [
-        format(new Date(timesheet.check_in_time!), 'MM/dd/yyyy'),
+        timesheet.check_in_time ? format(new Date(timesheet.check_in_time), 'MM/dd/yyyy') : '--',
         getJobsiteName(timesheet.jobsite_id),
         timesheet.check_in_time ? format(new Date(timesheet.check_in_time), 'h:mm a') : '--',
         timesheet.check_out_time ? format(new Date(timesheet.check_out_time), 'h:mm a') : 'Still Active',
