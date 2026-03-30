@@ -24,7 +24,8 @@ const TodayStatusBox = () => {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const todayTimesheets = weeklyTimesheets?.filter(timesheet => {
-    const checkInDate = new Date(timesheet.check_in_time!);
+    if (!timesheet.check_in_time) return false;
+    const checkInDate = new Date(timesheet.check_in_time);
     return checkInDate >= today && checkInDate < tomorrow;
   }) || [];
 
@@ -35,10 +36,11 @@ const TodayStatusBox = () => {
   }
 
   // Calculate today's totals
-  const firstClockIn = allTodayTimesheets.length > 0 
-    ? allTodayTimesheets.reduce((earliest, current) => {
-        const currentTime = new Date(current.check_in_time!);
-        const earliestTime = new Date(earliest.check_in_time!);
+  const validTimesheets = allTodayTimesheets.filter(t => t.check_in_time);
+  const firstClockIn = validTimesheets.length > 0 
+    ? validTimesheets.reduce((earliest, current) => {
+        const currentTime = new Date(current.check_in_time);
+        const earliestTime = new Date(earliest.check_in_time);
         return currentTime < earliestTime ? current : earliest;
       })
     : null;
@@ -82,7 +84,7 @@ const TodayStatusBox = () => {
             </div>
             <div className="text-xs md:text-sm text-blue-600 font-semibold mb-1 md:mb-2 uppercase tracking-wide">First Clock In</div>
             <div className="text-xl md:text-2xl font-black text-blue-900">
-              {firstClockIn ? format(new Date(firstClockIn.check_in_time!), 'h:mm a') : '--:--'}
+              {firstClockIn?.check_in_time ? format(new Date(firstClockIn.check_in_time), 'h:mm a') : '--:--'}
             </div>
           </div>
           
@@ -94,7 +96,7 @@ const TodayStatusBox = () => {
             </div>
             <div className="text-xs md:text-sm text-green-600 font-semibold mb-1 md:mb-2 uppercase tracking-wide">Last Clock Out</div>
             <div className="text-xl md:text-2xl font-black text-green-900">
-              {lastClockOut ? format(new Date(lastClockOut.check_out_time!), 'h:mm a') : 
+              {lastClockOut?.check_out_time ? format(new Date(lastClockOut.check_out_time), 'h:mm a') : 
                todayActiveTimesheet ? (
                  <span className="text-base md:text-lg bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent animate-pulse">
                    Still Active

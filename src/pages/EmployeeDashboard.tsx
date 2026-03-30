@@ -17,6 +17,7 @@ import EmployeeDesktopNav from '../components/employee/EmployeeDesktopNav';
 import { JobsiteSelectionScreen } from '../components/admin/tasks/JobsiteSelectionScreen';
 import { DailyTaskScreen } from '../components/admin/tasks/DailyTaskScreen';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 
 const EmployeeDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -65,7 +66,9 @@ const EmployeeDashboard = () => {
         <div className="max-w-4xl mx-auto px-2 md:px-4 py-4 max-w-full">
           <LicenseWarningBanner />
           <div className="space-y-6">
-            {renderContent()}
+            <ErrorBoundary>
+              {renderContent()}
+            </ErrorBoundary>
           </div>
         </div>
       </div>
