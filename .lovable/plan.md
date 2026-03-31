@@ -1,43 +1,75 @@
 
+# Fix plan: browser + mobile blank page on Employee Time Clock
 
-# Fix: Blank Page on Mobile Employee Dashboard
+## What I found
+This is not mainly a PWA problem anymore. The strongest root cause is the realtime subscription inside `useTimesheets`.
 
-## Root Cause Analysis
+The console error in the screenshot matches this exactly:
 
-After reviewing every component in the employee flow, the code logic itself is well-guarded. The blank page is caused by two things:
+```text
+tried to subscribe multiple times.
+subscribe can only be called a single time per channel instance
+```
 
-1. **No app-level ErrorBoundary** — If ANY component throws (Header, navigation, ProtectedRoute query), the entire React tree unmounts to a white screen. There is nothing catching errors at the top level in `App.tsx`.
+### Why it crashes
+When the Time Clock page opens:
 
-2. **Stale PWA cache** — The previous `sw.js` fix deployed a no-op service worker, but existing PWA installs won't activate the new worker until all app windows are closed and reopened. Many mobile users never fully close the app, so they're stuck on the old cached broken bundle indefinitely.
+- `TimeTracker.tsx` calls `useTimesheets(selectedWeek)`
+- `TodayStatusBox.tsx` also calls `useTimesheets()`
 
-## Changes
+Both hook instances create the same realtime channel:
 
-### 1. Add a top-level ErrorBoundary in `App.tsx`
+```ts
+supabase.channel(`timesheets-employee-${user.id}`)
+```
 
-Wrap `<AppInner />` (the entire route tree) with an `<ErrorBoundary>` that shows a full-page "Something went wrong — Reload" screen instead of blank white. This is the last line of defense.
+That causes a duplicate `.subscribe()` on the same channel instance, which throws at runtime. Because the error happens in an effect/subscription, the `ErrorBoundary` does not protect it, so the page goes white in both browser and mobile.
 
-### 2. Wrap `EmployeeDashboard` layout components individually
+## Fix
+### 1. Make `useTimesheets` realtime subscription single-instance
+**File:** `src/hooks/useTimesheets.ts`
 
-In `EmployeeDashboard.tsx`, wrap `<Header />`, `<EmployeeDesktopNav />`, and `<EmployeeBottomNav />` each in `<ErrorBoundary fallbackMinimal>`. Currently, if `Header` or nav crashes, the entire page dies. With individual boundaries, the content area (clock in/out) stays visible even if the header fails.
+- Remove the direct duplicate-prone `supabase.channel(...).subscribe()` pattern
+- Replace it with a shared/safe subscription approach:
+  - either use the existing `RealtimeProvider`
+  - or keep a module-level channel registry/ref so the same user only subscribes once
+- Keep query invalidation when timesheets change
 
-### 3. Force service worker update with `skipWaiting` message
+Result: opening the page will no longer crash from duplicate subscriptions.
 
-Update `src/utils/serviceWorker.ts` to send a `skipWaiting` message to any waiting service worker during registration, so the new no-op worker activates immediately without requiring the user to close all tabs.
+### 2. Stop calling `useTimesheets` twice on the Time Clock screen
+**Files:**  
+- `src/components/employee/TimeTracker.tsx`  
+- `src/components/employee/time-tracker/TodayStatusBox.tsx`
 
-Also add a `controllerchange` listener that auto-reloads the page once the new service worker takes over, ensuring the stale cached bundle is replaced.
+- Make `TimeTracker` the single source of truth
+- Pass `weeklyTimesheets` and `todayActiveTimesheet` into `TodayStatusBox` as props
+- Remove `useTimesheets()` from `TodayStatusBox`
 
-### 4. Update `public/sw.js` to handle the `skipWaiting` message
+Result: fewer queries, fewer subscriptions, and no duplicate hook side effects on this page.
 
-Add a `message` event listener so that when the registration code sends `{ type: 'SKIP_WAITING' }`, the worker calls `self.skipWaiting()` immediately.
+### 3. Keep the Time Clock screen resilient after the subscription fix
+**Files:**  
+- `src/components/employee/TimeTracker.tsx`  
+- `src/components/employee/time-tracker/TodayStatusBox.tsx`
 
-## Expected Result
-- Mobile PWA users who are stuck on old cached code will get force-updated on next open
-- If any component still crashes, users see a reload button instead of a blank page
-- Clock in/out functionality remains accessible even if secondary components fail
+- Preserve the existing null/date guards
+- Keep safe fallbacks for invalid timestamps and missing location values
 
-## Files
-- `src/App.tsx` — add top-level ErrorBoundary
-- `src/pages/EmployeeDashboard.tsx` — wrap Header, nav components in individual boundaries
-- `public/sw.js` — add SKIP_WAITING message handler
-- `src/utils/serviceWorker.ts` — send skipWaiting + listen for controllerchange
+Result: the page returns to normal and remains stable even if some records are malformed.
 
+## Expected outcome
+After this fix:
+
+- employees should be able to open the Time Clock page again in browser and mobile
+- the Clock In / Clock Out section should render normally
+- realtime updates can remain enabled without crashing the app
+- the blank white screen should stop happening on page open
+
+## Files to update
+- `src/hooks/useTimesheets.ts`
+- `src/components/employee/TimeTracker.tsx`
+- `src/components/employee/time-tracker/TodayStatusBox.tsx`
+
+## Technical note
+The key issue is that this error is thrown from subscription/effect code, not from render. That is why adding more `ErrorBoundary` wrappers did not fully solve it.
