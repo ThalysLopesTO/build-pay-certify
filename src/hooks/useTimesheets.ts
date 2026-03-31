@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -33,17 +33,32 @@ const computeRawHours = (checkIn: string | null, checkOut: string | null): numbe
   return isNaN(hours) || hours < 0 ? 0 : hours;
 };
 
+/**
+ * Module-level registry to prevent duplicate realtime subscriptions.
+ * Key = channelName, Value = channel instance.
+ */
+const activeChannels = new Map<string, ReturnType<typeof supabase.channel>>();
+
 export const useTimesheets = (selectedWeek?: Date) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const channelKeyRef = useRef<string | null>(null);
 
-  // Real-time subscription for admin edits
+  // Real-time subscription — single-instance per user via module-level registry
   useEffect(() => {
     if (!user?.id) return;
 
+    const channelKey = `timesheets-employee-${user.id}`;
+    channelKeyRef.current = channelKey;
+
+    // If a channel already exists for this user, skip — don't subscribe again
+    if (activeChannels.has(channelKey)) {
+      return;
+    }
+
     const channel = supabase
-      .channel(`timesheets-employee-${user.id}`)
+      .channel(channelKey)
       .on(
         'postgres_changes',
         {
@@ -58,8 +73,19 @@ export const useTimesheets = (selectedWeek?: Date) => {
       )
       .subscribe();
 
+    activeChannels.set(channelKey, channel);
+
     return () => {
-      supabase.removeChannel(channel);
+      // Only clean up if this effect owns the channel
+      const existing = activeChannels.get(channelKey);
+      if (existing === channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch (err) {
+          console.warn('Error removing timesheets channel:', err);
+        }
+        activeChannels.delete(channelKey);
+      }
     };
   }, [user?.id, queryClient]);
 
@@ -127,11 +153,11 @@ export const useTimesheets = (selectedWeek?: Date) => {
         .gte('check_in_time', today.toISOString())
         .lt('check_in_time', tomorrow.toISOString())
         .is('check_out_time', null)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching today active timesheet:', error);
-        throw error;
+        return null;
       }
 
       if (!data) return null;
