@@ -32,11 +32,15 @@ const TimeTracker = () => {
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_profiles')
         .select('photo_url, first_name, last_name')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+      if (error) {
+        console.warn('Profile fetch error (non-fatal):', error.message);
+        return null;
+      }
       return data;
     },
     enabled: !!user?.id,
