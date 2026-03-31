@@ -108,15 +108,17 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Welcome Card with Photo */}
 <div className="lg:col-span-2">
-  <DashboardHero
-    theme="blue"
-    firstName={user?.firstName}
-    lastName={user?.lastName}
-    photoUrl={userProfile?.photo_url}
-    companyName={user?.companyName}
-    trade={user?.trade}
-    onViewProfile={() => onNavigateToTab('settings')}
-  />
+  <ErrorBoundary fallbackMinimal>
+    <DashboardHero
+      theme="blue"
+      firstName={user?.firstName}
+      lastName={user?.lastName}
+      photoUrl={userProfile?.photo_url}
+      companyName={user?.companyName}
+      trade={user?.trade}
+      onViewProfile={() => onNavigateToTab('settings')}
+    />
+  </ErrorBoundary>
 </div>
 
         {/* Weekly Hours Card + Birthday Widget */}
