@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 import TodayStatusBox from './time-tracker/TodayStatusBox';
 import WeeklyHistorySection from './time-tracker/WeeklyHistorySection';
 import WeekSelector from './time-tracker/WeekSelector';
@@ -31,11 +32,15 @@ const TimeTracker = () => {
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_profiles')
         .select('photo_url, first_name, last_name')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+      if (error) {
+        console.warn('Profile fetch error (non-fatal):', error.message);
+        return null;
+      }
       return data;
     },
     enabled: !!user?.id,
@@ -212,58 +217,60 @@ const TimeTracker = () => {
       </Card>
 
       {/* Today's Status Box */}
-      <TodayStatusBox />
+      <ErrorBoundary fallbackMinimal>
+        <TodayStatusBox />
+      </ErrorBoundary>
 
       {/* Weekly Hours Summary */}
-      <Card className="shadow-xl border-2 border-primary/10 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-primary/10">
-          <CardTitle className="flex items-center justify-center space-x-3 text-xl font-bold">
-            <Target className="h-6 w-6 text-blue-600" />
-            <span>This Week's Summary</span>
-          </CardTitle>
-        </div>
-        <CardContent className="p-8">
-          <div className="space-y-6">
-            {/* Three stat boxes */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200">
-                <div className="text-sm text-slate-500 font-semibold uppercase tracking-wide mb-1">Raw Hours</div>
-                <div className="text-3xl font-black text-slate-700">{totalRawHours.toFixed(1)}</div>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl border border-orange-200">
-                <div className="text-sm text-orange-600 font-semibold uppercase tracking-wide mb-1">Breaks</div>
-                <div className="text-3xl font-black text-orange-800">
-                  {totalBreakMinutes >= 60 
-                    ? `${(totalBreakMinutes / 60).toFixed(1)}h` 
-                    : `${totalBreakMinutes}m`}
+      <ErrorBoundary fallbackMinimal>
+        <Card className="shadow-xl border-2 border-primary/10 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-primary/10">
+            <CardTitle className="flex items-center justify-center space-x-3 text-xl font-bold">
+              <Target className="h-6 w-6 text-blue-600" />
+              <span>This Week's Summary</span>
+            </CardTitle>
+          </div>
+          <CardContent className="p-8">
+            <div className="space-y-6">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200">
+                  <div className="text-sm text-slate-500 font-semibold uppercase tracking-wide mb-1">Raw Hours</div>
+                  <div className="text-3xl font-black text-slate-700">{isNaN(totalRawHours) ? '0.0' : totalRawHours.toFixed(1)}</div>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl border border-orange-200">
+                  <div className="text-sm text-orange-600 font-semibold uppercase tracking-wide mb-1">Breaks</div>
+                  <div className="text-3xl font-black text-orange-800">
+                    {totalBreakMinutes >= 60 
+                      ? `${(totalBreakMinutes / 60).toFixed(1)}h` 
+                      : `${totalBreakMinutes || 0}m`}
+                  </div>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl border border-blue-200">
+                  <div className="text-sm text-blue-600 font-semibold uppercase tracking-wide mb-1">Paid Hours</div>
+                  <div className="text-3xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{isNaN(totalPaidHours) ? '0.0' : totalPaidHours.toFixed(1)}</div>
                 </div>
               </div>
-              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl border border-blue-200">
-                <div className="text-sm text-blue-600 font-semibold uppercase tracking-wide mb-1">Paid Hours</div>
-                <div className="text-3xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{totalPaidHours.toFixed(1)}</div>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm font-medium">
+                  <span>Paid hours toward 40h</span>
+                  <span>{Math.min(100, ((totalPaidHours || 0) / 40) * 100).toFixed(0)}%</span>
+                </div>
+                <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-1000 ease-out"
+                    style={{ width: `${Math.min(100, ((totalPaidHours || 0) / 40) * 100)}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>0h</span>
+                  <span>40h</span>
+                </div>
               </div>
             </div>
-            
-            {/* Progress toward 40 hours */}
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm font-medium">
-                <span>Paid hours toward 40h</span>
-                <span>{Math.min(100, (totalPaidHours / 40) * 100).toFixed(0)}%</span>
-              </div>
-              <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${Math.min(100, (totalPaidHours / 40) * 100)}%` }}
-                ></div>
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>0h</span>
-                <span>40h</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </ErrorBoundary>
 
       {/* Week Selector */}
       <WeekSelector 
@@ -272,10 +279,12 @@ const TimeTracker = () => {
       />
 
       {/* Weekly History Section */}
-      <WeeklyHistorySection 
-        weeklyTimesheets={weeklyTimesheets}
-        selectedWeek={selectedWeek}
-      />
+      <ErrorBoundary fallbackMinimal>
+        <WeeklyHistorySection 
+          weeklyTimesheets={weeklyTimesheets}
+          selectedWeek={selectedWeek}
+        />
+      </ErrorBoundary>
 
       {/* Location Permission Info */}
       {!navigator.geolocation && (

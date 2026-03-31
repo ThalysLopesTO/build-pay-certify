@@ -13,6 +13,7 @@ import DashboardHero from '@/components/dashboard/DashboardHero';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { isMenuItemVisible } from '@/utils/menuPermissions';
 import BirthdayWidget from '@/components/common/BirthdayWidget';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 
 interface EmployeeDashboardHomeProps {
   onNavigateToTab: (tab: string) => void;
@@ -34,7 +35,10 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
         .eq('user_id', user.id)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.warn('User profile fetch error (non-fatal):', error.message);
+        return null;
+      }
       return data;
     },
     enabled: !!user?.id,
@@ -104,15 +108,17 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Welcome Card with Photo */}
 <div className="lg:col-span-2">
-  <DashboardHero
-    theme="blue"
-    firstName={user?.firstName}
-    lastName={user?.lastName}
-    photoUrl={userProfile?.photo_url}
-    companyName={user?.companyName}
-    trade={user?.trade}
-    onViewProfile={() => onNavigateToTab('settings')}
-  />
+  <ErrorBoundary fallbackMinimal>
+    <DashboardHero
+      theme="blue"
+      firstName={user?.firstName}
+      lastName={user?.lastName}
+      photoUrl={userProfile?.photo_url}
+      companyName={user?.companyName}
+      trade={user?.trade}
+      onViewProfile={() => onNavigateToTab('settings')}
+    />
+  </ErrorBoundary>
 </div>
 
         {/* Weekly Hours Card + Birthday Widget */}
@@ -148,7 +154,9 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
               </div>
             </CardContent>
           </Card>
-          <BirthdayWidget variant="blue" />
+          <ErrorBoundary fallbackMinimal>
+            <BirthdayWidget variant="blue" />
+          </ErrorBoundary>
         </div>
       </div>
 

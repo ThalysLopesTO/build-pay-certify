@@ -6,7 +6,7 @@ import { useTimesheets } from '@/hooks/useTimesheets';
 import { format } from 'date-fns';
 
 const formatBreakMinutes = (minutes: number): string => {
-  if (minutes === 0) return '0m';
+  if (!minutes || isNaN(minutes)) return '0m';
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   if (h === 0) return `${m}m`;
@@ -23,11 +23,11 @@ const TodayStatusBox = () => {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const todayTimesheets = weeklyTimesheets?.filter(timesheet => {
+  const todayTimesheets = (weeklyTimesheets || []).filter(timesheet => {
     if (!timesheet.check_in_time) return false;
     const checkInDate = new Date(timesheet.check_in_time);
-    return checkInDate >= today && checkInDate < tomorrow;
-  }) || [];
+    return !isNaN(checkInDate.getTime()) && checkInDate >= today && checkInDate < tomorrow;
+  });
 
   // Add active timesheet if it exists and isn't already in the list
   const allTodayTimesheets = [...todayTimesheets];
@@ -37,31 +37,53 @@ const TodayStatusBox = () => {
 
   // Calculate today's totals
   const validTimesheets = allTodayTimesheets.filter(t => t.check_in_time);
-  const firstClockIn = validTimesheets.length > 0 
-    ? validTimesheets.reduce((earliest, current) => {
-        const currentTime = new Date(current.check_in_time);
-        const earliestTime = new Date(earliest.check_in_time);
-        return currentTime < earliestTime ? current : earliest;
-      })
-    : null;
+  
+  let firstClockIn: typeof allTodayTimesheets[0] | null = null;
+  try {
+    firstClockIn = validTimesheets.length > 0 
+      ? validTimesheets.reduce((earliest, current) => {
+          if (!current.check_in_time || !earliest.check_in_time) return earliest;
+          const currentTime = new Date(current.check_in_time);
+          const earliestTime = new Date(earliest.check_in_time);
+          if (isNaN(currentTime.getTime()) || isNaN(earliestTime.getTime())) return earliest;
+          return currentTime < earliestTime ? current : earliest;
+        })
+      : null;
+  } catch {
+    firstClockIn = null;
+  }
 
-  const lastClockOut = allTodayTimesheets
-    .filter(t => t.check_out_time)
-    .reduce((latest, current) => {
-      if (!latest) return current;
-      const currentTime = new Date(current.check_out_time!);
-      const latestTime = new Date(latest.check_out_time!);
-      return currentTime > latestTime ? current : latest;
-    }, null as typeof allTodayTimesheets[0] | null);
+  let lastClockOut: typeof allTodayTimesheets[0] | null = null;
+  try {
+    lastClockOut = allTodayTimesheets
+      .filter(t => t.check_out_time)
+      .reduce((latest, current) => {
+        if (!latest) return current;
+        if (!current.check_out_time || !latest.check_out_time) return latest;
+        const currentTime = new Date(current.check_out_time);
+        const latestTime = new Date(latest.check_out_time);
+        if (isNaN(currentTime.getTime()) || isNaN(latestTime.getTime())) return latest;
+        return currentTime > latestTime ? current : latest;
+      }, null as typeof allTodayTimesheets[0] | null);
+  } catch {
+    lastClockOut = null;
+  }
 
   // Compute raw hours from timestamps
-  const totalRawHoursToday = allTodayTimesheets.reduce((total, t) => total + t.raw_hours, 0);
+  const totalRawHoursToday = allTodayTimesheets.reduce((total, t) => {
+    const val = t.raw_hours;
+    return total + (isNaN(val) ? 0 : val);
+  }, 0);
   const totalBreakMinutesToday = allTodayTimesheets.reduce((total, t) => total + (t.break_minutes || 0), 0);
 
   // Calculate current session time if clocked in
-  const currentSessionHours = todayActiveTimesheet?.check_in_time 
-    ? (new Date().getTime() - new Date(todayActiveTimesheet.check_in_time).getTime()) / (1000 * 60 * 60)
-    : 0;
+  let currentSessionHours = 0;
+  if (todayActiveTimesheet?.check_in_time) {
+    const checkInTime = new Date(todayActiveTimesheet.check_in_time).getTime();
+    if (!isNaN(checkInTime)) {
+      currentSessionHours = (Date.now() - checkInTime) / (1000 * 60 * 60);
+    }
+  }
 
   const displayRawHours = totalRawHoursToday + currentSessionHours;
   const displayPaidHours = Math.max(0, displayRawHours - (totalBreakMinutesToday / 60));
@@ -125,7 +147,7 @@ const TodayStatusBox = () => {
             </div>
             <div className="text-xs md:text-sm text-purple-600 font-semibold mb-1 md:mb-2 uppercase tracking-wide">Paid Hours</div>
             <div className="text-xl md:text-2xl font-black text-purple-900">
-              {displayPaidHours.toFixed(1)}h
+              {isNaN(displayPaidHours) ? '0.0' : displayPaidHours.toFixed(1)}h
             </div>
           </div>
         </div>
