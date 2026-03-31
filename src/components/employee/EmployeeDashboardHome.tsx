@@ -13,6 +13,7 @@ import DashboardHero from '@/components/dashboard/DashboardHero';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { isMenuItemVisible } from '@/utils/menuPermissions';
 import BirthdayWidget from '@/components/common/BirthdayWidget';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 
 interface EmployeeDashboardHomeProps {
   onNavigateToTab: (tab: string) => void;
