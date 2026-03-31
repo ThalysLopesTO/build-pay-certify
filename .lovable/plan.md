@@ -1,29 +1,40 @@
 
 
-# Fix: Ensure PWA Mobile Users Get Updated Code
+# Fix: Employee Dashboard Crashing (ErrorBoundary Showing)
 
-## Problem
-The ErrorBoundary and null guards **are applied** in the source code and work for all users. However, **PWA mobile users are at risk** because:
+## Analysis
 
-1. The current `public/sw.js` uses a **cache-first strategy** for JS/CSS files — meaning PWA users may be served the old, broken cached bundle indefinitely
-2. `src/main.tsx` registers the service worker **without any iframe/preview guards**, which also causes issues in the Lovable editor
-3. There's no mechanism to force PWA users to get the new version
+The ErrorBoundary we added is catching an error, which is better than a blank page — but employees still can't clock in/out because the **entire content area** is replaced by the error UI. The current ErrorBoundary wraps ALL of `renderContent()`, so any crash in any sub-component kills everything.
 
-## Fix (2 files)
+Since I can't reproduce the exact error from code alone, the fix needs to be **two-pronged**: make it more resilient AND show us what's actually failing.
 
-### 1. Replace `public/sw.js` with a minimal no-op service worker
-Strip all caching logic. Keep only `install` (skip waiting) and `activate` (claim clients + delete old caches). No `fetch` handler — let the browser load fresh assets every time. This preserves PWA installability without stale caching.
+## Changes
 
-### 2. Update `src/main.tsx` — add iframe/preview guard + force-clear old caches
-- Skip service worker registration when inside an iframe or on a Lovable preview host
-- On first load, unregister any existing service workers and clear all caches so PWA users immediately get the fixed code
-- Keep `registerServiceWorker()` call only for production PWA contexts
+### 1. Show actual error details in ErrorBoundary (`ErrorBoundary.tsx`)
 
-### 3. Simplify `src/utils/serviceWorker.ts`
-Update to include the guard logic and handle the legacy cache cleanup.
+Add a collapsible "Show Details" section that displays the error message and component stack. This way when employees report issues, the screenshot will show exactly what crashed.
+
+### 2. Wrap individual sections in TimeTracker and Dashboard Home with mini error boundaries
+
+Instead of one ErrorBoundary killing the whole page, wrap each major card/section individually. If `TodayStatusBox` crashes, the clock in/out buttons still work. If `WeeklyHistorySection` crashes, everything else still works.
+
+**`TimeTracker.tsx`**: Wrap `TodayStatusBox`, `WeeklyHistorySection`, and the weekly summary card each in their own `<ErrorBoundary>`.
+
+**`EmployeeDashboardHome.tsx`**: Wrap `DashboardHero`, the weekly hours card, `BirthdayWidget`, and the quick actions grid each in their own `<ErrorBoundary>`.
+
+### 3. Harden `TodayStatusBox.tsx` — remaining `!` force unwraps
+
+Lines 52-53 still have `check_out_time!` force unwraps inside the reduce. Wrap in a try-catch and add null guards.
+
+### 4. Harden `useTimesheets.ts` — protect against invalid dates
+
+Add validation in `computeRawHours` to check that `new Date()` produces a valid date before computing. Return 0 for invalid data instead of NaN.
+
+### 5. Harden `EmployeeDashboardHome.tsx` — handle query error state
+
+The `user_profiles` query throws on `.single()` when no profile exists. Change `if (error) throw error` to just return null, preventing the query from entering error state.
 
 ## Scope
-- 3 files modified
+- 4 files modified (`ErrorBoundary.tsx`, `TimeTracker.tsx`, `EmployeeDashboardHome.tsx`, `TodayStatusBox.tsx`, `useTimesheets.ts`)
 - No database changes
-- Fixes the root cause of PWA users seeing blank pages from stale cached code
 
