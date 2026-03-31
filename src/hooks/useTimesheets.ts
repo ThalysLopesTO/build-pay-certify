@@ -26,7 +26,11 @@ export interface Timesheet {
 
 const computeRawHours = (checkIn: string | null, checkOut: string | null): number => {
   if (!checkIn || !checkOut) return 0;
-  return (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60);
+  const inTime = new Date(checkIn).getTime();
+  const outTime = new Date(checkOut).getTime();
+  if (isNaN(inTime) || isNaN(outTime)) return 0;
+  const hours = (outTime - inTime) / (1000 * 60 * 60);
+  return isNaN(hours) || hours < 0 ? 0 : hours;
 };
 
 export const useTimesheets = (selectedWeek?: Date) => {

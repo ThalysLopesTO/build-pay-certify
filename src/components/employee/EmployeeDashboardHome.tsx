@@ -34,7 +34,10 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
         .eq('user_id', user.id)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.warn('User profile fetch error (non-fatal):', error.message);
+        return null;
+      }
       return data;
     },
     enabled: !!user?.id,
