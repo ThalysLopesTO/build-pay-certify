@@ -162,6 +162,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       </div>
 
       {/* Quick Actions */}
+      <ErrorBoundary fallbackMinimal>
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-slate-900">Quick Actions</h2>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
