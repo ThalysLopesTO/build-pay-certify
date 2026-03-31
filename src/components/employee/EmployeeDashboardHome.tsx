@@ -33,7 +33,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.warn('User profile fetch error (non-fatal):', error.message);
@@ -45,7 +45,8 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
   });
 
   const targetHours = 40;
-  const progressPercentage = Math.min((totalWeeklyHours / targetHours) * 100, 100);
+  const safeWeeklyHours = isNaN(totalWeeklyHours) ? 0 : totalWeeklyHours;
+  const progressPercentage = Math.min((safeWeeklyHours / targetHours) * 100, 100);
 
   const allQuickActions = [
     {
@@ -133,7 +134,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
                   <div>
                     <h3 className="text-sm font-medium opacity-90">This Week's Hours</h3>
                     <div className="text-2xl font-bold">
-                      {hoursLoading ? 'Loading...' : `${totalWeeklyHours.toFixed(1)} hrs`}
+                      {hoursLoading ? 'Loading...' : `${safeWeeklyHours.toFixed(1)} hrs`}
                     </div>
                   </div>
                 </div>
@@ -161,6 +162,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       </div>
 
       {/* Quick Actions */}
+      <ErrorBoundary fallbackMinimal>
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-slate-900">Quick Actions</h2>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -186,6 +188,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
           })}
         </div>
       </div>
+      </ErrorBoundary>
 
       {/* Additional Actions Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
