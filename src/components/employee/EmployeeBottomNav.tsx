@@ -30,9 +30,9 @@ const EmployeeBottomNav: React.FC<EmployeeBottomNavProps> = ({ activeTab, onTabC
       color: 'text-green-600'
     },
     {
-      id: 'timesheet',
-      title: 'Timesheet',
-      label: 'Timesheet',
+      id: 'time-tracker',
+      title: 'Time Clock',
+      label: 'Time Clock',
       icon: Clock,
       color: 'text-blue-600'
     },

@@ -17,14 +17,22 @@ export const useRolePermissions = () => {
   return useQuery({
     queryKey: ['role-permissions'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('role_permissions')
-        .select('*')
-        .order('role', { ascending: true })
-        .order('menu_item_id', { ascending: true });
-      
-      if (error) throw error;
-      return data as RolePermission[];
+      try {
+        const { data, error } = await supabase
+          .from('role_permissions')
+          .select('*')
+          .order('role', { ascending: true })
+          .order('menu_item_id', { ascending: true });
+        
+        if (error) {
+          console.warn('Role permissions fetch failed (non-fatal):', error.message);
+          return [] as RolePermission[];
+        }
+        return data as RolePermission[];
+      } catch (e) {
+        console.warn('Role permissions query exception (non-fatal):', e);
+        return [] as RolePermission[];
+      }
     }
   });
 };

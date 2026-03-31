@@ -158,7 +158,7 @@ const TimeTracker = () => {
                   <p className="text-xl font-semibold">Started: {todayActiveTimesheet.check_in_time ? format(new Date(todayActiveTimesheet.check_in_time), 'h:mm a') : '--:--'}</p>
                   <div className="flex items-center justify-center space-x-2 text-lg">
                     <MapPin className="h-5 w-5" />
-                    <span className="font-medium">{todayActiveTimesheet.check_in_location}</span>
+                    <span className="font-medium">{todayActiveTimesheet.check_in_location || 'Location not available'}</span>
                   </div>
                 </div>
               </div>

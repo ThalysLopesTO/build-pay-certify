@@ -188,6 +188,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
           })}
         </div>
       </div>
+      </ErrorBoundary>
 
       {/* Additional Actions Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
