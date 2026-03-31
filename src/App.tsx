@@ -153,7 +153,9 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AppProviders>
-        <AppInner />
+        <ErrorBoundary>
+          <AppInner />
+        </ErrorBoundary>
         <GlobalToasts />
         <Toaster />
         <SonnerToaster />

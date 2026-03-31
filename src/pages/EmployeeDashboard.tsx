@@ -72,10 +72,12 @@ const EmployeeDashboard = () => {
         </div>
       </div>
       {isMobile && (
-        <EmployeeBottomNav 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab} 
-        />
+        <ErrorBoundary fallbackMinimal>
+          <EmployeeBottomNav 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab} 
+          />
+        </ErrorBoundary>
       )}
     </div>
   );
