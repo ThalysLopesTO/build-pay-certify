@@ -2,8 +2,13 @@
 import React from 'react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Calendar, LogIn, LogOut, Timer, Coffee } from 'lucide-react';
-import { useTimesheets } from '@/hooks/useTimesheets';
 import { format } from 'date-fns';
+import { Timesheet } from '@/hooks/useTimesheets';
+
+interface TodayStatusBoxProps {
+  weeklyTimesheets?: Timesheet[];
+  todayActiveTimesheet?: Timesheet | null;
+}
 
 const formatBreakMinutes = (minutes: number): string => {
   if (!minutes || isNaN(minutes)) return '0m';
@@ -14,9 +19,7 @@ const formatBreakMinutes = (minutes: number): string => {
   return `${h}h ${m}m`;
 };
 
-const TodayStatusBox = () => {
-  const { weeklyTimesheets, todayActiveTimesheet } = useTimesheets();
-
+const TodayStatusBox: React.FC<TodayStatusBoxProps> = ({ weeklyTimesheets, todayActiveTimesheet }) => {
   // Get today's timesheets (both completed and active)
   const today = new Date();
   today.setHours(0, 0, 0, 0);

@@ -218,7 +218,10 @@ const TimeTracker = () => {
 
       {/* Today's Status Box */}
       <ErrorBoundary fallbackMinimal>
-        <TodayStatusBox />
+        <TodayStatusBox 
+          weeklyTimesheets={weeklyTimesheets}
+          todayActiveTimesheet={todayActiveTimesheet}
+        />
       </ErrorBoundary>
 
       {/* Weekly Hours Summary */}
