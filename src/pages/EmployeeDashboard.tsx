@@ -17,6 +17,7 @@ import EmployeeDesktopNav from '../components/employee/EmployeeDesktopNav';
 import { JobsiteSelectionScreen } from '../components/admin/tasks/JobsiteSelectionScreen';
 import { DailyTaskScreen } from '../components/admin/tasks/DailyTaskScreen';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 
 
 const EmployeeDashboard = () => {
@@ -60,8 +61,8 @@ const EmployeeDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col transition-colors overflow-x-hidden">
-      <Header />
-      <EmployeeDesktopNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <ErrorBoundary fallbackMinimal><Header /></ErrorBoundary>
+      <ErrorBoundary fallbackMinimal><EmployeeDesktopNav activeTab={activeTab} onTabChange={setActiveTab} /></ErrorBoundary>
       <div className={`flex-1 ${isMobile ? 'pb-20' : 'pb-6'} transition-all duration-300`}>
         <div className="max-w-4xl mx-auto px-2 md:px-4 py-4 max-w-full">
           <LicenseWarningBanner />
@@ -71,10 +72,12 @@ const EmployeeDashboard = () => {
         </div>
       </div>
       {isMobile && (
-        <EmployeeBottomNav 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab} 
-        />
+        <ErrorBoundary fallbackMinimal>
+          <EmployeeBottomNav 
+            activeTab={activeTab} 
+            onTabChange={setActiveTab} 
+          />
+        </ErrorBoundary>
       )}
     </div>
   );
