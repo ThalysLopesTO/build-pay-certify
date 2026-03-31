@@ -1,80 +1,43 @@
 
-Fix the employee punch page by removing the remaining full-page failure points and restoring direct access to the clock screen.
 
-## What’s likely going wrong
-The screenshot shows the top-level `ErrorBoundary` is still replacing the whole employee dashboard content. From the code review, there are 3 strong risk points:
+# Fix: Blank Page on Mobile Employee Dashboard
 
-1. `EmployeeDashboard.tsx` still wraps all tab content in one global `<ErrorBoundary>`, so any child error hides the whole punch page.
-2. `useRolePermissions()` throws on query failure and is used by both employee nav components and the dashboard home; if that query fails, navigation/home can crash.
-3. Mobile nav is inconsistent:
-   - home cards navigate to `time-tracker`
-   - desktop nav includes `time-tracker`
-   - mobile bottom nav does not include `time-tracker`, only `timesheet`
-   This can make the employee flow feel broken and inconsistent even when the page is healthy.
+## Root Cause Analysis
 
-## Plan
+After reviewing every component in the employee flow, the code logic itself is well-guarded. The blank page is caused by two things:
 
-### 1. Remove the full-page employee dashboard boundary
-File: `src/pages/EmployeeDashboard.tsx`
+1. **No app-level ErrorBoundary** — If ANY component throws (Header, navigation, ProtectedRoute query), the entire React tree unmounts to a white screen. There is nothing catching errors at the top level in `App.tsx`.
 
-- Stop wrapping `renderContent()` in the top-level `ErrorBoundary`
-- Let each screen/component handle its own resilience instead
+2. **Stale PWA cache** — The previous `sw.js` fix deployed a no-op service worker, but existing PWA installs won't activate the new worker until all app windows are closed and reopened. Many mobile users never fully close the app, so they're stuck on the old cached broken bundle indefinitely.
 
-Result: if one widget fails, the employee can still access the punch-in/out screen normally.
+## Changes
 
-### 2. Make role-permission loading non-fatal
-File: `src/hooks/useRolePermissions.ts`
+### 1. Add a top-level ErrorBoundary in `App.tsx`
 
-- Change the permissions query to fail safely:
-  - return `[]` on query error instead of throwing
-  - log a warning for debugging
-- Keep the current default behavior in `filterMenuByPermissions()` / `isMenuItemVisible()` where missing permissions means “show items”
+Wrap `<AppInner />` (the entire route tree) with an `<ErrorBoundary>` that shows a full-page "Something went wrong — Reload" screen instead of blank white. This is the last line of defense.
 
-Result: navigation and employee home won’t crash just because the permissions table/query fails temporarily.
+### 2. Wrap `EmployeeDashboard` layout components individually
 
-### 3. Restore punch access in mobile navigation
-File: `src/components/employee/EmployeeBottomNav.tsx`
+In `EmployeeDashboard.tsx`, wrap `<Header />`, `<EmployeeDesktopNav />`, and `<EmployeeBottomNav />` each in `<ErrorBoundary fallbackMinimal>`. Currently, if `Header` or nav crashes, the entire page dies. With individual boundaries, the content area (clock in/out) stays visible even if the header fails.
 
-- Replace the current bottom-nav `timesheet` entry with `time-tracker`
-- Label it clearly as `Time Clock` or `Clock In/Out`
-- Keep the same permission filtering pattern already used elsewhere
+### 3. Force service worker update with `skipWaiting` message
 
-Result: employees on mobile can always reach punch in/out directly from the main nav.
+Update `src/utils/serviceWorker.ts` to send a `skipWaiting` message to any waiting service worker during registration, so the new no-op worker activates immediately without requiring the user to close all tabs.
 
-### 4. Harden the employee home widgets further
-File: `src/components/employee/EmployeeDashboardHome.tsx`
+Also add a `controllerchange` listener that auto-reloads the page once the new service worker takes over, ensuring the stale cached bundle is replaced.
 
-- Change the user profile query from `.single()` to `.maybeSingle()`
-- Wrap the weekly hours card and quick-action sections in minimal `ErrorBoundary` blocks, just like other widgets
-- Guard numeric values like weekly progress/hours before calling `.toFixed()`
+### 4. Update `public/sw.js` to handle the `skipWaiting` message
 
-Result: if home data is missing or malformed, only that small section fails, not the whole employee experience.
+Add a `message` event listener so that when the registration code sends `{ type: 'SKIP_WAITING' }`, the worker calls `self.skipWaiting()` immediately.
 
-### 5. Keep the punch page itself resilient
-File: `src/components/employee/TimeTracker.tsx`
+## Expected Result
+- Mobile PWA users who are stuck on old cached code will get force-updated on next open
+- If any component still crashes, users see a reload button instead of a blank page
+- Clock in/out functionality remains accessible even if secondary components fail
 
-- Guard any remaining user-facing values that may be null or invalid:
-  - location text
-  - formatted dates/times
-  - summary numbers used in `.toFixed()`
-- Keep the current section-level boundaries around status/history/summary
-- Ensure the main clock in/out card is never wrapped in a failing boundary
+## Files
+- `src/App.tsx` — add top-level ErrorBoundary
+- `src/pages/EmployeeDashboard.tsx` — wrap Header, nav components in individual boundaries
+- `public/sw.js` — add SKIP_WAITING message handler
+- `src/utils/serviceWorker.ts` — send skipWaiting + listen for controllerchange
 
-Result: the core punch actions remain visible even if secondary timesheet data is bad.
-
-## Expected outcome
-After this fix:
-- employees should see the normal employee page again
-- mobile users should have a direct button/tab for punch in/out
-- a broken widget should no longer hide the whole screen
-- temporary Supabase/query issues should degrade gracefully instead of crashing the dashboard
-
-## Files to update
-- `src/pages/EmployeeDashboard.tsx`
-- `src/hooks/useRolePermissions.ts`
-- `src/components/employee/EmployeeBottomNav.tsx`
-- `src/components/employee/EmployeeDashboardHome.tsx`
-- `src/components/employee/TimeTracker.tsx`
-
-## Technical note
-I do not see a single confirmed crash stack in the available logs, so this plan focuses on removing the remaining architectural failure points that can still produce the exact full-page error state shown in the screenshot. This is the safest path to bring the employee punch page back without breaking the rest of the system.
