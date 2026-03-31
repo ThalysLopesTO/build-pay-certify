@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 import TodayStatusBox from './time-tracker/TodayStatusBox';
 import WeeklyHistorySection from './time-tracker/WeeklyHistorySection';
 import WeekSelector from './time-tracker/WeekSelector';
