@@ -33,6 +33,7 @@ import PublicQuotePage from "@/pages/PublicQuotePage";
 import ClientsPage from "@/pages/admin/ClientsPage";
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "@/components/common/ProtectedRoute";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { ClientPortalProvider } from "@/contexts/ClientPortalContext";
 import { PortalLayout } from "@/components/client-portal/PortalLayout";
 import PortalDashboard from "@/pages/client-portal/PortalDashboard";
