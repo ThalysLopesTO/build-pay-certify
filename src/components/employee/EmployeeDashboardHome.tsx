@@ -45,7 +45,8 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
   });
 
   const targetHours = 40;
-  const progressPercentage = Math.min((totalWeeklyHours / targetHours) * 100, 100);
+  const safeWeeklyHours = isNaN(totalWeeklyHours) ? 0 : totalWeeklyHours;
+  const progressPercentage = Math.min((safeWeeklyHours / targetHours) * 100, 100);
 
   const allQuickActions = [
     {
