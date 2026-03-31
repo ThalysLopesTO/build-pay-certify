@@ -154,7 +154,9 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
               </div>
             </CardContent>
           </Card>
-          <BirthdayWidget variant="blue" />
+          <ErrorBoundary fallbackMinimal>
+            <BirthdayWidget variant="blue" />
+          </ErrorBoundary>
         </div>
       </div>
 
