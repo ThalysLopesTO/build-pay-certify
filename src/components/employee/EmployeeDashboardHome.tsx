@@ -134,7 +134,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
                   <div>
                     <h3 className="text-sm font-medium opacity-90">This Week's Hours</h3>
                     <div className="text-2xl font-bold">
-                      {hoursLoading ? 'Loading...' : `${totalWeeklyHours.toFixed(1)} hrs`}
+                      {hoursLoading ? 'Loading...' : `${safeWeeklyHours.toFixed(1)} hrs`}
                     </div>
                   </div>
                 </div>
