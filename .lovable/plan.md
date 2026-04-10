@@ -1,37 +1,51 @@
 
 
-# Fix: Raw Hours Calculation Using Clamped Times Instead of Actual Punch Times
+# Fix: Raw and Paid Hours Still Using Clamped Values
 
 ## Problem
-When an employee punches in at 7:00 AM and out at 4:30 PM, raw hours should be **9.5 hours**. Instead, the system shows **8.5 hours**.
+The previous fix only partially addressed the issue. While `useTimeSummaryDataWithRules.ts` line 198 was updated to use `result.rawMinutes` for raw hours, **paid hours** in both files still use `result.totalMinutes` (clamped by jobsite rules). And `useTimeSummaryDetails.ts` (the expanded daily breakdown) was never updated at all.
 
-The jobsite "Arbutus 3" has a time rule: start = 08:00, end = 17:00, early grace = 0 minutes. When the employee punches in at 07:00 (before the rule start), the system clamps the effective start to 08:00. It then uses this clamped time to calculate "raw hours" — but raw hours should always be the actual punch-to-punch duration, not the clamped duration.
+Current behavior for 7:00 AM - 4:30 PM with 8:00 AM rule start:
+- Raw: 8.50 (clamped, wrong) in detail view
+- Paid: 8.50 or 8.00 (clamped minus break, wrong)
 
-## Root Cause
-In `calculateWorkedHours.ts`, the returned `totalMinutes` is computed from clamped effective times. Then in `useTimeSummaryDataWithRules.ts` line 198, `rawHours` is set to `result.totalMinutes / 60` — which is already clamped, not truly raw.
+Expected behavior (per your confirmation):
+- Raw: 9.50 (actual punch-to-punch)
+- Paid: 9.00 (raw minus 30m stored break)
+
+## Root Cause — Two files, three lines
+
+### File 1: `src/hooks/useTimeSummaryDetails.ts` (expanded daily rows)
+- **Line 130**: `raw_hours: result.totalMinutes / 60` — uses clamped time, should use `result.rawMinutes / 60`
+- **Line 121**: `paidMinutes = Math.max(0, result.totalMinutes - storedBreakMinutes)` — uses clamped time as base for paid, should use `result.rawMinutes`
+- **Line 125**: `paidMinutes = result.paidMinutes` — fallback also uses clamped paid, should use `result.rawMinutes`
+
+### File 2: `src/hooks/useTimeSummaryDataWithRules.ts` (aggregated totals)
+- **Line 204**: `paidMinutes = Math.max(0, result.totalMinutes - storedBreakMinutes)` — same issue, should use `result.rawMinutes`
+- **Line 206**: `paidMinutes = result.paidMinutes` — same issue, should use `result.rawMinutes`
 
 ## Fix
 
-### 1. Add actual raw minutes to `calculateWorkedHours` return value
-**File:** `src/lib/timeRules/calculateWorkedHours.ts`
+### `useTimeSummaryDetails.ts`
+```
+Line 121: result.totalMinutes → result.rawMinutes
+Line 125: result.paidMinutes → result.rawMinutes  (no stored break = no deduction)
+Line 130: result.totalMinutes → result.rawMinutes
+```
 
-- Add a new field `rawMinutes` to `CalculateWorkedHoursResult` that represents the unclamped punch-to-punch duration
-- Set it to `diffInMinutes(rawInDate, rawOutDate)` — the true difference between clock-in and clock-out
-- Keep `totalMinutes` as the clamped/effective value (used for paid hour calculations)
+### `useTimeSummaryDataWithRules.ts`
+```
+Line 204: result.totalMinutes → result.rawMinutes
+Line 206: result.paidMinutes → result.rawMinutes
+```
 
-### 2. Use `rawMinutes` for raw hours display
-**File:** `src/hooks/useTimeSummaryDataWithRules.ts`
+## Result
+- Raw hours = actual clock-in to clock-out duration (9.50 for 7am-4:30pm)
+- Paid hours = raw minus stored break only (9.00 when 30m break stored, 9.50 when no break stored)
+- Time rule flags (Early, Late, etc.) still generated correctly for review purposes
+- Clamping no longer affects pay calculation, only flags
 
-- Change line 198 from `result.totalMinutes / 60` to `result.rawMinutes / 60`
-- This ensures "Raw Hours" shows actual punch-to-punch time
-- Paid hours calculation continues using `result.totalMinutes` (clamped), which is correct
-
-## Expected Result
-- 7:00 AM to 4:30 PM → Raw: **9.50 hrs**, Break: 30m, Paid: **9.00 hrs**
-- The clamping still applies to paid hours where applicable
-- No change to flags or other calculations
-
-## Files to Change
-- `src/lib/timeRules/calculateWorkedHours.ts` — add `rawMinutes` field
-- `src/hooks/useTimeSummaryDataWithRules.ts` — use `rawMinutes` for raw hours
+## Files to change
+- `src/hooks/useTimeSummaryDetails.ts`
+- `src/hooks/useTimeSummaryDataWithRules.ts`
 
