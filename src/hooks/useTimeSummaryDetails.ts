@@ -118,16 +118,16 @@ export const useTimeSummaryDetails = ({
             if (storedBreakMinutes !== null && storedBreakMinutes !== undefined) {
               // Stored break takes priority - recalculate paid from raw totalMinutes
               finalBreakMinutes = storedBreakMinutes;
-              paidMinutes = Math.max(0, result.totalMinutes - storedBreakMinutes);
+              paidMinutes = Math.max(0, result.rawMinutes - storedBreakMinutes);
             } else {
               // No stored break - use calculated values from time rules
               finalBreakMinutes = result.breakMinutes;
-              paidMinutes = result.paidMinutes;
+              paidMinutes = result.rawMinutes;
             }
 
             return {
               ...base,
-              raw_hours: result.totalMinutes / 60,
+              raw_hours: result.rawMinutes / 60,
               paid_hours: paidMinutes / 60,
               break_minutes: finalBreakMinutes,
               flags: result.flags || [],
