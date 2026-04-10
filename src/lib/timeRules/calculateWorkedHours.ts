@@ -133,6 +133,7 @@ async function getApplicableTimeRule(
 export interface CalculateWorkedHoursResult {
   effectiveStart: string;
   effectiveEnd: string;
+  rawMinutes: number;
   totalMinutes: number;
   paidMinutes: number;
   paidHours: number;
@@ -165,6 +166,7 @@ export async function calculateWorkedHours({
     return {
       effectiveStart: rawIn,
       effectiveEnd: rawOut,
+      rawMinutes: 0,
       totalMinutes: 0,
       paidMinutes: 0,
       paidHours: 0,
@@ -182,6 +184,7 @@ export async function calculateWorkedHours({
     return {
       effectiveStart: rawIn,
       effectiveEnd: rawOut,
+      rawMinutes: totalMinutes,
       totalMinutes,
       paidMinutes: totalMinutes,
       paidHours: totalMinutes / 60,
@@ -232,11 +235,13 @@ export async function calculateWorkedHours({
     paidMinutes,
   });
 
+  const rawMinutes = diffInMinutes(rawInDate, rawOutDate);
   const breakMinutes = timeRule.break_is_paid ? 0 : timeRule.break_minutes;
 
   return {
     effectiveStart: formatISO(effectiveStart),
     effectiveEnd: formatISO(effectiveEnd),
+    rawMinutes,
     totalMinutes,
     paidMinutes,
     paidHours: paidMinutes / 60,
