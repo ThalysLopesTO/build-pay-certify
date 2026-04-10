@@ -195,7 +195,7 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
             date: new Date(timesheet.check_in_time).toISOString().split('T')[0],
           });
 
-          const rawHours = result.totalMinutes / 60;
+          const rawHours = result.rawMinutes / 60;
           
           const storedBreakMinutes = timesheet.break_minutes;
           let paidMinutes: number;
