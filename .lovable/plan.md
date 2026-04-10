@@ -1,75 +1,37 @@
 
-# Fix plan: browser + mobile blank page on Employee Time Clock
 
-## What I found
-This is not mainly a PWA problem anymore. The strongest root cause is the realtime subscription inside `useTimesheets`.
+# Fix: Raw Hours Calculation Using Clamped Times Instead of Actual Punch Times
 
-The console error in the screenshot matches this exactly:
+## Problem
+When an employee punches in at 7:00 AM and out at 4:30 PM, raw hours should be **9.5 hours**. Instead, the system shows **8.5 hours**.
 
-```text
-tried to subscribe multiple times.
-subscribe can only be called a single time per channel instance
-```
+The jobsite "Arbutus 3" has a time rule: start = 08:00, end = 17:00, early grace = 0 minutes. When the employee punches in at 07:00 (before the rule start), the system clamps the effective start to 08:00. It then uses this clamped time to calculate "raw hours" — but raw hours should always be the actual punch-to-punch duration, not the clamped duration.
 
-### Why it crashes
-When the Time Clock page opens:
-
-- `TimeTracker.tsx` calls `useTimesheets(selectedWeek)`
-- `TodayStatusBox.tsx` also calls `useTimesheets()`
-
-Both hook instances create the same realtime channel:
-
-```ts
-supabase.channel(`timesheets-employee-${user.id}`)
-```
-
-That causes a duplicate `.subscribe()` on the same channel instance, which throws at runtime. Because the error happens in an effect/subscription, the `ErrorBoundary` does not protect it, so the page goes white in both browser and mobile.
+## Root Cause
+In `calculateWorkedHours.ts`, the returned `totalMinutes` is computed from clamped effective times. Then in `useTimeSummaryDataWithRules.ts` line 198, `rawHours` is set to `result.totalMinutes / 60` — which is already clamped, not truly raw.
 
 ## Fix
-### 1. Make `useTimesheets` realtime subscription single-instance
-**File:** `src/hooks/useTimesheets.ts`
 
-- Remove the direct duplicate-prone `supabase.channel(...).subscribe()` pattern
-- Replace it with a shared/safe subscription approach:
-  - either use the existing `RealtimeProvider`
-  - or keep a module-level channel registry/ref so the same user only subscribes once
-- Keep query invalidation when timesheets change
+### 1. Add actual raw minutes to `calculateWorkedHours` return value
+**File:** `src/lib/timeRules/calculateWorkedHours.ts`
 
-Result: opening the page will no longer crash from duplicate subscriptions.
+- Add a new field `rawMinutes` to `CalculateWorkedHoursResult` that represents the unclamped punch-to-punch duration
+- Set it to `diffInMinutes(rawInDate, rawOutDate)` — the true difference between clock-in and clock-out
+- Keep `totalMinutes` as the clamped/effective value (used for paid hour calculations)
 
-### 2. Stop calling `useTimesheets` twice on the Time Clock screen
-**Files:**  
-- `src/components/employee/TimeTracker.tsx`  
-- `src/components/employee/time-tracker/TodayStatusBox.tsx`
+### 2. Use `rawMinutes` for raw hours display
+**File:** `src/hooks/useTimeSummaryDataWithRules.ts`
 
-- Make `TimeTracker` the single source of truth
-- Pass `weeklyTimesheets` and `todayActiveTimesheet` into `TodayStatusBox` as props
-- Remove `useTimesheets()` from `TodayStatusBox`
+- Change line 198 from `result.totalMinutes / 60` to `result.rawMinutes / 60`
+- This ensures "Raw Hours" shows actual punch-to-punch time
+- Paid hours calculation continues using `result.totalMinutes` (clamped), which is correct
 
-Result: fewer queries, fewer subscriptions, and no duplicate hook side effects on this page.
+## Expected Result
+- 7:00 AM to 4:30 PM → Raw: **9.50 hrs**, Break: 30m, Paid: **9.00 hrs**
+- The clamping still applies to paid hours where applicable
+- No change to flags or other calculations
 
-### 3. Keep the Time Clock screen resilient after the subscription fix
-**Files:**  
-- `src/components/employee/TimeTracker.tsx`  
-- `src/components/employee/time-tracker/TodayStatusBox.tsx`
+## Files to Change
+- `src/lib/timeRules/calculateWorkedHours.ts` — add `rawMinutes` field
+- `src/hooks/useTimeSummaryDataWithRules.ts` — use `rawMinutes` for raw hours
 
-- Preserve the existing null/date guards
-- Keep safe fallbacks for invalid timestamps and missing location values
-
-Result: the page returns to normal and remains stable even if some records are malformed.
-
-## Expected outcome
-After this fix:
-
-- employees should be able to open the Time Clock page again in browser and mobile
-- the Clock In / Clock Out section should render normally
-- realtime updates can remain enabled without crashing the app
-- the blank white screen should stop happening on page open
-
-## Files to update
-- `src/hooks/useTimesheets.ts`
-- `src/components/employee/TimeTracker.tsx`
-- `src/components/employee/time-tracker/TodayStatusBox.tsx`
-
-## Technical note
-The key issue is that this error is thrown from subscription/effect code, not from render. That is why adding more `ErrorBoundary` wrappers did not fully solve it.
