@@ -201,9 +201,9 @@ export const useTimeSummaryDataWithRules = (filters: TimeSummaryFilters) => {
           let paidMinutes: number;
           
           if (storedBreakMinutes !== null && storedBreakMinutes !== undefined) {
-            paidMinutes = Math.max(0, result.totalMinutes - storedBreakMinutes);
+            paidMinutes = Math.max(0, result.rawMinutes - storedBreakMinutes);
           } else {
-            paidMinutes = result.paidMinutes;
+            paidMinutes = result.rawMinutes;
           }
           
           const paidHours = paidMinutes / 60;
