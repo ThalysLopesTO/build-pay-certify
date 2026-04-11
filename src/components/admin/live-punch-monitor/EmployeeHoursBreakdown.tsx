@@ -1,12 +1,23 @@
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clock, Coffee, AlertTriangle, ArrowRight, Pencil, Timer } from 'lucide-react';
+import { Clock, Coffee, AlertTriangle, ArrowRight, Pencil, Timer, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { parseLocalDate } from '@/utils/dateUtils';
 import { formatDurationFromMinutes } from '@/hooks/useDailyHoursSummary';
+import { useDeleteTimesheet } from '@/hooks/useDeleteTimesheet';
 import type { EmployeeBreakdown, PunchRecord } from '@/hooks/useEmployeeHoursBreakdown';
 import PunchEditModal from './PunchEditModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface EmployeeHoursBreakdownProps {
   employees: EmployeeBreakdown[];
@@ -17,6 +28,17 @@ interface EmployeeHoursBreakdownProps {
 const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employees, incompleteCount, canEdit = false }) => {
   const [editingPunch, setEditingPunch] = useState<PunchRecord | null>(null);
   const [editingEmployee, setEditingEmployee] = useState('');
+  const [deletingPunch, setDeletingPunch] = useState<PunchRecord | null>(null);
+  const [deletingEmployee, setDeletingEmployee] = useState('');
+
+  const deleteMutation = useDeleteTimesheet();
+
+  const handleDelete = () => {
+    if (!deletingPunch) return;
+    deleteMutation.mutate(deletingPunch.id, {
+      onSettled: () => setDeletingPunch(null),
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -122,19 +144,32 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                         </span>
                       )}
 
-                      {/* Edit button */}
+                      {/* Edit & Delete buttons */}
                       {canEdit && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => {
-                            setEditingPunch(punch);
-                            setEditingEmployee(`${emp.firstName} ${emp.lastName}`);
-                          }}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() => {
+                              setEditingPunch(punch);
+                              setEditingEmployee(`${emp.firstName} ${emp.lastName}`);
+                            }}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 text-destructive hover:text-destructive"
+                            onClick={() => {
+                              setDeletingPunch(punch);
+                              setDeletingEmployee(`${emp.firstName} ${emp.lastName}`);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -151,6 +186,30 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
         punch={editingPunch}
         employeeName={editingEmployee}
       />
+
+      <AlertDialog open={!!deletingPunch} onOpenChange={(open) => { if (!open) setDeletingPunch(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Punch Record</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this punch record for <strong>{deletingEmployee}</strong>
+              {deletingPunch && (
+                <> on {format(new Date(deletingPunch.checkIn), 'EEE, MMM dd yyyy')} at {format(new Date(deletingPunch.checkIn), 'h:mm a')}</>
+              )}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
