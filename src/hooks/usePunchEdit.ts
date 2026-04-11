@@ -45,6 +45,7 @@ export const usePunchEdit = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
       queryClient.invalidateQueries({ queryKey: ['live-punch-data'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-hours-breakdown'] });
     },
     onError: (error) => {
       console.error('Failed to update punch record:', error);

@@ -5,7 +5,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { CalendarIcon, ChevronDown, ChevronUp, Clock, BarChart3, Coffee, TrendingUp, AlertCircle } from 'lucide-react';
+import { CalendarIcon, ChevronDown, ChevronUp, Clock, BarChart3, Coffee, TrendingUp, AlertCircle, Timer } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -19,6 +19,8 @@ interface DailyHoursSummaryProps {
   jobsites?: Array<{ id: string; name: string }> | null;
 }
 
+const ALLOWED_ROLES = ['admin', 'super_admin', 'management'];
+
 const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
   const { user } = useAuth();
   const supabase = getSupabase();
@@ -28,6 +30,13 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
   const [jobsiteId, setJobsiteId] = useState('all');
   const [employeeId, setEmployeeId] = useState('all');
   const [hasGenerated, setHasGenerated] = useState(false);
+
+  // Role gate — hide from foreman/employee
+  if (!user?.role || !ALLOWED_ROLES.includes(user.role)) {
+    return null;
+  }
+
+  const canEdit = ALLOWED_ROLES.includes(user.role);
 
   // Fetch employees
   const { data: employees } = useQuery({
@@ -48,6 +57,7 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
 
   const {
     employees: breakdownEmployees,
+    grandTotalGrossMinutes,
     grandTotalNetMinutes,
     grandTotalBreakMinutes,
     totalDays,
@@ -213,18 +223,24 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
                 <EmployeeHoursBreakdown
                   employees={breakdownEmployees}
                   incompleteCount={incompleteCount}
+                  canEdit={canEdit}
                 />
 
                 {/* Grand Totals */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   <SummaryStatCard
                     icon={<CalendarIcon className="h-4 w-4" />}
                     label="Days Worked"
                     value={String(totalDays)}
                   />
                   <SummaryStatCard
+                    icon={<Timer className="h-4 w-4" />}
+                    label="Total Raw Hours"
+                    value={formatDurationFromMinutes(grandTotalGrossMinutes)}
+                  />
+                  <SummaryStatCard
                     icon={<Clock className="h-4 w-4" />}
-                    label="Total Net Hours"
+                    label="Total Paid Hours"
                     value={formatDurationFromMinutes(grandTotalNetMinutes)}
                   />
                   <SummaryStatCard

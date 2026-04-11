@@ -8,6 +8,7 @@ export interface PunchRecord {
   checkIn: string;
   checkOut: string | null;
   breakMinutes: number;
+  grossMinutes: number;
   netMinutes: number;
   jobsiteName: string;
   status: string;
@@ -18,6 +19,7 @@ export interface PunchRecord {
 export interface DayBreakdown {
   date: string;
   punches: PunchRecord[];
+  dayGrossMinutes: number;
   dayNetMinutes: number;
   dayBreakMinutes: number;
 }
@@ -27,6 +29,7 @@ export interface EmployeeBreakdown {
   firstName: string;
   lastName: string;
   photoUrl: string | null;
+  totalGrossMinutes: number;
   totalNetMinutes: number;
   totalBreakMinutes: number;
   days: DayBreakdown[];
@@ -34,6 +37,7 @@ export interface EmployeeBreakdown {
 
 export interface EmployeeHoursResult {
   employees: EmployeeBreakdown[];
+  grandTotalGrossMinutes: number;
   grandTotalNetMinutes: number;
   grandTotalBreakMinutes: number;
   totalDays: number;
@@ -83,11 +87,9 @@ export const useEmployeeHoursBreakdown = ({
       const { data: timesheets, error } = await q.order('check_in_time', { ascending: true }).limit(1000);
       if (error) throw error;
 
-      // Collect unique user_ids and jobsite_ids
       const userIds = [...new Set((timesheets || []).map(t => t.user_id))];
       const jobsiteIds = [...new Set((timesheets || []).filter(t => t.jobsite_id).map(t => t.jobsite_id!))];
 
-      // Fetch profiles and jobsites in parallel
       const [profilesRes, jobsitesRes] = await Promise.all([
         userIds.length > 0
           ? supabase.from('user_profiles').select('user_id, first_name, last_name, photo_url').in('user_id', userIds)
@@ -114,10 +116,7 @@ export const useEmployeeHoursBreakdown = ({
 
     let incompleteCount = 0;
 
-    // Group by employee
-    const employeeMap = new Map<string, {
-      punches: Array<typeof timesheets[number]>;
-    }>();
+    const employeeMap = new Map<string, { punches: Array<typeof timesheets[number]> }>();
 
     for (const t of timesheets) {
       if (!employeeMap.has(t.user_id)) {
@@ -130,8 +129,6 @@ export const useEmployeeHoursBreakdown = ({
 
     for (const [userId, { punches }] of employeeMap) {
       const profile = profiles.get(userId);
-
-      // Group by day
       const dayMap = new Map<string, PunchRecord[]>();
 
       for (const p of punches) {
@@ -149,6 +146,7 @@ export const useEmployeeHoursBreakdown = ({
           checkIn: p.check_in_time!,
           checkOut: p.check_out_time,
           breakMinutes: breakMins,
+          grossMinutes: isIncomplete ? 0 : grossMinutes,
           netMinutes,
           jobsiteName: p.jobsite_id ? (jobsites.get(p.jobsite_id) || 'Unknown') : '—',
           status: p.status || '',
@@ -165,10 +163,12 @@ export const useEmployeeHoursBreakdown = ({
         .map(([date, recs]) => ({
           date,
           punches: recs,
+          dayGrossMinutes: recs.reduce((s, r) => s + (r.isIncomplete ? 0 : r.grossMinutes), 0),
           dayNetMinutes: recs.reduce((s, r) => s + (r.isIncomplete ? 0 : r.netMinutes), 0),
           dayBreakMinutes: recs.reduce((s, r) => s + (r.isIncomplete ? 0 : r.breakMinutes), 0),
         }));
 
+      const totalGrossMinutes = days.reduce((s, d) => s + d.dayGrossMinutes, 0);
       const totalNetMinutes = days.reduce((s, d) => s + d.dayNetMinutes, 0);
       const totalBreakMinutes = days.reduce((s, d) => s + d.dayBreakMinutes, 0);
 
@@ -177,15 +177,16 @@ export const useEmployeeHoursBreakdown = ({
         firstName: profile?.first_name || 'Unknown',
         lastName: profile?.last_name || '',
         photoUrl: profile?.photo_url || null,
+        totalGrossMinutes,
         totalNetMinutes,
         totalBreakMinutes,
         days,
       });
     }
 
-    // Sort employees alphabetically
     employees.sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
 
+    const grandTotalGrossMinutes = employees.reduce((s, e) => s + e.totalGrossMinutes, 0);
     const grandTotalNetMinutes = employees.reduce((s, e) => s + e.totalNetMinutes, 0);
     const grandTotalBreakMinutes = employees.reduce((s, e) => s + e.totalBreakMinutes, 0);
     const allDayKeys = new Set<string>();
@@ -193,6 +194,7 @@ export const useEmployeeHoursBreakdown = ({
 
     return {
       employees,
+      grandTotalGrossMinutes,
       grandTotalNetMinutes,
       grandTotalBreakMinutes,
       totalDays: allDayKeys.size,
