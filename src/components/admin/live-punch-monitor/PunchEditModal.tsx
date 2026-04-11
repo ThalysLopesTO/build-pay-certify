@@ -32,6 +32,7 @@ const PunchEditModal: React.FC<PunchEditModalProps> = ({ open, onOpenChange, pun
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [breakMinutes, setBreakMinutes] = useState(0);
+  const [isCustomBreak, setIsCustomBreak] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const mutation = usePunchEdit();
