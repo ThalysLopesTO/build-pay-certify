@@ -19,6 +19,7 @@ import BulkActionBar from './live-punch-monitor/BulkActionBar';
 import BulkClockOutModal from './live-punch-monitor/BulkClockOutModal';
 import BulkBreakTimeModal from './live-punch-monitor/BulkBreakTimeModal';
 import BulkNoteModal from './live-punch-monitor/BulkNoteModal';
+import DailyHoursSummary from './live-punch-monitor/DailyHoursSummary';
 import { useDeleteTimesheet } from '@/hooks/useDeleteTimesheet';
 import DashboardHeader from '@/components/common/DashboardHeader';
 import Papa from 'papaparse';
@@ -608,6 +609,9 @@ const LivePunchMonitor = () => {
         </CardContent>
       </Card>
     )}
+
+    {/* Daily Hours Summary */}
+    <DailyHoursSummary jobsites={jobsites} />
 
     {/* Results Section */}
     <div className="space-y-4">
