@@ -220,6 +220,18 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
 
             {hasGenerated && !isLoading && breakdownEmployees.length > 0 && (
               <div className="space-y-4">
+                {/* Export button */}
+                <div className="flex justify-end">
+                  <DailyHoursSummaryExport
+                    employees={breakdownEmployees}
+                    startDate={startDate!}
+                    endDate={endDate!}
+                    grandTotalGrossMinutes={grandTotalGrossMinutes}
+                    grandTotalNetMinutes={grandTotalNetMinutes}
+                    grandTotalBreakMinutes={grandTotalBreakMinutes}
+                  />
+                </div>
+
                 {/* Employee breakdown */}
                 <EmployeeHoursBreakdown
                   employees={breakdownEmployees}
