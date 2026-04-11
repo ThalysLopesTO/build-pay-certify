@@ -218,12 +218,30 @@ export const useTimesheets = (selectedWeek?: Date) => {
 
   // Clock out mutation
   const clockOutMutation = useMutation({
-    mutationFn: async ({ timesheetId, location, workNote }: { timesheetId: string; location: string; workNote?: string }) => {
-      const updateData: any = {
-        check_out_time: new Date().toISOString(),
+    mutationFn: async ({ timesheetId, location, workNote, breakMinutes }: { timesheetId: string; location: string; workNote?: string; breakMinutes?: number }) => {
+      const checkOutTime = new Date().toISOString();
+
+      // Fetch check_in_time to compute raw minutes
+      const { data: existing } = await supabase
+        .from('timesheets')
+        .select('check_in_time')
+        .eq('id', timesheetId)
+        .single();
+
+      const rawMinutes = existing?.check_in_time
+        ? Math.max(0, Math.round((new Date(checkOutTime).getTime() - new Date(existing.check_in_time).getTime()) / 60000))
+        : 0;
+      const effectiveBreak = breakMinutes ?? 0;
+      const finalPayableMinutes = Math.max(0, rawMinutes - effectiveBreak);
+
+      const updateData: Record<string, unknown> = {
+        check_out_time: checkOutTime,
         check_out_location: location,
+        break_minutes: effectiveBreak,
+        raw_minutes: rawMinutes,
+        final_payable_minutes: finalPayableMinutes,
       };
-      
+
       if (workNote) {
         updateData.work_note = workNote;
       }

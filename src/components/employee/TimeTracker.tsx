@@ -76,14 +76,14 @@ const TimeTracker = () => {
     setShowClockOutModal(true);
   };
 
-  const handleClockOutWithNote = async (note?: string) => {
+  const handleClockOutWithNote = async (breakMinutes: number, note: string) => {
     if (!todayActiveTimesheet) {
       return;
     }
 
     try {
       const location = await getCurrentLocation();
-      clockOut({ timesheetId: todayActiveTimesheet.id, location, workNote: note });
+      clockOut({ timesheetId: todayActiveTimesheet.id, location, workNote: note, breakMinutes });
       setShowClockOutModal(false);
     } catch (error) {
       console.error('Error getting location for clock out:', error);
