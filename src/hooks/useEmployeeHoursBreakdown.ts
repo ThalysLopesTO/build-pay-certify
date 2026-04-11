@@ -29,6 +29,7 @@ export interface EmployeeBreakdown {
   firstName: string;
   lastName: string;
   photoUrl: string | null;
+  hourlyRate: number;
   totalGrossMinutes: number;
   totalNetMinutes: number;
   totalBreakMinutes: number;
@@ -92,14 +93,14 @@ export const useEmployeeHoursBreakdown = ({
 
       const [profilesRes, jobsitesRes] = await Promise.all([
         userIds.length > 0
-          ? supabase.from('user_profiles').select('user_id, first_name, last_name, photo_url').in('user_id', userIds)
+          ? supabase.from('user_profiles').select('user_id, first_name, last_name, photo_url, hourly_rate').in('user_id', userIds)
           : Promise.resolve({ data: [], error: null }),
         jobsiteIds.length > 0
           ? supabase.from('jobsites').select('id, name').in('id', jobsiteIds)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
-      const profiles = new Map<string, { first_name: string; last_name: string; photo_url: string | null }>();
+      const profiles = new Map<string, { first_name: string; last_name: string; photo_url: string | null; hourly_rate: number | null }>();
       (profilesRes.data || []).forEach(p => profiles.set(p.user_id, p));
 
       const jobsites = new Map<string, string>();
@@ -177,6 +178,7 @@ export const useEmployeeHoursBreakdown = ({
         firstName: profile?.first_name || 'Unknown',
         lastName: profile?.last_name || '',
         photoUrl: profile?.photo_url || null,
+        hourlyRate: profile?.hourly_rate || 0,
         totalGrossMinutes,
         totalNetMinutes,
         totalBreakMinutes,

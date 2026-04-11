@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { formatDurationFromMinutes } from '@/hooks/useDailyHoursSummary';
 import { useEmployeeHoursBreakdown } from '@/hooks/useEmployeeHoursBreakdown';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useQuery } from '@tanstack/react-query';
 import { getSupabase } from '@/integrations/supabase/client';
 import EmployeeHoursBreakdown from './EmployeeHoursBreakdown';
@@ -25,6 +26,7 @@ const ALLOWED_ROLES = ['admin', 'super_admin', 'management'];
 const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
   const { user } = useAuth();
   const supabase = getSupabase();
+  const { settings: companySettings } = useCompanySettings();
   const [isOpen, setIsOpen] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
@@ -229,6 +231,8 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
                     grandTotalGrossMinutes={grandTotalGrossMinutes}
                     grandTotalNetMinutes={grandTotalNetMinutes}
                     grandTotalBreakMinutes={grandTotalBreakMinutes}
+                    companyName={companySettings?.company_name || 'Company'}
+                    timezone={companySettings?.timezone || 'America/Toronto'}
                   />
                 </div>
 
