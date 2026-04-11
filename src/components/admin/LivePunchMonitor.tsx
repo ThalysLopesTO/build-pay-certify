@@ -404,6 +404,23 @@ const LivePunchMonitor = () => {
     });
   };
 
+  // Selection handlers for bulk actions
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
   // Filter entries
   const filteredEntries = punchEntries?.filter(entry => {
     if (selectedJobsite !== 'all' && entry.jobsite_id !== selectedJobsite) return false;
@@ -416,7 +433,7 @@ const LivePunchMonitor = () => {
     return true;
   }) || [];
 
-  // Pagination calculations
+  // Paginated entries
   const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
