@@ -439,6 +439,47 @@ const LivePunchMonitor = () => {
   const endIndex = startIndex + itemsPerPage;
   const paginatedEntries = filteredEntries.slice(startIndex, endIndex);
 
+  // Toggle all visible (paginated) entries
+  const handleToggleSelectAll = useCallback(() => {
+    setSelectedIds(prev => {
+      const allVisible = paginatedEntries.every(e => prev.has(e.id));
+      const newSet = new Set(prev);
+      if (allVisible) {
+        paginatedEntries.forEach(e => newSet.delete(e.id));
+      } else {
+        paginatedEntries.forEach(e => newSet.add(e.id));
+      }
+      return newSet;
+    });
+  }, [paginatedEntries]);
+
+  const allVisibleSelected = useMemo(
+    () => paginatedEntries.length > 0 && paginatedEntries.every(e => selectedIds.has(e.id)),
+    [paginatedEntries, selectedIds]
+  );
+
+  // Count missing clock-out entries
+  const missingClockOutCount = useMemo(
+    () => (punchEntries || []).filter(e => !e.check_out_time && e.check_in_time).length,
+    [punchEntries]
+  );
+
+  // Get selected entries data for modals
+  const selectedEntries = useMemo(
+    () => filteredEntries.filter(e => selectedIds.has(e.id)),
+    [filteredEntries, selectedIds]
+  );
+
+  const hasActiveSelected = useMemo(
+    () => selectedEntries.some(e => !e.check_out_time),
+    [selectedEntries]
+  );
+
+  const handleBulkSuccess = useCallback(() => {
+    setSelectedIds(new Set());
+    refetch();
+  }, [refetch]);
+
   // Handle page changes and reset to page 1 when filters change
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
