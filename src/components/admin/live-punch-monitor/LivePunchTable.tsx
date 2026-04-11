@@ -400,6 +400,14 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gradient-to-r from-muted/80 to-muted/50 hover:from-muted/90 hover:to-muted/60 border-b border-border/50">
+                    {selectionEnabled && onToggleSelectAll && (
+                      <TableHead className="w-12 py-6 px-3">
+                        <Checkbox
+                          checked={allVisibleSelected && filteredEntries.length > 0}
+                          onCheckedChange={() => onToggleSelectAll()}
+                        />
+                      </TableHead>
+                    )}
                     <TableHead className="font-bold text-foreground py-6 px-6">Employee</TableHead>
                     <TableHead className="font-bold text-foreground py-6">Jobsite</TableHead>
                     <TableHead className="font-bold text-foreground py-6">Check-in</TableHead>
