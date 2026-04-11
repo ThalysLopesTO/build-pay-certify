@@ -32,6 +32,7 @@ interface PunchEntry {
   check_out_location: string | null;
   work_note: string | null;
   status: string;
+  break_minutes?: number | null;
   user_profiles: {
     first_name: string;
     last_name: string;
@@ -103,6 +104,14 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
     
     return `${hours}h ${minutes}m`;
+  };
+
+  const formatBreakTime = (minutes: number | null | undefined): string => {
+    if (!minutes) return '0m';
+    if (minutes < 60) return `${minutes}m`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h}h ${String(m).padStart(2, '0')}m` : `${h}h`;
   };
 
   const getStatusBadge = (entry: PunchEntry) => {
@@ -235,7 +244,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                       </div>
 
                       {/* Time Information Grid */}
-                      <div className="grid grid-cols-3 gap-2 p-2.5 bg-muted/30 rounded-md">
+                      <div className="grid grid-cols-4 gap-2 p-2.5 bg-muted/30 rounded-md">
                         <div className="text-center space-y-1">
                           <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">In</p>
                           <p className="font-mono text-xs font-bold text-foreground leading-tight">
@@ -258,8 +267,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                             </div>
                           )}
                         </div>
-                        <div className="text-center space-y-1">
-                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Time</p>
+                        <div className="text-center space-y-1 border-r border-border/30">
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Worked</p>
                           <div className="flex items-center justify-center gap-0.5">
                             <Clock className="h-2.5 w-2.5 text-primary flex-shrink-0" />
                             <span className="font-mono text-xs font-bold text-foreground leading-tight">
@@ -267,20 +276,13 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                             </span>
                           </div>
                         </div>
-                      </div>
-
-                      {/* Rule-based Hours Display */}
-                      {entry.check_out_time && user?.companyId && (
-                        <div className="pt-2 border-t border-border/30">
-                          <RuleBasedHours
-                            checkInTime={entry.check_in_time}
-                            checkOutTime={entry.check_out_time}
-                            jobsiteId={entry.jobsite_id}
-                            companyId={user.companyId}
-                            date={entry.check_in_time ? format(new Date(entry.check_in_time), 'yyyy-MM-dd') : format(selectedDate, 'yyyy-MM-dd')}
-                          />
+                        <div className="text-center space-y-1">
+                          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Break</p>
+                          <span className="font-mono text-xs font-bold text-muted-foreground leading-tight">
+                            {formatBreakTime(entry.break_minutes)}
+                          </span>
                         </div>
-                      )}
+                      </div>
 
                       {/* Action Buttons Row */}
                       <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/30">
@@ -389,7 +391,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     <TableHead className="font-bold text-foreground py-6">Jobsite</TableHead>
                     <TableHead className="font-bold text-foreground py-6">Check-in</TableHead>
                     <TableHead className="font-bold text-foreground py-6">Check-out</TableHead>
-                    <TableHead className="font-bold text-foreground py-6">Duration</TableHead>
+                    <TableHead className="font-bold text-foreground py-6">Worked Duration</TableHead>
+                    <TableHead className="font-bold text-foreground py-6">Break Time</TableHead>
                     <TableHead className="font-bold text-foreground py-6">Status</TableHead>
                     <TableHead className="font-bold text-foreground py-6">Note</TableHead>
                     <TableHead className="font-bold text-foreground py-6">Location</TableHead>
@@ -401,7 +404,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                 <TableBody>
                   {filteredEntries.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="text-center py-16 bg-gradient-to-br from-muted/20 to-muted/10">
+                      <TableCell colSpan={12} className="text-center py-16 bg-gradient-to-br from-muted/20 to-muted/10">
                         <div className="flex flex-col items-center gap-4">
                           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
                             <Clock className="h-8 w-8 text-muted-foreground/60" />
@@ -493,25 +496,17 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                             )}
                           </TableCell>
                           <TableCell className="py-6">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-primary" />
-                                <span className="font-mono text-sm font-bold text-foreground">
-                                  {calculateTotalTime(entry.check_in_time, entry.check_out_time)}
-                                </span>
-                              </div>
-                              {entry.check_out_time && user?.companyId && (
-                                <div className="pl-6">
-                                  <RuleBasedHoursCell
-                                    checkInTime={entry.check_in_time}
-                                    checkOutTime={entry.check_out_time}
-                                    jobsiteId={entry.jobsite_id}
-                                    companyId={user.companyId}
-                                    date={entry.check_in_time ? format(new Date(entry.check_in_time), 'yyyy-MM-dd') : format(selectedDate, 'yyyy-MM-dd')}
-                                  />
-                                </div>
-                              )}
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-primary" />
+                              <span className="font-mono text-sm font-bold text-foreground">
+                                {calculateTotalTime(entry.check_in_time, entry.check_out_time)}
+                              </span>
                             </div>
+                          </TableCell>
+                          <TableCell className="py-6">
+                            <span className="font-mono text-sm font-medium text-muted-foreground">
+                              {formatBreakTime(entry.break_minutes)}
+                            </span>
                           </TableCell>
                           <TableCell className="py-6">
                             {getStatusBadge(entry)}

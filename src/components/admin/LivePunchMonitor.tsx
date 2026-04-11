@@ -30,6 +30,7 @@ interface PunchEntry {
   check_out_location: string | null;
   work_note: string | null;
   status: string;
+  break_minutes?: number | null;
   user_profiles: {
     first_name: string;
     last_name: string;
@@ -210,6 +211,7 @@ const LivePunchMonitor = () => {
           check_out_location,
           work_note,
           status,
+          break_minutes,
           created_at
         `).eq('company_id', user.companyId);
 
