@@ -446,10 +446,19 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                           key={entry.id}
                           className={cn(
                             "border-b border-border/30 hover:bg-gradient-to-r hover:from-muted/30 hover:to-muted/10 transition-all duration-200 group",
+                            selectedIds.has(entry.id) && 'bg-primary/5 hover:bg-primary/10',
                             flaggedEntries.has(entry.id) && 'bg-gradient-to-r from-destructive/10 to-destructive/5 border-l-4 border-l-destructive hover:from-destructive/15 hover:to-destructive/8',
-                            !flaggedEntries.has(entry.id) && (isEven ? 'bg-background' : 'bg-muted/20')
+                            !flaggedEntries.has(entry.id) && !selectedIds.has(entry.id) && (isEven ? 'bg-background' : 'bg-muted/20')
                           )}
                         >
+                          {selectionEnabled && onToggleSelect && (
+                            <TableCell className="py-6 px-3 w-12">
+                              <Checkbox
+                                checked={selectedIds.has(entry.id)}
+                                onCheckedChange={() => onToggleSelect(entry.id)}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell className="py-6 px-6">
                             <div className="flex items-center gap-4">
                               <EmployeeAvatar
