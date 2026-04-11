@@ -21,11 +21,17 @@ interface DailyHoursSummaryExportProps {
   grandTotalGrossMinutes: number;
   grandTotalNetMinutes: number;
   grandTotalBreakMinutes: number;
+  companyName: string;
+  timezone: string;
 }
 
 type ExportFormat = 'csv' | 'excel' | 'pdf';
 
 const formatMins = (m: number) => formatDurationFromMinutes(m);
+const toDecimalHours = (m: number) => (m / 60).toFixed(2);
+const toAmount = (netMins: number, rate: number) => (rate > 0 ? ((netMins / 60) * rate).toFixed(2) : '—');
+
+const HEADERS = ['Employee', 'Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite', 'Hourly Rate', 'Amount'];
 
 const buildFlatRows = (employees: EmployeeBreakdown[]) => {
   const rows: Array<{
@@ -37,8 +43,9 @@ const buildFlatRows = (employees: EmployeeBreakdown[]) => {
     rawHours: string;
     paidHours: string;
     jobsite: string;
+    hourlyRate: number;
+    amount: string;
     isSubtotal?: boolean;
-    isGrand?: boolean;
   }> = [];
 
   for (const emp of employees) {
@@ -54,6 +61,8 @@ const buildFlatRows = (employees: EmployeeBreakdown[]) => {
           rawHours: p.isIncomplete ? '—' : formatMins(p.grossMinutes),
           paidHours: p.isIncomplete ? '—' : formatMins(p.netMinutes),
           jobsite: p.jobsiteName === '—' ? '' : p.jobsiteName,
+          hourlyRate: emp.hourlyRate,
+          amount: '',
         });
       }
     }
@@ -66,14 +75,14 @@ const buildFlatRows = (employees: EmployeeBreakdown[]) => {
       rawHours: formatMins(emp.totalGrossMinutes),
       paidHours: formatMins(emp.totalNetMinutes),
       jobsite: '',
+      hourlyRate: emp.hourlyRate,
+      amount: toAmount(emp.totalNetMinutes, emp.hourlyRate),
       isSubtotal: true,
     });
   }
 
   return rows;
 };
-
-const HEADERS = ['Employee', 'Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite'];
 
 const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
   employees,
@@ -82,19 +91,31 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
   grandTotalGrossMinutes,
   grandTotalNetMinutes,
   grandTotalBreakMinutes,
+  companyName,
+  timezone,
 }) => {
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
 
   const dateLabel = `${format(startDate, 'MMM dd yyyy')} - ${format(endDate, 'MMM dd yyyy')}`;
-  const fileName = `Hours_Summary_${format(startDate, 'yyyyMMdd')}_${format(endDate, 'yyyyMMdd')}`;
+  const fileName = `Payroll_Summary_${format(startDate, 'yyyyMMdd')}_${format(endDate, 'yyyyMMdd')}`;
+  const generatedAt = format(new Date(), 'MMM dd, yyyy h:mm a');
+  const grandTotalAmount = employees.reduce((s, e) => s + (e.hourlyRate > 0 ? (e.totalNetMinutes / 60) * e.hourlyRate : 0), 0);
 
   const exportCSV = () => {
     const rows = buildFlatRows(employees);
-    const lines = [HEADERS.join(',')];
+    const meta = [
+      `"${companyName}"`,
+      '"Payroll Summary Report"',
+      `"Period: ${dateLabel}"`,
+      `"Generated: ${generatedAt}"`,
+      `"Timezone: ${timezone}"`,
+      '',
+    ];
+    const lines = [...meta, HEADERS.join(',')];
     for (const r of rows) {
-      lines.push([r.employee, r.date, r.start, r.end, String(r.breakMin), r.rawHours, r.paidHours, `"${r.jobsite}"`].join(','));
+      lines.push([r.employee, r.date, r.start, r.end, String(r.breakMin), r.rawHours, r.paidHours, `"${r.jobsite}"`, r.hourlyRate > 0 ? `$${r.hourlyRate}` : '—', r.amount ? (r.amount !== '—' ? `$${r.amount}` : '—') : ''].join(','));
     }
-    lines.push(['GRAND TOTAL', '', '', '', String(Math.round(grandTotalBreakMinutes)), formatMins(grandTotalGrossMinutes), formatMins(grandTotalNetMinutes), ''].join(','));
+    lines.push(['GRAND TOTAL', '', '', '', String(Math.round(grandTotalBreakMinutes)), formatMins(grandTotalGrossMinutes), formatMins(grandTotalNetMinutes), '', '', grandTotalAmount > 0 ? `$${grandTotalAmount.toFixed(2)}` : '—'].join(','));
 
     const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
     downloadBlob(blob, `${fileName}.csv`);
@@ -104,8 +125,11 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     const XLSX = await import('xlsx-js-style');
     const wb = XLSX.utils.book_new();
 
+    const titleStyle = { font: { bold: true, sz: 16, color: { rgb: '000000' } } };
+    const subtitleStyle = { font: { bold: true, sz: 12, color: { rgb: '666666' } } };
+    const metaStyle = { font: { sz: 10, color: { rgb: '444444' } } };
     const headerStyle = {
-      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 },
       fill: { fgColor: { rgb: 'F97316' } },
       alignment: { horizontal: 'center' as const },
     };
@@ -114,17 +138,21 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
       fill: { fgColor: { rgb: 'FFF3E0' } },
     };
     const grandStyle = {
-      font: { bold: true, sz: 11 },
+      font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
       fill: { fgColor: { rgb: 'F97316' } },
       alignment: { horizontal: 'center' as const },
     };
 
     const wsData: any[][] = [];
-    // Title row
-    wsData.push([{ v: `Hours Summary — ${dateLabel}`, s: { font: { bold: true, sz: 14 } } }]);
+    // Professional header block
+    wsData.push([{ v: companyName, s: titleStyle }]);
+    wsData.push([{ v: 'Payroll Summary Report', s: subtitleStyle }]);
+    wsData.push([{ v: `Period: ${dateLabel}`, s: metaStyle }]);
+    wsData.push([{ v: `Generated: ${generatedAt}`, s: metaStyle }]);
+    wsData.push([{ v: `Timezone: ${timezone}`, s: metaStyle }]);
     wsData.push([]);
 
-    // Header row
+    // Header row (row index 6)
     wsData.push(HEADERS.map(h => ({ v: h, s: headerStyle })));
 
     const rows = buildFlatRows(employees);
@@ -139,9 +167,14 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
           { v: r.rawHours, s: subtotalStyle },
           { v: r.paidHours, s: subtotalStyle },
           { v: '', s: subtotalStyle },
+          { v: r.hourlyRate > 0 ? `$${r.hourlyRate.toFixed(2)}` : '—', s: subtotalStyle },
+          { v: r.amount !== '—' && r.amount ? `$${r.amount}` : '—', s: subtotalStyle },
         ]);
       } else {
-        wsData.push([r.employee, r.date, r.start, r.end, r.breakMin, r.rawHours, r.paidHours, r.jobsite]);
+        wsData.push([
+          r.employee, r.date, r.start, r.end, r.breakMin, r.rawHours, r.paidHours, r.jobsite,
+          r.hourlyRate > 0 ? `$${r.hourlyRate.toFixed(2)}` : '—', '',
+        ]);
       }
     }
 
@@ -156,36 +189,47 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
       { v: formatMins(grandTotalGrossMinutes), s: grandStyle },
       { v: formatMins(grandTotalNetMinutes), s: grandStyle },
       { v: '', s: grandStyle },
+      { v: '', s: grandStyle },
+      { v: grandTotalAmount > 0 ? `$${grandTotalAmount.toFixed(2)}` : '—', s: grandStyle },
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = [
       { wch: 22 }, { wch: 16 }, { wch: 10 }, { wch: 10 },
       { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 20 },
+      { wch: 12 }, { wch: 14 },
     ];
-    // Merge title
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+    // Merge title rows
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 9 } },
+      { s: { r: 4, c: 0 }, e: { r: 4, c: 9 } },
+    ];
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Hours Summary');
+    XLSX.utils.book_append_sheet(wb, ws, 'Payroll Summary');
     XLSX.writeFile(wb, `${fileName}.xlsx`);
   };
 
   const exportPDF = () => {
     const doc = new jsPDF({ orientation: 'landscape' });
-    const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Title
+    // Header block
     doc.setFontSize(16);
-    doc.text('Hours Summary', 14, 15);
-    doc.setFontSize(10);
-    doc.text(dateLabel, 14, 22);
+    doc.setFont('helvetica', 'bold');
+    doc.text(companyName, 14, 15);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Payroll Summary Report', 14, 22);
+    doc.setFontSize(9);
+    doc.text(`Period: ${dateLabel}`, 14, 28);
+    doc.text(`Generated: ${generatedAt}  |  Timezone: ${timezone}`, 14, 33);
 
-    let yPos = 30;
+    let yPos = 40;
 
     for (const emp of employees) {
       const name = `${emp.firstName} ${emp.lastName}`;
-
-      // Check if we need a new page
       if (yPos > doc.internal.pageSize.getHeight() - 40) {
         doc.addPage();
         yPos = 15;
@@ -207,29 +251,32 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
             p.isIncomplete ? '—' : formatMins(p.grossMinutes),
             p.isIncomplete ? '—' : formatMins(p.netMinutes),
             p.jobsiteName === '—' ? '' : p.jobsiteName,
+            emp.hourlyRate > 0 ? `$${emp.hourlyRate.toFixed(2)}` : '—',
+            '',
           ]);
         }
       }
 
-      // Subtotal row
+      // Subtotal
       body.push([
         '', '', 'SUBTOTAL',
-        formatMins(emp.totalBreakMinutes),
+        `${Math.round(emp.totalBreakMinutes)}m`,
         formatMins(emp.totalGrossMinutes),
         formatMins(emp.totalNetMinutes),
         '',
+        emp.hourlyRate > 0 ? `$${emp.hourlyRate.toFixed(2)}` : '—',
+        toAmount(emp.totalNetMinutes, emp.hourlyRate),
       ]);
 
       (doc as any).autoTable({
         startY: yPos,
-        head: [['Date', 'Start', 'End', 'Break', 'Raw Hours', 'Paid Hours', 'Jobsite']],
+        head: [['Date', 'Start', 'End', 'Break', 'Raw Hours', 'Paid Hours', 'Jobsite', 'Rate', 'Amount']],
         body,
         theme: 'striped',
-        headStyles: { fillColor: [249, 115, 22], fontSize: 8 },
-        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [249, 115, 22], fontSize: 7 },
+        styles: { fontSize: 7, cellPadding: 2 },
         margin: { left: 14, right: 14 },
         didParseCell: (data: any) => {
-          // Bold subtotal row
           if (data.row.index === body.length - 1) {
             data.cell.styles.fontStyle = 'bold';
             data.cell.styles.fillColor = [255, 243, 224];
@@ -248,11 +295,11 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
 
     (doc as any).autoTable({
       startY: yPos,
-      head: [['', '', '', 'Break', 'Raw Hours', 'Paid Hours', '']],
-      body: [['GRAND TOTAL', '', '', formatMins(grandTotalBreakMinutes), formatMins(grandTotalGrossMinutes), formatMins(grandTotalNetMinutes), '']],
+      head: [['', '', '', 'Break', 'Raw Hours', 'Paid Hours', '', '', 'Amount']],
+      body: [['GRAND TOTAL', '', '', `${Math.round(grandTotalBreakMinutes)}m`, formatMins(grandTotalGrossMinutes), formatMins(grandTotalNetMinutes), '', '', grandTotalAmount > 0 ? `$${grandTotalAmount.toFixed(2)}` : '—']],
       theme: 'plain',
-      headStyles: { fillColor: [249, 115, 22], fontSize: 8, textColor: [255, 255, 255] },
-      styles: { fontSize: 10, fontStyle: 'bold', cellPadding: 3 },
+      headStyles: { fillColor: [249, 115, 22], fontSize: 7, textColor: [255, 255, 255] },
+      styles: { fontSize: 9, fontStyle: 'bold', cellPadding: 3 },
       margin: { left: 14, right: 14 },
     });
 
