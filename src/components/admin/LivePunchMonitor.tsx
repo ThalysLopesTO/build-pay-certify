@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Calendar } from 'lucide-react';
+import { RefreshCw, Calendar, AlertTriangle } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -15,6 +15,10 @@ import LivePunchFilters from './live-punch-monitor/LivePunchFilters';
 import LivePunchMobileFilters from './live-punch-monitor/LivePunchMobileFilters';
 import LivePunchSummaryCards from './live-punch-monitor/LivePunchSummaryCards';
 import LivePunchTable from './live-punch-monitor/LivePunchTable';
+import BulkActionBar from './live-punch-monitor/BulkActionBar';
+import BulkClockOutModal from './live-punch-monitor/BulkClockOutModal';
+import BulkBreakTimeModal from './live-punch-monitor/BulkBreakTimeModal';
+import BulkNoteModal from './live-punch-monitor/BulkNoteModal';
 import { useDeleteTimesheet } from '@/hooks/useDeleteTimesheet';
 import DashboardHeader from '@/components/common/DashboardHeader';
 import Papa from 'papaparse';
@@ -58,6 +62,15 @@ const LivePunchMonitor = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [flaggedEntries, setFlaggedEntries] = useState<Set<string>>(new Set());
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
+
+  // Bulk actions state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkClockOut, setShowBulkClockOut] = useState(false);
+  const [showBulkBreak, setShowBulkBreak] = useState(false);
+  const [showBulkNote, setShowBulkNote] = useState(false);
+
+  // Role-based permission for bulk actions
+  const canBulkEdit = ['admin', 'super_admin', 'management', 'foreman'].includes(user?.role || '');
   const [selectedLocation, setSelectedLocation] = useState<{
     punchLocation: string | null;
     employeeName: string;
@@ -391,6 +404,23 @@ const LivePunchMonitor = () => {
     });
   };
 
+  // Selection handlers for bulk actions
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
   // Filter entries
   const filteredEntries = punchEntries?.filter(entry => {
     if (selectedJobsite !== 'all' && entry.jobsite_id !== selectedJobsite) return false;
@@ -403,11 +433,52 @@ const LivePunchMonitor = () => {
     return true;
   }) || [];
 
-  // Pagination calculations
+  // Paginated entries
   const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedEntries = filteredEntries.slice(startIndex, endIndex);
+
+  // Toggle all visible (paginated) entries
+  const handleToggleSelectAll = useCallback(() => {
+    setSelectedIds(prev => {
+      const allVisible = paginatedEntries.every(e => prev.has(e.id));
+      const newSet = new Set(prev);
+      if (allVisible) {
+        paginatedEntries.forEach(e => newSet.delete(e.id));
+      } else {
+        paginatedEntries.forEach(e => newSet.add(e.id));
+      }
+      return newSet;
+    });
+  }, [paginatedEntries]);
+
+  const allVisibleSelected = useMemo(
+    () => paginatedEntries.length > 0 && paginatedEntries.every(e => selectedIds.has(e.id)),
+    [paginatedEntries, selectedIds]
+  );
+
+  // Count missing clock-out entries
+  const missingClockOutCount = useMemo(
+    () => (punchEntries || []).filter(e => !e.check_out_time && e.check_in_time).length,
+    [punchEntries]
+  );
+
+  // Get selected entries data for modals
+  const selectedEntries = useMemo(
+    () => filteredEntries.filter(e => selectedIds.has(e.id)),
+    [filteredEntries, selectedIds]
+  );
+
+  const hasActiveSelected = useMemo(
+    () => selectedEntries.some(e => !e.check_out_time),
+    [selectedEntries]
+  );
+
+  const handleBulkSuccess = useCallback(() => {
+    setSelectedIds(new Set());
+    refetch();
+  }, [refetch]);
 
   // Handle page changes and reset to page 1 when filters change
   useEffect(() => {
@@ -540,12 +611,23 @@ const LivePunchMonitor = () => {
 
     {/* Results Section */}
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-semibold text-foreground">Punch Records</h2>
           <Badge variant="secondary" className="px-3 py-1">
             {filteredEntries.length} {filteredEntries.length === 1 ? 'record' : 'records'}
           </Badge>
+          {canBulkEdit && missingClockOutCount > 0 && statusFilter !== 'active' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10"
+              onClick={() => setStatusFilter('active')}
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {missingClockOutCount} Missing Clock Out
+            </Button>
+          )}
         </div>
         {selectedDate && <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4" />
@@ -557,6 +639,18 @@ const LivePunchMonitor = () => {
           <span>All Dates</span>
         </div>}
       </div>
+
+      {/* Bulk Action Bar */}
+      {canBulkEdit && selectedIds.size > 0 && (
+        <BulkActionBar
+          selectedCount={selectedIds.size}
+          onSetClockOut={() => setShowBulkClockOut(true)}
+          onAddBreakTime={() => setShowBulkBreak(true)}
+          onAddNote={() => setShowBulkNote(true)}
+          onClearSelection={handleClearSelection}
+          hasActiveEntries={hasActiveSelected}
+        />
+      )}
 
       {/* Punch Entries Table */}
       <Card className="shadow-sm">
@@ -574,12 +668,37 @@ const LivePunchMonitor = () => {
           totalItems={filteredEntries.length}
           itemsPerPage={itemsPerPage}
           onPageChange={handlePageChange}
+          selectionEnabled={canBulkEdit}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
+          onToggleSelectAll={handleToggleSelectAll}
+          allVisibleSelected={allVisibleSelected}
         />
       </Card>
     </div>
 
     {/* Edit Punch Modal */}
     {editingTimesheet && <EditPunchModal isOpen={!!editingTimesheet} onClose={() => setEditingTimesheet(null)} timesheet={editingTimesheet} onSuccess={() => refetch()} />}
+
+    {/* Bulk Action Modals */}
+    <BulkClockOutModal
+      isOpen={showBulkClockOut}
+      onClose={() => setShowBulkClockOut(false)}
+      selectedEntries={selectedEntries}
+      onSuccess={handleBulkSuccess}
+    />
+    <BulkBreakTimeModal
+      isOpen={showBulkBreak}
+      onClose={() => setShowBulkBreak(false)}
+      selectedIds={Array.from(selectedIds)}
+      onSuccess={handleBulkSuccess}
+    />
+    <BulkNoteModal
+      isOpen={showBulkNote}
+      onClose={() => setShowBulkNote(false)}
+      selectedEntries={selectedEntries}
+      onSuccess={handleBulkSuccess}
+    />
 
     {/* Location Map Modal */}
     {selectedLocation && (() => {

@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { MapPin, Flag, Edit, Trash2, AlertTriangle, CheckCircle, Clock, Calendar } from 'lucide-react';
@@ -59,6 +60,12 @@ interface LivePunchTableProps {
   totalItems?: number;
   itemsPerPage?: number;
   onPageChange?: (page: number) => void;
+  // Selection props
+  selectionEnabled?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  onToggleSelectAll?: () => void;
+  allVisibleSelected?: boolean;
 }
 
 const LivePunchTable: React.FC<LivePunchTableProps> = ({
@@ -74,7 +81,12 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
   totalPages = 1,
   totalItems = 0,
   itemsPerPage = 10,
-  onPageChange
+  onPageChange,
+  selectionEnabled = false,
+  selectedIds = new Set(),
+  onToggleSelect,
+  onToggleSelectAll,
+  allVisibleSelected = false,
 }) => {
   const isMobile = useIsMobile();
   const { user } = useAuth();
@@ -179,6 +191,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     key={entry.id}
                     className={cn(
                       "overflow-hidden transition-all duration-200 hover:shadow-md border",
+                      selectedIds.has(entry.id) && 'ring-2 ring-primary/40 bg-primary/5',
                       flaggedEntries.has(entry.id) 
                         ? 'border-l-4 border-l-destructive bg-gradient-to-r from-destructive/10 to-destructive/5' 
                         : 'border-border/50'
@@ -187,6 +200,13 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     <CardContent className="p-3 space-y-3">
                       {/* Employee Header */}
                       <div className="flex items-start gap-3">
+                        {selectionEnabled && onToggleSelect && (
+                          <Checkbox
+                            checked={selectedIds.has(entry.id)}
+                            onCheckedChange={() => onToggleSelect(entry.id)}
+                            className="mt-1 flex-shrink-0"
+                          />
+                        )}
                         <EmployeeAvatar
                           photoUrl={entry.user_profiles?.photo_url}
                           firstName={entry.user_profiles?.first_name}
@@ -380,6 +400,14 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gradient-to-r from-muted/80 to-muted/50 hover:from-muted/90 hover:to-muted/60 border-b border-border/50">
+                    {selectionEnabled && onToggleSelectAll && (
+                      <TableHead className="w-12 py-6 px-3">
+                        <Checkbox
+                          checked={allVisibleSelected && filteredEntries.length > 0}
+                          onCheckedChange={() => onToggleSelectAll()}
+                        />
+                      </TableHead>
+                    )}
                     <TableHead className="font-bold text-foreground py-6 px-6">Employee</TableHead>
                     <TableHead className="font-bold text-foreground py-6">Jobsite</TableHead>
                     <TableHead className="font-bold text-foreground py-6">Check-in</TableHead>
@@ -418,10 +446,19 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                           key={entry.id}
                           className={cn(
                             "border-b border-border/30 hover:bg-gradient-to-r hover:from-muted/30 hover:to-muted/10 transition-all duration-200 group",
+                            selectedIds.has(entry.id) && 'bg-primary/5 hover:bg-primary/10',
                             flaggedEntries.has(entry.id) && 'bg-gradient-to-r from-destructive/10 to-destructive/5 border-l-4 border-l-destructive hover:from-destructive/15 hover:to-destructive/8',
-                            !flaggedEntries.has(entry.id) && (isEven ? 'bg-background' : 'bg-muted/20')
+                            !flaggedEntries.has(entry.id) && !selectedIds.has(entry.id) && (isEven ? 'bg-background' : 'bg-muted/20')
                           )}
                         >
+                          {selectionEnabled && onToggleSelect && (
+                            <TableCell className="py-6 px-3 w-12">
+                              <Checkbox
+                                checked={selectedIds.has(entry.id)}
+                                onCheckedChange={() => onToggleSelect(entry.id)}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell className="py-6 px-6">
                             <div className="flex items-center gap-4">
                               <EmployeeAvatar
