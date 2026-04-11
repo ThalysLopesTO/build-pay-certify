@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useActiveJobsites } from '@/hooks/useJobsites';
 import { usePunchEdit } from '@/hooks/usePunchEdit';
 import { format } from 'date-fns';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Coffee } from 'lucide-react';
 
 interface EditPunchModalProps {
   isOpen: boolean;
@@ -17,6 +17,14 @@ interface EditPunchModalProps {
   timesheet: any;
   onSuccess?: () => void;
 }
+
+const BREAK_PRESETS = [
+  { label: '15 min', value: 15 },
+  { label: '30 min', value: 30 },
+  { label: '40 min', value: 40 },
+  { label: '1 hr', value: 60 },
+  { label: '1.5 hr', value: 90 },
+];
 
 const EditPunchModal: React.FC<EditPunchModalProps> = ({
   isOpen,
@@ -34,6 +42,9 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
     work_note: ''
   });
 
+  const [breakMinutes, setBreakMinutes] = useState<string>('');
+  const [isCustomBreak, setIsCustomBreak] = useState(false);
+
   useEffect(() => {
     if (timesheet && isOpen) {
       setFormData({
@@ -46,8 +57,36 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
         jobsite_id: timesheet.jobsite_id || '',
         work_note: timesheet.work_note || ''
       });
+
+      const existing = timesheet.break_minutes;
+      if (existing && existing > 0) {
+        setBreakMinutes(String(existing));
+        const isPreset = BREAK_PRESETS.some(p => p.value === existing);
+        setIsCustomBreak(!isPreset);
+      } else {
+        setBreakMinutes('');
+        setIsCustomBreak(false);
+      }
     }
   }, [timesheet, isOpen]);
+
+  const handlePresetClick = (value: number) => {
+    if (parseInt(breakMinutes) === value) {
+      setBreakMinutes('');
+    } else {
+      setBreakMinutes(String(value));
+    }
+    setIsCustomBreak(false);
+  };
+
+  const handleCustomClick = () => {
+    setIsCustomBreak(true);
+    const currentVal = parseInt(breakMinutes);
+    const isPreset = BREAK_PRESETS.some(p => p.value === currentVal);
+    if (isPreset) {
+      setBreakMinutes('');
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +106,8 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
       updateData.work_note = formData.work_note.trim() || null;
     }
 
+    updateData.break_minutes = breakMinutes ? parseInt(breakMinutes) : 0;
+
     updatePunch({ 
       id: timesheet.id, 
       data: updateData 
@@ -79,10 +120,11 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
   };
 
   const isOpenShift = timesheet?.check_in_time && !timesheet?.check_out_time;
+  const parsedBreak = parseInt(breakMinutes) || 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Edit Punch Record
@@ -120,6 +162,55 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
                 Employee forgot to clock out - please set the clock out time
               </p>
             )}
+          </div>
+
+          {/* Break Time Section */}
+          <div>
+            <Label className="flex items-center gap-1.5 mb-2">
+              <Coffee className="h-4 w-4 text-muted-foreground" />
+              Break Time
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {BREAK_PRESETS.map((preset) => (
+                <Button
+                  key={preset.value}
+                  type="button"
+                  size="sm"
+                  variant={parseInt(breakMinutes) === preset.value && !isCustomBreak ? 'default' : 'outline'}
+                  onClick={() => handlePresetClick(preset.value)}
+                  className="text-xs"
+                >
+                  {preset.label}
+                </Button>
+              ))}
+              <Button
+                type="button"
+                size="sm"
+                variant={isCustomBreak ? 'default' : 'outline'}
+                onClick={handleCustomClick}
+                className="text-xs"
+              >
+                Custom
+              </Button>
+            </div>
+            {isCustomBreak && (
+              <div className="mt-2">
+                <Input
+                  type="number"
+                  min={0}
+                  max={180}
+                  placeholder="Enter minutes"
+                  value={breakMinutes}
+                  onChange={(e) => setBreakMinutes(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {parsedBreak > 0
+                ? `${parsedBreak} minutes will be deducted from total hours`
+                : 'No break deducted'}
+            </p>
           </div>
 
           <div>
