@@ -233,6 +233,10 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
                     grandTotalBreakMinutes={grandTotalBreakMinutes}
                     companyName={companySettings?.company_name || 'Company'}
                     timezone={companySettings?.timezone || 'America/Toronto'}
+                    companyAddress={companySettings?.company_address || ''}
+                    companyPhone={companySettings?.company_phone || ''}
+                    companyEmail={companySettings?.company_email || ''}
+                    incompleteCount={incompleteCount}
                   />
                 </div>
 
