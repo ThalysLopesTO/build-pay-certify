@@ -1,116 +1,61 @@
 
 
-# Upgrade Daily Hours Summary to Payment-Ready Employee Breakdown
+# Upgrade Daily Hours Summary — Raw/Paid Hours + Inline Editing
 
 ## Overview
-Transform the existing Daily Hours Summary panel into a payment-review tool that groups records by employee, shows day-by-day punch details (time in, time out, break, net hours), and keeps the summary synchronized with the punch table filters.
+Add Raw Hours and Paid Hours columns to the employee breakdown, restrict visibility to Admin/Manager, and add inline edit capability for Start Time, End Time, and Break Time using the existing `usePunchEdit` hook.
 
-## Architecture
+## Changes
 
-The existing `useDailyHoursSummary` hook fetches flat timesheet records. We'll create a new hook that fetches the same data but includes `user_id`, `jobsite_id`, and user profile info, then groups by employee → day → individual punches.
+### 1. Role-gate the entire Daily Hours Summary
+**File: `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`**
+- At the top of the component, check `user?.role`: if not `admin`, `super_admin`, or `management`, return `null`
+- This hides the feature from Foreman and Employee
 
-## New Files
+### 2. Add `grossMinutes` to PunchRecord
+**File: `src/hooks/useEmployeeHoursBreakdown.ts`**
+- Add `grossMinutes: number` to `PunchRecord` interface
+- Add `dayGrossMinutes: number` to `DayBreakdown` interface
+- Add `totalGrossMinutes: number` to `EmployeeBreakdown` interface
+- Add `grandTotalGrossMinutes: number` to `EmployeeHoursResult` interface
+- In the grouping logic, store `grossMinutes` on each punch record (already computed but not stored)
+- Sum `dayGrossMinutes` and `totalGrossMinutes` per employee, `grandTotalGrossMinutes` overall
 
-### 1. `src/hooks/useEmployeeHoursBreakdown.ts`
-- Accepts same filter props as `useDailyHoursSummary` (companyId, startDate, endDate, jobsiteId, employeeId)
-- Queries `timesheets` with `user_id, check_in_time, check_out_time, break_minutes, jobsite_id, work_note, status`
-- Separately fetches `user_profiles` (first_name, last_name, photo_url) and `jobsites` (name) for matched records
-- Returns memoized structure:
-```
-{
-  employees: Array<{
-    userId: string
-    firstName: string
-    lastName: string
-    photoUrl: string | null
-    totalNetMinutes: number
-    totalBreakMinutes: number
-    days: Array<{
-      date: string
-      punches: Array<{
-        id: string
-        checkIn: string
-        checkOut: string | null
-        breakMinutes: number
-        netMinutes: number
-        jobsiteName: string
-        status: string
-        note: string | null
-        isIncomplete: boolean
-      }>
-      dayNetMinutes: number
-      dayBreakMinutes: number
-    }>
-  }>
-  grandTotalNetMinutes: number
-  grandTotalBreakMinutes: number
-  totalDays: number
-  incompleteCount: number
-}
-```
-- Incomplete punches (no check_out) are included but flagged `isIncomplete` and excluded from totals
+### 3. Update EmployeeHoursBreakdown UI — show Raw, Break, Paid
+**File: `src/components/admin/live-punch-monitor/EmployeeHoursBreakdown.tsx`**
+- Accept new prop `canEdit: boolean`
+- In employee header: show "Total Paid Hours" (net) prominently, plus break total
+- Each punch row: display Break, Raw Hours (gross), Paid Hours (net) as separate labeled values
+- Add a small edit (pencil) icon button per punch row when `canEdit` is true
+- Clicking edit opens the inline edit modal (new component below)
 
-### 2. `src/components/admin/live-punch-monitor/EmployeeHoursBreakdown.tsx`
-- Renders the grouped employee breakdown below the summary stats
-- For each employee: a card/section with avatar, name, total net hours, total break
-- Inside each employee card: day rows, each expandable or inline, showing individual punches with time in/out, break, net hours
-- Incomplete punches shown with a warning badge ("Missing Clock Out")
-- Desktop: clean table-like rows per employee card
-- Mobile: stacked card layout per day
+### 4. Create PunchEditModal for inline editing
+**File: `src/components/admin/live-punch-monitor/PunchEditModal.tsx`**
+- A Dialog/Sheet with fields: Start Time (datetime-local input), End Time (datetime-local input), Break Time (number input in minutes)
+- Validation: End > Start, Break <= gross duration
+- On save: call `usePunchEdit` mutation with `{ check_in_time, check_out_time, break_minutes }`
+- On success: invalidate `employee-hours-breakdown` query key so the summary refreshes
+- Reuses existing `usePunchEdit` hook — just adds `employee-hours-breakdown` to its invalidation list
 
-## Modified Files
+### 5. Update summary stat cards
+**File: `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`**
+- Change "Total Net Hours" → "Total Paid Hours" (uses `grandTotalNetMinutes`)
+- Add "Total Raw Hours" card (uses `grandTotalGrossMinutes`)
+- Keep "Total Break" and "Days Worked"
+- Change "Avg / Day" to use paid hours
+- Pass `canEdit={user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management'}` to `EmployeeHoursBreakdown`
 
-### 3. `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`
-- Replace `useDailyHoursSummary` with `useEmployeeHoursBreakdown`
-- Keep existing filter UI (start date, end date, jobsite, employee selects, generate button)
-- Keep existing summary stat cards (Days Worked, Total Hours, Total Break, Avg/Day) — fed from new hook's grand totals
-- Replace the simple daily list with `<EmployeeHoursBreakdown>` component
-- The daily-only view becomes the employee-grouped view with day details
-
-### 4. `src/hooks/useDailyHoursSummary.ts`
-- Keep as-is (other consumers may use it). The new hook replaces it only in DailyHoursSummary component.
-
-## Display Structure
-
-```text
-Daily Hours Summary [▲]
-┌──────────────────────────────────────────────┐
-│ Filters: [Start] [End] [Jobsite] [Employee]  │
-│ [Generate Summary]                           │
-│                                              │
-│ ┌─ Employee: Leonardo Machado ─────────────┐ │
-│ │ 📷 Leonardo Machado    Total: 38h 20m    │ │
-│ │                        Break: 1h 00m     │ │
-│ │                                          │ │
-│ │ Mon, Apr 07                              │ │
-│ │  6:18 AM → 2:00 PM  Break: 30m  7h 12m  │ │
-│ │                                          │ │
-│ │ Tue, Apr 08                              │ │
-│ │  6:10 AM → 2:14 PM  Break: 0m   8h 04m  │ │
-│ │  2:30 PM → 5:00 PM  Break: 0m   2h 30m  │ │
-│ └──────────────────────────────────────────┘ │
-│                                              │
-│ ┌─ Employee: John Smith ───────────────────┐ │
-│ │ ...                                      │ │
-│ └──────────────────────────────────────────┘ │
-│                                              │
-│ [Days Worked: 7] [Total: 120h] [Break: 2h]  │
-│ [Avg/Day: 17h]                               │
-└──────────────────────────────────────────────┘
-```
-
-## Key Rules
-- Net hours = (check_out - check_in) - break_minutes (same formula already used)
-- Incomplete punches flagged, excluded from totals
-- Reuses `formatDurationFromMinutes`, `EmployeeAvatar`, `parseLocalDate`
-- No changes to payroll, invoice, or other pages
-- Permissions inherited from LivePunchMonitor (admin/management/foreman only)
+### 6. Update usePunchEdit invalidation
+**File: `src/hooks/usePunchEdit.ts`**
+- Add `queryClient.invalidateQueries({ queryKey: ['employee-hours-breakdown'] })` to `onSuccess` so edits sync the breakdown view
 
 ## Files Summary
 
 | File | Action |
 |------|--------|
-| `src/hooks/useEmployeeHoursBreakdown.ts` | **Create** — query + employee/day grouping |
-| `src/components/admin/live-punch-monitor/EmployeeHoursBreakdown.tsx` | **Create** — employee cards with day-by-day punch details |
-| `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx` | **Update** — swap to new hook, render employee breakdown |
+| `src/hooks/useEmployeeHoursBreakdown.ts` | Add grossMinutes fields to types + computation |
+| `src/components/admin/live-punch-monitor/EmployeeHoursBreakdown.tsx` | Show Raw/Break/Paid, add edit button |
+| `src/components/admin/live-punch-monitor/PunchEditModal.tsx` | **Create** — edit dialog for start/end/break |
+| `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx` | Role-gate visibility, update stat card labels |
+| `src/hooks/usePunchEdit.ts` | Add breakdown query invalidation |
 
