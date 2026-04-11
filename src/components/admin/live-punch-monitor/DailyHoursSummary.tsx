@@ -9,10 +9,11 @@ import { CalendarIcon, ChevronDown, ChevronUp, Clock, BarChart3, Coffee, Trendin
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { useDailyHoursSummary, formatDurationFromMinutes } from '@/hooks/useDailyHoursSummary';
+import { formatDurationFromMinutes } from '@/hooks/useDailyHoursSummary';
+import { useEmployeeHoursBreakdown } from '@/hooks/useEmployeeHoursBreakdown';
 import { useQuery } from '@tanstack/react-query';
 import { getSupabase } from '@/integrations/supabase/client';
-import { parseLocalDate } from '@/utils/dateUtils';
+import EmployeeHoursBreakdown from './EmployeeHoursBreakdown';
 
 interface DailyHoursSummaryProps {
   jobsites?: Array<{ id: string; name: string }> | null;
@@ -46,14 +47,14 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
   });
 
   const {
-    dailyTotals,
+    employees: breakdownEmployees,
+    grandTotalNetMinutes,
+    grandTotalBreakMinutes,
     totalDays,
-    totalMinutes,
-    totalBreakMinutes,
-    avgMinutesPerDay,
+    incompleteCount,
     isLoading,
     isFetching,
-  } = useDailyHoursSummary({
+  } = useEmployeeHoursBreakdown({
     companyId: user?.companyId,
     startDate,
     endDate,
@@ -193,7 +194,7 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
               </div>
             )}
 
-            {hasGenerated && !isLoading && dailyTotals.length === 0 && (
+            {hasGenerated && !isLoading && breakdownEmployees.length === 0 && (
               <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-2">
                 <AlertCircle className="h-8 w-8 opacity-40" />
                 <p className="text-sm">No punch records found for the selected range.</p>
@@ -206,39 +207,15 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
               </div>
             )}
 
-            {hasGenerated && !isLoading && dailyTotals.length > 0 && (
+            {hasGenerated && !isLoading && breakdownEmployees.length > 0 && (
               <div className="space-y-4">
-                {/* Daily list */}
-                <div className="divide-y divide-border rounded-lg border bg-card">
-                  {dailyTotals.map((day) => {
-                    const workedNet = day.totalMinutes - day.breakMinutes;
-                    return (
-                      <div key={day.date} className="flex items-center justify-between px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm font-medium text-foreground">
-                            {format(parseLocalDate(day.date), 'EEE, MMM dd')}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {day.punchCount} {day.punchCount === 1 ? 'punch' : 'punches'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm font-semibold text-foreground">
-                            {formatDurationFromMinutes(workedNet > 0 ? workedNet : day.totalMinutes)}
-                          </span>
-                          {day.breakMinutes > 0 && (
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Coffee className="h-3 w-3" />
-                              {formatDurationFromMinutes(day.breakMinutes)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                {/* Employee breakdown */}
+                <EmployeeHoursBreakdown
+                  employees={breakdownEmployees}
+                  incompleteCount={incompleteCount}
+                />
 
-                {/* Totals */}
+                {/* Grand Totals */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <SummaryStatCard
                     icon={<CalendarIcon className="h-4 w-4" />}
@@ -247,19 +224,19 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
                   />
                   <SummaryStatCard
                     icon={<Clock className="h-4 w-4" />}
-                    label="Total Hours"
-                    value={formatDurationFromMinutes(totalMinutes - totalBreakMinutes)}
+                    label="Total Net Hours"
+                    value={formatDurationFromMinutes(grandTotalNetMinutes)}
                   />
                   <SummaryStatCard
                     icon={<Coffee className="h-4 w-4" />}
                     label="Total Break"
-                    value={formatDurationFromMinutes(totalBreakMinutes)}
+                    value={formatDurationFromMinutes(grandTotalBreakMinutes)}
                   />
                   <SummaryStatCard
                     icon={<TrendingUp className="h-4 w-4" />}
                     label="Avg / Day"
                     value={formatDurationFromMinutes(
-                      totalDays > 0 ? (totalMinutes - totalBreakMinutes) / totalDays : 0
+                      totalDays > 0 ? grandTotalNetMinutes / totalDays : 0
                     )}
                   />
                 </div>
