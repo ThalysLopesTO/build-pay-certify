@@ -1,44 +1,44 @@
 
 
-# Fix: Timesheet Delete Not Actually Deleting Records
+# Adapt Untitled UI Table Style into StackBuild
 
-## Root Cause
-The `timesheets` table has RLS (Row Level Security) enabled but **no DELETE policy exists**. This means:
-- The Supabase `.delete()` call completes without error
-- But RLS silently blocks it -- zero rows are deleted
-- The `onSuccess` callback fires and shows the "Success" toast, misleading the user
+## Problem
+The Untitled UI table component requires `react-aria-components`, `@untitledui/icons`, and Tailwind CSS v4 design tokens -- none of which exist in this project. Installing those dependencies would conflict with the existing Tailwind v3 + Radix/shadcn stack and risk breaking the entire app.
 
-## Fix
+## Approach
+Instead of installing the incompatible library, I will **re-skin the existing shadcn `Table` component** to match the Untitled UI table's visual design. This gives you the same look and feel without dependency conflicts.
 
-### 1. Add a DELETE RLS policy on the `timesheets` table (migration)
-Create a new migration that adds a DELETE policy allowing admin, super_admin, and management roles to delete timesheets within their company:
+### What gets built
 
-```sql
-CREATE POLICY "Admins can delete timesheets"
-ON public.timesheets
-FOR DELETE
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM user_profiles
-    WHERE user_profiles.user_id = auth.uid()
-      AND user_profiles.role IN ('admin', 'super_admin', 'management')
-      AND user_profiles.company_id = timesheets.company_id
-  )
-);
-```
+1. **Enhanced `src/components/ui/table.tsx`** -- Update styling to match Untitled UI's design:
+   - Sticky header with `bg-secondary` (gray background)
+   - Row hover with `hover:bg-muted/50`
+   - Bottom border via pseudo-elements (cleaner divider lines)
+   - Size variants (`sm` / `md`) via a context provider
+   - Proper spacing matching Untitled UI's `px-6 py-4` (md) and `px-5 py-3` (sm)
 
-### 2. Update `useDeleteTimesheet.ts` to verify deletion actually happened
-Change the delete call to use `.select()` or check the response count, so if RLS blocks the delete in the future, it throws an error instead of showing false success. Specifically, use `.select().single()` pattern or check `data`/`count` to confirm a row was actually removed.
+2. **New `src/components/ui/table-card.tsx`** -- A wrapper component matching `TableCard.Root` and `TableCard.Header` from Untitled UI:
+   - Rounded card with shadow and ring border
+   - Header with title, optional badge count, description, and trailing content
+   - Footer area for pagination
 
-## Files
+3. **Sortable column header support** -- Add a `TableHeadSortable` sub-component that shows sort direction arrows (ascending/descending chevrons) using Lucide icons (already installed), matching the Untitled UI sort UX.
+
+4. **Checkbox column support** -- The existing `Checkbox` component will be used in selection columns, matching the Untitled UI pattern of a leading checkbox column.
+
+5. **Utility function** -- Add a simple `cx` alias in `src/lib/utils.ts` (maps to the existing `cn` function) so any copied patterns work without changes.
+
+### Files
+
 | File | Action |
 |------|--------|
-| `supabase/migrations/[timestamp]_add_timesheets_delete_policy.sql` | Create |
-| `src/hooks/useDeleteTimesheet.ts` | Minor update for delete verification |
+| `src/components/ui/table.tsx` | Modify -- add size variants, updated spacing/colors |
+| `src/components/ui/table-card.tsx` | Create -- card wrapper with header/footer |
+| `src/lib/utils.ts` | Minor update -- export `cx` alias |
 
-## Impact
-- Only affects delete operations on the `timesheets` table
-- No payroll or calculation logic changes
-- No other pages affected
+### What does NOT change
+- No new npm dependencies (no react-aria, no @untitledui/icons)
+- No Tailwind version upgrade
+- Existing tables across the app continue to work (backward compatible)
+- No payroll, timesheet, or business logic changes
 
