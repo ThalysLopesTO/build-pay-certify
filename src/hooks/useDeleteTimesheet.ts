@@ -29,15 +29,20 @@ export const useDeleteTimesheet = () => {
         throw new Error('Insufficient permissions to delete timesheet records');
       }
 
-      // Delete the timesheet record
-      const { error } = await supabase
+      // Delete the timesheet record and verify it was actually removed
+      const { data, error } = await supabase
         .from('timesheets')
         .delete()
         .eq('id', timesheetId)
-        .eq('company_id', user.companyId);
+        .eq('company_id', user.companyId)
+        .select('id');
 
       if (error) {
         throw error;
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('Timesheet record was not deleted. You may not have permission to delete this record.');
       }
 
       return { success: true };
