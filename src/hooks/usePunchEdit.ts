@@ -26,7 +26,7 @@ export const usePunchEdit = () => {
           updated_at: new Date().toISOString(),
         })
         .eq('id', id)
-        .eq('company_id', user?.companyId) // Ensure user can only update their company's timesheets
+        .eq('company_id', user?.companyId)
         .select()
         .single();
 
@@ -51,6 +51,69 @@ export const usePunchEdit = () => {
       toast({
         title: "Update Failed",
         description: "Failed to update punch record. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+// Bulk update hook - updates multiple punch records via Promise.allSettled
+export const useBulkPunchEdit = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (updates: { id: string; data: PunchEditData }[]) => {
+      if (!user?.companyId) throw new Error('No company ID');
+
+      const results = await Promise.allSettled(
+        updates.map(async ({ id, data }) => {
+          const { data: result, error } = await supabase
+            .from('timesheets')
+            .update({
+              ...data,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', id)
+            .eq('company_id', user.companyId)
+            .select()
+            .single();
+
+          if (error) throw { id, error };
+          return { id, result };
+        })
+      );
+
+      const succeeded = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results
+        .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+        .map(r => r.reason);
+
+      return { succeeded, failed, total: updates.length };
+    },
+    onSuccess: ({ succeeded, failed, total }) => {
+      queryClient.invalidateQueries({ queryKey: ['live-punch-monitor'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['live-punch-data'] });
+
+      if (failed.length === 0) {
+        toast({
+          title: "Bulk Update Complete",
+          description: `${succeeded} punch record${succeeded !== 1 ? 's' : ''} updated successfully`,
+        });
+      } else {
+        toast({
+          title: "Partial Update",
+          description: `${succeeded} of ${total} records updated. ${failed.length} failed.`,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('Bulk update failed:', error);
+      toast({
+        title: "Bulk Update Failed",
+        description: "Failed to update punch records. Please try again.",
         variant: "destructive",
       });
     },
