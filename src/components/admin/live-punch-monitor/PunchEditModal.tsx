@@ -5,7 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePunchEdit } from '@/hooks/usePunchEdit';
 import { format } from 'date-fns';
+import { Coffee } from 'lucide-react';
 import type { PunchRecord } from '@/hooks/useEmployeeHoursBreakdown';
+
+const BREAK_PRESETS = [
+  { label: '15 min', value: 15 },
+  { label: '30 min', value: 30 },
+  { label: '40 min', value: 40 },
+];
 
 interface PunchEditModalProps {
   open: boolean;
