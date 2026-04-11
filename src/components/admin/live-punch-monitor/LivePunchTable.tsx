@@ -263,7 +263,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     </div>
                     <div className="flex-shrink-0">
                       {isMissingCheckout(entry) ? (
-                        <Badge variant="outline" className="border-[#d58e2a] bg-[#d58e2a] text-white text-[10px]">
+                        <Badge variant="default" className="bg-[#d58e2a] text-white text-[10px]">
                           <div className="w-1.5 h-1.5 bg-white rounded-full mr-1" />
                           Missing
                         </Badge>
@@ -273,7 +273,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                           Active
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="border-[#43b66e] bg-[#43b66e] text-white text-[10px]">
+                        <Badge variant="default" className="bg-[#43b66e] text-white text-[10px]">
                           <div className="w-1.5 h-1.5 bg-white rounded-full mr-1" />
                           Complete
                         </Badge>
@@ -532,7 +532,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                   {/* Status */}
                   <TableCell>
                     {isMissingCheckout(entry) ? (
-                      <Badge variant="outline" className="border-[#d58e2a] bg-[#d58e2a] text-white">
+                      <Badge variant="default" className="bg-[#d58e2a] text-white">
                         <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5" />
                         Missing
                       </Badge>
@@ -542,7 +542,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                         Active
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="border-[#43b66e] bg-[#43b66e] text-white">
+                      <Badge variant="default" className="bg-[#43b66e] text-white">
                         <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5" />
                         Complete
                       </Badge>
