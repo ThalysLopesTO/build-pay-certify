@@ -1,86 +1,116 @@
 
 
-# Daily Hours Summary — Expandable Panel on Punch In/Out Page
+# Upgrade Daily Hours Summary to Payment-Ready Employee Breakdown
 
 ## Overview
-Add a collapsible "Daily Hours Summary" panel to the Live Punch Monitor page. Users pick a date range (start + end), optionally filter by jobsite/employee, and see total worked hours grouped by day — plus aggregate totals.
+Transform the existing Daily Hours Summary panel into a payment-review tool that groups records by employee, shows day-by-day punch details (time in, time out, break, net hours), and keeps the summary synchronized with the punch table filters.
 
 ## Architecture
 
-**No new queries or DB changes.** The summary fetches its own timesheet data for the selected range via a single Supabase query (reusing the same `timesheets` table + profile joins pattern already in `LivePunchMonitor.tsx`). Duration math reuses the same punch-to-punch logic already used in the table (check_out - check_in, minus break_minutes). Incomplete punches (no check_out) are excluded from totals with a note shown.
+The existing `useDailyHoursSummary` hook fetches flat timesheet records. We'll create a new hook that fetches the same data but includes `user_id`, `jobsite_id`, and user profile info, then groups by employee → day → individual punches.
 
 ## New Files
 
-### 1. `src/hooks/useDailyHoursSummary.ts`
-- Custom hook accepting `{ companyId, startDate, endDate, jobsiteId?, employeeId? }`
-- Queries `timesheets` table with `check_in_time.gte` / `check_in_time.lte` for the range, plus optional jobsite/employee filters
-- Only includes records with both `check_in_time` and `check_out_time`
-- Groups by day (date string of `check_in_time`), sums duration per day
-- Returns: `{ dailyTotals: Array<{ date: string, totalMinutes: number, breakMinutes: number, punchCount: number }>, totalDays, totalMinutes, totalBreakMinutes, avgMinutesPerDay, skippedCount }`
-- Uses `useQuery` with a distinct query key; memoized grouping logic
+### 1. `src/hooks/useEmployeeHoursBreakdown.ts`
+- Accepts same filter props as `useDailyHoursSummary` (companyId, startDate, endDate, jobsiteId, employeeId)
+- Queries `timesheets` with `user_id, check_in_time, check_out_time, break_minutes, jobsite_id, work_note, status`
+- Separately fetches `user_profiles` (first_name, last_name, photo_url) and `jobsites` (name) for matched records
+- Returns memoized structure:
+```
+{
+  employees: Array<{
+    userId: string
+    firstName: string
+    lastName: string
+    photoUrl: string | null
+    totalNetMinutes: number
+    totalBreakMinutes: number
+    days: Array<{
+      date: string
+      punches: Array<{
+        id: string
+        checkIn: string
+        checkOut: string | null
+        breakMinutes: number
+        netMinutes: number
+        jobsiteName: string
+        status: string
+        note: string | null
+        isIncomplete: boolean
+      }>
+      dayNetMinutes: number
+      dayBreakMinutes: number
+    }>
+  }>
+  grandTotalNetMinutes: number
+  grandTotalBreakMinutes: number
+  totalDays: number
+  incompleteCount: number
+}
+```
+- Incomplete punches (no check_out) are included but flagged `isIncomplete` and excluded from totals
 
-### 2. `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`
-- Collapsible panel component toggled by a "Daily Hours Summary" button
-- Contains:
-  - Two date pickers (Start Date / End Date) using existing `Calendar` + `Popover` pattern
-  - Jobsite select (reuses existing jobsites data passed as prop)
-  - Employee select (reuses `useEmployees` hook)
-  - "Generate" button to trigger the query
-- Display section:
-  - Vertical list of days: `Apr 10 — 8h 02m` with break time shown subtly
-  - Totals card at bottom: Days Worked, Total Hours, Total Break, Avg Hours/Day
-  - Empty states for no-range-selected and no-results
-- Responsive: filters stack on mobile, list is vertical card-style
+### 2. `src/components/admin/live-punch-monitor/EmployeeHoursBreakdown.tsx`
+- Renders the grouped employee breakdown below the summary stats
+- For each employee: a card/section with avatar, name, total net hours, total break
+- Inside each employee card: day rows, each expandable or inline, showing individual punches with time in/out, break, net hours
+- Incomplete punches shown with a warning badge ("Missing Clock Out")
+- Desktop: clean table-like rows per employee card
+- Mobile: stacked card layout per day
 
 ## Modified Files
 
-### 3. `src/components/admin/LivePunchMonitor.tsx`
-- Add state: `showDailySummary` boolean
-- Add a "Daily Hours Summary" button next to the existing header area (near the Punch Records heading or after the filter card)
-- Render `<DailyHoursSummary>` conditionally, passing `jobsites` and `companyId`
-- No changes to existing query, filters, table, or any other logic
+### 3. `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`
+- Replace `useDailyHoursSummary` with `useEmployeeHoursBreakdown`
+- Keep existing filter UI (start date, end date, jobsite, employee selects, generate button)
+- Keep existing summary stat cards (Days Worked, Total Hours, Total Break, Avg/Day) — fed from new hook's grand totals
+- Replace the simple daily list with `<EmployeeHoursBreakdown>` component
+- The daily-only view becomes the employee-grouped view with day details
 
-## Duration Formatting
-Reuse the same `Math.floor(ms / 3600000)` + minutes pattern already used in `LivePunchTable.tsx` and CSV export. Extract to a tiny shared helper if needed, but keep it simple.
+### 4. `src/hooks/useDailyHoursSummary.ts`
+- Keep as-is (other consumers may use it). The new hook replaces it only in DailyHoursSummary component.
 
-## Permissions
-The component is only rendered inside `LivePunchMonitor`, which is already gated to admin/management/foreman roles. No additional permission check needed.
+## Display Structure
 
-## UI Placement
 ```text
-┌─────────────────────────────────────────┐
-│  Live Punch Monitor        [Refresh][CSV]│
-├─────────────────────────────────────────┤
-│  KPI Cards (existing)                    │
-├─────────────────────────────────────────┤
-│  Filters (existing)                      │
-├─────────────────────────────────────────┤
-│  [▶ Daily Hours Summary]  ← new button   │
-│  ┌─ expanded panel ─────────────────┐    │
-│  │ Start: [Apr 7]  End: [Apr 11]    │    │
-│  │ Jobsite: [All]  Employee: [All]  │    │
-│  │ [Generate Summary]               │    │
-│  │                                  │    │
-│  │ Apr 07 — 8h 02m  (break: 30m)   │    │
-│  │ Apr 08 — 7h 46m  (break: 30m)   │    │
-│  │ Apr 09 — 6h 55m  (break: 0m)    │    │
-│  │                                  │    │
-│  │ ─────────────────────────────    │    │
-│  │ Days Worked: 3                   │    │
-│  │ Total Hours: 22h 43m            │    │
-│  │ Total Break: 1h 00m             │    │
-│  │ Avg/Day: 7h 34m                 │    │
-│  └──────────────────────────────────┘    │
-├─────────────────────────────────────────┤
-│  Punch Records (existing table)          │
-└─────────────────────────────────────────┘
+Daily Hours Summary [▲]
+┌──────────────────────────────────────────────┐
+│ Filters: [Start] [End] [Jobsite] [Employee]  │
+│ [Generate Summary]                           │
+│                                              │
+│ ┌─ Employee: Leonardo Machado ─────────────┐ │
+│ │ 📷 Leonardo Machado    Total: 38h 20m    │ │
+│ │                        Break: 1h 00m     │ │
+│ │                                          │ │
+│ │ Mon, Apr 07                              │ │
+│ │  6:18 AM → 2:00 PM  Break: 30m  7h 12m  │ │
+│ │                                          │ │
+│ │ Tue, Apr 08                              │ │
+│ │  6:10 AM → 2:14 PM  Break: 0m   8h 04m  │ │
+│ │  2:30 PM → 5:00 PM  Break: 0m   2h 30m  │ │
+│ └──────────────────────────────────────────┘ │
+│                                              │
+│ ┌─ Employee: John Smith ───────────────────┐ │
+│ │ ...                                      │ │
+│ └──────────────────────────────────────────┘ │
+│                                              │
+│ [Days Worked: 7] [Total: 120h] [Break: 2h]  │
+│ [Avg/Day: 17h]                               │
+└──────────────────────────────────────────────┘
 ```
+
+## Key Rules
+- Net hours = (check_out - check_in) - break_minutes (same formula already used)
+- Incomplete punches flagged, excluded from totals
+- Reuses `formatDurationFromMinutes`, `EmployeeAvatar`, `parseLocalDate`
+- No changes to payroll, invoice, or other pages
+- Permissions inherited from LivePunchMonitor (admin/management/foreman only)
 
 ## Files Summary
 
 | File | Action |
 |------|--------|
-| `src/hooks/useDailyHoursSummary.ts` | Create — query + grouping logic |
-| `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx` | Create — panel UI with filters + results |
-| `src/components/admin/LivePunchMonitor.tsx` | Add toggle button + render new panel |
+| `src/hooks/useEmployeeHoursBreakdown.ts` | **Create** — query + employee/day grouping |
+| `src/components/admin/live-punch-monitor/EmployeeHoursBreakdown.tsx` | **Create** — employee cards with day-by-day punch details |
+| `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx` | **Update** — swap to new hook, render employee breakdown |
 
