@@ -1,51 +1,86 @@
 
 
-# Create `BadgeWithDot` Component & Unify Badge System
+# Daily Hours Summary — Expandable Panel on Punch In/Out Page
 
-## What We're Building
-A reusable `BadgeWithDot` component following Untitled UI's badge system (as shown in the reference image), then refactoring existing inline badge patterns across the project to use it.
+## Overview
+Add a collapsible "Daily Hours Summary" panel to the Live Punch Monitor page. Users pick a date range (start + end), optionally filter by jobsite/employee, and see total worked hours grouped by day — plus aggregate totals.
 
-## New File: `src/components/base/badges/badges.tsx`
+## Architecture
 
-A CVA-powered component with these props:
+**No new queries or DB changes.** The summary fetches its own timesheet data for the selected range via a single Supabase query (reusing the same `timesheets` table + profile joins pattern already in `LivePunchMonitor.tsx`). Duration math reuses the same punch-to-punch logic already used in the table (check_out - check_in, minus break_minutes). Incomplete punches (no check_out) are excluded from totals with a note shown.
 
-| Prop | Values | Description |
-|------|--------|-------------|
-| `type` | `pill-color`, `pill-outline` | Filled pastel bg vs outline-only |
-| `color` | `gray`, `brand`, `error`, `warning`, `success`, `blue`, `indigo`, `purple`, `pink`, `orange` | Maps to Untitled UI color rows from the reference |
-| `size` | `sm`, `md`, `lg` | Controls padding, font size, dot size |
-| `children` | ReactNode | Label text |
-| `pulse` | boolean | Optional animated pulse on the dot |
-| `className` | string | Override escape hatch |
+## New Files
 
-Each color maps to a specific pastel bg + darker text + matching dot:
-- `gray` → `bg-gray-50 text-gray-700 border-gray-200`, dot `bg-gray-500`
-- `brand` → `bg-brand-50 text-brand-700 border-brand-200` (mapped to primary)
-- `error` → `bg-red-50 text-red-700 border-red-200`, dot `bg-red-500`
-- `warning` → `bg-amber-50 text-amber-700 border-amber-200`, dot `bg-amber-500`
-- `success` → `bg-green-50 text-green-700 border-green-200`, dot `bg-green-500`
+### 1. `src/hooks/useDailyHoursSummary.ts`
+- Custom hook accepting `{ companyId, startDate, endDate, jobsiteId?, employeeId? }`
+- Queries `timesheets` table with `check_in_time.gte` / `check_in_time.lte` for the range, plus optional jobsite/employee filters
+- Only includes records with both `check_in_time` and `check_out_time`
+- Groups by day (date string of `check_in_time`), sums duration per day
+- Returns: `{ dailyTotals: Array<{ date: string, totalMinutes: number, breakMinutes: number, punchCount: number }>, totalDays, totalMinutes, totalBreakMinutes, avgMinutesPerDay, skippedCount }`
+- Uses `useQuery` with a distinct query key; memoized grouping logic
 
-Also supports custom hex via a `customColor` prop for cases like the existing `#d58e2a` (Missing) and `#43b66e` (Complete) solid badges — these become a `solid` type variant with white text.
+### 2. `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`
+- Collapsible panel component toggled by a "Daily Hours Summary" button
+- Contains:
+  - Two date pickers (Start Date / End Date) using existing `Calendar` + `Popover` pattern
+  - Jobsite select (reuses existing jobsites data passed as prop)
+  - Employee select (reuses `useEmployees` hook)
+  - "Generate" button to trigger the query
+- Display section:
+  - Vertical list of days: `Apr 10 — 8h 02m` with break time shown subtly
+  - Totals card at bottom: Days Worked, Total Hours, Total Break, Avg Hours/Day
+  - Empty states for no-range-selected and no-results
+- Responsive: filters stack on mobile, list is vertical card-style
 
-## Refactor: `LivePunchTable.tsx`
+## Modified Files
 
-Replace the 6 inline `<Badge>` with dot patterns:
-- **Active** → `<BadgeWithDot color="success" size="sm" pulse>Active</BadgeWithDot>`
-- **Missing** → `<BadgeWithDot type="solid" customColor="#d58e2a" size="sm">Missing</BadgeWithDot>`
-- **Complete** → `<BadgeWithDot type="solid" customColor="#43b66e" size="sm">Complete</BadgeWithDot>`
-- **Live** → `<BadgeWithDot color="success" size="sm" pulse>Live</BadgeWithDot>`
+### 3. `src/components/admin/LivePunchMonitor.tsx`
+- Add state: `showDailySummary` boolean
+- Add a "Daily Hours Summary" button next to the existing header area (near the Punch Records heading or after the filter card)
+- Render `<DailyHoursSummary>` conditionally, passing `jobsites` and `companyId`
+- No changes to existing query, filters, table, or any other logic
 
-## Refactor: Other Badge Consumers
+## Duration Formatting
+Reuse the same `Math.floor(ms / 3600000)` + minutes pattern already used in `LivePunchTable.tsx` and CSV export. Extract to a tiny shared helper if needed, but keep it simple.
 
-Update `TimesheetStatusBadge.tsx`, `RoleBadge.tsx`, and `status-badges.tsx` convenience components to wrap `BadgeWithDot` internally, keeping their public API unchanged.
+## Permissions
+The component is only rendered inside `LivePunchMonitor`, which is already gated to admin/management/foreman roles. No additional permission check needed.
 
-## Files
+## UI Placement
+```text
+┌─────────────────────────────────────────┐
+│  Live Punch Monitor        [Refresh][CSV]│
+├─────────────────────────────────────────┤
+│  KPI Cards (existing)                    │
+├─────────────────────────────────────────┤
+│  Filters (existing)                      │
+├─────────────────────────────────────────┤
+│  [▶ Daily Hours Summary]  ← new button   │
+│  ┌─ expanded panel ─────────────────┐    │
+│  │ Start: [Apr 7]  End: [Apr 11]    │    │
+│  │ Jobsite: [All]  Employee: [All]  │    │
+│  │ [Generate Summary]               │    │
+│  │                                  │    │
+│  │ Apr 07 — 8h 02m  (break: 30m)   │    │
+│  │ Apr 08 — 7h 46m  (break: 30m)   │    │
+│  │ Apr 09 — 6h 55m  (break: 0m)    │    │
+│  │                                  │    │
+│  │ ─────────────────────────────    │    │
+│  │ Days Worked: 3                   │    │
+│  │ Total Hours: 22h 43m            │    │
+│  │ Total Break: 1h 00m             │    │
+│  │ Avg/Day: 7h 34m                 │    │
+│  └──────────────────────────────────┘    │
+├─────────────────────────────────────────┤
+│  Punch Records (existing table)          │
+└─────────────────────────────────────────┘
+```
+
+## Files Summary
 
 | File | Action |
 |------|--------|
-| `src/components/base/badges/badges.tsx` | **Create** — new `BadgeWithDot` component |
-| `src/components/admin/live-punch-monitor/LivePunchTable.tsx` | Replace 6 inline badge+dot patterns |
-| `src/components/ui/status-badges.tsx` | Refactor internals to use `BadgeWithDot` |
-| `src/components/admin/timesheets/TimesheetStatusBadge.tsx` | Refactor to use `BadgeWithDot` |
-| `src/components/admin/time-summary/RoleBadge.tsx` | Refactor to use `BadgeWithDot` |
+| `src/hooks/useDailyHoursSummary.ts` | Create — query + grouping logic |
+| `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx` | Create — panel UI with filters + results |
+| `src/components/admin/LivePunchMonitor.tsx` | Add toggle button + render new panel |
 
