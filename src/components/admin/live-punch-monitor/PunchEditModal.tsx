@@ -112,15 +112,63 @@ const PunchEditModal: React.FC<PunchEditModalProps> = ({ open, onOpenChange, pun
               onChange={(e) => setEndTime(e.target.value)}
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="break-mins">Break (minutes)</Label>
-            <Input
-              id="break-mins"
-              type="number"
-              min={0}
-              value={breakMinutes}
-              onChange={(e) => setBreakMinutes(Math.max(0, parseInt(e.target.value) || 0))}
-            />
+          <div>
+            <Label className="flex items-center gap-1.5 mb-2">
+              <Coffee className="h-4 w-4 text-muted-foreground" />
+              Break Time
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {BREAK_PRESETS.map((preset) => (
+                <Button
+                  key={preset.value}
+                  type="button"
+                  size="sm"
+                  variant={breakMinutes === preset.value && !isCustomBreak ? 'default' : 'outline'}
+                  onClick={() => {
+                    if (breakMinutes === preset.value && !isCustomBreak) {
+                      setBreakMinutes(0);
+                    } else {
+                      setBreakMinutes(preset.value);
+                    }
+                    setIsCustomBreak(false);
+                  }}
+                  className="text-xs"
+                >
+                  {preset.label}
+                </Button>
+              ))}
+              <Button
+                type="button"
+                size="sm"
+                variant={isCustomBreak ? 'default' : 'outline'}
+                onClick={() => {
+                  setIsCustomBreak(true);
+                  const isPreset = BREAK_PRESETS.some(p => p.value === breakMinutes);
+                  if (isPreset) setBreakMinutes(0);
+                }}
+                className="text-xs"
+              >
+                Custom
+              </Button>
+            </div>
+            {isCustomBreak && (
+              <div className="mt-2">
+                <Input
+                  type="number"
+                  min={0}
+                  max={180}
+                  placeholder="Enter minutes"
+                  value={breakMinutes || ''}
+                  onChange={(e) => setBreakMinutes(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-full"
+                />
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {breakMinutes > 0
+                ? `${breakMinutes} minutes will be deducted from total hours`
+                : 'No break deducted'}
+            </p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
