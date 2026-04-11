@@ -60,6 +60,12 @@ interface LivePunchTableProps {
   totalItems?: number;
   itemsPerPage?: number;
   onPageChange?: (page: number) => void;
+  // Selection props
+  selectionEnabled?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  onToggleSelectAll?: () => void;
+  allVisibleSelected?: boolean;
 }
 
 const LivePunchTable: React.FC<LivePunchTableProps> = ({
@@ -75,7 +81,12 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
   totalPages = 1,
   totalItems = 0,
   itemsPerPage = 10,
-  onPageChange
+  onPageChange,
+  selectionEnabled = false,
+  selectedIds = new Set(),
+  onToggleSelect,
+  onToggleSelectAll,
+  allVisibleSelected = false,
 }) => {
   const isMobile = useIsMobile();
   const { user } = useAuth();
