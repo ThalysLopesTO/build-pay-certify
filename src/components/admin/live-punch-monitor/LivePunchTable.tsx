@@ -263,8 +263,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     </div>
                     <div className="flex-shrink-0">
                       {isMissingCheckout(entry) ? (
-                        <Badge variant="outline" className="border-yellow-300 bg-yellow-50 dark:bg-yellow-950 text-[#cf8b2a] text-[10px]">
-                          <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1" />
+                        <Badge variant="outline" className="border-[#d58e2a] bg-[#d58e2a] text-white text-[10px]">
+                          <div className="w-1.5 h-1.5 bg-white rounded-full mr-1" />
                           Missing
                         </Badge>
                       ) : !entry.check_out_time ? (
@@ -273,8 +273,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                           Active
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-muted-foreground border-border text-[10px]">
-                          <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full mr-1" />
+                        <Badge variant="outline" className="border-[#43b66e] bg-[#43b66e] text-white text-[10px]">
+                          <div className="w-1.5 h-1.5 bg-white rounded-full mr-1" />
                           Complete
                         </Badge>
                       )}
@@ -294,7 +294,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                       {entry.check_out_time ? (
                         <p className="font-mono text-xs font-semibold text-foreground">{format(new Date(entry.check_out_time), 'h:mm a')}</p>
                       ) : isMissingCheckout(entry) ? (
-                        <p className="text-[10px] text-yellow-600 font-semibold">Missing</p>
+                        <p className="text-[10px] text-[#d58e2a] font-semibold">Missing</p>
                       ) : (
                         <p className="text-[10px] text-green-600 font-semibold">Live</p>
                       )}
@@ -504,8 +504,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                       </div>
                     ) : isMissingCheckout(entry) ? (
                       <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />
-                        <span className="text-xs font-medium text-yellow-600">Missing</span>
+                        <div className="w-1.5 h-1.5 bg-[#d58e2a] rounded-full" />
+                        <span className="text-xs font-medium text-[#d58e2a]">Missing</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5">
@@ -532,8 +532,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                   {/* Status */}
                   <TableCell>
                     {isMissingCheckout(entry) ? (
-                      <Badge variant="outline" className="border-yellow-300 bg-yellow-50 dark:bg-yellow-950 text-[#cf8b2a]">
-                        <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1.5" />
+                      <Badge variant="outline" className="border-[#d58e2a] bg-[#d58e2a] text-white">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5" />
                         Missing
                       </Badge>
                     ) : !entry.check_out_time ? (
@@ -542,8 +542,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                         Active
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="border-green-300 bg-green-50 dark:bg-green-950 text-[#43b66e]">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5" />
+                      <Badge variant="outline" className="border-[#43b66e] bg-[#43b66e] text-white">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5" />
                         Complete
                       </Badge>
                     )}
