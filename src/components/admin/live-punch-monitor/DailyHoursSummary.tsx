@@ -48,7 +48,7 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
         .from('user_profiles')
         .select('user_id, first_name, last_name')
         .eq('company_id', user.companyId)
-        .in('role', ['employee', 'foreman'])
+        
         .order('first_name');
       if (error) throw error;
       return data;
