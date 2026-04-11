@@ -62,6 +62,15 @@ const LivePunchMonitor = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [flaggedEntries, setFlaggedEntries] = useState<Set<string>>(new Set());
   const [editingTimesheet, setEditingTimesheet] = useState<any>(null);
+
+  // Bulk actions state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkClockOut, setShowBulkClockOut] = useState(false);
+  const [showBulkBreak, setShowBulkBreak] = useState(false);
+  const [showBulkNote, setShowBulkNote] = useState(false);
+
+  // Role-based permission for bulk actions
+  const canBulkEdit = ['admin', 'super_admin', 'management', 'foreman'].includes(user?.role || '');
   const [selectedLocation, setSelectedLocation] = useState<{
     punchLocation: string | null;
     employeeName: string;
