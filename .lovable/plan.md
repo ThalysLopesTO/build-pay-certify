@@ -1,61 +1,40 @@
 
 
-# Upgrade Daily Hours Summary — Raw/Paid Hours + Inline Editing
-
-## Overview
-Add Raw Hours and Paid Hours columns to the employee breakdown, restrict visibility to Admin/Manager, and add inline edit capability for Start Time, End Time, and Break Time using the existing `usePunchEdit` hook.
+# Daily Hours Summary — Break Fix, Column Layout, and Export Downloads
 
 ## Changes
 
-### 1. Role-gate the entire Daily Hours Summary
-**File: `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`**
-- At the top of the component, check `user?.role`: if not `admin`, `super_admin`, or `management`, return `null`
-- This hides the feature from Foreman and Employee
-
-### 2. Add `grossMinutes` to PunchRecord
-**File: `src/hooks/useEmployeeHoursBreakdown.ts`**
-- Add `grossMinutes: number` to `PunchRecord` interface
-- Add `dayGrossMinutes: number` to `DayBreakdown` interface
-- Add `totalGrossMinutes: number` to `EmployeeBreakdown` interface
-- Add `grandTotalGrossMinutes: number` to `EmployeeHoursResult` interface
-- In the grouping logic, store `grossMinutes` on each punch record (already computed but not stored)
-- Sum `dayGrossMinutes` and `totalGrossMinutes` per employee, `grandTotalGrossMinutes` overall
-
-### 3. Update EmployeeHoursBreakdown UI — show Raw, Break, Paid
+### 1. Always show Break (even when 0)
 **File: `src/components/admin/live-punch-monitor/EmployeeHoursBreakdown.tsx`**
-- Accept new prop `canEdit: boolean`
-- In employee header: show "Total Paid Hours" (net) prominently, plus break total
-- Each punch row: display Break, Raw Hours (gross), Paid Hours (net) as separate labeled values
-- Add a small edit (pencil) icon button per punch row when `canEdit` is true
-- Clicking edit opens the inline edit modal (new component below)
+- Remove the `punch.breakMinutes > 0` condition on line 121 — always render break (e.g., "0m")
+- Remove the `emp.totalBreakMinutes > 0` condition on line 76 — always show employee-level break total
 
-### 4. Create PunchEditModal for inline editing
-**File: `src/components/admin/live-punch-monitor/PunchEditModal.tsx`**
-- A Dialog/Sheet with fields: Start Time (datetime-local input), End Time (datetime-local input), Break Time (number input in minutes)
-- Validation: End > Start, Break <= gross duration
-- On save: call `usePunchEdit` mutation with `{ check_in_time, check_out_time, break_minutes }`
-- On success: invalidate `employee-hours-breakdown` query key so the summary refreshes
-- Reuses existing `usePunchEdit` hook — just adds `employee-hours-breakdown` to its invalidation list
+### 2. Convert punch rows to a columnar table layout
+**File: `src/components/admin/live-punch-monitor/EmployeeHoursBreakdown.tsx`**
+- Replace the current inline flex-wrap layout for each day's punches with a proper table/grid with columns:
+  - **Date** | **Start** | **End** | **Break** | **Raw Hours** | **Paid Hours** | **Jobsite** | **Actions**
+- Each day header row spans full width with the date
+- Individual punches render as table rows beneath
+- On mobile, collapse to a stacked card layout
+- Employee header stays as-is (avatar, name, totals)
 
-### 5. Update summary stat cards
+### 3. Add export buttons (Excel, CSV, PDF)
+**File: `src/components/admin/live-punch-monitor/DailyHoursSummaryExport.tsx`** — **Create**
+- New component accepting `employees: EmployeeBreakdown[]`, `dateRange`, `companyName`, `grandTotals`
+- **CSV export**: Employee-grouped rows with Date, Start, End, Break, Raw Hours, Paid Hours, Jobsite columns. Employee subtotals and grand total at bottom.
+- **Excel export**: Uses `xlsx-js-style` (already in project). Styled headers, employee-grouped sheets or sections, subtotals. Same columns as CSV.
+- **PDF export**: Uses `jsPDF` + `autoTable` (already in project). Employee sections with day-by-day table, totals per employee, grand total footer.
+- UI: Dropdown for CSV/Excel + separate PDF button (same pattern as `TimeSummaryExport.tsx`)
+
 **File: `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`**
-- Change "Total Net Hours" → "Total Paid Hours" (uses `grandTotalNetMinutes`)
-- Add "Total Raw Hours" card (uses `grandTotalGrossMinutes`)
-- Keep "Total Break" and "Days Worked"
-- Change "Avg / Day" to use paid hours
-- Pass `canEdit={user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'management'}` to `EmployeeHoursBreakdown`
-
-### 6. Update usePunchEdit invalidation
-**File: `src/hooks/usePunchEdit.ts`**
-- Add `queryClient.invalidateQueries({ queryKey: ['employee-hours-breakdown'] })` to `onSuccess` so edits sync the breakdown view
+- Import and render `DailyHoursSummaryExport` next to the "Generate Summary" button when results are showing
+- Pass breakdown data and date range
 
 ## Files Summary
 
 | File | Action |
 |------|--------|
-| `src/hooks/useEmployeeHoursBreakdown.ts` | Add grossMinutes fields to types + computation |
-| `src/components/admin/live-punch-monitor/EmployeeHoursBreakdown.tsx` | Show Raw/Break/Paid, add edit button |
-| `src/components/admin/live-punch-monitor/PunchEditModal.tsx` | **Create** — edit dialog for start/end/break |
-| `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx` | Role-gate visibility, update stat card labels |
-| `src/hooks/usePunchEdit.ts` | Add breakdown query invalidation |
+| `EmployeeHoursBreakdown.tsx` | Fix break display, convert to column table |
+| `DailyHoursSummaryExport.tsx` | **Create** — Excel/CSV/PDF export |
+| `DailyHoursSummary.tsx` | Add export component |
 
