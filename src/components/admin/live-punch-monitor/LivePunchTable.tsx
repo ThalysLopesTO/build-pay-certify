@@ -199,6 +199,13 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     <CardContent className="p-3 space-y-3">
                       {/* Employee Header */}
                       <div className="flex items-start gap-3">
+                        {selectionEnabled && onToggleSelect && (
+                          <Checkbox
+                            checked={selectedIds.has(entry.id)}
+                            onCheckedChange={() => onToggleSelect(entry.id)}
+                            className="mt-1 flex-shrink-0"
+                          />
+                        )}
                         <EmployeeAvatar
                           photoUrl={entry.user_profiles?.photo_url}
                           firstName={entry.user_profiles?.first_name}
