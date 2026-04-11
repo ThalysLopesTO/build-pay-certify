@@ -653,28 +653,26 @@ const LivePunchMonitor = () => {
       )}
 
       {/* Punch Entries Table */}
-      <Card className="shadow-sm">
-        <LivePunchTable
-          filteredEntries={paginatedEntries}
-          selectedDate={selectedDate}
-          flaggedEntries={flaggedEntries}
-          onToggleFlag={toggleFlag}
-          onViewLocation={handleViewLocation}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          isLoading={isLoading}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredEntries.length}
-          itemsPerPage={itemsPerPage}
-          onPageChange={handlePageChange}
-          selectionEnabled={canBulkEdit}
-          selectedIds={selectedIds}
-          onToggleSelect={handleToggleSelect}
-          onToggleSelectAll={handleToggleSelectAll}
-          allVisibleSelected={allVisibleSelected}
-        />
-      </Card>
+      <LivePunchTable
+        filteredEntries={paginatedEntries}
+        selectedDate={selectedDate}
+        flaggedEntries={flaggedEntries}
+        onToggleFlag={toggleFlag}
+        onViewLocation={handleViewLocation}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        isLoading={isLoading}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredEntries.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={handlePageChange}
+        selectionEnabled={canBulkEdit}
+        selectedIds={selectedIds}
+        onToggleSelect={handleToggleSelect}
+        onToggleSelectAll={handleToggleSelectAll}
+        allVisibleSelected={allVisibleSelected}
+      />
     </div>
 
     {/* Edit Punch Modal */}
