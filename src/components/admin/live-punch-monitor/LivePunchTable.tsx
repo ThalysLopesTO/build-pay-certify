@@ -183,7 +183,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
             badge={filteredEntries.length}
             trailing={
               isDateToday(selectedDate) ? (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">
+                <Badge variant="outline" className="border-green-200 bg-green-50 dark:bg-green-950 text-[#43b66e] dark:border-green-800">
                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse" />
                   Live
                 </Badge>
@@ -240,7 +240,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     </div>
                     <div className="flex-shrink-0">
                       {!entry.check_out_time ? (
-                        <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 dark:bg-green-950 dark:text-green-400 text-[10px]">
+                        <Badge variant="outline" className="border-green-300 bg-green-50 dark:bg-green-950 text-[#43b66e] text-[10px]">
                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse" />
                           Active
                         </Badge>
@@ -364,7 +364,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                 <Badge variant="secondary" className="text-xs">{selectedIds.size} selected</Badge>
               )}
               {isDateToday(selectedDate) && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800">
+                <Badge variant="outline" className="border-green-200 bg-green-50 dark:bg-green-950 text-[#43b66e] dark:border-green-800">
                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse" />
                   Live
                 </Badge>
@@ -497,12 +497,12 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                   {/* Status */}
                   <TableCell>
                     {!entry.check_out_time ? (
-                      <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 dark:bg-green-950 dark:text-green-400">
+                      <Badge variant="outline" className="border-green-300 bg-green-50 dark:bg-green-950 text-[#43b66e]">
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse" />
                         Active
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 dark:bg-green-950 dark:text-green-400">
+                      <Badge variant="outline" className="border-green-300 bg-green-50 dark:bg-green-950 text-[#43b66e]">
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5" />
                         Complete
                       </Badge>
