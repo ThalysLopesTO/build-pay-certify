@@ -129,12 +129,13 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
                 <TableHead className="text-right font-bold text-slate-700 py-4">Raw Hours</TableHead>
                 <TableHead className="text-right font-bold text-slate-700 py-4">Break</TableHead>
                 <TableHead className="text-right font-bold text-slate-700 py-4">Paid Hours</TableHead>
+                <TableHead className="font-bold text-slate-700 py-4">Note</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {weeklyTimesheets?.length === 0 || !weeklyTimesheets ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
+                  <TableCell colSpan={8} className="text-center py-12">
                     <div className="flex flex-col items-center space-y-3 text-muted-foreground">
                       <Calendar className="h-12 w-12 text-slate-300" />
                       <span className="text-lg font-medium">No timesheet entries for this week</span>
@@ -186,6 +187,11 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
                         {timesheet.paid_hours.toFixed(2)}h
                       </span>
                     </TableCell>
+                    <TableCell className="py-4 max-w-[200px]">
+                      <span className="text-sm text-muted-foreground truncate block" title={(timesheet as any).work_note || ''}>
+                        {(timesheet as any).work_note || '—'}
+                      </span>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -193,7 +199,7 @@ const WeeklyHistorySection = ({ weeklyTimesheets, selectedWeek }: WeeklyHistoryS
             {weeklyTimesheets && weeklyTimesheets.length > 0 && (
               <TableFooter>
                 <TableRow className="bg-gradient-to-r from-slate-100 to-blue-50 border-t-2 border-slate-300">
-                  <TableCell colSpan={4} className="font-bold text-slate-800 py-4 text-right">
+                  <TableCell colSpan={5} className="font-bold text-slate-800 py-4 text-right">
                     Week Totals:
                   </TableCell>
                   <TableCell className="text-right py-4">
