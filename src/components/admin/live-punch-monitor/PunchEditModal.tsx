@@ -42,6 +42,8 @@ const PunchEditModal: React.FC<PunchEditModalProps> = ({ open, onOpenChange, pun
       setStartTime(toLocalDatetimeValue(punch.checkIn));
       setEndTime(punch.checkOut ? toLocalDatetimeValue(punch.checkOut) : '');
       setBreakMinutes(punch.breakMinutes);
+      const isPreset = BREAK_PRESETS.some(p => p.value === punch.breakMinutes);
+      setIsCustomBreak(punch.breakMinutes > 0 && !isPreset);
       setError(null);
     }
   }, [punch]);
