@@ -404,7 +404,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                 <TableBody>
                   {filteredEntries.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="text-center py-16 bg-gradient-to-br from-muted/20 to-muted/10">
+                      <TableCell colSpan={12} className="text-center py-16 bg-gradient-to-br from-muted/20 to-muted/10">
                         <div className="flex flex-col items-center gap-4">
                           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
                             <Clock className="h-8 w-8 text-muted-foreground/60" />
