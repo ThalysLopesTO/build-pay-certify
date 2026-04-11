@@ -14,6 +14,7 @@ import { useEmployeeHoursBreakdown } from '@/hooks/useEmployeeHoursBreakdown';
 import { useQuery } from '@tanstack/react-query';
 import { getSupabase } from '@/integrations/supabase/client';
 import EmployeeHoursBreakdown from './EmployeeHoursBreakdown';
+import DailyHoursSummaryExport from './DailyHoursSummaryExport';
 
 interface DailyHoursSummaryProps {
   jobsites?: Array<{ id: string; name: string }> | null;
