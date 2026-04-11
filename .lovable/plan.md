@@ -1,53 +1,44 @@
 
 
-# Improve Punch Records UI: Fix Duplicate Duration and Add Break Time
+# Add Break Time to Edit Punch Record Modal
 
-## Problem Summary
-1. **Duplicate duration**: The Duration column shows raw time (e.g. "7h 32m") AND a RuleBasedHoursCell below it showing the same or similar value -- appears as duplicated text
-2. **No break time visibility**: Break minutes stored on timesheets aren't displayed in the punch monitor
+## Summary
+Add a Break Time section to the Edit Punch Record modal (used in Punch In/Out page) matching the UX pattern already established in the Time Summary page's Edit Time Entry dialog. No changes to payroll logic or other pages.
 
 ## Changes
 
-### 1. Fetch `break_minutes` from timesheets
-**File:** `src/components/admin/LivePunchMonitor.tsx`
+### 1. Update `PunchEditData` interface in `src/hooks/usePunchEdit.ts`
+- Add `break_minutes?: number | null` to the interface so the mutation can save break data
+- Add `work_note?: string | null` (currently missing from the interface but already sent)
 
-Add `break_minutes` to the timesheet select query (line 203) and to the `PunchEntry` interface.
+### 2. Update `src/components/admin/timesheets/EditPunchModal.tsx`
+- Add `break_minutes` state field (string, initialized from `timesheet.break_minutes` or `''`)
+- Add `isCustomBreak` boolean state
+- Add break preset constants matching Time Summary: `[15, 30, 40, 60, 90]`
+- Insert Break Time section between Clock Out Time and Jobsite:
+  - Label: "Break Time"
+  - Row of preset buttons: 15 min, 30 min, 40 min, 1 hr, 1.5 hr, Custom
+  - Active preset gets `variant="default"`, others `variant="outline"`
+  - Clicking an active preset deselects it (sets to `''`)
+  - "Custom" button reveals a numeric input (min=0, max=180)
+  - Helper text: "{X} minutes will be deducted from total hours" or "No break deducted"
+- In `handleSubmit`: include `break_minutes: breakMinutes ? parseInt(breakMinutes) : 0` in the update data
+- In `useEffect`: preload `break_minutes` from `timesheet.break_minutes`
+- Make modal scrollable on small screens: add `max-h-[90vh] overflow-y-auto` to DialogContent
 
-### 2. Update LivePunchTable to show single duration + break column
-**File:** `src/components/admin/live-punch-monitor/LivePunchTable.tsx`
+### 3. No other files affected
+- The `usePunchEdit` hook already spreads `...data` into the update call, so adding `break_minutes` to the data object will save it automatically
+- The Live Punch Monitor table already fetches and displays `break_minutes`
+- No payroll or Time Summary logic is touched
 
-**Desktop table:**
-- Update `PunchEntry` interface to include `break_minutes?: number | null`
-- Rename "Duration" header to "Worked Duration"
-- Add new "Break Time" column header after "Worked Duration"
-- In the Duration cell (lines 495-514): remove the `RuleBasedHoursCell` sub-rendering -- show only the single `calculateTotalTime` value
-- Add a new Break Time cell that displays `entry.break_minutes` formatted as "30m", "1h 05m", or "0m" if null/zero
-
-**Mobile card layout:**
-- Replace the current "Time" section in the 3-column grid with "Worked" label
-- Add a 4th column or a separate row for "Break" showing the formatted break time
-- Remove the separate `RuleBasedHours` component block (lines 272-283) to eliminate duplication
-
-### 3. Helper for break formatting
-Add a simple inline helper in LivePunchTable:
-```typescript
-const formatBreakTime = (minutes: number | null | undefined): string => {
-  if (!minutes) return '0m';
-  if (minutes < 60) return `${minutes}m`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h ${String(m).padStart(2, '0')}m` : `${h}h`;
-};
-```
-
-## What stays the same
-- All payroll calculation logic (useTimeSummaryDataWithRules, useTimeSummaryDetails, calculateWorkedHours)
-- All other pages and components
-- Edit/delete/flag/location actions
-- Pagination, filters, realtime subscriptions
-- The RuleBasedHours component file itself (just unused in this table)
+## Field Order in Modal
+1. Clock In Time
+2. Clock Out Time
+3. **Break Time** (new)
+4. Jobsite
+5. Work Note
 
 ## Files to modify
-1. `src/components/admin/LivePunchMonitor.tsx` -- add `break_minutes` to query + interface
-2. `src/components/admin/live-punch-monitor/LivePunchTable.tsx` -- fix duplicate, add break column, improve mobile cards
+- `src/hooks/usePunchEdit.ts` — add `break_minutes` to `PunchEditData`
+- `src/components/admin/timesheets/EditPunchModal.tsx` — add break time UI section + save logic
 
