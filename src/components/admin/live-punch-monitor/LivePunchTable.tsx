@@ -104,6 +104,29 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
     }
   };
 
+  // Detect stale open punches (check-in before today, no check-out)
+  const isMissingCheckout = (entry: PunchEntry): boolean => {
+    if (entry.check_out_time || !entry.check_in_time) return false;
+    const checkInDate = new Date(entry.check_in_time);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return checkInDate < today;
+  };
+
+  // Get effective end time: cap at midnight of check-in day for stale punches
+  const getEffectiveEnd = (checkIn: string, checkOut: string | null): number => {
+    if (checkOut) return new Date(checkOut).getTime();
+    const checkInDate = new Date(checkIn);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (checkInDate < today) {
+      const midnight = new Date(checkIn);
+      midnight.setHours(23, 59, 59, 999);
+      return midnight.getTime();
+    }
+    return Date.now();
+  };
+
   const getSortValue = (entry: PunchEntry, col: SortColumn): string | number => {
     switch (col) {
       case 'employee':
@@ -119,7 +142,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
       case 'break':
         return entry.break_minutes || 0;
       case 'status':
-        return entry.check_out_time ? 1 : 0;
+        return entry.check_out_time ? 1 : (isMissingCheckout(entry) ? 2 : 0);
       default:
         return '';
     }
@@ -143,7 +166,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
   const getDurationMinutes = (checkIn: string | null, checkOut: string | null): number => {
     if (!checkIn) return 0;
     const start = new Date(checkIn).getTime();
-    const end = checkOut ? new Date(checkOut).getTime() : Date.now();
+    const end = getEffectiveEnd(checkIn, checkOut);
     return Math.floor((end - start) / 60000);
   };
 
@@ -239,7 +262,12 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                       <p className="text-xs text-muted-foreground truncate">{entry.jobsites?.name || 'Unknown Jobsite'}</p>
                     </div>
                     <div className="flex-shrink-0">
-                      {!entry.check_out_time ? (
+                      {isMissingCheckout(entry) ? (
+                        <Badge variant="outline" className="border-yellow-300 bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-400 text-[10px]">
+                          <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1" />
+                          Missing
+                        </Badge>
+                      ) : !entry.check_out_time ? (
                         <Badge variant="outline" className="border-green-300 bg-green-50 dark:bg-green-950 text-[#43b66e] text-[10px]">
                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse" />
                           Active
@@ -265,6 +293,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                       <p className="text-[10px] text-muted-foreground font-medium uppercase">Out</p>
                       {entry.check_out_time ? (
                         <p className="font-mono text-xs font-semibold text-foreground">{format(new Date(entry.check_out_time), 'h:mm a')}</p>
+                      ) : isMissingCheckout(entry) ? (
+                        <p className="text-[10px] text-yellow-600 font-semibold">Missing</p>
                       ) : (
                         <p className="text-[10px] text-green-600 font-semibold">Live</p>
                       )}
@@ -472,6 +502,11 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                         <p className="font-mono text-sm font-medium text-foreground">{format(new Date(entry.check_out_time), 'h:mm a')}</p>
                         <p className="text-xs text-muted-foreground">{format(new Date(entry.check_out_time), 'MMM dd')}</p>
                       </div>
+                    ) : isMissingCheckout(entry) ? (
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />
+                        <span className="text-xs font-medium text-yellow-600">Missing</span>
+                      </div>
                     ) : (
                       <div className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
@@ -496,7 +531,12 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
 
                   {/* Status */}
                   <TableCell>
-                    {!entry.check_out_time ? (
+                    {isMissingCheckout(entry) ? (
+                      <Badge variant="outline" className="border-yellow-300 bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-400">
+                        <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1.5" />
+                        Missing
+                      </Badge>
+                    ) : !entry.check_out_time ? (
                       <Badge variant="outline" className="border-green-300 bg-green-50 dark:bg-green-950 text-[#43b66e]">
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse" />
                         Active
