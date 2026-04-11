@@ -611,12 +611,23 @@ const LivePunchMonitor = () => {
 
     {/* Results Section */}
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-semibold text-foreground">Punch Records</h2>
           <Badge variant="secondary" className="px-3 py-1">
             {filteredEntries.length} {filteredEntries.length === 1 ? 'record' : 'records'}
           </Badge>
+          {canBulkEdit && missingClockOutCount > 0 && statusFilter !== 'active' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10"
+              onClick={() => setStatusFilter('active')}
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {missingClockOutCount} Missing Clock Out
+            </Button>
+          )}
         </div>
         {selectedDate && <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4" />
@@ -628,6 +639,18 @@ const LivePunchMonitor = () => {
           <span>All Dates</span>
         </div>}
       </div>
+
+      {/* Bulk Action Bar */}
+      {canBulkEdit && selectedIds.size > 0 && (
+        <BulkActionBar
+          selectedCount={selectedIds.size}
+          onSetClockOut={() => setShowBulkClockOut(true)}
+          onAddBreakTime={() => setShowBulkBreak(true)}
+          onAddNote={() => setShowBulkNote(true)}
+          onClearSelection={handleClearSelection}
+          hasActiveEntries={hasActiveSelected}
+        />
+      )}
 
       {/* Punch Entries Table */}
       <Card className="shadow-sm">
@@ -645,12 +668,37 @@ const LivePunchMonitor = () => {
           totalItems={filteredEntries.length}
           itemsPerPage={itemsPerPage}
           onPageChange={handlePageChange}
+          selectionEnabled={canBulkEdit}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
+          onToggleSelectAll={handleToggleSelectAll}
+          allVisibleSelected={allVisibleSelected}
         />
       </Card>
     </div>
 
     {/* Edit Punch Modal */}
     {editingTimesheet && <EditPunchModal isOpen={!!editingTimesheet} onClose={() => setEditingTimesheet(null)} timesheet={editingTimesheet} onSuccess={() => refetch()} />}
+
+    {/* Bulk Action Modals */}
+    <BulkClockOutModal
+      isOpen={showBulkClockOut}
+      onClose={() => setShowBulkClockOut(false)}
+      selectedEntries={selectedEntries}
+      onSuccess={handleBulkSuccess}
+    />
+    <BulkBreakTimeModal
+      isOpen={showBulkBreak}
+      onClose={() => setShowBulkBreak(false)}
+      selectedIds={Array.from(selectedIds)}
+      onSuccess={handleBulkSuccess}
+    />
+    <BulkNoteModal
+      isOpen={showBulkNote}
+      onClose={() => setShowBulkNote(false)}
+      selectedEntries={selectedEntries}
+      onSuccess={handleBulkSuccess}
+    />
 
     {/* Location Map Modal */}
     {selectedLocation && (() => {
