@@ -79,13 +79,6 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
   const isMobile = useIsMobile();
   const { user } = useAuth();
   
-  // TODO: Will re-add distance calculation functions later for jobsite comparison
-  
-  const getDistanceStatus = (entry: PunchEntry) => {
-    // TODO: Will re-implement distance calculation logic later
-    // For now, always return null to hide distance status
-    return null;
-  };
 
   const isToday = (date: Date | null) => {
     if (!date) return false;
@@ -396,7 +389,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     <TableHead className="font-bold text-foreground py-6">Status</TableHead>
                     <TableHead className="font-bold text-foreground py-6">Note</TableHead>
                     <TableHead className="font-bold text-foreground py-6">Location</TableHead>
-                    <TableHead className="font-bold text-foreground py-6">Distance</TableHead>
+                    
                     <TableHead className="font-bold text-foreground py-6">Flag</TableHead>
                     <TableHead className="font-bold text-foreground py-6 px-6">Actions</TableHead>
                   </TableRow>
@@ -418,7 +411,6 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     </TableRow>
                   ) : (
                     filteredEntries.map((entry, index) => {
-                      const distanceStatus = getDistanceStatus(entry);
                       const isEven = index % 2 === 0;
                       
                       return (
@@ -534,11 +526,6 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                             ) : (
                               <span className="text-muted-foreground text-sm font-medium">No location</span>
                             )}
-                          </TableCell>
-                          <TableCell className="py-6">
-                            <Badge variant="outline" className="text-xs font-medium bg-muted/50 border-muted-foreground/30">
-                              Disabled
-                            </Badge>
                           </TableCell>
                           <TableCell className="py-6">
                             <Tooltip>
