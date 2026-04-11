@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { MapPin, Flag, Edit, Trash2, Clock, Calendar, CheckCircle } from 'lucide-react';
+import { MapPin, Flag, Edit, Trash2, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -244,8 +245,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                           Active
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-50 dark:bg-blue-950 dark:text-blue-400 text-[10px]">
-                          <CheckCircle className="w-2.5 h-2.5 mr-1" />
+                        <Badge variant="outline" className="text-muted-foreground border-border text-[10px]">
+                          <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full mr-1" />
                           Complete
                         </Badge>
                       )}
@@ -391,15 +392,13 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
               <TableHeadSortable sorted={getSorted('break')} onSort={() => handleSort('break')}>Break</TableHeadSortable>
               <TableHeadSortable sorted={getSorted('status')} onSort={() => handleSort('status')}>Status</TableHeadSortable>
               <TableHead>Note</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Flag</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedEntries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={selectionEnabled ? 12 : 11} className="text-center py-12">
+                <TableCell colSpan={selectionEnabled ? 10 : 9} className="text-center py-12">
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                       <Clock className="h-6 w-6 text-muted-foreground" />
@@ -417,8 +416,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                   key={entry.id}
                   className={cn(
                     selectedIds.has(entry.id) && 'bg-primary/5',
-                    flaggedEntries.has(entry.id) && 'bg-destructive/5 border-l-2 border-l-destructive',
-                    !flaggedEntries.has(entry.id) && !selectedIds.has(entry.id) && index % 2 !== 0 && 'bg-muted/30'
+                    flaggedEntries.has(entry.id) && 'bg-destructive/5 border-l-2 border-l-destructive'
                   )}
                 >
                   {selectionEnabled && onToggleSelect && (
@@ -504,8 +502,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                         Active
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-50 dark:bg-blue-950 dark:text-blue-400">
-                        <CheckCircle className="w-3 h-3 mr-1" />
+                      <Badge variant="outline" className="text-muted-foreground border-border">
+                        <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full mr-1.5" />
                         Complete
                       </Badge>
                     )}
@@ -516,37 +514,27 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     <WorkNoteDisplay note={entry.work_note} variant="icon" />
                   </TableCell>
 
-                  {/* Location */}
-                  <TableCell>
-                    {entry.check_in_location ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" onClick={() => onViewLocation(entry)} className="h-8 w-8 p-0">
-                            <MapPin className="h-4 w-4 text-blue-500" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p className="text-xs">View location</p></TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-
-                  {/* Flag */}
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onToggleFlag(entry.id)}
-                      className={cn("h-8 w-8 p-0", flaggedEntries.has(entry.id) ? "text-destructive bg-destructive/10" : "text-muted-foreground")}
-                    >
-                      <Flag className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-
                   {/* Actions */}
                   <TableCell>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-end gap-1">
+                      {entry.check_in_location && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" onClick={() => onViewLocation(entry)} className="h-8 w-8 p-0">
+                              <MapPin className="h-4 w-4 text-muted-foreground hover:text-blue-500" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p className="text-xs">View location</p></TooltipContent>
+                        </Tooltip>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onToggleFlag(entry.id)}
+                        className={cn("h-8 w-8 p-0", flaggedEntries.has(entry.id) ? "text-destructive bg-destructive/10" : "text-muted-foreground")}
+                      >
+                        <Flag className="h-4 w-4" />
+                      </Button>
                       {onEdit && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -593,37 +581,22 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
         </Table>
 
         {/* Pagination */}
-        {totalPages > 1 && onPageChange && (
+        {onPageChange && (
           <TableCard.Footer className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} records
-            </span>
-            <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} className="h-8 px-3 text-xs">Prev</Button>
-              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                let page: number;
-                if (totalPages <= 7) {
-                  page = i + 1;
-                } else if (currentPage <= 4) {
-                  page = i + 1;
-                } else if (currentPage >= totalPages - 3) {
-                  page = totalPages - 6 + i;
-                } else {
-                  page = currentPage - 3 + i;
-                }
-                return (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => onPageChange(page)}
-                    className={cn("min-w-[32px] h-8 p-0 text-xs", currentPage === page && "bg-primary text-primary-foreground")}
-                  >
-                    {page}
-                  </Button>
-                );
-              })}
-              <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} className="h-8 px-3 text-xs">Next</Button>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} className="h-8 px-3 text-xs gap-1">
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} className="h-8 px-3 text-xs gap-1">
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           </TableCard.Footer>
         )}
