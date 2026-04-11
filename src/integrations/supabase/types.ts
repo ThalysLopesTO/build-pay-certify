@@ -1745,6 +1745,7 @@ export type Database = {
       }
       jobsite_time_rules: {
         Row: {
+          break_apply_after_minutes: number | null
           break_is_paid: boolean | null
           break_minutes: number | null
           created_at: string
@@ -1753,11 +1754,13 @@ export type Database = {
           inherits_company_rule: boolean
           jobsite_id: string
           late_grace_minutes: number | null
+          overtime_threshold_minutes: number | null
           updated_at: string
           work_end_time: string | null
           work_start_time: string | null
         }
         Insert: {
+          break_apply_after_minutes?: number | null
           break_is_paid?: boolean | null
           break_minutes?: number | null
           created_at?: string
@@ -1766,11 +1769,13 @@ export type Database = {
           inherits_company_rule?: boolean
           jobsite_id: string
           late_grace_minutes?: number | null
+          overtime_threshold_minutes?: number | null
           updated_at?: string
           work_end_time?: string | null
           work_start_time?: string | null
         }
         Update: {
+          break_apply_after_minutes?: number | null
           break_is_paid?: boolean | null
           break_minutes?: number | null
           created_at?: string
@@ -1779,6 +1784,7 @@ export type Database = {
           inherits_company_rule?: boolean
           jobsite_id?: string
           late_grace_minutes?: number | null
+          overtime_threshold_minutes?: number | null
           updated_at?: string
           work_end_time?: string | null
           work_start_time?: string | null
@@ -3340,8 +3346,61 @@ export type Database = {
           },
         ]
       }
+      timesheet_audit_log: {
+        Row: {
+          action: string
+          company_id: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          performed_at: string
+          performed_by: string
+          reason: string | null
+          timesheet_id: string
+        }
+        Insert: {
+          action: string
+          company_id: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          performed_at?: string
+          performed_by: string
+          reason?: string | null
+          timesheet_id: string
+        }
+        Update: {
+          action?: string
+          company_id?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          performed_at?: string
+          performed_by?: string
+          reason?: string | null
+          timesheet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_audit_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheet_audit_log_timesheet_id_fkey"
+            columns: ["timesheet_id"]
+            isOneToOne: false
+            referencedRelation: "timesheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timesheets: {
         Row: {
+          adjusted_end_time: string | null
+          adjusted_start_time: string | null
           admin_note: string | null
           break_minutes: number | null
           check_in_location: string | null
@@ -3351,15 +3410,28 @@ export type Database = {
           company_id: string
           created_at: string
           dismissed_flags: string[] | null
+          final_payable_minutes: number | null
           hours_worked: number | null
           id: string
           jobsite_id: string
+          manual_override: boolean | null
+          manual_override_at: string | null
+          manual_override_by: string | null
+          overtime_minutes: number | null
+          overtime_status: string | null
+          raw_minutes: number | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
+          time_rule_applied: boolean | null
           updated_at: string
           user_id: string | null
           work_note: string | null
         }
         Insert: {
+          adjusted_end_time?: string | null
+          adjusted_start_time?: string | null
           admin_note?: string | null
           break_minutes?: number | null
           check_in_location?: string | null
@@ -3369,15 +3441,28 @@ export type Database = {
           company_id: string
           created_at?: string
           dismissed_flags?: string[] | null
+          final_payable_minutes?: number | null
           hours_worked?: number | null
           id?: string
           jobsite_id: string
+          manual_override?: boolean | null
+          manual_override_at?: string | null
+          manual_override_by?: string | null
+          overtime_minutes?: number | null
+          overtime_status?: string | null
+          raw_minutes?: number | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
+          time_rule_applied?: boolean | null
           updated_at?: string
           user_id?: string | null
           work_note?: string | null
         }
         Update: {
+          adjusted_end_time?: string | null
+          adjusted_start_time?: string | null
           admin_note?: string | null
           break_minutes?: number | null
           check_in_location?: string | null
@@ -3387,10 +3472,21 @@ export type Database = {
           company_id?: string
           created_at?: string
           dismissed_flags?: string[] | null
+          final_payable_minutes?: number | null
           hours_worked?: number | null
           id?: string
           jobsite_id?: string
+          manual_override?: boolean | null
+          manual_override_at?: string | null
+          manual_override_by?: string | null
+          overtime_minutes?: number | null
+          overtime_status?: string | null
+          raw_minutes?: number | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
+          time_rule_applied?: boolean | null
           updated_at?: string
           user_id?: string | null
           work_note?: string | null
@@ -4119,6 +4215,16 @@ export type Database = {
           last_name: string
           photo_url: string
         }[]
+      }
+      insert_timesheet_audit_log: {
+        Args: {
+          p_action: string
+          p_new_values?: Json
+          p_old_values?: Json
+          p_reason?: string
+          p_timesheet_id: string
+        }
+        Returns: string
       }
       is_admin: { Args: never; Returns: boolean }
       is_company_admin: { Args: never; Returns: boolean }
