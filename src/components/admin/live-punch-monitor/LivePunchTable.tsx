@@ -502,18 +502,16 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                         <p className="font-mono text-sm font-medium text-foreground">{format(new Date(entry.check_out_time), 'h:mm a')}</p>
                         <p className="text-xs text-muted-foreground">{format(new Date(entry.check_out_time), 'MMM dd')}</p>
                       </div>
+                    ) : isMissingCheckout(entry) ? (
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />
+                        <span className="text-xs font-medium text-yellow-600">Missing</span>
+                      </div>
                     ) : (
-                      {isMissingCheckout(entry) ? (
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />
-                          <span className="text-xs font-medium text-yellow-600">Missing</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                          <span className="text-xs font-medium text-green-600">Active</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                        <span className="text-xs font-medium text-green-600">Active</span>
+                      </div>
                     )}
                   </TableCell>
 
