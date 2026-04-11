@@ -191,6 +191,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     key={entry.id}
                     className={cn(
                       "overflow-hidden transition-all duration-200 hover:shadow-md border",
+                      selectedIds.has(entry.id) && 'ring-2 ring-primary/40 bg-primary/5',
                       flaggedEntries.has(entry.id) 
                         ? 'border-l-4 border-l-destructive bg-gradient-to-r from-destructive/10 to-destructive/5' 
                         : 'border-border/50'
