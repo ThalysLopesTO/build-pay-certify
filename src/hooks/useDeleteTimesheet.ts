@@ -52,6 +52,8 @@ export const useDeleteTimesheet = () => {
       queryClient.invalidateQueries({ queryKey: ['live-punch-monitor'] });
       queryClient.invalidateQueries({ queryKey: ['timesheets'] });
       queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-hours-breakdown'] });
+      queryClient.invalidateQueries({ queryKey: ['live-punch-data'] });
       
       toast({
         title: "Success",
