@@ -9,6 +9,14 @@ import { useDeleteTimesheet } from '@/hooks/useDeleteTimesheet';
 import type { EmployeeBreakdown, PunchRecord } from '@/hooks/useEmployeeHoursBreakdown';
 import PunchEditModal from './PunchEditModal';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -73,17 +81,116 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                 <Timer className="h-3 w-3" />
                 <span className="text-xs">{formatDurationFromMinutes(emp.totalGrossMinutes)}</span>
               </div>
-              {emp.totalBreakMinutes > 0 && (
-                <div className="flex items-center gap-1 text-muted-foreground" title="Break">
-                  <Coffee className="h-3 w-3" />
-                  <span className="text-xs">{formatDurationFromMinutes(emp.totalBreakMinutes)}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-1 text-muted-foreground" title="Break">
+                <Coffee className="h-3 w-3" />
+                <span className="text-xs">{formatDurationFromMinutes(emp.totalBreakMinutes)}</span>
+              </div>
             </div>
           </div>
 
-          {/* Days */}
-          <div className="divide-y divide-border">
+          {/* Table layout - desktop */}
+          <div className="hidden md:block">
+            <Table size="sm">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Start</TableHead>
+                  <TableHead>End</TableHead>
+                  <TableHead>Break</TableHead>
+                  <TableHead>Raw Hours</TableHead>
+                  <TableHead>Paid Hours</TableHead>
+                  <TableHead>Jobsite</TableHead>
+                  {canEdit && <TableHead className="text-right">Actions</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {emp.days.map((day) =>
+                  day.punches.map((punch, pIdx) => (
+                    <TableRow key={punch.id}>
+                      {pIdx === 0 ? (
+                        <TableCell rowSpan={day.punches.length} className="align-top font-semibold text-xs text-muted-foreground whitespace-nowrap">
+                          {format(parseLocalDate(day.date), 'EEE, MMM dd')}
+                        </TableCell>
+                      ) : null}
+                      <TableCell className="text-xs font-medium">
+                        {format(new Date(punch.checkIn), 'h:mm a')}
+                      </TableCell>
+                      <TableCell className="text-xs font-medium">
+                        {punch.isIncomplete ? (
+                          <span className="text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
+                            <AlertTriangle className="h-3 w-3" /> Missing
+                          </span>
+                        ) : (
+                          format(new Date(punch.checkOut!), 'h:mm a')
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        <span className="flex items-center gap-0.5">
+                          <Coffee className="h-3 w-3 text-muted-foreground" />
+                          {punch.breakMinutes}m
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {punch.isIncomplete ? '—' : formatDurationFromMinutes(punch.grossMinutes)}
+                      </TableCell>
+                      <TableCell className="text-xs font-medium">
+                        {punch.isIncomplete ? '—' : formatDurationFromMinutes(punch.netMinutes)}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground truncate max-w-[140px]">
+                        {punch.jobsiteName !== '—' ? punch.jobsiteName : '—'}
+                      </TableCell>
+                      {canEdit && (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-0.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => {
+                                setEditingPunch(punch);
+                                setEditingEmployee(`${emp.firstName} ${emp.lastName}`);
+                              }}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setDeletingPunch(punch);
+                                setDeletingEmployee(`${emp.firstName} ${emp.lastName}`);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
+                {/* Day subtotal row */}
+                {emp.days.length > 1 && (
+                  <TableRow className="bg-muted/30 font-semibold">
+                    <TableCell colSpan={3} className="text-xs text-right">Employee Total</TableCell>
+                    <TableCell className="text-xs">
+                      <span className="flex items-center gap-0.5">
+                        <Coffee className="h-3 w-3" />
+                        {formatDurationFromMinutes(emp.totalBreakMinutes)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-xs">{formatDurationFromMinutes(emp.totalGrossMinutes)}</TableCell>
+                    <TableCell className="text-xs font-bold">{formatDurationFromMinutes(emp.totalNetMinutes)}</TableCell>
+                    <TableCell colSpan={canEdit ? 2 : 1} />
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile card layout */}
+          <div className="md:hidden divide-y divide-border">
             {emp.days.map((day) => (
               <div key={day.date} className="px-4 py-2.5">
                 <div className="flex items-center justify-between mb-1.5">
@@ -95,82 +202,44 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                     <span className="font-semibold text-foreground">Paid: {formatDurationFromMinutes(day.dayNetMinutes)}</span>
                   </div>
                 </div>
-
-                {/* Punch rows */}
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {day.punches.map((punch) => (
-                    <div
-                      key={punch.id}
-                      className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground group"
-                    >
-                      {/* Time in → Time out */}
-                      <span className="flex items-center gap-1 text-foreground font-medium">
-                        {format(new Date(punch.checkIn), 'h:mm a')}
-                        <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                        {punch.isIncomplete ? (
-                          <span className="text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
-                            <AlertTriangle className="h-3 w-3" />
-                            Missing
-                          </span>
-                        ) : (
-                          format(new Date(punch.checkOut!), 'h:mm a')
+                    <div key={punch.id} className="rounded-md border bg-muted/20 p-2.5 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-1 font-medium text-foreground">
+                          {format(new Date(punch.checkIn), 'h:mm a')}
+                          <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                          {punch.isIncomplete ? (
+                            <span className="text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
+                              <AlertTriangle className="h-3 w-3" /> Missing
+                            </span>
+                          ) : (
+                            format(new Date(punch.checkOut!), 'h:mm a')
+                          )}
+                        </span>
+                        {canEdit && (
+                          <div className="flex items-center gap-0.5">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingPunch(punch); setEditingEmployee(`${emp.firstName} ${emp.lastName}`); }}>
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => { setDeletingPunch(punch); setDeletingEmployee(`${emp.firstName} ${emp.lastName}`); }}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         )}
-                      </span>
-
-                      {/* Break */}
-                      {punch.breakMinutes > 0 && (
-                        <span className="flex items-center gap-0.5">
-                          <Coffee className="h-3 w-3" />
-                          {punch.breakMinutes}m
-                        </span>
-                      )}
-
-                      {/* Raw & Paid */}
-                      {!punch.isIncomplete && (
-                        <>
-                          <span className="text-muted-foreground">
-                            Raw: {formatDurationFromMinutes(punch.grossMinutes)}
-                          </span>
-                          <span className="font-medium text-foreground">
-                            Paid: {formatDurationFromMinutes(punch.netMinutes)}
-                          </span>
-                        </>
-                      )}
-
-                      {/* Jobsite */}
-                      {punch.jobsiteName && punch.jobsiteName !== '—' && (
-                        <span className="text-muted-foreground/70 truncate max-w-[140px]">
-                          @ {punch.jobsiteName}
-                        </span>
-                      )}
-
-                      {/* Edit & Delete buttons */}
-                      {canEdit && (
-                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5"
-                            onClick={() => {
-                              setEditingPunch(punch);
-                              setEditingEmployee(`${emp.firstName} ${emp.lastName}`);
-                            }}
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5 text-destructive hover:text-destructive"
-                            onClick={() => {
-                              setDeletingPunch(punch);
-                              setDeletingEmployee(`${emp.firstName} ${emp.lastName}`);
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
+                      </div>
+                      <div className="flex items-center gap-3 text-muted-foreground">
+                        <span className="flex items-center gap-0.5"><Coffee className="h-3 w-3" /> {punch.breakMinutes}m</span>
+                        {!punch.isIncomplete && (
+                          <>
+                            <span>Raw: {formatDurationFromMinutes(punch.grossMinutes)}</span>
+                            <span className="font-medium text-foreground">Paid: {formatDurationFromMinutes(punch.netMinutes)}</span>
+                          </>
+                        )}
+                        {punch.jobsiteName !== '—' && (
+                          <span className="truncate max-w-[120px]">@ {punch.jobsiteName}</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
