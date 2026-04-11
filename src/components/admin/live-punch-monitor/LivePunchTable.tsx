@@ -532,7 +532,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                   {/* Status */}
                   <TableCell>
                     {isMissingCheckout(entry) ? (
-                      <Badge variant="outline" className="border-yellow-300 bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-400">
+                      <Badge variant="outline" className="border-yellow-300 bg-yellow-50 dark:bg-yellow-950 text-[#cf8b2a]">
                         <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1.5" />
                         Missing
                       </Badge>
