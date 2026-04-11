@@ -502,8 +502,8 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                         Active
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-muted-foreground border-border">
-                        <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full mr-1.5" />
+                      <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 dark:bg-green-950 dark:text-green-400">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5" />
                         Complete
                       </Badge>
                     )}
