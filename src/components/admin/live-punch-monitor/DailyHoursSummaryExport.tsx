@@ -12,7 +12,7 @@ import { formatDurationFromMinutes } from '@/hooks/useDailyHoursSummary';
 import type { EmployeeBreakdown } from '@/hooks/useEmployeeHoursBreakdown';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface DailyHoursSummaryExportProps {
   employees: EmployeeBreakdown[];
@@ -322,7 +322,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
       }
       body.push(['SUBTOTAL', '', String(g.totalDays), fmtMins(g.totalRawMins), fmtMins(g.totalPaidMins), String(g.totalPunches), String(g.totalIssues), '', '']);
 
-      (doc as any).autoTable({
+      const tableResult = autoTable(doc, {
         startY: yPos,
         head: [HEADERS],
         body,
@@ -338,7 +338,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
         },
       });
 
-      yPos = (doc as any).lastAutoTable.finalY + 10;
+      yPos = (tableResult as any).finalY + 10;
     }
 
     // Grand totals
