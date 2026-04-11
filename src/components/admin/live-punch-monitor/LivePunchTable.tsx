@@ -240,7 +240,7 @@ const LivePunchTable: React.FC<LivePunchTableProps> = ({
                     </div>
                     <div className="flex-shrink-0">
                       {!entry.check_out_time ? (
-                        <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 dark:bg-green-950 dark:text-green-400 text-[10px]">
+                        <Badge variant="outline" className="border-green-300 bg-green-50 dark:bg-green-950 text-[#43b66e] text-[10px]">
                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse" />
                           Active
                         </Badge>
