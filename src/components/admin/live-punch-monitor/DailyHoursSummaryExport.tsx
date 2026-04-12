@@ -29,7 +29,7 @@ interface DailyHoursSummaryExportProps {
   incompleteCount: number;
 }
 
-type ExportFormat = 'csv' | 'excel' | 'pdf';
+type ExportFormat = 'csv' | 'excel-complete' | 'excel-overview' | 'pdf';
 
 const fmtMins = (m: number) => formatDurationFromMinutes(m);
 
