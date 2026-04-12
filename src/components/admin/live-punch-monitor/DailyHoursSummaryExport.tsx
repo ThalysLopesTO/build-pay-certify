@@ -517,8 +517,11 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
         <DropdownMenuItem onClick={() => handleExport('csv')} className="gap-2">
           <FileText className="h-4 w-4" /> CSV
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport('excel')} className="gap-2">
-          <FileSpreadsheet className="h-4 w-4" /> Excel
+        <DropdownMenuItem onClick={() => handleExport('excel-complete')} className="gap-2">
+          <FileSpreadsheet className="h-4 w-4" /> Excel (Complete)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleExport('excel-overview')} className="gap-2">
+          <FileSpreadsheet className="h-4 w-4" /> Excel (Overview)
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleExport('pdf')} className="gap-2">
           <FileText className="h-4 w-4" /> PDF
