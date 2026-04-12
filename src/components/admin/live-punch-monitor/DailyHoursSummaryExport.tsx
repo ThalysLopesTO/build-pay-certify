@@ -484,7 +484,8 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     setExporting(fmt);
     try {
       if (fmt === 'csv') exportCSV();
-      else if (fmt === 'excel') await exportExcel();
+      else if (fmt === 'excel-overview') await exportExcelOverview();
+      else if (fmt === 'excel-complete') await exportExcelComplete();
       else exportPDF();
       toast.success(`${fmt.toUpperCase()} exported successfully`);
     } catch (err) {
