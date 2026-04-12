@@ -322,7 +322,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
       }
       body.push(['SUBTOTAL', '', String(g.totalDays), fmtMins(g.totalRawMins), fmtMins(g.totalPaidMins), String(g.totalPunches), String(g.totalIssues), '', '']);
 
-      const tableResult = autoTable(doc, {
+      autoTable(doc, {
         startY: yPos,
         head: [HEADERS],
         body,
@@ -338,7 +338,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
         },
       });
 
-      yPos = (tableResult as any).finalY + 10;
+      yPos = (doc as any).lastAutoTable.finalY + 10;
     }
 
     // Grand totals
