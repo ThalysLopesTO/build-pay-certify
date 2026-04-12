@@ -1,54 +1,41 @@
 
 
-# Add Two Excel Export Options: Complete & Overview
+# Update Exports: New Excel Theme, Remove CSV, Split PDF
 
-## What Changes
+## Summary
+Match the Excel Complete export to the green-themed layout from the screenshot, remove CSV, and add PDF Complete + PDF Overview options.
 
-Replace the single "Excel" option in the Daily Hours Summary export dropdown with two options:
+## Changes (single file: `DailyHoursSummaryExport.tsx`)
 
-1. **Excel (Complete)** — Per-employee breakdown with daily rows showing Date, Start, End, Break, Raw Hours, Paid Hours, Jobsite, and Note for each punch
-2. **Excel (Overview)** — The current jobsite-grouped summary (unchanged logic, just renamed)
+### 1. Update Excel Complete theme to match screenshot
+- **Green header row** (dark green background `#4472C4` or forest green `#548235`, white text) with columns: Employee, Date, Start, End, Break (min), Raw Hours, Paid Hours, Jobsite
+- **Employee name in bold** on a row spanning the first column before their punch rows
+- **SUBTOTAL row** per employee: bold, light background, showing break total, raw hours total, paid hours total
+- **GRAND TOTAL row** at bottom: green/orange background with totals for Break, Raw Hours, Paid Hours
+- **Title row**: "Hours Summary — {date range}" merged across top
+- Alternating row shading (light gray) for readability
+- Column order matches screenshot exactly
 
-## File Changes
+### 2. Remove CSV export
+- Remove `exportCSV` function
+- Remove `'csv'` from `ExportFormat` type
+- Remove CSV menu item from dropdown
 
-### `src/components/admin/live-punch-monitor/DailyHoursSummaryExport.tsx`
+### 3. Add PDF Complete + PDF Overview
+- Rename current `exportPDF` to `exportPDFOverview` (jobsite-grouped, unchanged logic)
+- Add `exportPDFComplete`: per-employee daily breakdown matching the Excel Complete layout — employee header, daily punch rows (Date, Start, End, Break, Raw, Paid, Jobsite), employee subtotal, grand total
+- Update `ExportFormat` to include `'pdf-complete' | 'pdf-overview'`
+- Update dropdown: two PDF items — "PDF (Complete)" and "PDF (Overview)"
 
-**1. Add new export function `exportExcelComplete`:**
-- Sheet 1: "Employee Details" — For each employee, output a header row with their name, then day-by-day rows with columns: Date, Start, End, Break, Raw Hours, Paid Hours, Jobsite, Note. Employee total row after each employee. Grand total at the bottom.
-- Uses the existing `employees` prop which already contains `days[].punches[]` with all needed fields (checkIn, checkOut, breakMinutes, grossMinutes, netMinutes, jobsiteName, note).
-- Same branded header block (company name, address, period, timezone) as the current export.
-- Same orange/gray styling conventions.
+### 4. Update dropdown menu
+Final menu items:
+- Excel (Complete)
+- Excel (Overview)  
+- PDF (Complete)
+- PDF (Overview)
 
-**2. Rename current `exportExcel` to `exportExcelOverview`:**
-- No logic changes, just rename the function.
-
-**3. Update the dropdown menu:**
-- Replace the single "Excel" item with two items:
-  - "Excel (Complete)" → calls `exportExcelComplete`
-  - "Excel (Overview)" → calls `exportExcelOverview`
-
-**4. Update `handleExport`:**
-- Change `ExportFormat` type to include `'excel-complete' | 'excel-overview'` instead of `'excel'`.
-
-### Complete Export Layout
-
-```text
-[Company Name]
-[Address / Phone / Email]
-Payroll Detail Report
-Period: Apr 01 2026 - Apr 11 2026
-
-── Adriano Junior ──────────────────────────────────
-Date       | Start    | End      | Break | Raw    | Paid   | Jobsite       | Note
-Wed Apr 01 | 6:06 AM  | 2:00 PM  | 0m    | 7h 54m | 7h 54m | Project Eagle | Drywall install
-Thu Apr 02 | 6:06 AM  | 2:00 PM  | 0m    | 7h 53m | 7h 53m | Project Eagle | Framing
-                                   Employee Total:   55h 16m  55h 16m
-
-── Next Employee ───────────────────────────────────
-...
-
-GRAND TOTAL                                          120h 30m  118h 00m
-```
-
-No new files. No database changes. Single file edit.
+### Files
+| File | Action |
+|------|--------|
+| `DailyHoursSummaryExport.tsx` | Restyle Excel Complete, remove CSV, add PDF Complete/Overview split |
 
