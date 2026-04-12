@@ -29,7 +29,7 @@ interface DailyHoursSummaryExportProps {
   incompleteCount: number;
 }
 
-type ExportFormat = 'csv' | 'excel-complete' | 'excel-overview' | 'pdf';
+type ExportFormat = 'excel-complete' | 'excel-overview' | 'pdf-complete' | 'pdf-overview';
 
 const fmtMins = (m: number) => formatDurationFromMinutes(m);
 
@@ -58,7 +58,6 @@ interface LocationGroup {
 }
 
 const buildLocationGroups = (employees: EmployeeBreakdown[]): LocationGroup[] => {
-  // Map: jobsite -> employee -> aggregated stats
   const jobsiteMap = new Map<string, Map<string, { name: string; role: string; daySet: Set<string>; rawMins: number; paidMins: number; punches: number; issues: number; hourlyRate: number }>>();
 
   for (const emp of employees) {
@@ -128,44 +127,6 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
   const totalEmployees = employees.length;
   const grandTotalAmount = employees.reduce((s, e) => s + (e.hourlyRate > 0 ? (e.totalNetMinutes / 60) * e.hourlyRate : 0), 0);
   const grandTotalPunches = groups.reduce((s, g) => s + g.totalPunches, 0);
-
-  /* ── CSV ── */
-  const exportCSV = () => {
-    const lines: string[] = [];
-    lines.push(`"${companyName}"`);
-    if (companyAddress) lines.push(`"${companyAddress}"`);
-    if (companyPhone) lines.push(`"Phone: ${companyPhone}"`);
-    if (companyEmail) lines.push(`"Email: ${companyEmail}"`);
-    lines.push('"Payroll Summary Report"');
-    lines.push(`"Period: ${dateLabel}"`);
-    lines.push(`"Generated: ${generatedAt}"`);
-    lines.push(`"Timezone: ${timezone}"`);
-    lines.push('');
-    lines.push(`Locations,${totalLocations},Employees,${totalEmployees},Total Paid Hours,"${fmtMins(grandTotalNetMinutes)}",Issues,${incompleteCount}`);
-    lines.push('');
-
-    for (const g of groups) {
-      lines.push(`"Location: ${g.jobsite}"`);
-      lines.push(HEADERS.join(','));
-      for (const e of g.employees) {
-        lines.push([`"${e.name}"`, e.role, e.days, e.rawHrs, e.paidHrs, e.punches, e.issues, e.hourlyRate > 0 ? `$${e.hourlyRate}` : '—', e.amount !== '—' ? `$${e.amount}` : '—'].join(','));
-      }
-      lines.push(['SUBTOTAL', '', g.totalDays, fmtMins(g.totalRawMins), fmtMins(g.totalPaidMins), g.totalPunches, g.totalIssues, '', ''].join(','));
-      lines.push('');
-    }
-
-    lines.push('GRAND TOTALS');
-    lines.push(`Total Employees,${totalEmployees}`);
-    lines.push(`Total Locations,${totalLocations}`);
-    lines.push(`Total Raw Hours,"${fmtMins(grandTotalGrossMinutes)}"`);
-    lines.push(`Total Paid Hours,"${fmtMins(grandTotalNetMinutes)}"`);
-    lines.push(`Total Punches,${grandTotalPunches}`);
-    lines.push(`Total Issues,${incompleteCount}`);
-    lines.push(`Total Amount,"${grandTotalAmount > 0 ? `$${grandTotalAmount.toFixed(2)}` : '—'}"`);
-
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
-    downloadBlob(blob, `${fileName}.csv`);
-  };
 
   /* ── Excel Overview (jobsite-grouped, existing logic) ── */
   const exportExcelOverview = async () => {
@@ -248,33 +209,43 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     XLSX.writeFile(wb, `${fileName}.xlsx`);
   };
 
-  /* ── Excel Complete (per-employee daily breakdown) ── */
+  /* ── Excel Complete (green-themed per-employee breakdown) ── */
   const exportExcelComplete = async () => {
     const XLSX = await import('xlsx-js-style');
     const wb = XLSX.utils.book_new();
 
-    const titleStyle = { font: { bold: true, sz: 16, color: { rgb: '000000' } } };
-    const subtitleStyle = { font: { bold: true, sz: 12, color: { rgb: '666666' } } };
+    // Green theme styles matching screenshot
+    const titleStyle = { font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '548235' } } };
     const metaStyle = { font: { sz: 10, color: { rgb: '444444' } } };
-    const headerStyle = { font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 }, fill: { fgColor: { rgb: 'F97316' } }, alignment: { horizontal: 'center' as const } };
-    const empNameStyle = { font: { bold: true, sz: 11, color: { rgb: 'F97316' } } };
-    const empTotalStyle = { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: 'FFF3E0' } } };
-    const grandStyle = { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: 'F97316' } }, alignment: { horizontal: 'center' as const } };
+    const headerStyle = { font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 }, fill: { fgColor: { rgb: '548235' } }, alignment: { horizontal: 'center' as const } };
+    const empNameStyle = { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '70AD47' } } };
+    const rowEvenStyle = { fill: { fgColor: { rgb: 'E2EFDA' } } };
+    const subtotalStyle = { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: 'C6EFCE' } }, border: { top: { style: 'thin', color: { rgb: '548235' } } } };
+    const grandStyle = { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '548235' } }, alignment: { horizontal: 'center' as const } };
 
-    const DETAIL_HEADERS = ['Date', 'Start', 'End', 'Break', 'Raw Hours', 'Paid Hours', 'Jobsite', 'Note'];
+    const DETAIL_HEADERS = ['Employee', 'Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite'];
     const wsData: any[][] = [];
 
-    // Header block
-    wsData.push([{ v: companyName, s: titleStyle }]);
-    if (companyAddress) wsData.push([{ v: companyAddress, s: metaStyle }]);
-    if (companyPhone || companyEmail) wsData.push([{ v: [companyPhone ? `Phone: ${companyPhone}` : '', companyEmail ? `Email: ${companyEmail}` : ''].filter(Boolean).join('  |  '), s: metaStyle }]);
-    wsData.push([{ v: 'Payroll Detail Report', s: subtitleStyle }]);
-    wsData.push([{ v: `Period: ${dateLabel}`, s: metaStyle }]);
+    // Title row
+    const titleRow = DETAIL_HEADERS.map((_, i) => i === 0
+      ? { v: `Hours Summary — ${dateLabel}`, s: titleStyle }
+      : { v: '', s: titleStyle }
+    );
+    wsData.push(titleRow);
+
+    // Company info
+    wsData.push([{ v: companyName, s: metaStyle }]);
+    const contactParts = [companyAddress, companyPhone ? `Phone: ${companyPhone}` : '', companyEmail ? `Email: ${companyEmail}` : ''].filter(Boolean);
+    if (contactParts.length) wsData.push([{ v: contactParts.join('  |  '), s: metaStyle }]);
     wsData.push([{ v: `Generated: ${generatedAt}  |  Timezone: ${timezone}`, s: metaStyle }]);
     wsData.push([]);
 
+    // Column headers
+    wsData.push(DETAIL_HEADERS.map(h => ({ v: h, s: headerStyle })));
+
     let grandRawMins = 0;
     let grandPaidMins = 0;
+    let grandBreakMins = 0;
 
     const sortedEmployees = [...employees].sort((a, b) =>
       `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
@@ -282,77 +253,98 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
 
     for (const emp of sortedEmployees) {
       const empName = `${emp.firstName} ${emp.lastName}`;
-      wsData.push([{ v: empName, s: empNameStyle }]);
-      wsData.push(DETAIL_HEADERS.map(h => ({ v: h, s: headerStyle })));
+
+      // Employee name header row
+      wsData.push(DETAIL_HEADERS.map((_, i) => i === 0
+        ? { v: empName, s: empNameStyle }
+        : { v: '', s: empNameStyle }
+      ));
 
       let empRawMins = 0;
       let empPaidMins = 0;
+      let empBreakMins = 0;
+      let rowIdx = 0;
 
       for (const day of emp.days) {
         for (const p of day.punches) {
           const dateStr = format(new Date(day.date), 'EEE MMM dd');
           const startTime = p.checkIn ? format(new Date(p.checkIn), 'h:mm a') : '—';
           const endTime = p.checkOut ? format(new Date(p.checkOut), 'h:mm a') : '—';
-          const breakStr = `${p.breakMinutes}m`;
+          const breakVal = p.breakMinutes;
           const rawStr = p.isIncomplete ? '—' : fmtMins(p.grossMinutes);
           const paidStr = p.isIncomplete ? '—' : fmtMins(p.netMinutes);
           const jobsite = p.jobsiteName === '—' ? 'Unassigned' : p.jobsiteName;
-          const note = p.note || '';
 
-          wsData.push([dateStr, startTime, endTime, breakStr, rawStr, paidStr, jobsite, note]);
+          const useAlt = rowIdx % 2 === 0;
+          const cellStyle = useAlt ? rowEvenStyle : {};
+
+          wsData.push([
+            { v: empName, s: cellStyle },
+            { v: dateStr, s: cellStyle },
+            { v: startTime, s: cellStyle },
+            { v: endTime, s: cellStyle },
+            { v: breakVal, s: cellStyle },
+            { v: rawStr, s: cellStyle },
+            { v: paidStr, s: cellStyle },
+            { v: jobsite, s: cellStyle },
+          ]);
 
           if (!p.isIncomplete) {
             empRawMins += p.grossMinutes;
             empPaidMins += p.netMinutes;
           }
+          empBreakMins += breakVal;
+          rowIdx++;
         }
       }
 
-      // Employee total row
+      // Employee subtotal row
       wsData.push([
-        { v: '', s: empTotalStyle },
-        { v: '', s: empTotalStyle },
-        { v: '', s: empTotalStyle },
-        { v: 'Employee Total:', s: empTotalStyle },
-        { v: fmtMins(empRawMins), s: empTotalStyle },
-        { v: fmtMins(empPaidMins), s: empTotalStyle },
-        { v: '', s: empTotalStyle },
-        { v: '', s: empTotalStyle },
+        { v: 'SUBTOTAL', s: subtotalStyle },
+        { v: '', s: subtotalStyle },
+        { v: '', s: subtotalStyle },
+        { v: '', s: subtotalStyle },
+        { v: empBreakMins, s: subtotalStyle },
+        { v: fmtMins(empRawMins), s: subtotalStyle },
+        { v: fmtMins(empPaidMins), s: subtotalStyle },
+        { v: '', s: subtotalStyle },
       ]);
-      wsData.push([]);
 
       grandRawMins += empRawMins;
       grandPaidMins += empPaidMins;
+      grandBreakMins += empBreakMins;
     }
 
-    // Grand total
+    // Grand total row
     wsData.push([
       { v: 'GRAND TOTAL', s: grandStyle },
       { v: '', s: grandStyle },
       { v: '', s: grandStyle },
       { v: '', s: grandStyle },
+      { v: grandBreakMins, s: grandStyle },
       { v: fmtMins(grandRawMins), s: grandStyle },
       { v: fmtMins(grandPaidMins), s: grandStyle },
-      { v: '', s: grandStyle },
       { v: '', s: grandStyle },
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = [
-      { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 10 },
-      { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 30 },
+      { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 22 },
     ];
+
+    // Merge title row
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: DETAIL_HEADERS.length - 1 } }];
 
     XLSX.utils.book_append_sheet(wb, ws, 'Employee Details');
     XLSX.writeFile(wb, `${fileName}_Complete.xlsx`);
   };
 
-  /* ── PDF ── */
-  const exportPDF = () => {
+  /* ── PDF Overview (jobsite-grouped) ── */
+  const exportPDFOverview = () => {
     const doc = new jsPDF({ orientation: 'landscape' });
     const pw = doc.internal.pageSize.getWidth();
 
-    // Header
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text(companyName, 14, 15);
@@ -370,7 +362,6 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     doc.text(`Period: ${dateLabel}`, 14, 28);
     doc.text(`Generated: ${generatedAt}  |  Timezone: ${timezone}`, 14, 33);
 
-    // Summary stat boxes
     let yPos = 40;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
@@ -396,7 +387,6 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     doc.setTextColor(0);
     yPos += boxH + 8;
 
-    // Location tables
     for (const g of groups) {
       if (yPos > doc.internal.pageSize.getHeight() - 40) {
         doc.addPage();
@@ -435,7 +425,6 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
       yPos = (doc as any).lastAutoTable.finalY + 10;
     }
 
-    // Grand totals
     if (yPos > doc.internal.pageSize.getHeight() - 45) {
       doc.addPage();
       yPos = 15;
@@ -480,29 +469,154 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     doc.save(`${fileName}.pdf`);
   };
 
+  /* ── PDF Complete (per-employee daily breakdown) ── */
+  const exportPDFComplete = () => {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const pw = doc.internal.pageSize.getWidth();
+
+    // Header
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(companyName, 14, 15);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    let rightY = 10;
+    if (companyAddress) { doc.text(companyAddress, pw - 14, rightY, { align: 'right' }); rightY += 5; }
+    if (companyPhone) { doc.text(`Phone: ${companyPhone}`, pw - 14, rightY, { align: 'right' }); rightY += 5; }
+    if (companyEmail) { doc.text(`Email: ${companyEmail}`, pw - 14, rightY, { align: 'right' }); rightY += 5; }
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Payroll Detail Report', 14, 22);
+    doc.setFontSize(9);
+    doc.text(`Period: ${dateLabel}`, 14, 28);
+    doc.text(`Generated: ${generatedAt}  |  Timezone: ${timezone}`, 14, 33);
+
+    let yPos = 40;
+    const PDF_HEADERS = ['Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite'];
+
+    let grandRawMins = 0;
+    let grandPaidMins = 0;
+    let grandBreakMins = 0;
+
+    const sortedEmployees = [...employees].sort((a, b) =>
+      `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
+    );
+
+    for (const emp of sortedEmployees) {
+      const empName = `${emp.firstName} ${emp.lastName}`;
+
+      if (yPos > doc.internal.pageSize.getHeight() - 40) {
+        doc.addPage();
+        yPos = 15;
+      }
+
+      // Employee name header
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(84, 130, 53); // green
+      doc.text(empName, 14, yPos);
+      doc.setTextColor(0);
+      yPos += 2;
+
+      const body: string[][] = [];
+      let empRawMins = 0;
+      let empPaidMins = 0;
+      let empBreakMins = 0;
+
+      for (const day of emp.days) {
+        for (const p of day.punches) {
+          const dateStr = format(new Date(day.date), 'EEE MMM dd');
+          const startTime = p.checkIn ? format(new Date(p.checkIn), 'h:mm a') : '—';
+          const endTime = p.checkOut ? format(new Date(p.checkOut), 'h:mm a') : '—';
+          const breakVal = String(p.breakMinutes);
+          const rawStr = p.isIncomplete ? '—' : fmtMins(p.grossMinutes);
+          const paidStr = p.isIncomplete ? '—' : fmtMins(p.netMinutes);
+          const jobsite = p.jobsiteName === '—' ? 'Unassigned' : p.jobsiteName;
+
+          body.push([dateStr, startTime, endTime, breakVal, rawStr, paidStr, jobsite]);
+
+          if (!p.isIncomplete) {
+            empRawMins += p.grossMinutes;
+            empPaidMins += p.netMinutes;
+          }
+          empBreakMins += p.breakMinutes;
+        }
+      }
+
+      // Subtotal row
+      body.push(['SUBTOTAL', '', '', String(empBreakMins), fmtMins(empRawMins), fmtMins(empPaidMins), '']);
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [PDF_HEADERS],
+        body,
+        theme: 'striped',
+        headStyles: { fillColor: [84, 130, 53], fontSize: 7 },
+        styles: { fontSize: 7, cellPadding: 2 },
+        margin: { left: 14, right: 14 },
+        didParseCell: (data: any) => {
+          if (data.row.index === body.length - 1 && data.row.section === 'body') {
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.fillColor = [198, 239, 206];
+          }
+        },
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 10;
+      grandRawMins += empRawMins;
+      grandPaidMins += empPaidMins;
+      grandBreakMins += empBreakMins;
+    }
+
+    // Grand totals
+    if (yPos > doc.internal.pageSize.getHeight() - 30) {
+      doc.addPage();
+      yPos = 15;
+    }
+
+    doc.setFillColor(84, 130, 53);
+    doc.rect(14, yPos, pw - 28, 8, 'F');
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text('GRAND TOTAL', 18, yPos + 6);
+    doc.setTextColor(0);
+    yPos += 14;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Total Break:', 18, yPos);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${grandBreakMins} min`, 60, yPos);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text('Total Raw Hours:', 100, yPos);
+    doc.setFont('helvetica', 'bold');
+    doc.text(fmtMins(grandRawMins), 150, yPos);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text('Total Paid Hours:', 180, yPos);
+    doc.setFont('helvetica', 'bold');
+    doc.text(fmtMins(grandPaidMins), 230, yPos);
+
+    doc.save(`${fileName}_Complete.pdf`);
+  };
+
   const handleExport = async (fmt: ExportFormat) => {
     setExporting(fmt);
     try {
-      if (fmt === 'csv') exportCSV();
-      else if (fmt === 'excel-overview') await exportExcelOverview();
+      if (fmt === 'excel-overview') await exportExcelOverview();
       else if (fmt === 'excel-complete') await exportExcelComplete();
-      else exportPDF();
-      toast.success(`${fmt.toUpperCase()} exported successfully`);
+      else if (fmt === 'pdf-overview') exportPDFOverview();
+      else if (fmt === 'pdf-complete') exportPDFComplete();
+      toast.success(`Export completed successfully`);
     } catch (err) {
       console.error('Export error:', err);
       toast.error('Export failed');
     } finally {
       setExporting(null);
     }
-  };
-
-  const downloadBlob = (blob: Blob, name: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -514,17 +628,17 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => handleExport('csv')} className="gap-2">
-          <FileText className="h-4 w-4" /> CSV
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleExport('excel-complete')} className="gap-2">
           <FileSpreadsheet className="h-4 w-4" /> Excel (Complete)
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleExport('excel-overview')} className="gap-2">
           <FileSpreadsheet className="h-4 w-4" /> Excel (Overview)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport('pdf')} className="gap-2">
-          <FileText className="h-4 w-4" /> PDF
+        <DropdownMenuItem onClick={() => handleExport('pdf-complete')} className="gap-2">
+          <FileText className="h-4 w-4" /> PDF (Complete)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleExport('pdf-overview')} className="gap-2">
+          <FileText className="h-4 w-4" /> PDF (Overview)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
