@@ -167,8 +167,8 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     downloadBlob(blob, `${fileName}.csv`);
   };
 
-  /* ── Excel ── */
-  const exportExcel = async () => {
+  /* ── Excel Overview (jobsite-grouped, existing logic) ── */
+  const exportExcelOverview = async () => {
     const XLSX = await import('xlsx-js-style');
     const wb = XLSX.utils.book_new();
 
@@ -183,9 +183,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     const statValueStyle = { font: { bold: true, sz: 14, color: { rgb: '000000' } } };
 
     const wsData: any[][] = [];
-    const colCount = HEADERS.length;
 
-    // Header block
     wsData.push([{ v: companyName, s: titleStyle }]);
     if (companyAddress) wsData.push([{ v: companyAddress, s: metaStyle }]);
     if (companyPhone || companyEmail) wsData.push([{ v: [companyPhone ? `Phone: ${companyPhone}` : '', companyEmail ? `Email: ${companyEmail}` : ''].filter(Boolean).join('  |  '), s: metaStyle }]);
@@ -194,7 +192,6 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     wsData.push([{ v: `Generated: ${generatedAt}  |  Timezone: ${timezone}`, s: metaStyle }]);
     wsData.push([]);
 
-    // Summary stats row
     wsData.push([
       { v: 'Locations', s: statLabelStyle }, { v: totalLocations, s: statValueStyle }, { v: '' },
       { v: 'Employees', s: statLabelStyle }, { v: totalEmployees, s: statValueStyle }, { v: '' },
@@ -203,7 +200,6 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     ]);
     wsData.push([]);
 
-    // Location groups
     for (const g of groups) {
       wsData.push([{ v: `Location: ${g.jobsite}`, s: locationStyle }]);
       wsData.push(HEADERS.map(h => ({ v: h, s: headerStyle })));
@@ -223,7 +219,6 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
       wsData.push([]);
     }
 
-    // Grand totals
     wsData.push([
       { v: 'GRAND TOTALS', s: grandStyle }, { v: '', s: grandStyle }, { v: '', s: grandStyle },
       { v: '', s: grandStyle }, { v: '', s: grandStyle }, { v: '', s: grandStyle },
@@ -251,6 +246,105 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
 
     XLSX.utils.book_append_sheet(wb, ws, 'Payroll Summary');
     XLSX.writeFile(wb, `${fileName}.xlsx`);
+  };
+
+  /* ── Excel Complete (per-employee daily breakdown) ── */
+  const exportExcelComplete = async () => {
+    const XLSX = await import('xlsx-js-style');
+    const wb = XLSX.utils.book_new();
+
+    const titleStyle = { font: { bold: true, sz: 16, color: { rgb: '000000' } } };
+    const subtitleStyle = { font: { bold: true, sz: 12, color: { rgb: '666666' } } };
+    const metaStyle = { font: { sz: 10, color: { rgb: '444444' } } };
+    const headerStyle = { font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 }, fill: { fgColor: { rgb: 'F97316' } }, alignment: { horizontal: 'center' as const } };
+    const empNameStyle = { font: { bold: true, sz: 11, color: { rgb: 'F97316' } } };
+    const empTotalStyle = { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: 'FFF3E0' } } };
+    const grandStyle = { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: 'F97316' } }, alignment: { horizontal: 'center' as const } };
+
+    const DETAIL_HEADERS = ['Date', 'Start', 'End', 'Break', 'Raw Hours', 'Paid Hours', 'Jobsite', 'Note'];
+    const wsData: any[][] = [];
+
+    // Header block
+    wsData.push([{ v: companyName, s: titleStyle }]);
+    if (companyAddress) wsData.push([{ v: companyAddress, s: metaStyle }]);
+    if (companyPhone || companyEmail) wsData.push([{ v: [companyPhone ? `Phone: ${companyPhone}` : '', companyEmail ? `Email: ${companyEmail}` : ''].filter(Boolean).join('  |  '), s: metaStyle }]);
+    wsData.push([{ v: 'Payroll Detail Report', s: subtitleStyle }]);
+    wsData.push([{ v: `Period: ${dateLabel}`, s: metaStyle }]);
+    wsData.push([{ v: `Generated: ${generatedAt}  |  Timezone: ${timezone}`, s: metaStyle }]);
+    wsData.push([]);
+
+    let grandRawMins = 0;
+    let grandPaidMins = 0;
+
+    const sortedEmployees = [...employees].sort((a, b) =>
+      `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
+    );
+
+    for (const emp of sortedEmployees) {
+      const empName = `${emp.firstName} ${emp.lastName}`;
+      wsData.push([{ v: empName, s: empNameStyle }]);
+      wsData.push(DETAIL_HEADERS.map(h => ({ v: h, s: headerStyle })));
+
+      let empRawMins = 0;
+      let empPaidMins = 0;
+
+      for (const day of emp.days) {
+        for (const p of day.punches) {
+          const dateStr = format(new Date(day.date), 'EEE MMM dd');
+          const startTime = p.checkIn ? format(new Date(p.checkIn), 'h:mm a') : '—';
+          const endTime = p.checkOut ? format(new Date(p.checkOut), 'h:mm a') : '—';
+          const breakStr = `${p.breakMinutes}m`;
+          const rawStr = p.isIncomplete ? '—' : fmtMins(p.grossMinutes);
+          const paidStr = p.isIncomplete ? '—' : fmtMins(p.netMinutes);
+          const jobsite = p.jobsiteName === '—' ? 'Unassigned' : p.jobsiteName;
+          const note = p.note || '';
+
+          wsData.push([dateStr, startTime, endTime, breakStr, rawStr, paidStr, jobsite, note]);
+
+          if (!p.isIncomplete) {
+            empRawMins += p.grossMinutes;
+            empPaidMins += p.netMinutes;
+          }
+        }
+      }
+
+      // Employee total row
+      wsData.push([
+        { v: '', s: empTotalStyle },
+        { v: '', s: empTotalStyle },
+        { v: '', s: empTotalStyle },
+        { v: 'Employee Total:', s: empTotalStyle },
+        { v: fmtMins(empRawMins), s: empTotalStyle },
+        { v: fmtMins(empPaidMins), s: empTotalStyle },
+        { v: '', s: empTotalStyle },
+        { v: '', s: empTotalStyle },
+      ]);
+      wsData.push([]);
+
+      grandRawMins += empRawMins;
+      grandPaidMins += empPaidMins;
+    }
+
+    // Grand total
+    wsData.push([
+      { v: 'GRAND TOTAL', s: grandStyle },
+      { v: '', s: grandStyle },
+      { v: '', s: grandStyle },
+      { v: '', s: grandStyle },
+      { v: fmtMins(grandRawMins), s: grandStyle },
+      { v: fmtMins(grandPaidMins), s: grandStyle },
+      { v: '', s: grandStyle },
+      { v: '', s: grandStyle },
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [
+      { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 10 },
+      { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 30 },
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Employee Details');
+    XLSX.writeFile(wb, `${fileName}_Complete.xlsx`);
   };
 
   /* ── PDF ── */
