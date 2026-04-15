@@ -1,16 +1,35 @@
 
-# Fix Quote Editor Mobile Layout — Buttons Overflowing
+
+# Fix Quote Editor Freezing with Many Line Items
 
 ## Problem
-The mobile bottom action bar (`QuoteEditorMobileActions`) uses `fixed bottom-0` positioning but the form content doesn't account for the bar's height, causing overlap. The buttons also lack proper safe-area padding on notched devices.
+When adding 10+ line items on mobile, every keystroke triggers a full re-render of all line items. With each item containing 4-5 inputs plus a DnD sortable wrapper, this causes the page to freeze. Root causes:
+
+1. `SortableLineItem` is not memoized — all items re-render on every single keystroke
+2. `handleLineItemChange`, `addLineItem`, `removeLineItem` are recreated every render, breaking any memoization
+3. Index-based keys (`line-item-${index}`) cause unnecessary DOM reconciliation when items shift
 
 ## Changes
 
-### 1. `QuoteEditorMobileActions.tsx` — Fix bottom bar styling
-- Replace `safe-bottom` class with proper `pb-[env(safe-area-inset-bottom)]` padding
-- Ensure the bar has a solid background and adequate shadow to separate from content
+### 1. `QuoteEditor.tsx` — Memoize callbacks, add stable IDs
+- Wrap `handleLineItemChange`, `addLineItem`, `removeLineItem`, `handleReorderLineItems` with `useCallback`
+- Generate a stable `_tempId` (e.g., `crypto.randomUUID()`) for each new line item so keys don't shift when items are added/removed
 
-### 2. `QuoteEditor.tsx` — Add bottom padding for mobile
-- Add `pb-48` (or similar) to the form container when `isMobile` is true, so content scrolls above the fixed bottom bar and nothing is hidden behind it
+### 2. `SortableLineItem.tsx` — Wrap with `React.memo`
+- Add `React.memo` to prevent re-rendering items whose props haven't changed
+- Since callbacks will now be stable via `useCallback`, only the item that changed will re-render
 
-Two files, minimal changes.
+### 3. `QuoteEditorLineItemsSection.tsx` — Use stable keys
+- Change `key={`line-item-${index}`}` to use the stable `_tempId` or existing `id` from each item
+- Update `SortableContext` items array to use the same stable IDs
+
+## Expected Result
+Typing in item #3 will only re-render item #3 instead of all 10+ items. Adding/removing items won't cause full DOM re-mounts. The page will remain responsive even with 15-20 line items on mobile.
+
+## Files Changed
+| File | Change |
+|------|--------|
+| `QuoteEditor.tsx` | Add `useCallback` to handlers, add `_tempId` to new items |
+| `SortableLineItem.tsx` | Wrap component with `React.memo` |
+| `QuoteEditorLineItemsSection.tsx` | Use stable IDs for keys and DnD context |
+
