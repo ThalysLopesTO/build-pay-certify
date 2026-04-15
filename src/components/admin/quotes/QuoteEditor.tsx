@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save, Send, MessageSquare } from 'lucide-react';
 import { 
@@ -62,8 +62,8 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
     internal_notes: '',
   });
 
-  const [lineItems, setLineItems] = useState<Partial<QuoteLineItem>[]>([
-    { description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }
+  const [lineItems, setLineItems] = useState<(Partial<QuoteLineItem> & { _tempId?: string })[]>([
+    { description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0, _tempId: crypto.randomUUID() }
   ]);
 
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({
@@ -138,7 +138,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
         contract_disclaimer: 'This quote is valid for the next 30 days, after which values may be subject to change.',
         internal_notes: '',
       });
-      setLineItems([{ description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }]);
+      setLineItems([{ description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0, _tempId: crypto.randomUUID() }]);
       setPaymentConfig({
         mode: 'full',
         deposit_type: 'percentage',
@@ -167,7 +167,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
     }));
   };
 
-  const handleLineItemChange = (index: number, field: string, value: string | number) => {
+  const handleLineItemChange = useCallback((index: number, field: string, value: string | number) => {
     setLineItems(prevItems => {
       const updatedItems = [...prevItems];
       updatedItems[index] = { ...updatedItems[index], [field]: value };
@@ -180,30 +180,30 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
       
       return updatedItems;
     });
-  };
+  }, []);
 
-  const addLineItem = () => {
-    setLineItems(prev => [...prev, { description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0 }]);
-  };
+  const addLineItem = useCallback(() => {
+    setLineItems(prev => [...prev, { description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0, _tempId: crypto.randomUUID() }]);
+  }, []);
 
-  const removeLineItem = async (index: number) => {
-    const item = lineItems[index];
-    
-    if (item.id) {
-      await deleteLineItem.mutateAsync({ id: item.id, quoteId: quote!.id });
-    }
-    
-    setLineItems(prev => prev.filter((_, i) => i !== index));
-  };
+  const removeLineItem = useCallback(async (index: number) => {
+    setLineItems(prev => {
+      const item = prev[index];
+      if (item.id && quote) {
+        deleteLineItem.mutate({ id: item.id, quoteId: quote.id });
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  }, [quote, deleteLineItem]);
 
-  const handleReorderLineItems = (startIndex: number, endIndex: number) => {
+  const handleReorderLineItems = useCallback((startIndex: number, endIndex: number) => {
     setLineItems(prevItems => {
       const result = Array.from(prevItems);
       const [removed] = result.splice(startIndex, 1);
       result.splice(endIndex, 0, removed);
       return result;
     });
-  };
+  }, []);
 
   const calculateSubtotal = () => {
     return lineItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);

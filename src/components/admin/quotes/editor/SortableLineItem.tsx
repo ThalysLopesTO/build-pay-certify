@@ -17,7 +17,7 @@ interface SortableLineItemProps {
   showRemoveButton: boolean;
 }
 
-const SortableLineItem: React.FC<SortableLineItemProps> = ({
+const SortableLineItemInner: React.FC<SortableLineItemProps> = ({
   id,
   index,
   item,
@@ -232,5 +232,7 @@ const SortableLineItem: React.FC<SortableLineItemProps> = ({
     </div>
   );
 };
+
+const SortableLineItem = React.memo(SortableLineItemInner);
 
 export default SortableLineItem;
