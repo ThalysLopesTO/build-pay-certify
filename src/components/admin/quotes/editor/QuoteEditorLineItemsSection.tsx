@@ -69,7 +69,7 @@ const QuoteEditorLineItemsSection: React.FC<QuoteEditorLineItemsSectionProps> = 
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={lineItems.map((_, i) => `line-item-${i}`)}
+            items={lineItems.map((item) => (item as any)._tempId || item.id || crypto.randomUUID())}
             strategy={verticalListSortingStrategy}
           >
             {/* Desktop Table View - Hidden on mobile */}
@@ -86,35 +86,41 @@ const QuoteEditorLineItemsSection: React.FC<QuoteEditorLineItemsSectionProps> = 
 
               {/* Line Items */}
               <div className="space-y-0">
-                {lineItems.map((item, index) => (
-                  <SortableLineItem
-                    key={`line-item-${index}`}
-                    id={`line-item-${index}`}
-                    index={index}
-                    item={item}
-                    isMobile={false}
-                    handleLineItemChange={handleLineItemChange}
-                    removeLineItem={removeLineItem}
-                    showRemoveButton={lineItems.length > 1}
-                  />
-                ))}
+                {lineItems.map((item, index) => {
+                  const stableId = (item as any)._tempId || item.id || `line-item-${index}`;
+                  return (
+                    <SortableLineItem
+                      key={stableId}
+                      id={stableId}
+                      index={index}
+                      item={item}
+                      isMobile={false}
+                      handleLineItemChange={handleLineItemChange}
+                      removeLineItem={removeLineItem}
+                      showRemoveButton={lineItems.length > 1}
+                    />
+                  );
+                })}
               </div>
             </div>
 
             {/* Mobile Card View - Visible only on mobile */}
             <div className="md:hidden space-y-4">
-              {lineItems.map((item, index) => (
-                <SortableLineItem
-                  key={`line-item-${index}`}
-                  id={`line-item-${index}`}
-                  index={index}
-                  item={item}
-                  isMobile={true}
-                  handleLineItemChange={handleLineItemChange}
-                  removeLineItem={removeLineItem}
-                  showRemoveButton={lineItems.length > 1}
-                />
-              ))}
+              {lineItems.map((item, index) => {
+                const stableId = (item as any)._tempId || item.id || `line-item-${index}`;
+                return (
+                  <SortableLineItem
+                    key={stableId}
+                    id={stableId}
+                    index={index}
+                    item={item}
+                    isMobile={true}
+                    handleLineItemChange={handleLineItemChange}
+                    removeLineItem={removeLineItem}
+                    showRemoveButton={lineItems.length > 1}
+                  />
+                );
+              })}
             </div>
           </SortableContext>
         </DndContext>
