@@ -20,7 +20,7 @@ import {
 import SortableLineItem from './SortableLineItem';
 
 interface QuoteEditorLineItemsSectionProps {
-  lineItems: Partial<QuoteLineItem>[];
+  lineItems: (Partial<QuoteLineItem> & { _tempId?: string })[];
   handleLineItemChange: (index: number, field: string, value: string | number) => void;
   addLineItem: () => void;
   removeLineItem: (index: number) => void;
