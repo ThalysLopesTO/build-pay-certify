@@ -14,7 +14,7 @@ const QuoteEditorMobileActions: React.FC<QuoteEditorMobileActionsProps> = ({
   onCancel,
 }) => {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-20 bg-background border-t shadow-lg safe-bottom">
+    <div className="fixed bottom-0 left-0 right-0 z-20 bg-background border-t shadow-[0_-4px_12px_rgba(0,0,0,0.1)] pb-[env(safe-area-inset-bottom)]">
       <div className="px-4 py-3 space-y-2">
         <Button 
           type="button" 

@@ -400,7 +400,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
       )}
 
       {/* Main Editor Content */}
-      <div className={`max-w-[1600px] mx-auto px-4 md:px-6 py-4 md:py-8 ${isMobile ? 'pb-32' : ''}`}>
+      <div className={<div className={`max-w-[1600px] mx-auto px-4 md:px-6 py-4 md:py-8 ${isMobile ? 'pb-48' : ''}`}>}>
         <form onSubmit={handleSubmit}>
           <div className={`grid gap-6 md:gap-8 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[1fr_400px]'}`}>
             {/* LEFT COLUMN */}
