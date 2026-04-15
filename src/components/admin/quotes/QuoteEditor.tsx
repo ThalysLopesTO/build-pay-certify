@@ -62,7 +62,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
     internal_notes: '',
   });
 
-  const [lineItems, setLineItems] = useState<Partial<QuoteLineItem>[]>([
+  const [lineItems, setLineItems] = useState<(Partial<QuoteLineItem> & { _tempId?: string })[]>([
     { description: '', vendor: '', quantity: 1, unit_price: 0, amount: 0, _tempId: crypto.randomUUID() }
   ]);
 
