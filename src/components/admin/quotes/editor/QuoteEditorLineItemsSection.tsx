@@ -49,8 +49,9 @@ const QuoteEditorLineItemsSection: React.FC<QuoteEditorLineItemsSectionProps> = 
     
     if (!over || active.id === over.id) return;
     
-    const oldIndex = lineItems.findIndex((_, i) => `line-item-${i}` === active.id);
-    const newIndex = lineItems.findIndex((_, i) => `line-item-${i}` === over.id);
+    const getStableId = (item: any, i: number) => item._tempId || item.id || `line-item-${i}`;
+    const oldIndex = lineItems.findIndex((item, i) => getStableId(item, i) === active.id);
+    const newIndex = lineItems.findIndex((item, i) => getStableId(item, i) === over.id);
     
     if (oldIndex !== -1 && newIndex !== -1) {
       onReorderLineItems(oldIndex, newIndex);
