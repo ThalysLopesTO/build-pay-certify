@@ -186,13 +186,10 @@ export const groupedMenuItems = {
   employees: [
     menuData.find(item => item.id === 'employees')!,
     menuData.find(item => item.id === 'employee-registration')!,
-    menuData.find(item => item.id === 'live-punch-monitor')!,
-    menuData.find(item => item.id === 'time-summary')!,
     menuData.find(item => item.id === 'time-requests')!,
   ],
   managementOps: [
-    menuData.find(item => item.id === 'timesheets')!,
-    menuData.find(item => item.id === 'payroll-summary')!,
+    menuData.find(item => item.id === 'live-punch-monitor')!,
   ],
   invoices: [
     menuData.find(item => item.id === 'clients')!,
