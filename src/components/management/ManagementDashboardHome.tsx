@@ -67,16 +67,10 @@ const ManagementDashboardHome: React.FC<ManagementDashboardHomeProps> = ({ setAc
       id: 'my-timesheet'
     },
     {
-      title: 'Timesheet Approval',
-      description: 'Review and approve timesheets',
+      title: 'Live Punch Monitor',
+      description: 'Track active employee punches',
       icon: Clock,
-      id: 'timesheets'
-    },
-    {
-      title: 'Payroll Summary',
-      description: 'View payroll calculations',
-      icon: DollarSign,
-      id: 'payroll-summary'
+      id: 'live-punch-monitor'
     },
     {
       title: 'Bills & Expenses',
