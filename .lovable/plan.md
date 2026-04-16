@@ -1,31 +1,75 @@
 
 
-## Current vs Desired Behavior
+# Redesign Time Requests Page — SaaS Polish + Live Punch Integration Clarity
 
-**Daily Hours Summary button** (in Live Punch Monitor):
-- Current: visible to `admin`, `super_admin`, `management` ✅ matches your rule ("only admins and managers")
-- No change needed.
+## Goals
+Modernize the Time Requests page to match the project's "Untitled UI" aesthetic (consistent with the redesigned Live Punch Monitor), improve UX for reviewing/approving requests, and make the Live Punch Monitor link explicit. **No logic or data changes** — same approve/decline/edit/delete flows, same RPC (`approve_missed_punch_request`) that already auto-syncs the timesheet (which feeds Live Punch Monitor + employee history).
 
-**Employee Hours edit buttons** (inside the Daily Hours Summary panel — `EmployeeHoursBreakdown`):
-- Current: only `admin`, `super_admin`, `management` get edit buttons (because `canEdit` is derived inside `DailyHoursSummary` which Foremen can't even open).
-- Your rule: **Admin, Manager AND Foreman** should be able to edit employee hours.
+## What's Wrong Today
+- Heavy gradients, `text-3xl font-bold`, oversized 4-color borders, decorative card stacking
+- Filters are in a big separate card with `border-t-4` — disconnected from content
+- Dense info blocks: 6 grey tinted tiles repeating the same visual weight
+- No visual cue that approval will write straight to the Live Punch Monitor
+- No quick metrics (Pending / Approved this week / Declined) for situational awareness
+- Approve/Decline buttons take full-width on top of Edit/Delete row — too tall, redundant on mobile
 
-### The conflict
-Foremen can't currently reach the edit UI because the entire `DailyHoursSummary` panel (where `EmployeeHoursBreakdown` lives) is gated to admin/manager only.
+## Changes (single file: `TimeRequestsManagement.tsx`)
 
-### Two ways to resolve — please pick one
+### 1. Page header
+- Cleaner heading (`text-2xl font-semibold`, single small Clock icon, muted subtitle)
+- Add an info hint pill: "Approved requests sync automatically to Live Punch Monitor" with a subtle ArrowRight icon
 
-**Option A — Keep summary admin/manager only, but expose edit elsewhere for Foremen**
-Foremen edit punches via the existing Live Punch Monitor row actions (not the Daily Hours Summary). I'd verify foremen already have inline edit access on the main monitor table and leave this file alone. (No code change needed if already true.)
+### 2. New Summary Cards row (3 cards)
+Flat bordered cards matching Live Punch Monitor's new design:
+- **Pending Review** (amber dot) — count of pending requests
+- **Approved** (emerald dot) — count of approved requests  
+- **Declined** (red dot) — count of declined requests
+Same `text-3xl font-semibold`, soft tinted icon container (`h-9 w-9 bg-color/10`)
 
-**Option B — Let Foremen open Daily Hours Summary too (for editing only)**
-Add `foreman` to `ALLOWED_ROLES` so Foremen see the button and can use the breakdown to edit. This contradicts what you said ("only admins and managers can see the button").
+### 3. Unified Filter Bar
+- Wrap Status + Jobsite filters in one bordered card (`rounded-lg border bg-card`)
+- Compact inline triggers: icon inside the SelectTrigger (Activity / Building), no stacked labels
+- Add a third filter: **Date range** (Today / This Week / This Month / All) — purely client-side filter on `request_date`
+- Add "Clear filters" link button when any filter is active
 
-### Recommendation
-**Option A.** Your stated rule is internally consistent: Foremen edit hours through the Live Punch Monitor's own row controls; the Daily Hours Summary stays an admin/manager reporting tool. I'll save this as a memory rule and verify Foreman edit access on the main monitor table — no code change unless I find a gap.
+### 4. Tabs polish
+- Slimmer tabs (`h-10`), use `BadgeWithDot`-style solid count badges (matches project memory rule)
+- Rename "Active Requests" → "Active" / "Archived Requests" → "Approved & Archived" for clarity
 
-### Plan
-1. Save memory rule: "Daily Hours Summary visible only to admin/management; Foremen edit punches via Live Punch Monitor row actions."
-2. Inspect `LivePunchMonitor` row-level edit gating to confirm Foremen already have edit access there.
-3. If Foremen are missing edit access on the main monitor, add `foreman` to that gate (one line). If they already have it, no code change.
+### 5. Redesigned Request Card
+- Remove the thick 4px left border; use a small status dot + status pill in the top-right
+- Two-row info layout instead of 6 tinted tiles:
+  - Row 1 (employee strip): Avatar circle with initials → name + employee ID + submitted-at timestamp → status badge
+  - Row 2 (request details, compact inline): Date • Type (In/Out/Both) • Jobsite • Supervisor — separated by subtle dividers, single muted background
+  - Row 3 (corrected times, only when present): two pill-style time chips with arrows: `Clock In → 6:25 AM` / `Clock Out → 2:04 PM`
+  - Row 4: Reason in a muted bordered block with FileText icon
+  - Row 5 (declined only): red-tinted decline reason block
+- Footer actions: Approve (primary green) + Decline (ghost red) for pending, Edit + Delete (ghost icons only on the right) for admin/management
+- After Approve button: small inline note "Will create/update timesheet for this employee on [date]" — sets expectation that it auto-flows to Live Punch Monitor
+
+### 6. Empty states
+- Replace dashed border boxes with a subtle centered illustration block matching shadcn empty-state pattern (small icon, heading, muted helper text)
+
+### 7. Decline + Edit + Delete dialogs
+- Keep functionality identical
+- Apply consistent header styling (smaller icon, semantic tokens)
+- Edit dialog: tighten spacing, group corrected times side-by-side when "Both" is selected
+
+## Live Punch Monitor Integration (verified, no change needed)
+The `useApproveMissedPunchRequest` hook already calls the `approve_missed_punch_request` RPC which creates/updates the timesheet record, then invalidates `['live-punch-monitor']`, `['live-punch-data']`, `['employee-timesheets']`, and `['timesheets']`. So an approved request already updates Live Punch Monitor and the employee's history in real time. The redesign just makes this **visible** to the user via the header hint and the per-request inline note.
+
+## What Stays Identical
+- All hooks, queries, mutations, RPC calls
+- Approve / Decline / Edit / Delete logic and permissions (`admin`, `super_admin`, `management` for edit/delete)
+- Active vs Archived split (pending+declined vs approved)
+- Decline-with-reason flow, delete confirmation, edit form fields
+- Mobile responsive behavior
+
+## Files Changed
+| File | Change |
+|------|--------|
+| `src/components/admin/TimeRequestsManagement.tsx` | Header redesign, add summary cards row, unified filter bar with date filter, polished cards, empty states, dialog styling |
+
+## Memory Update
+Save: `mem://features/timesheets/time-requests-live-punch-sync` — "Approving a missed punch request via `approve_missed_punch_request` RPC creates or updates the timesheet entry, automatically reflecting in Live Punch Monitor and the employee's history. No separate write needed."
 
