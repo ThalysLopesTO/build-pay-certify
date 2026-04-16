@@ -1,35 +1,44 @@
 
 
-# Fix Quote Editor Freezing with Many Line Items
+# Redesign Live Punch Monitor — Cards & Filter Bar
 
-## Problem
-When adding 10+ line items on mobile, every keystroke triggers a full re-render of all line items. With each item containing 4-5 inputs plus a DnD sortable wrapper, this causes the page to freeze. Root causes:
+## Goals
+Make the summary cards and filter bar look cleaner, more professional, and consistent with the project's "Untitled UI / shadcn" SaaS aesthetic. **No logic changes** — same data, same handlers, same filters.
 
-1. `SortableLineItem` is not memoized — all items re-render on every single keystroke
-2. `handleLineItemChange`, `addLineItem`, `removeLineItem` are recreated every render, breaking any memoization
-3. Index-based keys (`line-item-${index}`) cause unnecessary DOM reconciliation when items shift
+## What's Wrong Today
+- **Cards**: Heavy gradients, oversized 4xl black numbers, fake "+12% / +8% / +5%" trend pills (decorative, not real data), oversized icon tiles with shadows, and a prominent "Live Updates" pill on every card — feels noisy and cluttered.
+- **Filters**: Generic outlined inputs with redundant icon labels above and a separate active-filters badge row. Visually disconnected from the cards.
 
 ## Changes
 
-### 1. `QuoteEditor.tsx` — Memoize callbacks, add stable IDs
-- Wrap `handleLineItemChange`, `addLineItem`, `removeLineItem`, `handleReorderLineItems` with `useCallback`
-- Generate a stable `_tempId` (e.g., `crypto.randomUUID()`) for each new line item so keys don't shift when items are added/removed
+### 1. `LivePunchSummaryCards.tsx` — Cleaner stat cards
+- Remove gradients, hover scale, and heavy shadows. Use a flat card with subtle border (matches `TableCard` aesthetic).
+- Drop the **fake trend pills** (`+12%`, `+8%`, `+5%`) — they aren't real metrics.
+- Smaller, refined icon container (rounded-lg, `h-9 w-9`, soft tinted bg, no shadow).
+- Number sizing: `text-3xl font-semibold` (not `text-4xl font-black`).
+- Title: smaller, normal-case `text-sm font-medium text-muted-foreground` (drop uppercase tracking).
+- Replace per-card "Live Updates" badge with a single subtle green dot + "Live" inline next to the value when viewing today.
+- Keep grid `1 / md:3` responsive layout and the same 3 metrics.
 
-### 2. `SortableLineItem.tsx` — Wrap with `React.memo`
-- Add `React.memo` to prevent re-rendering items whose props haven't changed
-- Since callbacks will now be stable via `useCallback`, only the item that changed will re-render
+### 2. `LivePunchFilters.tsx` — Unified filter bar
+- Wrap filters in a single bordered card (`rounded-lg border bg-card`) for visual cohesion with the new stat cards.
+- Keep the "Filter Controls" header row + "Clear All Filters" button (same logic).
+- Replace stacked label-above-input layout with **compact inline triggers**: icon + value inside each Select/Popover trigger button (e.g., calendar icon + "Apr 16, 2026"), removing the separate label row to save vertical space.
+- Same 4 controls (Date, Jobsite, Employee, Status), same handlers.
+- Active filter badges row: keep, but use the project's `BadgeWithDot` style (solid, no outline) for consistency with project memory.
 
-### 3. `QuoteEditorLineItemsSection.tsx` — Use stable keys
-- Change `key={`line-item-${index}`}` to use the stable `_tempId` or existing `id` from each item
-- Update `SortableContext` items array to use the same stable IDs
-
-## Expected Result
-Typing in item #3 will only re-render item #3 instead of all 10+ items. Adding/removing items won't cause full DOM re-mounts. The page will remain responsive even with 15-20 line items on mobile.
+### 3. Visual consistency
+- Use semantic tokens (`text-foreground`, `text-muted-foreground`, `bg-card`, `border`) — no hardcoded `bg-emerald-50`, `text-blue-600` etc. for surfaces. Icon accent colors stay (emerald/blue/orange) but applied only to the icon glyph, not large background tiles.
 
 ## Files Changed
 | File | Change |
 |------|--------|
-| `QuoteEditor.tsx` | Add `useCallback` to handlers, add `_tempId` to new items |
-| `SortableLineItem.tsx` | Wrap component with `React.memo` |
-| `QuoteEditorLineItemsSection.tsx` | Use stable IDs for keys and DnD context |
+| `LivePunchSummaryCards.tsx` | Flatten cards, remove fake trend %, simplify icon + Live indicator |
+| `LivePunchFilters.tsx` | Wrap in card, compact inline filter triggers, polish active badges |
+
+## What Stays Identical
+- All props, hooks, handlers, filter logic, data calculations
+- 3 stat metrics and their values
+- 4 filter controls and their behavior
+- Mobile filters component (`LivePunchMobileFilters.tsx`) — untouched
 
