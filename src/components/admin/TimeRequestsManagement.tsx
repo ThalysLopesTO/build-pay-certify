@@ -702,27 +702,29 @@ const TimeRequestsManagement = () => {
         <TabsList className="grid w-full grid-cols-2 h-10">
           <TabsTrigger value="active" className="flex items-center gap-2 text-sm">
             <span>Active</span>
-            <BadgeWithDot
-              type="solid"
-              customColor="hsl(38 92% 50%)"
-              size="sm"
-              hideDot
-              className="ml-0.5 px-1.5"
+            <span
+              className={cn(
+                'inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[11px] font-semibold tabular-nums',
+                activeTab === 'active'
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
+                  : 'bg-muted text-muted-foreground'
+              )}
             >
               {filteredActiveRequests.length}
-            </BadgeWithDot>
+            </span>
           </TabsTrigger>
           <TabsTrigger value="archived" className="flex items-center gap-2 text-sm">
             <span>Approved & Archived</span>
-            <BadgeWithDot
-              type="solid"
-              customColor="hsl(142 71% 45%)"
-              size="sm"
-              hideDot
-              className="ml-0.5 px-1.5"
+            <span
+              className={cn(
+                'inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[11px] font-semibold tabular-nums',
+                activeTab === 'archived'
+                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                  : 'bg-muted text-muted-foreground'
+              )}
             >
               {filteredArchivedRequests.length}
-            </BadgeWithDot>
+            </span>
           </TabsTrigger>
         </TabsList>
 
