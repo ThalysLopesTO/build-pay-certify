@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { BadgeWithDot } from '@/components/base/badges/badges';
 import {
   Select,
   SelectContent,
@@ -16,7 +15,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Calendar as CalendarIcon, Building, Users, Activity } from 'lucide-react';
+import { Calendar as CalendarIcon, Building, Users, Activity, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/hooks/new/useUsers';
@@ -46,181 +45,186 @@ const LivePunchFilters: React.FC<LivePunchFiltersProps> = ({
   setStatusFilter,
   jobsites,
   onClearFilters,
-  hasActiveFilters
+  hasActiveFilters,
 }) => {
   const { data } = useEmployees();
   const employees = data?.activeEmployees ?? [];
 
+  const selectedEmployeeObj = employees?.find((e) => e.user_id === selectedEmployee);
+  const selectedJobsiteObj = jobsites?.find((j) => j.id === selectedJobsite);
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="rounded-lg border bg-card shadow-sm">
+      <div className="flex items-center justify-between border-b px-5 py-3">
         <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-primary"></div>
-          <h3 className="text-lg font-semibold text-foreground">Filter Controls</h3>
+          <span className="h-2 w-2 rounded-full bg-primary" />
+          <h3 className="text-sm font-semibold text-foreground">Filter Controls</h3>
         </div>
         {hasActiveFilters && (
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClearFilters}
-            className="text-xs"
+            className="h-7 text-xs text-muted-foreground hover:text-foreground"
           >
-            Clear All Filters
+            Clear all
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Date Picker */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4 text-primary" />
-            Date Filter
-          </label>
-          <Popover>
-            <PopoverTrigger asChild>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="h-10 w-full justify-start gap-2 font-normal"
+            >
+              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="truncate">
+                {selectedDate ? format(selectedDate, 'PPP') : 'All Dates'}
+              </span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <div className="border-b p-2">
               <Button
-                variant="outline"
-                className="w-full justify-start text-left font-normal hover:bg-accent/50 border-accent/30"
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedDate(null)}
+                className="w-full justify-start text-xs"
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "PPP") : "All Dates"}
+                Show all dates
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <div className="p-2 border-b">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setSelectedDate(null)}
-                  className="w-full text-left justify-start text-xs"
-                >
-                  Show All Dates
-                </Button>
-              </div>
-              <CalendarComponent
-                mode="single"
-                selected={selectedDate || undefined}
-                onSelect={(date) => setSelectedDate(date || null)}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+            </div>
+            <CalendarComponent
+              mode="single"
+              selected={selectedDate || undefined}
+              onSelect={(date) => setSelectedDate(date || null)}
+              initialFocus
+              className={cn('p-3 pointer-events-auto')}
+            />
+          </PopoverContent>
+        </Popover>
 
         {/* Jobsite Filter */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground flex items-center gap-2">
-            <Building className="h-4 w-4 text-primary" />
-            Jobsite
-          </label>
-          <Select value={selectedJobsite} onValueChange={setSelectedJobsite}>
-            <SelectTrigger className="hover:bg-accent/50 border-accent/30">
-              <SelectValue placeholder="All Jobsites" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Jobsites</SelectItem>
-              {jobsites?.map((jobsite) => (
-                <SelectItem key={jobsite.id} value={jobsite.id}>
-                  {jobsite.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={selectedJobsite} onValueChange={setSelectedJobsite}>
+          <SelectTrigger className="h-10 gap-2">
+            <Building className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+            <SelectValue placeholder="All Jobsites" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Jobsites</SelectItem>
+            {jobsites?.map((jobsite) => (
+              <SelectItem key={jobsite.id} value={jobsite.id}>
+                {jobsite.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {/* Employee Filter */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
-            Employee
-          </label>
-          <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-            <SelectTrigger className="hover:bg-accent/50 border-accent/30">
-              <SelectValue placeholder="All Employees" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Employees</SelectItem>
-              {employees?.map((employee) => (
-                <SelectItem key={employee.user_id} value={employee.user_id}>
-                  {employee.first_name} {employee.last_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+          <SelectTrigger className="h-10 gap-2">
+            <Users className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+            <SelectValue placeholder="All Employees" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Employees</SelectItem>
+            {employees?.map((employee) => (
+              <SelectItem key={employee.user_id} value={employee.user_id}>
+                {employee.first_name} {employee.last_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {/* Status Filter */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground flex items-center gap-2">
-            <Activity className="h-4 w-4 text-primary" />
-            Status
-          </label>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="hover:bg-accent/50 border-accent/30">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Clocked In</SelectItem>
-              <SelectItem value="completed">Clocked Out</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-10 gap-2">
+            <Activity className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Clocked In</SelectItem>
+            <SelectItem value="completed">Clocked Out</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-      
+
       {/* Active Filters Display */}
-      <div className="flex flex-wrap gap-2">
-        {selectedJobsite !== 'all' && (
-          <Badge variant="secondary" className="gap-1">
-            Jobsite: {jobsites?.find(j => j.id === selectedJobsite)?.name}
-            <button 
-              onClick={() => setSelectedJobsite('all')}
-              className="ml-1 hover:bg-destructive/20 rounded-full"
+      {(selectedJobsite !== 'all' ||
+        selectedEmployee !== 'all' ||
+        statusFilter !== 'all' ||
+        selectedDate) && (
+        <div className="flex flex-wrap items-center gap-2 border-t px-4 py-3">
+          <span className="text-xs font-medium text-muted-foreground">Active:</span>
+
+          {selectedDate && (
+            <BadgeWithDot color="brand" size="sm">
+              <span className="inline-flex items-center gap-1">
+                {format(selectedDate, 'MMM dd, yyyy')}
+                <button
+                  onClick={() => setSelectedDate(null)}
+                  className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10"
+                  aria-label="Remove date filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            </BadgeWithDot>
+          )}
+
+          {selectedJobsite !== 'all' && (
+            <BadgeWithDot color="blue" size="sm">
+              <span className="inline-flex items-center gap-1">
+                {selectedJobsiteObj?.name}
+                <button
+                  onClick={() => setSelectedJobsite('all')}
+                  className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10"
+                  aria-label="Remove jobsite filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            </BadgeWithDot>
+          )}
+
+          {selectedEmployee !== 'all' && (
+            <BadgeWithDot color="indigo" size="sm">
+              <span className="inline-flex items-center gap-1">
+                {selectedEmployeeObj?.first_name} {selectedEmployeeObj?.last_name}
+                <button
+                  onClick={() => setSelectedEmployee('all')}
+                  className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10"
+                  aria-label="Remove employee filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            </BadgeWithDot>
+          )}
+
+          {statusFilter !== 'all' && (
+            <BadgeWithDot
+              color={statusFilter === 'active' ? 'success' : 'gray'}
+              size="sm"
             >
-              ×
-            </button>
-          </Badge>
-        )}
-        {selectedEmployee !== 'all' && (
-          <Badge variant="secondary" className="gap-1">
-            Employee: {employees?.find(e => e.user_id === selectedEmployee)?.first_name} {employees?.find(e => e.user_id === selectedEmployee)?.last_name}
-            <button 
-              onClick={() => setSelectedEmployee('all')}
-              className="ml-1 hover:bg-destructive/20 rounded-full"
-            >
-              ×
-            </button>
-          </Badge>
-        )}
-        {statusFilter !== 'all' && (
-          <Badge variant="secondary" className="gap-1">
-            Status: {statusFilter === 'active' ? 'Clocked In' : 'Clocked Out'}
-            <button 
-              onClick={() => setStatusFilter('all')}
-              className="ml-1 hover:bg-destructive/20 rounded-full"
-            >
-              ×
-            </button>
-          </Badge>
-        )}
-        {selectedDate && (
-          <Badge variant="secondary" className="gap-1">
-            Date: {format(selectedDate, "MMM dd, yyyy")}
-            <button 
-              onClick={() => setSelectedDate(null)}
-              className="ml-1 hover:bg-destructive/20 rounded-full"
-            >
-              ×
-            </button>
-          </Badge>
-        )}
-        {!selectedDate && (selectedEmployee !== 'all' || selectedJobsite !== 'all' || statusFilter !== 'all') && (
-          <Badge variant="outline" className="gap-1">
-            All Dates
-          </Badge>
-        )}
-      </div>
+              <span className="inline-flex items-center gap-1">
+                {statusFilter === 'active' ? 'Clocked In' : 'Clocked Out'}
+                <button
+                  onClick={() => setStatusFilter('all')}
+                  className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10"
+                  aria-label="Remove status filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            </BadgeWithDot>
+          )}
+        </div>
+      )}
     </div>
   );
 };
