@@ -471,7 +471,7 @@ const SummaryCard = ({
   tone: 'amber' | 'emerald' | 'red';
 }) => {
   const toneClasses = {
-    amber: { bg: 'bg-amber-100/60 dark:bg-amber-900/20 ring-1 ring-amber-200/60 dark:ring-amber-800/30', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
+    amber: { bg: 'ring-1 ring-amber-200/60 dark:ring-amber-800/30 bg-primary-foreground', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
     emerald: { bg: 'bg-emerald-100/60 dark:bg-emerald-900/20 ring-1 ring-emerald-200/60 dark:ring-emerald-800/30', text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
     red: { bg: 'bg-red-100/60 dark:bg-red-900/20 ring-1 ring-red-200/60 dark:ring-red-800/30', text: 'text-red-600 dark:text-red-400', dot: 'bg-red-500' },
   }[tone];
