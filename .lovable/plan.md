@@ -1,53 +1,54 @@
 
+## Goal
+Hide three pages from navigation (**Timesheets**, **Payroll Summary**, **Time Summary**) and move **Live Punch Monitor** under the **Management Operations** group — without deleting any underlying components, routes, hooks, or DB logic.
 
-Looking at the screenshot, the badges that need changing are visible in the Time Requests page:
+## Strategy: Hide, Don't Delete
+- Keep `EmployeeTimesheets`, `PayrollSummary`, `TimeSummaryPage`, `LivePunchMonitor` components intact.
+- Keep their `case` handlers in `AdminDashboard.tsx` and `ManagementDashboard.tsx` (so any deep links / emails / dashboard quick-action cards that still point there don't break — they just become unreachable from the sidebar).
+- Only remove the **menu entries** from the sidebars and rewire the **Live Punch Monitor** menu position.
 
-1. **Status badge top-right of card**: "Pending" — currently a solid dark amber/brown filled badge with white text (looks heavy and clashes with the rest of the page)
-2. **Tab count badges**: "3" (orange filled circle) and "5" (green filled circle) — heavy filled circles
-3. **Stat card icon tiles**: Inbox (dark amber filled square), Check (dark green filled square), X (dark red filled square) — these dark filled squares look out of place with the otherwise light/flat SaaS design
+This minimizes blast radius — no imports removed, no shared hooks touched, no DB or realtime channels affected.
 
-The rest of the page (sync hint pill, time chips "Clock In → 6:25 AM", filter triggers) looks clean — those should stay.
+## Files to Change
 
-The project's `BadgeWithDot` system uses soft tinted backgrounds (`bg-amber-50 text-amber-700 border-amber-200`) which would match much better than the current heavy solid fills.
+### 1. `src/components/admin/sidebar/menuData.ts`
+- **Remove from `groupedMenuItems.employees`**: `time-summary`
+- **Move `live-punch-monitor`**: from `groupedMenuItems.employees` → into `groupedMenuItems.managementOps` (as the first item)
+- **Remove from `groupedMenuItems.managementOps`**: `timesheets`, `payroll-summary`
+- Result: `managementOps` group becomes `[live-punch-monitor]` only. `employees` group keeps `employees`, `employee-registration`, `time-requests`.
+- Leave the unused `menuData` entries (`timesheets`, `payroll-summary`, `time-summary`) in the array — harmless and keeps types/icons intact.
 
-## Plan
+### 2. `src/components/management/sidebar/managementMenuData.ts`
+In `managementMenuItems.operations`, remove these three items:
+- `Timesheet Approval` (id: `timesheets`)
+- `Payroll Summary` (id: `payroll-summary`)
+- `Time Summary` (id: `time-summary`)
 
-# Soften Badges on Time Requests Page
+`Live Punch Monitor` already lives under `operations` here — no move needed.
 
-## Problem
-Three badge styles look heavy and out of sync with the rest of the SaaS design:
-- **Status badge** ("Pending"): solid dark amber fill, white text → too dark
-- **Tab count badges** ("3", "5"): solid orange/green filled circles → too loud
-- **Stat card icon tiles**: dark filled squares (amber/green/red) → clash with the flat aesthetic
+### 3. `src/components/admin/dashboard/AdminDashboardContent.tsx`
+Quick Actions still link to the removed tabs. Update:
+- Remove the **"My Timesheet"**, **"Timesheet Approval"**, and **"Payroll Summary"** entries from the `quickActions` array (keep "Bills & Expenses").
+- Add replacement quick actions so the grid still has 4 cards: suggest **Live Punch Monitor** (`live-punch-monitor`), **Time Requests** (`time-requests`), **Daily Reports** (`daily-reports`).
+- Update the two stat cards (`Total Hours This Week`, `Timesheets (Last 7 Days)`) — re-target their `onClick` from `'timesheets'` → `'live-punch-monitor'` so clicks still go somewhere meaningful.
 
-## Changes (single file: `TimeRequestsManagement.tsx`)
+### 4. `src/components/management/ManagementDashboardHome.tsx`
+Same treatment in the Management home quick-actions — replace `timesheets` and `payroll-summary` cards with `live-punch-monitor` and another relevant action (e.g. `bills-expenses` if not already present, or `daily-tasks`).
 
-### 1. Status badge (top-right of each request card)
-Replace solid dark badge with project's standard `BadgeWithDot` soft-tint style:
-- Pending → `color="warning"` (soft amber bg, amber dot)
-- Approved → `color="success"` (soft green bg, green dot)
-- Declined → `color="error"` (soft red bg, red dot)
+## What We're NOT Touching
+- `AdminDashboard.tsx` / `ManagementDashboard.tsx` route switch — all `case` handlers stay.
+- Component files (`EmployeeTimesheets.tsx`, `PayrollSummary.tsx`, `TimeSummaryPage.tsx`, `LivePunchMonitor.tsx`).
+- Hooks (`useDailyHoursSummary`, `useUpdateTimesheet`, etc.) — all DB/timesheet logic preserved.
+- `UserRolesTab.tsx` permission keys — leaving them protects existing role configs.
+- Foreman dashboard, employee mobile nav, missed-punch sync, realtime channels.
 
-### 2. Tab count badges ("Active 3" / "Approved & Archived 5")
-Replace solid filled circles with subtle inline counts:
-- Use a small rounded pill with soft tinted bg matching the tab state (`bg-muted text-muted-foreground` when inactive, `bg-primary/10 text-primary` when active)
-- Or use `BadgeWithDot` with `hideDot` and `size="sm"` for consistency
+## Section Label Note
+The Admin sidebar's `Management Operations` group label/icon stays as is. With only Live Punch Monitor inside, it's a single-item group — acceptable, and matches the user's "move under Management Operations" instruction exactly.
 
-### 3. Summary card icon containers (Pending / Approved / Declined)
-Replace dark filled squares with the soft-tint pattern already used in Live Punch Monitor cards:
-- `h-9 w-9 rounded-lg bg-amber-50` with `text-amber-600` icon (Pending)
-- `h-9 w-9 rounded-lg bg-emerald-50` with `text-emerald-600` icon (Approved)
-- `h-9 w-9 rounded-lg bg-red-50` with `text-red-600` icon (Declined)
-
-## What Stays Identical
-- All logic, handlers, data, filters, hooks
-- Sync hint pill at top (looks good)
-- Time chips ("Clock In → 6:25 AM") (look good)
-- Filter bar and dropdowns (look good)
-- Card layout and content structure
-
-## Files Changed
-| File | Change |
-|------|--------|
-| `src/components/admin/TimeRequestsManagement.tsx` | Swap heavy badges for soft-tint `BadgeWithDot` style; flatten icon tiles in summary cards; refine tab count chips |
-
+## Verification Checklist (post-implement)
+1. Admin sidebar: no Timesheets, Payroll Summary, or Time Summary entries visible.
+2. Admin sidebar: Live Punch Monitor appears under "Management Operations" (not "Employee Management").
+3. Management sidebar: no Timesheet Approval, Payroll Summary, Time Summary entries.
+4. Admin Dashboard quick actions: no broken links, 4 cards render, each click navigates to a valid section.
+5. Time-clock punch-in/out still works (LivePunchMonitor still receives realtime updates because component & hooks untouched).
+6. Email deep-links containing `?tab=timesheets` etc. still render the page (route handler preserved).
