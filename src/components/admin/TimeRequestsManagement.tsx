@@ -1,76 +1,108 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useMemo, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, MapPin, User, FileText, AlertCircle, Check, X, Filter, Archive, Clock3, History, Edit, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { useMissedPunchRequests, useApproveMissedPunchRequest, useDeclineMissedPunchRequest, useEditMissedPunchRequest, useDeleteMissedPunchRequest } from '@/hooks/useMissedPunchRequests';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  FileText,
+  AlertCircle,
+  Check,
+  X,
+  Edit,
+  Trash2,
+  ArrowRight,
+  Activity,
+  Building2,
+  CalendarRange,
+  Inbox,
+  CheckCircle2,
+  XCircle,
+  ArrowDownToLine,
+  Paperclip,
+  Sparkles,
+} from 'lucide-react';
+import { format, isToday, isThisWeek, isThisMonth, parseISO } from 'date-fns';
+import {
+  useMissedPunchRequests,
+  useApproveMissedPunchRequest,
+  useDeclineMissedPunchRequest,
+  useEditMissedPunchRequest,
+  useDeleteMissedPunchRequest,
+} from '@/hooks/useMissedPunchRequests';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { BadgeWithDot } from '@/components/base/badges/badges';
+import { cn } from '@/lib/utils';
 
-const statusColors = {
-  pending: 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm',
-  approved: 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm',
-  declined: 'bg-red-50 text-red-700 border-red-200 shadow-sm',
-};
+/* -------------------------------------------------------------------------- */
+/*  Helpers                                                                   */
+/* -------------------------------------------------------------------------- */
 
-const statusIcons = {
-  pending: AlertCircle,
-  approved: Check,
-  declined: X,
-};
-
-const formatTimeDisplay = (timeString: string) => {
+const formatTimeDisplay = (timeString?: string) => {
   if (!timeString) return 'N/A';
-  
-  // Handle both simple time format (HH:MM) and ISO timestamp format
   let timePart = timeString;
-  if (timeString.includes('T')) {
-    // Extract time part from ISO string
-    timePart = timeString.split('T')[1]?.substring(0, 5);
-  }
-  
+  if (timeString.includes('T')) timePart = timeString.split('T')[1]?.substring(0, 5);
   if (!timePart) return 'N/A';
-  
-  // Convert to 12-hour format
   const [hours, minutes] = timePart.split(':');
   const hour = parseInt(hours);
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  
   return `${displayHour}:${minutes} ${ampm}`;
 };
 
-const formatDateDisplay = (dateString: string) => {
+const formatDateDisplay = (dateString?: string) => {
   if (!dateString) return 'N/A';
-  
-  // Parse date string manually to avoid timezone issues
   const [year, month, day] = dateString.split('-');
   const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-  
   return format(date, 'PPP');
 };
 
-const formatDateTimeDisplay = (dateTimeString: string) => {
+const formatShortDate = (dateString?: string) => {
+  if (!dateString) return 'N/A';
+  const [year, month, day] = dateString.split('-');
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  return format(date, 'MMM d, yyyy');
+};
+
+const formatRelativeDateTime = (dateTimeString?: string) => {
   if (!dateTimeString) return 'N/A';
-  
   try {
     const date = new Date(dateTimeString);
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return format(date, 'PPP p');
-  } catch (error) {
+    return format(date, "MMM d, yyyy 'at' p");
+  } catch {
     return 'Invalid Date';
   }
 };
 
-// Edit Request Dialog Component
+const getInitials = (firstName?: string, lastName?: string) => {
+  const f = firstName?.[0] ?? '';
+  const l = lastName?.[0] ?? '';
+  return (f + l).toUpperCase() || '?';
+};
+
+const punchTypeLabel = (type: string) => {
+  if (type === 'both') return 'Punch In & Out';
+  if (type === 'in') return 'Punch In';
+  if (type === 'out') return 'Punch Out';
+  return type;
+};
+
+type DateRangeFilter = 'all' | 'today' | 'week' | 'month';
+
+/* -------------------------------------------------------------------------- */
+/*  Edit Dialog                                                               */
+/* -------------------------------------------------------------------------- */
+
 const EditRequestDialog = ({ request, jobsites, onSave, onClose, isLoading }: any) => {
   const [formData, setFormData] = useState({
     request_date: '',
@@ -81,7 +113,6 @@ const EditRequestDialog = ({ request, jobsites, onSave, onClose, isLoading }: an
     reason: '',
   });
 
-  // Initialize form data when request changes
   React.useEffect(() => {
     if (request) {
       setFormData({
@@ -95,102 +126,97 @@ const EditRequestDialog = ({ request, jobsites, onSave, onClose, isLoading }: an
     }
   }, [request]);
 
-  const handleSave = () => {
-    onSave(formData);
-  };
-
   if (!request) return null;
+
+  const showIn = formData.punch_type === 'in' || formData.punch_type === 'both';
+  const showOut = formData.punch_type === 'out' || formData.punch_type === 'both';
 
   return (
     <Dialog open={!!request} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Edit className="h-5 w-5 text-blue-600" />
+          <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+            <Edit className="h-4 w-4 text-primary" />
             Edit Time Request
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6">
-          {/* Employee Info (Read-only) */}
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-2">Employee Information</h3>
-            <p className="text-sm text-gray-600">
+
+        <div className="space-y-5">
+          <div className="rounded-lg border bg-muted/40 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Employee</p>
+            <p className="text-sm font-medium text-foreground mt-0.5">
               {request.employee_profiles?.first_name} {request.employee_profiles?.last_name}
             </p>
           </div>
 
-          {/* Date */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-date">Request Date</Label>
-            <Input
-              id="edit-date"
-              type="date"
-              value={formData.request_date}
-              onChange={(e) => setFormData({ ...formData, request_date: e.target.value })}
-            />
-          </div>
-
-          {/* Punch Type */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-punch-type">Punch Type</Label>
-            <Select value={formData.punch_type} onValueChange={(value: 'in' | 'out' | 'both') => setFormData({ ...formData, punch_type: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="in">Punch In</SelectItem>
-                <SelectItem value="out">Punch Out</SelectItem>
-                <SelectItem value="both">Both In & Out</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Times */}
-          {(formData.punch_type === 'in' || formData.punch_type === 'both') && (
-            <div className="space-y-2">
-              <Label htmlFor="edit-time-in">Corrected In Time</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-date" className="text-xs font-medium">Request Date</Label>
               <Input
-                id="edit-time-in"
-                type="time"
-                value={formData.corrected_time_in}
-                onChange={(e) => setFormData({ ...formData, corrected_time_in: e.target.value })}
+                id="edit-date"
+                type="date"
+                value={formData.request_date}
+                onChange={(e) => setFormData({ ...formData, request_date: e.target.value })}
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-punch-type" className="text-xs font-medium">Punch Type</Label>
+              <Select
+                value={formData.punch_type}
+                onValueChange={(value: 'in' | 'out' | 'both') => setFormData({ ...formData, punch_type: value })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="in">Punch In</SelectItem>
+                  <SelectItem value="out">Punch Out</SelectItem>
+                  <SelectItem value="both">Both In & Out</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {(showIn || showOut) && (
+            <div className={cn('grid gap-4', showIn && showOut ? 'grid-cols-2' : 'grid-cols-1')}>
+              {showIn && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-time-in" className="text-xs font-medium">Corrected In Time</Label>
+                  <Input
+                    id="edit-time-in"
+                    type="time"
+                    value={formData.corrected_time_in}
+                    onChange={(e) => setFormData({ ...formData, corrected_time_in: e.target.value })}
+                  />
+                </div>
+              )}
+              {showOut && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-time-out" className="text-xs font-medium">Corrected Out Time</Label>
+                  <Input
+                    id="edit-time-out"
+                    type="time"
+                    value={formData.corrected_time_out}
+                    onChange={(e) => setFormData({ ...formData, corrected_time_out: e.target.value })}
+                  />
+                </div>
+              )}
             </div>
           )}
 
-          {(formData.punch_type === 'out' || formData.punch_type === 'both') && (
-            <div className="space-y-2">
-              <Label htmlFor="edit-time-out">Corrected Out Time</Label>
-              <Input
-                id="edit-time-out"
-                type="time"
-                value={formData.corrected_time_out}
-                onChange={(e) => setFormData({ ...formData, corrected_time_out: e.target.value })}
-              />
-            </div>
-          )}
-
-          {/* Jobsite */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-jobsite">Jobsite</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-jobsite" className="text-xs font-medium">Jobsite</Label>
             <Select value={formData.jobsite_id} onValueChange={(value) => setFormData({ ...formData, jobsite_id: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select jobsite" />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Select jobsite" /></SelectTrigger>
               <SelectContent>
                 {jobsites.map((jobsite: any) => (
-                  <SelectItem key={jobsite.id} value={jobsite.id}>
-                    {jobsite.name}
-                  </SelectItem>
+                  <SelectItem key={jobsite.id} value={jobsite.id}>{jobsite.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Reason */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-reason">Reason</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-reason" className="text-xs font-medium">Reason</Label>
             <Textarea
               id="edit-reason"
               value={formData.reason}
@@ -200,21 +226,10 @@ const EditRequestDialog = ({ request, jobsites, onSave, onClose, isLoading }: an
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              onClick={handleSave}
-              disabled={isLoading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
-            >
+          <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+            <Button variant="outline" onClick={onClose} className="sm:flex-1">Cancel</Button>
+            <Button onClick={() => onSave(formData)} disabled={isLoading} className="sm:flex-1">
               {isLoading ? 'Saving...' : 'Save Changes'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-            >
-              Cancel
             </Button>
           </div>
         </div>
@@ -223,196 +238,251 @@ const EditRequestDialog = ({ request, jobsites, onSave, onClose, isLoading }: an
   );
 };
 
-// Request Card Component
+/* -------------------------------------------------------------------------- */
+/*  Status badge mapping → BadgeWithDot color                                 */
+/* -------------------------------------------------------------------------- */
+
+const statusBadgeColor: Record<string, 'warning' | 'success' | 'error'> = {
+  pending: 'warning',
+  approved: 'success',
+  declined: 'error',
+};
+
+const statusLabel: Record<string, string> = {
+  pending: 'Pending',
+  approved: 'Approved',
+  declined: 'Declined',
+};
+
+/* -------------------------------------------------------------------------- */
+/*  Request Card                                                              */
+/* -------------------------------------------------------------------------- */
+
 const RequestCard = ({ request, onApprove, onDecline, onEdit, onDelete, isArchived = false, userRole }: any) => {
-  const StatusIcon = statusIcons[request.status];
-  const employeeName = request.employee_profiles 
-    ? `${request.employee_profiles.first_name} ${request.employee_profiles.last_name}`
+  const employeeFirst = request.employee_profiles?.first_name;
+  const employeeLast = request.employee_profiles?.last_name;
+  const employeeName = employeeFirst || employeeLast
+    ? `${employeeFirst ?? ''} ${employeeLast ?? ''}`.trim()
     : 'Unknown Employee';
-  
+
   const canEditDelete = userRole && ['admin', 'super_admin', 'management'].includes(userRole);
+  const showCorrectedTimes = !!(request.corrected_time_in || request.corrected_time_out);
 
   return (
-    <Card className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${
-      isArchived 
-        ? 'border-l-gray-300 bg-gray-50/50' 
-        : request.status === 'pending' 
-          ? 'border-l-amber-400' 
-          : request.status === 'approved' 
-            ? 'border-l-emerald-400' 
-            : 'border-l-red-400'
-    }`}>
-      <CardContent className="p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">{employeeName}</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              ID: {request.employee_profiles?.user_id || request.employee_id}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {isArchived && (
-              <Badge variant="outline" className="text-xs text-gray-500 border-gray-300">
-                <Archive className="h-3 w-3 mr-1" />
-                Archived
-              </Badge>
-            )}
-            <Badge className={`${statusColors[request.status]} font-medium px-3 py-1 rounded-full`}>
-              <StatusIcon className="h-3 w-3 mr-1" />
-              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Request Details Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-            <Calendar className="h-4 w-4 text-gray-600" />
-            <div>
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date</p>
-              <p className="text-sm font-medium text-gray-900">{formatDateDisplay(request.request_date)}</p>
+    <Card className="overflow-hidden transition-shadow hover:shadow-md">
+      <CardContent className="p-5 space-y-4">
+        {/* Row 1 — Employee strip */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold flex-shrink-0">
+              {getInitials(employeeFirst, employeeLast)}
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-            <Clock3 className="h-4 w-4 text-gray-600" />
-            <div>
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Type</p>
-              <p className="text-sm font-medium text-gray-900">
-                {request.punch_type === 'both' ? 'In & Out' : `Punch ${request.punch_type}`}
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{employeeName}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                Submitted {formatRelativeDateTime(request.created_at)}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-            <MapPin className="h-4 w-4 text-gray-600" />
-            <div>
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Jobsite</p>
-              <p className="text-sm font-medium text-gray-900">{request.jobsites?.name || 'Unknown'}</p>
-            </div>
-          </div>
-
-          {request.corrected_time_in && (
-            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-              <Clock className="h-4 w-4 text-blue-600" />
-              <div>
-                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">In Time</p>
-                <p className="text-sm font-medium text-blue-900">{formatTimeDisplay(request.corrected_time_in)}</p>
-              </div>
-            </div>
-          )}
-
-          {request.corrected_time_out && (
-            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-              <Clock className="h-4 w-4 text-blue-600" />
-              <div>
-                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Out Time</p>
-                <p className="text-sm font-medium text-blue-900">{formatTimeDisplay(request.corrected_time_out)}</p>
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-            <User className="h-4 w-4 text-gray-600" />
-            <div>
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Supervisor</p>
-              <p className="text-sm font-medium text-gray-900">{request.supervisor_on_site}</p>
-            </div>
-          </div>
+          <BadgeWithDot
+            color={statusBadgeColor[request.status] ?? 'gray'}
+            size="md"
+            pulse={request.status === 'pending'}
+          >
+            {statusLabel[request.status] ?? request.status}
+          </BadgeWithDot>
         </div>
 
-        {/* Reason Section */}
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
-          <div className="flex items-center gap-2 mb-2">
-            <FileText className="h-4 w-4 text-gray-600" />
-            <span className="text-sm font-semibold text-gray-700">Reason</span>
+        {/* Row 2 — Compact inline info strip */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border bg-muted/30 px-3 py-2.5 text-xs">
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5" />
+            <span className="font-medium text-foreground">{formatShortDate(request.request_date)}</span>
           </div>
-          <p className="text-sm text-gray-600 leading-relaxed">{request.reason}</p>
+          <div className="h-3 w-px bg-border hidden sm:block" />
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" />
+            <span className="font-medium text-foreground">{punchTypeLabel(request.punch_type)}</span>
+          </div>
+          <div className="h-3 w-px bg-border hidden sm:block" />
+          <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="font-medium text-foreground truncate">{request.jobsites?.name || 'Unknown jobsite'}</span>
+          </div>
+          {request.supervisor_on_site && (
+            <>
+              <div className="h-3 w-px bg-border hidden sm:block" />
+              <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+                <User className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="font-medium text-foreground truncate">{request.supervisor_on_site}</span>
+              </div>
+            </>
+          )}
         </div>
+
+        {/* Row 3 — Corrected time chips */}
+        {showCorrectedTimes && (
+          <div className="flex flex-wrap gap-2">
+            {request.corrected_time_in && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs dark:border-emerald-800 dark:bg-emerald-950">
+                <span className="text-emerald-700 dark:text-emerald-400 font-medium">Clock In</span>
+                <ArrowRight className="h-3 w-3 text-emerald-500" />
+                <span className="font-semibold text-emerald-900 dark:text-emerald-300">
+                  {formatTimeDisplay(request.corrected_time_in)}
+                </span>
+              </div>
+            )}
+            {request.corrected_time_out && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs dark:border-blue-800 dark:bg-blue-950">
+                <span className="text-blue-700 dark:text-blue-400 font-medium">Clock Out</span>
+                <ArrowRight className="h-3 w-3 text-blue-500" />
+                <span className="font-semibold text-blue-900 dark:text-blue-300">
+                  {formatTimeDisplay(request.corrected_time_out)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Row 4 — Reason */}
+        {request.reason && (
+          <div className="rounded-lg border bg-card px-3 py-2.5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Reason</span>
+            </div>
+            <p className="text-sm text-foreground leading-relaxed">{request.reason}</p>
+          </div>
+        )}
 
         {/* Attachment */}
         {request.attachment_url && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <a 
-              href={request.attachment_url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
-            >
-              <FileText className="h-4 w-4" />
-              View attachment
-            </a>
+          <a
+            href={request.attachment_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+          >
+            <Paperclip className="h-3.5 w-3.5" />
+            View attachment
+          </a>
+        )}
+
+        {/* Row 5 — Decline reason */}
+        {request.status === 'declined' && request.decline_reason && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 dark:border-red-800 dark:bg-red-950">
+            <div className="flex items-center gap-1.5 mb-1">
+              <AlertCircle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+              <span className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wide">
+                Decline Reason
+              </span>
+            </div>
+            <p className="text-sm text-red-700 dark:text-red-300 leading-relaxed">{request.decline_reason}</p>
           </div>
         )}
 
-        {/* Decline Reason */}
-        {request.status === 'declined' && request.decline_reason && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <span className="text-sm font-semibold text-red-700">Decline Reason</span>
-            </div>
-            <p className="text-sm text-red-600">{request.decline_reason}</p>
-          </div>
+        {/* Reviewed timestamp */}
+        {request.reviewed_at && request.status !== 'pending' && (
+          <p className="text-xs text-muted-foreground">
+            Reviewed {formatRelativeDateTime(request.reviewed_at)}
+          </p>
         )}
 
         {/* Actions */}
-        {!isArchived && (
-          <div className="pt-4 border-t border-gray-200 space-y-3">
-            {request.status === 'pending' && (
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => onApprove(request.id)}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
-                >
-                  <Check className="h-4 w-4 mr-2" />
-                  Approve
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => onDecline(request.id)}
-                  className="flex-1 border-red-300 text-red-600 hover:bg-red-50 font-medium"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Decline
-                </Button>
-              </div>
-            )}
-            
-            {/* Edit/Delete Actions for Admins */}
-            {canEditDelete && (
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => onEdit(request)}
-                  className="flex-1 border-blue-300 text-blue-600 hover:bg-blue-50 font-medium"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => onDelete(request.id)}
-                  className="flex-1 border-red-300 text-red-600 hover:bg-red-50 font-medium"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              </div>
+        {(request.status === 'pending' || canEditDelete) && (
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t">
+            {request.status === 'pending' ? (
+              <>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <ArrowDownToLine className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Approval will sync this punch on {formatShortDate(request.request_date)}</span>
+                </div>
+                <div className="flex gap-2 ml-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDecline(request.id)}
+                    className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
+                  >
+                    <X className="h-4 w-4 mr-1.5" />
+                    Decline
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => onApprove(request.id)}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <Check className="h-4 w-4 mr-1.5" />
+                    Approve
+                  </Button>
+                </div>
+              </>
+            ) : (
+              canEditDelete && (
+                <div className="flex gap-1 ml-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEdit(request)}
+                    className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                  >
+                    <Edit className="h-3.5 w-3.5 mr-1.5" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDelete(request.id)}
+                    className="h-8 px-2 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    Delete
+                  </Button>
+                </div>
+              )
             )}
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+};
 
-        {/* Metadata */}
-        <div className="text-xs text-gray-500 pt-3 border-t border-gray-200 mt-4">
-          <div className="flex items-center justify-between">
-            <span>Submitted {formatDateTimeDisplay(request.created_at)}</span>
-            {request.reviewed_at && (
-              <span>Reviewed {formatDateTimeDisplay(request.reviewed_at)}</span>
-            )}
+/* -------------------------------------------------------------------------- */
+/*  Summary Cards                                                             */
+/* -------------------------------------------------------------------------- */
+
+const SummaryCard = ({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: 'amber' | 'emerald' | 'red';
+}) => {
+  const toneClasses = {
+    amber: { bg: 'bg-amber-100 dark:bg-amber-950', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
+    emerald: { bg: 'bg-emerald-100 dark:bg-emerald-950', text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
+    red: { bg: 'bg-red-100 dark:bg-red-950', text: 'text-red-600 dark:text-red-400', dot: 'bg-red-500' },
+  }[tone];
+
+  return (
+    <Card>
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className={cn('h-1.5 w-1.5 rounded-full', toneClasses.dot)} />
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+            </div>
+            <p className="text-3xl font-semibold text-foreground tabular-nums">{value}</p>
+          </div>
+          <div className={cn('h-9 w-9 rounded-lg flex items-center justify-center', toneClasses.bg)}>
+            <Icon className={cn('h-4 w-4', toneClasses.text)} />
           </div>
         </div>
       </CardContent>
@@ -420,15 +490,20 @@ const RequestCard = ({ request, onApprove, onDecline, onEdit, onDelete, isArchiv
   );
 };
 
+/* -------------------------------------------------------------------------- */
+/*  Main                                                                      */
+/* -------------------------------------------------------------------------- */
+
 const TimeRequestsManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [jobsiteFilter, setJobsiteFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<DateRangeFilter>('all');
   const [declineReason, setDeclineReason] = useState('');
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
   const [editingRequest, setEditingRequest] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('active');
-  
+
   const { user } = useAuth();
   const { data: requests = [], isLoading } = useMissedPunchRequests();
   const { data: jobsites = [] } = useJobsites('active');
@@ -437,34 +512,54 @@ const TimeRequestsManagement = () => {
   const editMutation = useEditMissedPunchRequest();
   const deleteMutation = useDeleteMissedPunchRequest();
 
-  // Separate active and archived requests
-  const activeRequests = requests.filter((request: any) => 
-    request.status === 'pending' || request.status === 'declined'
-  );
-  
-  const archivedRequests = requests.filter((request: any) => 
-    request.status === 'approved'
-  );
+  // Stats
+  const stats = useMemo(() => {
+    const pending = requests.filter((r: any) => r.status === 'pending').length;
+    const approved = requests.filter((r: any) => r.status === 'approved').length;
+    const declined = requests.filter((r: any) => r.status === 'declined').length;
+    return { pending, approved, declined };
+  }, [requests]);
 
-  // Filter logic for each tab
-  const getFilteredRequests = (requestList: any[]) => {
-    return requestList.filter((request: any) => {
-      const statusMatch = statusFilter === 'all' || request.status === statusFilter;
-      const jobsiteMatch = jobsiteFilter === 'all' || request.jobsite_id === jobsiteFilter;
-      return statusMatch && jobsiteMatch;
-    });
+  const activeRequests = requests.filter(
+    (r: any) => r.status === 'pending' || r.status === 'declined'
+  );
+  const archivedRequests = requests.filter((r: any) => r.status === 'approved');
+
+  const matchesDateFilter = (dateStr: string) => {
+    if (dateFilter === 'all') return true;
+    if (!dateStr) return false;
+    try {
+      const d = parseISO(dateStr);
+      if (dateFilter === 'today') return isToday(d);
+      if (dateFilter === 'week') return isThisWeek(d);
+      if (dateFilter === 'month') return isThisMonth(d);
+    } catch {
+      return false;
+    }
+    return true;
   };
+
+  const getFilteredRequests = (requestList: any[]) =>
+    requestList.filter((r: any) => {
+      const statusMatch = statusFilter === 'all' || r.status === statusFilter;
+      const jobsiteMatch = jobsiteFilter === 'all' || r.jobsite_id === jobsiteFilter;
+      const dateMatch = matchesDateFilter(r.request_date);
+      return statusMatch && jobsiteMatch && dateMatch;
+    });
 
   const filteredActiveRequests = getFilteredRequests(activeRequests);
   const filteredArchivedRequests = getFilteredRequests(archivedRequests);
 
-  const handleApprove = (requestId: string) => {
-    approveMutation.mutate(requestId);
+  const hasActiveFilters = statusFilter !== 'all' || jobsiteFilter !== 'all' || dateFilter !== 'all';
+
+  const clearFilters = () => {
+    setStatusFilter('all');
+    setJobsiteFilter('all');
+    setDateFilter('all');
   };
 
-  const handleDecline = (requestId: string) => {
-    setSelectedRequestId(requestId);
-  };
+  const handleApprove = (requestId: string) => approveMutation.mutate(requestId);
+  const handleDecline = (requestId: string) => setSelectedRequestId(requestId);
 
   const handleDeclineConfirm = () => {
     if (selectedRequestId) {
@@ -477,13 +572,8 @@ const TimeRequestsManagement = () => {
     }
   };
 
-  const handleEdit = (request: any) => {
-    setEditingRequest(request);
-  };
-
-  const handleDelete = (requestId: string) => {
-    setDeleteRequestId(requestId);
-  };
+  const handleEdit = (request: any) => setEditingRequest(request);
+  const handleDelete = (requestId: string) => setDeleteRequestId(requestId);
 
   const handleDeleteConfirm = () => {
     if (deleteRequestId) {
@@ -494,10 +584,7 @@ const TimeRequestsManagement = () => {
 
   const handleEditSave = (formData: any) => {
     if (editingRequest) {
-      editMutation.mutate({
-        requestId: editingRequest.id,
-        updateData: formData,
-      });
+      editMutation.mutate({ requestId: editingRequest.id, updateData: formData });
       setEditingRequest(null);
     }
   };
@@ -505,10 +592,10 @@ const TimeRequestsManagement = () => {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-8">
+        <CardContent className="p-12">
           <div className="text-center">
-            <Clock className="h-8 w-8 mx-auto mb-4 text-gray-400 animate-spin" />
-            <p className="text-gray-600">Loading time requests...</p>
+            <Clock className="h-7 w-7 mx-auto mb-3 text-muted-foreground animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading time requests...</p>
           </div>
         </CardContent>
       </Card>
@@ -518,30 +605,44 @@ const TimeRequestsManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Clock className="h-8 w-8 text-blue-600" />
-            Time Requests Management
-          </h1>
-          <p className="text-gray-600 mt-1">Manage and review employee time correction requests</p>
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Clock className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground tracking-tight">Time Requests</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Review and approve employee missed-punch corrections
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Sync hint */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>Approved requests sync automatically to the Live Punch Monitor</span>
+          <ArrowRight className="h-3.5 w-3.5" />
         </div>
       </div>
 
-      {/* Filters */}
-      <Card className="border-t-4 border-t-blue-500">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-gray-800">
-            <Filter className="h-5 w-5 text-blue-600" />
-            Filter Requests
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="status-filter" className="text-sm font-semibold text-gray-700">Status</Label>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <SummaryCard label="Pending Review" value={stats.pending} icon={Inbox} tone="amber" />
+        <SummaryCard label="Approved" value={stats.approved} icon={CheckCircle2} tone="emerald" />
+        <SummaryCard label="Declined" value={stats.declined} icon={XCircle} tone="red" />
+      </div>
+
+      {/* Filter Bar */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="border-gray-300">
+                <SelectTrigger className="h-9 text-sm">
+                  <Activity className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -551,12 +652,10 @@ const TimeRequestsManagement = () => {
                   <SelectItem value="declined">Declined</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="jobsite-filter" className="text-sm font-semibold text-gray-700">Jobsite</Label>
               <Select value={jobsiteFilter} onValueChange={setJobsiteFilter}>
-                <SelectTrigger className="border-gray-300">
+                <SelectTrigger className="h-9 text-sm">
+                  <Building2 className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                   <SelectValue placeholder="All jobsites" />
                 </SelectTrigger>
                 <SelectContent>
@@ -568,50 +667,83 @@ const TimeRequestsManagement = () => {
                   ))}
                 </SelectContent>
               </Select>
+
+              <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateRangeFilter)}>
+                <SelectTrigger className="h-9 text-sm">
+                  <CalendarRange className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-muted-foreground hover:text-foreground self-end lg:self-auto"
+              >
+                <X className="h-3.5 w-3.5 mr-1.5" />
+                Clear filters
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100 p-1">
-          <TabsTrigger 
-            value="active" 
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-          >
-            <Clock3 className="h-4 w-4" />
-            Active Requests
-            <Badge variant="secondary" className="ml-1 bg-amber-100 text-amber-700">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 h-10">
+          <TabsTrigger value="active" className="flex items-center gap-2 text-sm">
+            <span>Active</span>
+            <BadgeWithDot
+              type="solid"
+              customColor="hsl(38 92% 50%)"
+              size="sm"
+              hideDot
+              className="ml-0.5 px-1.5"
+            >
               {filteredActiveRequests.length}
-            </Badge>
+            </BadgeWithDot>
           </TabsTrigger>
-          <TabsTrigger 
-            value="archived" 
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-          >
-            <History className="h-4 w-4" />
-            Archived Requests
-            <Badge variant="secondary" className="ml-1 bg-emerald-100 text-emerald-700">
+          <TabsTrigger value="archived" className="flex items-center gap-2 text-sm">
+            <span>Approved & Archived</span>
+            <BadgeWithDot
+              type="solid"
+              customColor="hsl(142 71% 45%)"
+              size="sm"
+              hideDot
+              className="ml-0.5 px-1.5"
+            >
               {filteredArchivedRequests.length}
-            </Badge>
+            </BadgeWithDot>
           </TabsTrigger>
         </TabsList>
 
-        {/* Active Requests Tab */}
-        <TabsContent value="active" className="space-y-4">
+        {/* Active */}
+        <TabsContent value="active" className="space-y-4 mt-4">
           {filteredActiveRequests.length === 0 ? (
-            <Card className="border-dashed border-2 border-gray-300">
-              <CardContent className="p-12">
-                <div className="text-center text-gray-500">
-                  <Clock3 className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No active requests</h3>
-                  <p className="text-sm">No time requests match your current filters.</p>
+            <Card>
+              <CardContent className="py-16">
+                <div className="text-center">
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                    <Inbox className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">No active requests</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {hasActiveFilters ? 'Try adjusting your filters.' : 'New requests will appear here for review.'}
+                  </p>
                 </div>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-6">
+            <div className="grid gap-3">
               {filteredActiveRequests.map((request: any) => (
                 <RequestCard
                   key={request.id}
@@ -628,20 +760,24 @@ const TimeRequestsManagement = () => {
           )}
         </TabsContent>
 
-        {/* Archived Requests Tab */}
-        <TabsContent value="archived" className="space-y-4">
+        {/* Archived */}
+        <TabsContent value="archived" className="space-y-4 mt-4">
           {filteredArchivedRequests.length === 0 ? (
-            <Card className="border-dashed border-2 border-gray-300">
-              <CardContent className="p-12">
-                <div className="text-center text-gray-500">
-                  <Archive className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No archived requests</h3>
-                  <p className="text-sm">Approved requests will appear here once archived.</p>
+            <Card>
+              <CardContent className="py-16">
+                <div className="text-center">
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">No approved requests yet</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Approved requests will be listed here.
+                  </p>
                 </div>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-6">
+            <div className="grid gap-3">
               {filteredArchivedRequests.map((request: any) => (
                 <RequestCard
                   key={request.id}
@@ -650,7 +786,7 @@ const TimeRequestsManagement = () => {
                   onDecline={() => {}}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
-                  isArchived={true}
+                  isArchived
                   userRole={user?.role}
                 />
               ))}
@@ -663,18 +799,18 @@ const TimeRequestsManagement = () => {
       <Dialog open={!!selectedRequestId} onOpenChange={() => setSelectedRequestId(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <X className="h-5 w-5 text-red-600" />
+            <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+              <X className="h-4 w-4 text-red-600" />
               Decline Request
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Are you sure you want to decline this missed punch request?
             </p>
-            <div className="space-y-2">
-              <Label htmlFor="decline-reason" className="text-sm font-semibold">
-                Reason for Decline (Optional)
+            <div className="space-y-1.5">
+              <Label htmlFor="decline-reason" className="text-xs font-medium">
+                Reason for Decline (optional)
               </Label>
               <Textarea
                 id="decline-reason"
@@ -684,28 +820,24 @@ const TimeRequestsManagement = () => {
                 className="min-h-[100px] resize-none"
               />
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 pt-1">
+              <Button variant="outline" className="sm:flex-1" onClick={() => setSelectedRequestId(null)}>
+                Cancel
+              </Button>
               <Button
                 onClick={handleDeclineConfirm}
                 disabled={declineMutation.isPending}
                 variant="destructive"
-                className="flex-1"
+                className="sm:flex-1"
               >
                 {declineMutation.isPending ? 'Declining...' : 'Confirm Decline'}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => setSelectedRequestId(null)}
-              >
-                Cancel
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation */}
       <ConfirmDialog
         open={!!deleteRequestId}
         onOpenChange={(open) => !open && setDeleteRequestId(null)}
@@ -717,7 +849,7 @@ const TimeRequestsManagement = () => {
         onConfirm={handleDeleteConfirm}
       />
 
-      {/* Edit Request Dialog */}
+      {/* Edit Dialog */}
       <EditRequestDialog
         request={editingRequest}
         jobsites={jobsites}
