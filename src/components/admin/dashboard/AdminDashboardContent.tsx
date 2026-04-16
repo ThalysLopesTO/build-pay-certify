@@ -212,7 +212,7 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer rounded-2xl shadow-sm" onClick={() => navigateToSection('timesheets')}>
+          <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer rounded-2xl shadow-sm" onClick={() => navigateToSection('live-punch-monitor')}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
