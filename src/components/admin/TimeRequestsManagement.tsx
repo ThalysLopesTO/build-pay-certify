@@ -636,9 +636,9 @@ const TimeRequestsManagement = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <SummaryCard label="Pending Review" value={stats.pending} icon={Inbox} tone="amber" />
-        <SummaryCard label="Approved" value={stats.approved} icon={CheckCircle2} tone="emerald" />
-        <SummaryCard label="Declined" value={stats.declined} icon={XCircle} tone="red" />
+        <SummaryCard label="Pending Review" value={stats.pending} icon={Hourglass} tone="amber" />
+        <SummaryCard label="Approved" value={stats.approved} icon={CircleCheck} tone="emerald" />
+        <SummaryCard label="Declined" value={stats.declined} icon={CircleX} tone="red" />
       </div>
 
       {/* Filter Bar */}
@@ -741,7 +741,7 @@ const TimeRequestsManagement = () => {
               <CardContent className="py-16">
                 <div className="text-center">
                   <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                    <Inbox className="h-5 w-5 text-muted-foreground" />
+                    <Hourglass className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <h3 className="text-sm font-semibold text-foreground mb-1">No active requests</h3>
                   <p className="text-xs text-muted-foreground">
@@ -775,7 +775,7 @@ const TimeRequestsManagement = () => {
               <CardContent className="py-16">
                 <div className="text-center">
                   <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                    <CircleCheck className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <h3 className="text-sm font-semibold text-foreground mb-1">No approved requests yet</h3>
                   <p className="text-xs text-muted-foreground">
