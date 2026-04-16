@@ -49,22 +49,22 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({
 
   const quickActions = [
     {
-      title: 'My Timesheet',
-      description: 'Submit and manage your timesheet',
+      title: 'Live Punch Monitor',
+      description: 'Track active employee punches',
       icon: Clock,
-      id: 'timesheets'
+      id: 'live-punch-monitor'
     },
     {
-      title: 'Timesheet Approval',
-      description: 'Review and approve timesheets',
+      title: 'Time Requests',
+      description: 'Review missed punch requests',
       icon: CheckCircle,
-      id: 'timesheets'
+      id: 'time-requests'
     },
     {
-      title: 'Payroll Summary',
-      description: 'View payroll calculations',
-      icon: DollarSign,
-      id: 'payroll-summary'
+      title: 'Daily Reports',
+      description: 'View jobsite daily reports',
+      icon: FileText,
+      id: 'daily-reports'
     },
     {
       title: 'Bills & Expenses',
