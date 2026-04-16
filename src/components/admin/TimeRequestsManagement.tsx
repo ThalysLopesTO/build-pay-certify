@@ -41,6 +41,7 @@ import { useJobsites } from '@/hooks/useJobsites';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BadgeWithDot } from '@/components/base/badges/badges';
+import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { cn } from '@/lib/utils';
 
 /* -------------------------------------------------------------------------- */
@@ -274,9 +275,13 @@ const RequestCard = ({ request, onApprove, onDecline, onEdit, onDelete, isArchiv
         {/* Row 1 — Employee strip */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold flex-shrink-0">
-              {getInitials(employeeFirst, employeeLast)}
-            </div>
+            <EmployeeAvatar
+              photoUrl={request.employee_profiles?.photo_url}
+              firstName={employeeFirst}
+              lastName={employeeLast}
+              size="sm"
+              className="flex-shrink-0"
+            />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground truncate">{employeeName}</p>
               <p className="text-xs text-muted-foreground truncate">
