@@ -287,7 +287,7 @@ const RequestCard = ({ request, onApprove, onDecline, onEdit, onDelete, isArchiv
 
           <BadgeWithDot
             color={statusBadgeColor[request.status] ?? 'gray'}
-            size="md"
+            size="sm"
             pulse={request.status === 'pending'}
           >
             {statusLabel[request.status] ?? request.status}
@@ -465,9 +465,9 @@ const SummaryCard = ({
   tone: 'amber' | 'emerald' | 'red';
 }) => {
   const toneClasses = {
-    amber: { bg: 'bg-amber-100 dark:bg-amber-950', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
-    emerald: { bg: 'bg-emerald-100 dark:bg-emerald-950', text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
-    red: { bg: 'bg-red-100 dark:bg-red-950', text: 'text-red-600 dark:text-red-400', dot: 'bg-red-500' },
+    amber: { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
+    emerald: { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
+    red: { bg: 'bg-red-50 dark:bg-red-950/40', text: 'text-red-600 dark:text-red-400', dot: 'bg-red-500' },
   }[tone];
 
   return (
@@ -702,27 +702,29 @@ const TimeRequestsManagement = () => {
         <TabsList className="grid w-full grid-cols-2 h-10">
           <TabsTrigger value="active" className="flex items-center gap-2 text-sm">
             <span>Active</span>
-            <BadgeWithDot
-              type="solid"
-              customColor="hsl(38 92% 50%)"
-              size="sm"
-              hideDot
-              className="ml-0.5 px-1.5"
+            <span
+              className={cn(
+                'inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[11px] font-semibold tabular-nums',
+                activeTab === 'active'
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
+                  : 'bg-muted text-muted-foreground'
+              )}
             >
               {filteredActiveRequests.length}
-            </BadgeWithDot>
+            </span>
           </TabsTrigger>
           <TabsTrigger value="archived" className="flex items-center gap-2 text-sm">
             <span>Approved & Archived</span>
-            <BadgeWithDot
-              type="solid"
-              customColor="hsl(142 71% 45%)"
-              size="sm"
-              hideDot
-              className="ml-0.5 px-1.5"
+            <span
+              className={cn(
+                'inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[11px] font-semibold tabular-nums',
+                activeTab === 'archived'
+                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                  : 'bg-muted text-muted-foreground'
+              )}
             >
               {filteredArchivedRequests.length}
-            </BadgeWithDot>
+            </span>
           </TabsTrigger>
         </TabsList>
 
