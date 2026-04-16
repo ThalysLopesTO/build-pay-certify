@@ -69,7 +69,8 @@ export const useMissedPunchRequests = () => {
           employee_profiles:user_profiles!fk_missed_punch_requests_employee(
             first_name,
             last_name,
-            user_id
+            user_id,
+            photo_url
           ),
           jobsites(name)
         `)
