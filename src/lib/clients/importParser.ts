@@ -113,7 +113,7 @@ const rowsToParsedClients = (rows: unknown[][]): ParsedClientRow[] => {
       const parsed = emptyRow(idx + 1);
       (row as unknown[]).forEach((cell, colIdx) => {
         const key = headerMap[colIdx];
-        if (key) (parsed as Record<string, string>)[key] = safeStr(cell);
+        if (key) (parsed as unknown as Record<string, string>)[key] = safeStr(cell);
       });
       return parsed;
     })
