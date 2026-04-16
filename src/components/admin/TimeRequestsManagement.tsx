@@ -22,9 +22,9 @@ import {
   Activity,
   Building2,
   CalendarRange,
-  Inbox,
-  CheckCircle2,
-  XCircle,
+  Hourglass,
+  CircleCheck,
+  CircleX,
   ArrowDownToLine,
   Paperclip,
   Sparkles,
@@ -471,9 +471,9 @@ const SummaryCard = ({
   tone: 'amber' | 'emerald' | 'red';
 }) => {
   const toneClasses = {
-    amber: { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
-    emerald: { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
-    red: { bg: 'bg-red-50 dark:bg-red-950/40', text: 'text-red-600 dark:text-red-400', dot: 'bg-red-500' },
+    amber: { bg: 'bg-amber-100/60 dark:bg-amber-900/20 ring-1 ring-amber-200/60 dark:ring-amber-800/30', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' },
+    emerald: { bg: 'bg-emerald-100/60 dark:bg-emerald-900/20 ring-1 ring-emerald-200/60 dark:ring-emerald-800/30', text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
+    red: { bg: 'bg-red-100/60 dark:bg-red-900/20 ring-1 ring-red-200/60 dark:ring-red-800/30', text: 'text-red-600 dark:text-red-400', dot: 'bg-red-500' },
   }[tone];
 
   return (
@@ -636,9 +636,9 @@ const TimeRequestsManagement = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <SummaryCard label="Pending Review" value={stats.pending} icon={Inbox} tone="amber" />
-        <SummaryCard label="Approved" value={stats.approved} icon={CheckCircle2} tone="emerald" />
-        <SummaryCard label="Declined" value={stats.declined} icon={XCircle} tone="red" />
+        <SummaryCard label="Pending Review" value={stats.pending} icon={Hourglass} tone="amber" />
+        <SummaryCard label="Approved" value={stats.approved} icon={CircleCheck} tone="emerald" />
+        <SummaryCard label="Declined" value={stats.declined} icon={CircleX} tone="red" />
       </div>
 
       {/* Filter Bar */}
@@ -741,7 +741,7 @@ const TimeRequestsManagement = () => {
               <CardContent className="py-16">
                 <div className="text-center">
                   <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                    <Inbox className="h-5 w-5 text-muted-foreground" />
+                    <Hourglass className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <h3 className="text-sm font-semibold text-foreground mb-1">No active requests</h3>
                   <p className="text-xs text-muted-foreground">
@@ -775,7 +775,7 @@ const TimeRequestsManagement = () => {
               <CardContent className="py-16">
                 <div className="text-center">
                   <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                    <CircleCheck className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <h3 className="text-sm font-semibold text-foreground mb-1">No approved requests yet</h3>
                   <p className="text-xs text-muted-foreground">
