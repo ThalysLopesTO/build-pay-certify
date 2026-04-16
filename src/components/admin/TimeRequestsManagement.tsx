@@ -294,6 +294,7 @@ const RequestCard = ({ request, onApprove, onDecline, onEdit, onDelete, isArchiv
             color={statusBadgeColor[request.status] ?? 'gray'}
             size="sm"
             pulse={request.status === 'pending'}
+            className={cn(request.status === 'pending' && "bg-[#f4e194] dark:bg-[#f4e194]")}
           >
             {statusLabel[request.status] ?? request.status}
           </BadgeWithDot>
