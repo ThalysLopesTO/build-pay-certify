@@ -340,8 +340,8 @@ const RequestCard = ({ request, onApprove, onDecline, onEdit, onDelete, isArchiv
               </div>
             )}
             {request.corrected_time_out && (
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs dark:border-blue-800 dark:bg-blue-950">
-                <span className="text-blue-700 dark:text-blue-400 font-medium">Clock Out</span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-3 py-1 text-xs dark:border-blue-800 bg-[#284dc8]">
+                <span className="font-medium text-[#021f27]">Clock Out</span>
                 <ArrowRight className="h-3 w-3 text-blue-500" />
                 <span className="font-semibold text-blue-900 dark:text-blue-300">
                   {formatTimeDisplay(request.corrected_time_out)}
