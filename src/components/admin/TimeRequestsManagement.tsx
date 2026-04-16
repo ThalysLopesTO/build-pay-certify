@@ -287,7 +287,7 @@ const RequestCard = ({ request, onApprove, onDecline, onEdit, onDelete, isArchiv
 
           <BadgeWithDot
             color={statusBadgeColor[request.status] ?? 'gray'}
-            size="md"
+            size="sm"
             pulse={request.status === 'pending'}
           >
             {statusLabel[request.status] ?? request.status}
