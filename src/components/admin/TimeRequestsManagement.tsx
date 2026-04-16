@@ -331,10 +331,10 @@ const RequestCard = ({ request, onApprove, onDecline, onEdit, onDelete, isArchiv
         {showCorrectedTimes && (
           <div className="flex flex-wrap gap-2">
             {request.corrected_time_in && (
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs dark:border-emerald-800 dark:bg-emerald-950">
-                <span className="text-emerald-700 dark:text-emerald-400 font-medium">Clock In</span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 px-3 py-1 text-xs dark:border-emerald-800 bg-[#a7f1cb] text-[#07310f]">
+                <span className="font-medium text-green-950">Clock In</span>
                 <ArrowRight className="h-3 w-3 text-emerald-500" />
-                <span className="font-semibold text-emerald-900 dark:text-emerald-300">
+                <span className="font-semibold text-green-800">
                   {formatTimeDisplay(request.corrected_time_in)}
                 </span>
               </div>
