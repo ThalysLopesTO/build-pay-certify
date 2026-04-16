@@ -626,7 +626,7 @@ const TimeRequestsManagement = () => {
         </div>
 
         {/* Sync hint */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-100/40 px-3 py-1.5 text-xs text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/20 dark:text-emerald-400">
+        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/60 px-3 py-1.5 text-xs text-emerald-700 dark:border-emerald-800/40 dark:text-emerald-400 bg-[#a7f1cb]">
           <Sparkles className="h-3.5 w-3.5" />
           <span>Approved requests sync automatically to the Live Punch Monitor</span>
           <ArrowRight className="h-3.5 w-3.5" />
