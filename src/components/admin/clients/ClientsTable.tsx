@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Building2, Mail, Phone, MoreVertical, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Client, useDeleteClient } from '@/hooks/useClients';
 import { ClientFormModal } from './ClientFormModal';
@@ -33,30 +33,37 @@ interface ClientsTableProps {
   clients: Client[];
 }
 
+/**
+ * NOTE (perf): Modals (Edit, Portal Link, Delete confirmation) are rendered
+ * ONCE at this parent level — not per-row inside the .map() loop.
+ * Mounting modals per-row was the root cause of the Clients page freeze:
+ * each row was instantiating useCreateClient/useUpdateClient observers and
+ * its own form state, multiplying React Query subscriptions by N.
+ */
 export function ClientsTable({ clients }: ClientsTableProps) {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
   const [portalClient, setPortalClient] = useState<Client | null>(null);
+  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+
   const deleteClient = useDeleteClient();
-  
   const isDeleting = deleteClient.isPending;
 
-  const handleDelete = async () => {
-    if (deletingClient) {
-      try {
-        await deleteClient.mutateAsync(deletingClient.id);
-        setDeletingClient(null);
-      } catch (error) {
-        console.error('Failed to delete client:', error);
-      }
+  const handleEdit = useCallback((client: Client) => setEditingClient(client), []);
+  const handlePortal = useCallback((client: Client) => setPortalClient(client), []);
+  const handleAskDelete = useCallback((client: Client) => setDeletingClient(client), []);
+
+  const handleConfirmDelete = async () => {
+    if (!deletingClient) return;
+    try {
+      await deleteClient.mutateAsync(deletingClient.id);
+      setDeletingClient(null);
+    } catch (error) {
+      console.error('Failed to delete client:', error);
     }
   };
 
   const handleDeleteDialogChange = (open: boolean) => {
-    if (!open && !isDeleting) {
-      setDeletingClient(null);
-    }
+    if (!open && !isDeleting) setDeletingClient(null);
   };
 
   return (
@@ -75,9 +82,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
           <TableBody>
             {clients.map((client) => (
               <TableRow key={client.id}>
-                <TableCell className="font-medium">
-                  {client.client_name}
-                </TableCell>
+                <TableCell className="font-medium">{client.client_name}</TableCell>
                 <TableCell>
                   {client.client_company ? (
                     <div className="flex items-center gap-2">
@@ -108,9 +113,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                       <span className="text-muted-foreground">Q: {client.total_quotes}</span>
                       <span className="text-muted-foreground">I: {client.total_invoices}</span>
                     </div>
-                    <div className="font-semibold">
-                      ${client.total_revenue.toFixed(0)}
-                    </div>
+                    <div className="font-semibold">${client.total_revenue.toFixed(0)}</div>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -121,19 +124,16 @@ export function ClientsTable({ clients }: ClientsTableProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => {
-                        setEditingClient(client);
-                        setIsEditModalOpen(true);
-                      }}>
+                      <DropdownMenuItem onClick={() => handleEdit(client)}>
                         <Edit className="w-4 h-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setPortalClient(client)}>
+                      <DropdownMenuItem onClick={() => handlePortal(client)}>
                         <ExternalLink className="w-4 h-4 mr-2" />
                         Client Portal
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => setDeletingClient(client)}
+                        onClick={() => handleAskDelete(client)}
                         className="text-destructive"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
@@ -148,12 +148,10 @@ export function ClientsTable({ clients }: ClientsTableProps) {
         </Table>
       </div>
 
+      {/* Single modal instances, hoisted out of the row loop */}
       <ClientFormModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setTimeout(() => setEditingClient(null), 200);
-        }}
+        isOpen={!!editingClient}
+        onClose={() => setEditingClient(null)}
         client={editingClient || undefined}
       />
 
@@ -175,7 +173,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+            <AlertDialogAction onClick={handleConfirmDelete} disabled={isDeleting}>
               {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
