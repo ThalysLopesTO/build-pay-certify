@@ -1852,6 +1852,72 @@ export type Database = {
           },
         ]
       }
+      manual_timesheets: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          daily_hours: Json
+          employee_id: string
+          employee_name: string
+          extra_amount: number
+          hourly_rate: number
+          id: string
+          jobsite_id: string | null
+          pay_period_end: string
+          pay_period_start: string
+          project_name: string
+          subtotal: number
+          tax_amount: number
+          timesheet_type: string
+          total_hours: number
+          total_payment: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          daily_hours?: Json
+          employee_id: string
+          employee_name: string
+          extra_amount?: number
+          hourly_rate?: number
+          id?: string
+          jobsite_id?: string | null
+          pay_period_end: string
+          pay_period_start: string
+          project_name: string
+          subtotal?: number
+          tax_amount?: number
+          timesheet_type?: string
+          total_hours?: number
+          total_payment?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          daily_hours?: Json
+          employee_id?: string
+          employee_name?: string
+          extra_amount?: number
+          hourly_rate?: number
+          id?: string
+          jobsite_id?: string | null
+          pay_period_end?: string
+          pay_period_start?: string
+          project_name?: string
+          subtotal?: number
+          tax_amount?: number
+          timesheet_type?: string
+          total_hours?: number
+          total_payment?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       material_catalog_items: {
         Row: {
           category: string
