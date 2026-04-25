@@ -1,7 +1,6 @@
 import React from 'react';
 import { ClipboardList } from 'lucide-react';
 import { ManualTimesheetForm } from '@/components/admin/manual-timesheets/ManualTimesheetForm';
-import { ManualTimesheetsTable } from '@/components/admin/manual-timesheets/ManualTimesheetsTable';
 
 const ManualTimesheetsPage: React.FC = () => {
   return (
@@ -19,11 +18,6 @@ const ManualTimesheetsPage: React.FC = () => {
       </div>
 
       <ManualTimesheetForm />
-
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Saved Timesheets</h2>
-        <ManualTimesheetsTable />
-      </div>
     </div>
   );
 };

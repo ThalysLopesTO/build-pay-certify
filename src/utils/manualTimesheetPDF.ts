@@ -124,12 +124,15 @@ export const generateManualTimesheetPDF = async (
   y = (doc.lastAutoTable?.finalY ?? y) + 25;
 
   // ========= Totals block
+  const taxLabel = ts.tax_percent && Number(ts.tax_percent) > 0
+    ? `Tax (${Number(ts.tax_percent)}%)`
+    : 'Tax';
   const rows: Array<[string, string]> = [
     ['Total Hours', ts.total_hours.toFixed(2)],
     ['Hourly Rate', formatCurrency(ts.hourly_rate)],
     ['Extra Amount', formatCurrency(ts.extra_amount)],
     ['Subtotal', formatCurrency(ts.subtotal)],
-    ['Tax', formatCurrency(ts.tax_amount)],
+    [taxLabel, formatCurrency(ts.tax_amount)],
   ];
 
   autoTable(doc, {
