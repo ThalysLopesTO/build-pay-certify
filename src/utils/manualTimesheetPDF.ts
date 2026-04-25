@@ -27,6 +27,23 @@ export interface PdfBranding {
   logoUrl?: string | null;
 }
 
+const getImageSize = (dataUrl: string): Promise<{ w: number; h: number }> =>
+  new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => resolve({ w: 0, h: 0 });
+    img.src = dataUrl;
+  });
+
+const detectImageFormat = (dataUrl: string): 'PNG' | 'JPEG' | 'WEBP' => {
+  const m = dataUrl.match(/^data:image\/(png|jpeg|jpg|webp)/i);
+  if (!m) return 'PNG';
+  const t = m[1].toLowerCase();
+  if (t === 'jpg' || t === 'jpeg') return 'JPEG';
+  if (t === 'webp') return 'WEBP';
+  return 'PNG';
+};
+
 export const generateManualTimesheetPDF = async (
   ts: ManualTimesheet,
   branding: PdfBranding
@@ -37,25 +54,39 @@ export const generateManualTimesheetPDF = async (
   let y = margin;
 
   // ========= Header
+  const HEADER_BAND = 70;
+  const MAX_LOGO_W = 160;
+  const MAX_LOGO_H = 70;
+  let textX = margin;
+
   if (branding.logoUrl) {
     const dataUrl = await loadImageAsDataUrl(branding.logoUrl);
     if (dataUrl) {
       try {
-        doc.addImage(dataUrl, 'PNG', margin, y, 70, 70);
+        const { w, h } = await getImageSize(dataUrl);
+        if (w > 0 && h > 0) {
+          const ratio = Math.min(MAX_LOGO_W / w, MAX_LOGO_H / h);
+          const drawW = w * ratio;
+          const drawH = h * ratio;
+          const drawY = y + (HEADER_BAND - drawH) / 2;
+          doc.addImage(dataUrl, detectImageFormat(dataUrl), margin, drawY, drawW, drawH);
+          textX = margin + drawW + 18;
+        }
       } catch {
         // ignore
       }
     }
   }
 
+  // Vertically center text in the header band
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  doc.text(branding.companyName ?? 'Company', margin + 85, y + 25);
+  doc.text(branding.companyName ?? 'Company', textX, y + HEADER_BAND / 2 - 4);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
   doc.setTextColor(110, 110, 110);
-  doc.text('TIME SHEET', margin + 85, y + 45);
+  doc.text('TIME SHEET', textX, y + HEADER_BAND / 2 + 14);
   doc.setTextColor(0, 0, 0);
 
   // Right-aligned meta
