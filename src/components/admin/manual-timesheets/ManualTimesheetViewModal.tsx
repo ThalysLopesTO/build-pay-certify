@@ -95,7 +95,9 @@ export const ManualTimesheetViewModal: React.FC<Props> = ({ timesheet, onClose }
                 <span className="font-medium">{formatCurrency(Number(timesheet.subtotal))}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Tax</span>
+                <span className="text-muted-foreground">
+                  Tax{timesheet.tax_percent && Number(timesheet.tax_percent) > 0 ? ` (${Number(timesheet.tax_percent)}%)` : ''}
+                </span>
                 <span className="font-medium">{formatCurrency(Number(timesheet.tax_amount))}</span>
               </div>
               <Separator />
