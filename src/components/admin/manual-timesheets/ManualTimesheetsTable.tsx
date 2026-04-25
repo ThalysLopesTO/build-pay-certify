@@ -36,7 +36,7 @@ const formatCurrency = (n: number) =>
 export const ManualTimesheetsTable: React.FC = () => {
   const { list, remove } = useManualTimesheets();
   const { logoUrl } = useCompanyLogo();
-  const { data: companySettings } = useCompanySettings();
+  const { settings: companySettings } = useCompanySettings();
 
   const [viewing, setViewing] = useState<ManualTimesheet | null>(null);
   const [editing, setEditing] = useState<ManualTimesheet | null>(null);
@@ -47,7 +47,7 @@ export const ManualTimesheetsTable: React.FC = () => {
     setDownloadingId(ts.id);
     try {
       await generateManualTimesheetPDF(ts, {
-        companyName: (companySettings as any)?.company_name ?? 'Company',
+        companyName: companySettings?.company_name ?? 'Company',
         logoUrl,
       });
     } finally {
