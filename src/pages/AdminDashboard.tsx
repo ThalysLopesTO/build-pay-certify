@@ -32,6 +32,7 @@ import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage
 import { JobsiteSelectionScreen } from '@/components/admin/tasks/JobsiteSelectionScreen';
 import { DailyTaskScreen } from '@/components/admin/tasks/DailyTaskScreen';
 import ClientsPage from '@/pages/admin/ClientsPage';
+import ManualTimesheetsPage from '@/pages/admin/ManualTimesheetsPage';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -72,6 +73,8 @@ const AdminDashboard = () => {
         return <SuppliersManagement />;
       case 'live-punch-monitor':
         return <LivePunchMonitor />;
+      case 'manual-timesheets':
+        return <ManualTimesheetsPage />;
       case 'time-summary':
         return <TimeSummaryPage />;
       case 'timesheets':

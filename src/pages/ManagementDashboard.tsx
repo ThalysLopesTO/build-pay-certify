@@ -25,6 +25,7 @@ import DailyReportsManagement from '../components/admin/DailyReportsManagement';
 import { JobsiteSelectionScreen } from '../components/admin/tasks/JobsiteSelectionScreen';
 import { DailyTaskScreen } from '../components/admin/tasks/DailyTaskScreen';
 import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
+import ManualTimesheetsPage from './admin/ManualTimesheetsPage';
 
 const ManagementDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -46,6 +47,8 @@ const ManagementDashboard = () => {
         return <TimeTracker />;
       case 'live-punch-monitor':
         return <LivePunchMonitor />;
+      case 'manual-timesheets':
+        return <ManualTimesheetsPage />;
       case 'time-summary':
         return <TimeSummaryPage />;
       case 'daily-tasks':
