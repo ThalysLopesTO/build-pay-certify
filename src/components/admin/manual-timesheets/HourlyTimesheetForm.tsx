@@ -126,7 +126,8 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
       hourly_rate: hourlyRate,
       extra_amount: extra,
       subtotal,
-      tax_amount: tax,
+      tax_percent: taxPercent,
+      tax_amount: taxAmount,
       total_payment: totalPayment,
     };
 
