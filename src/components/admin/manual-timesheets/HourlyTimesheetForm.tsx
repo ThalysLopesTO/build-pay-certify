@@ -63,7 +63,16 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
   const [days, setDays] = useState<DayEntry[]>(initial?.daily_hours ?? []);
   const [hourlyRate, setHourlyRate] = useState<number>(Number(initial?.hourly_rate ?? 0));
   const [extra, setExtra] = useState<number>(Number(initial?.extra_amount ?? 0));
-  const [tax, setTax] = useState<number>(Number(initial?.tax_amount ?? 0));
+  // Initialize tax percent — back-fill from legacy tax_amount/subtotal if needed
+  const [taxPercent, setTaxPercent] = useState<number>(() => {
+    if (!initial) return 0;
+    if (initial.tax_percent && Number(initial.tax_percent) > 0) return Number(initial.tax_percent);
+    if (initial.subtotal && initial.tax_amount) {
+      const pct = (Number(initial.tax_amount) / Number(initial.subtotal)) * 100;
+      return Number.isFinite(pct) ? +pct.toFixed(2) : 0;
+    }
+    return 0;
+  });
 
   // Auto-fill rate when employee changes (only for new entries)
   useEffect(() => {
@@ -79,7 +88,8 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
 
   const totalHours = useMemo(() => sumHours(days), [days]);
   const subtotal = totalHours * hourlyRate + extra;
-  const totalPayment = subtotal + tax;
+  const taxAmount = +(subtotal * (taxPercent / 100)).toFixed(2);
+  const totalPayment = +(subtotal + taxAmount).toFixed(2);
 
   const employee = employees.find((e: any) => e.user_id === employeeId);
   const employeeName = employee
@@ -116,7 +126,8 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
       hourly_rate: hourlyRate,
       extra_amount: extra,
       subtotal,
-      tax_amount: tax,
+      tax_percent: taxPercent,
+      tax_amount: taxAmount,
       total_payment: totalPayment,
     };
 
@@ -135,7 +146,7 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
         setDays([]);
         setHourlyRate(0);
         setExtra(0);
-        setTax(0);
+        setTaxPercent(0);
       }
       onSaved?.();
     } catch {
@@ -263,10 +274,10 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
         totalHours={totalHours}
         hourlyRate={hourlyRate}
         extraAmount={extra}
-        taxAmount={tax}
+        taxPercent={taxPercent}
         onHourlyRateChange={setHourlyRate}
         onExtraChange={setExtra}
-        onTaxChange={setTax}
+        onTaxPercentChange={setTaxPercent}
         disabled={isSaving}
       />
 
