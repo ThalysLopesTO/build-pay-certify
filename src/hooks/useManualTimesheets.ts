@@ -20,6 +20,7 @@ export interface ManualTimesheet {
   hourly_rate: number;
   extra_amount: number;
   subtotal: number;
+  tax_percent: number;
   tax_amount: number;
   total_payment: number;
   created_by: string;
@@ -40,6 +41,7 @@ export interface ManualTimesheetInput {
   hourly_rate: number;
   extra_amount: number;
   subtotal: number;
+  tax_percent: number;
   tax_amount: number;
   total_payment: number;
 }
