@@ -146,7 +146,7 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
         setDays([]);
         setHourlyRate(0);
         setExtra(0);
-        setTax(0);
+        setTaxPercent(0);
       }
       onSaved?.();
     } catch {
@@ -274,10 +274,10 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
         totalHours={totalHours}
         hourlyRate={hourlyRate}
         extraAmount={extra}
-        taxAmount={tax}
+        taxPercent={taxPercent}
         onHourlyRateChange={setHourlyRate}
         onExtraChange={setExtra}
-        onTaxChange={setTax}
+        onTaxPercentChange={setTaxPercent}
         disabled={isSaving}
       />
 
