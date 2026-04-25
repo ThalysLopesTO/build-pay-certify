@@ -1869,6 +1869,7 @@ export type Database = {
           project_name: string
           subtotal: number
           tax_amount: number
+          tax_percent: number
           timesheet_type: string
           total_hours: number
           total_payment: number
@@ -1890,6 +1891,7 @@ export type Database = {
           project_name: string
           subtotal?: number
           tax_amount?: number
+          tax_percent?: number
           timesheet_type?: string
           total_hours?: number
           total_payment?: number
@@ -1911,6 +1913,7 @@ export type Database = {
           project_name?: string
           subtotal?: number
           tax_amount?: number
+          tax_percent?: number
           timesheet_type?: string
           total_hours?: number
           total_payment?: number
