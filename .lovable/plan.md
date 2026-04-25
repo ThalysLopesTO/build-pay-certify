@@ -1,88 +1,113 @@
-
-
 ## Goal
-1. Add **Import Clients** (xlsx/xls/csv) with template download, preview, validation, dedup, and result summary.
-2. Fix **Clients page freeze** at the root cause.
 
-## Root Cause of Freeze
+Build a new, fully independent **Time Sheet** module accessible only to Admin and Manager roles. It lets them manually create hourly timesheets per employee + project + pay period, calculate payment, save to Supabase, list/edit/delete, and export a branded PDF. Punch-in/out and existing `weekly_timesheets` flows are untouched.
 
-After auditing the code, the freeze is **not** caused by realtime subscriptions (there are none on `clients`). The actual culprits are in `ClientsTable.tsx` and `ClientMobileCard.tsx`:
+## Scope
 
-1. **Modal mounted per-row**: `<ClientFormModal>` is rendered inside the `clients.map(...)` loop in `ClientsTable` and `ClientMobileCard`. With N clients, N copies of the form modal mount on render. Each modal calls `useCreateClient()` + `useUpdateClient()` (which subscribe to React Query). Same for `ClientPortalLinkDialog`. With 50+ clients this multiplies React Query observers and form state by N → render lag and UI freeze on edits.
-2. **Search recomputes whole list every keystroke** without `useMemo` — minor, but compounds with #1.
-3. **`isLoading` evaluated twice**: once in `ClientsList`, once via `useIsMobile` re-evaluation — minor, but causes extra renders.
+- New page mounted at `tab=manual-timesheets` in both Admin and Management dashboards.
+- New sidebar entry "Time Sheet" (icon: ClipboardList) under **Management Operations** for both portals.
+- New Supabase table `manual_timesheets` (independent — does NOT touch `weekly_timesheets` or `timesheets`).
+- Hourly type: full functionality. Project type: selectable but shows a "Coming soon" placeholder so the UI is future-proof without committing logic now.
 
-### Fix Strategy
-- Hoist `ClientFormModal`, `ClientPortalLinkDialog`, and `AlertDialog` to the **table parent** (single instance). Pass the active client via state (`editingClient`, `portalClient`, `deletingClient`).
-- Same pattern for the mobile list — single set of modals at `ClientsMobileList` level instead of one per `ClientMobileCard`.
-- Wrap `filteredClients` and stat totals in `useMemo` keyed on `clients` + `searchQuery`.
-- Stabilize row callbacks with `useCallback` only where they cross memoization boundaries.
+## Database
 
-This is the real root cause — no virtualization or pagination needed yet.
+New table `public.manual_timesheets`:
 
-## Feature: Import Clients
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid PK default gen_random_uuid() | |
+| `company_id` | uuid NOT NULL | RLS scope |
+| `employee_id` | uuid NOT NULL | references `user_profiles.user_id` (no FK to auth.users) |
+| `employee_name` | text NOT NULL | snapshot |
+| `timesheet_type` | text NOT NULL default `'hourly'` | `'hourly' \| 'project'` |
+| `jobsite_id` | uuid NULL | optional FK-style ref to `jobsites.id` |
+| `project_name` | text NOT NULL | resolved jobsite name OR custom typed name |
+| `pay_period_start` | date NOT NULL | |
+| `pay_period_end` | date NOT NULL | |
+| `daily_hours` | jsonb NOT NULL default `'[]'` | `[{date:'2025-04-20', day:'Monday', hours:8}, ...]` |
+| `total_hours` | numeric(10,2) NOT NULL default 0 | |
+| `hourly_rate` | numeric(10,2) NOT NULL default 0 | editable snapshot |
+| `extra_amount` | numeric(10,2) NOT NULL default 0 | |
+| `subtotal` | numeric(10,2) NOT NULL default 0 | total_hours * hourly_rate + extra |
+| `tax_amount` | numeric(10,2) NOT NULL default 0 | |
+| `total_payment` | numeric(10,2) NOT NULL default 0 | subtotal + tax |
+| `created_by` | uuid NOT NULL | `auth.uid()` |
+| `created_at` | timestamptz default now() | |
+| `updated_at` | timestamptz default now() | trigger |
 
-### Schema Note
-The existing `clients` table only has: `client_name`, `client_email`, `client_company`, `client_phone`, `client_address`. Columns like `city`, `province`, `postal_code`, `country`, `notes` **don't exist**. To honor the request without a risky schema migration, the importer will:
-- Map `address`, `city`, `province`, `postal_code`, `country` → concatenate into a single `client_address` string.
-- `notes` → ignored with a warning (or stored at end of address). Documented as a limitation.
+**RLS** (company-isolated, admin/manager-only):
 
-If the user wants real columns, that's a follow-up migration.
+- `SELECT/INSERT/UPDATE/DELETE` allowed when `company_id = public.get_user_company_id()` AND role IN (`admin`, `super_admin`, `management`) — reuse `is_company_admin()` helper which already covers all three.
+- Trigger `update_manual_timesheets_updated_at` to maintain `updated_at`.
 
-### New Files
-- `src/lib/clients/importParser.ts` — parse xlsx/xls/csv (using existing `xlsx` + `papaparse`), normalize headers (case-insensitive, accepts aliases like "Client Name", "Full Name", "Phone Number", "Company Name").
-- `src/lib/clients/importValidator.ts` — per-row validation (name required, email format via zod), in-file dedup (email, phone, name+company), DB dedup against existing `clients` for current `company_id`.
-- `src/lib/clients/importTemplate.ts` — generates the downloadable `.xlsx` sample with headers + 1 example row.
-- `src/hooks/useImportClients.ts` — batch insert (chunks of 200) using `supabase.from('clients').insert(batch)`, returns per-batch results, invalidates `['clients']` once at the end.
-- `src/components/admin/clients/ImportClientsModal.tsx` — main drawer/modal with 3 steps: **Upload → Preview/Validate → Result**.
-- `src/components/admin/clients/import/ImportDropzone.tsx` — drag-and-drop + file picker.
-- `src/components/admin/clients/import/ImportPreviewTable.tsx` — preview with row-level status badges (Valid / Duplicate / Invalid), checkboxes, and "Skip duplicates" / "Skip invalid" toggles.
-- `src/components/admin/clients/import/ImportResultSummary.tsx` — final counts.
+## Frontend
 
-### UI Wiring
-- `ClientsPage.tsx`: add **Import Clients** button next to **New Client** (desktop). Mobile: add a secondary FAB or menu item under the existing FAB.
-- Shows a single result toast and refreshes via `invalidateQueries(['clients'])`.
+### New files
 
-### Validation Rules (in `importValidator.ts`)
-- `name` required → otherwise `Invalid`.
-- `email` if present → must match standard regex; **email is not strictly required at DB level** but the `clients.client_email` column is `NOT NULL`. The importer will:
-  - Auto-fill missing/invalid emails with a placeholder (`no-email-<uuid>@import.local`) and flag the row as **Warning: placeholder email** so users see what happened. (Or skip — user toggles via a "Require email" switch.)
-- Duplicate detection (in-file): email match, phone match, or `name+company` match → `Duplicate`.
-- Duplicate detection (DB): batch-fetch existing clients for `company_id` once at preview time, build Sets of normalized emails/phones/(name+company), check each row.
-- User toggles: **Skip Invalid** (default on) and **Skip Duplicates** (default on). Cannot import while invalid rows are selected unless toggle is off.
+- `src/pages/admin/ManualTimesheetsPage.tsx` — page shell (header + form + list).
+- `src/components/admin/manual-timesheets/ManualTimesheetForm.tsx` — type selector + hourly form.
+- `src/components/admin/manual-timesheets/HourlyTimesheetForm.tsx` — employee/project/period + dynamic day grid + calc summary.
+- `src/components/admin/manual-timesheets/DailyHoursGrid.tsx` — day-by-day rows generated from start/end date.
+- `src/components/admin/manual-timesheets/PaymentSummary.tsx` — total hours / rate / extra / subtotal / tax / total.
+- `src/components/admin/manual-timesheets/ManualTimesheetsTable.tsx` — list with desktop table + mobile cards.
+- `src/components/admin/manual-timesheets/ManualTimesheetViewModal.tsx` — read-only detail.
+- `src/components/admin/manual-timesheets/ManualTimesheetEditModal.tsx` — reuse `HourlyTimesheetForm` in edit mode.
+- `src/components/admin/manual-timesheets/EmptyState.tsx`.
+- `src/hooks/useManualTimesheets.ts` — list/create/update/delete with React Query, scoped to `companyId`.
+- `src/utils/manualTimesheetPDF.ts` — jsPDF + autotable branded export (logo from `companies.logo_url`).
+- `src/utils/manualTimesheetDays.ts` — pure helper: given start/end → array of `{date, day, hours:0}`.
 
-### Result Summary
-Total rows | Imported | Skipped (duplicates) | Skipped (invalid) | Failed (DB error). Then `queryClient.invalidateQueries(['clients'])`.
+### Wiring
 
-### Security
-- All inserts go through Supabase client respecting existing RLS on `clients` (already restricts by `company_id`). Importer uses `user.companyId` from `useAuth()` — same pattern as `ClientFormModal`.
-- No edge function needed; client-side bulk insert is safe under RLS.
+**Admin** (`src/pages/AdminDashboard.tsx`):
+- Import + add `case 'manual-timesheets': return <ManualTimesheetsPage />;`
+**Management** (`src/pages/ManagementDashboard.tsx`):
+- Same case.
+**Sidebar**:
+- `src/components/admin/sidebar/menuData.ts` — add menu item `{ id:'manual-timesheets', title:'Time Sheet', icon: ClipboardList }` and include it in `groupedMenuItems.managementOps` (sits next to Live Punch Monitor).
+- `src/components/management/sidebar/managementMenuData.ts` — add `{ id:'manual-timesheets', title:'Time Sheet', icon: ClipboardList }` to `operations` array.
 
-## Files Changed
-**New (8):**
-- `src/lib/clients/importParser.ts`
-- `src/lib/clients/importValidator.ts`
-- `src/lib/clients/importTemplate.ts`
-- `src/hooks/useImportClients.ts`
-- `src/components/admin/clients/ImportClientsModal.tsx`
-- `src/components/admin/clients/import/ImportDropzone.tsx`
-- `src/components/admin/clients/import/ImportPreviewTable.tsx`
-- `src/components/admin/clients/import/ImportResultSummary.tsx`
+Both sidebars are already only rendered for admin/manager portals, so role gating happens at the route level. No employee/foreman portal changes.
 
-**Modified (4):**
-- `src/pages/admin/ClientsPage.tsx` — add Import button, memoize stats/filter.
-- `src/components/admin/clients/ClientsTable.tsx` — hoist modals out of map (freeze fix).
-- `src/components/admin/clients/ClientsMobileList.tsx` — hoist modals out of cards.
-- `src/components/admin/clients/ClientMobileCard.tsx` — accept `onEdit/onDelete/onPortal` props instead of owning modals.
+### Hourly form behavior
 
-## What We're NOT Touching
-- `clients` table schema — no migration. Extra columns folded into `client_address`.
-- `useClients.ts` query/mutation logic — only consumers change.
-- RLS policies.
-- Other entities (invoices, quotes) that reference clients.
+1. **Employee**: dropdown from `useEmployeeDirectory()`. On select, auto-fill `hourly_rate` from `user_profiles.hourly_rate` (editable after).
+2. **Project**: combobox listing jobsites (via existing `useJobsiteActions`/jobsites query) + free-text input. State stores `{ jobsite_id?: string, project_name: string }`. Custom name → `jobsite_id = null`, `project_name = typed`.
+3. **Pay period**: two `DatePicker`s. On both selected, `manualTimesheetDays(start, end)` generates rows; each row has a numeric `Input` for hours (0 placeholder).
+4. **Calc summary** (live):
+   - `total_hours = sum(daily_hours[].hours)`
+   - `subtotal = total_hours * hourly_rate + extra_amount`
+   - `total_payment = subtotal + tax_amount`
+5. **Validation**: employee, project_name, period start ≤ end, period ≤ 31 days (guardrail), hours 0–24 per day.
+6. **Submit**: insert via `useManualTimesheets().create`; toast success; reset form; invalidate list.
 
-## Limitations (documented for user)
-- `notes`, `city`, `province`, `postal_code`, `country` are merged into `client_address` (no dedicated columns yet — request a schema migration if needed).
-- Email is required by DB; rows missing email get a placeholder unless skipped.
-- Bulk import processes in batches of 200; very large files (>5k rows) will work but show progress.
+### List
 
+- Columns: Employee, Project, Pay Period (formatted), Total Hours, Total Payment, Created Date, Actions.
+- Actions: View (modal), Edit (modal), Download PDF, Delete (with `AlertDialog` confirm).
+- Loading skeleton + empty state.
+- Mobile: stacked cards with same actions.
+
+### PDF (`manualTimesheetPDF.ts`)
+
+Uses jsPDF + jspdf-autotable v5 (per project memory: read `doc.lastAutoTable.finalY`):
+- Header: company logo (if `logo_url` set), company name, "TIME SHEET" title.
+- Meta block: Employee, Project, Pay Period, Created Date.
+- Daily hours table.
+- Totals block: Total Hours, Hourly Rate, Subtotal, Extra, Tax, **Total Payment** (bold).
+- Footer: page number, generated timestamp.
+- Filename: `Timesheet_{Employee}_{periodStart}_{periodEnd}.pdf`.
+
+## Safety / Guardrails
+
+- New table only; no changes to `weekly_timesheets`, `timesheets`, `time-tracker`, or `LivePunchMonitor`.
+- RLS uses existing `get_user_company_id()` + role check (admin/super_admin/management).
+- Sidebar only adds an entry — does not reorder or remove anything.
+- Edit/Delete confirmed via existing AlertDialog pattern; updates set `updated_at` via trigger.
+- Project Type "Project" is shown but renders an "Available soon" panel — no DB writes for that type yet.
+
+## Out of scope (deferred)
+
+- Project-type timesheet (line items, cost codes) — placeholder only.
+- Bulk export of multiple timesheets — single-record PDF only.
+- Approval workflow — these are admin-created records, no employee approval needed.
