@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CalendarIcon, FileText, Loader2, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
@@ -42,6 +43,12 @@ const parseDate = (s?: string): Date | undefined => {
   if (!s) return undefined;
   const d = new Date(`${s}T12:00:00`);
   return Number.isNaN(d.getTime()) ? undefined : d;
+};
+
+const initials = (first?: string | null, last?: string | null) => {
+  const f = (first ?? '').trim().charAt(0);
+  const l = (last ?? '').trim().charAt(0);
+  return (f + l).toUpperCase() || '?';
 };
 
 export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
@@ -132,6 +139,7 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
       tax_amount: taxAmount,
       total_payment: totalPayment,
       notes: notes.trim() || null,
+      employee_photo_url: employee?.photo_url ?? null,
     };
 
     try {
@@ -167,13 +175,35 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
             <Label>Select Employee *</Label>
             <Select value={employeeId} onValueChange={setEmployeeId} disabled={employeesLoading}>
               <SelectTrigger className="h-10">
-                <SelectValue placeholder={employeesLoading ? 'Loading...' : 'Choose employee'} />
+                {employee ? (
+                  <span className="flex items-center gap-2 truncate">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={employee.photo_url ?? undefined} alt={employeeName} />
+                      <AvatarFallback className="text-[10px]">
+                        {initials(employee.first_name, employee.last_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="truncate">{employeeName}</span>
+                  </span>
+                ) : (
+                  <SelectValue placeholder={employeesLoading ? 'Loading...' : 'Choose employee'} />
+                )}
               </SelectTrigger>
               <SelectContent>
                 {employees.map((e: any) => (
                   <SelectItem key={e.user_id} value={e.user_id}>
-                    {e.first_name} {e.last_name}
-                    {e.position ? ` — ${e.position}` : ''}
+                    <span className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={e.photo_url ?? undefined} alt={`${e.first_name ?? ''} ${e.last_name ?? ''}`} />
+                        <AvatarFallback className="text-[10px]">
+                          {initials(e.first_name, e.last_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>
+                        {e.first_name} {e.last_name}
+                        {e.position ? ` — ${e.position}` : ''}
+                      </span>
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>

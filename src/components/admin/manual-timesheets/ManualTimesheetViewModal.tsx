@@ -6,8 +6,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { ManualTimesheet } from '@/hooks/useManualTimesheets';
 import { formatDateLong } from '@/utils/manualTimesheetDays';
+
+const initialsFromName = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n.charAt(0).toUpperCase())
+    .join('') || '?';
 
 interface Props {
   timesheet: ManualTimesheet | null;
@@ -29,7 +38,15 @@ export const ManualTimesheetViewModal: React.FC<Props> = ({ timesheet, onClose }
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground text-xs uppercase">Employee</p>
-                <p className="font-medium">{timesheet.employee_name}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={timesheet.employee_photo_url ?? undefined} alt={timesheet.employee_name} />
+                    <AvatarFallback className="text-[11px]">
+                      {initialsFromName(timesheet.employee_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="font-medium">{timesheet.employee_name}</p>
+                </div>
               </div>
               <div>
                 <p className="text-muted-foreground text-xs uppercase">Project</p>
