@@ -139,6 +139,7 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
       tax_amount: taxAmount,
       total_payment: totalPayment,
       notes: notes.trim() || null,
+      employee_photo_url: employee?.photo_url ?? null,
     };
 
     try {
