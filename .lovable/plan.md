@@ -1,27 +1,33 @@
-## Add Notes to Manual Timesheets
+## Add Employee Photos to Manual Timesheet Dropdown + PDF
 
-Allow users to attach descriptive notes (work performed, observations, etc.) to a manual timesheet. Notes appear in the form, view modal, and generated PDF.
+Show the employee's circular profile photo (with initials fallback) in the "Select Employee" dropdown, and render a circular avatar in the PDF header next to the employee details.
 
-### 1. Database
-- Migration: add `notes text` (nullable) to `public.manual_timesheets`.
+### 1. Persist photo on the timesheet
+- **Migration**: add `employee_photo_url text` (nullable) to `public.manual_timesheets`. Storing it on the row keeps the PDF stable even if the employee later changes their photo.
+- **`src/hooks/useManualTimesheets.ts`** — add `employee_photo_url: string | null` to `ManualTimesheet` and optional on `ManualTimesheetInput`.
 
-### 2. Types & Hook
-- `src/hooks/useManualTimesheets.ts` — add `notes: string | null` to `ManualTimesheet` and `notes?: string | null` to `ManualTimesheetInput`.
+### 2. Dropdown UI (`HourlyTimesheetForm.tsx`)
+- Import shadcn `Avatar`, `AvatarImage`, `AvatarFallback`.
+- Helper `initials(first, last)` returning up to 2 letters.
+- Each `SelectItem`: 24px avatar + name + position, in a flex row.
+- `SelectTrigger`: replace plain `SelectValue` with a custom render — when an employee is selected, show the avatar + name; otherwise show the placeholder.
+- On submit, include `employee_photo_url: employee?.photo_url ?? null` in the input.
 
-### 3. Form (HourlyTimesheetForm)
-- Add a `notes` state initialized from `initial?.notes ?? ''`.
-- New Card section "Notes" placed below `PaymentSummary` containing a `Textarea` (4–6 rows) with placeholder: "Describe the work performed, materials used, observations…".
-- Include `notes: notes.trim() || null` in the saved input; reset on create.
+### 3. PDF (`src/utils/manualTimesheetPDF.ts`)
+- After the header band, before the meta block, if `ts.employee_photo_url`:
+  - Reuse `loadImageAsDataUrl` + `getImageSize` + `detectImageFormat`.
+  - Draw a 48pt circle: use `doc.circle(cx, cy, r, 'S')` outline + `doc.saveGraphicsState()` / clip path via `doc.ellipse` is unavailable — jsPDF supports clipping via `doc.clip()` only on path. Practical approach: draw the image as a 48×48 square at the avatar position, then overlay a white "donut" mask using 4 white rectangles is too messy. Instead use the documented jsPDF roundedRect clipping pattern:
+    1. `doc.saveGraphicsState()`
+    2. Build a circular path: `doc.circle(cx, cy, r, null)` followed by `doc.clip()` and `doc.discardPath()`
+    3. `doc.addImage(...)` covering the bounding box
+    4. `doc.restoreGraphicsState()`
+    5. Draw a thin border circle on top: `doc.setDrawColor(220) ; doc.circle(cx, cy, r, 'S')`
+  - Fallback when no photo: draw a filled light-gray circle and render initials in the center.
+- Position: right side of the header band (so it doesn't fight with the company logo on the left), or just below the divider next to "Employee:" label. Place it to the **left of the meta block** and shift the "Employee:" / "Project:" / "Pay Period:" / "Type:" text right by ~58pt when photo is shown.
 
-### 4. View Modal
-- `ManualTimesheetViewModal.tsx` — render a "Notes" section (only when present) with whitespace preserved (`whitespace-pre-wrap`).
-
-### 5. PDF
-- `src/utils/manualTimesheetPDF.ts` — after the totals block, if `ts.notes` is present:
-  - Add a "Notes" heading.
-  - Render with `doc.splitTextToSize(notes, pageWidth - 2*margin)` so long text wraps.
-  - Auto-handle page break if `y` near bottom (use `doc.addPage()` when needed).
+### 4. View Modal (small bonus, keeps UI consistent)
+- `ManualTimesheetViewModal.tsx`: show the avatar next to the Employee name (uses `timesheet.employee_photo_url`).
 
 ### Out of scope
-- No new tab. Notes live inline within the existing Hourly form (one quick scroll, not a separate step).
-- No rich text — plain multi-line text only.
+- No bulk back-fill for existing rows — older timesheets simply render the initials fallback in the PDF.
+- No upload UI (photos already managed in user profiles).
