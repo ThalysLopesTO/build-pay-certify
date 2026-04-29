@@ -6,8 +6,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { ManualTimesheet } from '@/hooks/useManualTimesheets';
 import { formatDateLong } from '@/utils/manualTimesheetDays';
+
+const initialsFromName = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n.charAt(0).toUpperCase())
+    .join('') || '?';
 
 interface Props {
   timesheet: ManualTimesheet | null;
