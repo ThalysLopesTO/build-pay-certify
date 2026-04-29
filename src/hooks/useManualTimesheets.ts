@@ -23,6 +23,7 @@ export interface ManualTimesheet {
   tax_percent: number;
   tax_amount: number;
   total_payment: number;
+  notes: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -44,6 +45,7 @@ export interface ManualTimesheetInput {
   tax_percent: number;
   tax_amount: number;
   total_payment: number;
+  notes?: string | null;
 }
 
 const QUERY_KEY = ['manual-timesheets'] as const;

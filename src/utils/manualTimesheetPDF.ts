@@ -190,6 +190,41 @@ export const generateManualTimesheetPDF = async (
   doc.setFontSize(12);
   doc.text('TOTAL PAYMENT', pageWidth - margin - 320, y);
   doc.text(formatCurrency(ts.total_payment), pageWidth - margin, y, { align: 'right' });
+  y += 30;
+
+  // ========= Notes
+  if (ts.notes && ts.notes.trim()) {
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const ensureSpace = (needed: number) => {
+      if (y + needed > pageHeight - 50) {
+        doc.addPage();
+        y = margin;
+      }
+    };
+
+    ensureSpace(40);
+    doc.setDrawColor(220, 220, 220);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 18;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(80, 80, 80);
+    doc.text('NOTES', margin, y);
+    y += 14;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(40, 40, 40);
+    const lines = doc.splitTextToSize(ts.notes.trim(), pageWidth - margin * 2);
+    const lineHeight = 13;
+    for (const line of lines) {
+      ensureSpace(lineHeight);
+      doc.text(line, margin, y);
+      y += lineHeight;
+    }
+    doc.setTextColor(0, 0, 0);
+  }
 
   // Footer
   const pageCount = doc.getNumberOfPages();

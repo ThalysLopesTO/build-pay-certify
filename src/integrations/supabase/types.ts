@@ -1864,6 +1864,7 @@ export type Database = {
           hourly_rate: number
           id: string
           jobsite_id: string | null
+          notes: string | null
           pay_period_end: string
           pay_period_start: string
           project_name: string
@@ -1886,6 +1887,7 @@ export type Database = {
           hourly_rate?: number
           id?: string
           jobsite_id?: string | null
+          notes?: string | null
           pay_period_end: string
           pay_period_start: string
           project_name: string
@@ -1908,6 +1910,7 @@ export type Database = {
           hourly_rate?: number
           id?: string
           jobsite_id?: string | null
+          notes?: string | null
           pay_period_end?: string
           pay_period_start?: string
           project_name?: string

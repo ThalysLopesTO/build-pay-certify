@@ -3,10 +3,11 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, Save } from 'lucide-react';
+import { CalendarIcon, FileText, Loader2, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useJobsites } from '@/hooks/useJobsites';
@@ -73,6 +74,7 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
     }
     return 0;
   });
+  const [notes, setNotes] = useState<string>(initial?.notes ?? '');
 
   // Auto-fill rate when employee changes (only for new entries)
   useEffect(() => {
@@ -129,6 +131,7 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
       tax_percent: taxPercent,
       tax_amount: taxAmount,
       total_payment: totalPayment,
+      notes: notes.trim() || null,
     };
 
     try {
@@ -147,6 +150,7 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
         setHourlyRate(0);
         setExtra(0);
         setTaxPercent(0);
+        setNotes('');
       }
       onSaved?.();
     } catch {
@@ -280,6 +284,24 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
         onTaxPercentChange={setTaxPercent}
         disabled={isSaving}
       />
+
+      <Card className="p-4 md:p-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Notes</Label>
+        </div>
+        <Textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Describe the work performed, materials used, observations…"
+          rows={5}
+          disabled={isSaving}
+          className="resize-y"
+        />
+        <p className="text-xs text-muted-foreground">
+          These notes will be included in the PDF export.
+        </p>
+      </Card>
 
       <div className="flex justify-end">
         <Button onClick={handleSubmit} disabled={isSaving} size="lg" className="gap-2">

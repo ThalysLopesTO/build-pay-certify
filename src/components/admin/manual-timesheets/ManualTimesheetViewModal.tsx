@@ -108,6 +108,20 @@ export const ManualTimesheetViewModal: React.FC<Props> = ({ timesheet, onClose }
                 </span>
               </div>
             </div>
+
+            {timesheet.notes && (
+              <>
+                <Separator />
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">
+                    Notes
+                  </p>
+                  <p className="text-sm whitespace-pre-wrap rounded-md border bg-muted/30 p-3">
+                    {timesheet.notes}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         )}
       </DialogContent>
