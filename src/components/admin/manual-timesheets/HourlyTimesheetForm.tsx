@@ -45,6 +45,12 @@ const parseDate = (s?: string): Date | undefined => {
   return Number.isNaN(d.getTime()) ? undefined : d;
 };
 
+const initials = (first?: string | null, last?: string | null) => {
+  const f = (first ?? '').trim().charAt(0);
+  const l = (last ?? '').trim().charAt(0);
+  return (f + l).toUpperCase() || '?';
+};
+
 export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
   initial,
   onSaved,
