@@ -1860,6 +1860,7 @@ export type Database = {
           daily_hours: Json
           employee_id: string
           employee_name: string
+          employee_photo_url: string | null
           extra_amount: number
           hourly_rate: number
           id: string
@@ -1883,6 +1884,7 @@ export type Database = {
           daily_hours?: Json
           employee_id: string
           employee_name: string
+          employee_photo_url?: string | null
           extra_amount?: number
           hourly_rate?: number
           id?: string
@@ -1906,6 +1908,7 @@ export type Database = {
           daily_hours?: Json
           employee_id?: string
           employee_name?: string
+          employee_photo_url?: string | null
           extra_amount?: number
           hourly_rate?: number
           id?: string
