@@ -100,6 +100,62 @@ export const generateManualTimesheetPDF = async (
   });
   doc.setTextColor(0, 0, 0);
 
+  // ========= Employee avatar (circular) — top-right area
+  const AVATAR_R = 26; // radius pt
+  const avatarCx = pageWidth - margin - AVATAR_R;
+  const avatarCy = y + HEADER_BAND + 8 + AVATAR_R;
+  let avatarDrawn = false;
+
+  if (ts.employee_photo_url) {
+    const photoData = await loadImageAsDataUrl(ts.employee_photo_url);
+    if (photoData) {
+      try {
+        const { w: iw, h: ih } = await getImageSize(photoData);
+        if (iw > 0 && ih > 0) {
+          // Cover the circle: scale image so the shorter dimension equals 2R
+          const scale = (2 * AVATAR_R) / Math.min(iw, ih);
+          const drawW = iw * scale;
+          const drawH = ih * scale;
+          const drawX = avatarCx - drawW / 2;
+          const drawY = avatarCy - drawH / 2;
+
+          // @ts-expect-error - graphics state APIs exist on jsPDF
+          doc.saveGraphicsState();
+          doc.circle(avatarCx, avatarCy, AVATAR_R, null as any);
+          // @ts-expect-error - clip API
+          doc.clip();
+          // @ts-expect-error - discardPath API
+          doc.discardPath();
+          doc.addImage(photoData, detectImageFormat(photoData), drawX, drawY, drawW, drawH);
+          // @ts-expect-error - restore
+          doc.restoreGraphicsState();
+
+          avatarDrawn = true;
+        }
+      } catch {
+        // ignore — fall through to initials fallback
+      }
+    }
+  }
+
+  if (!avatarDrawn) {
+    // Initials fallback
+    doc.setFillColor(240, 240, 240);
+    doc.circle(avatarCx, avatarCy, AVATAR_R, 'F');
+    const parts = (ts.employee_name ?? '').split(/\s+/).filter(Boolean).slice(0, 2);
+    const init = parts.map(p => p.charAt(0).toUpperCase()).join('') || '?';
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(110, 110, 110);
+    doc.text(init, avatarCx, avatarCy + 5, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+  }
+
+  // Border ring
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.8);
+  doc.circle(avatarCx, avatarCy, AVATAR_R, 'S');
+
   y += 90;
 
   // Divider
