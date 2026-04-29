@@ -175,13 +175,35 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
             <Label>Select Employee *</Label>
             <Select value={employeeId} onValueChange={setEmployeeId} disabled={employeesLoading}>
               <SelectTrigger className="h-10">
-                <SelectValue placeholder={employeesLoading ? 'Loading...' : 'Choose employee'} />
+                {employee ? (
+                  <span className="flex items-center gap-2 truncate">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={employee.photo_url ?? undefined} alt={employeeName} />
+                      <AvatarFallback className="text-[10px]">
+                        {initials(employee.first_name, employee.last_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="truncate">{employeeName}</span>
+                  </span>
+                ) : (
+                  <SelectValue placeholder={employeesLoading ? 'Loading...' : 'Choose employee'} />
+                )}
               </SelectTrigger>
               <SelectContent>
                 {employees.map((e: any) => (
                   <SelectItem key={e.user_id} value={e.user_id}>
-                    {e.first_name} {e.last_name}
-                    {e.position ? ` — ${e.position}` : ''}
+                    <span className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={e.photo_url ?? undefined} alt={`${e.first_name ?? ''} ${e.last_name ?? ''}`} />
+                        <AvatarFallback className="text-[10px]">
+                          {initials(e.first_name, e.last_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>
+                        {e.first_name} {e.last_name}
+                        {e.position ? ` — ${e.position}` : ''}
+                      </span>
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
