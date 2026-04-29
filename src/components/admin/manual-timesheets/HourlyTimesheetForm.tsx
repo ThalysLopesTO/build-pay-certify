@@ -74,6 +74,7 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
     }
     return 0;
   });
+  const [notes, setNotes] = useState<string>(initial?.notes ?? '');
 
   // Auto-fill rate when employee changes (only for new entries)
   useEffect(() => {
