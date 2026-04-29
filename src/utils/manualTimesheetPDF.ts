@@ -119,15 +119,11 @@ export const generateManualTimesheetPDF = async (
           const drawX = avatarCx - drawW / 2;
           const drawY = avatarCy - drawH / 2;
 
-          // @ts-expect-error - graphics state APIs exist on jsPDF
           doc.saveGraphicsState();
           doc.circle(avatarCx, avatarCy, AVATAR_R, null as any);
-          // @ts-expect-error - clip API
           doc.clip();
-          // @ts-expect-error - discardPath API
           doc.discardPath();
           doc.addImage(photoData, detectImageFormat(photoData), drawX, drawY, drawW, drawH);
-          // @ts-expect-error - restore
           doc.restoreGraphicsState();
 
           avatarDrawn = true;
