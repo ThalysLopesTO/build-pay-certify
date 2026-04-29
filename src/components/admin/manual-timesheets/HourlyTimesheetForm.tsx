@@ -285,6 +285,24 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
         disabled={isSaving}
       />
 
+      <Card className="p-4 md:p-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Notes</Label>
+        </div>
+        <Textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Describe the work performed, materials used, observations…"
+          rows={5}
+          disabled={isSaving}
+          className="resize-y"
+        />
+        <p className="text-xs text-muted-foreground">
+          These notes will be included in the PDF export.
+        </p>
+      </Card>
+
       <div className="flex justify-end">
         <Button onClick={handleSubmit} disabled={isSaving} size="lg" className="gap-2">
           {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
