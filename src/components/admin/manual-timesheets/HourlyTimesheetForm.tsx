@@ -61,6 +61,14 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
   const { create, update } = useManualTimesheets();
 
   const [employeeId, setEmployeeId] = useState<string>(initial?.employee_id ?? '');
+  const [useCustomEmployee, setUseCustomEmployee] = useState<boolean>(
+    initial ? !initial.employee_id : false
+  );
+  const [customEmployeeName, setCustomEmployeeName] = useState<string>(
+    initial && !initial.employee_id ? initial.employee_name : ''
+  );
+  const [employeeRole, setEmployeeRole] = useState<string>(initial?.employee_role ?? '');
+  const [customRole, setCustomRole] = useState<string>('');
   const [jobsiteId, setJobsiteId] = useState<string>(initial?.jobsite_id ?? '');
   const [customProject, setCustomProject] = useState<string>(
     initial && !initial.jobsite_id ? initial.project_name : ''
