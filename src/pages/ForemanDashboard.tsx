@@ -43,6 +43,8 @@ const ForemanDashboard = () => {
         return <ForemanTimesheetForm />;
       case 'missed-punch-requests':
         return <MissedPunchRequests />;
+      case 'manual-timesheets':
+        return <ManualTimesheetsPage />;
       case 'material-request':
         return <MaterialRequestForm />;
       case 'my-requests':
