@@ -154,43 +154,6 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
       employee_photo_url: useCustomEmployee ? null : (employee?.photo_url ?? null),
     };
 
-  const handleDayChange = (i: number, hours: number) => {
-    setDays(prev => prev.map((d, idx) => (idx === i ? { ...d, hours } : d)));
-  };
-
-  const projectName = useCustom
-    ? customProject.trim()
-    : jobsites.find((j: any) => j.id === jobsiteId)?.name ?? '';
-
-  const isSaving = create.isPending || update.isPending;
-
-  const handleSubmit = async () => {
-    if (!employeeId || !employeeName) return toast.error('Select an employee');
-    if (!projectName) return toast.error('Select a jobsite or enter a project name');
-    if (!periodStart || !periodEnd) return toast.error('Select pay period');
-    if (days.length === 0) return toast.error('Pay period is invalid');
-    if (days.length > 60) return toast.error('Pay period too long (max 60 days)');
-
-    const input: ManualTimesheetInput = {
-      employee_id: employeeId,
-      employee_name: employeeName,
-      timesheet_type: 'hourly',
-      jobsite_id: useCustom ? null : jobsiteId || null,
-      project_name: projectName,
-      pay_period_start: periodStart,
-      pay_period_end: periodEnd,
-      daily_hours: days,
-      total_hours: totalHours,
-      hourly_rate: hourlyRate,
-      extra_amount: extra,
-      subtotal,
-      tax_percent: taxPercent,
-      tax_amount: taxAmount,
-      total_payment: totalPayment,
-      notes: notes.trim() || null,
-      employee_photo_url: employee?.photo_url ?? null,
-    };
-
     try {
       if (initial) {
         await update.mutateAsync({ id: initial.id, input });
@@ -198,6 +161,10 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
         await create.mutateAsync(input);
         // reset
         setEmployeeId('');
+        setUseCustomEmployee(false);
+        setCustomEmployeeName('');
+        setEmployeeRole('');
+        setCustomRole('');
         setJobsiteId('');
         setCustomProject('');
         setUseCustom(false);
