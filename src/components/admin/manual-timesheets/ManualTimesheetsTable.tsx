@@ -153,6 +153,9 @@ export const ManualTimesheetsTable: React.FC = () => {
             <div className="flex justify-between items-start">
               <div>
                 <p className="font-semibold">{ts.employee_name}</p>
+                {ts.employee_role && (
+                  <p className="text-xs text-muted-foreground">{ts.employee_role}</p>
+                )}
                 <p className="text-sm text-muted-foreground">{ts.project_name}</p>
               </div>
               <p className="font-bold text-primary">{formatCurrency(Number(ts.total_payment))}</p>
