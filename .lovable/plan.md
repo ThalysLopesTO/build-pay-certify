@@ -1,33 +1,68 @@
-## Add Employee Photos to Manual Timesheet Dropdown + PDF
+## Goal
 
-Show the employee's circular profile photo (with initials fallback) in the "Select Employee" dropdown, and render a circular avatar in the PDF header next to the employee details.
+The Manual "Time Sheet" page (under Management Operations) is currently admin/management only. Make it accessible to **foremen** as well, so managers and foremen can also create/edit/delete manual timesheets.
 
-### 1. Persist photo on the timesheet
-- **Migration**: add `employee_photo_url text` (nullable) to `public.manual_timesheets`. Storing it on the row keeps the PDF stable even if the employee later changes their photo.
-- **`src/hooks/useManualTimesheets.ts`** — add `employee_photo_url: string | null` to `ManualTimesheet` and optional on `ManualTimesheetInput`.
+Note: Management already has the menu entry and DB access (manager role is included in `is_company_admin()`). The work is therefore focused on adding **Foreman** access — UI + database — while keeping admin/manager behavior unchanged.
 
-### 2. Dropdown UI (`HourlyTimesheetForm.tsx`)
-- Import shadcn `Avatar`, `AvatarImage`, `AvatarFallback`.
-- Helper `initials(first, last)` returning up to 2 letters.
-- Each `SelectItem`: 24px avatar + name + position, in a flex row.
-- `SelectTrigger`: replace plain `SelectValue` with a custom render — when an employee is selected, show the avatar + name; otherwise show the placeholder.
-- On submit, include `employee_photo_url: employee?.photo_url ?? null` in the input.
+## Changes
 
-### 3. PDF (`src/utils/manualTimesheetPDF.ts`)
-- After the header band, before the meta block, if `ts.employee_photo_url`:
-  - Reuse `loadImageAsDataUrl` + `getImageSize` + `detectImageFormat`.
-  - Draw a 48pt circle: use `doc.circle(cx, cy, r, 'S')` outline + `doc.saveGraphicsState()` / clip path via `doc.ellipse` is unavailable — jsPDF supports clipping via `doc.clip()` only on path. Practical approach: draw the image as a 48×48 square at the avatar position, then overlay a white "donut" mask using 4 white rectangles is too messy. Instead use the documented jsPDF roundedRect clipping pattern:
-    1. `doc.saveGraphicsState()`
-    2. Build a circular path: `doc.circle(cx, cy, r, null)` followed by `doc.clip()` and `doc.discardPath()`
-    3. `doc.addImage(...)` covering the bounding box
-    4. `doc.restoreGraphicsState()`
-    5. Draw a thin border circle on top: `doc.setDrawColor(220) ; doc.circle(cx, cy, r, 'S')`
-  - Fallback when no photo: draw a filled light-gray circle and render initials in the center.
-- Position: right side of the header band (so it doesn't fight with the company logo on the left), or just below the divider next to "Employee:" label. Place it to the **left of the meta block** and shift the "Employee:" / "Project:" / "Pay Period:" / "Type:" text right by ~58pt when photo is shown.
+### 1. Foreman sidebar — add "Time Sheet" entry
+File: `src/components/foreman/sidebar/foremanMenuData.ts`
+- Add a new item `{ id: 'manual-timesheets', title: 'Time Sheet', icon: ClipboardList }` inside the existing `timesheet` group (next to "Timesheet" / "Missed Punch Requests"), so it shows under "Time Management".
 
-### 4. View Modal (small bonus, keeps UI consistent)
-- `ManualTimesheetViewModal.tsx`: show the avatar next to the Employee name (uses `timesheet.employee_photo_url`).
+### 2. Foreman dashboard route
+File: `src/pages/ForemanDashboard.tsx`
+- Import `ManualTimesheetsPage` from `@/pages/admin/ManualTimesheetsPage`.
+- Add `case 'manual-timesheets': return <ManualTimesheetsPage />;` to the `renderContent()` switch.
 
-### Out of scope
-- No bulk back-fill for existing rows — older timesheets simply render the initials fallback in the PDF.
-- No upload UI (photos already managed in user profiles).
+The same `ManualTimesheetsPage` / `ManualTimesheetForm` is reused — no new UI needed.
+
+### 3. Database — allow foreman role on `manual_timesheets`
+New migration adding RLS policies that grant foremen the same SELECT/INSERT/UPDATE/DELETE access admins/managers already have, scoped to their company.
+
+```sql
+-- Helper: include foreman alongside admin/management for manual timesheets
+CREATE OR REPLACE FUNCTION public.can_manage_manual_timesheets()
+RETURNS boolean
+LANGUAGE sql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT role IN ('super_admin','admin','management','foreman')
+  FROM public.user_profiles
+  WHERE user_id = auth.uid();
+$$;
+
+-- Replace the 4 existing policies on public.manual_timesheets to use the new helper
+DROP POLICY IF EXISTS "Admin/Manager can view manual timesheets in their company"   ON public.manual_timesheets;
+DROP POLICY IF EXISTS "Admin/Manager can insert manual timesheets in their company" ON public.manual_timesheets;
+DROP POLICY IF EXISTS "Admin/Manager can update manual timesheets in their company" ON public.manual_timesheets;
+DROP POLICY IF EXISTS "Admin/Manager can delete manual timesheets in their company" ON public.manual_timesheets;
+
+CREATE POLICY "Staff can view manual timesheets in their company"
+ON public.manual_timesheets FOR SELECT TO authenticated
+USING (company_id = public.get_user_company_id() AND public.can_manage_manual_timesheets());
+
+CREATE POLICY "Staff can insert manual timesheets in their company"
+ON public.manual_timesheets FOR INSERT TO authenticated
+WITH CHECK (company_id = public.get_user_company_id()
+            AND public.can_manage_manual_timesheets()
+            AND created_by = auth.uid());
+
+CREATE POLICY "Staff can update manual timesheets in their company"
+ON public.manual_timesheets FOR UPDATE TO authenticated
+USING (company_id = public.get_user_company_id() AND public.can_manage_manual_timesheets())
+WITH CHECK (company_id = public.get_user_company_id() AND public.can_manage_manual_timesheets());
+
+CREATE POLICY "Staff can delete manual timesheets in their company"
+ON public.manual_timesheets FOR DELETE TO authenticated
+USING (company_id = public.get_user_company_id() AND public.can_manage_manual_timesheets());
+```
+
+This keeps admin/manager behavior identical and adds foreman access without touching the broader `is_company_admin()` function (which is used in many other policies and should not be widened).
+
+## Out of scope
+
+- No changes to admin or management menus — they already have "Time Sheet".
+- No changes to the form, list, view modal, or PDF generator — they already work for any authorized user.
+- Role-permission overrides (`menuPermissions`) still apply normally, so admins can hide the item per role from settings if desired.
