@@ -91,12 +91,12 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
   });
   const [notes, setNotes] = useState<string>(initial?.notes ?? '');
 
-  // Auto-fill rate when employee changes (only for new entries)
+  // Auto-fill rate when employee changes (only for new entries, when not using custom)
   useEffect(() => {
-    if (initial) return;
+    if (initial || useCustomEmployee) return;
     const emp = employees.find((e: any) => e.user_id === employeeId);
     if (emp?.hourly_rate != null) setHourlyRate(Number(emp.hourly_rate));
-  }, [employeeId, employees, initial]);
+  }, [employeeId, employees, initial, useCustomEmployee]);
 
   // Regenerate days when period changes (preserving entered hours)
   useEffect(() => {
@@ -109,9 +109,50 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
   const totalPayment = +(subtotal + taxAmount).toFixed(2);
 
   const employee = employees.find((e: any) => e.user_id === employeeId);
-  const employeeName = employee
+  const selectedEmployeeName = employee
     ? `${employee.first_name ?? ''} ${employee.last_name ?? ''}`.trim() || 'Unknown'
     : '';
+  const employeeName = useCustomEmployee ? customEmployeeName.trim() : selectedEmployeeName;
+
+  const handleDayChange = (i: number, hours: number) => {
+    setDays(prev => prev.map((d, idx) => (idx === i ? { ...d, hours } : d)));
+  };
+
+  const projectName = useCustom
+    ? customProject.trim()
+    : jobsites.find((j: any) => j.id === jobsiteId)?.name ?? '';
+
+  const isSaving = create.isPending || update.isPending;
+
+  const finalRole = (employeeRole === 'Other' ? customRole.trim() : employeeRole.trim()) || null;
+
+  const handleSubmit = async () => {
+    if (!employeeName) return toast.error('Select an employee or enter a custom name');
+    if (!projectName) return toast.error('Select a jobsite or enter a project name');
+    if (!periodStart || !periodEnd) return toast.error('Select pay period');
+    if (days.length === 0) return toast.error('Pay period is invalid');
+    if (days.length > 60) return toast.error('Pay period too long (max 60 days)');
+
+    const input: ManualTimesheetInput = {
+      employee_id: useCustomEmployee ? null : (employeeId || null),
+      employee_name: employeeName,
+      employee_role: finalRole,
+      timesheet_type: 'hourly',
+      jobsite_id: useCustom ? null : jobsiteId || null,
+      project_name: projectName,
+      pay_period_start: periodStart,
+      pay_period_end: periodEnd,
+      daily_hours: days,
+      total_hours: totalHours,
+      hourly_rate: hourlyRate,
+      extra_amount: extra,
+      subtotal,
+      tax_percent: taxPercent,
+      tax_amount: taxAmount,
+      total_payment: totalPayment,
+      notes: notes.trim() || null,
+      employee_photo_url: useCustomEmployee ? null : (employee?.photo_url ?? null),
+    };
 
   const handleDayChange = (i: number, hours: number) => {
     setDays(prev => prev.map((d, idx) => (idx === i ? { ...d, hours } : d)));
