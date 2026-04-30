@@ -188,42 +188,83 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Employee */}
           <div className="space-y-1.5">
-            <Label>Select Employee *</Label>
-            <Select value={employeeId} onValueChange={setEmployeeId} disabled={employeesLoading}>
-              <SelectTrigger className="h-10">
-                {employee ? (
-                  <span className="flex items-center gap-2 truncate">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={employee.photo_url ?? undefined} alt={employeeName} />
-                      <AvatarFallback className="text-[10px]">
-                        {initials(employee.first_name, employee.last_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="truncate">{employeeName}</span>
-                  </span>
-                ) : (
-                  <SelectValue placeholder={employeesLoading ? 'Loading...' : 'Choose employee'} />
-                )}
-              </SelectTrigger>
-              <SelectContent>
-                {employees.map((e: any) => (
-                  <SelectItem key={e.user_id} value={e.user_id}>
-                    <span className="flex items-center gap-2">
+            <div className="flex items-center justify-between">
+              <Label>Select Employee *</Label>
+              <button
+                type="button"
+                onClick={() => setUseCustomEmployee(v => !v)}
+                className="text-xs text-primary hover:underline"
+              >
+                {useCustomEmployee ? 'Choose from list' : 'Enter custom name'}
+              </button>
+            </div>
+            {useCustomEmployee ? (
+              <Input
+                placeholder="Type employee name"
+                value={customEmployeeName}
+                onChange={e => setCustomEmployeeName(e.target.value)}
+                className="h-10"
+              />
+            ) : (
+              <Select value={employeeId} onValueChange={setEmployeeId} disabled={employeesLoading}>
+                <SelectTrigger className="h-10">
+                  {employee ? (
+                    <span className="flex items-center gap-2 truncate">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={e.photo_url ?? undefined} alt={`${e.first_name ?? ''} ${e.last_name ?? ''}`} />
+                        <AvatarImage src={employee.photo_url ?? undefined} alt={selectedEmployeeName} />
                         <AvatarFallback className="text-[10px]">
-                          {initials(e.first_name, e.last_name)}
+                          {initials(employee.first_name, employee.last_name)}
                         </AvatarFallback>
                       </Avatar>
-                      <span>
-                        {e.first_name} {e.last_name}
-                        {e.position ? ` — ${e.position}` : ''}
-                      </span>
+                      <span className="truncate">{selectedEmployeeName}</span>
                     </span>
-                  </SelectItem>
+                  ) : (
+                    <SelectValue placeholder={employeesLoading ? 'Loading...' : 'Choose employee'} />
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((e: any) => (
+                    <SelectItem key={e.user_id} value={e.user_id}>
+                      <span className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={e.photo_url ?? undefined} alt={`${e.first_name ?? ''} ${e.last_name ?? ''}`} />
+                          <AvatarFallback className="text-[10px]">
+                            {initials(e.first_name, e.last_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>
+                          {e.first_name} {e.last_name}
+                          {e.position ? ` — ${e.position}` : ''}
+                        </span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          {/* Role / Trade */}
+          <div className="space-y-1.5">
+            <Label>Role / Trade</Label>
+            <Select value={employeeRole} onValueChange={setEmployeeRole}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Select role (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                {['Taper','Framer','Drywaller','Labourer','Painter','Carpenter','Electrician','Plumber','Foreman','Other'].map(r => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {employeeRole === 'Other' && (
+              <Input
+                placeholder="Type role / trade"
+                value={customRole}
+                onChange={e => setCustomRole(e.target.value)}
+                className="h-10"
+              />
+            )}
           </div>
 
           {/* Project */}
