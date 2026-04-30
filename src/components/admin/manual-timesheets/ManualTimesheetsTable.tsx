@@ -87,7 +87,14 @@ export const ManualTimesheetsTable: React.FC = () => {
           <TableBody>
             {items.map((ts) => (
               <TableRow key={ts.id}>
-                <TableCell className="font-medium">{ts.employee_name}</TableCell>
+                <TableCell className="font-medium">
+                  <div className="leading-tight">
+                    <div>{ts.employee_name}</div>
+                    {ts.employee_role && (
+                      <div className="text-xs text-muted-foreground font-normal">{ts.employee_role}</div>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell>{ts.project_name}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {formatDateLong(ts.pay_period_start)} – {formatDateLong(ts.pay_period_end)}
