@@ -45,7 +45,12 @@ export const ManualTimesheetViewModal: React.FC<Props> = ({ timesheet, onClose }
                       {initialsFromName(timesheet.employee_name)}
                     </AvatarFallback>
                   </Avatar>
-                  <p className="font-medium">{timesheet.employee_name}</p>
+                  <div className="leading-tight">
+                    <p className="font-medium">{timesheet.employee_name}</p>
+                    {timesheet.employee_role && (
+                      <p className="text-xs text-muted-foreground">{timesheet.employee_role}</p>
+                    )}
+                  </div>
                 </div>
               </div>
               <div>

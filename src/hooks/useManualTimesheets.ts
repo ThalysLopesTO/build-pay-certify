@@ -8,8 +8,9 @@ import type { DayEntry } from '@/utils/manualTimesheetDays';
 export interface ManualTimesheet {
   id: string;
   company_id: string;
-  employee_id: string;
+  employee_id: string | null;
   employee_name: string;
+  employee_role: string | null;
   timesheet_type: 'hourly' | 'project';
   jobsite_id: string | null;
   project_name: string;
@@ -31,8 +32,9 @@ export interface ManualTimesheet {
 }
 
 export interface ManualTimesheetInput {
-  employee_id: string;
+  employee_id: string | null;
   employee_name: string;
+  employee_role?: string | null;
   timesheet_type: 'hourly' | 'project';
   jobsite_id: string | null;
   project_name: string;

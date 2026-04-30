@@ -164,7 +164,10 @@ export const generateManualTimesheetPDF = async (
   doc.setFont('helvetica', 'bold');
   doc.text('Employee:', margin, y);
   doc.setFont('helvetica', 'normal');
-  doc.text(ts.employee_name, margin + 90, y);
+  const employeeLine = ts.employee_role
+    ? `${ts.employee_name} (${ts.employee_role})`
+    : ts.employee_name;
+  doc.text(employeeLine, margin + 90, y);
 
   doc.setFont('helvetica', 'bold');
   doc.text('Project:', pageWidth / 2, y);

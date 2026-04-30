@@ -1858,9 +1858,10 @@ export type Database = {
           created_at: string
           created_by: string
           daily_hours: Json
-          employee_id: string
+          employee_id: string | null
           employee_name: string
           employee_photo_url: string | null
+          employee_role: string | null
           extra_amount: number
           hourly_rate: number
           id: string
@@ -1882,9 +1883,10 @@ export type Database = {
           created_at?: string
           created_by: string
           daily_hours?: Json
-          employee_id: string
+          employee_id?: string | null
           employee_name: string
           employee_photo_url?: string | null
+          employee_role?: string | null
           extra_amount?: number
           hourly_rate?: number
           id?: string
@@ -1906,9 +1908,10 @@ export type Database = {
           created_at?: string
           created_by?: string
           daily_hours?: Json
-          employee_id?: string
+          employee_id?: string | null
           employee_name?: string
           employee_photo_url?: string | null
+          employee_role?: string | null
           extra_amount?: number
           hourly_rate?: number
           id?: string
