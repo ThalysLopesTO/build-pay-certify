@@ -25,6 +25,7 @@ import { JobsiteSelectionScreen } from '../components/admin/tasks/JobsiteSelecti
 import { DailyTaskScreen } from '../components/admin/tasks/DailyTaskScreen';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
+import ManualTimesheetsPage from '@/pages/admin/ManualTimesheetsPage';
 
 const ForemanDashboard = () => {
   const params = useParams();
