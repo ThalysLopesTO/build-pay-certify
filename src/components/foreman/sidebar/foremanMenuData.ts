@@ -103,6 +103,11 @@ export const groupedForemanItems = {
       id: 'timesheet',
     },
     {
+      title: 'Time Sheet',
+      icon: ClipboardList,
+      id: 'manual-timesheets',
+    },
+    {
       title: 'Missed Punch Requests',
       icon: Clock,
       id: 'missed-punch-requests',
