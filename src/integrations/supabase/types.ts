@@ -4161,6 +4161,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_manage_manual_timesheets: { Args: never; Returns: boolean }
       can_self_update_profile: {
         Args: {
           new_company_id: string
