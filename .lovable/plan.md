@@ -1,46 +1,69 @@
 ## Goal
 
-Mirror the "custom project name" toggle for the Employee field, plus add a trade/role field (Taper, Framer, Drywall, Labour, etc.). Both flow through to the View modal, list, and PDF — keeping current PDF layout intact.
+Add filters and bulk PDF download to the **All Timesheets** tab only. Zero changes to the form, view modal, edit modal, hook, PDF generator, or database.
 
-## Changes
+## Scope
 
-### 1. Database migration — `manual_timesheets`
-Add two nullable columns:
-- `employee_role text` — free-text trade label (e.g. "Taper", "Framer")
-- (employee custom name is already supported via `employee_name`; no schema change needed for it — when custom is used, `employee_id` will be set to a sentinel/null pattern)
+Single file edit: `src/components/admin/manual-timesheets/ManualTimesheetsTable.tsx`.
 
-Make `employee_id` nullable to allow custom-name entries with no linked employee record. Keep existing data intact.
+## UI additions (above the table, inside the same card)
 
-```sql
-ALTER TABLE public.manual_timesheets
-  ADD COLUMN IF NOT EXISTS employee_role text,
-  ALTER COLUMN employee_id DROP NOT NULL;
+A toolbar with:
+
+1. **Search** — free text matching `employee_name`, `employee_role`, `project_name` (case-insensitive).
+2. **Employee** — dropdown built from unique `employee_name` values present in the loaded list, plus "All employees".
+3. **Project / Jobsite** — dropdown built from unique `project_name` values, plus "All projects".
+4. **Role / Trade** — dropdown built from unique `employee_role` values (excluding null), plus "All roles".
+5. **Date range** — two date pickers (From / To) matched against `pay_period_start`/`pay_period_end` (inclusive overlap). Parsed at noon local time.
+6. **Clear filters** button — visible only when any filter is active.
+7. Result count: "Showing X of Y timesheets".
+
+## Multi-select download
+
+- Checkbox column added as the first column on the desktop table; mobile cards get a small checkbox in the top-left.
+- Header checkbox toggles "select all visible (filtered) rows".
+- A sticky action bar appears when ≥1 row is selected: "N selected · [Download PDFs] · [Clear]".
+- Bulk download iterates the selected timesheets and calls the existing `generateManualTimesheetPDF` for each (sequentially, with a small await gap so browsers don't block downloads). Progress shown as "Downloading X of N…" on the button. No changes to the PDF utility.
+
+## State (local, in this component)
+
+```ts
+const [search, setSearch] = useState('');
+const [employeeFilter, setEmployeeFilter] = useState<string>('all');
+const [projectFilter, setProjectFilter] = useState<string>('all');
+const [roleFilter, setRoleFilter] = useState<string>('all');
+const [fromDate, setFromDate] = useState<string>('');
+const [toDate, setToDate] = useState<string>('');
+const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
 ```
 
-### 2. Hook — `src/hooks/useManualTimesheets.ts`
-- Add `employee_role: string | null` to `ManualTimesheet` and `ManualTimesheetInput`.
-- Allow `employee_id: string | null` in both interfaces.
+## Filtering logic (memoized)
 
-### 3. Form — `HourlyTimesheetForm.tsx`
-- Add `useCustomEmployee` toggle next to "Select Employee" label (mirrors the project toggle: link "Enter custom name" / "Choose from list").
-- When custom: render an `Input` for the typed employee name; clear `employeeId`, skip rate auto-fill, photo defaults to null.
-- Add a new field "Role / Trade" — a `Select` with preset options (Taper, Framer, Drywaller, Labourer, Painter, Carpenter, Electrician, Plumber, Foreman, Other) plus a free-text fallback when "Other" is chosen. Stored in state as `employeeRole`.
-- Submit payload: include `employee_role`; when custom, send `employee_id: null`, `employee_name: customEmployeeName.trim()`, `employee_photo_url: null`.
-- Validation: require either a selected employee or a non-empty custom name; role optional but recommended.
+```text
+filtered = items.filter(ts =>
+  (search === '' || matches name/role/project) &&
+  (employeeFilter === 'all' || ts.employee_name === employeeFilter) &&
+  (projectFilter === 'all'  || ts.project_name === projectFilter) &&
+  (roleFilter === 'all'     || ts.employee_role === roleFilter) &&
+  (fromDate === '' || ts.pay_period_end   >= fromDate) &&
+  (toDate   === '' || ts.pay_period_start <= toDate)
+)
+```
 
-### 4. View modal — `ManualTimesheetViewModal.tsx`
-- Below the employee name, show role as a small muted line if present (e.g. "Taper").
+When the filtered set changes, prune `selectedIds` to only ids that still appear (so hidden rows aren't accidentally downloaded).
 
-### 5. List/Table — `ManualTimesheetsTable.tsx`
-- If a role column exists, display role as a subtle badge under employee name. (Will inspect file during implementation; otherwise minimal change.)
+## Non-goals (explicitly NOT touched)
 
-### 6. PDF — `src/utils/manualTimesheetPDF.ts`
-Keep current layout. Two small additions:
-- In the meta block, under "Employee:" line, render role on the same line as a parenthetical when present: `John Doe (Taper)`. No layout shifts.
-- Avatar/initials fallback already handles missing `employee_photo_url` (custom-name entries).
+- `useManualTimesheets` hook
+- `manualTimesheetPDF.ts`
+- `HourlyTimesheetForm`, `ManualTimesheetEditModal`, `ManualTimesheetViewModal`
+- Database schema, RLS, types
+- Foreman/Management dashboards or any other table/list
 
 ## Acceptance
 
-- Toggle "Enter custom name" appears next to Employee label, behaves identically to the Project toggle.
-- Role selector visible on the form; saved value appears in the View modal and in the PDF next to the employee name.
-- Existing timesheets continue to render with no role shown and no layout regression in the PDF.
+- All filters reduce both desktop table rows and mobile cards.
+- Header checkbox selects only currently filtered rows.
+- "Download PDFs" produces one PDF per selected row; existing single-row Download button still works unchanged.
+- Clearing filters restores the full list; selection persists for ids still visible.
