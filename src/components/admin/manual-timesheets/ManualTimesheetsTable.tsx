@@ -41,6 +41,10 @@ import {
   CalendarIcon,
   X,
   Filter,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useManualTimesheets, type ManualTimesheet } from '@/hooks/useManualTimesheets';
@@ -126,6 +130,27 @@ export const ManualTimesheetsTable: React.FC = () => {
     });
   }, [items, search, employeeFilter, projectFilter, roleFilter, fromDate, toDate]);
 
+  // Pagination
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, employeeFilter, projectFilter, roleFilter, fromDate, toDate, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize]
+  );
+
+  const startItem = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, filtered.length);
+
   // Prune selection when filtered set changes
   useEffect(() => {
     setSelectedIds((prev) => {
@@ -157,14 +182,14 @@ export const ManualTimesheetsTable: React.FC = () => {
     setToDate('');
   };
 
-  const allVisibleSelected = filtered.length > 0 && filtered.every((f) => selectedIds.has(f.id));
-  const someVisibleSelected = filtered.some((f) => selectedIds.has(f.id));
+  const allVisibleSelected = paginated.length > 0 && paginated.every((f) => selectedIds.has(f.id));
+  const someVisibleSelected = paginated.some((f) => selectedIds.has(f.id));
 
   const toggleSelectAll = (checked: boolean) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (checked) filtered.forEach((f) => next.add(f.id));
-      else filtered.forEach((f) => next.delete(f.id));
+      if (checked) paginated.forEach((f) => next.add(f.id));
+      else paginated.forEach((f) => next.delete(f.id));
       return next;
     });
   };
@@ -448,7 +473,7 @@ export const ManualTimesheetsTable: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((ts) => (
+                {paginated.map((ts) => (
                   <TableRow key={ts.id} data-state={selectedIds.has(ts.id) ? 'selected' : undefined}>
                     <TableCell>
                       <Checkbox
@@ -520,7 +545,7 @@ export const ManualTimesheetsTable: React.FC = () => {
 
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
-            {filtered.map((ts) => (
+            {paginated.map((ts) => (
               <Card key={ts.id} className="p-4 space-y-2">
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex items-start gap-2">
@@ -582,6 +607,89 @@ export const ManualTimesheetsTable: React.FC = () => {
               </Card>
             ))}
           </div>
+
+          {/* Pagination footer */}
+          <Card className="mt-3 px-4 py-3">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-muted-foreground">
+                  Showing <span className="font-medium text-foreground">{startItem}</span> to{' '}
+                  <span className="font-medium text-foreground">{endItem}</span> of{' '}
+                  <span className="font-medium text-foreground">{filtered.length}</span> timesheets
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground">Per page</Label>
+                  <Select
+                    value={String(pageSize)}
+                    onValueChange={(v) => setPageSize(Number(v))}
+                  >
+                    <SelectTrigger className="h-8 w-[80px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[10, 20, 50, 100].map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    title="First page"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    title="Previous page"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-1 px-2">
+                    <span className="text-sm text-muted-foreground">Page</span>
+                    <span className="text-sm font-medium min-w-[1.5rem] text-center">
+                      {currentPage}
+                    </span>
+                    <span className="text-sm text-muted-foreground">of {totalPages}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    title="Next page"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    title="Last page"
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
         </>
       )}
 
