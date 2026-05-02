@@ -41,6 +41,10 @@ import {
   CalendarIcon,
   X,
   Filter,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useManualTimesheets, type ManualTimesheet } from '@/hooks/useManualTimesheets';
