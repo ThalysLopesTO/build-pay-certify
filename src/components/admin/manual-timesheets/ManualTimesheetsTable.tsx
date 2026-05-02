@@ -182,14 +182,14 @@ export const ManualTimesheetsTable: React.FC = () => {
     setToDate('');
   };
 
-  const allVisibleSelected = filtered.length > 0 && filtered.every((f) => selectedIds.has(f.id));
-  const someVisibleSelected = filtered.some((f) => selectedIds.has(f.id));
+  const allVisibleSelected = paginated.length > 0 && paginated.every((f) => selectedIds.has(f.id));
+  const someVisibleSelected = paginated.some((f) => selectedIds.has(f.id));
 
   const toggleSelectAll = (checked: boolean) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (checked) filtered.forEach((f) => next.add(f.id));
-      else filtered.forEach((f) => next.delete(f.id));
+      if (checked) paginated.forEach((f) => next.add(f.id));
+      else paginated.forEach((f) => next.delete(f.id));
       return next;
     });
   };
