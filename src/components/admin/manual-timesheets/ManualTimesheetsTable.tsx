@@ -473,7 +473,7 @@ export const ManualTimesheetsTable: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((ts) => (
+                {paginated.map((ts) => (
                   <TableRow key={ts.id} data-state={selectedIds.has(ts.id) ? 'selected' : undefined}>
                     <TableCell>
                       <Checkbox
