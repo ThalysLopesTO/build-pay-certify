@@ -545,7 +545,7 @@ export const ManualTimesheetsTable: React.FC = () => {
 
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
-            {filtered.map((ts) => (
+            {paginated.map((ts) => (
               <Card key={ts.id} className="p-4 space-y-2">
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex items-start gap-2">
