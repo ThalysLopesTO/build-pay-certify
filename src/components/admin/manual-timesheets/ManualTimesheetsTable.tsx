@@ -130,6 +130,27 @@ export const ManualTimesheetsTable: React.FC = () => {
     });
   }, [items, search, employeeFilter, projectFilter, roleFilter, fromDate, toDate]);
 
+  // Pagination
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, employeeFilter, projectFilter, roleFilter, fromDate, toDate, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize]
+  );
+
+  const startItem = filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, filtered.length);
+
   // Prune selection when filtered set changes
   useEffect(() => {
     setSelectedIds((prev) => {
