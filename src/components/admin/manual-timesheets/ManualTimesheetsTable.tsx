@@ -55,6 +55,7 @@ import { formatDateLong } from '@/utils/manualTimesheetDays';
 import { generateManualTimesheetPDF } from '@/utils/manualTimesheetPDF';
 import { ManualTimesheetViewModal } from './ManualTimesheetViewModal';
 import { ManualTimesheetEditModal } from './ManualTimesheetEditModal';
+import { MoveToFolderDialog } from './MoveToFolderDialog';
 import { EmptyState } from './EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 
