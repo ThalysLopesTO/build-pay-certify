@@ -28,6 +28,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Folder,
   FolderPlus,
@@ -39,6 +41,10 @@ import {
   Eye,
   FileDown,
   X,
+  Check,
+  XCircle,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import {
   Table,
@@ -54,6 +60,7 @@ import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { generateManualTimesheetPDF } from '@/utils/manualTimesheetPDF';
 import { ManualTimesheetViewModal } from './ManualTimesheetViewModal';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import type { ManualTimesheet } from '@/hooks/useManualTimesheets';
 
 const formatCurrency = (n: number) =>
