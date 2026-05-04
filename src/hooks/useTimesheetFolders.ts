@@ -130,12 +130,45 @@ export const useTimesheetFolders = () => {
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: FOLDERS_KEY });
       queryClient.invalidateQueries({ queryKey: ITEMS_KEY });
+      queryClient.invalidateQueries({ queryKey: ['manual-timesheets'] });
       toast.success(`Moved ${vars.timesheetIds.length} timesheet${vars.timesheetIds.length > 1 ? 's' : ''} to folder`);
     },
     onError: (e: any) => toast.error('Failed to move timesheets', { description: e.message }),
   });
 
-  return { list, create, rename, remove, moveTimesheets };
+  const approveTimesheet = useMutation({
+    mutationFn: async ({
+      timesheetId,
+      decision,
+      comment,
+    }: {
+      timesheetId: string;
+      decision: 'approved' | 'declined';
+      comment?: string;
+    }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email || 'Admin';
+      const { error } = await supabase
+        .from('manual_timesheets' as any)
+        .update({
+          approval_status: decision,
+          approval_comment: comment?.trim() || null,
+          approved_by: user.id,
+          approved_by_name: fullName,
+          approved_at: new Date().toISOString(),
+        })
+        .eq('id', timesheetId);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ITEMS_KEY });
+      queryClient.invalidateQueries({ queryKey: FOLDERS_KEY });
+      toast.success(vars.decision === 'approved' ? 'Timesheet approved' : 'Timesheet declined');
+    },
+    onError: (e: any) => toast.error('Action failed', { description: e.message }),
+  });
+
+  return { list, create, rename, remove, moveTimesheets, approveTimesheet };
 };
 
 export const useFolderItems = (folderId: string | null) => {
