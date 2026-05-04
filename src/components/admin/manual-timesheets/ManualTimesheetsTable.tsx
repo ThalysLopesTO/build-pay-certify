@@ -419,6 +419,7 @@ export const ManualTimesheetsTable: React.FC = () => {
               disabled={!!bulkProgress}
             >
               Clear
+            </Button>
             <Button
               size="sm"
               variant="outline"
