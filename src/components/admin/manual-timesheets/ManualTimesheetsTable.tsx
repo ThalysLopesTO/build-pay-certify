@@ -419,6 +419,15 @@ export const ManualTimesheetsTable: React.FC = () => {
               disabled={!!bulkProgress}
             >
               Clear
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setMoveDialogOpen(true)}
+              disabled={!!bulkProgress}
+              className="gap-2"
+            >
+              <FolderInput className="h-4 w-4" />
+              Move to folder
             </Button>
             <Button
               size="sm"
