@@ -28,6 +28,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+// (Badge already imported above)
 import {
   Folder,
   FolderPlus,
@@ -39,6 +41,10 @@ import {
   Eye,
   FileDown,
   X,
+  Check,
+  XCircle,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import {
   Table,
@@ -54,19 +60,117 @@ import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { generateManualTimesheetPDF } from '@/utils/manualTimesheetPDF';
 import { ManualTimesheetViewModal } from './ManualTimesheetViewModal';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import type { ManualTimesheet } from '@/hooks/useManualTimesheets';
 
 const formatCurrency = (n: number) =>
   Number(n).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
+const StatusBadge: React.FC<{ ts: ManualTimesheet }> = ({ ts }) => {
+  const status = ts.approval_status ?? 'pending';
+  if (status === 'approved') {
+    return (
+      <div className="flex flex-col items-start gap-0.5">
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 gap-1">
+          <CheckCircle2 className="h-3 w-3" /> Approved
+        </Badge>
+        {ts.approved_by_name && (
+          <span className="text-[10px] text-muted-foreground">
+            by {ts.approved_by_name}
+            {ts.approved_at && ` • ${new Date(ts.approved_at).toLocaleString()}`}
+          </span>
+        )}
+      </div>
+    );
+  }
+  if (status === 'declined') {
+    return (
+      <div className="flex flex-col items-start gap-0.5">
+        <Badge className="bg-red-100 text-red-800 hover:bg-red-100 gap-1">
+          <XCircle className="h-3 w-3" /> Declined
+        </Badge>
+        {ts.approved_by_name && (
+          <span className="text-[10px] text-muted-foreground">
+            by {ts.approved_by_name}
+            {ts.approved_at && ` • ${new Date(ts.approved_at).toLocaleString()}`}
+          </span>
+        )}
+      </div>
+    );
+  }
+  return (
+    <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 gap-1">
+      <Clock className="h-3 w-3" /> Pending
+    </Badge>
+  );
+};
+
+const ApprovalDialog: React.FC<{
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  decision: 'approved' | 'declined' | null;
+  timesheet: ManualTimesheet | null;
+  onConfirm: (comment: string) => Promise<void> | void;
+  pending: boolean;
+}> = ({ open, onOpenChange, decision, timesheet, onConfirm, pending }) => {
+  const [comment, setComment] = useState('');
+  React.useEffect(() => {
+    if (open) setComment('');
+  }, [open]);
+
+  const isDecline = decision === 'declined';
+  const canSubmit = isDecline ? comment.trim().length > 0 : true;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {isDecline ? 'Decline timesheet' : 'Approve timesheet'}
+          </DialogTitle>
+          <DialogDescription>
+            {timesheet ? `${timesheet.employee_name} — ${timesheet.project_name}` : ''}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label className="text-sm">
+            Comment {isDecline ? <span className="text-destructive">*</span> : '(optional)'}
+          </Label>
+          <Textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={3}
+            placeholder={isDecline ? 'Reason for declining…' : 'Add a note (optional)'}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            onClick={() => onConfirm(comment)}
+            disabled={!canSubmit || pending}
+            className={isDecline ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+          >
+            {pending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {isDecline ? 'Decline' : 'Approve'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = ({ folder, onBack }) => {
   const { list, removeItem } = useFolderItems(folder.id);
+  const { approveTimesheet } = useTimesheetFolders();
   const { logoUrl } = useCompanyLogo();
   const { settings } = useCompanySettings();
+  const { user } = useAuth();
   const [viewing, setViewing] = useState<ManualTimesheet | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [actionTarget, setActionTarget] = useState<{ ts: ManualTimesheet; decision: 'approved' | 'declined' } | null>(null);
 
   const items = list.data ?? [];
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const handleDownload = async (ts: ManualTimesheet) => {
     setDownloadingId(ts.id);
@@ -78,6 +182,16 @@ const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = 
     } finally {
       setDownloadingId(null);
     }
+  };
+
+  const handleConfirmAction = async (comment: string) => {
+    if (!actionTarget) return;
+    await approveTimesheet.mutateAsync({
+      timesheetId: actionTarget.ts.id,
+      decision: actionTarget.decision,
+      comment,
+    });
+    setActionTarget(null);
   };
 
   return (
@@ -129,6 +243,7 @@ const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = 
                 <TableHead>Pay Period</TableHead>
                 <TableHead className="text-right">Total Hours</TableHead>
                 <TableHead className="text-right">Total Payment</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -149,8 +264,38 @@ const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = 
                   </TableCell>
                   <TableCell className="text-right">{Number(ts.total_hours).toFixed(2)}</TableCell>
                   <TableCell className="text-right font-medium">{formatCurrency(ts.total_payment)}</TableCell>
+                  <TableCell>
+                    <StatusBadge ts={ts} />
+                    {ts.approval_comment && (
+                      <div className="text-[11px] text-muted-foreground italic mt-1 max-w-[220px] truncate" title={ts.approval_comment}>
+                        “{ts.approval_comment}”
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      {isAdmin && ts.approval_status !== 'approved' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-green-700 hover:text-green-800 hover:bg-green-50"
+                          onClick={() => setActionTarget({ ts, decision: 'approved' })}
+                          title="Approve"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {isAdmin && ts.approval_status !== 'declined' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-700 hover:text-red-800 hover:bg-red-50"
+                          onClick={() => setActionTarget({ ts, decision: 'declined' })}
+                          title="Decline"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" onClick={() => setViewing(ts)}>
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -189,6 +334,15 @@ const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = 
           onClose={() => setViewing(null)}
         />
       )}
+
+      <ApprovalDialog
+        open={!!actionTarget}
+        onOpenChange={(o) => !o && setActionTarget(null)}
+        decision={actionTarget?.decision ?? null}
+        timesheet={actionTarget?.ts ?? null}
+        onConfirm={handleConfirmAction}
+        pending={approveTimesheet.isPending}
+      />
     </div>
   );
 };

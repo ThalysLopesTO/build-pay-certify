@@ -1929,6 +1929,11 @@ export type Database = {
       }
       manual_timesheets: {
         Row: {
+          approval_comment: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
+          approved_by_name: string | null
           company_id: string
           created_at: string
           created_by: string
@@ -1954,6 +1959,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_comment?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
           company_id: string
           created_at?: string
           created_by: string
@@ -1979,6 +1989,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_comment?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
           company_id?: string
           created_at?: string
           created_by?: string

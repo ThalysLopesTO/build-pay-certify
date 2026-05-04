@@ -29,6 +29,11 @@ export interface ManualTimesheet {
   created_by: string;
   created_at: string;
   updated_at: string;
+  approval_status?: 'pending' | 'approved' | 'declined';
+  approval_comment?: string | null;
+  approved_by?: string | null;
+  approved_by_name?: string | null;
+  approved_at?: string | null;
 }
 
 export interface ManualTimesheetInput {
@@ -68,7 +73,15 @@ export const useManualTimesheets = () => {
         .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as ManualTimesheet[];
+
+      // Exclude timesheets that already belong to a folder
+      const { data: folderItems } = await supabase
+        .from('manual_timesheet_folder_items' as any)
+        .select('timesheet_id')
+        .eq('company_id', user.companyId);
+      const inFolder = new Set(((folderItems ?? []) as any[]).map((r) => r.timesheet_id));
+
+      return ((data ?? []) as unknown as ManualTimesheet[]).filter((r) => !inFolder.has(r.id));
     },
     enabled: !!user?.companyId,
   });
