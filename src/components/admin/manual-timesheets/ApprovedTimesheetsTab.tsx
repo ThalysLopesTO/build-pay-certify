@@ -186,8 +186,7 @@ const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = 
       {viewing && (
         <ManualTimesheetViewModal
           timesheet={viewing}
-          open={!!viewing}
-          onOpenChange={(o) => !o && setViewing(null)}
+          onClose={() => setViewing(null)}
         />
       )}
     </div>
