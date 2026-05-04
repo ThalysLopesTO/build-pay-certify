@@ -96,6 +96,7 @@ export const ManualTimesheetsTable: React.FC = () => {
   // Selection + bulk download
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
   const items = list.data ?? [];
 
