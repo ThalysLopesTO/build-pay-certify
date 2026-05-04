@@ -41,6 +41,7 @@ import {
   CalendarIcon,
   X,
   Filter,
+  FolderInput,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -54,6 +55,7 @@ import { formatDateLong } from '@/utils/manualTimesheetDays';
 import { generateManualTimesheetPDF } from '@/utils/manualTimesheetPDF';
 import { ManualTimesheetViewModal } from './ManualTimesheetViewModal';
 import { ManualTimesheetEditModal } from './ManualTimesheetEditModal';
+import { MoveToFolderDialog } from './MoveToFolderDialog';
 import { EmptyState } from './EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -94,6 +96,7 @@ export const ManualTimesheetsTable: React.FC = () => {
   // Selection + bulk download
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
   const items = list.data ?? [];
 
@@ -419,6 +422,16 @@ export const ManualTimesheetsTable: React.FC = () => {
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              onClick={() => setMoveDialogOpen(true)}
+              disabled={!!bulkProgress}
+              className="gap-2"
+            >
+              <FolderInput className="h-4 w-4" />
+              Move to folder
+            </Button>
+            <Button
+              size="sm"
               onClick={handleBulkDownload}
               disabled={!!bulkProgress}
               className="gap-2"
@@ -719,6 +732,13 @@ export const ManualTimesheetsTable: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <MoveToFolderDialog
+        open={moveDialogOpen}
+        onOpenChange={setMoveDialogOpen}
+        timesheetIds={Array.from(selectedIds)}
+        onMoved={() => setSelectedIds(new Set())}
+      />
     </>
   );
 };
