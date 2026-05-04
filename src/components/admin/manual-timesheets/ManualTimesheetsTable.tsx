@@ -732,6 +732,13 @@ export const ManualTimesheetsTable: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <MoveToFolderDialog
+        open={moveDialogOpen}
+        onOpenChange={setMoveDialogOpen}
+        timesheetIds={Array.from(selectedIds)}
+        onMoved={() => setSelectedIds(new Set())}
+      />
     </>
   );
 };
