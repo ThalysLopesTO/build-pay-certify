@@ -1852,6 +1852,81 @@ export type Database = {
           },
         ]
       }
+      manual_timesheet_folder_items: {
+        Row: {
+          company_id: string
+          folder_id: string
+          id: string
+          moved_at: string
+          moved_by: string
+          timesheet_id: string
+        }
+        Insert: {
+          company_id: string
+          folder_id: string
+          id?: string
+          moved_at?: string
+          moved_by: string
+          timesheet_id: string
+        }
+        Update: {
+          company_id?: string
+          folder_id?: string
+          id?: string
+          moved_at?: string
+          moved_by?: string
+          timesheet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_timesheet_folder_items_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "manual_timesheet_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_timesheet_folder_items_timesheet_id_fkey"
+            columns: ["timesheet_id"]
+            isOneToOne: true
+            referencedRelation: "manual_timesheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manual_timesheet_folders: {
+        Row: {
+          color: string | null
+          company_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          company_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       manual_timesheets: {
         Row: {
           company_id: string
