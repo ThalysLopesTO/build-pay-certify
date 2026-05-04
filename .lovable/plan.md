@@ -1,61 +1,99 @@
-## Add "Approved Timesheets" tab with Folders
+## Overview
 
-Build the foundation for an approval workflow: a new tab next to **All Timesheets** containing user-created folders. From the All Timesheets tab, admins/managers can select multiple timesheets and move them into a folder. The actual approval logic is a follow-up step.
+Two changes to the Manual Timesheets module:
 
-### Database changes
+1. **Hide moved timesheets from "All Timesheets"** — once a timesheet is in any folder, it should only appear in its folder under "Approved Timesheets".
+2. **Add an Approval System** — admins can approve / decline a timesheet inside a folder, with optional comment. Approval shows the admin's name and timestamp. Only `admin` role users can approve/decline.
 
-Two new tables (with RLS scoped to `company_id`, just like `manual_timesheets`):
+---
 
-1. **`manual_timesheet_folders`**
-   - `id uuid pk`
-   - `company_id uuid not null` (FK to companies)
-   - `name text not null`
-   - `description text`
-   - `color text` (optional accent color for the folder card)
-   - `created_by uuid not null`
-   - `created_at`, `updated_at`
+## Database changes
 
-2. **`manual_timesheet_folder_items`** (join table — one timesheet can live in one folder at a time)
-   - `id uuid pk`
-   - `folder_id uuid not null` (FK → manual_timesheet_folders, on delete cascade)
-   - `timesheet_id uuid not null unique` (FK → manual_timesheets, on delete cascade)
-   - `company_id uuid not null`
-   - `moved_by uuid not null`
-   - `moved_at timestamptz default now()`
+New migration adding approval fields on `manual_timesheets`:
 
-RLS: select/insert/update/delete restricted to rows where `company_id = current user's company` and the user has admin/manager role (matches existing manual_timesheets policies).
+```sql
+ALTER TABLE public.manual_timesheets
+  ADD COLUMN approval_status text NOT NULL DEFAULT 'pending'
+    CHECK (approval_status IN ('pending','approved','declined')),
+  ADD COLUMN approval_comment text,
+  ADD COLUMN approved_by uuid REFERENCES auth.users(id),
+  ADD COLUMN approved_by_name text,
+  ADD COLUMN approved_at timestamptz;
 
-### UI changes
-
-**`ManualTimesheetForm.tsx`** — add a 4th tab:
-
-```text
-[ Hourly ] [ Project ] [ All Timesheets (94) ] [ Approved Timesheets (N) ]
+CREATE INDEX IF NOT EXISTS idx_manual_timesheets_approval_status
+  ON public.manual_timesheets(company_id, approval_status);
 ```
 
-The new tab renders a new component `ApprovedTimesheetsTab`.
+RLS update: ensure only users with role `admin` (via existing `has_role` helper) can `UPDATE` approval-related columns. Managers retain read access; approve/decline restricted to admins.
 
-**`ApprovedTimesheetsTab.tsx`** (new)
-- Header with **"+ New Folder"** button (opens a small dialog: name, optional description, optional color)
-- Grid of folder cards (folder icon, name, item count, created date, menu: rename / delete)
-- Click a folder → opens `FolderDetailView` showing the timesheets inside (reusing the same row layout as the main table, with a "Remove from folder" action and the existing View / Edit / Download PDF actions)
-- Empty state: "No folders yet — create one to start organizing timesheets for approval."
+---
 
-**`ManualTimesheetsTable.tsx`** — extend the existing bulk action bar (already shows when rows are selected):
-- Add a **"Move to folder"** button next to "Download PDFs"
-- Opens a small picker dialog listing existing folders + an inline "Create new folder" option
-- On confirm: insert rows into `manual_timesheet_folder_items` (upsert on `timesheet_id` so moving between folders works), invalidate both queries, clear selection, toast success
+## "All Timesheets" filtering
 
-### Hooks (new)
+Update `useManualTimesheets.list` to exclude timesheets that already belong to a folder:
 
-- `useTimesheetFolders` — list / create / rename / delete folders, plus a derived `itemCount` per folder (computed via a single grouped query).
-- `useFolderItems(folderId)` — list timesheets in a folder (joins `manual_timesheet_folder_items` → `manual_timesheets`), plus `addItems(timesheetIds, folderId)` and `removeItem(timesheetId)` mutations.
+```ts
+// Fetch folder item ids first, then exclude
+const { data: folderItems } = await supabase
+  .from('manual_timesheet_folder_items')
+  .select('timesheet_id')
+  .eq('company_id', user.companyId);
 
-Both hooks invalidate each other so counts stay in sync.
+const inFolder = new Set((folderItems ?? []).map(r => r.timesheet_id));
+return rows.filter(r => !inFolder.has(r.id));
+```
 
-### Out of scope (next step, per your message)
-- Approval state machine (pending / approved / rejected inside a folder)
-- Per-folder "Approve all" / signature / audit log
-- Notifications to employees
+After `moveTimesheets` succeeds in `useTimesheetFolders`, also invalidate `['manual-timesheets']` so the All Timesheets list refreshes.
 
-Once you approve this plan I'll run the migration and ship the UI.
+---
+
+## Approval UI (inside folder detail view)
+
+In `ApprovedTimesheetsTab.tsx` → `FolderDetail` table, add:
+
+- **New column "Status"** showing a badge: `Pending` (gray), `Approved` (green), `Declined` (red). When approved/declined, show `by {admin_name} • {date time}` underneath.
+- **Action buttons** (admin only, gated by `user.role === 'admin'`):
+  - `Approve` (green check) → opens dialog with optional comment, confirms.
+  - `Decline` (red X) → opens dialog requiring a comment, confirms.
+- **View modal** also shows the approval block (status, admin name, timestamp, comment).
+
+New hook `useTimesheetApprovalAction` (in `useTimesheetFolders.ts` or new file):
+
+```ts
+const approve = useMutation({
+  mutationFn: async ({ id, comment, status }) => {
+    await supabase.from('manual_timesheets').update({
+      approval_status: status, // 'approved' | 'declined'
+      approval_comment: comment ?? null,
+      approved_by: user.id,
+      approved_by_name: `${user.firstName} ${user.lastName}`.trim(),
+      approved_at: new Date().toISOString(),
+    }).eq('id', id);
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['manual-timesheet-folder-items'] });
+    queryClient.invalidateQueries({ queryKey: ['manual-timesheets'] });
+  },
+});
+```
+
+For non-admin viewers (manager), buttons are hidden; status badge still visible.
+
+---
+
+## Files to change
+
+- `supabase/migrations/<new>.sql` — add approval columns + RLS for admin-only updates.
+- `src/hooks/useManualTimesheets.ts` — exclude in-folder rows from list.
+- `src/hooks/useTimesheetFolders.ts` — invalidate manual-timesheets after move/remove; add `approve` mutation.
+- `src/components/admin/manual-timesheets/ApprovedTimesheetsTab.tsx` — Status column, Approve/Decline buttons + comment dialog, admin gating.
+- `src/components/admin/manual-timesheets/ManualTimesheetViewModal.tsx` — show approval block.
+- `src/integrations/supabase/types.ts` — auto-regenerated.
+
+---
+
+## Notes
+
+- Removing a timesheet from a folder will make it reappear in "All Timesheets" (its approval status persists on the row but it's effectively unfiled again).
+- Decline requires a comment; Approve makes it optional.
+- Admin role detection uses the existing `useAuth().user.role` value already used elsewhere in the admin panel.
