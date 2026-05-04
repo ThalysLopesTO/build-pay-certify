@@ -202,6 +202,7 @@ export const useFolderItems = (folderId: string | null) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ITEMS_KEY });
       queryClient.invalidateQueries({ queryKey: FOLDERS_KEY });
+      queryClient.invalidateQueries({ queryKey: ['manual-timesheets'] });
       toast.success('Removed from folder');
     },
     onError: (e: any) => toast.error('Failed to remove', { description: e.message }),
