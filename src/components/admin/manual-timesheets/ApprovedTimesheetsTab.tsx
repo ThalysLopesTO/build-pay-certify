@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Badge } from '@/components/ui/badge';
+// (Badge already imported above)
 import {
   Folder,
   FolderPlus,
