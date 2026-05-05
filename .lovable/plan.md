@@ -1,99 +1,27 @@
-## Overview
+## Problem
 
-Two changes to the Manual Timesheets module:
+In the "Complete" Excel export of the Time Summary (Daily Hours Summary), each row's **Date** column is shifted back by one day (Apr 18–May 03 selection shows Apr 17–May 02 in the file). The title row (`Apr 18 2026 - May 03 2026`) is correct because it uses real `Date` objects, but the per-row dates are not.
 
-1. **Hide moved timesheets from "All Timesheets"** — once a timesheet is in any folder, it should only appear in its folder under "Approved Timesheets".
-2. **Add an Approval System** — admins can approve / decline a timesheet inside a folder, with optional comment. Approval shows the admin's name and timestamp. Only `admin` role users can approve/decline.
+## Root cause
 
----
-
-## Database changes
-
-New migration adding approval fields on `manual_timesheets`:
-
-```sql
-ALTER TABLE public.manual_timesheets
-  ADD COLUMN approval_status text NOT NULL DEFAULT 'pending'
-    CHECK (approval_status IN ('pending','approved','declined')),
-  ADD COLUMN approval_comment text,
-  ADD COLUMN approved_by uuid REFERENCES auth.users(id),
-  ADD COLUMN approved_by_name text,
-  ADD COLUMN approved_at timestamptz;
-
-CREATE INDEX IF NOT EXISTS idx_manual_timesheets_approval_status
-  ON public.manual_timesheets(company_id, approval_status);
-```
-
-RLS update: ensure only users with role `admin` (via existing `has_role` helper) can `UPDATE` approval-related columns. Managers retain read access; approve/decline restricted to admins.
-
----
-
-## "All Timesheets" filtering
-
-Update `useManualTimesheets.list` to exclude timesheets that already belong to a folder:
+In `src/components/admin/live-punch-monitor/DailyHoursSummaryExport.tsx` (line 270 of `exportExcelComplete`, and the equivalent line in `exportPDFComplete`):
 
 ```ts
-// Fetch folder item ids first, then exclude
-const { data: folderItems } = await supabase
-  .from('manual_timesheet_folder_items')
-  .select('timesheet_id')
-  .eq('company_id', user.companyId);
-
-const inFolder = new Set((folderItems ?? []).map(r => r.timesheet_id));
-return rows.filter(r => !inFolder.has(r.id));
+const dateStr = format(new Date(day.date), 'EEE MMM dd');
 ```
 
-After `moveTimesheets` succeeds in `useTimesheetFolders`, also invalidate `['manual-timesheets']` so the All Timesheets list refreshes.
+`day.date` is a `YYYY-MM-DD` string from `useEmployeeHoursBreakdown`. `new Date('2026-04-18')` is parsed as **UTC midnight**, which becomes Apr 17 in negative-offset timezones like `America/Edmonton` (UTC-6/7). This is the exact pattern called out in the project's core memory ("Parse dates at noon local time to prevent UTC shifts") and we already have `parseLocalDate` in `src/utils/dateUtils.ts` for this.
 
----
+## Fix
 
-## Approval UI (inside folder detail view)
+Replace `new Date(day.date)` with `parseLocalDate(day.date)` in `DailyHoursSummaryExport.tsx`:
 
-In `ApprovedTimesheetsTab.tsx` → `FolderDetail` table, add:
+1. Add import: `import { parseLocalDate } from '@/utils/dateUtils';`
+2. In `exportExcelComplete` row builder: `const dateStr = format(parseLocalDate(day.date), 'EEE MMM dd');`
+3. Apply the same fix in `exportPDFComplete` (and `exportPDFOverview` if it formats `day.date`) — audit lines 434–648 of the same file and replace any `new Date(day.date)` / `new Date(<YYYY-MM-DD string>)` usage with `parseLocalDate(...)`.
 
-- **New column "Status"** showing a badge: `Pending` (gray), `Approved` (green), `Declined` (red). When approved/declined, show `by {admin_name} • {date time}` underneath.
-- **Action buttons** (admin only, gated by `user.role === 'admin'`):
-  - `Approve` (green check) → opens dialog with optional comment, confirms.
-  - `Decline` (red X) → opens dialog requiring a comment, confirms.
-- **View modal** also shows the approval block (status, admin name, timestamp, comment).
+## Verification
 
-New hook `useTimesheetApprovalAction` (in `useTimesheetFolders.ts` or new file):
+After the change, exporting Apr 18 – May 03 should produce rows starting `Sat Apr 18` and ending `Sun May 03`, matching the on-screen Daily Hours Summary and the selected filter range.
 
-```ts
-const approve = useMutation({
-  mutationFn: async ({ id, comment, status }) => {
-    await supabase.from('manual_timesheets').update({
-      approval_status: status, // 'approved' | 'declined'
-      approval_comment: comment ?? null,
-      approved_by: user.id,
-      approved_by_name: `${user.firstName} ${user.lastName}`.trim(),
-      approved_at: new Date().toISOString(),
-    }).eq('id', id);
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['manual-timesheet-folder-items'] });
-    queryClient.invalidateQueries({ queryKey: ['manual-timesheets'] });
-  },
-});
-```
-
-For non-admin viewers (manager), buttons are hidden; status badge still visible.
-
----
-
-## Files to change
-
-- `supabase/migrations/<new>.sql` — add approval columns + RLS for admin-only updates.
-- `src/hooks/useManualTimesheets.ts` — exclude in-folder rows from list.
-- `src/hooks/useTimesheetFolders.ts` — invalidate manual-timesheets after move/remove; add `approve` mutation.
-- `src/components/admin/manual-timesheets/ApprovedTimesheetsTab.tsx` — Status column, Approve/Decline buttons + comment dialog, admin gating.
-- `src/components/admin/manual-timesheets/ManualTimesheetViewModal.tsx` — show approval block.
-- `src/integrations/supabase/types.ts` — auto-regenerated.
-
----
-
-## Notes
-
-- Removing a timesheet from a folder will make it reappear in "All Timesheets" (its approval status persists on the row but it's effectively unfiled again).
-- Decline requires a comment; Approve makes it optional.
-- Admin role detection uses the existing `useAuth().user.role` value already used elsewhere in the admin panel.
+No schema, hook, or UI changes required — this is a one-file display fix.
