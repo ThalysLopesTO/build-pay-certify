@@ -9,6 +9,7 @@ import {
 import { Download, FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDurationFromMinutes } from '@/hooks/useDailyHoursSummary';
+import { parseLocalDate } from '@/utils/dateUtils';
 import type { EmployeeBreakdown } from '@/hooks/useEmployeeHoursBreakdown';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -267,7 +268,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
 
       for (const day of emp.days) {
         for (const p of day.punches) {
-          const dateStr = format(new Date(day.date), 'EEE MMM dd');
+          const dateStr = format(parseLocalDate(day.date), 'EEE MMM dd');
           const startTime = p.checkIn ? format(new Date(p.checkIn), 'h:mm a') : '—';
           const endTime = p.checkOut ? format(new Date(p.checkOut), 'h:mm a') : '—';
           const breakVal = p.breakMinutes;
@@ -526,7 +527,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
 
       for (const day of emp.days) {
         for (const p of day.punches) {
-          const dateStr = format(new Date(day.date), 'EEE MMM dd');
+          const dateStr = format(parseLocalDate(day.date), 'EEE MMM dd');
           const startTime = p.checkIn ? format(new Date(p.checkIn), 'h:mm a') : '—';
           const endTime = p.checkOut ? format(new Date(p.checkOut), 'h:mm a') : '—';
           const breakVal = String(p.breakMinutes);
