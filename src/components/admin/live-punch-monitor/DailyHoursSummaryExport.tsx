@@ -538,7 +538,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
           const paidStr = p.isIncomplete ? '—' : fmtMins(p.netMinutes);
           const jobsite = p.jobsiteName === '—' ? 'Unassigned' : p.jobsiteName;
 
-          body.push([dateStr, startTime, endTime, breakVal, rawStr, paidStr, jobsite]);
+          body.push([dateStr, startTime, endTime, breakVal, rawStr, paidStr, jobsite, p.note || '']);
 
           if (!p.isIncomplete) {
             empRawMins += p.grossMinutes;
@@ -549,7 +549,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
       }
 
       // Subtotal row
-      body.push(['SUBTOTAL', '', '', String(empBreakMins), fmtMins(empRawMins), fmtMins(empPaidMins), '']);
+      body.push(['SUBTOTAL', '', '', String(empBreakMins), fmtMins(empRawMins), fmtMins(empPaidMins), '', '']);
 
       autoTable(doc, {
         startY: yPos,
@@ -557,7 +557,8 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
         body,
         theme: 'striped',
         headStyles: { fillColor: [84, 130, 53], fontSize: 7 },
-        styles: { fontSize: 7, cellPadding: 2 },
+        styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
+        columnStyles: { 7: { cellWidth: 60 } },
         margin: { left: 14, right: 14 },
         didParseCell: (data: any) => {
           if (data.row.index === body.length - 1 && data.row.section === 'body') {
