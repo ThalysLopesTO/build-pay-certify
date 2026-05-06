@@ -140,6 +140,11 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                       <TableCell className="text-xs text-muted-foreground truncate max-w-[140px]">
                         {punch.jobsiteName !== '—' ? punch.jobsiteName : '—'}
                       </TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[220px]" title={punch.note || ''}>
+                        <span className="line-clamp-2 whitespace-pre-wrap">
+                          {punch.note || '—'}
+                        </span>
+                      </TableCell>
                       {canEdit && (
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-0.5">
