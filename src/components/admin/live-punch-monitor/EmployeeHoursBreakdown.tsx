@@ -188,7 +188,7 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                     </TableCell>
                     <TableCell className="text-xs">{formatDurationFromMinutes(emp.totalGrossMinutes)}</TableCell>
                     <TableCell className="text-xs font-bold">{formatDurationFromMinutes(emp.totalNetMinutes)}</TableCell>
-                    <TableCell colSpan={canEdit ? 2 : 1} />
+                    <TableCell colSpan={canEdit ? 3 : 2} />
                   </TableRow>
                 )}
               </TableBody>
