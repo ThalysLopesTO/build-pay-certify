@@ -224,7 +224,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     const subtotalStyle = { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: 'C6EFCE' } }, border: { top: { style: 'thin', color: { rgb: '548235' } } } };
     const grandStyle = { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '548235' } }, alignment: { horizontal: 'center' as const } };
 
-    const DETAIL_HEADERS = ['Employee', 'Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite'];
+    const DETAIL_HEADERS = ['Employee', 'Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite', 'Notes'];
     const wsData: any[][] = [];
 
     // Title row
