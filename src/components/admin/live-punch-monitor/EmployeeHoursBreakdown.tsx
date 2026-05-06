@@ -246,6 +246,11 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                           <span className="truncate max-w-[120px]">@ {punch.jobsiteName}</span>
                         )}
                       </div>
+                      {punch.note && (
+                        <div className="text-muted-foreground whitespace-pre-wrap pt-1 border-t border-border/60">
+                          <span className="font-medium text-foreground">Note: </span>{punch.note}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
