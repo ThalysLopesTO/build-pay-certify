@@ -1,27 +1,51 @@
-## Problem
+## Goal
 
-In the "Complete" Excel export of the Time Summary (Daily Hours Summary), each row's **Date** column is shifted back by one day (Apr 18–May 03 selection shows Apr 17–May 02 in the file). The title row (`Apr 18 2026 - May 03 2026`) is correct because it uses real `Date` objects, but the per-row dates are not.
+Show the **work notes** (entered by employees at punch-out) inside the **Daily Hours Summary**, both in the on-screen breakdown and in the Excel/PDF exports — so admins can review notes alongside hours for each day.
 
-## Root cause
+## Scope
 
-In `src/components/admin/live-punch-monitor/DailyHoursSummaryExport.tsx` (line 270 of `exportExcelComplete`, and the equivalent line in `exportPDFComplete`):
+The note data is already fetched (`work_note` → `PunchRecord.note` in `useEmployeeHoursBreakdown`). It's just not displayed anywhere in the summary UI or exports today. This is a presentation-only change.
 
-```ts
-const dateStr = format(new Date(day.date), 'EEE MMM dd');
-```
+## Changes
 
-`day.date` is a `YYYY-MM-DD` string from `useEmployeeHoursBreakdown`. `new Date('2026-04-18')` is parsed as **UTC midnight**, which becomes Apr 17 in negative-offset timezones like `America/Edmonton` (UTC-6/7). This is the exact pattern called out in the project's core memory ("Parse dates at noon local time to prevent UTC shifts") and we already have `parseLocalDate` in `src/utils/dateUtils.ts` for this.
+### 1. On-screen breakdown — `EmployeeHoursBreakdown.tsx`
 
-## Fix
+**Desktop table:**
+- Add a new `Notes` column (after Jobsite, before Actions).
+- Render `punch.note` truncated with a tooltip on hover for the full text. Show `—` when empty.
 
-Replace `new Date(day.date)` with `parseLocalDate(day.date)` in `DailyHoursSummaryExport.tsx`:
+**Mobile card layout:**
+- Below the existing punch row meta line, add a small note block when `punch.note` exists:
+  ```
+  📝 <note text>
+  ```
+  Styled muted, wrapped, full text visible.
 
-1. Add import: `import { parseLocalDate } from '@/utils/dateUtils';`
-2. In `exportExcelComplete` row builder: `const dateStr = format(parseLocalDate(day.date), 'EEE MMM dd');`
-3. Apply the same fix in `exportPDFComplete` (and `exportPDFOverview` if it formats `day.date`) — audit lines 434–648 of the same file and replace any `new Date(day.date)` / `new Date(<YYYY-MM-DD string>)` usage with `parseLocalDate(...)`.
+### 2. Excel export (Complete mode) — `DailyHoursSummaryExport.tsx`
 
-## Verification
+In `exportExcelComplete`:
+- Add a `Notes` column to each employee's per-punch detail table.
+- Populate with `punch.note ?? ''`.
+- Widen that column and enable wrap-text so longer notes stay readable.
 
-After the change, exporting Apr 18 – May 03 should produce rows starting `Sat Apr 18` and ending `Sun May 03`, matching the on-screen Daily Hours Summary and the selected filter range.
+(Overview Excel stays unchanged — overview is per-employee aggregate, no per-punch notes apply.)
 
-No schema, hook, or UI changes required — this is a one-file display fix.
+### 3. PDF export (Complete mode) — `DailyHoursSummaryExport.tsx`
+
+In `exportPDFComplete`:
+- Add a `Notes` column to the per-punch autoTable for each employee.
+- Use `columnStyles` to set a wider width and `cellWidth: 'wrap'` so notes wrap onto multiple lines without breaking the layout.
+- If a row has no note, leave the cell empty.
+
+(Overview PDF stays unchanged.)
+
+## Technical notes
+
+- Data source is already in place: `useEmployeeHoursBreakdown.ts` selects `work_note` and maps it to `PunchRecord.note` — no DB or hook changes needed.
+- No new dependencies.
+- No business logic changes — totals, filtering, approvals, and timezone handling all stay the same.
+
+## Out of scope
+
+- Editing notes from the summary view (notes are still entered/edited via the existing punch-out flow and `PunchEditModal`).
+- Adding notes to the Overview exports (they're aggregate-level, not per-punch).

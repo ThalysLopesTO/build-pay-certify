@@ -100,6 +100,7 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                   <TableHead>Raw Hours</TableHead>
                   <TableHead>Paid Hours</TableHead>
                   <TableHead>Jobsite</TableHead>
+                  <TableHead>Notes</TableHead>
                   {canEdit && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -138,6 +139,11 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground truncate max-w-[140px]">
                         {punch.jobsiteName !== '—' ? punch.jobsiteName : '—'}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[220px]" title={punch.note || ''}>
+                        <span className="line-clamp-2 whitespace-pre-wrap">
+                          {punch.note || '—'}
+                        </span>
                       </TableCell>
                       {canEdit && (
                         <TableCell className="text-right">
@@ -182,7 +188,7 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                     </TableCell>
                     <TableCell className="text-xs">{formatDurationFromMinutes(emp.totalGrossMinutes)}</TableCell>
                     <TableCell className="text-xs font-bold">{formatDurationFromMinutes(emp.totalNetMinutes)}</TableCell>
-                    <TableCell colSpan={canEdit ? 2 : 1} />
+                    <TableCell colSpan={canEdit ? 3 : 2} />
                   </TableRow>
                 )}
               </TableBody>
@@ -240,6 +246,11 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                           <span className="truncate max-w-[120px]">@ {punch.jobsiteName}</span>
                         )}
                       </div>
+                      {punch.note && (
+                        <div className="text-muted-foreground whitespace-pre-wrap pt-1 border-t border-border/60">
+                          <span className="font-medium text-foreground">Note: </span>{punch.note}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

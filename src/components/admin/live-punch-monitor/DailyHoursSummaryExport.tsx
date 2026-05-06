@@ -224,7 +224,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     const subtotalStyle = { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: 'C6EFCE' } }, border: { top: { style: 'thin', color: { rgb: '548235' } } } };
     const grandStyle = { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '548235' } }, alignment: { horizontal: 'center' as const } };
 
-    const DETAIL_HEADERS = ['Employee', 'Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite'];
+    const DETAIL_HEADERS = ['Employee', 'Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite', 'Notes'];
     const wsData: any[][] = [];
 
     // Title row
@@ -288,6 +288,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
             { v: rawStr, s: cellStyle },
             { v: paidStr, s: cellStyle },
             { v: jobsite, s: cellStyle },
+            { v: p.note || '', s: { ...cellStyle, alignment: { wrapText: true, vertical: 'top' as const } } },
           ]);
 
           if (!p.isIncomplete) {
@@ -309,6 +310,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
         { v: fmtMins(empRawMins), s: subtotalStyle },
         { v: fmtMins(empPaidMins), s: subtotalStyle },
         { v: '', s: subtotalStyle },
+        { v: '', s: subtotalStyle },
       ]);
 
       grandRawMins += empRawMins;
@@ -326,12 +328,13 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
       { v: fmtMins(grandRawMins), s: grandStyle },
       { v: fmtMins(grandPaidMins), s: grandStyle },
       { v: '', s: grandStyle },
+      { v: '', s: grandStyle },
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = [
       { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 },
-      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 22 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 22 }, { wch: 40 },
     ];
 
     // Merge title row
@@ -494,7 +497,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     doc.text(`Generated: ${generatedAt}  |  Timezone: ${timezone}`, 14, 33);
 
     let yPos = 40;
-    const PDF_HEADERS = ['Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite'];
+    const PDF_HEADERS = ['Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite', 'Notes'];
 
     let grandRawMins = 0;
     let grandPaidMins = 0;
@@ -535,7 +538,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
           const paidStr = p.isIncomplete ? '—' : fmtMins(p.netMinutes);
           const jobsite = p.jobsiteName === '—' ? 'Unassigned' : p.jobsiteName;
 
-          body.push([dateStr, startTime, endTime, breakVal, rawStr, paidStr, jobsite]);
+          body.push([dateStr, startTime, endTime, breakVal, rawStr, paidStr, jobsite, p.note || '']);
 
           if (!p.isIncomplete) {
             empRawMins += p.grossMinutes;
@@ -546,7 +549,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
       }
 
       // Subtotal row
-      body.push(['SUBTOTAL', '', '', String(empBreakMins), fmtMins(empRawMins), fmtMins(empPaidMins), '']);
+      body.push(['SUBTOTAL', '', '', String(empBreakMins), fmtMins(empRawMins), fmtMins(empPaidMins), '', '']);
 
       autoTable(doc, {
         startY: yPos,
@@ -554,7 +557,8 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
         body,
         theme: 'striped',
         headStyles: { fillColor: [84, 130, 53], fontSize: 7 },
-        styles: { fontSize: 7, cellPadding: 2 },
+        styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
+        columnStyles: { 7: { cellWidth: 60 } },
         margin: { left: 14, right: 14 },
         didParseCell: (data: any) => {
           if (data.row.index === body.length - 1 && data.row.section === 'body') {
