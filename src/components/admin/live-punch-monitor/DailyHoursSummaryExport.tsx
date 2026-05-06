@@ -497,7 +497,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
     doc.text(`Generated: ${generatedAt}  |  Timezone: ${timezone}`, 14, 33);
 
     let yPos = 40;
-    const PDF_HEADERS = ['Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite'];
+    const PDF_HEADERS = ['Date', 'Start', 'End', 'Break (min)', 'Raw Hours', 'Paid Hours', 'Jobsite', 'Notes'];
 
     let grandRawMins = 0;
     let grandPaidMins = 0;
