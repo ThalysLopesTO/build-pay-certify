@@ -100,6 +100,7 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                   <TableHead>Raw Hours</TableHead>
                   <TableHead>Paid Hours</TableHead>
                   <TableHead>Jobsite</TableHead>
+                  <TableHead>Notes</TableHead>
                   {canEdit && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
