@@ -288,6 +288,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
             { v: rawStr, s: cellStyle },
             { v: paidStr, s: cellStyle },
             { v: jobsite, s: cellStyle },
+            { v: p.note || '', s: { ...cellStyle, alignment: { wrapText: true, vertical: 'top' as const } } },
           ]);
 
           if (!p.isIncomplete) {
@@ -308,6 +309,7 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
         { v: empBreakMins, s: subtotalStyle },
         { v: fmtMins(empRawMins), s: subtotalStyle },
         { v: fmtMins(empPaidMins), s: subtotalStyle },
+        { v: '', s: subtotalStyle },
         { v: '', s: subtotalStyle },
       ]);
 
