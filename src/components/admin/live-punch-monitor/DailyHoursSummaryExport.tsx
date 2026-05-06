@@ -328,12 +328,13 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
       { v: fmtMins(grandRawMins), s: grandStyle },
       { v: fmtMins(grandPaidMins), s: grandStyle },
       { v: '', s: grandStyle },
+      { v: '', s: grandStyle },
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = [
       { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 },
-      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 22 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 22 }, { wch: 40 },
     ];
 
     // Merge title row
