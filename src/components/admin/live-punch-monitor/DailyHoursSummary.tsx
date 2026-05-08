@@ -41,6 +41,7 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
   }
 
   const canEdit = ALLOWED_ROLES.includes(user.role);
+  const canExport = EXPORT_ROLES.includes(user.role);
 
   // Fetch employees
   const { data: employees } = useQuery({
