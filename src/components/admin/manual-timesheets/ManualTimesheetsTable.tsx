@@ -246,6 +246,20 @@ export const ManualTimesheetsTable: React.FC = () => {
     }
   };
 
+  const handleBulkDownloadCombined = async () => {
+    const targets = filtered.filter((f) => selectedIds.has(f.id));
+    if (targets.length === 0) return;
+    setBulkProgress({ current: 0, total: targets.length });
+    try {
+      await generateCombinedManualTimesheetsPDF(targets, {
+        companyName: companySettings?.company_name ?? 'Company',
+        logoUrl,
+      });
+    } finally {
+      setBulkProgress(null);
+    }
+  };
+
   if (list.isLoading) {
     return (
       <Card className="p-4 space-y-2">
