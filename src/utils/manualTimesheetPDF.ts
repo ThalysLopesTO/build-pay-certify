@@ -281,7 +281,10 @@ const renderTimesheetIntoDoc = async (
     doc.setTextColor(0, 0, 0);
   }
 
-  // Footer
+};
+
+const addFooterPageNumbers = (doc: jsPDF) => {
+  const pageWidth = doc.internal.pageSize.getWidth();
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -295,7 +298,31 @@ const renderTimesheetIntoDoc = async (
       { align: 'center' }
     );
   }
+};
 
+export const generateManualTimesheetPDF = async (
+  ts: ManualTimesheet,
+  branding: PdfBranding
+) => {
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  await renderTimesheetIntoDoc(doc, ts, branding);
+  addFooterPageNumbers(doc);
   const safeName = ts.employee_name.replace(/[^a-z0-9]+/gi, '_');
   doc.save(`Timesheet_${safeName}_${ts.pay_period_start}_${ts.pay_period_end}.pdf`);
 };
+
+export const generateCombinedManualTimesheetsPDF = async (
+  timesheets: ManualTimesheet[],
+  branding: PdfBranding
+) => {
+  if (!timesheets.length) return;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  for (let i = 0; i < timesheets.length; i++) {
+    if (i > 0) doc.addPage();
+    await renderTimesheetIntoDoc(doc, timesheets[i], branding);
+  }
+  addFooterPageNumbers(doc);
+  const today = new Date().toISOString().slice(0, 10);
+  doc.save(`Timesheets_Combined_${timesheets.length}_${today}.pdf`);
+};
+
