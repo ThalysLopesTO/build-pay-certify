@@ -1,24 +1,36 @@
-## Verification: Managers already have full Employee Management access
+## Problem
 
-No code changes are needed. After auditing the codebase and database, the `management` role already has the same access as `admin` for Employee Management.
+Users intermittently see a crash on the Employee Management page:
+> `Cannot read properties of undefined (reading 'activeEmployeeCount')`
 
-### What's confirmed
+## Root cause
 
-1. **Sidebar / Routing** — `ManagementDashboard.tsx` renders the same `EmployeeManagement` component used in the Admin Panel, and `managementMenuData.ts` includes the "Employee Management" entry.
+In `src/components/admin/employee-management/ImprovedEmployeeManagement.tsx`:
 
-2. **UI permissions** — `useIsAdmin()` returns `true` for roles `admin`, `super_admin`, and `management`. This flag controls Edit, Delete, and Reset Password buttons on each employee card, so managers see all three actions.
+```ts
+const { data, isLoading: loading, isError: error } = useEmployees();
+const activeEmployeeCount = data.activeEmployeeCount;  // crashes
+```
 
-3. **Database (RLS) on `user_profiles`**:
-   - `Company admins update company` policy → `is_user_admin() AND company_id = get_user_company_id()`
-   - The `is_user_admin()` function returns true for `admin`, `super_admin`, and `management`.
-   - So managers can update names, rates, trades, positions, contact info, etc., for any employee in their company.
+The `useEmployees` query (`src/hooks/new/useUsers.ts`) can legitimately resolve to `null` (when the user profile hasn't loaded yet) or be `undefined` while disabled. In those moments, `isLoading` is `false` but `data` is not an object, so reading `data.activeEmployeeCount` throws and trips the ErrorBoundary — exactly what the screenshot shows.
 
-4. **Delete (archive)** — the `delete_employee` RPC explicitly allows `admin`, `super_admin`, and `management`.
+This is a race condition: profile is still loading, or the query is disabled because `company_id` isn't ready, so the component renders before `data` exists.
 
-5. **Password reset** — invoked through the `reset-user-password` edge function from the same UI button visible to managers.
+## Fix
 
-### Conclusion
+Make `ImprovedEmployeeManagement` defensive against `data` being null/undefined:
 
-Managers can already access Employee Management and edit name, rate, trade, position, contact details, reset passwords, and archive employees. No changes required.
+1. Treat "no data yet" the same as `loading` — show `<EmployeeLoadingState />` until `data` is an object.
+2. Safely read `data?.activeEmployeeCount ?? 0` and `data?.activeEmployees ?? []`.
+3. Also wait for the user profile so the query has a chance to enable (use `useUserProfile`'s loading state, or simply gate on `data` presence — option 3 is simpler and sufficient).
 
-If you've seen a specific action fail as a manager (e.g. a button missing, a permission denied error), let me know which employee/action and I'll dig into that specific case.
+No business-logic changes; purely defensive frontend rendering.
+
+## Files to edit
+
+- `src/components/admin/employee-management/ImprovedEmployeeManagement.tsx` — guard against undefined/null `data` before destructuring.
+
+## Verification
+
+- Reload `/admin/dashboard?tab=employees` — should render loading state then employee list, never the ErrorBoundary.
+- Switching tabs quickly should not trigger the crash.
