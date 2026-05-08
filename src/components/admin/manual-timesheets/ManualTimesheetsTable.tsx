@@ -451,24 +451,42 @@ export const ManualTimesheetsTable: React.FC = () => {
               <FolderInput className="h-4 w-4" />
               Move to folder
             </Button>
-            <Button
-              size="sm"
-              onClick={handleBulkDownload}
-              disabled={!!bulkProgress}
-              className="gap-2"
-            >
-              {bulkProgress ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Downloading {bulkProgress.current} of {bulkProgress.total}…
-                </>
-              ) : (
-                <>
-                  <FileDown className="h-4 w-4" />
-                  Download {selectedCount} PDF{selectedCount > 1 ? 's' : ''}
-                </>
-              )}
-            </Button>
+            {bulkProgress ? (
+              <Button size="sm" disabled className="gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {bulkProgress.current === 0
+                  ? 'Generating combined PDF…'
+                  : `Downloading ${bulkProgress.current} of ${bulkProgress.total}…`}
+              </Button>
+            ) : (
+              <div className="flex">
+                <Button
+                  size="sm"
+                  onClick={handleBulkDownloadCombined}
+                  className="gap-2 rounded-r-none"
+                >
+                  <FileText className="h-4 w-4" />
+                  Download as 1 PDF
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="rounded-l-none border-l border-primary-foreground/20 px-2">
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleBulkDownloadCombined} className="gap-2">
+                      <FileText className="h-4 w-4" />
+                      Download as 1 combined PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkDownload} className="gap-2">
+                      <Files className="h-4 w-4" />
+                      Download {selectedCount} separate PDF{selectedCount > 1 ? 's' : ''}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
           </div>
         </Card>
       )}
