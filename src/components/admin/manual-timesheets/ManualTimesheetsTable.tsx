@@ -52,7 +52,14 @@ import { useManualTimesheets, type ManualTimesheet } from '@/hooks/useManualTime
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { formatDateLong } from '@/utils/manualTimesheetDays';
-import { generateManualTimesheetPDF } from '@/utils/manualTimesheetPDF';
+import { generateManualTimesheetPDF, generateCombinedManualTimesheetsPDF } from '@/utils/manualTimesheetPDF';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown, Files, FileText } from 'lucide-react';
 import { ManualTimesheetViewModal } from './ManualTimesheetViewModal';
 import { ManualTimesheetEditModal } from './ManualTimesheetEditModal';
 import { MoveToFolderDialog } from './MoveToFolderDialog';
@@ -234,6 +241,20 @@ export const ManualTimesheetsTable: React.FC = () => {
         // eslint-disable-next-line no-await-in-loop
         await new Promise((r) => setTimeout(r, 250));
       }
+    } finally {
+      setBulkProgress(null);
+    }
+  };
+
+  const handleBulkDownloadCombined = async () => {
+    const targets = filtered.filter((f) => selectedIds.has(f.id));
+    if (targets.length === 0) return;
+    setBulkProgress({ current: 0, total: targets.length });
+    try {
+      await generateCombinedManualTimesheetsPDF(targets, {
+        companyName: companySettings?.company_name ?? 'Company',
+        logoUrl,
+      });
     } finally {
       setBulkProgress(null);
     }
@@ -430,24 +451,42 @@ export const ManualTimesheetsTable: React.FC = () => {
               <FolderInput className="h-4 w-4" />
               Move to folder
             </Button>
-            <Button
-              size="sm"
-              onClick={handleBulkDownload}
-              disabled={!!bulkProgress}
-              className="gap-2"
-            >
-              {bulkProgress ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Downloading {bulkProgress.current} of {bulkProgress.total}…
-                </>
-              ) : (
-                <>
-                  <FileDown className="h-4 w-4" />
-                  Download {selectedCount} PDF{selectedCount > 1 ? 's' : ''}
-                </>
-              )}
-            </Button>
+            {bulkProgress ? (
+              <Button size="sm" disabled className="gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {bulkProgress.current === 0
+                  ? 'Generating combined PDF…'
+                  : `Downloading ${bulkProgress.current} of ${bulkProgress.total}…`}
+              </Button>
+            ) : (
+              <div className="flex">
+                <Button
+                  size="sm"
+                  onClick={handleBulkDownloadCombined}
+                  className="gap-2 rounded-r-none"
+                >
+                  <FileText className="h-4 w-4" />
+                  Download as 1 PDF
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="rounded-l-none border-l border-primary-foreground/20 px-2">
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleBulkDownloadCombined} className="gap-2">
+                      <FileText className="h-4 w-4" />
+                      Download as 1 combined PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBulkDownload} className="gap-2">
+                      <Files className="h-4 w-4" />
+                      Download {selectedCount} separate PDF{selectedCount > 1 ? 's' : ''}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
           </div>
         </Card>
       )}
