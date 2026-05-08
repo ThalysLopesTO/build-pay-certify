@@ -46,7 +46,7 @@ const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateTo
 
   const handleResetPassword = (employee: Employee) => setResettingPasswordEmployee(employee);
 
-  if (loading) return <EmployeeLoadingState />;
+  if (loading || !data) return <EmployeeLoadingState />;
 
   if (error) return <EmployeeErrorState />;
 
