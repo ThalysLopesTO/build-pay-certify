@@ -52,7 +52,14 @@ import { useManualTimesheets, type ManualTimesheet } from '@/hooks/useManualTime
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { formatDateLong } from '@/utils/manualTimesheetDays';
-import { generateManualTimesheetPDF } from '@/utils/manualTimesheetPDF';
+import { generateManualTimesheetPDF, generateCombinedManualTimesheetsPDF } from '@/utils/manualTimesheetPDF';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown, Files, FileText } from 'lucide-react';
 import { ManualTimesheetViewModal } from './ManualTimesheetViewModal';
 import { ManualTimesheetEditModal } from './ManualTimesheetEditModal';
 import { MoveToFolderDialog } from './MoveToFolderDialog';
