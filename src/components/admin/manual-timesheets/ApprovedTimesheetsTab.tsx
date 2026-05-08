@@ -169,6 +169,7 @@ const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = 
   const [viewing, setViewing] = useState<ManualTimesheet | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [actionTarget, setActionTarget] = useState<{ ts: ManualTimesheet; decision: 'approved' | 'declined' } | null>(null);
+  const [moveBackTarget, setMoveBackTarget] = useState<ManualTimesheet | null>(null);
 
   const items = list.data ?? [];
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
