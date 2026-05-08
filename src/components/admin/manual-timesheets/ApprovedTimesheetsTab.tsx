@@ -41,6 +41,7 @@ import {
   Eye,
   FileDown,
   X,
+  Undo2,
   Check,
   XCircle,
   CheckCircle2,
@@ -168,6 +169,7 @@ const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = 
   const [viewing, setViewing] = useState<ManualTimesheet | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [actionTarget, setActionTarget] = useState<{ ts: ManualTimesheet; decision: 'approved' | 'declined' } | null>(null);
+  const [moveBackTarget, setMoveBackTarget] = useState<ManualTimesheet | null>(null);
 
   const items = list.data ?? [];
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
@@ -311,14 +313,17 @@ const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = 
                           <FileDown className="h-4 w-4" />
                         )}
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => removeItem.mutate(ts.id)}
-                        title="Remove from folder"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {isAdmin && ts.approval_status !== 'approved' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-blue-700 hover:text-blue-800 hover:bg-blue-50"
+                          onClick={() => setMoveBackTarget(ts)}
+                          title="Move back to All Timesheets"
+                        >
+                          <Undo2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -343,6 +348,34 @@ const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = 
         onConfirm={handleConfirmAction}
         pending={approveTimesheet.isPending}
       />
+
+      <AlertDialog open={!!moveBackTarget} onOpenChange={(o) => !o && setMoveBackTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Move timesheet back?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove <strong>{moveBackTarget?.employee_name}</strong>'s timesheet from this folder
+              and return it to the <strong>All Timesheets</strong> tab. The timesheet itself is not deleted
+              and remains editable.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={removeItem.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (!moveBackTarget) return;
+                removeItem.mutate(moveBackTarget.id, {
+                  onSuccess: () => setMoveBackTarget(null),
+                });
+              }}
+            >
+              {removeItem.isPending ? 'Moving…' : 'Move back'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
