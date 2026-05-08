@@ -24,7 +24,7 @@ const ImprovedEmployeeManagement = ({ onNavigateToRegistration }: { onNavigateTo
 
   const { data, isLoading: loading, isError: error } = useEmployees();
   const canAddEmployee = IsCanAddEmployee();
-  const activeEmployeeCount = data.activeEmployeeCount;
+  const activeEmployeeCount = data?.activeEmployeeCount ?? 0;
   const employees = (data?.activeEmployees ?? []).filter(employee =>
     `${employee.first_name} ${employee.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (employee.trade || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
