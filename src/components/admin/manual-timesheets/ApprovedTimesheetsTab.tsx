@@ -348,6 +348,34 @@ const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = 
         onConfirm={handleConfirmAction}
         pending={approveTimesheet.isPending}
       />
+
+      <AlertDialog open={!!moveBackTarget} onOpenChange={(o) => !o && setMoveBackTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Move timesheet back?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove <strong>{moveBackTarget?.employee_name}</strong>'s timesheet from this folder
+              and return it to the <strong>All Timesheets</strong> tab. The timesheet itself is not deleted
+              and remains editable.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={removeItem.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (!moveBackTarget) return;
+                removeItem.mutate(moveBackTarget.id, {
+                  onSuccess: () => setMoveBackTarget(null),
+                });
+              }}
+            >
+              {removeItem.isPending ? 'Moving…' : 'Move back'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
