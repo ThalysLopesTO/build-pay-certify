@@ -313,14 +313,17 @@ const FolderDetail: React.FC<{ folder: TimesheetFolder; onBack: () => void }> = 
                           <FileDown className="h-4 w-4" />
                         )}
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => removeItem.mutate(ts.id)}
-                        title="Remove from folder"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {isAdmin && ts.approval_status !== 'approved' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-blue-700 hover:text-blue-800 hover:bg-blue-50"
+                          onClick={() => setMoveBackTarget(ts)}
+                          title="Move back to All Timesheets"
+                        >
+                          <Undo2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
