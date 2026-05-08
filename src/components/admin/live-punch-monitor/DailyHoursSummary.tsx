@@ -21,7 +21,8 @@ interface DailyHoursSummaryProps {
   jobsites?: Array<{ id: string; name: string }> | null;
 }
 
-const ALLOWED_ROLES = ['admin', 'super_admin', 'management'];
+const ALLOWED_ROLES = ['admin', 'super_admin', 'management', 'foreman'];
+const EXPORT_ROLES = ['admin', 'super_admin', 'management'];
 
 const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
   const { user } = useAuth();

@@ -1,27 +1,20 @@
 ## Goal
+Give foremen access to the **Daily Hours Summary** panel (Live Punch Monitor) with full filter + edit ability, but hide the **Export** button from them.
 
-Let admins move a non-approved timesheet out of an Approved-Timesheets folder back into the All Timesheets tab, with a clear UX (not just a tiny "X" icon).
+## Files to change
 
-## Current state
+**`src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`**
 
-- Inside a folder (e.g. "Project Eagle - Week April 30"), every row already has a small `X` button calling `removeItem.mutate(ts.id)` which deletes the `manual_timesheet_folder_items` row — the timesheet then reappears in All Timesheets.
-- The button is unlabelled, has no confirmation, and is shown for every status (including approved/declined). Users don't realise it's the "move back" action.
-- RLS already allows admins/managers to delete folder items.
+1. Add `'foreman'` to `ALLOWED_ROLES` so the panel renders for foremen.
+2. Keep `canEdit` true for foremen (they get inline edit on rows like admins).
+3. Add a separate `canExport = ['admin','super_admin','management'].includes(user.role)` and wrap the `<DailyHoursSummaryExport ... />` block (lines ~225–241) so it only renders when `canExport` is true. Foremen see the data and edits but no Export button.
 
-## Changes (UI only — frontend)
+No backend / RLS changes needed — read and edit permissions already cover foremen.
 
-File: `src/components/admin/manual-timesheets/ApprovedTimesheetsTab.tsx`
-
-1. Replace the bare `X` button with an explicit "Move back to All Timesheets" action:
-   - Use an `Undo2` (or `ArrowLeftCircle`) icon + visible tooltip "Move back to All Timesheets".
-   - Only render it when `ts.approval_status !== 'approved'` (and admin). Approved timesheets stay locked in the folder, matching the user's request.
-2. Add a confirmation dialog before calling `removeItem.mutate(ts.id)` so admins don't remove items by accident. Title: "Move timesheet back?", body explains it returns to the All Timesheets tab and stays editable, with Cancel / Move back buttons.
-3. Toast message updated to "Moved back to All Timesheets" (override the hook's generic "Removed from folder" toast by passing `onSuccess` in the mutate call, or update the hook's default — prefer per-call override to avoid touching the hook).
-
-No DB or RLS changes required — permissions already cover this.
+## Memory update
+The existing memory `[Punch monitor access rules]` says "Daily Hours Summary = admin/management only". After implementation I'll update it to: foremen now have view + edit access, but export is still admin/management only.
 
 ## Verification
-
-- As admin, open a folder with a Pending timesheet → click the new "Move back" action → confirm → row disappears from folder, reappears in All Timesheets.
-- Approved rows show no "Move back" button.
-- Non-admin users see no "Move back" button.
+- Log in as foreman → Live Punch Monitor → Daily Hours Summary panel is visible, filters/Generate work, inline edits save, **Export button is hidden**.
+- Log in as admin/management → unchanged: panel visible with Export button.
+- Log in as employee → still hidden.
