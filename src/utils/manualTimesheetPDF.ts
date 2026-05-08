@@ -44,11 +44,11 @@ const detectImageFormat = (dataUrl: string): 'PNG' | 'JPEG' | 'WEBP' => {
   return 'PNG';
 };
 
-export const generateManualTimesheetPDF = async (
+const renderTimesheetIntoDoc = async (
+  doc: jsPDF,
   ts: ManualTimesheet,
   branding: PdfBranding
 ) => {
-  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 40;
   let y = margin;
