@@ -11,6 +11,7 @@ interface DashboardHeaderProps {
   isRefreshing?: boolean;
   onRefresh?: () => void;
   onExportCsv?: () => void;
+  actions?: React.ReactNode;
   className?: string;
 }
 
@@ -28,6 +29,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   isRefreshing,
   onRefresh,
   onExportCsv,
+  actions,
   className,
 }) => {
   return (
@@ -41,6 +43,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <LivePill live={live} />
+          {actions}
           {onExportCsv && (
             <Button variant="outline" size="lg" className="gap-2" onClick={onExportCsv} aria-label="Export CSV">
               <Download className="h-4 w-4" />

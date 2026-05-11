@@ -2,7 +2,8 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Calendar, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Calendar, AlertTriangle, UserPlus } from 'lucide-react';
+import CreatePunchModal from './live-punch-monitor/CreatePunchModal';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -72,6 +73,8 @@ const LivePunchMonitor = () => {
 
   // Role-based permission for bulk actions
   const canBulkEdit = ['admin', 'super_admin', 'management', 'foreman'].includes(user?.role || '');
+  const canCreatePunch = ['admin', 'super_admin'].includes(user?.role || '');
+  const [showCreatePunch, setShowCreatePunch] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
     punchLocation: string | null;
     employeeName: string;
@@ -568,8 +571,23 @@ const LivePunchMonitor = () => {
       isRefreshing={isLoading}
       onRefresh={handleRefresh}
       onExportCsv={handleExportCsv}
+      actions={canCreatePunch ? (
+        <Button size="lg" className="gap-2" onClick={() => setShowCreatePunch(true)}>
+          <UserPlus className="h-4 w-4" />
+          Add Punch
+        </Button>
+      ) : undefined}
     />
 
+    {canCreatePunch && (
+      <CreatePunchModal
+        open={showCreatePunch}
+        onOpenChange={setShowCreatePunch}
+        employees={employees}
+        jobsites={jobsites}
+        defaultDate={selectedDate}
+      />
+    )}
     {/* KPI Cards */}
     <LivePunchSummaryCards filteredEntries={filteredEntries} selectedDate={selectedDate} />
 
