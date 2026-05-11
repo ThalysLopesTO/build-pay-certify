@@ -174,6 +174,19 @@ const PunchEditModal: React.FC<PunchEditModalProps> = ({ open, onOpenChange, pun
                 : 'No break deducted'}
             </p>
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="punch-note" className="flex items-center gap-1.5">
+              <StickyNote className="h-4 w-4 text-muted-foreground" />
+              Notes
+            </Label>
+            <Textarea
+              id="punch-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add a note about this punch (optional)"
+              rows={3}
+            />
+          </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
         <DialogFooter>
