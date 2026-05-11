@@ -173,10 +173,14 @@ const CreatePunchModal: React.FC<CreatePunchModalProps> = ({
             <Label>Jobsite</Label>
             <Select value={jobsiteId} onValueChange={setJobsiteId}>
               <SelectTrigger><SelectValue placeholder="Select jobsite" /></SelectTrigger>
-              <SelectContent>
-                {(Array.isArray(jobsites) ? jobsites : []).map((j) => (
-                  <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>
-                ))}
+              <SelectContent position="popper" className="z-[60] max-h-72">
+                {(Array.isArray(jobsites) ? jobsites : []).length === 0 ? (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">No jobsites found</div>
+                ) : (
+                  (Array.isArray(jobsites) ? jobsites : []).map((j) => (
+                    <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
