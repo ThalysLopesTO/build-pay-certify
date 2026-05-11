@@ -596,8 +596,8 @@ const LivePunchMonitor = () => {
       <CreatePunchModal
         open={showCreatePunch}
         onOpenChange={setShowCreatePunch}
-        employees={employees}
-        jobsites={jobsites}
+        employees={employeesList}
+        jobsites={jobsitesList}
         defaultDate={selectedDate}
       />
     )}
@@ -616,7 +616,7 @@ const LivePunchMonitor = () => {
           setSelectedEmployee={setSelectedEmployee} 
           statusFilter={statusFilter} 
           setStatusFilter={setStatusFilter} 
-          jobsites={jobsites} 
+          jobsites={jobsitesList} 
           onClearFilters={handleClearFilters} 
           hasActiveFilters={hasActiveFilters()} 
         />
@@ -633,7 +633,7 @@ const LivePunchMonitor = () => {
             setSelectedEmployee={setSelectedEmployee} 
             statusFilter={statusFilter} 
             setStatusFilter={setStatusFilter} 
-            jobsites={jobsites} 
+            jobsites={jobsitesList} 
             onClearFilters={handleClearFilters} 
             hasActiveFilters={hasActiveFilters()} 
           />
@@ -642,7 +642,7 @@ const LivePunchMonitor = () => {
     )}
 
     {/* Daily Hours Summary */}
-    <DailyHoursSummary jobsites={jobsites} />
+    <DailyHoursSummary jobsites={jobsitesList} />
 
     {/* Results Section */}
     <div className="space-y-4">
