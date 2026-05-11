@@ -170,7 +170,7 @@ const CreatePunchModal: React.FC<CreatePunchModalProps> = ({
             <Select value={jobsiteId} onValueChange={setJobsiteId}>
               <SelectTrigger><SelectValue placeholder="Select jobsite" /></SelectTrigger>
               <SelectContent>
-                {jobsites?.map((j) => (
+                {(Array.isArray(jobsites) ? jobsites : []).map((j) => (
                   <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>
                 ))}
               </SelectContent>
