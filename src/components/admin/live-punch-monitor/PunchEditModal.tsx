@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { usePunchEdit } from '@/hooks/usePunchEdit';
 import { format } from 'date-fns';
-import { Coffee } from 'lucide-react';
+import { Coffee, StickyNote } from 'lucide-react';
 import type { PunchRecord } from '@/hooks/useEmployeeHoursBreakdown';
 
 const BREAK_PRESETS = [
@@ -33,6 +34,7 @@ const PunchEditModal: React.FC<PunchEditModalProps> = ({ open, onOpenChange, pun
   const [endTime, setEndTime] = useState('');
   const [breakMinutes, setBreakMinutes] = useState(0);
   const [isCustomBreak, setIsCustomBreak] = useState(false);
+  const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const mutation = usePunchEdit();
@@ -44,6 +46,7 @@ const PunchEditModal: React.FC<PunchEditModalProps> = ({ open, onOpenChange, pun
       setBreakMinutes(punch.breakMinutes);
       const isPreset = BREAK_PRESETS.some(p => p.value === punch.breakMinutes);
       setIsCustomBreak(punch.breakMinutes > 0 && !isPreset);
+      setNote(punch.note ?? '');
       setError(null);
     }
   }, [punch]);
@@ -76,6 +79,7 @@ const PunchEditModal: React.FC<PunchEditModalProps> = ({ open, onOpenChange, pun
           check_in_time: start.toISOString(),
           check_out_time: end ? end.toISOString() : undefined,
           break_minutes: breakMinutes,
+          work_note: note.trim() || null,
         },
       },
       { onSuccess: () => onOpenChange(false) }
@@ -169,6 +173,19 @@ const PunchEditModal: React.FC<PunchEditModalProps> = ({ open, onOpenChange, pun
                 ? `${breakMinutes} minutes will be deducted from total hours`
                 : 'No break deducted'}
             </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="punch-note" className="flex items-center gap-1.5">
+              <StickyNote className="h-4 w-4 text-muted-foreground" />
+              Notes
+            </Label>
+            <Textarea
+              id="punch-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Add a note about this punch (optional)"
+              rows={3}
+            />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>

@@ -1,14 +1,16 @@
-### Bug
-`ArchivedEmployeesModalContext.tsx` is mounted unconditionally by `ImprovedEmployeeManagement`. On line 30 it reads `data?.archivedEmployees` (can be `undefined` while loading), then on line 34 calls `.filter(...)` on it — throwing `Cannot read properties of undefined (reading 'filter')` and tripping the global ErrorBoundary, which masks the entire Employees screen.
+Add an editable **Notes** field to the Punch Edit modal used by the Daily Hours Summary breakdown.
 
-### Fix
-Default the array to `[]`:
+### File
+`src/components/admin/live-punch-monitor/PunchEditModal.tsx`
 
-```ts
-const archivedEmployees = data?.archivedEmployees ?? [];
-```
+### Changes
+1. Add `note` state (string), initialized from `punch.note ?? ''` inside the existing `useEffect`.
+2. Render a `<Textarea>` ("Notes") below the Break Time section.
+3. Include `work_note: note.trim() || null` in the `mutation.mutate` payload.
 
-That single change resolves the crash. No other behavior change.
+### Why no backend work
+- `usePunchEdit` already accepts and writes `work_note`.
+- Foremen, managers, and admins already see the Edit button in the breakdown (existing `canEdit` rule), so no permission changes are needed.
 
 ### Verification
-Open Admin → Employees. Page renders the employee list. Open "Archived Employees" — modal renders with archived list (or empty state).
+Open Daily Hours Summary → Edit a punch → Notes textarea is prefilled → change & Save → updated note appears in the breakdown row.
