@@ -27,7 +27,7 @@ const ArchivedEmployeesModalContext: React.FC<ArchivedEmployeesModalProps> = ({
   const [employeeToDelete, setEmployeeToDelete] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { data, isLoading: loading } = useEmployees();
-  const archivedEmployees = data?.archivedEmployees;
+  const archivedEmployees = data?.archivedEmployees ?? [];
   const toggleStatus = useToggleEmployeeStatus();
   const permanentlyDelete = usePermanentlyDeleteEmployee();
 
