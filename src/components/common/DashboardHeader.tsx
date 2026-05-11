@@ -11,6 +11,7 @@ interface DashboardHeaderProps {
   isRefreshing?: boolean;
   onRefresh?: () => void;
   onExportCsv?: () => void;
+  actions?: React.ReactNode;
   className?: string;
 }
 
