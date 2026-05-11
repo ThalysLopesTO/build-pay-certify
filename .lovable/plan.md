@@ -1,32 +1,27 @@
-## Issue
+## Problem
 
-In the new "Create Punch for Employee" modal, clicking the **Employee** dropdown shows nothing — the list of employees doesn't appear.
-
-## Root cause (most likely)
-
-The Radix `<SelectContent>` portal mounts to `document.body` with `z-50`, and the surrounding `<DialogContent>` is also `z-50`. Inside a Dialog, Radix Select sometimes renders with a stacking context that puts it visually behind the dialog overlay, so the list is technically rendered but invisible/non-clickable. This is a known shadcn/ui interaction issue.
-
-A secondary contributing factor: the modal currently doesn't show a placeholder/empty-state when there are no employees, so if the query is still loading (or returned 0 rows) the dropdown looks broken with no hint.
+The "Create Punch for Employee" insert is blocked by Row Level Security on the `timesheets` table. The only INSERT policy is `Employees can create their own timesheets`, which requires `user_id = auth.uid()`. When an admin creates a punch for someone else, that check fails → "new row violates row-level security policy for table timesheets".
 
 ## Fix
 
-Edit `src/components/admin/live-punch-monitor/CreatePunchModal.tsx`:
+Add a new INSERT policy on `public.timesheets` allowing admins/super_admins/management (and optionally foreman) to insert punches for any employee within their own company:
 
-1. **Force `<SelectContent>` above the dialog**
-   - Add `className="z-[60]"` and `position="popper"` to both `<SelectContent>` blocks (Employee + Jobsite). `popper` keeps the list anchored to the trigger and `z-[60]` lifts it above the Dialog's `z-50`.
+```sql
+CREATE POLICY "Admins can create timesheets for company employees"
+ON public.timesheets
+FOR INSERT
+WITH CHECK (
+  company_id = (SELECT company_id FROM user_profiles WHERE user_id = auth.uid())
+  AND EXISTS (
+    SELECT 1 FROM user_profiles
+    WHERE user_profiles.user_id = auth.uid()
+      AND user_profiles.role = ANY (ARRAY['admin','super_admin','management'])
+  )
+);
+```
 
-2. **Add empty/loading hints inside the dropdowns**
-   - If `employees` array is empty, render a disabled `<div className="px-2 py-1.5 text-sm text-muted-foreground">No employees found</div>` instead of zero items.
-   - Same for jobsites.
-
-3. **No data-fetching changes** — the modal continues to use the `employees` / `jobsites` arrays passed from `LivePunchMonitor`.
-
-## Files to edit
-
-- `src/components/admin/live-punch-monitor/CreatePunchModal.tsx`
+No frontend code changes needed — the existing `CreatePunchModal` insert payload already supplies `company_id`, `user_id`, and `manual_override` fields.
 
 ## Verification
 
-- Open the modal → click **Employee** → the dropdown appears in front of the dialog with the full list of employees.
-- Same for **Jobsite**.
-- If a list is empty, "No employees found" / "No jobsites found" is shown instead of a blank list.
+After migration: open Live Punch Monitor → Add Punch → select another employee → Create punch → row inserts and appears in the list.
