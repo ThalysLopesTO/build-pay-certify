@@ -156,7 +156,7 @@ const CreatePunchModal: React.FC<CreatePunchModalProps> = ({
             <Select value={employeeId} onValueChange={setEmployeeId}>
               <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
               <SelectContent>
-                {employees?.map((e) => (
+                {(Array.isArray(employees) ? employees : []).map((e) => (
                   <SelectItem key={e.user_id} value={e.user_id}>
                     {(e.first_name ?? '') + ' ' + (e.last_name ?? '')}
                   </SelectItem>
@@ -170,7 +170,7 @@ const CreatePunchModal: React.FC<CreatePunchModalProps> = ({
             <Select value={jobsiteId} onValueChange={setJobsiteId}>
               <SelectTrigger><SelectValue placeholder="Select jobsite" /></SelectTrigger>
               <SelectContent>
-                {jobsites?.map((j) => (
+                {(Array.isArray(jobsites) ? jobsites : []).map((j) => (
                   <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>
                 ))}
               </SelectContent>
