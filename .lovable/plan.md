@@ -1,52 +1,32 @@
 ## Issue
 
-Live Punch Monitor crashes on load in production (`app.stackbuild.ca`) with `TypeError: r.map is not a function`. The minified stack (`zqe`, react-vendor reconciler) doesn't pinpoint the component, and no matching runtime error is captured locally — meaning either (a) something in the production data shape is unexpected, or (b) a prop that should be an array is occasionally not one.
+In the new "Create Punch for Employee" modal, clicking the **Employee** dropdown shows nothing — the list of employees doesn't appear.
 
-The page mounts several sibling components that iterate arrays (`LivePunchFilters`, `LivePunchMobileFilters`, `DailyHoursSummary`, `LivePunchTable`, `LivePunchSummaryCards`, the new `CreatePunchModal`). Any one of them receiving a non-array (e.g. `null`, an object, or a Supabase error envelope) would crash the whole page since they share the same React subtree.
+## Root cause (most likely)
 
-## Fix — defensive guards + isolated error boundary
+The Radix `<SelectContent>` portal mounts to `document.body` with `z-50`, and the surrounding `<DialogContent>` is also `z-50`. Inside a Dialog, Radix Select sometimes renders with a stacking context that puts it visually behind the dialog overlay, so the list is technically rendered but invisible/non-clickable. This is a known shadcn/ui interaction issue.
 
-### 1. Always coerce to arrays where data flows in
+A secondary contributing factor: the modal currently doesn't show a placeholder/empty-state when there are no employees, so if the query is still loading (or returned 0 rows) the dropdown looks broken with no hint.
 
-In `src/components/admin/LivePunchMonitor.tsx`:
+## Fix
 
-- Compute `const employeesList = Array.isArray(employees) ? employees : [];` and `const jobsitesList = Array.isArray(jobsites) ? jobsites : [];` once, after the `useQuery` calls.
-- Pass `employeesList` / `jobsitesList` everywhere instead of the raw query result (filters, mobile filters, `DailyHoursSummary`, `CreatePunchModal`).
-- Same coercion for `punchEntries` → `const entries = Array.isArray(punchEntries) ? punchEntries : [];` and use `entries` for filtering/iteration.
+Edit `src/components/admin/live-punch-monitor/CreatePunchModal.tsx`:
 
-In `src/components/admin/live-punch-monitor/CreatePunchModal.tsx`:
+1. **Force `<SelectContent>` above the dialog**
+   - Add `className="z-[60]"` and `position="popper"` to both `<SelectContent>` blocks (Employee + Jobsite). `popper` keeps the list anchored to the trigger and `z-[60]` lifts it above the Dialog's `z-50`.
 
-- Replace `employees?.map(...)` and `jobsites?.map(...)` with `(Array.isArray(employees) ? employees : []).map(...)`. Belt-and-braces in case a parent ever passes the raw query object.
+2. **Add empty/loading hints inside the dropdowns**
+   - If `employees` array is empty, render a disabled `<div className="px-2 py-1.5 text-sm text-muted-foreground">No employees found</div>` instead of zero items.
+   - Same for jobsites.
 
-In `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`:
-
-- Same `Array.isArray` guard on the `jobsites?.map` and `employees?.map` calls inside the filter selects.
-
-### 2. Wrap the page in a scoped ErrorBoundary that logs the real component stack
-
-Add a thin wrapper around the `LivePunchMonitor` body using the existing `src/components/common/ErrorBoundary.tsx`. On error, log `error.message` + `errorInfo.componentStack` to the console so the next production occurrence shows the actual failing component name (even with minified function names, the component-stack walk is preserved).
-
-### 3. Sanity-check the queries
-
-In `LivePunchMonitor.tsx`:
-
-- After each `useQuery`, log a one-shot `console.warn('[LivePunchMonitor] employees not array:', employees)` in a `useEffect` if `employees` is defined and not an array (same for `jobsites`, `punchEntries`). This is a 1-line diagnostic that survives minification and pinpoints the misshape next time.
-
-### 4. No DB or feature changes
-
-- No schema migration, no new feature, no behavior change for working cases. Purely defensive + diagnostic.
+3. **No data-fetching changes** — the modal continues to use the `employees` / `jobsites` arrays passed from `LivePunchMonitor`.
 
 ## Files to edit
 
-- `src/components/admin/LivePunchMonitor.tsx` — array coercions, diagnostic warnings, ErrorBoundary import + wrap.
-- `src/components/admin/live-punch-monitor/CreatePunchModal.tsx` — `Array.isArray` guards on the two `.map` calls.
-- `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx` — `Array.isArray` guards on the two `.map` calls in the filter selects.
+- `src/components/admin/live-punch-monitor/CreatePunchModal.tsx`
 
 ## Verification
 
-- Reload `/admin/dashboard?tab=live-punch-monitor` → page renders even if a query returns nothing or an unexpected shape; if data shape ever is wrong, the in-page error boundary shows a friendly fallback for that section instead of the full-page crash, and the console reports which prop was misshaped.
-- Existing functionality (filters, table, daily hours summary, Add Punch modal) continues to work normally.
-
-## Optional follow-up (only if the issue persists after this fix)
-
-If the crash still happens, ask the user to reproduce it in the **preview** URL (not the published one) so we get an unminified stack trace pointing at the exact line.
+- Open the modal → click **Employee** → the dropdown appears in front of the dialog with the full list of employees.
+- Same for **Jobsite**.
+- If a list is empty, "No employees found" / "No jobsites found" is shown instead of a blank list.
