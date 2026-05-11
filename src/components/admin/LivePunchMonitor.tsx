@@ -209,6 +209,19 @@ const LivePunchMonitor = () => {
     enabled: !!user?.companyId
   });
 
+  // Defensive: ensure these are always arrays for child components
+  const employeesList = Array.isArray(employees) ? employees : [];
+  const jobsitesList = Array.isArray(jobsites) ? jobsites : [];
+
+  useEffect(() => {
+    if (employees !== undefined && !Array.isArray(employees)) {
+      console.warn('[LivePunchMonitor] employees not array:', employees);
+    }
+    if (jobsites !== undefined && !Array.isArray(jobsites)) {
+      console.warn('[LivePunchMonitor] jobsites not array:', jobsites);
+    }
+  }, [employees, jobsites]);
+
   // Fetch punch entries for the selected date
   const {
     data: punchEntries,
