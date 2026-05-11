@@ -73,6 +73,8 @@ const LivePunchMonitor = () => {
 
   // Role-based permission for bulk actions
   const canBulkEdit = ['admin', 'super_admin', 'management', 'foreman'].includes(user?.role || '');
+  const canCreatePunch = ['admin', 'super_admin'].includes(user?.role || '');
+  const [showCreatePunch, setShowCreatePunch] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
     punchLocation: string | null;
     employeeName: string;
