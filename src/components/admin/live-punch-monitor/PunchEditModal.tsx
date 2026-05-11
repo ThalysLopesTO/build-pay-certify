@@ -79,6 +79,7 @@ const PunchEditModal: React.FC<PunchEditModalProps> = ({ open, onOpenChange, pun
           check_in_time: start.toISOString(),
           check_out_time: end ? end.toISOString() : undefined,
           break_minutes: breakMinutes,
+          work_note: note.trim() || null,
         },
       },
       { onSuccess: () => onOpenChange(false) }
