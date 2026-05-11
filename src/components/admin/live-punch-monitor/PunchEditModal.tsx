@@ -34,6 +34,7 @@ const PunchEditModal: React.FC<PunchEditModalProps> = ({ open, onOpenChange, pun
   const [endTime, setEndTime] = useState('');
   const [breakMinutes, setBreakMinutes] = useState(0);
   const [isCustomBreak, setIsCustomBreak] = useState(false);
+  const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const mutation = usePunchEdit();
@@ -45,6 +46,7 @@ const PunchEditModal: React.FC<PunchEditModalProps> = ({ open, onOpenChange, pun
       setBreakMinutes(punch.breakMinutes);
       const isPreset = BREAK_PRESETS.some(p => p.value === punch.breakMinutes);
       setIsCustomBreak(punch.breakMinutes > 0 && !isPreset);
+      setNote(punch.note ?? '');
       setError(null);
     }
   }, [punch]);
