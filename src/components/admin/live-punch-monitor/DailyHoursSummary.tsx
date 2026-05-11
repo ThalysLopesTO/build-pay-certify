@@ -166,7 +166,7 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Jobsites</SelectItem>
-                    {jobsites?.map((js) => (
+                    {(Array.isArray(jobsites) ? jobsites : []).map((js) => (
                       <SelectItem key={js.id} value={js.id}>{js.name}</SelectItem>
                     ))}
                   </SelectContent>
