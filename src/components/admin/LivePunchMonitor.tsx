@@ -571,8 +571,23 @@ const LivePunchMonitor = () => {
       isRefreshing={isLoading}
       onRefresh={handleRefresh}
       onExportCsv={handleExportCsv}
+      actions={canCreatePunch ? (
+        <Button size="lg" className="gap-2" onClick={() => setShowCreatePunch(true)}>
+          <UserPlus className="h-4 w-4" />
+          Add Punch
+        </Button>
+      ) : undefined}
     />
 
+    {canCreatePunch && (
+      <CreatePunchModal
+        open={showCreatePunch}
+        onOpenChange={setShowCreatePunch}
+        employees={employees}
+        jobsites={jobsites}
+        defaultDate={selectedDate}
+      />
+    )}
     {/* KPI Cards */}
     <LivePunchSummaryCards filteredEntries={filteredEntries} selectedDate={selectedDate} />
 
