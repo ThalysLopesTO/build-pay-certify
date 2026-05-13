@@ -1,16 +1,17 @@
-Add an editable **Notes** field to the Punch Edit modal used by the Daily Hours Summary breakdown.
+## Goal
+Foremen should be able to export the **Excel (Complete)** report from the Daily Hours Summary. Other export formats (Excel Overview, PDF Complete, PDF Overview) remain admin/management/super_admin only.
 
-### File
-`src/components/admin/live-punch-monitor/PunchEditModal.tsx`
+## Changes
 
-### Changes
-1. Add `note` state (string), initialized from `punch.note ?? ''` inside the existing `useEffect`.
-2. Render a `<Textarea>` ("Notes") below the Break Time section.
-3. Include `work_note: note.trim() || null` in the `mutation.mutate` payload.
+### 1. `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`
+- Add `foreman` to the role list that's allowed to see the Export button. Replace the `canExport` check so foremen pass it, and pass a new `userRole` prop down to `DailyHoursSummaryExport`.
 
-### Why no backend work
-- `usePunchEdit` already accepts and writes `work_note`.
-- Foremen, managers, and admins already see the Edit button in the breakdown (existing `canEdit` rule), so no permission changes are needed.
+### 2. `src/components/admin/live-punch-monitor/DailyHoursSummaryExport.tsx`
+- Accept a new `userRole` prop.
+- When `userRole === 'foreman'`, render only the **Excel (Complete)** dropdown item (hide Excel Overview, PDF Complete, PDF Overview).
+- Admin / management / super_admin keep all four options unchanged.
 
-### Verification
-Open Daily Hours Summary → Edit a punch → Notes textarea is prefilled → change & Save → updated note appears in the breakdown row.
+## Verification
+- Log in as foreman → open Daily Hours Summary → Export button visible → dropdown shows only "Excel (Complete)" → file downloads.
+- Log in as admin/management → all four export options still appear.
+- Employee role still cannot see the Daily Hours Summary at all.
