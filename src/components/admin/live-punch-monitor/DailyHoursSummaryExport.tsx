@@ -28,6 +28,7 @@ interface DailyHoursSummaryExportProps {
   companyPhone: string;
   companyEmail: string;
   incompleteCount: number;
+  userRole?: string;
 }
 
 type ExportFormat = 'excel-complete' | 'excel-overview' | 'pdf-complete' | 'pdf-overview';
@@ -117,8 +118,10 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
   companyPhone,
   companyEmail,
   incompleteCount,
+  userRole,
 }) => {
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
+  const isForemanOnly = userRole === 'foreman';
 
   const dateLabel = `${format(startDate, 'MMM dd yyyy')} - ${format(endDate, 'MMM dd yyyy')}`;
   const fileName = `Payroll_Summary_${format(startDate, 'yyyyMMdd')}_${format(endDate, 'yyyyMMdd')}`;
@@ -636,15 +639,19 @@ const DailyHoursSummaryExport: React.FC<DailyHoursSummaryExportProps> = ({
         <DropdownMenuItem onClick={() => handleExport('excel-complete')} className="gap-2">
           <FileSpreadsheet className="h-4 w-4" /> Excel (Complete)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport('excel-overview')} className="gap-2">
-          <FileSpreadsheet className="h-4 w-4" /> Excel (Overview)
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport('pdf-complete')} className="gap-2">
-          <FileText className="h-4 w-4" /> PDF (Complete)
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport('pdf-overview')} className="gap-2">
-          <FileText className="h-4 w-4" /> PDF (Overview)
-        </DropdownMenuItem>
+        {!isForemanOnly && (
+          <>
+            <DropdownMenuItem onClick={() => handleExport('excel-overview')} className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" /> Excel (Overview)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('pdf-complete')} className="gap-2">
+              <FileText className="h-4 w-4" /> PDF (Complete)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('pdf-overview')} className="gap-2">
+              <FileText className="h-4 w-4" /> PDF (Overview)
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

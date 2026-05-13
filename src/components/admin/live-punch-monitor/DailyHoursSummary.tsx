@@ -22,7 +22,7 @@ interface DailyHoursSummaryProps {
 }
 
 const ALLOWED_ROLES = ['admin', 'super_admin', 'management', 'foreman'];
-const EXPORT_ROLES = ['admin', 'super_admin', 'management'];
+const EXPORT_ROLES = ['admin', 'super_admin', 'management', 'foreman'];
 
 const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
   const { user } = useAuth();
@@ -240,6 +240,7 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
                       companyPhone={companySettings?.company_phone || ''}
                       companyEmail={companySettings?.company_email || ''}
                       incompleteCount={incompleteCount}
+                      userRole={user.role}
                     />
                   </div>
                 )}
