@@ -15,7 +15,7 @@ import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { CreateInvoiceData, Invoice } from './types/invoice';
 import { autoSendInvoiceEmail } from '@/utils/autoSendInvoiceEmail';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, X, Calendar, MapPin, User, Building, Mail, Phone, Hash, FileText, DollarSign, Save, Send, Download, Paperclip } from 'lucide-react';
+import { Plus, X, Copy, Calendar, MapPin, User, Building, Mail, Phone, Hash, FileText, DollarSign, Save, Send, Download, Paperclip } from 'lucide-react';
 import ClientSelector from './quotes/editor/ClientSelector';
 import type { Client } from '@/hooks/useClients';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -99,7 +99,7 @@ const CreateInvoiceForm = () => {
     form.setValue('client_address', client.client_address || '');
   };
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, insert } = useFieldArray({
     control: form.control,
     name: 'line_items',
   });
@@ -502,16 +502,32 @@ const CreateInvoiceForm = () => {
                           ${((form.watch(`line_items.${index}.quantity`) || 0) * (form.watch(`line_items.${index}.unit_price`) || 0)).toFixed(2)}
                         </span>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => remove(index)}
-                        disabled={fields.length === 1}
-                        className="text-destructive hover:text-destructive hover:bg-red-50 rounded-lg transition-all duration-200"
-                      >
-                        <X className="h-5 w-5" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const current = form.getValues(`line_items.${index}`);
+                            insert(index + 1, { ...current });
+                          }}
+                          aria-label="Duplicate item"
+                          className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all duration-200"
+                        >
+                          <Copy className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => remove(index)}
+                          disabled={fields.length === 1}
+                          aria-label="Remove item"
+                          className="text-destructive hover:text-destructive hover:bg-red-50 rounded-lg transition-all duration-200"
+                        >
+                          <X className="h-5 w-5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </Card>

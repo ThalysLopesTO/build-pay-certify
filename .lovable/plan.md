@@ -1,17 +1,16 @@
-## Goal
-Foremen should be able to export the **Excel (Complete)** report from the Daily Hours Summary. Other export formats (Excel Overview, PDF Complete, PDF Overview) remain admin/management/super_admin only.
+## Add "Duplicate" action to invoice line items
 
-## Changes
+In `src/components/admin/CreateInvoiceForm.tsx`, add a duplicate button next to the existing remove (X) button on each line item row. Clicking it inserts a copy of that row's current values directly below it.
 
-### 1. `src/components/admin/live-punch-monitor/DailyHoursSummary.tsx`
-- Add `foreman` to the role list that's allowed to see the Export button. Replace the `canExport` check so foremen pass it, and pass a new `userRole` prop down to `DailyHoursSummaryExport`.
+### Changes
 
-### 2. `src/components/admin/live-punch-monitor/DailyHoursSummaryExport.tsx`
-- Accept a new `userRole` prop.
-- When `userRole === 'foreman'`, render only the **Excel (Complete)** dropdown item (hide Excel Overview, PDF Complete, PDF Overview).
-- Admin / management / super_admin keep all four options unchanged.
+1. **Import `Copy` icon** from `lucide-react` alongside the existing `X` import.
+2. **Use `insert` from `useFieldArray`** (already destructured for `append`/`remove`) to add the duplicated row right after the source row, preserving order.
+3. **Read the current row values** via `form.getValues(\`line_items.${index}\`)` so any unsaved edits are copied (name, description, quantity, unit_price).
+4. **Render a Duplicate button** in the row-actions area (around line 505), styled as a ghost button matching the X button — icon-only with `aria-label="Duplicate item"`, neutral hover color (e.g. `text-muted-foreground hover:text-foreground hover:bg-muted`).
+5. **No disabled state** — duplicating is always allowed.
 
-## Verification
-- Log in as foreman → open Daily Hours Summary → Export button visible → dropdown shows only "Excel (Complete)" → file downloads.
-- Log in as admin/management → all four export options still appear.
-- Employee role still cannot see the Daily Hours Summary at all.
+### Out of scope
+
+- Quote line items (`QuoteEditorLineItemsSection.tsx`) — only the user's invoice request.
+- Schema, persistence, or PDF changes — values flow through the existing field array.
