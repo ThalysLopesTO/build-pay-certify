@@ -99,7 +99,7 @@ const CreateInvoiceForm = () => {
     form.setValue('client_address', client.client_address || '');
   };
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, insert } = useFieldArray({
     control: form.control,
     name: 'line_items',
   });
