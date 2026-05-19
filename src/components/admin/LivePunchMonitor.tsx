@@ -698,7 +698,7 @@ const LivePunchMonitor = () => {
         flaggedEntries={flaggedEntries}
         onToggleFlag={toggleFlag}
         onViewLocation={handleViewLocation}
-        onEdit={canEditHours ? handleEdit : undefined}
+        onEdit={canEditNotes ? handleEdit : undefined}
         onDelete={canEditHours ? handleDelete : undefined}
         isLoading={isLoading}
         currentPage={currentPage}
