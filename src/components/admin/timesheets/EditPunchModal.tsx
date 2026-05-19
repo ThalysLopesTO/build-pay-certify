@@ -16,6 +16,8 @@ interface EditPunchModalProps {
   onClose: () => void;
   timesheet: any;
   onSuccess?: () => void;
+  /** When true, restricts editing to the work note only (used for Foreman role) */
+  notesOnly?: boolean;
 }
 
 const BREAK_PRESETS = [
@@ -30,7 +32,8 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
   isOpen,
   onClose,
   timesheet,
-  onSuccess
+  onSuccess,
+  notesOnly = false,
 }) => {
   const { data: jobsites } = useActiveJobsites();
   const { mutate: updatePunch, isPending: isEditing } = usePunchEdit();
