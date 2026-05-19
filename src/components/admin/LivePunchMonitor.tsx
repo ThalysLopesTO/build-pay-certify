@@ -71,8 +71,9 @@ const LivePunchMonitor = () => {
   const [showBulkBreak, setShowBulkBreak] = useState(false);
   const [showBulkNote, setShowBulkNote] = useState(false);
 
-  // Role-based permission for bulk actions
-  const canBulkEdit = ['admin', 'super_admin', 'management', 'foreman'].includes(user?.role || '');
+  // Role-based permission — only Admins and Managers can change hours on the Live Punch Monitor
+  const canEditHours = ['admin', 'super_admin', 'management'].includes(user?.role || '');
+  const canBulkEdit = canEditHours;
   const canCreatePunch = ['admin', 'super_admin'].includes(user?.role || '');
   const [showCreatePunch, setShowCreatePunch] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
