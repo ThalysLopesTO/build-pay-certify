@@ -93,27 +93,31 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const updateData: any = {};
 
-    if (formData.check_in_time) {
-      updateData.check_in_time = new Date(formData.check_in_time).toISOString();
-    }
-    if (formData.check_out_time) {
-      updateData.check_out_time = new Date(formData.check_out_time).toISOString();
-    }
-    if (formData.jobsite_id) {
-      updateData.jobsite_id = formData.jobsite_id;
-    }
-    if (formData.work_note !== undefined) {
+    if (notesOnly) {
+      // Foremen can only update the work note
       updateData.work_note = formData.work_note.trim() || null;
+    } else {
+      if (formData.check_in_time) {
+        updateData.check_in_time = new Date(formData.check_in_time).toISOString();
+      }
+      if (formData.check_out_time) {
+        updateData.check_out_time = new Date(formData.check_out_time).toISOString();
+      }
+      if (formData.jobsite_id) {
+        updateData.jobsite_id = formData.jobsite_id;
+      }
+      if (formData.work_note !== undefined) {
+        updateData.work_note = formData.work_note.trim() || null;
+      }
+      updateData.break_minutes = breakMinutes ? parseInt(breakMinutes) : 0;
     }
 
-    updateData.break_minutes = breakMinutes ? parseInt(breakMinutes) : 0;
-
-    updatePunch({ 
-      id: timesheet.id, 
-      data: updateData 
+    updatePunch({
+      id: timesheet.id,
+      data: updateData
     }, {
       onSuccess: () => {
         onSuccess?.();
