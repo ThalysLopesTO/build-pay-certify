@@ -246,6 +246,8 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
               </SelectContent>
             </Select>
           </div>
+          </>
+          )}
 
           <div>
             <Label htmlFor="work_note">Work Note</Label>
