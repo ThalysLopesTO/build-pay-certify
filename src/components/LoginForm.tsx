@@ -237,7 +237,7 @@ const LoginForm = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 to-transparent"></div>
         </div>
       </div>
-      </div>
+      </main>
     </>;
 };
 export default LoginForm;
