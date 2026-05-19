@@ -16,6 +16,8 @@ interface EditPunchModalProps {
   onClose: () => void;
   timesheet: any;
   onSuccess?: () => void;
+  /** When true, restricts editing to the work note only (used for Foreman role) */
+  notesOnly?: boolean;
 }
 
 const BREAK_PRESETS = [
@@ -30,7 +32,8 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
   isOpen,
   onClose,
   timesheet,
-  onSuccess
+  onSuccess,
+  notesOnly = false,
 }) => {
   const { data: jobsites } = useActiveJobsites();
   const { mutate: updatePunch, isPending: isEditing } = usePunchEdit();
@@ -90,27 +93,31 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const updateData: any = {};
 
-    if (formData.check_in_time) {
-      updateData.check_in_time = new Date(formData.check_in_time).toISOString();
-    }
-    if (formData.check_out_time) {
-      updateData.check_out_time = new Date(formData.check_out_time).toISOString();
-    }
-    if (formData.jobsite_id) {
-      updateData.jobsite_id = formData.jobsite_id;
-    }
-    if (formData.work_note !== undefined) {
+    if (notesOnly) {
+      // Foremen can only update the work note
       updateData.work_note = formData.work_note.trim() || null;
+    } else {
+      if (formData.check_in_time) {
+        updateData.check_in_time = new Date(formData.check_in_time).toISOString();
+      }
+      if (formData.check_out_time) {
+        updateData.check_out_time = new Date(formData.check_out_time).toISOString();
+      }
+      if (formData.jobsite_id) {
+        updateData.jobsite_id = formData.jobsite_id;
+      }
+      if (formData.work_note !== undefined) {
+        updateData.work_note = formData.work_note.trim() || null;
+      }
+      updateData.break_minutes = breakMinutes ? parseInt(breakMinutes) : 0;
     }
 
-    updateData.break_minutes = breakMinutes ? parseInt(breakMinutes) : 0;
-
-    updatePunch({ 
-      id: timesheet.id, 
-      data: updateData 
+    updatePunch({
+      id: timesheet.id,
+      data: updateData
     }, {
       onSuccess: () => {
         onSuccess?.();
@@ -127,8 +134,8 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            Edit Punch Record
-            {isOpenShift && (
+            {notesOnly ? 'Edit Work Note' : 'Edit Punch Record'}
+            {isOpenShift && !notesOnly && (
               <div className="flex items-center gap-1 text-red-600 text-sm">
                 <AlertTriangle className="h-4 w-4" />
                 <span>Open Shift</span>
@@ -137,7 +144,15 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
+        {notesOnly && (
+          <p className="text-xs text-muted-foreground -mt-2">
+            As a Foreman you can update the work note. Only Admins and Managers can change hours.
+          </p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {!notesOnly && (
+          <>
           <div>
             <Label htmlFor="check_in_time">Clock In Time</Label>
             <Input
@@ -231,6 +246,8 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
               </SelectContent>
             </Select>
           </div>
+          </>
+          )}
 
           <div>
             <Label htmlFor="work_note">Work Note</Label>
