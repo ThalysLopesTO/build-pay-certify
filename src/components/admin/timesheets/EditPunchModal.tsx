@@ -152,6 +152,7 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!notesOnly && (
+          <>
           <div>
             <Label htmlFor="check_in_time">Clock In Time</Label>
             <Input
