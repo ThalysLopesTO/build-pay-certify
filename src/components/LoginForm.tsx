@@ -123,13 +123,13 @@ const LoginForm = () => {
   };
   return <>
       {loading && isAuthenticated && user && <LoginLoading message="Setting up your admin dashboard..." />}
-      <div className="min-h-screen flex bg-gradient-to-br from-orange-50 via-slate-50 to-orange-100">
+      <main className="min-h-screen flex bg-gradient-to-br from-orange-50 via-slate-50 to-orange-100">
       {/* Left Side - Login Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-8">
         <div className="w-full max-w-md">
           {/* StackBuild Logo */}
           <div className="text-center mb-8">
-            <img src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png" alt="StackBuild Logo" className="h-16 w-auto mx-auto mb-8" />
+            <img src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png" alt="StackBuild Logo" width="160" height="64" fetchPriority="high" className="h-16 w-auto mx-auto mb-8" />
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Company Login</h1>
             <p className="text-slate-600">Welcome back to StackBuild</p>
             
@@ -237,7 +237,7 @@ const LoginForm = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 to-transparent"></div>
         </div>
       </div>
-      </div>
+      </main>
     </>;
 };
 export default LoginForm;
