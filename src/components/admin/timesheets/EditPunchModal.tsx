@@ -134,8 +134,8 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            Edit Punch Record
-            {isOpenShift && (
+            {notesOnly ? 'Edit Work Note' : 'Edit Punch Record'}
+            {isOpenShift && !notesOnly && (
               <div className="flex items-center gap-1 text-red-600 text-sm">
                 <AlertTriangle className="h-4 w-4" />
                 <span>Open Shift</span>
@@ -144,7 +144,14 @@ const EditPunchModal: React.FC<EditPunchModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
+        {notesOnly && (
+          <p className="text-xs text-muted-foreground -mt-2">
+            As a Foreman you can update the work note. Only Admins and Managers can change hours.
+          </p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {!notesOnly && (
           <div>
             <Label htmlFor="check_in_time">Clock In Time</Label>
             <Input
