@@ -1,20 +1,28 @@
 import { useSearchParams } from 'react-router-dom';
 import { PlanId } from '@/types/trialEmbed';
 import TrialWizard from '@/components/trial-embed/TrialWizard';
+import SEO from '@/components/common/SEO';
 
 const StartTrialEmbedPage = () => {
   const [searchParams] = useSearchParams();
-  
-  // Read plan from query parameter and validate
+
   const planParam = searchParams.get('plan');
   const validPlans: PlanId[] = ['start', 'builder', 'builder_pro'];
-  
-  // Default to 'start' if invalid or missing
+
   const initialPlan: PlanId = validPlans.includes(planParam as PlanId)
     ? (planParam as PlanId)
     : 'start';
 
-  return <TrialWizard initialPlan={initialPlan} />;
+  return (
+    <>
+      <SEO
+        title="Start Your Free Trial | StackBuild"
+        description="Start a free StackBuild trial — construction payroll, timesheets, jobsite tracking, and safety certs in one platform."
+        path="/start-trial-embed"
+      />
+      <TrialWizard initialPlan={initialPlan} />
+    </>
+  );
 };
 
 export default StartTrialEmbedPage;
