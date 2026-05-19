@@ -71,8 +71,11 @@ const LivePunchMonitor = () => {
   const [showBulkBreak, setShowBulkBreak] = useState(false);
   const [showBulkNote, setShowBulkNote] = useState(false);
 
-  // Role-based permission — only Admins and Managers can change hours on the Live Punch Monitor
+  // Role-based permissions
+  // - Admins/Managers can change hours (punch in/out, breaks, jobsite, notes)
+  // - Foremen can only edit notes on a punch
   const canEditHours = ['admin', 'super_admin', 'management'].includes(user?.role || '');
+  const canEditNotes = canEditHours || user?.role === 'foreman';
   const canBulkEdit = canEditHours;
   const canCreatePunch = ['admin', 'super_admin'].includes(user?.role || '');
   const [showCreatePunch, setShowCreatePunch] = useState(false);
