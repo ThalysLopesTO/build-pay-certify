@@ -40,7 +40,8 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
     return null;
   }
 
-  const canEdit = ALLOWED_ROLES.includes(user.role);
+  // Only Admins and Managers can change hours
+  const canEdit = ['admin', 'super_admin', 'management'].includes(user.role);
   const canExport = EXPORT_ROLES.includes(user.role);
 
   // Fetch employees
