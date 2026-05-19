@@ -715,7 +715,7 @@ const LivePunchMonitor = () => {
     </div>
 
     {/* Edit Punch Modal */}
-    {editingTimesheet && <EditPunchModal isOpen={!!editingTimesheet} onClose={() => setEditingTimesheet(null)} timesheet={editingTimesheet} onSuccess={() => refetch()} />}
+    {editingTimesheet && <EditPunchModal isOpen={!!editingTimesheet} onClose={() => setEditingTimesheet(null)} timesheet={editingTimesheet} notesOnly={!canEditHours} onSuccess={() => refetch()} />}
 
     {/* Bulk Action Modals */}
     <BulkClockOutModal
