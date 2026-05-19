@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://build-pay-certify.lovable.app/sitemap.xml

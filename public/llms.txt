@@ -1,0 +1,13 @@
+# StackBuild
+
+> Construction payroll, timesheet, and safety certification management platform for construction companies.
+
+StackBuild streamlines construction business operations with payroll, invoicing, certificate tracking, project and jobsite control, material requests, and multi-role access for admins, foremen, and workers.
+
+## Pages
+
+- [Home](/): Plans, pricing, and overview of StackBuild's construction management platform.
+- [Start Trial](/start-trial): Begin a trial of StackBuild.
+- [Admin Login](/admin-login): Sign in for company admins, managers, and foremen.
+- [Employee Login](/employee-login): Sign in for construction workers and employees.
+- [Company Registration](/company-registration): Complete company onboarding after subscription.
