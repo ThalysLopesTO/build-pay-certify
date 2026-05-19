@@ -15,7 +15,7 @@ import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { CreateInvoiceData, Invoice } from './types/invoice';
 import { autoSendInvoiceEmail } from '@/utils/autoSendInvoiceEmail';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, X, Calendar, MapPin, User, Building, Mail, Phone, Hash, FileText, DollarSign, Save, Send, Download, Paperclip } from 'lucide-react';
+import { Plus, X, Copy, Calendar, MapPin, User, Building, Mail, Phone, Hash, FileText, DollarSign, Save, Send, Download, Paperclip } from 'lucide-react';
 import ClientSelector from './quotes/editor/ClientSelector';
 import type { Client } from '@/hooks/useClients';
 import { useIsMobile } from '@/hooks/use-mobile';
