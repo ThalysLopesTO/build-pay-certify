@@ -58,6 +58,8 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
   submitLabel,
 }) => {
   const { data: employees = [], isLoading: employeesLoading } = useEmployeeDirectory();
+  const { user } = useAuth();
+  const canEditRate = ['admin', 'super_admin', 'management'].includes(user?.role || '');
   const { data: jobsites = [], isLoading: jobsitesLoading } = useJobsites('all');
   const { create, update } = useManualTimesheets();
 
