@@ -25,6 +25,7 @@ import {
   type ManualTimesheetInput,
 } from '@/hooks/useManualTimesheets';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 interface HourlyTimesheetFormProps {
   initial?: ManualTimesheet | null;
@@ -57,6 +58,8 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
   submitLabel,
 }) => {
   const { data: employees = [], isLoading: employeesLoading } = useEmployeeDirectory();
+  const { user } = useAuth();
+  const canEditRate = ['admin', 'super_admin', 'management'].includes(user?.role || '');
   const { data: jobsites = [], isLoading: jobsitesLoading } = useJobsites('all');
   const { create, update } = useManualTimesheets();
 
@@ -370,6 +373,7 @@ export const HourlyTimesheetForm: React.FC<HourlyTimesheetFormProps> = ({
         onExtraChange={setExtra}
         onTaxPercentChange={setTaxPercent}
         disabled={isSaving}
+        rateLocked={!canEditRate}
       />
 
       <Card className="p-4 md:p-6 space-y-3">

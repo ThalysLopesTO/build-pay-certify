@@ -1,16 +1,20 @@
-## Add "Duplicate" action to invoice line items
+## Restrict Hourly Rate editing to Admins & Managers on Time Sheet
 
-In `src/components/admin/CreateInvoiceForm.tsx`, add a duplicate button next to the existing remove (X) button on each line item row. Clicking it inserts a copy of that row's current values directly below it.
+Foremen will still be able to create/edit a manual timesheet, but the **Hourly Rate** input in the Payment Summary will be read-only for them. Other fields (Extra Amount, Tax %) remain editable.
 
 ### Changes
 
-1. **Import `Copy` icon** from `lucide-react` alongside the existing `X` import.
-2. **Use `insert` from `useFieldArray`** (already destructured for `append`/`remove`) to add the duplicated row right after the source row, preserving order.
-3. **Read the current row values** via `form.getValues(\`line_items.${index}\`)` so any unsaved edits are copied (name, description, quantity, unit_price).
-4. **Render a Duplicate button** in the row-actions area (around line 505), styled as a ghost button matching the X button — icon-only with `aria-label="Duplicate item"`, neutral hover color (e.g. `text-muted-foreground hover:text-foreground hover:bg-muted`).
-5. **No disabled state** — duplicating is always allowed.
+1. **`src/components/admin/manual-timesheets/PaymentSummary.tsx`**
+   - Add new optional prop `rateLocked?: boolean`.
+   - Pass `disabled={disabled || rateLocked}` to the Hourly Rate `Input` only.
+   - When `rateLocked` is true, also add a small helper text under the field: "Only Admins and Managers can edit the rate."
+
+2. **`src/components/admin/manual-timesheets/HourlyTimesheetForm.tsx`**
+   - Import `useAuth` from `@/contexts/SupabaseAuthContext`.
+   - Compute `const canEditRate = ['admin', 'super_admin', 'management'].includes(user?.role || '')`.
+   - Pass `rateLocked={!canEditRate}` to `<PaymentSummary />`.
 
 ### Out of scope
-
-- Quote line items (`QuoteEditorLineItemsSection.tsx`) — only the user's invoice request.
-- Schema, persistence, or PDF changes — values flow through the existing field array.
+- No changes to Extra Amount or Tax % editability.
+- No changes to backend / DB / roles model.
+- Live Punch Monitor permissions (already handled in prior change).
