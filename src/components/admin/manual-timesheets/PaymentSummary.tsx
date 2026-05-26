@@ -13,6 +13,7 @@ interface PaymentSummaryProps {
   onExtraChange: (v: number) => void;
   onTaxPercentChange: (v: number) => void;
   disabled?: boolean;
+  rateLocked?: boolean;
 }
 
 const formatCurrency = (n: number) =>
@@ -27,6 +28,7 @@ export const PaymentSummary: React.FC<PaymentSummaryProps> = ({
   onExtraChange,
   onTaxPercentChange,
   disabled,
+  rateLocked,
 }) => {
   const subtotal = totalHours * hourlyRate + extraAmount;
   const taxAmount = +(subtotal * (taxPercent / 100)).toFixed(2);
@@ -67,7 +69,25 @@ export const PaymentSummary: React.FC<PaymentSummaryProps> = ({
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Hourly Rate</Label>
-          {numInput(hourlyRate, onHourlyRateChange)}
+          <Input
+            type="number"
+            min={0}
+            step={0.01}
+            value={hourlyRate === 0 ? '' : hourlyRate}
+            placeholder="0.00"
+            disabled={disabled || rateLocked}
+            readOnly={rateLocked}
+            onChange={e => {
+              const v = e.target.value === '' ? 0 : parseFloat(e.target.value);
+              onHourlyRateChange(Number.isFinite(v) ? v : 0);
+            }}
+            className="text-right h-9"
+          />
+          {rateLocked && (
+            <p className="text-xs text-muted-foreground">
+              Only Admins and Managers can edit the rate.
+            </p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Extra Amount</Label>
