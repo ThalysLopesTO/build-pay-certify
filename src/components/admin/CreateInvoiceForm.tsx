@@ -388,6 +388,7 @@ const CreateInvoiceForm = () => {
                       index={index}
                       form={form}
                       onRemove={() => remove(index)}
+                      onDuplicate={() => insert(index + 1, { ...form.getValues(`line_items.${index}`) })}
                       canRemove={fields.length > 1}
                     />
                   ))}

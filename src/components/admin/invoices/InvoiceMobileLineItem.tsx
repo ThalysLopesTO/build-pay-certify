@@ -3,13 +3,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Copy } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
 
 interface InvoiceMobileLineItemProps {
   index: number;
   form: UseFormReturn<any>;
   onRemove: () => void;
+  onDuplicate: () => void;
   canRemove: boolean;
 }
 
@@ -17,6 +18,7 @@ const InvoiceMobileLineItem: React.FC<InvoiceMobileLineItemProps> = ({
   index,
   form,
   onRemove,
+  onDuplicate,
   canRemove,
 }) => {
   const quantity = form.watch(`line_items.${index}.quantity`) || 0;
@@ -28,17 +30,29 @@ const InvoiceMobileLineItem: React.FC<InvoiceMobileLineItemProps> = ({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-muted-foreground">Item {index + 1}</span>
-          {canRemove && (
+          <div className="flex items-center gap-1">
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              onClick={onRemove}
-              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={onDuplicate}
+              aria-label="Duplicate item"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
             >
-              <Trash2 className="h-4 w-4" />
+              <Copy className="h-4 w-4" />
             </Button>
-          )}
+            {canRemove && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onRemove}
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <FormField
