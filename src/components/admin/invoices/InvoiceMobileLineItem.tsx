@@ -30,17 +30,29 @@ const InvoiceMobileLineItem: React.FC<InvoiceMobileLineItemProps> = ({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-muted-foreground">Item {index + 1}</span>
-          {canRemove && (
+          <div className="flex items-center gap-1">
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              onClick={onRemove}
-              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={onDuplicate}
+              aria-label="Duplicate item"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
             >
-              <Trash2 className="h-4 w-4" />
+              <Copy className="h-4 w-4" />
             </Button>
-          )}
+            {canRemove && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onRemove}
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <FormField
