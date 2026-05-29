@@ -3,13 +3,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Copy } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
 
 interface InvoiceMobileLineItemProps {
   index: number;
   form: UseFormReturn<any>;
   onRemove: () => void;
+  onDuplicate: () => void;
   canRemove: boolean;
 }
 
@@ -17,6 +18,7 @@ const InvoiceMobileLineItem: React.FC<InvoiceMobileLineItemProps> = ({
   index,
   form,
   onRemove,
+  onDuplicate,
   canRemove,
 }) => {
   const quantity = form.watch(`line_items.${index}.quantity`) || 0;
