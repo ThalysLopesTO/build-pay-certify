@@ -26,6 +26,7 @@ import { JobsiteSelectionScreen } from '../components/admin/tasks/JobsiteSelecti
 import { DailyTaskScreen } from '../components/admin/tasks/DailyTaskScreen';
 import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
 import ManualTimesheetsPage from './admin/ManualTimesheetsPage';
+import TimeRequestsManagement from '../components/admin/TimeRequestsManagement';
 
 const ManagementDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
