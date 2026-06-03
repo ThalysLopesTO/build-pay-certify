@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown, Paperclip, Eye, RefreshCw, Camera } from 'lucide-react';
 import ExpenseAttachmentField from './income-expenses/ExpenseAttachmentField';
 import { ScanReceiptModal } from './income-expenses/ScanReceiptModal';
+import { IncomeExpensesSkeleton } from './income-expenses/IncomeExpensesSkeleton';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { formatDateFromDB, formatDateForDB, parseLocalDate } from '@/utils/dateUtils';
@@ -51,13 +52,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useIsPWAStandalone } from '@/hooks/useIsPWAStandalone';
 import { TransactionMobileList } from './income-expenses/TransactionMobileList';
 import PullToRefresh from 'react-simple-pull-to-refresh';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 
 const IncomeExpensesManagement = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const isPWAStandalone = useIsPWAStandalone();
-  const [transactions, setTransactions] = useState<TransactionWithHierarchy[]>([]);
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   
   const { 
@@ -75,7 +77,6 @@ const IncomeExpensesManagement = () => {
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithHierarchy | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
@@ -118,28 +119,23 @@ const IncomeExpensesManagement = () => {
     existingAttachmentUrl: null
   });
 
-  useEffect(() => {
-    if (user?.companyId) {
-      fetchTransactions();
-      fetchCategories();
-    }
-  }, [user?.companyId]);
+  // Cached data fetch via React Query — single query, instant on revisit.
+  const {
+    data: transactions = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useQuery({
+    queryKey: ['income-expenses', user?.companyId],
+    queryFn: () => getTransactionsWithHierarchy(),
+    enabled: !!user?.companyId,
+    staleTime: 2 * 60 * 1000,
+  });
 
   const fetchTransactions = async () => {
-    try {
-      const allTransactions = await getTransactionsWithHierarchy();
-      setTransactions(allTransactions);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load transactions",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    await queryClient.invalidateQueries({ queryKey: ['income-expenses', user?.companyId] });
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -621,7 +617,7 @@ const IncomeExpensesManagement = () => {
   }));
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-96">Loading...</div>;
+    return <IncomeExpensesSkeleton isMobile={isMobile} />;
   }
 
   return (
@@ -1098,10 +1094,10 @@ const IncomeExpensesManagement = () => {
             <Button
               variant="outline"
               onClick={fetchTransactions}
-              disabled={isLoading}
+              disabled={isFetching}
               className="w-full mb-4 h-11"
             >
-              <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+              <RefreshCw className={cn("h-4 w-4 mr-2", isFetching && "animate-spin")} />
               Refresh Transactions
             </Button>
 

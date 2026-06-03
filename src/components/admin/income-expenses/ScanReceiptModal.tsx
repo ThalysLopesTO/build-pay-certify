@@ -124,91 +124,32 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     payment_method: ''
   });
 
-  // iOS PWA viewport recovery - fixes blank screen after camera
+  // Lightweight viewport repaint after returning from the native camera/picker.
+  // A single rAF nudge is enough to clear iOS's stale paint without the heavy
+  // style-resetting loops that previously left the dialog blank/frozen.
   const recoverViewport = useCallback(() => {
-    console.log('[PWA] Running viewport recovery');
-    
-    // Immediate scroll reset
     window.scrollTo(0, 0);
-    
-    // Reset all body styles that iOS may have corrupted
-    document.body.style.cssText = '';
-    document.documentElement.style.cssText = '';
-    
-    // Force the document to be visible
-    document.body.style.visibility = 'visible';
-    document.body.style.opacity = '1';
-    
-    // Remove any iOS-added scroll locks
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width = '';
-    document.body.style.height = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    
-    // Force layout recalculation
     requestAnimationFrame(() => {
+      // Force a single layout flush.
       void document.body.offsetHeight;
-      void document.documentElement.scrollHeight;
-      
-      // Find and force visibility of dialog elements
-      const dialogOverlay = document.querySelector('[data-radix-dialog-overlay]');
       const dialogContent = document.querySelector('[data-radix-dialog-content]');
-      
-      if (dialogOverlay instanceof HTMLElement) {
-        dialogOverlay.style.visibility = 'visible';
-        dialogOverlay.style.opacity = '1';
-      }
-      
       if (dialogContent instanceof HTMLElement) {
         dialogContent.style.visibility = 'visible';
-        dialogContent.style.opacity = '0.99';
-        
-        requestAnimationFrame(() => {
-          dialogContent.style.opacity = '1';
-        });
+        dialogContent.style.opacity = '1';
       }
     });
-    
-    // Additional recovery attempts with delays
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      void document.body.offsetHeight;
-    }, 100);
-    
-    setTimeout(() => {
-      void document.body.offsetHeight;
-    }, 300);
   }, []);
-  
-  // Detect when iOS returns from camera using visibilitychange event
+
+  // When the app/tab regains visibility after the camera closes, do one repaint.
   useEffect(() => {
     if (!isMobile || !isOpen) return;
-    
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('[PWA] Visibility restored, triggering recovery');
-        
-        // Multiple recovery strategies
         recoverViewport();
-        
-        // Force a complete re-render after a short delay
-        setTimeout(() => {
-          setRenderKey(prev => prev + 1);
-          recoverViewport();
-        }, 100);
-        
-        setTimeout(() => {
-          recoverViewport();
-        }, 300);
-        
-        setTimeout(() => {
-          recoverViewport();
-        }, 500);
       }
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [isMobile, isOpen, recoverViewport]);
@@ -448,29 +389,11 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
         payment_method: ''
       });
 
-      // For mobile: delay tab switch to let iOS viewport stabilize
+      // Switch to the review step once. A single repaint handles iOS;
+      // no timed loops or intermediate states needed.
+      setActiveTab('review');
       if (isMobile) {
-        console.log('[PWA] Extraction complete, delaying tab switch for recovery');
-        setExtractionComplete(true);
-        
-        // Force immediate recovery
         recoverViewport();
-        
-        // Force re-render to ensure dialog is visible
-        setRenderKey(prev => prev + 1);
-        
-        // Wait for viewport to stabilize, then switch tabs
-        setTimeout(() => {
-          recoverViewport();
-          setTimeout(() => {
-            setActiveTab('review');
-            setExtractionComplete(false);
-            recoverViewport();
-          }, 200);
-        }, 300);
-      } else {
-        // Desktop: switch immediately
-        setActiveTab('review');
       }
 
       toast({
@@ -612,74 +535,29 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   }, [companyId, transactionType]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    // Immediately trigger recovery when file selection completes
-    console.log('[PWA] File selected, triggering recovery');
-    
-    // Force immediate recovery
-    recoverViewport();
-    
-    // Force re-render to clear any corrupted state
-    setRenderKey(prev => prev + 1);
-    
-    // Clear any previous error
     setUploadError(null);
-    
+    // One lightweight repaint on mobile after the picker/camera closes.
+    if (isMobile) recoverViewport();
+
     const file = e.target.files?.[0];
     if (file) {
       handleFileUpload(file);
     }
-    
-    // Reset input to allow re-selecting same file
+
+    // Reset input to allow re-selecting the same file
     e.target.value = '';
-  }, [handleFileUpload, recoverViewport]);
-
-  // iOS PWA recovery - force visibility when returning from camera during loading states
-  useEffect(() => {
-    if (isOpen && (isUploading || isExtracting) && isMobile) {
-      // Periodic recovery attempts during loading state
-      const recoveryInterval = setInterval(() => {
-        recoverViewport();
-      }, 500);
-      
-      // Stop after 5 seconds to avoid infinite recovery attempts
-      const timeout = setTimeout(() => {
-        clearInterval(recoveryInterval);
-      }, 5000);
-      
-      return () => {
-        clearInterval(recoveryInterval);
-        clearTimeout(timeout);
-      };
-    }
-  }, [isOpen, isUploading, isExtracting, isMobile, recoverViewport]);
-
-  // Recovery when switching to review tab on mobile - more aggressive with multiple attempts
-  useEffect(() => {
-    if (activeTab === 'review' && isMobile) {
-      // Multiple recovery attempts when review tab becomes active
-      recoverViewport();
-      
-      const recoveryAttempts = [100, 300, 500, 1000];
-      const timeouts = recoveryAttempts.map(delay => 
-        setTimeout(() => {
-          recoverViewport();
-          setRenderKey(prev => prev + 1);
-        }, delay)
-      );
-      
-      return () => timeouts.forEach(clearTimeout);
-    }
-  }, [activeTab, isMobile, recoverViewport]);
+  }, [handleFileUpload, recoverViewport, isMobile]);
 
   return (
     <>
-      {/* File input OUTSIDE dialog to avoid iOS portal corruption when returning from camera */}
+      {/* File input OUTSIDE dialog to avoid iOS portal corruption when returning from camera.
+          No `capture` attribute so the OS shows "Take Photo or Choose from Library" —
+          the reliable path that avoids the camera-only freeze. */}
       <input
         ref={fileInputRef}
         id="receipt-upload-external"
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleFileSelect}
         className="hidden"
         disabled={isUploading || isExtracting}
@@ -841,7 +719,6 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                 id="receipt-upload"
                 type="file"
                 accept="image/*"
-                capture="environment"
                 onChange={handleFileSelect}
                 className="hidden"
                 disabled={isUploading || isExtracting}
@@ -868,21 +745,13 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                     Supports JPG, PNG, HEIC • Max 10MB
                   </p>
                   <p className="text-xs text-muted-foreground/70 mt-2">
-                    On mobile, you can take a photo directly
+                    On mobile, take a photo or choose one from your library
                   </p>
                 </>
               )}
             </div>
 
-              {/* Extraction complete state - intermediate UI for mobile before tab switch */}
-              {extractionComplete && isMobile && (
-                <div className="text-center py-6 border border-green-200 rounded-lg bg-green-50">
-                  <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-3" />
-                  <p className="text-green-700 font-medium mb-2">Receipt Analyzed Successfully!</p>
-                  <p className="text-sm text-muted-foreground">Loading review form...</p>
-                  <Loader2 className="h-5 w-5 animate-spin mx-auto mt-3 text-green-500" />
-                </div>
-              )}
+
 
               {/* Error state with retry option */}
               {uploadError && !isUploading && !isExtracting && (
