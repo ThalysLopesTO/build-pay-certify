@@ -72,10 +72,25 @@ export const useHierarchicalCategories = () => {
     if (!user?.companyId) return [];
 
     try {
-      let query = supabase
+      // Fetch transactions and all categories in parallel (single round-trip each).
+      // Category name resolution is done in-memory below to avoid an N+1 query per row.
+      let txQuery = supabase
         .from('bills_expenses')
         .select(`
-          *,
+          id,
+          expense_title,
+          vendor_payee,
+          expense_date,
+          amount,
+          payment_status,
+          payment_method,
+          notes,
+          attachment_url,
+          is_recurring,
+          recurrence_frequency,
+          parent_recurring_bill_id,
+          category_id,
+          transaction_type,
           expense_categories!category_id (
             id,
             name,
@@ -86,79 +101,74 @@ export const useHierarchicalCategories = () => {
         .eq('company_id', user.companyId);
 
       if (transactionType) {
-        query = query.eq('transaction_type', transactionType);
+        txQuery = txQuery.eq('transaction_type', transactionType);
       }
 
-      const { data, error } = await query.order('expense_date', { ascending: false });
+      const [{ data, error }, { data: allCategories }] = await Promise.all([
+        txQuery.order('expense_date', { ascending: false }),
+        supabase
+          .from('expense_categories')
+          .select('id, name')
+          .eq('company_id', user.companyId),
+      ]);
 
       if (error) throw error;
 
-      // Transform the data to include hierarchical category information
-      const expensesWithHierarchy = await Promise.all(
-        (data || []).map(async (expense: any) => {
-          const category = expense.expense_categories;
-          
-          // Handle uncategorized transactions (null category)
-          if (!category) {
-            return {
-              id: expense.id,
-              expense_title: expense.expense_title,
-              vendor_payee: expense.vendor_payee,
-              expense_date: expense.expense_date,
-              amount: expense.amount,
-              payment_status: expense.payment_status,
-              payment_method: expense.payment_method,
-              notes: expense.notes,
-              attachment_url: expense.attachment_url,
-              is_recurring: expense.is_recurring,
-              recurrence_frequency: expense.recurrence_frequency,
-              parent_recurring_bill_id: expense.parent_recurring_bill_id,
-              category_id: expense.category_id,
-              parent_category_name: 'Uncategorized',
-              subcategory_name: null,
-              category_level: 'parent' as const,
-              transaction_type: expense.transaction_type,
-            };
-          }
-          
-          let parentCategoryName = category.name;
-          let subcategoryName = null;
+      // Build a fast lookup for parent category names.
+      const categoryNameById = new Map<string, string>();
+      (allCategories || []).forEach((cat: { id: string; name: string }) => {
+        categoryNameById.set(cat.id, cat.name);
+      });
 
-          // If this is a subcategory, get the parent category name
-          if (category.category_level === 'subcategory' && category.parent_category_id) {
-            const { data: parentCategory } = await supabase
-              .from('expense_categories')
-              .select('name')
-              .eq('id', category.parent_category_id)
-              .single();
+      const expensesWithHierarchy: TransactionWithHierarchy[] = (data || []).map((expense: any) => {
+        const category = expense.expense_categories;
 
-            if (parentCategory) {
-              parentCategoryName = parentCategory.name;
-              subcategoryName = category.name;
-            }
-          }
+        const base = {
+          id: expense.id,
+          expense_title: expense.expense_title,
+          vendor_payee: expense.vendor_payee,
+          expense_date: expense.expense_date,
+          amount: expense.amount,
+          payment_status: expense.payment_status,
+          payment_method: expense.payment_method,
+          notes: expense.notes,
+          attachment_url: expense.attachment_url,
+          is_recurring: expense.is_recurring,
+          recurrence_frequency: expense.recurrence_frequency,
+          parent_recurring_bill_id: expense.parent_recurring_bill_id,
+          category_id: expense.category_id,
+          transaction_type: expense.transaction_type,
+        };
 
+        // Handle uncategorized transactions (null category)
+        if (!category) {
           return {
-            id: expense.id,
-            expense_title: expense.expense_title,
-            vendor_payee: expense.vendor_payee,
-            expense_date: expense.expense_date,
-            amount: expense.amount,
-            payment_status: expense.payment_status,
-            payment_method: expense.payment_method,
-            notes: expense.notes,
-            attachment_url: expense.attachment_url,
-            is_recurring: expense.is_recurring,
-            recurrence_frequency: expense.recurrence_frequency,
-            parent_recurring_bill_id: expense.parent_recurring_bill_id,
-            category_id: expense.category_id,
-            parent_category_name: parentCategoryName,
-            subcategory_name: subcategoryName,
-            category_level: category.category_level,
-            transaction_type: expense.transaction_type,
+            ...base,
+            parent_category_name: 'Uncategorized',
+            subcategory_name: null,
+            category_level: 'parent' as const,
           };
-        })
-      );
+        }
+
+        let parentCategoryName = category.name;
+        let subcategoryName = null;
+
+        // If this is a subcategory, resolve the parent name from the in-memory map
+        if (category.category_level === 'subcategory' && category.parent_category_id) {
+          const resolvedParent = categoryNameById.get(category.parent_category_id);
+          if (resolvedParent) {
+            parentCategoryName = resolvedParent;
+            subcategoryName = category.name;
+          }
+        }
+
+        return {
+          ...base,
+          parent_category_name: parentCategoryName,
+          subcategory_name: subcategoryName,
+          category_level: category.category_level,
+        };
+      });
 
       return expensesWithHierarchy;
     } catch (error) {
