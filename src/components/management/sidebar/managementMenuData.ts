@@ -76,6 +76,11 @@ export const managementMenuItems = {
       icon: UserPlus,
       id: 'employee-registration',
     },
+    {
+      title: 'Time Requests',
+      icon: Clock,
+      id: 'time-requests',
+    },
   ],
   inventory: [
     {
