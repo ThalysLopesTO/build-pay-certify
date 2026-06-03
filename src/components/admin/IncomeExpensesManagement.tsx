@@ -29,6 +29,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown, Paperclip, Eye, RefreshCw, Camera } from 'lucide-react';
 import ExpenseAttachmentField from './income-expenses/ExpenseAttachmentField';
 import { ScanReceiptModal } from './income-expenses/ScanReceiptModal';
+import { IncomeExpensesSkeleton } from './income-expenses/IncomeExpensesSkeleton';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { formatDateFromDB, formatDateForDB, parseLocalDate } from '@/utils/dateUtils';
