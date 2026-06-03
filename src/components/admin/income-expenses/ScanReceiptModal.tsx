@@ -389,29 +389,11 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
         payment_method: ''
       });
 
-      // For mobile: delay tab switch to let iOS viewport stabilize
+      // Switch to the review step once. A single repaint handles iOS;
+      // no timed loops or intermediate states needed.
+      setActiveTab('review');
       if (isMobile) {
-        console.log('[PWA] Extraction complete, delaying tab switch for recovery');
-        setExtractionComplete(true);
-        
-        // Force immediate recovery
         recoverViewport();
-        
-        // Force re-render to ensure dialog is visible
-        setRenderKey(prev => prev + 1);
-        
-        // Wait for viewport to stabilize, then switch tabs
-        setTimeout(() => {
-          recoverViewport();
-          setTimeout(() => {
-            setActiveTab('review');
-            setExtractionComplete(false);
-            recoverViewport();
-          }, 200);
-        }, 300);
-      } else {
-        // Desktop: switch immediately
-        setActiveTab('review');
       }
 
       toast({
