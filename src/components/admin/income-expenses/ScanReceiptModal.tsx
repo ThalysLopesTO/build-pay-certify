@@ -550,13 +550,14 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
 
   return (
     <>
-      {/* File input OUTSIDE dialog to avoid iOS portal corruption when returning from camera */}
+      {/* File input OUTSIDE dialog to avoid iOS portal corruption when returning from camera.
+          No `capture` attribute so the OS shows "Take Photo or Choose from Library" —
+          the reliable path that avoids the camera-only freeze. */}
       <input
         ref={fileInputRef}
         id="receipt-upload-external"
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleFileSelect}
         className="hidden"
         disabled={isUploading || isExtracting}
