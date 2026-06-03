@@ -751,15 +751,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
               )}
             </div>
 
-              {/* Extraction complete state - intermediate UI for mobile before tab switch */}
-              {extractionComplete && isMobile && (
-                <div className="text-center py-6 border border-green-200 rounded-lg bg-green-50">
-                  <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-3" />
-                  <p className="text-green-700 font-medium mb-2">Receipt Analyzed Successfully!</p>
-                  <p className="text-sm text-muted-foreground">Loading review form...</p>
-                  <Loader2 className="h-5 w-5 animate-spin mx-auto mt-3 text-green-500" />
-                </div>
-              )}
+
 
               {/* Error state with retry option */}
               {uploadError && !isUploading && !isExtracting && (
