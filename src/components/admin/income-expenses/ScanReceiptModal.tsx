@@ -124,91 +124,32 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     payment_method: ''
   });
 
-  // iOS PWA viewport recovery - fixes blank screen after camera
+  // Lightweight viewport repaint after returning from the native camera/picker.
+  // A single rAF nudge is enough to clear iOS's stale paint without the heavy
+  // style-resetting loops that previously left the dialog blank/frozen.
   const recoverViewport = useCallback(() => {
-    console.log('[PWA] Running viewport recovery');
-    
-    // Immediate scroll reset
     window.scrollTo(0, 0);
-    
-    // Reset all body styles that iOS may have corrupted
-    document.body.style.cssText = '';
-    document.documentElement.style.cssText = '';
-    
-    // Force the document to be visible
-    document.body.style.visibility = 'visible';
-    document.body.style.opacity = '1';
-    
-    // Remove any iOS-added scroll locks
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width = '';
-    document.body.style.height = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    
-    // Force layout recalculation
     requestAnimationFrame(() => {
+      // Force a single layout flush.
       void document.body.offsetHeight;
-      void document.documentElement.scrollHeight;
-      
-      // Find and force visibility of dialog elements
-      const dialogOverlay = document.querySelector('[data-radix-dialog-overlay]');
       const dialogContent = document.querySelector('[data-radix-dialog-content]');
-      
-      if (dialogOverlay instanceof HTMLElement) {
-        dialogOverlay.style.visibility = 'visible';
-        dialogOverlay.style.opacity = '1';
-      }
-      
       if (dialogContent instanceof HTMLElement) {
         dialogContent.style.visibility = 'visible';
-        dialogContent.style.opacity = '0.99';
-        
-        requestAnimationFrame(() => {
-          dialogContent.style.opacity = '1';
-        });
+        dialogContent.style.opacity = '1';
       }
     });
-    
-    // Additional recovery attempts with delays
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      void document.body.offsetHeight;
-    }, 100);
-    
-    setTimeout(() => {
-      void document.body.offsetHeight;
-    }, 300);
   }, []);
-  
-  // Detect when iOS returns from camera using visibilitychange event
+
+  // When the app/tab regains visibility after the camera closes, do one repaint.
   useEffect(() => {
     if (!isMobile || !isOpen) return;
-    
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('[PWA] Visibility restored, triggering recovery');
-        
-        // Multiple recovery strategies
         recoverViewport();
-        
-        // Force a complete re-render after a short delay
-        setTimeout(() => {
-          setRenderKey(prev => prev + 1);
-          recoverViewport();
-        }, 100);
-        
-        setTimeout(() => {
-          recoverViewport();
-        }, 300);
-        
-        setTimeout(() => {
-          recoverViewport();
-        }, 500);
       }
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [isMobile, isOpen, recoverViewport]);
