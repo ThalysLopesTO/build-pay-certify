@@ -719,7 +719,6 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                 id="receipt-upload"
                 type="file"
                 accept="image/*"
-                capture="environment"
                 onChange={handleFileSelect}
                 className="hidden"
                 disabled={isUploading || isExtracting}
