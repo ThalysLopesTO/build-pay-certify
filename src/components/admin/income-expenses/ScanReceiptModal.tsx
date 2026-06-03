@@ -745,7 +745,7 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
                     Supports JPG, PNG, HEIC • Max 10MB
                   </p>
                   <p className="text-xs text-muted-foreground/70 mt-2">
-                    On mobile, you can take a photo directly
+                    On mobile, take a photo or choose one from your library
                   </p>
                 </>
               )}
