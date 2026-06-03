@@ -1093,10 +1093,10 @@ const IncomeExpensesManagement = () => {
             <Button
               variant="outline"
               onClick={fetchTransactions}
-              disabled={isLoading}
+              disabled={isFetching}
               className="w-full mb-4 h-11"
             >
-              <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+              <RefreshCw className={cn("h-4 w-4 mr-2", isFetching && "animate-spin")} />
               Refresh Transactions
             </Button>
 
