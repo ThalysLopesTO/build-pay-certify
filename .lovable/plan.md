@@ -1,48 +1,30 @@
-# Bills & Expenses: Faster, More Professional, Working Mobile Scan
+# Add Time Requests to the Manager Menu
 
-No data is deleted or migrated — all changes are to how existing data is loaded and displayed.
+## Goal
+Let managers (role `management`) access the same **Time Requests** screen admins use — viewing, approving, declining, editing, and deleting employee missed-punch corrections.
 
-## 1. Fix the slow loading (root cause)
+## Good news: backend already allows it
+No database or permission changes are needed:
+- RLS on `missed_punch_requests` already grants `management` view/update/delete access.
+- The `approve_missed_punch_request` and `decline_missed_punch_request` RPCs already accept `management`.
+- The `TimeRequestsManagement` component already treats `management` the same as `admin` for edit/delete buttons.
 
-The section is slow because of how the data is fetched, not the amount of data.
+The feature is simply not surfaced in the manager sidebar or wired into the manager dashboard router.
 
-**`src/hooks/useHierarchicalCategories.ts` — `getTransactionsWithHierarchy`**
-- Today, for every transaction that uses a subcategory, the app fires a *separate* database request to look up its parent category name. With many transactions this becomes hundreds of round-trips (the "Loading…" you see).
-- Fix: resolve parent/subcategory names in-memory from the categories list that's already loaded, so transactions load in a single query instead of hundreds.
-- Select only the columns the screen needs instead of `*`.
+## Changes (frontend only)
 
-**`src/components/admin/IncomeExpensesManagement.tsx`**
-- Categories are currently fetched twice on load (once by the component, once inside the hook). Remove the duplicate fetch.
-- Move transaction + category loading to React Query (the app already uses it) so results are cached. Revisiting Bills & Expenses becomes near-instant instead of reloading every time, and the existing pull-to-refresh / save flows trigger a cache refresh.
-- Keep the existing 20-per-page pagination for rendering.
+### 1. Add the menu item — `src/components/management/sidebar/managementMenuData.ts`
+Add a "Time Requests" entry (Clock icon, `id: 'time-requests'`) to the `employees` section, right after Employee Registration — matching where it lives in the admin sidebar.
 
-Expected result: first load drops from many seconds to roughly one query; repeat visits are instant.
-
-## 2. Make it more professional (all areas)
-
-Applying the project's existing "Untitled UI" SaaS design system (TableCard, semantic tokens, solid badges) consistently:
-
-- **Summary / KPIs:** tighten the income/expense/net KPI cards and the charts at the top — consistent spacing, aligned number formatting, clear up/down indicators.
-- **Table + layout:** cleaner column alignment, consistent status/category/type badges, better empty and loading states (skeleton rows instead of a bare "Loading…").
-- **Mobile:** polish the transaction card list and the action buttons for a smoother, more app-like feel.
-
-No business logic, totals, or filter behavior changes — visual/structure only.
-
-## 3. Fix receipt scanning on the phone (camera opens, then freezes)
-
-The freeze happens because, after the camera closes, the modal runs several aggressive "viewport recovery" loops and forced re-renders that fight with iOS and leave the screen blank/stuck.
-
-**`src/components/admin/income-expenses/ScanReceiptModal.tsx`**
-- Replace the fragile recovery hacks (repeated `recoverViewport()` intervals, multiple forced `renderKey` bumps, delayed tab switches) with a single, reliable flow: keep the file input outside the dialog, switch to the review step once, and do one lightweight repaint on return instead of timed loops.
-- Let the user pick from the photo library as well as the camera (more reliable than camera-only capture, and avoids the freeze path entirely when they choose an existing photo).
-- Keep the upload → AI extract → review → save flow and all duplicate-detection logic unchanged.
-
-## Technical notes
-- Data fetching converts from `useState`/`useEffect` to React Query keyed by company; mutations (create/edit/delete/scan-save) invalidate that query.
-- N+1 removal relies on the already-loaded `categories` array for name resolution; uncategorized transactions still show "Uncategorized".
-- No schema migration, no edge-function logic change (the `receipt-extract` function stays as-is).
+### 2. Wire the route — `src/pages/ManagementDashboard.tsx`
+- Import `TimeRequestsManagement` from `@/components/admin/TimeRequestsManagement`.
+- Add a `case 'time-requests': return <TimeRequestsManagement />;` to the `renderContent()` switch.
 
 ## Out of scope
-- Changing totals, tax, or filter logic.
-- Backend/database structure changes.
-- Native (Capacitor) app changes — this targets the installable web/PWA experience.
+- No database, RLS, or RPC changes (already support managers).
+- No changes to the admin experience.
+- No new business logic — managers reuse the exact same component and flows as admins.
+
+## Verification
+- Open the manager dashboard, confirm **Time Requests** appears under Employee Management.
+- Open it and confirm the list loads with Approve / Decline / Edit / Delete actions working.
