@@ -76,7 +76,6 @@ const IncomeExpensesManagement = () => {
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithHierarchy | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
