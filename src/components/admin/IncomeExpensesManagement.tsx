@@ -58,7 +58,7 @@ const IncomeExpensesManagement = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const isPWAStandalone = useIsPWAStandalone();
-  const [transactions, setTransactions] = useState<TransactionWithHierarchy[]>([]);
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   
   const { 
