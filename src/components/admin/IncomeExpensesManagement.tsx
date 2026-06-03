@@ -118,28 +118,23 @@ const IncomeExpensesManagement = () => {
     existingAttachmentUrl: null
   });
 
-  useEffect(() => {
-    if (user?.companyId) {
-      fetchTransactions();
-      fetchCategories();
-    }
-  }, [user?.companyId]);
+  // Cached data fetch via React Query — single query, instant on revisit.
+  const {
+    data: transactions = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useQuery({
+    queryKey: ['income-expenses', user?.companyId],
+    queryFn: () => getTransactionsWithHierarchy(),
+    enabled: !!user?.companyId,
+    staleTime: 2 * 60 * 1000,
+  });
 
   const fetchTransactions = async () => {
-    try {
-      const allTransactions = await getTransactionsWithHierarchy();
-      setTransactions(allTransactions);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load transactions",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    await queryClient.invalidateQueries({ queryKey: ['income-expenses', user?.companyId] });
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
