@@ -535,64 +535,18 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   }, [companyId, transactionType]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    // Immediately trigger recovery when file selection completes
-    console.log('[PWA] File selected, triggering recovery');
-    
-    // Force immediate recovery
-    recoverViewport();
-    
-    // Force re-render to clear any corrupted state
-    setRenderKey(prev => prev + 1);
-    
-    // Clear any previous error
     setUploadError(null);
-    
+    // One lightweight repaint on mobile after the picker/camera closes.
+    if (isMobile) recoverViewport();
+
     const file = e.target.files?.[0];
     if (file) {
       handleFileUpload(file);
     }
-    
-    // Reset input to allow re-selecting same file
+
+    // Reset input to allow re-selecting the same file
     e.target.value = '';
-  }, [handleFileUpload, recoverViewport]);
-
-  // iOS PWA recovery - force visibility when returning from camera during loading states
-  useEffect(() => {
-    if (isOpen && (isUploading || isExtracting) && isMobile) {
-      // Periodic recovery attempts during loading state
-      const recoveryInterval = setInterval(() => {
-        recoverViewport();
-      }, 500);
-      
-      // Stop after 5 seconds to avoid infinite recovery attempts
-      const timeout = setTimeout(() => {
-        clearInterval(recoveryInterval);
-      }, 5000);
-      
-      return () => {
-        clearInterval(recoveryInterval);
-        clearTimeout(timeout);
-      };
-    }
-  }, [isOpen, isUploading, isExtracting, isMobile, recoverViewport]);
-
-  // Recovery when switching to review tab on mobile - more aggressive with multiple attempts
-  useEffect(() => {
-    if (activeTab === 'review' && isMobile) {
-      // Multiple recovery attempts when review tab becomes active
-      recoverViewport();
-      
-      const recoveryAttempts = [100, 300, 500, 1000];
-      const timeouts = recoveryAttempts.map(delay => 
-        setTimeout(() => {
-          recoverViewport();
-          setRenderKey(prev => prev + 1);
-        }, delay)
-      );
-      
-      return () => timeouts.forEach(clearTimeout);
-    }
-  }, [activeTab, isMobile, recoverViewport]);
+  }, [handleFileUpload, recoverViewport, isMobile]);
 
   return (
     <>
