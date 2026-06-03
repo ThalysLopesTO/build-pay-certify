@@ -616,7 +616,7 @@ const IncomeExpensesManagement = () => {
   }));
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-96">Loading...</div>;
+    return <IncomeExpensesSkeleton isMobile={isMobile} />;
   }
 
   return (
