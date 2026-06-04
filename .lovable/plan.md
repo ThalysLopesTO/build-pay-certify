@@ -1,30 +1,31 @@
-# Add Time Requests to the Manager Menu
+# Fix: Managers can't decline time requests
 
-## Goal
-Let managers (role `management`) access the same **Time Requests** screen admins use — viewing, approving, declining, editing, and deleting employee missed-punch corrections.
+## Problem
+- **Approve** works for managers because it calls the `approve_missed_punch_request` SECURITY DEFINER database function, which explicitly allows the `management` (and `foreman`) role.
+- **Decline** instead performs a direct client-side `UPDATE` on `missed_punch_requests`, relying entirely on Row-Level Security. This is fragile and is what's failing for managers.
+- There is **no** `decline_missed_punch_request` function in the database (contrary to an earlier note).
 
-## Good news: backend already allows it
-No database or permission changes are needed:
-- RLS on `missed_punch_requests` already grants `management` view/update/delete access.
-- The `approve_missed_punch_request` and `decline_missed_punch_request` RPCs already accept `management`.
-- The `TimeRequestsManagement` component already treats `management` the same as `admin` for edit/delete buttons.
+## Fix (mirror the approve pattern)
 
-The feature is simply not surfaced in the manager sidebar or wired into the manager dashboard router.
+### 1. Database — add `decline_missed_punch_request` RPC
+Create a `SECURITY DEFINER` function that mirrors the approve permission model:
+- Loads the request where `status = 'pending'`; returns a clear error if not found/already processed.
+- Verifies the caller via `user_profiles` has role in `('admin','super_admin','management','foreman')` for the request's company.
+- Updates the row: `status = 'declined'`, `reviewed_by = auth.uid()`, `reviewed_at = now()`, `decline_reason = <provided>`.
+- Returns a JSON result `{ success, ... }` (consistent with approve).
+- `GRANT EXECUTE` on the function to `authenticated`.
 
-## Changes (frontend only)
-
-### 1. Add the menu item — `src/components/management/sidebar/managementMenuData.ts`
-Add a "Time Requests" entry (Clock icon, `id: 'time-requests'`) to the `employees` section, right after Employee Registration — matching where it lives in the admin sidebar.
-
-### 2. Wire the route — `src/pages/ManagementDashboard.tsx`
-- Import `TimeRequestsManagement` from `@/components/admin/TimeRequestsManagement`.
-- Add a `case 'time-requests': return <TimeRequestsManagement />;` to the `renderContent()` switch.
+### 2. Frontend — `src/hooks/useMissedPunchRequests.ts`
+Update `useDeclineMissedPunchRequest` to call the new RPC instead of the direct table update:
+- `supabase.rpc('decline_missed_punch_request', { request_id, p_decline_reason })`
+- Keep the same query invalidations (`missed-punch-requests`, `my-missed-punch-requests`) and success/error toasts; surface the RPC's error message when `success` is false (same style as approve).
 
 ## Out of scope
-- No database, RLS, or RPC changes (already support managers).
-- No changes to the admin experience.
-- No new business logic — managers reuse the exact same component and flows as admins.
+- No UI/layout changes to `TimeRequestsManagement` (decline dialog already works and shows for managers).
+- No changes to approve, edit, or delete flows.
+- No RLS policy rewrites (the new RPC bypasses the RLS ambiguity entirely, matching approve).
 
 ## Verification
-- Open the manager dashboard, confirm **Time Requests** appears under Employee Management.
-- Open it and confirm the list loads with Approve / Decline / Edit / Delete actions working.
+- As a manager, open **Time Requests**, decline a pending request with and without a reason → status becomes Declined, toast confirms, list refreshes.
+- As an admin, confirm decline still works.
+- Confirm a declined request shows the decline reason.
