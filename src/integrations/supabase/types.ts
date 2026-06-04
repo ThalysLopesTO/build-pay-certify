@@ -4276,6 +4276,10 @@ export type Database = {
         Args: { quote_id_param: string }
         Returns: string
       }
+      decline_missed_punch_request: {
+        Args: { p_decline_reason?: string; request_id: string }
+        Returns: Json
+      }
       decline_quote_public: {
         Args: { p_reason: string; p_token: string }
         Returns: Json
