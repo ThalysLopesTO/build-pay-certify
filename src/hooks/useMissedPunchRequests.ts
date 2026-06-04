@@ -250,20 +250,17 @@ export const useDeclineMissedPunchRequest = () => {
 
   return useMutation({
     mutationFn: async ({ requestId, declineReason }: { requestId: string; declineReason?: string }) => {
-      const { data, error } = await supabase
-        .from('missed_punch_requests')
-        .update({
-          status: 'declined' as any,
-          reviewed_by: (await supabase.auth.getUser()).data.user?.id,
-          reviewed_at: new Date().toISOString(),
-          decline_reason: declineReason,
-        })
-        .eq('id', requestId)
-        .eq('status', 'pending')
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('decline_missed_punch_request', {
+        request_id: requestId,
+        p_decline_reason: declineReason ?? null,
+      });
 
       if (error) throw error;
+
+      if (data && typeof data === 'object' && (data as any).success === false) {
+        throw new Error((data as any).error || 'Failed to decline request');
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -271,9 +268,9 @@ export const useDeclineMissedPunchRequest = () => {
       queryClient.invalidateQueries({ queryKey: ['my-missed-punch-requests'] });
       toast.success('Request declined');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to decline request:', error);
-      toast.error('Failed to decline request');
+      toast.error(error?.message || 'Failed to decline request');
     },
   });
 };
