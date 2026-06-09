@@ -310,7 +310,7 @@ const EmployeeBillsManagement: React.FC = () => {
         description="This permanently removes the bill and its photos. This cannot be undone."
         confirmText="Delete"
         variant="destructive"
-        loading={isDeleting}
+        isLoading={isDeleting}
         onConfirm={() => {
           if (billToDelete) {
             deleteBill(billToDelete);
