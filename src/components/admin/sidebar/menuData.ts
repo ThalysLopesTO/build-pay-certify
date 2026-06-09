@@ -201,6 +201,7 @@ export const groupedMenuItems = {
   managementOps: [
     menuData.find(item => item.id === 'live-punch-monitor')!,
     menuData.find(item => item.id === 'manual-timesheets')!,
+    menuData.find(item => item.id === 'employee-bills')!,
   ],
   invoices: [
     menuData.find(item => item.id === 'clients')!,
