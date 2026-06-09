@@ -121,6 +121,11 @@ export const menuData: MenuItem[] = [
     icon: ClipboardList,
   },
   {
+    id: 'employee-bills',
+    title: 'Employee Bills',
+    icon: Receipt,
+  },
+  {
     id: 'timesheets',
     title: 'Timesheets',
     icon: Calendar,
