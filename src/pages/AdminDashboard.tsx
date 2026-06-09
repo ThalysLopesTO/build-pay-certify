@@ -33,6 +33,7 @@ import { JobsiteSelectionScreen } from '@/components/admin/tasks/JobsiteSelectio
 import { DailyTaskScreen } from '@/components/admin/tasks/DailyTaskScreen';
 import ClientsPage from '@/pages/admin/ClientsPage';
 import ManualTimesheetsPage from '@/pages/admin/ManualTimesheetsPage';
+import EmployeeBillsManagement from '@/components/admin/EmployeeBillsManagement';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
