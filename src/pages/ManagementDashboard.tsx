@@ -51,6 +51,8 @@ const ManagementDashboard = () => {
         return <LivePunchMonitor />;
       case 'manual-timesheets':
         return <ManualTimesheetsPage />;
+      case 'employee-bills':
+        return <EmployeeBillsManagement />;
       case 'time-summary':
         return <TimeSummaryPage />;
       case 'daily-tasks':
