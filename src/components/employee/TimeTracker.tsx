@@ -344,7 +344,7 @@ const TimeTracker = () => {
         isOpen={showClockOutModal}
         onClose={() => setShowClockOutModal(false)}
         onClockOut={handleClockOutWithNote}
-        isLoading={isClockingOut}
+        isLoading={isClockingOut || isGettingLocation || isSubmittingBill}
       />
     </div>
   );
