@@ -121,6 +121,11 @@ export const menuData: MenuItem[] = [
     icon: ClipboardList,
   },
   {
+    id: 'employee-bills',
+    title: 'Employee Bills',
+    icon: Receipt,
+  },
+  {
     id: 'timesheets',
     title: 'Timesheets',
     icon: Calendar,
@@ -196,6 +201,7 @@ export const groupedMenuItems = {
   managementOps: [
     menuData.find(item => item.id === 'live-punch-monitor')!,
     menuData.find(item => item.id === 'manual-timesheets')!,
+    menuData.find(item => item.id === 'employee-bills')!,
   ],
   invoices: [
     menuData.find(item => item.id === 'clients')!,

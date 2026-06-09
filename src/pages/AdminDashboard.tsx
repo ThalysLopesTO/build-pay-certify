@@ -33,6 +33,7 @@ import { JobsiteSelectionScreen } from '@/components/admin/tasks/JobsiteSelectio
 import { DailyTaskScreen } from '@/components/admin/tasks/DailyTaskScreen';
 import ClientsPage from '@/pages/admin/ClientsPage';
 import ManualTimesheetsPage from '@/pages/admin/ManualTimesheetsPage';
+import EmployeeBillsManagement from '@/components/admin/EmployeeBillsManagement';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -75,6 +76,8 @@ const AdminDashboard = () => {
         return <LivePunchMonitor />;
       case 'manual-timesheets':
         return <ManualTimesheetsPage />;
+      case 'employee-bills':
+        return <EmployeeBillsManagement />;
       case 'time-summary':
         return <TimeSummaryPage />;
       case 'timesheets':

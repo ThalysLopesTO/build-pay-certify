@@ -1068,6 +1068,89 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_bill_photos: {
+        Row: {
+          bill_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          bill_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          bill_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_bill_photos_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "employee_bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_bills: {
+        Row: {
+          amount: number | null
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          jobsite_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          timesheet_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          jobsite_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          timesheet_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          jobsite_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          timesheet_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       employee_certificates: {
         Row: {
           certificate_name: string

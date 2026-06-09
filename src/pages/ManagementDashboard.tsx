@@ -27,6 +27,7 @@ import { DailyTaskScreen } from '../components/admin/tasks/DailyTaskScreen';
 import { TimeSummaryPage } from '@/components/admin/time-summary/TimeSummaryPage';
 import ManualTimesheetsPage from './admin/ManualTimesheetsPage';
 import TimeRequestsManagement from '../components/admin/TimeRequestsManagement';
+import EmployeeBillsManagement from '../components/admin/EmployeeBillsManagement';
 
 const ManagementDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -50,6 +51,8 @@ const ManagementDashboard = () => {
         return <LivePunchMonitor />;
       case 'manual-timesheets':
         return <ManualTimesheetsPage />;
+      case 'employee-bills':
+        return <EmployeeBillsManagement />;
       case 'time-summary':
         return <TimeSummaryPage />;
       case 'daily-tasks':
