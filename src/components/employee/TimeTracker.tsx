@@ -80,7 +80,7 @@ const TimeTracker = () => {
     setShowClockOutModal(true);
   };
 
-  const handleClockOutWithNote = async (breakMinutes: number, note: string) => {
+  const handleClockOutWithNote = async (breakMinutes: number, note: string, bill?: ClockOutBillPayload) => {
     if (!todayActiveTimesheet) {
       return;
     }
@@ -88,17 +88,50 @@ const TimeTracker = () => {
     try {
       const location = await getCurrentLocation();
       clockOut({ timesheetId: todayActiveTimesheet.id, location, workNote: note, breakMinutes });
+
+      // Submit reimbursement bill (optional) after clocking out
+      if (bill && bill.files.length > 0 && user?.id && user?.companyId) {
+        setIsSubmittingBill(true);
+        try {
+          await submitEmployeeBill(
+            {
+              files: bill.files,
+              amount: bill.amount,
+              description: bill.description,
+              jobsiteId: todayActiveTimesheet.jobsite_id,
+              timesheetId: todayActiveTimesheet.id,
+            },
+            user.id,
+            user.companyId
+          );
+          toast({
+            title: 'Bill submitted',
+            description: 'Your reimbursement bill was sent for review.',
+          });
+        } catch (billError) {
+          console.error('Error submitting reimbursement bill:', billError);
+          toast({
+            title: 'Bill not submitted',
+            description: 'You were clocked out, but the bill upload failed. Please try again later.',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsSubmittingBill(false);
+        }
+      }
+
       setShowClockOutModal(false);
     } catch (error) {
       console.error('Error getting location for clock out:', error);
     }
   };
 
-  const isLoading = isClockingIn || isClockingOut || isGettingLocation;
+  const isLoading = isClockingIn || isClockingOut || isGettingLocation || isSubmittingBill;
   const isClockedIn = !!todayActiveTimesheet;
 
   // Get today's full date
   const todayDate = format(new Date(), 'EEEE, MMMM dd, yyyy');
+
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto p-4">
