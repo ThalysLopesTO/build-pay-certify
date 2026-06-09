@@ -17,7 +17,9 @@ import TodayStatusBox from './time-tracker/TodayStatusBox';
 import WeeklyHistorySection from './time-tracker/WeeklyHistorySection';
 import WeekSelector from './time-tracker/WeekSelector';
 import DigitalClock from './time-tracker/DigitalClock';
-import ClockOutNoteModal from './ClockOutNoteModal';
+import ClockOutNoteModal, { ClockOutBillPayload } from './ClockOutNoteModal';
+import { submitEmployeeBill } from '@/hooks/useEmployeeBills';
+import { useToast } from '@/hooks/use-toast';
 
 const TimeTracker = () => {
   const { user } = useAuth();
