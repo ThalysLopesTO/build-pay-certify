@@ -55,6 +55,11 @@ export const managementMenuItems = {
       id: 'manual-timesheets',
     },
     {
+      title: 'Employee Bills',
+      icon: Receipt,
+      id: 'employee-bills',
+    },
+    {
       title: 'My Timesheet',
       icon: Clock,
       id: 'my-timesheet',
