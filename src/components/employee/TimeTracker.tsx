@@ -23,9 +23,11 @@ import { useToast } from '@/hooks/use-toast';
 
 const TimeTracker = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [selectedJobsiteId, setSelectedJobsiteId] = useState<string>('');
   const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
   const [showClockOutModal, setShowClockOutModal] = useState(false);
+  const [isSubmittingBill, setIsSubmittingBill] = useState(false);
   const { data: jobsites, isLoading: jobsitesLoading } = useActiveJobsites();
   const { getCurrentLocation, isGettingLocation } = useGeolocation();
 
