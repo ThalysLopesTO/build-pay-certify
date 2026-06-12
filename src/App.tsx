@@ -15,23 +15,25 @@ import HomePage from "@/pages/HomePage";
 import AdminLogin from "@/pages/AdminLogin";
 import EmployeeLogin from "@/pages/EmployeeLogin";
 import SubscriptionPlanPage from "@/pages/SubscriptionPlanPage";
-import AdminDashboard from "@/pages/AdminDashboard";
-import EmployeeDashboard from "@/pages/EmployeeDashboard";
-import ForemanDashboard from "@/pages/ForemanDashboard";
-import ManagementDashboard from "@/pages/ManagementDashboard";
-import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
+import AdminLayout from "@/components/admin/AdminLayout";
+import { adminTabRoutes, AdminDashboardWithLegacyRedirect } from "@/components/admin/adminTabRoutes";
 import SuperAdminLogin from "@/pages/SuperAdminLogin";
-import SuperAdminSetup from "@/pages/setup/SuperAdminSetup";
-import CompanyRegistration from "@/pages/CompanyRegistration";
-import CompanyHandbook from "@/pages/CompanyHandbook";
 import ResetPassword from "@/pages/ResetPassword";
 import LicenseExpired from "@/pages/LicenseExpired";
-import InvoicePreview from "@/pages/InvoicePreview";
-import MaterialTakeoffPage from "@/pages/admin/MaterialTakeoffPage";
-import InventoryIndex from "@/pages/admin/inventory/Index";
-import PublicQuotePage from "@/pages/PublicQuotePage";
-import ClientsPage from "@/pages/admin/ClientsPage";
 import NotFound from "@/pages/NotFound";
+
+// Heavy role dashboards and secondary pages load on demand to keep the
+// initial bundle small (each becomes its own chunk).
+const AttentionReportDetails = React.lazy(() => import("@/components/admin/AttentionReportDetails"));
+const EmployeeDashboard = React.lazy(() => import("@/pages/EmployeeDashboard"));
+const ForemanDashboard = React.lazy(() => import("@/pages/ForemanDashboard"));
+const ManagementDashboard = React.lazy(() => import("@/pages/ManagementDashboard"));
+const SuperAdminDashboard = React.lazy(() => import("@/pages/SuperAdminDashboard"));
+const SuperAdminSetup = React.lazy(() => import("@/pages/setup/SuperAdminSetup"));
+const CompanyRegistration = React.lazy(() => import("@/pages/CompanyRegistration"));
+const CompanyHandbook = React.lazy(() => import("@/pages/CompanyHandbook"));
+const InvoicePreview = React.lazy(() => import("@/pages/InvoicePreview"));
+const PublicQuotePage = React.lazy(() => import("@/pages/PublicQuotePage"));
 import ProtectedRoute from "@/components/common/ProtectedRoute";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { ClientPortalProvider } from "@/contexts/ClientPortalContext";
@@ -45,9 +47,16 @@ import PortalContactPage from "@/pages/client-portal/PortalContactPage";
 import StartTrialEmbedPage from "@/pages/StartTrialEmbedPage";
 
 
+const routeLoadingFallback = (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
+
 const AppInner: React.FC = () => {
   return (
     <RoleBasedRedirect>
+      <React.Suspense fallback={routeLoadingFallback}>
       <Routes>
         <Route path="/" element={<Navigate to="/admin-login" replace />} />
 
@@ -55,14 +64,25 @@ const AppInner: React.FC = () => {
         <Route path="/employee-login" element={<EmployeeLogin />} />
         <Route path="/subscription-plan" element={<SubscriptionPlanPage />} />
 
+        {/* Admin — nested routes with shared layout (sidebar + header).
+            Legacy /admin/dashboard?tab=<slug> links redirect to /admin/<slug>. */}
         <Route
-          path="/admin/dashboard"
+          path="/admin"
           element={
             <ProtectedRoute requireSubscription>
-              <AdminDashboard />
+              <AdminLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboardWithLegacyRedirect />} />
+          {adminTabRoutes
+            .filter((r) => r.slug !== "dashboard")
+            .map((r) => (
+              <Route key={r.slug} path={r.slug} element={r.element} />
+            ))}
+          <Route path="attention-reports/:reportId" element={<AttentionReportDetails />} />
+        </Route>
         <Route
           path="/employee/dashboard"
           element={
@@ -112,37 +132,13 @@ const AppInner: React.FC = () => {
           <Route path="contact" element={<PortalContactPage />} />
         </Route>
 
-        <Route
-          path="/admin/clients"
-          element={
-            <ProtectedRoute requireSubscription>
-              <ClientsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/material-takeoff"
-          element={
-            <ProtectedRoute requireSubscription>
-              <MaterialTakeoffPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/inventory"
-          element={
-            <ProtectedRoute requireSubscription>
-              <InventoryIndex />
-            </ProtectedRoute>
-          }
-        />
-
         {/* Trial Embed Page */}
         <Route path="/start-trial-embed" element={<StartTrialEmbedPage />} />
 
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
+      </React.Suspense>
     </RoleBasedRedirect>
   );
 };

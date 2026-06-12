@@ -137,9 +137,8 @@ const CollapsibleSidebarSection = ({
                     if (item.href) {
                       navigate(item.href);
                     } else {
-                      const tabId = item.id || item.title.toLowerCase().replace(/\s+/g, '-');
-                      setActiveTab(tabId);
-                      navigate(`/admin/dashboard?tab=${tabId}`);
+                      // setActiveTab navigates to /admin/<tabId> (see AdminLayout)
+                      setActiveTab(item.id || item.title.toLowerCase().replace(/\s+/g, '-'));
                     }
                   }}
                   className={`
