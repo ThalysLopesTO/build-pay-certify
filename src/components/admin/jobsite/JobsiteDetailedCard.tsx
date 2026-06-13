@@ -108,23 +108,78 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
   const totalTasks = tasks.length;
   const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
+  // ── urgency helpers ──────────────────────────────────────────────────────────
+  const getDueInfo = () => {
+    if (jobsite.status === 'completed' || !jobsite.due_date) return null;
+    const diffDays = Math.ceil(
+      (new Date(jobsite.due_date).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) /
+      86_400_000
+    );
+    if (diffDays < 0)  return { label: `${Math.abs(diffDays)}d overdue`,  style: 'text-red-700 bg-red-100 border-red-200' };
+    if (diffDays === 0) return { label: 'Due today',                        style: 'text-red-700 bg-red-100 border-red-200' };
+    if (diffDays <= 7)  return { label: `${diffDays}d left`,                style: 'text-amber-700 bg-amber-100 border-amber-200' };
+    return { label: `${diffDays}d left`, style: 'text-slate-600 bg-slate-100 border-slate-200' };
+  };
+
+  const getCardAccent = () => {
+    if (jobsite.status === 'completed') return 'border-l-4 border-l-emerald-400';
+    if (!jobsite.due_date) return 'border-l-4 border-l-blue-400';
+    const diffDays = Math.ceil(
+      (new Date(jobsite.due_date).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) /
+      86_400_000
+    );
+    if (diffDays < 0)  return 'border-l-4 border-l-red-500';
+    if (diffDays <= 7) return 'border-l-4 border-l-amber-400';
+    return 'border-l-4 border-l-blue-400';
+  };
+
+  const dueInfo = getDueInfo();
+
   return (
-    <Card className="shadow-md bg-background rounded-2xl border hover:shadow-lg transition-shadow">
+    <Card className={`shadow-md bg-background rounded-2xl border hover:shadow-lg transition-shadow ${getCardAccent()}`}>
       <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <CardTitle className="text-lg sm:text-xl font-semibold">{jobsite.name}</CardTitle>
-              <Badge 
-                variant={status.variant}
-                className="text-xs px-2 py-1"
-              >
+              <Badge variant={status.variant} className="text-xs px-2 py-1">
                 {status.label}
               </Badge>
-              <Badge variant="outline" className="text-xs text-muted-foreground">
-                ID: {jobsite.id.slice(0, 8)}
-              </Badge>
+              {dueInfo && (
+                <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border font-semibold ${dueInfo.style}`}>
+                  <Clock className="h-3 w-3" />
+                  {dueInfo.label}
+                </span>
+              )}
             </div>
+
+            {/* Task progress bar */}
+            {totalTasks > 0 && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                  <span className="flex items-center gap-1">
+                    <BarChart3 className="h-3 w-3" />
+                    Task progress
+                  </span>
+                  <span className="font-semibold tabular-nums">
+                    {completedTasks}/{totalTasks} &nbsp;·&nbsp; {progressPercentage.toFixed(0)}%
+                  </span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      progressPercentage === 100
+                        ? 'bg-emerald-500'
+                        : progressPercentage >= 50
+                        ? 'bg-blue-500'
+                        : 'bg-orange-400'
+                    }`}
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
               <p className="flex items-center">
                 <MapPin className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
@@ -148,10 +203,6 @@ const JobsiteDetailedCard: React.FC<JobsiteDetailedCardProps> = ({ jobsite }) =>
                   Completed: {formatDate(jobsite.completion_date)}
                 </p>
               )}
-              <p className="flex items-center">
-                <BarChart3 className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
-                Progress: {progressPercentage.toFixed(0)}% ({completedTasks}/{totalTasks} tasks)
-              </p>
               {jobsite.latitude !== undefined && jobsite.longitude !== undefined && (
                 <p className="flex items-center">
                   <Globe className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
