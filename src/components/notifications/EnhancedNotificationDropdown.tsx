@@ -180,28 +180,22 @@ const EnhancedNotificationDropdown: React.FC<EnhancedNotificationDropdownProps> 
 
   const getRedirectUrl = (notification: Notification) => {
     if (notification.redirect_to) {
+      // Legacy stored links may use ?tab= format — the AdminDashboardWithLegacyRedirect
+      // handles those transparently, so pass them through as-is.
       return notification.redirect_to;
     }
 
     switch (notification.type) {
-      case 'certificate':
-        return '/admin/dashboard?tab=employees';
-      case 'jobsite':
-        return '/admin/dashboard?tab=jobsites';
-      case 'material_request':
-        return '/admin/dashboard?tab=material-requests';
-      case 'attention_report':
-        return '/admin/dashboard?tab=attention-reports';
-      case 'daily_report':
-        return '/admin/dashboard?tab=daily-reports';
+      case 'certificate':        return '/admin/employees';
+      case 'jobsite':            return '/admin/jobsites';
+      case 'material_request':   return '/admin/material-requests';
+      case 'attention_report':   return '/admin/attention-reports';
+      case 'daily_report':       return '/admin/daily-reports';
       case 'bill_due_soon':
-      case 'bill_overdue':
-        return '/admin/dashboard?tab=bills-expenses';
+      case 'bill_overdue':       return '/admin/bills-expenses';
       case 'invoice_due_soon':
-      case 'invoice_overdue':
-        return '/admin/dashboard?tab=invoices';
-      default:
-        return '/admin/dashboard';
+      case 'invoice_overdue':    return '/admin/invoices';
+      default:                   return '/admin/dashboard';
     }
   };
 
@@ -448,22 +442,9 @@ const EnhancedNotificationDropdown: React.FC<EnhancedNotificationDropdownProps> 
         )}
       </ScrollArea>
 
-      {/* Enhanced Footer */}
+      {/* Footer */}
       {notifications.length > 0 && (
-        <div className="p-4 border-t border-gray-100 bg-white space-y-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition-colors rounded-lg py-3 font-medium"
-            onClick={() => {
-              navigate('/admin/dashboard?tab=notifications');
-              onClose();
-            }}
-          >
-            View all notifications
-            <ChevronRight className="h-4 w-4 ml-2" />
-          </Button>
-          
+        <div className="p-4 border-t border-gray-100 bg-white">
           <Button
             variant="ghost"
             size="sm"

@@ -1,8 +1,5 @@
-
 import React, { useState } from 'react';
 import { Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useNotifications } from '@/hooks/notifications/useNotifications';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -13,40 +10,41 @@ const NotificationBell = () => {
   const { data: notifications = [], isLoading } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Only show for admin, super_admin, foreman, and management roles
   if (!user || !['admin', 'super_admin', 'foreman', 'management'].includes(user.role || '')) {
     return null;
   }
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="relative p-2 hover:bg-gray-100"
+        <button
           disabled={isLoading}
+          className="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors disabled:opacity-50"
+          aria-label={`Notifications${unreadCount > 0 ? ` — ${unreadCount} unread` : ''}`}
         >
-          <Bell className="h-5 w-5 text-gray-600" />
+          <Bell className="h-5 w-5" />
+
           {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0 min-w-[20px]"
-            >
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
+            <>
+              {/* Pulse ring */}
+              <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-red-500 animate-ping opacity-75" />
+              {/* Solid badge */}
+              <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-red-500 flex items-center justify-center">
+                {unreadCount > 9 && (
+                  <span className="text-white text-[8px] font-bold leading-none">
+                    {unreadCount > 99 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </span>
+            </>
           )}
-        </Button>
+        </button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="w-96 p-0" 
-        align="end"
-        side="bottom"
-        sideOffset={8}
-      >
-        <EnhancedNotificationDropdown 
+
+      <PopoverContent className="w-96 p-0" align="end" side="bottom" sideOffset={8}>
+        <EnhancedNotificationDropdown
           notifications={notifications}
           onClose={() => setIsOpen(false)}
         />

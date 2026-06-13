@@ -137,14 +137,14 @@ const EnhancedManagementNotificationDropdown: React.FC<EnhancedManagementNotific
 
     switch (notification.type) {
       case 'bill_due_soon':
-      case 'bill_overdue':
-        return '/management/dashboard?tab=bills-expenses';
-      case 'certificate':
-        return '/management/dashboard?tab=employees';
-      case 'attention_report':
-        return '/management/dashboard?tab=reports';
-      default:
-        return '/management/dashboard';
+      case 'bill_overdue':       return '/management/bills-expenses';
+      case 'certificate':        return '/management/employees';
+      case 'attention_report':   return '/management/attention-reports';
+      case 'material_request':   return '/management/material-requests';
+      case 'daily_report':       return '/management/daily-reports';
+      case 'invoice_due_soon':
+      case 'invoice_overdue':    return '/management/invoices';
+      default:                   return '/management/dashboard';
     }
   };
 
@@ -375,20 +375,16 @@ const EnhancedManagementNotificationDropdown: React.FC<EnhancedManagementNotific
         )}
       </ScrollArea>
 
-      {/* Enhanced Footer */}
+      {/* Footer — clear only, no broken "view all" link */}
       {notifications.length > 0 && (
         <div className="p-4 border-t border-gray-100 bg-white">
           <Button
             variant="ghost"
             size="sm"
-            className="w-full text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition-colors rounded-lg py-3 font-medium"
-            onClick={() => {
-              navigate('/management/dashboard?tab=notifications');
-              onClose();
-            }}
+            className="w-full text-sm bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 transition-colors rounded-lg py-3 font-medium"
+            onClick={() => markAllAsRead()}
           >
-            View all notifications
-            <ChevronRight className="h-4 w-4 ml-2" />
+            Mark all as read
           </Button>
         </div>
       )}

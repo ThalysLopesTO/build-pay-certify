@@ -1,12 +1,15 @@
-
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Notification } from './types';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const useNotifications = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Stable channel name — created once per user session, not on every render
+  const channelName = useRef(`notifications-${user?.companyId ?? 'anon'}-${user?.id ?? 'anon'}`);
 
   const query = useQuery({
     queryKey: ['notifications', user?.id, user?.role],
@@ -25,23 +28,26 @@ export const useNotifications = () => {
       if (error) throw error;
       return (data || []) as Notification[];
     },
-    enabled: !!user?.id && !!user?.companyId && ['admin', 'super_admin', 'foreman', 'management'].includes(user?.role || ''),
-    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+    enabled:
+      !!user?.id &&
+      !!user?.companyId &&
+      ['admin', 'super_admin', 'foreman', 'management'].includes(user?.role || ''),
+    staleTime: 30 * 1000,
   });
 
-  // Set up realtime subscription for notifications
+  // Realtime subscription — stable channel, invalidates query on any change
   useEffect(() => {
-    if (!user?.companyId || !['admin', 'super_admin', 'foreman', 'management'].includes(user?.role || '')) {
+    if (
+      !user?.companyId ||
+      !['admin', 'super_admin', 'foreman', 'management'].includes(user?.role || '')
+    ) {
       return;
     }
 
-    let unsubscribeRef: (() => void) | null = null;
+    const name = channelName.current;
 
-    // Create unique channel name to avoid conflicts
-    const channelName = `notifications-${user.companyId}-${Math.random().toString(36).substr(2, 9)}`;
-    
     const channel = supabase
-      .channel(channelName)
+      .channel(name)
       .on(
         'postgres_changes',
         {
@@ -50,21 +56,17 @@ export const useNotifications = () => {
           table: 'notifications',
           filter: `company_id=eq.${user.companyId}`,
         },
-        (payload) => {
-          console.log('Notification realtime update:', payload);
-          // Refetch notifications when changes occur
-          query.refetch();
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['notifications', user.id, user.role] });
         }
       )
-      .subscribe((status) => {
-        console.log('Notifications channel status:', channelName, status);
-      });
+      .subscribe();
 
     return () => {
-      console.log('Cleaning up notifications channel:', channelName);
       supabase.removeChannel(channel);
     };
-  }, [user?.companyId, user?.role, user?.id, query.refetch]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.companyId, user?.role, user?.id]);
 
   return query;
 };
