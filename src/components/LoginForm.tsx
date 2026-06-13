@@ -97,21 +97,18 @@ const LoginForm = () => {
       <div className="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col lg:flex-row bg-slate-950">
 
         {/* ── Left branding panel (desktop only) ─────────────────────────── */}
-        <div className="hidden lg:flex lg:w-5/12 xl:w-[46%] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex-col p-8 xl:p-12 relative overflow-hidden">
+        <div className="hidden lg:flex lg:w-5/12 xl:w-[46%] bg-slate-950 flex-col p-8 xl:p-12 relative overflow-hidden">
 
-          {/* Atmospheric glows */}
-          <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-orange-500/25 rounded-full blur-[140px] pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-orange-600/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute top-1/3 right-0 w-72 h-72 bg-amber-400/10 rounded-full blur-[80px] pointer-events-none" />
-
-          {/* Subtle grid texture */}
+          {/* Background construction photo (falls back to the dark base if absent) */}
           <div
-            className="absolute inset-0 opacity-[0.035] pointer-events-none"
-            style={{
-              backgroundImage: 'linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)',
-              backgroundSize: '40px 40px',
-            }}
+            className="absolute inset-0 bg-cover bg-center pointer-events-none"
+            style={{ backgroundImage: 'url(/images/login-hero.png)' }}
           />
+          {/* Dark gradients keep the overlaid text readable over the photo */}
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/25 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/15 to-slate-950/55 pointer-events-none" />
+          {/* Subtle orange warmth */}
+          <div className="absolute -top-32 -right-24 w-[420px] h-[420px] bg-orange-500/15 rounded-full blur-[120px] pointer-events-none" />
 
           {/* Logo + version chip */}
           <div className="relative z-10 flex items-center justify-between">
@@ -132,15 +129,17 @@ const LoginForm = () => {
               <span className="text-orange-300 text-xs font-medium tracking-wide">Built for construction teams</span>
             </div>
 
-            <h2 className="text-3xl xl:text-[2.5rem] font-bold text-white leading-[1.15] mb-4 animate-in fade-in slide-in-from-bottom-3 duration-700">
-              The operating system<br />
-              for{' '}
+            <h2 className="text-3xl xl:text-[2.6rem] font-bold text-white leading-[1.12] mb-4 animate-in fade-in slide-in-from-bottom-3 duration-700 drop-shadow-lg">
+              Powering construction<br />
+              teams to build<br />
+              a{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-400 to-amber-300">
-                construction.
+                better tomorrow.
               </span>
             </h2>
-            <p className="text-slate-400 text-[15px] leading-relaxed mb-7 max-w-md">
-              Real-time payroll, timesheets, and jobsite management — all in one platform.
+            <p className="text-slate-300 text-[15px] leading-relaxed mb-7 max-w-md">
+              Real-time payroll, timesheets, and jobsite management — all in one platform
+              built to keep your projects on track and your teams paid on time.
             </p>
 
             <div className="space-y-3">
@@ -159,7 +158,7 @@ const LoginForm = () => {
               {STATS.map(({ value, label }) => (
                 <div
                   key={label}
-                  className="rounded-xl bg-white/[0.03] border border-white/10 px-3 py-3 text-center backdrop-blur-sm"
+                  className="rounded-xl bg-slate-900/50 border border-white/15 px-3 py-3 text-center backdrop-blur-md"
                 >
                   <p className="text-orange-400 text-lg font-bold leading-none">{value}</p>
                   <p className="text-slate-400 text-[11px] mt-1.5 leading-tight">{label}</p>
