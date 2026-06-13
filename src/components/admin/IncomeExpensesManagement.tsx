@@ -26,7 +26,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown, Paperclip, Eye, RefreshCw, Camera } from 'lucide-react';
+import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown, Paperclip, Eye, RefreshCw, Camera, X, Filter } from 'lucide-react';
 import ExpenseAttachmentField from './income-expenses/ExpenseAttachmentField';
 import { ScanReceiptModal } from './income-expenses/ScanReceiptModal';
 import { IncomeExpensesSkeleton } from './income-expenses/IncomeExpensesSkeleton';
@@ -616,6 +616,30 @@ const IncomeExpensesManagement = () => {
     label: payee
   }));
 
+  const hasActiveFilters =
+    filters.transactionTypeFilter.length > 0 ||
+    filters.statusFilter.length > 0 ||
+    filters.categoryFilter.length > 0 ||
+    filters.payeeFilter.length > 0 ||
+    !!filters.searchTerm;
+
+  const clearAllFilters = () => {
+    filters.setTransactionTypeFilter([]);
+    filters.setStatusFilter([]);
+    filters.setCategoryFilter([]);
+    filters.setPayeeFilter([]);
+    filters.setSearchTerm('');
+  };
+
+  const totalIncome = filteredTransactions
+    .filter(t => t.transaction_type === 'income')
+    .reduce((s, t) => s + t.amount, 0);
+  const totalExpenses = filteredTransactions
+    .filter(t => t.transaction_type === 'expense')
+    .reduce((s, t) => s + t.amount, 0);
+  const netAmount = totalIncome - totalExpenses;
+  const fmt = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 });
+
   if (isLoading) {
     return <IncomeExpensesSkeleton isMobile={isMobile} />;
   }
@@ -624,82 +648,56 @@ const IncomeExpensesManagement = () => {
     <div className="space-y-6 p-4 md:p-6 bg-slate-50 min-h-screen overflow-x-hidden max-w-full">
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-start space-x-4">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-xl shadow-lg">
-              <Receipt className="h-8 w-8 text-white" />
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-indigo-100">
+              <Receipt className="h-6 w-6 text-indigo-600" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">
-                Income & Expenses
-              </h1>
-              <p className="text-lg text-slate-600 font-medium">
-                Track income and expenses, analyze cash flow, and manage your company's finances.
+              <h1 className="text-2xl font-bold text-slate-900">Bills &amp; Expenses</h1>
+              <p className="text-sm text-slate-500">
+                {transactions.length} total transactions
               </p>
             </div>
           </div>
-          
-          <div className="flex gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline"
-                  className="bg-white border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-sm hover:shadow-md transition-all duration-200 px-4 py-2.5 text-sm font-medium"
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print Report
-                  <ChevronDown className="h-3 w-3 ml-2" />
+                <Button variant="outline" size="sm" className="h-9 text-xs">
+                  <Printer className="h-3.5 w-3.5 mr-1.5" />
+                  Print
+                  <ChevronDown className="h-3 w-3 ml-1.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem 
-                  onClick={() => handlePrint('charts')}
-                  className="flex items-center px-3 py-2 text-sm"
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Charts & KPIs Only
+                <DropdownMenuItem onClick={() => handlePrint('charts')} className="text-sm">
+                  <TrendingUp className="h-4 w-4 mr-2" />Charts &amp; KPIs
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => handlePrint('table')}
-                  className="flex items-center px-3 py-2 text-sm"
-                >
-                  <Receipt className="h-4 w-4 mr-2" />
-                  Transaction Table Only
+                <DropdownMenuItem onClick={() => handlePrint('table')} className="text-sm">
+                  <Receipt className="h-4 w-4 mr-2" />Transaction Table
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => handlePrint('full')}
-                  className="flex items-center px-3 py-2 text-sm"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Full Report
+                <DropdownMenuItem onClick={() => handlePrint('full')} className="text-sm">
+                  <Download className="h-4 w-4 mr-2" />Full Report
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            
-            <HierarchicalCategoryManager
-              categories={categories}
-              onCategoriesChange={fetchCategories}
-            />
-            <Button 
-              onClick={() => { prepareNewTransaction('income'); setIsCreateDialogOpen(true); }} 
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Income
+            <HierarchicalCategoryManager categories={categories} onCategoriesChange={fetchCategories} />
+            <Button variant="outline" size="sm" className="h-9 text-xs" onClick={() => setIsScanReceiptOpen(true)}>
+              <Camera className="h-3.5 w-3.5 mr-1.5" />Scan Receipt
             </Button>
-            <Button 
-              onClick={() => { prepareNewTransaction('expense'); setIsCreateDialogOpen(true); }} 
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold"
+            <Button
+              size="sm"
+              className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+              onClick={() => { prepareNewTransaction('income'); setIsCreateDialogOpen(true); }}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Expense
+              <Plus className="h-3.5 w-3.5 mr-1.5" />Add Income
             </Button>
-            <Button 
-              onClick={() => setIsScanReceiptOpen(true)} 
-              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-sm font-semibold"
+            <Button
+              size="sm"
+              className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white text-xs"
+              onClick={() => { prepareNewTransaction('expense'); setIsCreateDialogOpen(true); }}
             >
-              <Camera className="h-4 w-4 mr-2" />
-              Scan Receipt
+              <Plus className="h-3.5 w-3.5 mr-1.5" />Add Expense
             </Button>
           </div>
         </div>
@@ -707,54 +705,50 @@ const IncomeExpensesManagement = () => {
 
       {/* Mobile Header */}
       {isMobile && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-start space-x-3">
-              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2.5 rounded-xl shadow-lg">
-                <Receipt className="h-6 w-6 text-white" />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-indigo-100 flex-shrink-0">
+                <Receipt className="h-5 w-5 text-indigo-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">
-                  Income & Expenses
-                </h1>
-                <p className="text-sm text-slate-600">
-                  Track finances
-                </p>
+                <h1 className="text-xl font-bold text-slate-900 leading-tight">Bills &amp; Expenses</h1>
+                <p className="text-xs text-slate-500">{transactions.length} transactions</p>
               </div>
             </div>
-            <HierarchicalCategoryManager
-              categories={categories}
-              onCategoriesChange={fetchCategories}
-              trigger={
-                <Button variant="outline" size="sm" className="h-9 w-9 p-0 flex-shrink-0">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              }
-            />
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 w-9 p-0"
+                onClick={() => setIsScanReceiptOpen(true)}
+                title="Scan Receipt"
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
+              <HierarchicalCategoryManager
+                categories={categories}
+                onCategoriesChange={fetchCategories}
+                trigger={
+                  <Button variant="outline" size="sm" className="h-9 w-9 p-0">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            </div>
           </div>
-          
-          {/* Mobile Action Buttons - Full Width */}
-          <div className="space-y-2">
-            <Button 
+          <div className="grid grid-cols-2 gap-2">
+            <Button
               onClick={() => { prepareNewTransaction('income'); setIsCreateDialogOpen(true); }}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all duration-200 h-11"
+              className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Income
+              <Plus className="h-4 w-4 mr-1.5" />Add Income
             </Button>
-            <Button 
+            <Button
               onClick={() => { prepareNewTransaction('expense'); setIsCreateDialogOpen(true); }}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200 h-11"
+              className="h-10 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Expense
-            </Button>
-            <Button 
-              onClick={() => setIsScanReceiptOpen(true)}
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md hover:shadow-lg transition-all duration-200 h-11"
-            >
-              <Camera className="h-4 w-4 mr-2" />
-              Scan Receipt
+              <Plus className="h-4 w-4 mr-1.5" />Add Expense
             </Button>
           </div>
         </div>
@@ -821,269 +815,189 @@ const IncomeExpensesManagement = () => {
         </div>
       )}
 
-      {/* Advanced Filters Panel */}
-      <Card className="bg-white shadow-sm border-slate-200 overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-md">
-                <Settings className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-lg font-semibold text-slate-900">Advanced Filters</CardTitle>
-                <p className="text-sm text-slate-600 mt-1">Refine your search and filter criteria</p>
-              </div>
-            </div>
-            
-            {/* Results Count & Clear Filters */}
-            <div className="flex items-center space-x-3">
-              <Badge variant="secondary" className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 font-medium">
-                {filteredTransactions.length} results
-              </Badge>
-              {(filters.transactionTypeFilter.length > 0 || 
-                filters.statusFilter.length > 0 || 
-                filters.categoryFilter.length > 0 || 
-                filters.payeeFilter.length > 0 || 
-                filters.searchTerm) && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    filters.setTransactionTypeFilter([]);
-                    filters.setStatusFilter([]);
-                    filters.setCategoryFilter([]);
-                    filters.setPayeeFilter([]);
-                    filters.setSearchTerm('');
-                  }}
-                  className="text-slate-600 hover:text-slate-900 border-slate-300"
-                >
-                  Clear All
-                </Button>
-              )}
-            </div>
+      {/* Compact Filter Bar */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 space-y-3">
+        {/* Row 1: Search + Date pills + Export + Clear */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[160px]">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <Input
+              placeholder="Search title, vendor…"
+              value={filters.searchTerm}
+              onChange={(e) => filters.setSearchTerm(e.target.value)}
+              className="pl-9 h-9 text-sm"
+            />
           </div>
-        </CardHeader>
 
-        <CardContent className="p-3 md:p-6">
-          {/* Filter Sections */}
-          <div className="space-y-6">
-            
-            {/* Search & Quick Filters Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Search */}
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <SearchIcon className="h-4 w-4 text-slate-500" />
-                  <label className="text-sm font-medium text-slate-700">Search Transactions</label>
-                </div>
-                <div className="relative">
-                  <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    placeholder="Search by title, vendor, or payee..."
-                    value={filters.searchTerm}
-                    onChange={(e) => filters.setSearchTerm(e.target.value)}
-                    className="pl-9 h-11 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Date Range */}
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <CalendarIcon className="h-4 w-4 text-slate-500" />
-                  <label className="text-sm font-medium text-slate-700">Date Range</label>
-                </div>
-                <Select 
-                  value={filters.dateRangeType} 
-                  onValueChange={(value: DateRangeType) => {
-                    filters.setDateRangeType(value);
-                  }}
-                >
-                  <SelectTrigger className="h-11 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 bg-white">
-                    <SelectValue placeholder="Select date range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="this-week">This Week</SelectItem>
-                    <SelectItem value="this-month">This Month</SelectItem>
-                    <SelectItem value="last-month">Last Month</SelectItem>
-                    <SelectItem value="year-to-date">Year to Date</SelectItem>
-                    <SelectItem value="all-time">All Time</SelectItem>
-                    <SelectItem value="custom">Custom Range</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Custom Date Range */}
-            {filters.dateRangeType === 'custom' && (
-              <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700">Start Date</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full h-11 justify-start text-left font-normal border-slate-300 hover:border-blue-500 bg-white">
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {filters.customStartDate ? format(filters.customStartDate, "MMM dd, yyyy") : "Select start date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={filters.customStartDate || undefined}
-                          onSelect={(date) => {
-                            filters.setCustomStartDate(date || null);
-                          }}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700">End Date</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full h-11 justify-start text-left font-normal border-slate-300 hover:border-blue-500 bg-white">
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {filters.customEndDate ? format(filters.customEndDate, "MMM dd, yyyy") : "Select end date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={filters.customEndDate || undefined}
-                          onSelect={(date) => {
-                            filters.setCustomEndDate(date || null);
-                          }}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Multi-Select Filters Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-              {/* Transaction Type */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <ArrowRightLeft className="h-4 w-4 text-slate-500" />
-                  <label className="text-sm font-medium text-slate-700">Type</label>
-                </div>
-                <MultiSelect
-                  options={transactionTypeOptions}
-                  selected={filters.transactionTypeFilter}
-                  onChange={filters.setTransactionTypeFilter}
-                  placeholder="Income / Expense"
-                  className="border-slate-300 focus:border-emerald-500 focus:ring-emerald-500/20 bg-white h-11"
-                />
-              </div>
-
-              {/* Status */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4 text-slate-500" />
-                  <label className="text-sm font-medium text-slate-700">Status</label>
-                </div>
-                <MultiSelect
-                  options={statusOptions}
-                  selected={filters.statusFilter}
-                  onChange={filters.setStatusFilter}
-                  placeholder="Payment Status"
-                  className="border-slate-300 focus:border-amber-500 focus:ring-amber-500/20 bg-white h-11"
-                />
-              </div>
-
-              {/* Category */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Receipt className="h-4 w-4 text-slate-500" />
-                  <label className="text-sm font-medium text-slate-700">Category</label>
-                </div>
-                <MultiSelect
-                  options={categoryOptions}
-                  selected={filters.categoryFilter}
-                  onChange={filters.setCategoryFilter}
-                  placeholder="Select Categories"
-                  className="border-slate-300 focus:border-purple-500 focus:ring-purple-500/20 bg-white h-11"
-                />
-              </div>
-
-              {/* Payer/Payee */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <DollarSign className="h-4 w-4 text-slate-500" />
-                  <label className="text-sm font-medium text-slate-700">Payer/Payee</label>
-                </div>
-                <MultiSelect
-                  options={payeeOptions}
-                  selected={filters.payeeFilter}
-                  onChange={filters.setPayeeFilter}
-                  placeholder="Select Vendors"
-                  className="border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20 bg-white h-11"
-                />
-              </div>
-            </div>
-
-            {/* Active Filters Summary */}
-            {(filters.transactionTypeFilter.length > 0 || 
-              filters.statusFilter.length > 0 || 
-              filters.categoryFilter.length > 0 || 
-              filters.payeeFilter.length > 0) && (
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <div className="flex items-start space-x-2">
-                  <div className="p-1 bg-blue-100 rounded">
-                    <Settings className="h-3 w-3 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium text-blue-900 mb-2">Active Filters</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {filters.transactionTypeFilter.map(type => (
-                        <Badge key={type} variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200">
-                          {type === 'income' ? 'Income' : 'Expense'}
-                        </Badge>
-                      ))}
-                      {filters.statusFilter.map(status => (
-                        <Badge key={status} variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </Badge>
-                      ))}
-                      {filters.categoryFilter.map(category => (
-                        <Badge key={category} variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
-                          {category}
-                        </Badge>
-                      ))}
-                      {filters.payeeFilter.map(payee => (
-                        <Badge key={payee} variant="secondary" className="bg-indigo-100 text-indigo-800 border-indigo-200">
-                          {payee}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Export Actions */}
-            <div className="flex justify-end pt-4 border-t border-slate-200">
-              <Button 
-                variant="outline" 
-                onClick={exportToExcel}
-                className="bg-white hover:bg-slate-50 border-slate-300 text-slate-700 hover:text-slate-900"
+          {/* Date quick pills */}
+          <div className="flex gap-1 flex-wrap">
+            {([
+              { value: 'this-month', label: 'Month' },
+              { value: 'last-month', label: 'Last Mo.' },
+              { value: 'year-to-date', label: 'YTD' },
+              { value: 'all-time', label: 'All' },
+              { value: 'custom', label: 'Custom' },
+            ] as { value: DateRangeType; label: string }[]).map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => filters.setDateRangeType(value)}
+                className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${
+                  filters.dateRangeType === value
+                    ? 'bg-slate-800 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
               >
-                <Download className="mr-2 h-4 w-4" />
-                Export Filtered Data
-              </Button>
-            </div>
+                {label}
+              </button>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-xs text-slate-500 font-medium whitespace-nowrap hidden sm:block">
+              {filteredTransactions.length} results
+            </span>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportToExcel}>
+              <Download className="h-3.5 w-3.5 mr-1.5" />Export
+            </Button>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs text-slate-500 hover:text-slate-800" onClick={clearAllFilters}>
+                <X className="h-3.5 w-3.5 mr-1" />Clear
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Custom date range (shown only when 'custom' is selected) */}
+        {filters.dateRangeType === 'custom' && (
+          <div className="flex flex-wrap gap-2 px-1">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs font-normal">
+                  <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                  {filters.customStartDate ? format(filters.customStartDate, 'MMM d, yyyy') : 'Start date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={filters.customStartDate || undefined}
+                  onSelect={(date) => filters.setCustomStartDate(date || null)}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            <span className="self-center text-xs text-slate-400">to</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs font-normal">
+                  <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                  {filters.customEndDate ? format(filters.customEndDate, 'MMM d, yyyy') : 'End date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={filters.customEndDate || undefined}
+                  onSelect={(date) => filters.setCustomEndDate(date || null)}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
+
+        {/* Row 2: Multi-select dropdowns */}
+        <div className="flex flex-wrap gap-2">
+          <div className="min-w-[130px] flex-1 sm:flex-none">
+            <MultiSelect
+              options={transactionTypeOptions}
+              selected={filters.transactionTypeFilter}
+              onChange={filters.setTransactionTypeFilter}
+              placeholder="All Types"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="min-w-[130px] flex-1 sm:flex-none">
+            <MultiSelect
+              options={statusOptions}
+              selected={filters.statusFilter}
+              onChange={filters.setStatusFilter}
+              placeholder="All Statuses"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="min-w-[140px] flex-1 sm:flex-none">
+            <MultiSelect
+              options={categoryOptions}
+              selected={filters.categoryFilter}
+              onChange={filters.setCategoryFilter}
+              placeholder="All Categories"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="min-w-[140px] flex-1 sm:flex-none">
+            <MultiSelect
+              options={payeeOptions}
+              selected={filters.payeeFilter}
+              onChange={filters.setPayeeFilter}
+              placeholder="All Vendors"
+              className="h-9 text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Active filter chips */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100">
+            {filters.searchTerm && (
+              <button
+                onClick={() => filters.setSearchTerm('')}
+                className="flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 text-xs rounded-full hover:bg-slate-200"
+              >
+                "{filters.searchTerm}" <X className="h-3 w-3" />
+              </button>
+            )}
+            {filters.transactionTypeFilter.map(type => (
+              <button
+                key={type}
+                onClick={() => filters.setTransactionTypeFilter(filters.transactionTypeFilter.filter(t => t !== type))}
+                className="flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-xs rounded-full hover:bg-emerald-200"
+              >
+                {type === 'income' ? 'Income' : 'Expense'} <X className="h-3 w-3" />
+              </button>
+            ))}
+            {filters.statusFilter.map(status => (
+              <button
+                key={status}
+                onClick={() => filters.setStatusFilter(filters.statusFilter.filter(s => s !== status))}
+                className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 text-xs rounded-full hover:bg-amber-200"
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)} <X className="h-3 w-3" />
+              </button>
+            ))}
+            {filters.categoryFilter.map(cat => (
+              <button
+                key={cat}
+                onClick={() => filters.setCategoryFilter(filters.categoryFilter.filter(c => c !== cat))}
+                className="flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full hover:bg-purple-200"
+              >
+                {cat} <X className="h-3 w-3" />
+              </button>
+            ))}
+            {filters.payeeFilter.map(payee => (
+              <button
+                key={payee}
+                onClick={() => filters.setPayeeFilter(filters.payeeFilter.filter(p => p !== payee))}
+                className="flex items-center gap-1 px-2 py-0.5 bg-indigo-100 text-indigo-800 text-xs rounded-full hover:bg-indigo-200"
+              >
+                {payee} <X className="h-3 w-3" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Transactions Section - Mobile Cards or Desktop Table */}
       {isMobile ? (
@@ -1226,18 +1140,21 @@ const IncomeExpensesManagement = () => {
         <Card className="bg-white shadow-sm border-slate-200" data-print="table">
           <CardHeader className="border-b border-slate-200 pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-semibold text-slate-900">
-                Transactions
-              </CardTitle>
-              <div className="flex items-center gap-4">
-                <div className="text-sm text-slate-600">
-                  Showing {startItem} to {endItem} of {filteredTransactions.length} transactions
-                </div>
-                <Badge variant="outline" className="text-slate-600">
-                  {filteredTransactions.length} total
-                </Badge>
-              </div>
+              <CardTitle className="text-base font-semibold text-slate-900">Transactions</CardTitle>
+              <span className="text-sm text-slate-500">
+                {filteredTransactions.length === 0 ? '0' : `${startItem}–${endItem}`} of {filteredTransactions.length}
+              </span>
             </div>
+            {filteredTransactions.length > 0 && (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 pt-3 border-t border-slate-100 text-sm">
+                <span className="text-slate-500">{filteredTransactions.length} transactions</span>
+                <span className="text-emerald-700 font-semibold">+{fmt.format(totalIncome)} income</span>
+                <span className="text-red-600 font-semibold">−{fmt.format(totalExpenses)} expenses</span>
+                <span className={`font-bold ${netAmount >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                  Net {netAmount >= 0 ? '+' : ''}{fmt.format(netAmount)}
+                </span>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
