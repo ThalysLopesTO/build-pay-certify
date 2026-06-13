@@ -39,6 +39,7 @@ const DailyTaskScreen = lazy(() =>
 const ClientsPage = lazy(() => import('@/pages/admin/ClientsPage'));
 const ManualTimesheetsPage = lazy(() => import('@/pages/admin/ManualTimesheetsPage'));
 const EmployeeBillsManagement = lazy(() => import('@/components/admin/EmployeeBillsManagement'));
+const JobCostingPage = lazy(() => import('@/components/admin/JobCostingPage'));
 
 const DashboardRoute = () => {
   const navigate = useNavigate();
@@ -85,6 +86,7 @@ export const adminTabRoutes: AdminTabRoute[] = [
   { slug: 'quotes', title: 'Quotes', element: <QuotesManagement /> },
   { slug: 'clients', title: 'Clients', element: <ClientsPage /> },
   { slug: 'bills-expenses', title: 'Bills / Expenses', element: <IncomeExpensesManagement /> },
+  { slug: 'job-costing', title: 'Job Costing / P&L', element: <JobCostingPage /> },
   { slug: 'time-requests', title: 'Time Requests', element: <TimeRequestsManagement /> },
   { slug: 'tasks', title: 'Daily Tasks', element: <TasksRoute /> },
   { slug: 'company-settings', title: 'Company Settings', element: <SystemSettings /> },

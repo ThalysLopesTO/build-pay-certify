@@ -28,6 +28,7 @@ import {
   MessageSquare,
   Cog,
   ClipboardList,
+  TrendingUp,
 } from 'lucide-react';
 import { MenuItem } from './types';
 
@@ -157,6 +158,11 @@ export const menuData: MenuItem[] = [
     title: 'Bills / Expenses',
     icon: Receipt,
   },
+  {
+    id: 'job-costing',
+    title: 'Job Costing / P&L',
+    icon: TrendingUp,
+  },
   
   // Reports & Communication
   {
@@ -204,6 +210,7 @@ export const groupedMenuItems = {
     menuData.find(item => item.id === 'employee-bills')!,
   ],
   invoices: [
+    menuData.find(item => item.id === 'job-costing')!,
     menuData.find(item => item.id === 'clients')!,
     menuData.find(item => item.id === 'invoices')!,
     menuData.find(item => item.id === 'quotes')!,

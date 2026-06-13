@@ -389,7 +389,7 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
                 { label: 'Daily Reports', icon: FileText, href: '/admin/daily-reports', bg: 'bg-purple-50 hover:bg-purple-100', color: 'text-purple-700' },
                 { label: 'Jobsites', icon: MapPin, href: '/admin/jobsites', bg: 'bg-orange-50 hover:bg-orange-100', color: 'text-orange-700' },
                 { label: 'Invoices', icon: TrendingUp, href: '/admin/invoices', bg: 'bg-pink-50 hover:bg-pink-100', color: 'text-pink-700' },
-                { label: 'Employees', icon: Users, href: '/admin/employees', bg: 'bg-slate-50 hover:bg-slate-100', color: 'text-slate-700' },
+                { label: 'Job Costing', icon: Receipt, href: '/admin/job-costing', bg: 'bg-emerald-50 hover:bg-emerald-100', color: 'text-emerald-700' },
               ].map((item) => (
                 <button
                   key={item.href}
