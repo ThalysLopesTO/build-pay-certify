@@ -13,7 +13,10 @@ import { useTimesheetPDF } from '@/hooks/useTimesheetPDF';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Calendar, Plus, Download, RefreshCw, Trash2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { Calendar, CheckCircle2, Plus, Download, RefreshCw, Trash2, XCircle } from 'lucide-react';
 import TimesheetEditModal from '@/components/admin/timesheets/TimesheetEditModal';
 import CreateManualTimesheetModal from '@/components/admin/timesheets/CreateManualTimesheetModal';
 import { TimesheetDeleteConfirmDialog } from '@/components/admin/timesheets/TimesheetDeleteConfirmDialog';
@@ -27,6 +30,7 @@ import { format } from 'date-fns';
 
 const EmployeeTimesheets = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { approveTimesheet, rejectTimesheet, editTimesheet, isApproving, isRejecting, isEditing } = useWeeklyTimesheetActions();
   const { createManualTimesheet, isCreating } = useCreateManualTimesheet();
   const { mutate: deleteTimesheet, isPending: isDeleting } = useDeleteWeeklyTimesheet();
@@ -47,7 +51,7 @@ const EmployeeTimesheets = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [selectedTimesheets, setSelectedTimesheets] = useState<Set<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<'pdf' | 'xlsx' | 'delete' | ''>('');
+  const [bulkAction, setBulkAction] = useState<'approve' | 'reject' | 'pdf' | 'xlsx' | 'delete' | ''>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   
@@ -159,7 +163,7 @@ const EmployeeTimesheets = () => {
   // Download selected as Excel
   const downloadSelectedAsExcel = () => {
     if (selectedTimesheetsData.length === 0) {
-      alert('Please select at least one timesheet to export');
+      toast({ title: 'No timesheets selected', description: 'Select at least one timesheet to export.', variant: 'destructive' });
       return;
     }
 
@@ -247,7 +251,7 @@ const EmployeeTimesheets = () => {
   // Download selected as PDF
   const downloadSelectedAsPDF = async () => {
     if (selectedTimesheetsData.length === 0) {
-      alert('Please select at least one timesheet to export');
+      toast({ title: 'No timesheets selected', description: 'Select at least one timesheet to export.', variant: 'destructive' });
       return;
     }
 
@@ -283,10 +287,10 @@ const EmployeeTimesheets = () => {
         // Add a small delay between downloads
         await new Promise(resolve => setTimeout(resolve, 500));
       }
-      alert(`Downloaded ${selectedTimesheetsData.length} PDF files`);
+      toast({ title: `${selectedTimesheetsData.length} PDF${selectedTimesheetsData.length !== 1 ? 's' : ''} downloaded` });
     } catch (error) {
       console.error('Error generating PDF files:', error);
-      alert('Error generating PDF files. Please try again.');
+      toast({ title: 'Error generating PDFs', description: 'Please try again.', variant: 'destructive' });
     } finally {
       setIsProcessing(false);
     }
@@ -335,21 +339,59 @@ const EmployeeTimesheets = () => {
 
     // Show summary toast
     if (failCount === 0) {
-      alert(`Successfully deleted ${successCount} timesheet${successCount !== 1 ? 's' : ''}`);
+      toast({ title: `${successCount} timesheet${successCount !== 1 ? 's' : ''} deleted` });
     } else {
-      alert(`Deleted ${successCount} timesheet${successCount !== 1 ? 's' : ''}. Failed to delete ${failCount}.`);
+      toast({ title: `Deleted ${successCount}, failed ${failCount}`, variant: 'destructive' });
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    if (!user?.companyId || selectedTimesheets.size === 0) return;
+    setIsProcessing(true);
+    const ids = Array.from(selectedTimesheets);
+    const { error } = await supabase
+      .from('weekly_timesheets')
+      .update({ status: 'approved', updated_by: user.id })
+      .in('id', ids)
+      .eq('company_id', user.companyId);
+    setIsProcessing(false);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to approve timesheets.', variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['weekly-timesheets'] });
+      toast({ title: `${ids.length} timesheet${ids.length !== 1 ? 's' : ''} approved` });
+      setSelectedTimesheets(new Set());
+      setBulkAction('');
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (!user?.companyId || selectedTimesheets.size === 0) return;
+    setIsProcessing(true);
+    const ids = Array.from(selectedTimesheets);
+    const { error } = await supabase
+      .from('weekly_timesheets')
+      .update({ status: 'rejected', updated_by: user.id })
+      .in('id', ids)
+      .eq('company_id', user.companyId);
+    setIsProcessing(false);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to reject timesheets.', variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['weekly-timesheets'] });
+      toast({ title: `${ids.length} timesheet${ids.length !== 1 ? 's' : ''} rejected` });
+      setSelectedTimesheets(new Set());
+      setBulkAction('');
     }
   };
 
   // Handle bulk actions
   const handleBulkAction = () => {
-    if (bulkAction === 'pdf') {
-      downloadSelectedAsPDF();
-    } else if (bulkAction === 'xlsx') {
-      downloadSelectedAsExcel();
-    } else if (bulkAction === 'delete') {
-      handleBulkDelete();
-    }
+    if (bulkAction === 'approve') handleBulkApprove();
+    else if (bulkAction === 'reject') handleBulkReject();
+    else if (bulkAction === 'pdf') downloadSelectedAsPDF();
+    else if (bulkAction === 'xlsx') downloadSelectedAsExcel();
+    else if (bulkAction === 'delete') handleBulkDelete();
   };
 
   // Check if user can create manual timesheets (Admin and Management only)
@@ -410,11 +452,23 @@ const EmployeeTimesheets = () => {
                 <span className="text-sm font-medium text-blue-900">
                   {selectedTimesheets.size} timesheet{selectedTimesheets.size !== 1 ? 's' : ''} selected
                 </span>
-                <Select value={bulkAction} onValueChange={(value: 'pdf' | 'xlsx' | 'delete' | '') => setBulkAction(value)}>
-                  <SelectTrigger className="w-48">
+                <Select value={bulkAction} onValueChange={(value: 'approve' | 'reject' | 'pdf' | 'xlsx' | 'delete' | '') => setBulkAction(value)}>
+                  <SelectTrigger className="w-52">
                     <SelectValue placeholder="Choose action..." />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="approve">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        Approve Selected
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="reject">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-red-500" />
+                        Reject Selected
+                      </div>
+                    </SelectItem>
                     <SelectItem value="pdf">Download as PDF</SelectItem>
                     <SelectItem value="xlsx">Download as Excel</SelectItem>
                     {isAuthorized && (

@@ -15,7 +15,10 @@ import { generateBrandedInvoicePDF } from './BrandedInvoicePDF';
 import { useToast } from '@/hooks/use-toast';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
-import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2 } from 'lucide-react';
+import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2, CheckCircle2, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { InvoiceDetailsDialogContent } from './invoices/InvoiceDetailsDialogContent';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -29,6 +32,7 @@ import InvoiceTrackerMobileFilters from './invoices/InvoiceTrackerMobileFilters'
 const InvoiceTracker = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { invoices, isLoading, updateInvoiceStatus, deleteInvoice, isDeleting } = useInvoices();
   const { data: jobsites } = useJobsites();
   const { settings: companySettings } = useCompanySettings();
@@ -45,6 +49,10 @@ const InvoiceTracker = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Bulk selection state
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
   const getStatusBadgeClass = (status: string, isOverdue: boolean = false) => {
     if (isOverdue) return 'invoice-status-overdue';
@@ -197,6 +205,88 @@ const InvoiceTracker = () => {
   };
 
   const canDeleteInvoices = user?.role && ['admin', 'super_admin', 'management'].includes(user.role);
+
+  // ── Bulk helpers ────────────────────────────────────────────────────────────
+
+  const allVisibleIds = filteredInvoices.map((inv) => inv.id);
+  const allVisibleSelected =
+    allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedInvoiceIds.has(id));
+
+  const toggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedInvoiceIds(new Set(allVisibleIds));
+    } else {
+      setSelectedInvoiceIds(new Set());
+    }
+  };
+
+  const toggleSelectInvoice = (id: string, checked: boolean) => {
+    const next = new Set(selectedInvoiceIds);
+    if (checked) next.add(id); else next.delete(id);
+    setSelectedInvoiceIds(next);
+  };
+
+  const selectedInvoices = filteredInvoices.filter((inv) => selectedInvoiceIds.has(inv.id));
+
+  const handleBulkMarkPaid = async () => {
+    if (!user?.companyId || selectedInvoiceIds.size === 0) return;
+    setIsBulkProcessing(true);
+    const ids = Array.from(selectedInvoiceIds);
+    const { error } = await supabase
+      .from('invoices')
+      .update({ status: 'paid' })
+      .in('id', ids)
+      .eq('company_id', user.companyId);
+    setIsBulkProcessing(false);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to update invoices.', variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast({ title: `${ids.length} invoice${ids.length !== 1 ? 's' : ''} marked as paid` });
+      setSelectedInvoiceIds(new Set());
+    }
+  };
+
+  const handleBulkExportCSV = () => {
+    if (selectedInvoices.length === 0) return;
+    const headers = ['Invoice Number', 'Client Company', 'Title', 'Amount', 'Status', 'Due Date'];
+    const rows = selectedInvoices.map((inv) => [
+      inv.invoice_number,
+      inv.client_company,
+      inv.title,
+      inv.total_amount.toFixed(2),
+      inv.status,
+      format(new Date(inv.due_date), 'yyyy-MM-dd'),
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((f) => `"${f}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `invoices-selected-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    toast({ title: `${selectedInvoices.length} invoice${selectedInvoices.length !== 1 ? 's' : ''} exported` });
+  };
+
+  const handleBulkDelete = async () => {
+    if (!user?.companyId || selectedInvoiceIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedInvoiceIds.size} invoice${selectedInvoiceIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    setIsBulkProcessing(true);
+    const ids = Array.from(selectedInvoiceIds);
+    const { error } = await supabase
+      .from('invoices')
+      .delete()
+      .in('id', ids)
+      .eq('company_id', user.companyId);
+    setIsBulkProcessing(false);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to delete invoices.', variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast({ title: `${ids.length} invoice${ids.length !== 1 ? 's' : ''} deleted` });
+      setSelectedInvoiceIds(new Set());
+    }
+  };
 
   if (isLoading) {
     return (
@@ -387,11 +477,62 @@ const InvoiceTracker = () => {
             </div>
           </div>
 
+          {/* Bulk selection bar */}
+          {selectedInvoiceIds.size > 0 && (
+            <div className="mb-4 flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200">
+              <span className="text-sm font-medium text-blue-900">
+                {selectedInvoiceIds.size} invoice{selectedInvoiceIds.size !== 1 ? 's' : ''} selected
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={handleBulkMarkPaid}
+                  disabled={isBulkProcessing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors disabled:opacity-50"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Mark as Paid
+                </button>
+                <button
+                  onClick={handleBulkExportCSV}
+                  disabled={isBulkProcessing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors disabled:opacity-50"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5" />
+                  Export CSV
+                </button>
+                {canDeleteInvoices && (
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={isBulkProcessing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-red-200 hover:bg-red-50 text-red-600 text-xs font-semibold transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectedInvoiceIds(new Set())}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-blue-600 hover:bg-blue-100 text-xs font-medium transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Professional Invoice Table */}
           <div className="rounded-xl border border-border/50 bg-card overflow-hidden shadow-lg">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gradient-to-r from-muted/60 to-muted/40 border-border/50">
+                  <TableHead className="w-10 py-4">
+                    <Checkbox
+                      checked={allVisibleSelected}
+                      onCheckedChange={(c) => toggleSelectAll(!!c)}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
                   <TableHead className="font-semibold text-foreground py-4">Invoice #</TableHead>
                   <TableHead className="font-semibold text-foreground py-4">Client</TableHead>
                   <TableHead className="font-semibold text-foreground py-4">Jobsite</TableHead>
@@ -404,13 +545,22 @@ const InvoiceTracker = () => {
               </TableHeader>
               <TableBody>
                 {filteredInvoices.map((invoice, index) => (
-                  <TableRow 
-                    key={invoice.id} 
+                  <TableRow
+                    key={invoice.id}
                     className={`
                       invoice-table-row
+                      ${selectedInvoiceIds.has(invoice.id) ? 'bg-blue-50/60' : ''}
                       ${isOverdue(invoice.due_date, invoice.status) ? 'bg-red-50/50 border-l-4 border-l-red-500' : ''}
                     `}
                   >
+                    <TableCell className="py-4 w-10">
+                      <Checkbox
+                        checked={selectedInvoiceIds.has(invoice.id)}
+                        onCheckedChange={(c) => toggleSelectInvoice(invoice.id, !!c)}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Select invoice ${invoice.invoice_number}`}
+                      />
+                    </TableCell>
                     <TableCell className="py-4">
                       <div className="flex items-center space-x-3">
                         <span className="font-semibold text-base">{invoice.invoice_number}</span>

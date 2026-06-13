@@ -2,14 +2,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Notification } from './types';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 export const useNotifications = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-
-  // Stable channel name — created once per user session, not on every render
-  const channelName = useRef(`notifications-${user?.companyId ?? 'anon'}-${user?.id ?? 'anon'}`);
 
   const query = useQuery({
     queryKey: ['notifications', user?.id, user?.role],
@@ -35,16 +32,22 @@ export const useNotifications = () => {
     staleTime: 30 * 1000,
   });
 
-  // Realtime subscription — stable channel, invalidates query on any change
   useEffect(() => {
     if (
       !user?.companyId ||
+      !user?.id ||
       !['admin', 'super_admin', 'foreman', 'management'].includes(user?.role || '')
     ) {
       return;
     }
 
-    const name = channelName.current;
+    const companyId = user.companyId;
+    const userId = user.id;
+    const role = user.role;
+
+    // Unique name per effect invocation — prevents "subscribe called twice" when
+    // TOKEN_REFRESHED fires and re-runs this effect before removeChannel completes.
+    const name = `notif-${companyId}-${userId}-${Date.now()}`;
 
     const channel = supabase
       .channel(name)
@@ -54,10 +57,10 @@ export const useNotifications = () => {
           event: '*',
           schema: 'public',
           table: 'notifications',
-          filter: `company_id=eq.${user.companyId}`,
+          filter: `company_id=eq.${companyId}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['notifications', user.id, user.role] });
+          queryClient.invalidateQueries({ queryKey: ['notifications', userId, role] });
         }
       )
       .subscribe();
@@ -65,8 +68,7 @@ export const useNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.companyId, user?.role, user?.id]);
+  }, [user?.companyId, user?.role, user?.id, queryClient]);
 
   return query;
 };
