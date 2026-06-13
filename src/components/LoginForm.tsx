@@ -34,7 +34,7 @@ const LoginForm = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
 
-  const { login, isAuthenticated, user } = useAuth();
+  const { login, logout, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,13 +43,19 @@ const LoginForm = () => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
+      if (user.role === 'employee') {
+        // Employee tried to sign in via the company portal — kick them out and show an error
+        logout();
+        setLoading(false);
+        setFieldError('employee-portal');
+        return;
+      }
       setLoading(false);
       switch (user.role) {
         case 'admin':
         case 'super_admin': navigate('/admin/dashboard',      { replace: true }); break;
         case 'management':  navigate('/management/dashboard', { replace: true }); break;
         case 'foreman':     navigate('/foreman/dashboard',    { replace: true }); break;
-        case 'employee':    navigate('/employee/dashboard',   { replace: true }); break;
         default:            navigate('/',                     { replace: true });
       }
     }
@@ -176,12 +182,26 @@ const LoginForm = () => {
                 </div>
 
                 {/* Inline error */}
-                {fieldError && (
+                {fieldError === 'employee-portal' ? (
+                  <div className="mb-5 px-4 py-4 bg-amber-50 border border-amber-200 rounded-xl">
+                    <p className="text-amber-800 text-sm font-medium mb-1">Wrong portal</p>
+                    <p className="text-amber-700 text-sm leading-snug mb-3">
+                      This account is registered as an employee. Please sign in through the employee portal.
+                    </p>
+                    <Link
+                      to="/employee-login"
+                      className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-900 transition-colors"
+                    >
+                      Go to Employee Login
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                ) : fieldError ? (
                   <div className="mb-5 flex items-start gap-2.5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
                     <div className="mt-0.5 h-2 w-2 rounded-full bg-red-500 flex-shrink-0" />
                     <p className="text-red-700 text-sm leading-snug">{fieldError}</p>
                   </div>
-                )}
+                ) : null}
 
                 {/* Form */}
                 <form onSubmit={handleLogin} className="space-y-4">
