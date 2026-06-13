@@ -166,6 +166,11 @@ export const menuData: MenuItem[] = [
   
   // Reports & Communication
   {
+    id: 'chat',
+    title: 'Team Chat',
+    icon: MessageSquare,
+  },
+  {
     id: 'daily-reports',
     title: 'Daily Reports',
     icon: ClipboardList,
@@ -217,6 +222,7 @@ export const groupedMenuItems = {
     menuData.find(item => item.id === 'bills-expenses')!,
   ],
   reports: [
+    menuData.find(item => item.id === 'chat')!,
     menuData.find(item => item.id === 'daily-reports')!,
   ],
   system: [

@@ -40,6 +40,7 @@ const ClientsPage = lazy(() => import('@/pages/admin/ClientsPage'));
 const ManualTimesheetsPage = lazy(() => import('@/pages/admin/ManualTimesheetsPage'));
 const EmployeeBillsManagement = lazy(() => import('@/components/admin/EmployeeBillsManagement'));
 const JobCostingPage = lazy(() => import('@/components/admin/JobCostingPage'));
+const ChatPage = lazy(() => import('@/components/chat/ChatPage'));
 
 const DashboardRoute = () => {
   const navigate = useNavigate();
@@ -91,6 +92,7 @@ export const adminTabRoutes: AdminTabRoute[] = [
   { slug: 'tasks', title: 'Daily Tasks', element: <TasksRoute /> },
   { slug: 'company-settings', title: 'Company Settings', element: <SystemSettings /> },
   { slug: 'settings', title: 'User Settings', element: <UserSettings /> },
+  { slug: 'chat', title: 'Team Chat', element: <ChatPage /> },
 ];
 
 export const adminTabSlugs = new Set(adminTabRoutes.map((r) => r.slug));
