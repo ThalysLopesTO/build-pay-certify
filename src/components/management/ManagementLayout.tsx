@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import Header from '@/components/Header';
 import ManagementSidebar from '@/components/management/ManagementSidebar';
 import LicenseWarningBanner from '@/components/common/LicenseWarningBanner';
+import ChatWidget from '@/components/chat/ChatWidget';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const roleDashboards: Record<string, string> = {
@@ -53,6 +54,7 @@ const ManagementLayout = () => {
           </main>
         </SidebarInset>
       </div>
+      <ChatWidget />
     </SidebarProvider>
   );
 };

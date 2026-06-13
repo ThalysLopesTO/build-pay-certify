@@ -5,6 +5,7 @@ import EmployeeBottomNav from '@/components/employee/EmployeeBottomNav';
 import EmployeeDesktopNav from '@/components/employee/EmployeeDesktopNav';
 import LicenseWarningBanner from '@/components/common/LicenseWarningBanner';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
+import ChatWidget from '@/components/chat/ChatWidget';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
@@ -56,6 +57,7 @@ const EmployeeLayout = () => {
           <EmployeeBottomNav activeTab={activeTab} onTabChange={onTabChange} />
         </ErrorBoundary>
       )}
+      <ChatWidget />
     </div>
   );
 };

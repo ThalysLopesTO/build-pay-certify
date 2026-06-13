@@ -13,9 +13,12 @@ import { ChatUserProfile } from './types';
 interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
+  /** When rendered inside the floating ChatWidget, the widget supplies its own
+   *  title bar, so the sidebar hides its internal header (keeps search + list). */
+  embedded?: boolean;
 }
 
-export const ConversationSidebar: React.FC<Props> = ({ selectedId, onSelect }) => {
+export const ConversationSidebar: React.FC<Props> = ({ selectedId, onSelect, embedded = false }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: conversations = [], isLoading } = useConversations();
@@ -56,38 +59,52 @@ export const ConversationSidebar: React.FC<Props> = ({ selectedId, onSelect }) =
     <div className="flex flex-col h-full bg-white">
       {/* Header */}
       <div className="px-4 pt-4 pb-3 border-b border-slate-100">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-indigo-100">
-              <MessageSquare className="h-4 w-4 text-indigo-600" />
+        {!embedded && (
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-indigo-100">
+                <MessageSquare className="h-4 w-4 text-indigo-600" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 leading-tight">Team Chat</h2>
+                {totalUnread > 0 && (
+                  <p className="text-[10px] text-indigo-600 font-semibold">
+                    {totalUnread} unread {totalUnread === 1 ? 'message' : 'messages'}
+                  </p>
+                )}
+              </div>
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-slate-900 leading-tight">Team Chat</h2>
-              {totalUnread > 0 && (
-                <p className="text-[10px] text-indigo-600 font-semibold">
-                  {totalUnread} unread {totalUnread === 1 ? 'message' : 'messages'}
-                </p>
-              )}
-            </div>
+            <Button
+              size="sm"
+              onClick={() => setNewChatOpen(true)}
+              className="h-8 w-8 p-0 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-md shadow-indigo-200"
+              title="New conversation"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            size="sm"
-            onClick={() => setNewChatOpen(true)}
-            className="h-8 w-8 p-0 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-md shadow-indigo-200"
-            title="New conversation"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+        )}
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-          <Input
-            placeholder="Search conversations…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-8 h-8 text-xs bg-slate-50 border-slate-200 focus:border-indigo-300"
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+            <Input
+              placeholder="Search conversations…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-8 h-8 text-xs bg-slate-50 border-slate-200 focus:border-indigo-300"
+            />
+          </div>
+          {embedded && (
+            <Button
+              size="sm"
+              onClick={() => setNewChatOpen(true)}
+              className="h-8 w-8 p-0 flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-md shadow-indigo-200"
+              title="New conversation"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 

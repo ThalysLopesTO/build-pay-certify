@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import Header from '@/components/Header';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import GlobalCommandPalette from '@/components/admin/GlobalCommandPalette';
+import ChatWidget from '@/components/chat/ChatWidget';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
 const roleDashboards: Record<string, string> = {
@@ -51,6 +52,7 @@ const AdminLayout = () => {
         </SidebarInset>
       </div>
       <GlobalCommandPalette />
+      <ChatWidget />
     </SidebarProvider>
   );
 };

@@ -12,9 +12,12 @@ import { UserAvatar } from './UserAvatar';
 interface Props {
   conversation: ConversationWithDetails;
   onBack?: () => void;
+  /** When rendered inside the floating ChatWidget, the widget supplies its own
+   *  title bar, so the thread hides its internal header. */
+  embedded?: boolean;
 }
 
-export const ConversationThread: React.FC<Props> = ({ conversation, onBack }) => {
+export const ConversationThread: React.FC<Props> = ({ conversation, onBack, embedded = false }) => {
   const { user } = useAuth();
   const { data: messages = [], isLoading, sendMessage, deleteMessage } = useMessages(conversation.id);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -81,6 +84,7 @@ export const ConversationThread: React.FC<Props> = ({ conversation, onBack }) =>
   return (
     <div className="flex flex-col h-full bg-slate-50/80">
       {/* Header */}
+      {!embedded && (
       <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-200 shadow-sm flex-shrink-0">
         {onBack && (
           <Button
@@ -112,6 +116,7 @@ export const ConversationThread: React.FC<Props> = ({ conversation, onBack }) =>
           </Button>
         )}
       </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
