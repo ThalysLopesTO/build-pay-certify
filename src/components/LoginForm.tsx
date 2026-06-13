@@ -3,33 +3,16 @@ import { useAuth } from '../contexts/SupabaseAuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowRight,
-  Clock,
-  DollarSign,
   Eye,
   EyeOff,
   HardHat,
   Loader2,
   Lock,
   Mail,
-  MapPin,
-  ShieldCheck,
 } from 'lucide-react';
 import PWAInstallButton from '@/components/common/PWAInstallButton';
 import LoginLoading from '@/components/common/LoginLoading';
 import ForgotPasswordForm from '@/components/ForgotPasswordForm';
-
-const FEATURES = [
-  { icon: Clock,       text: 'Real-time punch tracking from any jobsite' },
-  { icon: DollarSign,  text: 'Payroll calculated automatically, every week' },
-  { icon: MapPin,      text: 'Jobsite management & daily task tracking' },
-  { icon: ShieldCheck, text: 'Cert expiry alerts & safety compliance' },
-];
-
-const STATS = [
-  { value: '8 hrs',   label: 'Saved weekly' },
-  { value: 'Auto',    label: 'Payroll runs' },
-  { value: 'Live',    label: 'Punch sync' },
-];
 
 const LoginForm = () => {
   const [email, setEmail]               = useState('');
@@ -96,96 +79,12 @@ const LoginForm = () => {
 
       <div className="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col lg:flex-row bg-slate-950">
 
-        {/* ── Left branding panel (desktop only) ─────────────────────────── */}
-        <div className="hidden lg:flex lg:w-5/12 xl:w-[46%] bg-slate-950 flex-col p-8 xl:p-12 relative overflow-hidden">
-
-          {/* Background construction photo (falls back to the dark base if absent) */}
-          <div
-            className="absolute inset-0 bg-cover bg-center pointer-events-none"
-            style={{ backgroundImage: 'url(/images/login-hero.png)' }}
-          />
-          {/* Dark gradients keep the overlaid text readable over the photo */}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/25 pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/15 to-slate-950/55 pointer-events-none" />
-          {/* Subtle orange warmth */}
-          <div className="absolute -top-32 -right-24 w-[420px] h-[420px] bg-orange-500/15 rounded-full blur-[120px] pointer-events-none" />
-
-          {/* Logo + version chip */}
-          <div className="relative z-10 flex items-center justify-between">
-            <img
-              src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png"
-              alt="StackBuild"
-              className="h-9 w-auto brightness-0 invert"
-            />
-            <span className="text-[11px] font-semibold tracking-[0.12em] text-orange-300 bg-orange-500/10 border border-orange-500/25 rounded-full px-2.5 py-1">
-              VERSION 2.0
-            </span>
-          </div>
-
-          {/* Center content */}
-          <div className="relative z-10 flex-1 flex flex-col justify-center py-6 min-h-0">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/25 w-fit mb-5 animate-in fade-in slide-in-from-bottom-2 duration-700">
-              <HardHat className="h-3.5 w-3.5 text-orange-400" />
-              <span className="text-orange-300 text-xs font-medium tracking-wide">Built for construction teams</span>
-            </div>
-
-            <h2 className="text-3xl xl:text-[2.6rem] font-bold text-white leading-[1.12] mb-4 animate-in fade-in slide-in-from-bottom-3 duration-700 drop-shadow-lg">
-              Powering construction<br />
-              teams to build<br />
-              a{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-400 to-amber-300">
-                better tomorrow.
-              </span>
-            </h2>
-            <p className="text-slate-300 text-[15px] leading-relaxed mb-7 max-w-md">
-              Real-time payroll, timesheets, and jobsite management — all in one platform
-              built to keep your projects on track and your teams paid on time.
-            </p>
-
-            <div className="space-y-3">
-              {FEATURES.map(({ icon: Icon, text }) => (
-                <div key={text} className="flex items-center gap-3.5">
-                  <div className="w-8 h-8 rounded-lg bg-orange-500/15 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
-                    <Icon className="h-[15px] w-[15px] text-orange-400" />
-                  </div>
-                  <span className="text-slate-300 text-sm">{text}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Stats strip */}
-            <div className="grid grid-cols-3 gap-3 mt-7 max-w-md">
-              {STATS.map(({ value, label }) => (
-                <div
-                  key={label}
-                  className="rounded-xl bg-slate-900/50 border border-white/15 px-3 py-3 text-center backdrop-blur-md"
-                >
-                  <p className="text-orange-400 text-lg font-bold leading-none">{value}</p>
-                  <p className="text-slate-400 text-[11px] mt-1.5 leading-tight">{label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Testimonial */}
-          <div className="relative z-10 border-t border-slate-800/80 pt-6">
-            <div className="flex gap-0.5 mb-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i} className="text-orange-400 text-[13px]">★</span>
-              ))}
-            </div>
-            <p className="text-slate-300 text-sm leading-relaxed">
-              "StackBuild saved us over 8 hours of admin work every week. The payroll feature alone was worth it."
-            </p>
-            <div className="flex items-center gap-2.5 mt-4">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white text-xs font-bold">J</div>
-              <div>
-                <p className="text-slate-300 text-xs font-semibold">James R.</p>
-                <p className="text-slate-500 text-xs">Construction Owner · Ontario, CA</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* ── Left branding panel (desktop only) — full-bleed marketing image ── */}
+        <div
+          className="hidden lg:block lg:w-5/12 xl:w-[46%] bg-slate-950 bg-cover bg-center"
+          style={{ backgroundImage: 'url(/images/login-hero.png)' }}
+          aria-hidden="true"
+        />
 
         {/* ── Right form panel ─────────────────────────────────────────────── */}
         <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-slate-50 via-white to-slate-50 min-h-screen lg:min-h-0 lg:h-screen px-6 py-10 lg:py-6 lg:px-14 relative overflow-y-auto">
