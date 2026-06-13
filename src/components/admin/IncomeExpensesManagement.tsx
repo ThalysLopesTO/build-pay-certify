@@ -648,25 +648,25 @@ const IncomeExpensesManagement = () => {
     <div className="space-y-6 p-4 md:p-6 bg-slate-50 min-h-screen overflow-x-hidden max-w-full">
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-100">
-              <Receipt className="h-6 w-6 text-indigo-600" />
+        <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-500 rounded-2xl shadow-lg p-5 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 rounded-xl bg-white/15 backdrop-blur-sm">
+              <Receipt className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Bills &amp; Expenses</h1>
-              <p className="text-sm text-slate-500">
-                {transactions.length} total transactions
-              </p>
+              <h1 className="text-2xl font-bold text-white">Bills &amp; Expenses</h1>
+              <p className="text-sm text-indigo-200">{transactions.length} total transactions</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 text-xs">
-                  <Printer className="h-3.5 w-3.5 mr-1.5" />
-                  Print
-                  <ChevronDown className="h-3 w-3 ml-1.5" />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 text-xs text-white bg-white/10 border border-white/25 hover:bg-white/20 hover:text-white font-medium"
+                >
+                  <Printer className="h-3.5 w-3.5 mr-1.5" />Print<ChevronDown className="h-3 w-3 ml-1.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -681,20 +681,37 @@ const IncomeExpensesManagement = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <HierarchicalCategoryManager categories={categories} onCategoriesChange={fetchCategories} />
-            <Button variant="outline" size="sm" className="h-9 text-xs" onClick={() => setIsScanReceiptOpen(true)}>
+            <HierarchicalCategoryManager
+              categories={categories}
+              onCategoriesChange={fetchCategories}
+              trigger={
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 text-xs text-white bg-white/10 border border-white/25 hover:bg-white/20 hover:text-white font-medium"
+                >
+                  <Settings className="h-3.5 w-3.5 mr-1.5" />Categories
+                </Button>
+              }
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-9 text-xs text-white bg-white/10 border border-white/25 hover:bg-white/20 hover:text-white font-medium"
+              onClick={() => setIsScanReceiptOpen(true)}
+            >
               <Camera className="h-3.5 w-3.5 mr-1.5" />Scan Receipt
             </Button>
             <Button
               size="sm"
-              className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+              className="h-9 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-semibold shadow-md shadow-emerald-900/20"
               onClick={() => { prepareNewTransaction('income'); setIsCreateDialogOpen(true); }}
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />Add Income
             </Button>
             <Button
               size="sm"
-              className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white text-xs"
+              className="h-9 bg-white text-indigo-700 hover:bg-indigo-50 text-xs font-semibold shadow-md"
               onClick={() => { prepareNewTransaction('expense'); setIsCreateDialogOpen(true); }}
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />Add Expense
@@ -705,24 +722,23 @@ const IncomeExpensesManagement = () => {
 
       {/* Mobile Header */}
       {isMobile && (
-        <div className="space-y-3">
+        <div className="bg-gradient-to-r from-indigo-700 to-indigo-500 rounded-2xl shadow-lg p-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-indigo-100 flex-shrink-0">
-                <Receipt className="h-5 w-5 text-indigo-600" />
+              <div className="p-2 rounded-xl bg-white/15 flex-shrink-0">
+                <Receipt className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900 leading-tight">Bills &amp; Expenses</h1>
-                <p className="text-xs text-slate-500">{transactions.length} transactions</p>
+                <h1 className="text-xl font-bold text-white leading-tight">Bills &amp; Expenses</h1>
+                <p className="text-xs text-indigo-200">{transactions.length} transactions</p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0"
+                className="h-9 w-9 p-0 text-white bg-white/10 border border-white/25 hover:bg-white/20 hover:text-white"
                 onClick={() => setIsScanReceiptOpen(true)}
-                title="Scan Receipt"
               >
                 <Camera className="h-4 w-4" />
               </Button>
@@ -730,7 +746,11 @@ const IncomeExpensesManagement = () => {
                 categories={categories}
                 onCategoriesChange={fetchCategories}
                 trigger={
-                  <Button variant="outline" size="sm" className="h-9 w-9 p-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 w-9 p-0 text-white bg-white/10 border border-white/25 hover:bg-white/20 hover:text-white"
+                  >
                     <Settings className="h-4 w-4" />
                   </Button>
                 }
@@ -739,14 +759,14 @@ const IncomeExpensesManagement = () => {
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Button
+              className="h-10 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold text-sm shadow-md"
               onClick={() => { prepareNewTransaction('income'); setIsCreateDialogOpen(true); }}
-              className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm"
             >
               <Plus className="h-4 w-4 mr-1.5" />Add Income
             </Button>
             <Button
+              className="h-10 bg-white text-indigo-700 hover:bg-indigo-50 font-semibold text-sm shadow-md"
               onClick={() => { prepareNewTransaction('expense'); setIsCreateDialogOpen(true); }}
-              className="h-10 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm"
             >
               <Plus className="h-4 w-4 mr-1.5" />Add Expense
             </Button>
@@ -764,6 +784,7 @@ const IncomeExpensesManagement = () => {
       </div>
 
       {/* Charts Section */}
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 -mb-3">Analytics</p>
       {isMobile ? (
         <MobileChartWrapper
           titles={["Cash Flow", "Category Breakdown"]}
@@ -1160,16 +1181,16 @@ const IncomeExpensesManagement = () => {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-b border-slate-200 bg-slate-50/50">
-                    <TableHead className="font-semibold text-slate-700 py-3">Date</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3">Type</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3">Title</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3">Category</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3">Payer/Payee</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3 text-right">Amount</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3">Status</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3 text-center">File</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3">Actions</TableHead>
+                  <TableRow className="border-b-2 border-slate-200 bg-slate-50">
+                    <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 py-3.5">Date</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 py-3.5">Type</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 py-3.5">Title</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 py-3.5">Category</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 py-3.5">Payer/Payee</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 py-3.5 text-right">Amount</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 py-3.5">Status</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 py-3.5 text-center">File</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 py-3.5">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1203,7 +1224,7 @@ const IncomeExpensesManagement = () => {
                     </TableRow>
                   ) : (
                     paginatedTransactions.map((transaction) => (
-                      <TableRow key={transaction.id} className="border-b border-slate-100 hover:bg-slate-50/30">
+                      <TableRow key={transaction.id} className="border-b border-slate-100 hover:bg-indigo-50/30 transition-colors duration-100">
                         <TableCell className="font-medium text-slate-700 py-3">
                           {formatDateFromDB(transaction.expense_date, 'MMM dd, yyyy')}
                         </TableCell>
