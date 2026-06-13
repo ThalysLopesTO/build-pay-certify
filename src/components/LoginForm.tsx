@@ -42,22 +42,27 @@ const LoginForm = () => {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      if (user.role === 'employee') {
-        // Employee tried to sign in via the company portal — kick them out and show an error
-        logout();
+    if (!isAuthenticated || !user) return;
+
+    if (user.role === 'employee') {
+      // Employee tried to sign in via the company portal — sign them out immediately
+      // then show the "wrong portal" error. RoleBasedRedirect is patched to not
+      // race here, so we have time to call logout before any navigation fires.
+      (async () => {
+        await logout();
         setLoading(false);
         setFieldError('employee-portal');
-        return;
-      }
-      setLoading(false);
-      switch (user.role) {
-        case 'admin':
-        case 'super_admin': navigate('/admin/dashboard',      { replace: true }); break;
-        case 'management':  navigate('/management/dashboard', { replace: true }); break;
-        case 'foreman':     navigate('/foreman/dashboard',    { replace: true }); break;
-        default:            navigate('/',                     { replace: true });
-      }
+      })();
+      return;
+    }
+
+    setLoading(false);
+    switch (user.role) {
+      case 'admin':
+      case 'super_admin': navigate('/admin/dashboard',      { replace: true }); break;
+      case 'management':  navigate('/management/dashboard', { replace: true }); break;
+      case 'foreman':     navigate('/foreman/dashboard',    { replace: true }); break;
+      default:            navigate('/',                     { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 
