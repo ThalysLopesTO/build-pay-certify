@@ -64,14 +64,25 @@ ALTER TABLE public.chat_conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_members       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_messages      ENABLE ROW LEVEL SECURITY;
 
+-- Helper: the conversation IDs the current user belongs to.
+-- SECURITY DEFINER bypasses RLS inside the function, which prevents the
+-- "infinite recursion detected in policy for relation chat_members" error
+-- that occurs when a chat_members policy queries chat_members directly.
+CREATE OR REPLACE FUNCTION public.user_conversation_ids()
+RETURNS SETOF uuid
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT conversation_id FROM public.chat_members WHERE user_id = auth.uid()
+$$;
+
 -- ── RLS: chat_conversations ──────────────────────────────────
 DROP POLICY IF EXISTS "chat_conv_select" ON public.chat_conversations;
 CREATE POLICY "chat_conv_select" ON public.chat_conversations
   FOR SELECT USING (
-    id IN (
-      SELECT conversation_id FROM public.chat_members
-      WHERE user_id = auth.uid()
-    )
+    id IN (SELECT public.user_conversation_ids())
   );
 
 DROP POLICY IF EXISTS "chat_conv_insert" ON public.chat_conversations;
@@ -86,10 +97,7 @@ CREATE POLICY "chat_conv_update" ON public.chat_conversations
 DROP POLICY IF EXISTS "chat_members_select" ON public.chat_members;
 CREATE POLICY "chat_members_select" ON public.chat_members
   FOR SELECT USING (
-    conversation_id IN (
-      SELECT conversation_id FROM public.chat_members m2
-      WHERE m2.user_id = auth.uid()
-    )
+    conversation_id IN (SELECT public.user_conversation_ids())
   );
 
 DROP POLICY IF EXISTS "chat_members_insert" ON public.chat_members;
@@ -104,27 +112,37 @@ CREATE POLICY "chat_members_update" ON public.chat_members
 DROP POLICY IF EXISTS "chat_messages_select" ON public.chat_messages;
 CREATE POLICY "chat_messages_select" ON public.chat_messages
   FOR SELECT USING (
-    conversation_id IN (
-      SELECT conversation_id FROM public.chat_members
-      WHERE user_id = auth.uid()
-    )
+    conversation_id IN (SELECT public.user_conversation_ids())
   );
 
 DROP POLICY IF EXISTS "chat_messages_insert" ON public.chat_messages;
 CREATE POLICY "chat_messages_insert" ON public.chat_messages
   FOR INSERT WITH CHECK (
     sender_id = auth.uid() AND
-    conversation_id IN (
-      SELECT conversation_id FROM public.chat_members
-      WHERE user_id = auth.uid()
-    )
+    conversation_id IN (SELECT public.user_conversation_ids())
   );
 
 DROP POLICY IF EXISTS "chat_messages_update" ON public.chat_messages;
 CREATE POLICY "chat_messages_update" ON public.chat_messages
   FOR UPDATE USING (sender_id = auth.uid());
 
--- Enable Realtime publication for live updates
-ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_conversations;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_members;
+-- Enable Realtime publication for live updates.
+-- Wrapped so re-running the migration doesn't error with
+-- "relation is already member of publication".
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_messages;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_conversations;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_members;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
