@@ -94,10 +94,10 @@ const LoginForm = () => {
         <LoginLoading message="Setting up your dashboard…" />
       )}
 
-      <div className="min-h-screen flex flex-col lg:flex-row bg-slate-950">
+      <div className="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col lg:flex-row bg-slate-950">
 
         {/* ── Left branding panel (desktop only) ─────────────────────────── */}
-        <div className="hidden lg:flex lg:w-5/12 xl:w-[46%] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex-col p-10 xl:p-14 relative overflow-hidden">
+        <div className="hidden lg:flex lg:w-5/12 xl:w-[46%] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex-col p-8 xl:p-12 relative overflow-hidden">
 
           {/* Atmospheric glows */}
           <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-orange-500/25 rounded-full blur-[140px] pointer-events-none" />
@@ -126,24 +126,24 @@ const LoginForm = () => {
           </div>
 
           {/* Center content */}
-          <div className="relative z-10 flex-1 flex flex-col justify-center py-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/25 w-fit mb-7 animate-in fade-in slide-in-from-bottom-2 duration-700">
+          <div className="relative z-10 flex-1 flex flex-col justify-center py-6 min-h-0">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/25 w-fit mb-5 animate-in fade-in slide-in-from-bottom-2 duration-700">
               <HardHat className="h-3.5 w-3.5 text-orange-400" />
               <span className="text-orange-300 text-xs font-medium tracking-wide">Built for construction teams</span>
             </div>
 
-            <h2 className="text-3xl xl:text-[2.7rem] font-bold text-white leading-[1.15] mb-5 animate-in fade-in slide-in-from-bottom-3 duration-700">
+            <h2 className="text-3xl xl:text-[2.5rem] font-bold text-white leading-[1.15] mb-4 animate-in fade-in slide-in-from-bottom-3 duration-700">
               The operating system<br />
               for{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-400 to-amber-300">
                 construction.
               </span>
             </h2>
-            <p className="text-slate-400 text-[15px] leading-relaxed mb-9 max-w-md">
+            <p className="text-slate-400 text-[15px] leading-relaxed mb-7 max-w-md">
               Real-time payroll, timesheets, and jobsite management — all in one platform.
             </p>
 
-            <div className="space-y-3.5">
+            <div className="space-y-3">
               {FEATURES.map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-3.5">
                   <div className="w-8 h-8 rounded-lg bg-orange-500/15 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
@@ -155,11 +155,11 @@ const LoginForm = () => {
             </div>
 
             {/* Stats strip */}
-            <div className="grid grid-cols-3 gap-3 mt-10 max-w-md">
+            <div className="grid grid-cols-3 gap-3 mt-7 max-w-md">
               {STATS.map(({ value, label }) => (
                 <div
                   key={label}
-                  className="rounded-xl bg-white/[0.03] border border-white/10 px-3 py-3.5 text-center backdrop-blur-sm"
+                  className="rounded-xl bg-white/[0.03] border border-white/10 px-3 py-3 text-center backdrop-blur-sm"
                 >
                   <p className="text-orange-400 text-lg font-bold leading-none">{value}</p>
                   <p className="text-slate-400 text-[11px] mt-1.5 leading-tight">{label}</p>
@@ -169,7 +169,7 @@ const LoginForm = () => {
           </div>
 
           {/* Testimonial */}
-          <div className="relative z-10 border-t border-slate-800/80 pt-7">
+          <div className="relative z-10 border-t border-slate-800/80 pt-6">
             <div className="flex gap-0.5 mb-3">
               {Array.from({ length: 5 }).map((_, i) => (
                 <span key={i} className="text-orange-400 text-[13px]">★</span>
@@ -189,7 +189,7 @@ const LoginForm = () => {
         </div>
 
         {/* ── Right form panel ─────────────────────────────────────────────── */}
-        <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-slate-50 via-white to-slate-50 min-h-screen px-6 py-12 lg:px-14 relative">
+        <div className="flex flex-1 items-center justify-center bg-gradient-to-b from-slate-50 via-white to-slate-50 min-h-screen lg:min-h-0 lg:h-screen px-6 py-10 lg:py-6 lg:px-14 relative overflow-y-auto">
 
           {/* faint top accent bar */}
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-orange-400/60 to-transparent" />
