@@ -47,7 +47,9 @@ export const useNotifications = () => {
 
     // Unique name per effect invocation — prevents "subscribe called twice" when
     // TOKEN_REFRESHED fires and re-runs this effect before removeChannel completes.
-    const name = `notif-${companyId}-${userId}-${Date.now()}`;
+    // Date.now() alone collides when StrictMode remounts within the same millisecond,
+    // so append a random suffix to guarantee a fresh channel instance every time.
+    const name = `notif-${companyId}-${userId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
     const channel = supabase
       .channel(name)

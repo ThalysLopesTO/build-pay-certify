@@ -65,7 +65,7 @@ export const useMessages = (conversationId: string | null) => {
     if (!conversationId || !user?.id) return;
 
     const channel = supabase
-      .channel(`chat-msg-${conversationId}-${Date.now()}`)
+      .channel(`chat-msg-${conversationId}-${Date.now()}-${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {

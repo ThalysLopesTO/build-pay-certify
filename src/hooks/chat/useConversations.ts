@@ -122,7 +122,7 @@ export const useConversations = () => {
     if (!user?.id || !user?.companyId) return;
 
     const channel = supabase
-      .channel(`chat-list-${user.id}-${Date.now()}`)
+      .channel(`chat-list-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, () => {
         queryClient.invalidateQueries({ queryKey: ['chat-conversations', user.id] });
       })
