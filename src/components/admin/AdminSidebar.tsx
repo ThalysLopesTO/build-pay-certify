@@ -17,17 +17,17 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
   useScrollToActiveSection(activeTab);
 
   return (
-    <Sidebar className="border-r border-border bg-sidebar transition-colors">
-      
+    <Sidebar className="border-r border-slate-200/70 bg-sidebar transition-colors">
+
       {/* Header */}
-      <SidebarHeader className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-orange-100 rounded-lg">
-            <Building className="h-5 w-5 text-orange-600" />
+      <SidebarHeader className="p-4 border-b border-slate-200/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-md shadow-orange-500/20">
+            <Building className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h2 className="font-bold text-sm text-gray-900">Admin Panel</h2>
-            <p className="text-xs text-gray-500">Construction Manager</p>
+            <h2 className="font-bold text-sm text-slate-900 leading-tight">Admin Panel</h2>
+            <p className="text-xs text-slate-500">Construction Manager</p>
           </div>
         </div>
       </SidebarHeader>
@@ -105,8 +105,8 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
       </SidebarContent>
 
       {/* Footer */}
-      <SidebarFooter className="p-4 border-t border-sidebar-border bg-sidebar">
-        <div className="text-xs text-gray-500 text-center">
+      <SidebarFooter className="p-4 border-t border-slate-200/60 bg-sidebar">
+        <div className="text-[11px] font-medium text-slate-400 text-center tracking-wide">
           Construction Payroll Manager
         </div>
       </SidebarFooter>

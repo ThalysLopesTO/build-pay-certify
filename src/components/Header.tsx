@@ -1,6 +1,5 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -19,55 +18,48 @@ const Header = () => {
     <>
       {/* Mobile Top Bar */}
       <MobileTopBar />
-      
-      {/* Desktop Header - hidden on mobile */}
-      <header className="hidden md:flex bg-background border-b border-border w-full flex-shrink-0 transition-colors duration-300">
-        <div className="flex items-center justify-between w-full px-6 py-4 max-w-full overflow-x-hidden">
-          {/* Left: Company Logo */}
-          <div className="flex items-center min-w-0">
-            {!isLoading && logoUrl && (
-              <div className="">
+
+      {/* Desktop Header — floating rounded card to match the dashboard */}
+      <header className="hidden md:block flex-shrink-0 px-3 md:px-6 pt-3 md:pt-5">
+        <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm">
+          <div className="flex items-center justify-between w-full px-5 py-2.5 gap-4 max-w-full overflow-x-hidden">
+            {/* Left: Company Logo */}
+            <div className="flex items-center min-w-0 gap-3">
+              {!isLoading && logoUrl && (
                 <img
                   src={logoUrl}
                   alt="Company Logo"
-                  className="h-[60px] w-auto object-contain"
+                  className="h-[52px] w-auto object-contain"
                 />
-              </div>
-            )}
-            {!isLoading && !logoUrl && (
-              <div className="w-[200px] h-[70px]">
-                {/* Blank space when no logo is uploaded */}
-              </div>
-            )}
-            {isLoading && (
-              <div className="bg-card border border-border rounded-lg shadow-sm p-4">
-                <div className="flex items-center justify-center w-[200px] h-[50px]">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-muted-foreground"></div>
+              )}
+              {!isLoading && !logoUrl && (
+                <div className="w-[160px] h-[52px]" />
+              )}
+              {isLoading && (
+                <div className="flex items-center justify-center w-[160px] h-[52px]">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-muted-foreground" />
                 </div>
-              </div>
-            )}
-            {user?.role === 'super_admin' && (
-              <Badge variant="secondary" className="ml-3">
-                <Crown className="h-3 w-3 mr-1" />
-                Super Admin
-              </Badge>
-            )}
-          </div>
-          
-          {/* Right: PWA Install, Notifications & User Profile Menu */}
-          <div className="flex items-center space-x-4 flex-shrink-0">
-            {/* PWA Install Button */}
-            <PWAInstallButton />
-            
-            {/* Notification Bell - role-specific */}
-            {user?.role === 'management' ? (
-              <ManagementNotificationBell />
-            ) : (
-              <NotificationBell />
-            )}
-            
-            {/* User Profile Menu */}
-            {user && <UserProfileMenu variant="desktop" />}
+              )}
+              {user?.role === 'super_admin' && (
+                <Badge variant="secondary" className="ml-1">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Super Admin
+                </Badge>
+              )}
+            </div>
+
+            {/* Right: PWA Install, Notifications & User Profile Menu */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <PWAInstallButton />
+
+              {user?.role === 'management' ? (
+                <ManagementNotificationBell />
+              ) : (
+                <NotificationBell />
+              )}
+
+              {user && <UserProfileMenu variant="desktop" />}
+            </div>
           </div>
         </div>
       </header>
