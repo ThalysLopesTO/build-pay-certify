@@ -26,7 +26,12 @@ interface Props {
   isProcessing: boolean;
 }
 
-const PLAN_OPTIONS = ['Free', 'Starter', 'Pro', 'Enterprise'];
+const PLAN_OPTIONS = [
+  { value: 'free', label: 'Free' },
+  { value: 'start', label: 'Start' },
+  { value: 'builder', label: 'Builder' },
+  { value: 'builder_pro', label: 'Builder Pro' },
+];
 const SUB_STATUS_OPTIONS = ['active', 'trial', 'past_due', 'expired', 'cancelled'];
 
 const toDateInput = (iso?: string | null) => (iso ? new Date(iso).toISOString().slice(0, 10) : '');
@@ -47,7 +52,7 @@ export const ManageSubscriptionDialog: React.FC<Props> = ({ open, onOpenChange, 
 
   useEffect(() => {
     if (company) {
-      setPlan(company.plan || 'Free');
+      setPlan(company.plan || 'free');
       setSubStatus(company.subscription_status || 'active');
       setCompanyStatus(company.status || 'active');
       setExpiration(toDateInput(company.expiration_date));
@@ -105,7 +110,7 @@ export const ManageSubscriptionDialog: React.FC<Props> = ({ open, onOpenChange, 
               <Select value={plan} onValueChange={setPlan}>
                 <SelectTrigger className="mt-1.5 h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {PLAN_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  {PLAN_OPTIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

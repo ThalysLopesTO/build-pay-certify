@@ -6,9 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Building } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { SubscriptionStatusBadge } from './super-admin/SubscriptionStatusBadge';
 import { CompanyActionsMenu } from './super-admin/CompanyActionsMenu';
+import { CompanyUsage } from '@/hooks/super-admin/useCompanyUsage';
 
 interface Company {
   id: string;
@@ -54,8 +55,22 @@ interface CompanyManagementTableProps {
   onRevokeCompany: (company: Company) => void;
   onResetPassword: (company: Company) => void;
   onManageSubscription?: (company: Company) => void;
+  usageMap?: Record<string, CompanyUsage>;
   isProcessing: string | null;
 }
+
+const LastActiveCell: React.FC<{ usage?: CompanyUsage }> = ({ usage }) => {
+  if (!usage) return <span className="text-muted-foreground text-sm">—</span>;
+  if (!usage.last_login) return <span className="text-red-600 text-sm font-semibold">Never</span>;
+  const d = new Date(usage.last_login);
+  const days = Math.floor((Date.now() - d.getTime()) / 86_400_000);
+  const cls = days > 90 ? 'text-red-600' : days > 30 ? 'text-amber-600' : 'text-emerald-600';
+  return (
+    <span className={`text-sm font-medium ${cls}`} title={format(d, 'PPpp')}>
+      {formatDistanceToNowStrict(d, { addSuffix: true })}
+    </span>
+  );
+};
 
 const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
   companies,
@@ -63,6 +78,7 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
   onRevokeCompany,
   onResetPassword,
   onManageSubscription,
+  usageMap,
   isProcessing
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -147,6 +163,7 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                   <TableHead className="font-semibold">Subscription Status</TableHead>
                   <TableHead className="font-semibold">Plan</TableHead>
                   <TableHead className="font-semibold">Registration Date</TableHead>
+                  <TableHead className="font-semibold">Last Active</TableHead>
                   <TableHead className="font-semibold">Next Billing / Expiry</TableHead>
                   <TableHead className="font-semibold text-right">Actions</TableHead>
                 </TableRow>
@@ -154,7 +171,7 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
               <TableBody>
                 {filteredItems.length === 0 ? (
                   <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                       No companies found
                     </TableCell>
                   </TableRow>
@@ -188,6 +205,11 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                       </TableCell>
                       <TableCell className="py-4 text-muted-foreground">
                         {item.registration_date ? format(new Date(item.registration_date), 'MMM dd, yyyy') : '--'}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        {item.type === 'company'
+                          ? <LastActiveCell usage={usageMap?.[(item.original as Company).id]} />
+                          : <span className="text-muted-foreground text-sm">—</span>}
                       </TableCell>
                       <TableCell className="py-4">
                         {item.trial_end_date && item.subscription_status === 'active' && item.trial_days_remaining && item.trial_days_remaining > 0 ? (

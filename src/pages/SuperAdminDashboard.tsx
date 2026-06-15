@@ -15,6 +15,7 @@ import { useSuperAdminMutations } from '@/hooks/useSuperAdminMutations';
 import { useCompanyMutations } from '@/hooks/useCompanyMutations';
 import { useResetUserPassword } from '@/hooks/usePasswordManagement';
 import { useManageSubscription, SubscriptionUpdate } from '@/hooks/super-admin/useManageSubscription';
+import { useCompanyUsage } from '@/hooks/super-admin/useCompanyUsage';
 import CompanyRequestTable from '@/components/admin/CompanyRequestTable';
 import { CreateTrialCompanyDialog } from '@/components/admin/trial-companies/CreateTrialCompanyDialog';
 import { MobileCompanyCard } from '@/components/admin/super-admin/MobileCompanyCard';
@@ -79,6 +80,7 @@ const SuperAdminDashboard = () => {
   const { editCompanyMutation, revokeCompanyMutation } = useCompanyMutations();
   const resetPasswordMutation = useResetUserPassword();
   const manageSubscription = useManageSubscription();
+  const { data: usageMap = {} } = useCompanyUsage();
 
   const handleApprove = (request: RegistrationRequest) => { setSelectedRequest(request); setShowApprovalDialog(true); };
   const handleReject = (request: RegistrationRequest) => { setSelectedRequest(request); setShowRejectionDialog(true); };
@@ -177,6 +179,7 @@ const SuperAdminDashboard = () => {
         onRevokeCompany={handleRevokeCompany}
         onResetPassword={handleResetPassword}
         onManageSubscription={handleManageSubscription}
+        usageMap={usageMap}
         isProcessing={processingId}
       />
     )
