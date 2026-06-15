@@ -553,17 +553,18 @@ const InvoiceTracker = () => {
                 {filteredInvoices.map((invoice, index) => (
                   <TableRow
                     key={invoice.id}
+                    onClick={() => handleViewDetails(invoice)}
+                    title="View invoice details"
                     className={`
-                      invoice-table-row
+                      invoice-table-row cursor-pointer
                       ${selectedInvoiceIds.has(invoice.id) ? 'bg-blue-50/60' : ''}
                       ${isOverdue(invoice.due_date, invoice.status) ? 'bg-red-50/50 border-l-4 border-l-red-500' : ''}
                     `}
                   >
-                    <TableCell className="py-4 w-10">
+                    <TableCell className="py-4 w-10" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={selectedInvoiceIds.has(invoice.id)}
                         onCheckedChange={(c) => toggleSelectInvoice(invoice.id, !!c)}
-                        onClick={(e) => e.stopPropagation()}
                         aria-label={`Select invoice ${invoice.invoice_number}`}
                       />
                     </TableCell>
@@ -595,38 +596,8 @@ const InvoiceTracker = () => {
                     <TableCell className="py-3">
                       <span className="text-sm font-medium text-slate-700 whitespace-nowrap">{format(new Date(invoice.due_date), 'MMM dd, yyyy')}</span>
                     </TableCell>
-                    <TableCell className="py-3 pr-4">
+                    <TableCell className="py-3 pr-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* View details */}
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleViewDetails(invoice)}
-                              title="View details"
-                              className="h-8 w-8 p-0"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Invoice Details</DialogTitle>
-                              <DialogDescription>
-                                Complete information for invoice {invoice.invoice_number}
-                              </DialogDescription>
-                            </DialogHeader>
-                            {selectedInvoice && (
-                              <InvoiceDetailsDialogContent
-                                invoice={selectedInvoice}
-                                getStatusBadgeClass={getStatusBadgeClass}
-                                isOverdue={isOverdue}
-                              />
-                            )}
-                          </DialogContent>
-                        </Dialog>
-
                         {/* Send email (primary quick action) */}
                         <Button
                           size="sm"
@@ -646,6 +617,9 @@ const InvoiceTracker = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={() => handleViewDetails(invoice)}>
+                              <Eye className="h-4 w-4 mr-2" /> View details
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDownloadPDF(invoice)}>
                               <Download className="h-4 w-4 mr-2" /> Download PDF
                             </DropdownMenuItem>
@@ -727,6 +701,25 @@ const InvoiceTracker = () => {
           )}
         </div>
       )}
+
+      {/* Invoice Details Dialog (opened by clicking a row or the menu) */}
+      <Dialog open={!!selectedInvoice} onOpenChange={(o) => !o && setSelectedInvoice(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Invoice Details</DialogTitle>
+            <DialogDescription>
+              {selectedInvoice ? `Complete information for invoice ${selectedInvoice.invoice_number}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedInvoice && (
+            <InvoiceDetailsDialogContent
+              invoice={selectedInvoice}
+              getStatusBadgeClass={getStatusBadgeClass}
+              isOverdue={isOverdue}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Invoice Email Dialog */}
       {emailInvoice && (
