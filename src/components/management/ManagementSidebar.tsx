@@ -5,7 +5,6 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Calculator } from 'lucide-react';
 import ManagementSidebarSection from './sidebar/ManagementSidebarSection';
 import ManagementCollapsibleSidebarSection from './sidebar/ManagementCollapsibleSidebarSection';
 import { managementMenuItems, sectionConfigs } from './sidebar/managementMenuData';
@@ -21,20 +20,21 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
   useScrollToActiveSection(activeTab);
 
   return (
-    <Sidebar className="border-r border-border bg-sidebar transition-colors">
-      <SidebarHeader className="p-4 border-b border-sidebar-border bg-sidebar">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-green-100 rounded-lg">
-            <Calculator className="h-5 w-5 text-green-600" />
-          </div>
-          <div>
-            <h2 className="font-bold text-sm text-gray-900">Management Panel</h2>
-            <p className="text-xs text-gray-500">Operations Management</p>
-          </div>
+    <Sidebar variant="floating" className="transition-colors">
+      <SidebarHeader className="p-4 border-b border-slate-200/60 bg-sidebar">
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png"
+            alt="StackBuild"
+            className="h-7 w-auto object-contain"
+          />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-orange-600 bg-orange-50 border border-orange-100 rounded-md px-1.5 py-0.5">
+            Manager
+          </span>
         </div>
       </SidebarHeader>
-      
-      <SidebarContent className="overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent bg-sidebar">
+
+      <SidebarContent className="overflow-y-auto px-2 py-2 scrollbar-hide bg-sidebar">
         
         {/* Dashboard - Always visible */}
         <ManagementSidebarSection
@@ -105,8 +105,8 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
         />
       </SidebarContent>
       
-      <SidebarFooter className="p-4 border-t border-sidebar-border bg-sidebar">
-        <div className="text-xs text-gray-500 text-center">
+      <SidebarFooter className="p-4 border-t border-slate-200/60 bg-sidebar">
+        <div className="text-[11px] font-medium text-slate-400 text-center tracking-wide">
           Construction Management System
         </div>
       </SidebarFooter>

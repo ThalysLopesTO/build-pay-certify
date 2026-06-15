@@ -116,18 +116,21 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
         <StatCard loading={timesheetLoading} icon={FileText} accent="purple" value={timesheetSummary?.total ?? 0} label="Total timesheets" sublabel="This week" />
       </DashboardHeroBand>
 
-      {/* Quick actions + birthday */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <SectionCard title="Quick Actions" icon={Clock} iconTone="emerald" className="lg:col-span-2">
-          <QuickActions items={QUICK_ACTIONS} cols={3} />
-        </SectionCard>
-        <BirthdayWidget variant="green" />
-      </div>
+      {/* Main column + live-punch side box */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:items-start">
+        {/* Main column */}
+        <div className="lg:col-span-2 space-y-4">
+          <SectionCard title="Quick Actions" icon={Clock} iconTone="emerald">
+            <QuickActions items={QUICK_ACTIONS} cols={3} />
+          </SectionCard>
+          <ForemanJobProgressCard onViewProjects={() => setActiveTab('jobsite-progress')} />
+        </div>
 
-      {/* Crew + jobsite progress */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <TodayPunchesCard setActiveTab={setActiveTab} />
-        <ForemanJobProgressCard onViewProjects={() => setActiveTab('jobsite-progress')} />
+        {/* Side rail — real-time live punch overview, pinned while scrolling */}
+        <div className="space-y-4 lg:sticky lg:top-4">
+          <TodayPunchesCard setActiveTab={setActiveTab} />
+          <BirthdayWidget variant="green" />
+        </div>
       </div>
 
       {/* Timesheets + material requests */}

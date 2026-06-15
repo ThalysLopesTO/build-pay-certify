@@ -122,7 +122,7 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({
   const debounceRef = useRef<number | null>(null);
   useEffect(() => {
     if (!user?.companyId) return;
-    const channel = supabase.channel('timesheets-live-foreman').on('postgres_changes', {
+    const channel = supabase.channel(`timesheets-live-foreman-${Date.now()}-${Math.random().toString(36).slice(2)}`).on('postgres_changes', {
       event: '*',
       schema: 'public',
       table: 'timesheets'

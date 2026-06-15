@@ -65,18 +65,16 @@ const ManagementCollapsibleSidebarSection = ({
 
   return (
     <SidebarGroup className="mt-4 first:mt-2">
-      <SidebarGroupLabel 
+      <SidebarGroupLabel
         onClick={toggleExpanded}
-        className="text-sm font-bold text-gray-900 mb-2 px-2 cursor-pointer hover:bg-gray-100 rounded-md py-1 transition-colors duration-200 flex items-center justify-between group"
+        className={`h-auto text-[11px] font-bold uppercase tracking-wider mb-1 px-2.5 py-2 cursor-pointer rounded-lg transition-colors duration-200 flex items-center justify-between ${hasActiveItem ? 'text-orange-600' : 'text-slate-400 hover:text-slate-600'}`}
       >
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-gray-700" />
+          <Icon className={`h-3.5 w-3.5 ${hasActiveItem ? 'text-orange-500' : 'text-slate-400'}`} />
           <span>{label}</span>
         </div>
-        <ChevronDown 
-          className={`h-4 w-4 text-gray-600 transition-transform duration-200 ${
-            isExpanded ? 'rotate-0' : '-rotate-90'
-          }`} 
+        <ChevronDown
+          className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'} ${hasActiveItem ? 'text-orange-400' : 'text-slate-300'}`}
         />
       </SidebarGroupLabel>
       
@@ -97,15 +95,17 @@ const ManagementCollapsibleSidebarSection = ({
                       }
                     }}
                     className={`
-                      relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
-                      transition-colors duration-200 hover:bg-white hover:text-black
-                      ${isActive 
-                        ? 'bg-blue-50 text-blue-900 font-medium border-l-4 border-blue-500 shadow-sm' 
-                        : 'text-gray-900 font-medium'
+                      h-auto w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-sm
+                      transition-all duration-200
+                      ${isActive
+                        ? 'bg-white shadow-md text-slate-900 font-semibold'
+                        : 'text-slate-500 hover:bg-white/70 hover:text-slate-900'
                       }
                     `}
                   >
-                    <item.icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-700'}`} />
+                    <span className={`flex items-center justify-center h-9 w-9 rounded-xl flex-shrink-0 transition-all ${isActive ? 'bg-gradient-to-br from-orange-500 to-amber-500 shadow-md shadow-orange-500/30' : 'bg-white shadow-sm'}`}>
+                      <item.icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-orange-500'}`} />
+                    </span>
                     <span className="truncate">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -115,8 +115,6 @@ const ManagementCollapsibleSidebarSection = ({
         </SidebarGroupContent>
       )}
       
-      {/* Subtle divider between sections */}
-      <div className="mt-3 mx-2 border-b border-sidebar-border"></div>
     </SidebarGroup>
   );
 };
