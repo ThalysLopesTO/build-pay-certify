@@ -15,8 +15,15 @@ import { generateBrandedInvoicePDF } from './BrandedInvoicePDF';
 import { useToast } from '@/hooks/use-toast';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
-import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2, CheckCircle2, X } from 'lucide-react';
+import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2, CheckCircle2, X, MoreHorizontal } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { InvoiceDetailsDialogContent } from './invoices/InvoiceDetailsDialogContent';
@@ -536,11 +543,10 @@ const InvoiceTracker = () => {
                   <TableHead className="font-semibold text-foreground py-4">Invoice #</TableHead>
                   <TableHead className="font-semibold text-foreground py-4">Client</TableHead>
                   <TableHead className="font-semibold text-foreground py-4">Jobsite</TableHead>
-                  <TableHead className="font-semibold text-foreground py-4">Amount</TableHead>
-                  <TableHead className="font-semibold text-foreground py-4">Due Date</TableHead>
+                  <TableHead className="font-semibold text-foreground py-4 text-right">Amount</TableHead>
                   <TableHead className="font-semibold text-foreground py-4">Status</TableHead>
-                  <TableHead className="font-semibold text-foreground py-4">Sent Date</TableHead>
-                  <TableHead className="font-semibold text-foreground py-4">Actions</TableHead>
+                  <TableHead className="font-semibold text-foreground py-4">Due Date</TableHead>
+                  <TableHead className="font-semibold text-foreground py-4 text-right pr-4">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -575,48 +581,31 @@ const InvoiceTracker = () => {
                         <div className="text-sm text-muted-foreground">{invoice.title}</div>
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="p-1 rounded-md bg-muted/50">
-                          <Building className="h-3 w-3 text-muted-foreground" />
-                        </div>
-                        <span className="text-sm">{invoice.jobsites?.name || 'No jobsite'}</span>
-                      </div>
+                    <TableCell className="py-3">
+                      <span className="text-sm text-slate-600 whitespace-nowrap">{invoice.jobsites?.name || 'No jobsite'}</span>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <span className="font-mono font-bold text-lg text-foreground">${invoice.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    <TableCell className="py-3 text-right">
+                      <span className="font-mono font-bold text-base text-foreground tabular-nums whitespace-nowrap">${invoice.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="p-1 rounded-md bg-muted/50">
-                          <Calendar className="h-3 w-3 text-muted-foreground" />
-                        </div>
-                        <span className="text-sm font-medium">{format(new Date(invoice.due_date), 'MMM dd, yyyy')}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <Badge className={`${getStatusBadgeClass(invoice.status, isOverdue(invoice.due_date, invoice.status))} px-3 py-1`}>
-                        {isOverdue(invoice.due_date, invoice.status) ? 'OVERDUE' : invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                    <TableCell className="py-3">
+                      <Badge className={`${getStatusBadgeClass(invoice.status, isOverdue(invoice.due_date, invoice.status))} px-2.5 py-0.5 whitespace-nowrap`}>
+                        {isOverdue(invoice.due_date, invoice.status) ? 'Overdue' : invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="p-1 rounded-md bg-muted/50">
-                          <Calendar className="h-3 w-3 text-muted-foreground" />
-                        </div>
-                        <span className="text-sm font-medium">{format(new Date(invoice.sent_date), 'MMM dd, yyyy')}</span>
-                      </div>
+                    <TableCell className="py-3">
+                      <span className="text-sm font-medium text-slate-700 whitespace-nowrap">{format(new Date(invoice.due_date), 'MMM dd, yyyy')}</span>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex items-center space-x-2">
+                    <TableCell className="py-3 pr-4">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* View details */}
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleViewDetails(invoice)}
-                              title="View Details"
-                              className="invoice-action-button h-8 w-8 p-0"
+                              title="View details"
+                              className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -629,7 +618,7 @@ const InvoiceTracker = () => {
                               </DialogDescription>
                             </DialogHeader>
                             {selectedInvoice && (
-                              <InvoiceDetailsDialogContent 
+                              <InvoiceDetailsDialogContent
                                 invoice={selectedInvoice}
                                 getStatusBadgeClass={getStatusBadgeClass}
                                 isOverdue={isOverdue}
@@ -637,66 +626,58 @@ const InvoiceTracker = () => {
                             )}
                           </DialogContent>
                         </Dialog>
-                        
-                        <Select
-                          value={invoice.status}
-                          onValueChange={(value: 'pending' | 'paid' | 'expired') =>
-                            handleStatusUpdate(invoice.id, value)
-                          }
-                        >
-                          <SelectTrigger className="w-24 h-8 border-border/50 bg-background/80">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
-                            <SelectItem value="expired">Expired</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        
-                        {invoice.status === 'pending' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleReceiptUpload(invoice.id)}
-                            title="Upload Receipt"
-                            className="invoice-action-button h-8 w-8 p-0"
-                          >
-                            <Upload className="h-4 w-4" />
-                          </Button>
-                        )}
-                        
-                        <Button 
-                          size="sm" 
-                          variant="default" 
+
+                        {/* Send email (primary quick action) */}
+                        <Button
+                          size="sm"
+                          variant="default"
                           onClick={() => handleSendEmail(invoice)}
-                          title="Send Email"
+                          title="Send email"
                           className="h-8 w-8 p-0 bg-primary hover:bg-primary/90"
                         >
                           <Mail className="h-4 w-4" />
                         </Button>
 
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDownloadPDF(invoice)}
-                          title="Download PDF"
-                          className="invoice-action-button h-8 w-8 p-0"
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-
-                        {canDeleteInvoices && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteInvoice(invoice)}
-                            title="Delete Invoice"
-                            className="h-8 w-8 p-0 border-destructive/50 hover:bg-destructive hover:text-destructive-foreground"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                        {/* More actions */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="outline" title="More actions" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={() => handleDownloadPDF(invoice)}>
+                              <Download className="h-4 w-4 mr-2" /> Download PDF
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {invoice.status !== 'paid' && (
+                              <DropdownMenuItem onClick={() => handleStatusUpdate(invoice.id, 'paid')}>
+                                <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-600" /> Mark as paid
+                              </DropdownMenuItem>
+                            )}
+                            {invoice.status !== 'pending' && (
+                              <DropdownMenuItem onClick={() => handleStatusUpdate(invoice.id, 'pending')}>
+                                <Clock className="h-4 w-4 mr-2 text-amber-600" /> Mark as pending
+                              </DropdownMenuItem>
+                            )}
+                            {invoice.status !== 'expired' && (
+                              <DropdownMenuItem onClick={() => handleStatusUpdate(invoice.id, 'expired')}>
+                                <Bell className="h-4 w-4 mr-2 text-red-600" /> Mark as expired
+                              </DropdownMenuItem>
+                            )}
+                            {canDeleteInvoices && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteInvoice(invoice)}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
