@@ -121,16 +121,54 @@ export const useMessages = (conversationId: string | null) => {
   const sendMessage = async (content: string) => {
     if (!conversationId || !user?.id || !content.trim()) return;
 
+    // Client-generated id so we can show the message immediately and let the
+    // realtime handler dedupe against it (it checks m.id). This makes sent
+    // messages appear instantly even if realtime delivery is delayed/unavailable.
+    const id =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    const optimistic: ChatMessage = {
+      id,
+      conversation_id: conversationId,
+      sender_id: user.id,
+      content: content.trim(),
+      created_at: new Date().toISOString(),
+      is_deleted: false,
+      attachment_url: null,
+      sender: {
+        user_id: user.id,
+        first_name: user.firstName ?? null,
+        last_name: user.lastName ?? null,
+        role: user.role ?? '',
+        photo_url: user.photo_url ?? null,
+      },
+    };
+
+    queryClient.setQueryData<ChatMessage[]>(['chat-messages', conversationId], old => {
+      if (old?.some(m => m.id === id)) return old;
+      return [...(old ?? []), optimistic];
+    });
+
     const { error } = await supabase.from('chat_messages').insert({
+      id,
       conversation_id: conversationId,
       sender_id: user.id,
       content: content.trim(),
     });
 
     if (error) {
+      // Roll back the optimistic message on failure.
+      queryClient.setQueryData<ChatMessage[]>(['chat-messages', conversationId], old =>
+        old?.filter(m => m.id !== id),
+      );
       toast({ title: 'Failed to send message', variant: 'destructive' });
       throw error;
     }
+
+    // Refresh the conversation list (ordering / last message / unread).
+    queryClient.invalidateQueries({ queryKey: ['chat-conversations', user.id] });
   };
 
   const deleteMessage = async (messageId: string) => {
