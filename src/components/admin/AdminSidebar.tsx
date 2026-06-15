@@ -5,7 +5,6 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Building } from 'lucide-react';
 import SidebarSection from './sidebar/SidebarSection';
 import CollapsibleSidebarSection from './sidebar/CollapsibleSidebarSection';
 import { groupedMenuItems, sectionConfigs } from './sidebar/menuData';
@@ -21,14 +20,15 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
 
       {/* Header */}
       <SidebarHeader className="p-4 border-b border-slate-200/60">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-md shadow-orange-500/20">
-            <Building className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h2 className="font-bold text-sm text-slate-900 leading-tight">Admin Panel</h2>
-            <p className="text-xs text-slate-500">Construction Manager</p>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/lovable-uploads/3496e725-3945-4e97-9e3b-23e2b57ac36b.png"
+            alt="StackBuild"
+            className="h-7 w-auto object-contain"
+          />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-orange-600 bg-orange-50 border border-orange-100 rounded-md px-1.5 py-0.5">
+            Admin
+          </span>
         </div>
       </SidebarHeader>
 
