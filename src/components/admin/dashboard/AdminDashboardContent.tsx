@@ -2,10 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
-  Building,
   Clock,
   DollarSign,
-  Eye,
   FileText,
   HardHat,
   Inbox,
@@ -15,14 +13,12 @@ import {
   Timer,
   TrendingUp,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { useDashboardCommandCenter } from '@/hooks/useDashboardCommandCenter';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useInvoiceAnalytics } from '@/hooks/useInvoiceAnalytics';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useUserProfile } from '@/hooks/new/useUsers';
-import WeatherChip from '@/components/dashboard/WeatherChip';
+import DashboardHeroBand from '@/components/dashboard/DashboardHeroBand';
 import StatCard from '@/components/dashboard/StatCard';
 import RevenueOverviewChart from '@/components/dashboard/RevenueOverviewChart';
 import CollectionsBarChart from '@/components/dashboard/CollectionsBarChart';
@@ -57,7 +53,7 @@ const QUICK_ACTIONS: QuickAction[] = [
 const pctChange = (cur: number, prev: number): number | null =>
   prev > 0 ? ((cur - prev) / prev) * 100 : null;
 
-const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActiveTab }) => {
+const AdminDashboardContent: React.FC<AdminDashboardContentProps> = () => {
   const { data: cc, isLoading } = useDashboardCommandCenter();
   const { invoices, isLoading: invoicesLoading } = useInvoices();
   const { monthlyData } = useInvoiceAnalytics(invoices);
@@ -65,12 +61,6 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
   const { data: userProfile } = useUserProfile();
   const navigate = useNavigate();
 
-  const firstName = userProfile?.first_name || user?.firstName || 'Admin';
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-
-  // Financial stat-card figures (this month vs prior) from invoice analytics.
   const last = monthlyData[monthlyData.length - 1];
   const prev = monthlyData[monthlyData.length - 2];
   const issuedThisMonth = last?.issued ?? 0;
@@ -104,98 +94,26 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
   return (
     <div className="space-y-5 max-w-7xl mx-auto animate-fade-in">
 
-      {/* ── Hero band + overlapping stat cards ── */}
-      <div>
-        <div className="relative rounded-2xl bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 shadow-lg p-5 sm:p-6 pb-16 lg:pb-20 overflow-hidden">
-          <div className="absolute -top-24 -right-10 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 left-1/3 w-64 h-64 bg-amber-300/20 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 flex items-center gap-4">
-            <div className="rounded-full p-0.5 bg-white/25 flex-shrink-0">
-              <EmployeeAvatar
-                photoUrl={userProfile?.photo_url ?? undefined}
-                firstName={userProfile?.first_name ?? user?.firstName ?? undefined}
-                lastName={userProfile?.last_name ?? user?.lastName ?? undefined}
-                size="lg"
-              />
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-white/70">{today}</p>
-              <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
-                {greeting}, {firstName} 👋
-              </h1>
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-white/20 text-white capitalize">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                  {user?.role?.replace('_', ' ') || 'Admin'}
-                </span>
-                {user?.companyName && (
-                  <span className="inline-flex items-center gap-1 text-xs text-white/80">
-                    <Building className="h-3.5 w-3.5" />
-                    {user.companyName}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="hidden sm:flex items-center gap-2.5 flex-shrink-0">
-              <WeatherChip />
-              <Button
-                variant="ghost"
-                className="h-9 text-white bg-white/15 hover:bg-white/25 hover:text-white border border-white/25"
-                onClick={() => navigate('/admin/settings')}
-              >
-                <Eye className="h-4 w-4 mr-2" /> Profile
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Stat cards overlap the band on desktop, stack on mobile */}
-        <div className="relative z-20 -mt-10 lg:-mt-12 px-1 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <StatCard
-            loading={invoicesLoading}
-            label="Invoiced this month"
-            value={fmt.format(issuedThisMonth)}
-            icon={FileText}
-            accent="orange"
-            delta={issuedDelta}
-            sublabel="No prior month data"
-          />
-          <StatCard
-            loading={invoicesLoading}
-            label="Collected this month"
-            value={fmt.format(paidThisMonth)}
-            icon={DollarSign}
-            accent="emerald"
-            delta={paidDelta}
-            sublabel="No prior month data"
-          />
-          <StatCard
-            loading={isLoading}
-            label="On clock now"
-            value={cc?.workersOnClockNow ?? 0}
-            icon={HardHat}
-            accent="blue"
-            pulse
-            sublabel="Live on site"
-          />
-          <StatCard
-            loading={isLoading}
-            label="Hours logged today"
-            value={`${cc?.totalHoursToday ?? 0}h`}
-            icon={Timer}
-            accent="purple"
-            sublabel="Across all sites"
-          />
-        </div>
-      </div>
+      {/* Hero band + stat cards */}
+      <DashboardHeroBand
+        firstName={userProfile?.first_name ?? user?.firstName}
+        lastName={userProfile?.last_name ?? user?.lastName}
+        photoUrl={userProfile?.photo_url}
+        roleLabel={user?.role?.replace('_', ' ') || 'Admin'}
+        companyName={user?.companyName}
+        accent="orange"
+        onViewProfile={() => navigate('/admin/settings')}
+      >
+        <StatCard loading={invoicesLoading} label="Invoiced this month" value={fmt.format(issuedThisMonth)} icon={FileText} accent="orange" delta={issuedDelta} sublabel="No prior month data" />
+        <StatCard loading={invoicesLoading} label="Collected this month" value={fmt.format(paidThisMonth)} icon={DollarSign} accent="emerald" delta={paidDelta} sublabel="No prior month data" />
+        <StatCard loading={isLoading} label="On clock now" value={cc?.workersOnClockNow ?? 0} icon={HardHat} accent="blue" pulse sublabel="Live on site" />
+        <StatCard loading={isLoading} label="Hours logged today" value={`${cc?.totalHoursToday ?? 0}h`} icon={Timer} accent="purple" sublabel="Across all sites" />
+      </DashboardHeroBand>
 
       <LicenseWarningBanner />
       <EmployeeLimitCard />
 
-      {/* ── Charts ── */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <RevenueOverviewChart data={monthlyData} loading={invoicesLoading} />
@@ -205,7 +123,7 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
         </div>
       </div>
 
-      {/* ── Command center ── */}
+      {/* Command center */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <SectionCard
           title="Needs Attention"
@@ -266,12 +184,12 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = ({ setActive
         </div>
       </div>
 
-      {/* ── Quick jump ── */}
+      {/* Quick jump */}
       <SectionCard title="Quick Jump" icon={TrendingUp} iconTone="slate">
         <QuickActions items={QUICK_ACTIONS} cols={3} />
       </SectionCard>
 
-      {/* ── Live activity ── */}
+      {/* Live activity */}
       <LiveActiveEmployees />
     </div>
   );

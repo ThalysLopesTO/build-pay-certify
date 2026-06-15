@@ -10,15 +10,18 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useManagementDashboardStats } from '@/hooks/useManagementDashboardStats';
+import { useInvoices } from '@/hooks/useInvoices';
+import { useInvoiceAnalytics } from '@/hooks/useInvoiceAnalytics';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useUserProfile } from '@/hooks/new/useUsers';
-import WeatherChip from '@/components/dashboard/WeatherChip';
+import DashboardHeroBand from '@/components/dashboard/DashboardHeroBand';
+import StatCard from '@/components/dashboard/StatCard';
+import RevenueOverviewChart from '@/components/dashboard/RevenueOverviewChart';
+import CollectionsBarChart from '@/components/dashboard/CollectionsBarChart';
 import {
   ActionItem,
   ActionItemData,
   AllClear,
-  DashboardTopBar,
-  KpiCard,
   QuickAction,
   QuickActions,
   SectionCard,
@@ -32,27 +35,33 @@ interface ManagementDashboardHomeProps {
 const fmt = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 });
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: 'My Timesheet',   icon: Clock,      href: '/management/my-timesheet',       tone: 'blue' },
-  { label: 'Live Punches',   icon: Clock,      href: '/management/live-punch-monitor', tone: 'emerald' },
-  { label: 'Bills',          icon: Receipt,    href: '/management/bills-expenses',     tone: 'orange' },
-  { label: 'Reports',        icon: BarChart3,  href: '/management/reports',            tone: 'purple' },
-  { label: 'Payroll',        icon: DollarSign, href: '/management/payroll-summary',    tone: 'emerald' },
-  { label: 'Invoices',       icon: TrendingUp, href: '/management/invoices',           tone: 'blue' },
+  { label: 'My Timesheet', icon: Clock,      href: '/management/my-timesheet',       tone: 'blue' },
+  { label: 'Live Punches', icon: Clock,      href: '/management/live-punch-monitor', tone: 'emerald' },
+  { label: 'Bills',        icon: Receipt,    href: '/management/bills-expenses',     tone: 'orange' },
+  { label: 'Reports',      icon: BarChart3,  href: '/management/reports',            tone: 'purple' },
+  { label: 'Payroll',      icon: DollarSign, href: '/management/payroll-summary',    tone: 'emerald' },
+  { label: 'Invoices',     icon: TrendingUp, href: '/management/invoices',           tone: 'blue' },
 ];
 
-const ManagementDashboardHome: React.FC<ManagementDashboardHomeProps> = ({ setActiveTab }) => {
+const pctChange = (cur: number, prev: number): number | null =>
+  prev > 0 ? ((cur - prev) / prev) * 100 : null;
+
+const ManagementDashboardHome: React.FC<ManagementDashboardHomeProps> = () => {
   const { user } = useAuth();
   const { data: stats, isLoading } = useManagementDashboardStats();
+  const { invoices, isLoading: invoicesLoading } = useInvoices();
+  const { monthlyData } = useInvoiceAnalytics(invoices);
   const { data: userProfile } = useUserProfile();
   const navigate = useNavigate();
 
-  const totalTimesheets = stats?.totalTimesheetsCount ?? 0;
-  const approvedTimesheets = stats?.approvedTimesheetsCount ?? 0;
-  const approvalProgress = totalTimesheets > 0 ? Math.round((approvedTimesheets / totalTimesheets) * 100) : 0;
+  const last = monthlyData[monthlyData.length - 1];
+  const prev = monthlyData[monthlyData.length - 2];
+  const paidThisMonth = last?.paid ?? 0;
+  const paidDelta = pctChange(paidThisMonth, prev?.paid ?? 0);
 
   const actionItems: ActionItemData[] = [
-    { icon: Receipt,  label: 'Unpaid bills',          count: stats?.pendingBillsCount ?? 0,     href: '/management/bills-expenses', tone: 'urgent' },
-    { icon: FileText, label: 'Open attention reports', count: stats?.openReportsCount ?? 0,      href: '/management/reports',        tone: 'warning' },
+    { icon: Receipt,  label: 'Unpaid bills',          count: stats?.pendingBillsCount ?? 0,      href: '/management/bills-expenses', tone: 'urgent' },
+    { icon: FileText, label: 'Open attention reports', count: stats?.openReportsCount ?? 0,       href: '/management/reports',        tone: 'warning' },
     { icon: Clock,    label: 'Timesheets to approve',  count: stats?.pendingTimesheetsCount ?? 0, href: '/management/timesheets',     tone: 'normal' },
   ];
 
@@ -62,8 +71,8 @@ const ManagementDashboardHome: React.FC<ManagementDashboardHomeProps> = ({ setAc
   return (
     <div className="space-y-5 max-w-7xl mx-auto animate-fade-in">
 
-      {/* Top bar */}
-      <DashboardTopBar
+      {/* Hero band + stat cards */}
+      <DashboardHeroBand
         firstName={userProfile?.first_name ?? user?.firstName}
         lastName={userProfile?.last_name ?? user?.lastName}
         photoUrl={userProfile?.photo_url}
@@ -71,43 +80,21 @@ const ManagementDashboardHome: React.FC<ManagementDashboardHomeProps> = ({ setAc
         companyName={user?.companyName}
         accent="orange"
         onViewProfile={() => navigate('/management/settings')}
-        rightSlot={<WeatherChip />}
-      />
+      >
+        <StatCard loading={invoicesLoading} label="Collected this month" value={fmt.format(paidThisMonth)} icon={DollarSign} accent="emerald" delta={paidDelta} sublabel="No prior month data" />
+        <StatCard loading={isLoading} label="Payroll this week" value={fmt.format(stats?.currentWeekPayroll ?? 0)} icon={Receipt} accent="blue" onClick={() => navigate('/management/payroll-summary')} sublabel="Approved timesheets" />
+        <StatCard loading={isLoading} label="Timesheets to approve" value={stats?.pendingTimesheetsCount ?? 0} icon={Clock} accent="orange" onClick={() => navigate('/management/timesheets')} sublabel="Awaiting review" />
+        <StatCard loading={isLoading} label="Unpaid bills" value={stats?.pendingBillsCount ?? 0} icon={FileText} accent="red" onClick={() => navigate('/management/bills-expenses')} sublabel="Outstanding" />
+      </DashboardHeroBand>
 
-      {/* KPI band */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard
-          loading={isLoading}
-          icon={DollarSign}
-          tone="emerald"
-          value={fmt.format(stats?.currentWeekPayroll ?? 0)}
-          label="Payroll this week"
-          onClick={() => navigate('/management/payroll-summary')}
-        />
-        <KpiCard
-          loading={isLoading}
-          icon={Clock}
-          tone="orange"
-          value={stats?.pendingTimesheetsCount ?? 0}
-          label="Timesheets to approve"
-          onClick={() => navigate('/management/timesheets')}
-        />
-        <KpiCard
-          loading={isLoading}
-          icon={Receipt}
-          tone="red"
-          value={stats?.pendingBillsCount ?? 0}
-          label="Unpaid bills"
-          onClick={() => navigate('/management/bills-expenses')}
-        />
-        <KpiCard
-          loading={isLoading}
-          icon={TrendingUp}
-          tone="blue"
-          value={`${approvalProgress}%`}
-          label="Approved this week"
-          sublabel={`${approvedTimesheets}/${totalTimesheets} timesheets`}
-        />
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <RevenueOverviewChart data={monthlyData} loading={invoicesLoading} />
+        </div>
+        <div className="lg:col-span-1">
+          <CollectionsBarChart data={monthlyData} loading={invoicesLoading} />
+        </div>
       </div>
 
       {/* Command center */}

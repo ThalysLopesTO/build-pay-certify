@@ -8,14 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useUserProfile } from '@/hooks/new/useUsers';
 import { useJobsites } from '@/hooks/useJobsites';
-import WeatherChip from '@/components/dashboard/WeatherChip';
-import {
-  DashboardTopBar,
-  KpiCard,
-  QuickAction,
-  QuickActions,
-  SectionCard,
-} from '@/components/dashboard/primitives';
+import DashboardHeroBand from '@/components/dashboard/DashboardHeroBand';
+import StatCard from '@/components/dashboard/StatCard';
+import { QuickAction, QuickActions, SectionCard } from '@/components/dashboard/primitives';
 import { DashboardCard } from '@/components/common/DashboardCard';
 import BirthdayWidget from '@/components/common/BirthdayWidget';
 import TodayPunchesCard from './TodayPunchesCard';
@@ -37,12 +32,12 @@ interface MaterialRequest {
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: 'Live Punches',  icon: Clock,    href: '/foreman/live-punch-monitor', tone: 'emerald' },
-  { label: 'New Request',   icon: Package,  href: '/foreman/material-request',   tone: 'blue' },
-  { label: 'Timesheet',     icon: FileText, href: '/foreman/timesheet',          tone: 'purple' },
-  { label: 'Daily Tasks',   icon: Clock,    href: '/foreman/daily-tasks',        tone: 'orange' },
-  { label: 'Projects',      icon: MapPin,   href: '/foreman/jobsite-progress',   tone: 'emerald' },
-  { label: 'My Requests',   icon: Package,  href: '/foreman/my-requests',        tone: 'blue' },
+  { label: 'Live Punches', icon: Clock,    href: '/foreman/live-punch-monitor', tone: 'emerald' },
+  { label: 'New Request',  icon: Package,  href: '/foreman/material-request',   tone: 'blue' },
+  { label: 'Timesheet',    icon: FileText, href: '/foreman/timesheet',          tone: 'purple' },
+  { label: 'Daily Tasks',  icon: Clock,    href: '/foreman/daily-tasks',        tone: 'orange' },
+  { label: 'Projects',     icon: MapPin,   href: '/foreman/jobsite-progress',   tone: 'emerald' },
+  { label: 'My Requests',  icon: Package,  href: '/foreman/my-requests',        tone: 'blue' },
 ];
 
 const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
@@ -105,8 +100,8 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
   return (
     <div className="space-y-5 max-w-7xl mx-auto animate-fade-in">
 
-      {/* Top bar */}
-      <DashboardTopBar
+      {/* Hero band + stat cards */}
+      <DashboardHeroBand
         firstName={userProfile?.first_name ?? user?.firstName}
         lastName={userProfile?.last_name ?? user?.lastName}
         photoUrl={userProfile?.photo_url}
@@ -114,41 +109,12 @@ const ForemanDashboardHome = ({ setActiveTab }: { setActiveTab: (tab: string) =>
         companyName={user?.companyName}
         accent="emerald"
         onViewProfile={() => navigate('/foreman/settings')}
-        rightSlot={<WeatherChip />}
-      />
-
-      {/* KPI band */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard
-          icon={MapPin}
-          tone="blue"
-          value={jobsites.length}
-          label="Active jobsites"
-          onClick={() => navigate('/foreman/jobsite-progress')}
-        />
-        <KpiCard
-          loading={timesheetLoading}
-          icon={Clock}
-          tone="orange"
-          value={timesheetSummary?.pending ?? 0}
-          label="Pending timesheets"
-          onClick={() => navigate('/foreman/timesheet')}
-        />
-        <KpiCard
-          loading={timesheetLoading}
-          icon={CheckCircle2}
-          tone="emerald"
-          value={timesheetSummary?.approved ?? 0}
-          label="Approved this week"
-        />
-        <KpiCard
-          loading={timesheetLoading}
-          icon={FileText}
-          tone="purple"
-          value={timesheetSummary?.total ?? 0}
-          label="Total timesheets"
-        />
-      </div>
+      >
+        <StatCard icon={MapPin} accent="blue" value={jobsites.length} label="Active jobsites" onClick={() => navigate('/foreman/jobsite-progress')} sublabel="In progress" />
+        <StatCard loading={timesheetLoading} icon={Clock} accent="orange" value={timesheetSummary?.pending ?? 0} label="Pending timesheets" onClick={() => navigate('/foreman/timesheet')} sublabel="Awaiting approval" />
+        <StatCard loading={timesheetLoading} icon={CheckCircle2} accent="emerald" value={timesheetSummary?.approved ?? 0} label="Approved this week" sublabel="Signed off" />
+        <StatCard loading={timesheetLoading} icon={FileText} accent="purple" value={timesheetSummary?.total ?? 0} label="Total timesheets" sublabel="This week" />
+      </DashboardHeroBand>
 
       {/* Quick actions + birthday */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
