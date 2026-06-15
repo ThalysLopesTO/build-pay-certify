@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Key, Edit, Trash2 } from 'lucide-react';
+import { MoreVertical, Key, Edit, Trash2, CreditCard } from 'lucide-react';
 
 interface Company {
   id: string;
@@ -21,6 +21,7 @@ interface CompanyActionsMenuProps {
   onEdit: (company: Company) => void;
   onRevoke: (company: Company) => void;
   onResetPassword: (company: Company) => void;
+  onManageSubscription?: (company: Company) => void;
   isProcessing: boolean;
 }
 
@@ -29,6 +30,7 @@ export const CompanyActionsMenu: React.FC<CompanyActionsMenuProps> = ({
   onEdit,
   onRevoke,
   onResetPassword,
+  onManageSubscription,
   isProcessing,
 }) => {
   return (
@@ -44,7 +46,16 @@ export const CompanyActionsMenu: React.FC<CompanyActionsMenuProps> = ({
           <span className="sr-only">Open menu</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48 bg-background border-border shadow-lg z-50">
+      <DropdownMenuContent align="end" className="w-52 bg-background border-border shadow-lg z-50">
+        {onManageSubscription && (
+          <DropdownMenuItem
+            onClick={() => onManageSubscription(company)}
+            className="cursor-pointer"
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Manage Membership
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem
           onClick={() => onResetPassword(company)}
           disabled={!company.admin_user_id}
