@@ -16,6 +16,8 @@ import { useCompanyMutations } from '@/hooks/useCompanyMutations';
 import { useResetUserPassword } from '@/hooks/usePasswordManagement';
 import { useManageSubscription, SubscriptionUpdate } from '@/hooks/super-admin/useManageSubscription';
 import { useCompanyUsage } from '@/hooks/super-admin/useCompanyUsage';
+import { useDeleteCompany } from '@/hooks/super-admin/useDeleteCompany';
+import { DeleteCompanyDialog } from '@/components/admin/super-admin/DeleteCompanyDialog';
 import CompanyRequestTable from '@/components/admin/CompanyRequestTable';
 import { CreateTrialCompanyDialog } from '@/components/admin/trial-companies/CreateTrialCompanyDialog';
 import { MobileCompanyCard } from '@/components/admin/super-admin/MobileCompanyCard';
@@ -70,6 +72,7 @@ const SuperAdminDashboard = () => {
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [section, setSection] = useState('overview');
   const [mobileCompanyTab, setMobileCompanyTab] = useState('companies');
@@ -80,6 +83,7 @@ const SuperAdminDashboard = () => {
   const { editCompanyMutation, revokeCompanyMutation } = useCompanyMutations();
   const resetPasswordMutation = useResetUserPassword();
   const manageSubscription = useManageSubscription();
+  const deleteCompany = useDeleteCompany();
   const { data: usageMap = {} } = useCompanyUsage();
 
   const handleApprove = (request: RegistrationRequest) => { setSelectedRequest(request); setShowApprovalDialog(true); };
@@ -106,6 +110,7 @@ const SuperAdminDashboard = () => {
   const handleRevokeCompany = (company: Company) => { setSelectedCompany(company); setShowRevokeDialog(true); };
   const handleResetPassword = (company: Company) => { setSelectedCompany(company); setShowResetPasswordDialog(true); };
   const handleManageSubscription = (company: Company) => { setSelectedCompany(company); setShowSubscriptionDialog(true); };
+  const handleDeleteCompany = (company: Company) => { setSelectedCompany(company); setShowDeleteDialog(true); };
 
   const confirmEdit = (companyId: string, data: { name: string; email: string; phone?: string }) => {
     setProcessingId(companyId);
@@ -137,6 +142,14 @@ const SuperAdminDashboard = () => {
     manageSubscription.mutate(
       { companyId, updates },
       { onSettled: () => { setProcessingId(null); setShowSubscriptionDialog(false); setSelectedCompany(null); } }
+    );
+  };
+
+  const confirmDelete = (companyId: string, confirmName: string) => {
+    setProcessingId(companyId);
+    deleteCompany.mutate(
+      { companyId, confirmName },
+      { onSuccess: () => { setShowDeleteDialog(false); setSelectedCompany(null); }, onSettled: () => setProcessingId(null) }
     );
   };
 
@@ -179,6 +192,7 @@ const SuperAdminDashboard = () => {
         onRevokeCompany={handleRevokeCompany}
         onResetPassword={handleResetPassword}
         onManageSubscription={handleManageSubscription}
+        onDeleteCompany={handleDeleteCompany}
         usageMap={usageMap}
         isProcessing={processingId}
       />
@@ -273,6 +287,13 @@ const SuperAdminDashboard = () => {
         onConfirm={confirmResetPassword} isProcessing={processingId === selectedCompany?.id} />
       <ManageSubscriptionDialog open={showSubscriptionDialog} onOpenChange={setShowSubscriptionDialog} company={selectedCompany}
         onConfirm={confirmSubscription} isProcessing={processingId === selectedCompany?.id} />
+      <DeleteCompanyDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        company={selectedCompany ? { id: selectedCompany.id, name: selectedCompany.name, member_count: usageMap[selectedCompany.id]?.member_count } : null}
+        onConfirm={confirmDelete}
+        isProcessing={processingId === selectedCompany?.id}
+      />
     </div>
   );
 };

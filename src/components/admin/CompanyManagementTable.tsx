@@ -55,6 +55,7 @@ interface CompanyManagementTableProps {
   onRevokeCompany: (company: Company) => void;
   onResetPassword: (company: Company) => void;
   onManageSubscription?: (company: Company) => void;
+  onDeleteCompany?: (company: Company) => void;
   usageMap?: Record<string, CompanyUsage>;
   isProcessing: string | null;
 }
@@ -78,6 +79,7 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
   onRevokeCompany,
   onResetPassword,
   onManageSubscription,
+  onDeleteCompany,
   usageMap,
   isProcessing
 }) => {
@@ -233,6 +235,7 @@ const CompanyManagementTable: React.FC<CompanyManagementTableProps> = ({
                               onRevoke={onRevokeCompany}
                               onResetPassword={onResetPassword}
                               onManageSubscription={onManageSubscription}
+                              onDelete={onDeleteCompany}
                               isProcessing={isProcessing === item.id}
                             />
                           )}

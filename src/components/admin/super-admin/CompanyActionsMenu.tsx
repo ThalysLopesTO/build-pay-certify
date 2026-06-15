@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Key, Edit, Trash2, CreditCard } from 'lucide-react';
+import { MoreVertical, Key, Edit, Trash2, CreditCard, Ban } from 'lucide-react';
 
 interface Company {
   id: string;
@@ -22,6 +22,7 @@ interface CompanyActionsMenuProps {
   onRevoke: (company: Company) => void;
   onResetPassword: (company: Company) => void;
   onManageSubscription?: (company: Company) => void;
+  onDelete?: (company: Company) => void;
   isProcessing: boolean;
 }
 
@@ -31,6 +32,7 @@ export const CompanyActionsMenu: React.FC<CompanyActionsMenuProps> = ({
   onRevoke,
   onResetPassword,
   onManageSubscription,
+  onDelete,
   isProcessing,
 }) => {
   return (
@@ -74,11 +76,20 @@ export const CompanyActionsMenu: React.FC<CompanyActionsMenuProps> = ({
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => onRevoke(company)}
-          className="cursor-pointer text-destructive focus:text-destructive"
+          className="cursor-pointer text-amber-600 focus:text-amber-600"
         >
-          <Trash2 className="h-4 w-4 mr-2" />
+          <Ban className="h-4 w-4 mr-2" />
           Revoke Access
         </DropdownMenuItem>
+        {onDelete && (
+          <DropdownMenuItem
+            onClick={() => onDelete(company)}
+            className="cursor-pointer text-red-600 focus:text-red-600"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Permanently
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
