@@ -33,7 +33,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
       </SidebarHeader>
 
       {/* Scrollable Content */}
-      <SidebarContent className="overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent bg-sidebar">
+      <SidebarContent className="overflow-y-auto px-2 py-2 scrollbar-hide bg-sidebar">
         
         {/* Dashboard - Always visible */}
         <SidebarSection
