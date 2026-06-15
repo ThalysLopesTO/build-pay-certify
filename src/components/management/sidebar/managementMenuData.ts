@@ -1,7 +1,6 @@
-import { 
+import {
   LayoutDashboard,
   Clock,
-  DollarSign,
   Receipt,
   BarChart3,
   Settings,
@@ -11,172 +10,100 @@ import {
   FileText,
   Users,
   UserPlus,
-  Building2,
-  UserCheck,
-  TrendingUp,
-  Wallet,
   FileSpreadsheet,
-  Bell,
-  CheckSquare
+  CheckSquare,
+  Briefcase,
+  UserCog,
+  Target,
+  PieChart,
+  Cog,
 } from 'lucide-react';
 
+// Organised to mirror the Admin sidebar structure (Project Management,
+// Employee Management, Management Operations, Financial, Reports, System
+// Settings), scoped to the routes a manager actually has. A small
+// "My Workspace" section holds the manager-only personal time items that
+// admins don't have. Notifications live in the header bell (as on Admin).
 export const managementMenuItems = {
   main: [
-    {
-      title: 'Dashboard',
-      icon: LayoutDashboard,
-      id: 'dashboard',
-    },
-    {
-      title: 'Notifications',
-      icon: Bell,
-      id: 'notifications',
-    },
+    { title: 'Dashboard', icon: LayoutDashboard, id: 'dashboard' },
   ],
-  operations: [
-    {
-      title: 'Time Clock (Punch In/Out)',
-      icon: Clock,
-      id: 'time-tracker',
-    },
-    {
-      title: 'Daily Tasks',
-      icon: CheckSquare,
-      id: 'daily-tasks',
-    },
-    {
-      title: 'Live Punch Monitor',
-      icon: Clock,
-      id: 'live-punch-monitor',
-    },
-    {
-      title: 'Time Sheet',
-      icon: FileSpreadsheet,
-      id: 'manual-timesheets',
-    },
-    {
-      title: 'Employee Bills',
-      icon: Receipt,
-      id: 'employee-bills',
-    },
-    {
-      title: 'My Timesheet',
-      icon: Clock,
-      id: 'my-timesheet',
-    },
-    {
-      title: 'Bills & Expenses',
-      icon: Receipt,
-      id: 'bills-expenses',
-    },
+  projects: [
+    { title: 'Daily Tasks', icon: CheckSquare, id: 'daily-tasks' },
+    { title: 'Inventory',   icon: Package,      id: 'inventory' },
+    { title: 'Suppliers',   icon: Truck,        id: 'suppliers' },
   ],
   employees: [
-    {
-      title: 'Employee Management',
-      icon: Users,
-      id: 'employees',
-    },
-    {
-      title: 'Employee Registration',
-      icon: UserPlus,
-      id: 'employee-registration',
-    },
-    {
-      title: 'Time Requests',
-      icon: Clock,
-      id: 'time-requests',
-    },
+    { title: 'Employee Management',   icon: Users,    id: 'employees' },
+    { title: 'Employee Registration', icon: UserPlus, id: 'employee-registration' },
+    { title: 'Time Requests',         icon: Clock,    id: 'time-requests' },
   ],
-  inventory: [
-    {
-      title: 'Inventory',
-      icon: Package,
-      id: 'inventory',
-    },
-    {
-      title: 'Suppliers',
-      icon: Truck,
-      id: 'suppliers',
-    },
+  operations: [
+    { title: 'Live Punch Monitor', icon: Clock,           id: 'live-punch-monitor' },
+    { title: 'Time Sheet',         icon: FileSpreadsheet, id: 'manual-timesheets' },
+    { title: 'Employee Bills',     icon: Receipt,         id: 'employee-bills' },
+    { title: 'Time Summary',       icon: BarChart3,       id: 'time-summary' },
   ],
   financial: [
-    {
-      title: 'Clients',
-      icon: Building2,
-      id: 'clients',
-    },
-    {
-      title: 'Quotes',
-      icon: CreditCard,
-      id: 'quotes',
-    },
-    {
-      title: 'Invoices',
-      icon: FileText,
-      id: 'invoices',
-    },
+    { title: 'Invoices',         icon: FileText,   id: 'invoices' },
+    { title: 'Quotes',           icon: CreditCard, id: 'quotes' },
+    { title: 'Bills & Expenses', icon: Receipt,    id: 'bills-expenses' },
   ],
   reports: [
-    {
-      title: 'My Timesheet History',
-      icon: FileSpreadsheet,
-      id: 'my-timesheet-history',
-    },
-    {
-      title: 'Daily Reports',
-      icon: FileText,
-      id: 'daily-reports',
-    },
-    {
-      title: 'Reports',
-      icon: BarChart3,
-      id: 'reports',
-    },
+    { title: 'Daily Reports', icon: FileText,   id: 'daily-reports' },
+    { title: 'Reports',       icon: BarChart3,  id: 'reports' },
   ],
-  account: [
-    {
-      title: 'Settings',
-      icon: Settings,
-      id: 'settings',
-    },
+  personal: [
+    { title: 'Time Clock',        icon: Clock,           id: 'time-tracker' },
+    { title: 'My Timesheet',      icon: Clock,           id: 'my-timesheet' },
+    { title: 'Timesheet History', icon: FileSpreadsheet, id: 'my-timesheet-history' },
+  ],
+  system: [
+    { title: 'Settings', icon: Settings, id: 'settings' },
   ],
 };
 
 export const sectionConfigs = {
-  operations: {
-    label: "Management Operations",
-    icon: TrendingUp,
+  projects: {
+    label: 'Project Management',
+    icon: Briefcase,
     defaultExpanded: true,
-    storageKey: "management-operations-expanded"
+    storageKey: 'management-projects-expanded',
   },
   employees: {
-    label: "Employee Management",
-    icon: UserCheck,
+    label: 'Employee Management',
+    icon: UserCog,
     defaultExpanded: false,
-    storageKey: "management-employees-expanded"
+    storageKey: 'management-employees-expanded',
   },
-  inventory: {
-    label: "Inventory Management",
-    icon: Package,
+  operations: {
+    label: 'Management Operations',
+    icon: Target,
     defaultExpanded: false,
-    storageKey: "management-inventory-expanded"
+    storageKey: 'management-operations-expanded',
   },
   financial: {
-    label: "Financial",
-    icon: Wallet,
+    label: 'Financial',
+    icon: PieChart,
     defaultExpanded: false,
-    storageKey: "management-financial-expanded"
+    storageKey: 'management-financial-expanded',
   },
   reports: {
-    label: "Reports",
-    icon: FileSpreadsheet,
+    label: 'Reports',
+    icon: BarChart3,
     defaultExpanded: false,
-    storageKey: "management-reports-expanded"
+    storageKey: 'management-reports-expanded',
   },
-  account: {
-    label: "Account",
-    icon: Settings,
+  personal: {
+    label: 'My Workspace',
+    icon: Clock,
     defaultExpanded: false,
-    storageKey: "management-account-expanded"
-  }
+    storageKey: 'management-personal-expanded',
+  },
+  system: {
+    label: 'System Settings',
+    icon: Cog,
+    defaultExpanded: false,
+    storageKey: 'management-system-expanded',
+  },
 };

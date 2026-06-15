@@ -43,15 +43,15 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
           setActiveTab={setActiveTab}
         />
 
-        {/* Collapsible Sections */}
+        {/* Collapsible Sections — mirrors the Admin sidebar order */}
         <ManagementCollapsibleSidebarSection
-          items={managementMenuItems.operations}
+          items={managementMenuItems.projects}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label={sectionConfigs.operations.label}
-          icon={sectionConfigs.operations.icon}
-          defaultExpanded={sectionConfigs.operations.defaultExpanded}
-          storageKey={sectionConfigs.operations.storageKey}
+          label={sectionConfigs.projects.label}
+          icon={sectionConfigs.projects.icon}
+          defaultExpanded={sectionConfigs.projects.defaultExpanded}
+          storageKey={sectionConfigs.projects.storageKey}
         />
 
         <ManagementCollapsibleSidebarSection
@@ -65,13 +65,13 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
         />
 
         <ManagementCollapsibleSidebarSection
-          items={managementMenuItems.inventory}
+          items={managementMenuItems.operations}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label={sectionConfigs.inventory.label}
-          icon={sectionConfigs.inventory.icon}
-          defaultExpanded={sectionConfigs.inventory.defaultExpanded}
-          storageKey={sectionConfigs.inventory.storageKey}
+          label={sectionConfigs.operations.label}
+          icon={sectionConfigs.operations.icon}
+          defaultExpanded={sectionConfigs.operations.defaultExpanded}
+          storageKey={sectionConfigs.operations.storageKey}
         />
 
         <ManagementCollapsibleSidebarSection
@@ -95,13 +95,23 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
         />
 
         <ManagementCollapsibleSidebarSection
-          items={managementMenuItems.account}
+          items={managementMenuItems.personal}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          label={sectionConfigs.account.label}
-          icon={sectionConfigs.account.icon}
-          defaultExpanded={sectionConfigs.account.defaultExpanded}
-          storageKey={sectionConfigs.account.storageKey}
+          label={sectionConfigs.personal.label}
+          icon={sectionConfigs.personal.icon}
+          defaultExpanded={sectionConfigs.personal.defaultExpanded}
+          storageKey={sectionConfigs.personal.storageKey}
+        />
+
+        <ManagementCollapsibleSidebarSection
+          items={managementMenuItems.system}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          label={sectionConfigs.system.label}
+          icon={sectionConfigs.system.icon}
+          defaultExpanded={sectionConfigs.system.defaultExpanded}
+          storageKey={sectionConfigs.system.storageKey}
         />
       </SidebarContent>
       
