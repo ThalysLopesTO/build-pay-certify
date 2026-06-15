@@ -101,21 +101,21 @@ const CollapsibleSidebarSection = ({
     <SidebarGroup className="mt-2">
       <SidebarGroupLabel
         className={`
-          flex items-center justify-between px-3 py-2.5 text-sm font-semibold
-          rounded-xl cursor-pointer transition-all duration-200 active:scale-[0.98]
-          ${hasActiveItem ? 'text-orange-800 bg-orange-50' : 'text-slate-800 hover:bg-slate-100'}
+          flex items-center justify-between h-auto px-2.5 py-2 text-[11px] font-bold uppercase tracking-wider
+          rounded-lg cursor-pointer transition-colors duration-200
+          ${hasActiveItem ? 'text-orange-600' : 'text-slate-400 hover:text-slate-600'}
         `}
         onClick={toggleExpanded}
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           {SectionIcon && (
-            <SectionIcon className={`h-4 w-4 ${hasActiveItem ? 'text-orange-600' : 'text-slate-400'}`} />
+            <SectionIcon className={`h-3.5 w-3.5 ${hasActiveItem ? 'text-orange-500' : 'text-slate-400'}`} />
           )}
-          <span className="font-medium">{label}</span>
+          <span>{label}</span>
         </div>
-        <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'}`}>
-          <ChevronDown className={`h-4 w-4 ${hasActiveItem ? 'text-orange-500' : 'text-slate-400'}`} />
-        </div>
+        <ChevronDown
+          className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'} ${hasActiveItem ? 'text-orange-400' : 'text-slate-300'}`}
+        />
       </SidebarGroupLabel>
 
       <SidebarGroupContent 
@@ -141,15 +141,17 @@ const CollapsibleSidebarSection = ({
                     }
                   }}
                   className={`
-                    relative w-full flex items-center gap-3 px-4 py-2.5 ml-2 rounded-xl text-sm
-                    transition-all duration-200 hover:translate-x-1 group
+                    h-auto w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-sm
+                    transition-all duration-200 group
                     ${isActive
-                      ? 'bg-orange-50 text-orange-700 font-semibold shadow-sm translate-x-1'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      ? 'bg-white shadow-md text-slate-900 font-semibold'
+                      : 'text-slate-500 hover:bg-white/70 hover:text-slate-900'
                     }
                   `}
                 >
-                  <Icon className={`h-4 w-4 flex-shrink-0 transition-colors ${isActive ? 'text-orange-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                  <span className={`flex items-center justify-center h-9 w-9 rounded-xl flex-shrink-0 transition-all ${isActive ? 'bg-gradient-to-br from-orange-500 to-amber-500 shadow-md shadow-orange-500/30' : 'bg-white shadow-sm group-hover:shadow'}`}>
+                    <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-orange-500'}`} />
+                  </span>
                   <span className="truncate font-medium">{item.title}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -157,9 +159,6 @@ const CollapsibleSidebarSection = ({
           })}
         </SidebarMenu>
       </SidebarGroupContent>
-      
-      {/* Subtle divider between sections */}
-      <div className="mt-3 mx-2 border-b border-slate-200/50"></div>
     </SidebarGroup>
   );
 };

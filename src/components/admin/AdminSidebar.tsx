@@ -17,7 +17,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
   useScrollToActiveSection(activeTab);
 
   return (
-    <Sidebar className="border-r border-slate-200/70 bg-sidebar transition-colors">
+    <Sidebar variant="floating" className="transition-colors">
 
       {/* Header */}
       <SidebarHeader className="p-4 border-b border-slate-200/60">
