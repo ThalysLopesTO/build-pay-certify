@@ -66,21 +66,29 @@ export const NewConversationDialog: React.FC<Props> = ({
 
     setCreating(true);
     try {
-      const { data: conv, error: convErr } = await supabase
+      // Generate the id client-side so we don't have to read the row back with
+      // .select() — the chat_conversations SELECT policy only permits members,
+      // and the creator isn't a member until the next insert, which otherwise
+      // makes the read-back fail RLS with a 403.
+      const convId =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      const { error: convErr } = await supabase
         .from('chat_conversations')
         .insert({
+          id: convId,
           company_id: user?.companyId,
           name: tab === 'group' ? groupName.trim() : null,
           type: tab,
           created_by: user?.id,
-        })
-        .select()
-        .single();
+        });
 
       if (convErr) throw convErr;
 
       const members = [user?.id!, ...selected].map(uid => ({
-        conversation_id: conv.id,
+        conversation_id: convId,
         user_id: uid,
         last_read_at: new Date().toISOString(),
         joined_at: new Date().toISOString(),
@@ -89,7 +97,7 @@ export const NewConversationDialog: React.FC<Props> = ({
       const { error: memErr } = await supabase.from('chat_members').insert(members);
       if (memErr) throw memErr;
 
-      onConversationCreated(conv.id);
+      onConversationCreated(convId);
       onOpenChange(false);
       setSelected([]);
       setGroupName('');

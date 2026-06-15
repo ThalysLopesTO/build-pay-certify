@@ -82,7 +82,9 @@ $$;
 DROP POLICY IF EXISTS "chat_conv_select" ON public.chat_conversations;
 CREATE POLICY "chat_conv_select" ON public.chat_conversations
   FOR SELECT USING (
-    id IN (SELECT public.user_conversation_ids())
+    -- The creator can read the conversation immediately (membership is added in
+    -- a separate insert), plus anyone who is a member.
+    created_by = auth.uid() OR id IN (SELECT public.user_conversation_ids())
   );
 
 DROP POLICY IF EXISTS "chat_conv_insert" ON public.chat_conversations;
