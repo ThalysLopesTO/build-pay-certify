@@ -280,6 +280,14 @@ const InvoiceTracker = () => {
     if (!window.confirm(`Delete ${selectedInvoiceIds.size} invoice${selectedInvoiceIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) return;
     setIsBulkProcessing(true);
     const ids = Array.from(selectedInvoiceIds);
+
+    // Clear child references first so foreign-key constraints don't block the
+    // delete (a quote can reference the invoice it was converted into; line
+    // items / payments are owned children).
+    await supabase.from('quotes').update({ invoice_id: null }).in('invoice_id', ids);
+    await supabase.from('invoice_payments').delete().in('invoice_id', ids);
+    await supabase.from('invoice_line_items').delete().in('invoice_id', ids);
+
     const { error } = await supabase
       .from('invoices')
       .delete()

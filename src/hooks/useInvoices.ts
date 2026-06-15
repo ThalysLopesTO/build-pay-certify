@@ -271,7 +271,14 @@ export const useInvoices = () => {
       if (!user?.companyId) {
         throw new Error('Company ID is required to delete invoices');
       }
-      
+
+      // Clear child references first so foreign-key constraints don't block the
+      // delete (a quote can reference the invoice it was converted into; line
+      // items / payments are owned children).
+      await supabase.from('quotes').update({ invoice_id: null }).eq('invoice_id', invoiceId);
+      await supabase.from('invoice_payments').delete().eq('invoice_id', invoiceId);
+      await supabase.from('invoice_line_items').delete().eq('invoice_id', invoiceId);
+
       const { error } = await supabase
         .from('invoices')
         .delete()
