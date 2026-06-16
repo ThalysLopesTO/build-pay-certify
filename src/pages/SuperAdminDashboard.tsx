@@ -67,7 +67,7 @@ interface Company {
   subscription_days_remaining: number | null;
 }
 
-const SuperAdminDashboard = () => {
+const SuperAdminDashboardInner = () => {
   const [selectedRequest, setSelectedRequest] = useState<RegistrationRequest | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
@@ -311,6 +311,34 @@ const SuperAdminDashboard = () => {
       <CreateSuperAdminDialog open={showCreateSuperAdmin} onOpenChange={setShowCreateSuperAdmin} />
     </div>
   );
+};
+
+const roleDashboardPath = (role?: string): string => {
+  switch (role) {
+    case 'admin':      return '/admin/dashboard';
+    case 'management': return '/management/dashboard';
+    case 'foreman':    return '/foreman/dashboard';
+    case 'employee':   return '/employee/dashboard';
+    default:           return '/admin-login';
+  }
+};
+
+const SuperAdminDashboard = () => {
+  const { user, isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <SuperAdminLoading />;
+  }
+
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/super-admin/login" replace />;
+  }
+
+  if (user.role !== 'super_admin') {
+    return <Navigate to={roleDashboardPath(user.role)} replace />;
+  }
+
+  return <SuperAdminDashboardInner />;
 };
 
 export default SuperAdminDashboard;
