@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Building2, Eye, Bell, Clock, CalendarIcon, Webhook, Key, Link2, AlertCircle } from 'lucide-react';
+import { Building2, Eye, Bell, Clock, CalendarIcon, Webhook, Key, Link2, AlertCircle, Palette } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,9 +26,18 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 
+const SUB_TABS = [
+  { id: 'business',  label: 'Business',           icon: Building2 },
+  { id: 'branding',  label: 'Branding',           icon: Palette },
+  { id: 'schedule',  label: 'Schedule & Payroll', icon: CalendarIcon },
+  { id: 'reminders', label: 'Reminders',          icon: Bell },
+  { id: 'advanced',  label: 'Advanced',           icon: Webhook },
+];
+
 export const CompanySettingsTab = () => {
   const { settings, isLoading } = useCompanySettings();
   const [selectedDate, setSelectedDate] = useState<Date>()
+  const [subTab, setSubTab] = useState('business');
   const updateSettings = useUpdateSettingsMutation()
   const { toast } = useToast();
   const { user } = useAuth();
@@ -192,53 +201,57 @@ export const CompanySettingsTab = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-5xl mx-auto p-6 space-y-8">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">Company Settings</h1>
-          <p className="text-muted-foreground">Configure your company information, branding, and operational preferences.</p>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Sub-section nav */}
+        <div className="flex flex-wrap gap-1 p-1 bg-slate-100 rounded-xl w-fit">
+          {SUB_TABS.map((t) => {
+            const Icon = t.icon;
+            const isActive = subTab === t.id;
+            return (
+              <button
+                type="button"
+                key={t.id}
+                onClick={() => setSubTab(t.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive ? 'bg-white text-orange-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {/* Company Branding Section */}
-            <Card className="shadow-sm border-border">
-              <CardHeader className="border-b border-border">
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Building2 className="h-5 w-5 text-primary" />
-                  </div>
-                  Company Branding
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <CompanyBrandingSection />
-              </CardContent>
-            </Card>
+        {/* Business */}
+        {subTab === 'business' && (
+          <CompanyInformationForm
+            form={form}
+            onSubmit={onSubmit}
+            isUpdating={updateSettings.isPending}
+          />
+        )}
 
-            {/* Company Information */}
-            <CompanyInformationForm
-              form={form}
-              onSubmit={onSubmit}
-              isUpdating={updateSettings.isPending}
-            />
+        {/* Branding */}
+        {subTab === 'branding' && (
+          <Card className="shadow-sm border-border">
+            <CardHeader className="border-b border-border">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Palette className="h-5 w-5 text-primary" />
+                </div>
+                Company Branding & Logo
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <CompanyBrandingSection />
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Company Rules & Policies */}
-            <div className="space-y-4">
-              <Card className="shadow-sm border-border">
-                <CardHeader className="border-b border-border">
-                  <CardTitle className="text-xl">Company Rules & Policies</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {/* Reuse existing tab section */}
-                  {/* We'll mount the dedicated rules editor here for consistency */}
-                  {/* ... keep existing code (Company rules editor component) */}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Payroll & Timesheet Settings */}
+        {/* Schedule & Payroll */}
+        {subTab === 'schedule' && (
             <Card className="shadow-sm border-border">
               <CardHeader className="border-b border-border">
                 <CardTitle className="flex items-center gap-3 text-xl">
@@ -370,8 +383,10 @@ export const CompanySettingsTab = () => {
                 />
               </CardContent>
             </Card>
+        )}
 
-            {/* Reminder Settings */}
+        {/* Reminders */}
+        {subTab === 'reminders' && (
             <Card className="shadow-sm border-border">
               <CardHeader className="border-b border-border">
                 <CardTitle className="flex items-center gap-3 text-xl">
@@ -559,7 +574,11 @@ export const CompanySettingsTab = () => {
                 </div>
               </CardContent>
             </Card>
+        )}
 
+        {/* Advanced */}
+        {subTab === 'advanced' && (
+          <>
             {/* Webhook Integration */}
             <Card className="shadow-sm border-border">
               <CardHeader className="border-b border-border">
@@ -682,9 +701,11 @@ export const CompanySettingsTab = () => {
 
             {/* Usage Information */}
             <UsageInformation />
+          </>
+        )}
 
-            {/* Save Button - Fixed at bottom */}
-            <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border p-6 -mx-6">
+        {/* Save Button - sticky at bottom */}
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border p-4">
               <div className="max-w-5xl mx-auto">
                 <Button
                   type="submit"
@@ -705,7 +726,5 @@ export const CompanySettingsTab = () => {
             </div>
           </form>
         </Form>
-      </div>
-    </div>
   );
 };
