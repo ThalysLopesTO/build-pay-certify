@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { metaFor } from '../notifications/notificationMeta';
+import { useTodaysBirthdays } from '@/hooks/useTodaysBirthdays';
+import BirthdayNotificationBanner from '../notifications/BirthdayNotificationBanner';
 
 interface EnhancedManagementNotificationDropdownProps {
   notifications: Notification[];
@@ -26,6 +28,7 @@ const EnhancedManagementNotificationDropdown: React.FC<EnhancedManagementNotific
 }) => {
   const navigate = useNavigate();
   const { markAsRead, markAsUnread, dismiss, markAllAsRead, clearAllNotifications, isLoading } = useNotificationActions();
+  const { data: birthdayPeople = [] } = useTodaysBirthdays();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
@@ -190,16 +193,19 @@ const EnhancedManagementNotificationDropdown: React.FC<EnhancedManagementNotific
 
       {/* List */}
       <ScrollArea className="max-h-[26rem]">
+        <BirthdayNotificationBanner people={birthdayPeople} />
         {notifications.length === 0 ? (
-          <div className="px-8 py-12 text-center">
-            <div className="p-3.5 bg-slate-50 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Bell className="h-7 w-7 text-slate-300" />
+          birthdayPeople.length === 0 && (
+            <div className="px-8 py-12 text-center">
+              <div className="p-3.5 bg-slate-50 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Bell className="h-7 w-7 text-slate-300" />
+              </div>
+              <h4 className="font-semibold text-slate-700 text-sm">You're all caught up</h4>
+              <p className="text-xs text-slate-400 max-w-[15rem] mx-auto leading-relaxed mt-1">
+                We'll notify you about bills, reports and certificates here.
+              </p>
             </div>
-            <h4 className="font-semibold text-slate-700 text-sm">You're all caught up</h4>
-            <p className="text-xs text-slate-400 max-w-[15rem] mx-auto leading-relaxed mt-1">
-              We'll notify you about bills, reports and certificates here.
-            </p>
-          </div>
+          )
         ) : (
           <div className="pb-1">
             {renderGroup('Today', grouped.today)}

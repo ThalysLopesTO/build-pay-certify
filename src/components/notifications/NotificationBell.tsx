@@ -2,22 +2,34 @@ import React, { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useNotifications } from '@/hooks/notifications/useNotifications';
+import { useTodaysBirthdays, birthdaySeenToday, markBirthdaySeen } from '@/hooks/useTodaysBirthdays';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import EnhancedNotificationDropdown from './EnhancedNotificationDropdown';
 
 const NotificationBell = () => {
   const { user } = useAuth();
   const { data: notifications = [], isLoading } = useNotifications();
+  const { data: birthdayPeople = [] } = useTodaysBirthdays();
   const [isOpen, setIsOpen] = useState(false);
+  const [birthdaySeen, setBirthdaySeen] = useState(birthdaySeenToday);
 
   if (!user || !['admin', 'super_admin', 'foreman', 'management'].includes(user.role || '')) {
     return null;
   }
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const showBirthdayDot = birthdayPeople.length > 0 && !birthdaySeen;
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open && birthdayPeople.length > 0) {
+      markBirthdaySeen();
+      setBirthdaySeen(true);
+    }
+  };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <button
           disabled={isLoading}
@@ -25,6 +37,14 @@ const NotificationBell = () => {
           aria-label={`Notifications${unreadCount > 0 ? ` — ${unreadCount} unread` : ''}`}
         >
           <Bell className="h-5 w-5" />
+
+          {/* Birthday ping — only when there's nothing else already drawing the eye */}
+          {showBirthdayDot && unreadCount === 0 && (
+            <>
+              <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-pink-500 animate-ping opacity-75" />
+              <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-pink-500" />
+            </>
+          )}
 
           {unreadCount > 0 && (
             <>

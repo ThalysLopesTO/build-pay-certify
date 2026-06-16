@@ -14,6 +14,8 @@ import { useNotificationActions } from '@/hooks/notifications/useNotificationAct
 import { useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { metaFor } from './notificationMeta';
+import { useTodaysBirthdays } from '@/hooks/useTodaysBirthdays';
+import BirthdayNotificationBanner from './BirthdayNotificationBanner';
 
 interface EnhancedNotificationDropdownProps {
   notifications: Notification[];
@@ -22,6 +24,7 @@ interface EnhancedNotificationDropdownProps {
 
 const EnhancedNotificationDropdown: React.FC<EnhancedNotificationDropdownProps> = ({ notifications, onClose }) => {
   const { markAsRead, markAsUnread, dismiss, markAllAsRead, clearAllNotifications, isLoading } = useNotificationActions();
+  const { data: birthdayPeople = [] } = useTodaysBirthdays();
   const navigate = useNavigate();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -179,16 +182,19 @@ const EnhancedNotificationDropdown: React.FC<EnhancedNotificationDropdownProps> 
 
       {/* List */}
       <ScrollArea className="max-h-[26rem]">
+        <BirthdayNotificationBanner people={birthdayPeople} />
         {notifications.length === 0 ? (
-          <div className="px-8 py-12 text-center">
-            <div className="p-3.5 bg-slate-50 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Bell className="h-7 w-7 text-slate-300" />
+          birthdayPeople.length === 0 && (
+            <div className="px-8 py-12 text-center">
+              <div className="p-3.5 bg-slate-50 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Bell className="h-7 w-7 text-slate-300" />
+              </div>
+              <h4 className="font-semibold text-slate-700 text-sm">You're all caught up</h4>
+              <p className="text-xs text-slate-400 max-w-[15rem] mx-auto leading-relaxed mt-1">
+                We'll let you know here when something needs your attention.
+              </p>
             </div>
-            <h4 className="font-semibold text-slate-700 text-sm">You're all caught up</h4>
-            <p className="text-xs text-slate-400 max-w-[15rem] mx-auto leading-relaxed mt-1">
-              We'll let you know here when something needs your attention.
-            </p>
-          </div>
+          )
         ) : (
           <div className="pb-1">
             {renderGroup('Today', grouped.today)}

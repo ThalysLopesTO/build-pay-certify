@@ -4,13 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useNotifications } from '@/hooks/notifications/useNotifications';
+import { useTodaysBirthdays, birthdaySeenToday, markBirthdaySeen } from '@/hooks/useTodaysBirthdays';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import EnhancedManagementNotificationDropdown from './EnhancedManagementNotificationDropdown';
 
 const ManagementNotificationBell = () => {
   const { user } = useAuth();
   const { data: notifications = [], isLoading } = useNotifications();
+  const { data: birthdayPeople = [] } = useTodaysBirthdays();
   const [isOpen, setIsOpen] = useState(false);
+  const [birthdaySeen, setBirthdaySeen] = useState(birthdaySeenToday);
 
   // Only show for management and super_admin roles
   if (!user || !['management', 'super_admin'].includes(user.role || '')) {
@@ -18,9 +21,18 @@ const ManagementNotificationBell = () => {
   }
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+  const showBirthdayDot = birthdayPeople.length > 0 && !birthdaySeen;
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open && birthdayPeople.length > 0) {
+      markBirthdaySeen();
+      setBirthdaySeen(true);
+    }
+  };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -30,6 +42,12 @@ const ManagementNotificationBell = () => {
           aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
         >
           <Bell className="h-5 w-5 text-green-700" />
+          {showBirthdayDot && unreadCount === 0 && (
+            <>
+              <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-pink-500 animate-ping opacity-75" />
+              <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-pink-500" />
+            </>
+          )}
           {unreadCount > 0 && (
             <Badge
               variant="destructive"

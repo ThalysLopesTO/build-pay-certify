@@ -3,6 +3,7 @@ import {
   Award,
   Bell,
   Building2,
+  Cake,
   ClipboardList,
   DollarSign,
   FileText,
@@ -30,6 +31,7 @@ export const NOTIFICATION_TYPE_META: Record<string, NotificationTypeMeta> = {
   invoice_due_soon: { icon: FileText,       bg: 'bg-orange-50',  text: 'text-orange-600',  label: 'Invoice Due' },
   invoice_overdue:  { icon: FileText,       bg: 'bg-red-50',     text: 'text-red-600',     label: 'Invoice Overdue' },
   progress:         { icon: Upload,         bg: 'bg-blue-50',    text: 'text-blue-600',    label: 'Progress' },
+  birthday:         { icon: Cake,           bg: 'bg-pink-50',    text: 'text-pink-600',    label: 'Birthday' },
 };
 
 export const metaFor = (type: string): NotificationTypeMeta =>

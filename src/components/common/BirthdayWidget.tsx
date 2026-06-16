@@ -1,59 +1,15 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Cake, PartyPopper } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
-
-interface BirthdayPerson {
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  photo_url: string | null;
-}
+import { useTodaysBirthdays } from '@/hooks/useTodaysBirthdays';
 
 interface BirthdayWidgetProps {
   variant?: 'orange' | 'green' | 'blue';
 }
 
 const BirthdayWidget: React.FC<BirthdayWidgetProps> = ({ variant = 'orange' }) => {
-  const { user } = useAuth();
-
-  const { data: birthdayPeople = [], isLoading } = useQuery({
-    queryKey: ['birthdays-today', user?.companyId],
-    queryFn: async () => {
-      if (!user?.companyId) return [];
-
-      // Get current date parts
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1; // JS months are 0-indexed
-      const currentDay = now.getDate();
-
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('user_id, first_name, last_name, photo_url, date_of_birth')
-        .eq('company_id', user.companyId)
-        .eq('is_active', true)
-        .not('date_of_birth', 'is', null);
-
-      if (error) {
-        console.error('Error fetching birthdays:', error);
-        return [];
-      }
-
-      // Filter for birthdays today (matching month and day)
-      const todaysBirthdays = (data || []).filter((person: any) => {
-        if (!person.date_of_birth) return false;
-        const dob = new Date(person.date_of_birth + 'T12:00:00'); // Add time to prevent timezone shift
-        return dob.getMonth() + 1 === currentMonth && dob.getDate() === currentDay;
-      });
-
-      return todaysBirthdays as BirthdayPerson[];
-    },
-    enabled: !!user?.companyId,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-  });
+  const { data: birthdayPeople = [], isLoading } = useTodaysBirthdays();
 
   // Don't render if no birthdays or loading
   if (isLoading || birthdayPeople.length === 0) {
