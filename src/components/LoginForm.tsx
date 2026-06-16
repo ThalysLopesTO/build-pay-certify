@@ -64,8 +64,8 @@ const LoginForm = () => {
 
     setLoading(false);
     switch (user.role) {
-      case 'admin':
-      case 'super_admin': navigate('/admin/dashboard',      { replace: true }); break;
+      case 'super_admin': navigate('/super-admin/dashboard', { replace: true }); break;
+      case 'admin':       navigate('/admin/dashboard',      { replace: true }); break;
       case 'management':  navigate('/management/dashboard', { replace: true }); break;
       case 'foreman':     navigate('/foreman/dashboard',    { replace: true }); break;
       default:            navigate('/',                     { replace: true });

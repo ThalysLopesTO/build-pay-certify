@@ -16,7 +16,12 @@ const RoleBasedRedirect: React.FC<RoleBasedRedirectProps> = ({ children }) => {
 
     if (!isAuthenticated || !user) {
       // Not authenticated - allow access to login pages but redirect dashboard pages to login
-      if (location.pathname.includes('/dashboard')) {
+      if (location.pathname.startsWith('/super-admin')) {
+        // Super admin area has its own dedicated login page
+        if (location.pathname !== '/super-admin/login') {
+          navigate('/super-admin/login', { replace: true });
+        }
+      } else if (location.pathname.includes('/dashboard')) {
         navigate('/admin-login', { replace: true });
       }
       // Allow access to login pages, home page, and registration pages when not authenticated
