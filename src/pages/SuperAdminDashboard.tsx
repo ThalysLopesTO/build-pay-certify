@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Crown, LayoutDashboard, Building2, Users, Inbox } from 'lucide-react';
+import { Crown, LayoutDashboard, Building2, Users, Inbox, ShieldPlus } from 'lucide-react';
 import Header from '@/components/Header';
 import SuperAdminNavigation from '@/components/admin/SuperAdminNavigation';
 import SuperAdminLoading from '@/components/admin/SuperAdminLoading';
@@ -18,6 +18,8 @@ import { useManageSubscription, SubscriptionUpdate } from '@/hooks/super-admin/u
 import { useCompanyUsage } from '@/hooks/super-admin/useCompanyUsage';
 import { useDeleteCompany } from '@/hooks/super-admin/useDeleteCompany';
 import { DeleteCompanyDialog } from '@/components/admin/super-admin/DeleteCompanyDialog';
+import { CreateSuperAdminDialog } from '@/components/admin/super-admin/CreateSuperAdminDialog';
+import { Button } from '@/components/ui/button';
 import CompanyRequestTable from '@/components/admin/CompanyRequestTable';
 import { CreateTrialCompanyDialog } from '@/components/admin/trial-companies/CreateTrialCompanyDialog';
 import { MobileCompanyCard } from '@/components/admin/super-admin/MobileCompanyCard';
@@ -73,6 +75,7 @@ const SuperAdminDashboard = () => {
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCreateSuperAdmin, setShowCreateSuperAdmin] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [section, setSection] = useState('overview');
   const [mobileCompanyTab, setMobileCompanyTab] = useState('companies');
@@ -216,7 +219,16 @@ const SuperAdminDashboard = () => {
                 <p className="text-white/80 text-sm">Manage companies, memberships & platform members</p>
               </div>
             </div>
-            <div className="relative z-10"><CreateTrialCompanyDialog /></div>
+            <div className="relative z-10 flex items-center gap-2 flex-wrap">
+              <Button
+                variant="ghost"
+                onClick={() => setShowCreateSuperAdmin(true)}
+                className="h-10 text-white bg-white/15 hover:bg-white/25 hover:text-white border border-white/25"
+              >
+                <ShieldPlus className="h-4 w-4 mr-2" /> New Super Admin
+              </Button>
+              <CreateTrialCompanyDialog />
+            </div>
           </div>
 
           {/* Section nav */}
@@ -294,6 +306,7 @@ const SuperAdminDashboard = () => {
         onConfirm={confirmDelete}
         isProcessing={processingId === selectedCompany?.id}
       />
+      <CreateSuperAdminDialog open={showCreateSuperAdmin} onOpenChange={setShowCreateSuperAdmin} />
     </div>
   );
 };
