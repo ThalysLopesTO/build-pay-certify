@@ -449,6 +449,109 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_conversations: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_members: {
+        Row: {
+          conversation_id: string
+          id: string
+          joined_at: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          id?: string
+          joined_at?: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          id?: string
+          joined_at?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          attachment_url: string | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          is_deleted: boolean
+          sender_id: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          sender_id: string
+        }
+        Update: {
+          attachment_url?: string | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           client_address: string | null
@@ -4589,6 +4692,15 @@ export type Database = {
             Args: { p_html: string; p_subject: string; p_to_email: string }
             Returns: undefined
           }
+      super_admin_company_usage: {
+        Args: never
+        Returns: {
+          company_id: string
+          last_login: string
+          member_count: number
+        }[]
+      }
+      user_conversation_ids: { Args: never; Returns: string[] }
       user_has_admin_role: { Args: never; Returns: boolean }
     }
     Enums: {
