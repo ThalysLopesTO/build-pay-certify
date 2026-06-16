@@ -1,22 +1,6 @@
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import {
-  AlertCircle,
-  AlertTriangle,
-  Package,
-  MoreHorizontal,
-  CheckCircle,
-  Circle,
-  X,
-  Bell,
-  DollarSign,
-  FileText,
-  ClipboardList,
-  Upload,
-  Building2,
-  Trash2,
-  CheckCheck,
-} from 'lucide-react';
+import { MoreHorizontal, CheckCircle, Circle, X, Bell, Trash2, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -29,29 +13,12 @@ import { Notification } from '@/hooks/notifications/types';
 import { useNotificationActions } from '@/hooks/notifications/useNotificationActions';
 import { useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { metaFor } from './notificationMeta';
 
 interface EnhancedNotificationDropdownProps {
   notifications: Notification[];
   onClose: () => void;
 }
-
-type TypeMeta = { icon: React.ElementType; bg: string; text: string; label: string };
-
-const TYPE_META: Record<string, TypeMeta> = {
-  certificate:      { icon: AlertCircle,   bg: 'bg-amber-50',   text: 'text-amber-600',   label: 'Certificate' },
-  jobsite:          { icon: Building2,      bg: 'bg-blue-50',    text: 'text-blue-600',    label: 'Jobsite' },
-  material_request: { icon: Package,        bg: 'bg-purple-50',  text: 'text-purple-600',  label: 'Material Request' },
-  attention_report: { icon: AlertTriangle,  bg: 'bg-red-50',     text: 'text-red-600',     label: 'Attention' },
-  daily_report:     { icon: ClipboardList,  bg: 'bg-emerald-50', text: 'text-emerald-600', label: 'Daily Report' },
-  bill_due_soon:    { icon: DollarSign,     bg: 'bg-amber-50',   text: 'text-amber-600',   label: 'Bill Due Soon' },
-  bill_overdue:     { icon: DollarSign,     bg: 'bg-red-50',     text: 'text-red-600',     label: 'Bill Overdue' },
-  invoice_due_soon: { icon: FileText,       bg: 'bg-orange-50',  text: 'text-orange-600',  label: 'Invoice Due' },
-  invoice_overdue:  { icon: FileText,       bg: 'bg-red-50',     text: 'text-red-600',     label: 'Invoice Overdue' },
-  progress:         { icon: Upload,         bg: 'bg-blue-50',    text: 'text-blue-600',    label: 'Progress' },
-};
-
-const metaFor = (type: string): TypeMeta =>
-  TYPE_META[type] ?? { icon: Bell, bg: 'bg-slate-100', text: 'text-slate-500', label: 'Notification' };
 
 const EnhancedNotificationDropdown: React.FC<EnhancedNotificationDropdownProps> = ({ notifications, onClose }) => {
   const { markAsRead, markAsUnread, dismiss, markAllAsRead, clearAllNotifications, isLoading } = useNotificationActions();
