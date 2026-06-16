@@ -204,7 +204,7 @@ export const CompanySettingsTab = () => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Sub-section nav */}
-        <div className="flex flex-wrap gap-1 p-1 bg-slate-100 rounded-xl w-fit">
+        <div data-tour="settings-subtabs" className="flex flex-wrap gap-1 p-1 bg-slate-100 rounded-xl w-fit">
           {SUB_TABS.map((t) => {
             const Icon = t.icon;
             const isActive = subTab === t.id;
@@ -705,7 +705,7 @@ export const CompanySettingsTab = () => {
         )}
 
         {/* Save Button - sticky at bottom */}
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border p-4">
+        <div data-tour="settings-save" className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border p-4">
               <div className="max-w-5xl mx-auto">
                 <Button
                   type="submit"

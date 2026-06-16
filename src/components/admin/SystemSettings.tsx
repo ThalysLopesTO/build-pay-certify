@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import {
-  Building2, Users, DollarSign, Settings, BarChart3, Bell, Package, CreditCard, FileText, SlidersHorizontal,
+  Building2, Users, DollarSign, Settings, BarChart3, Bell, Package, CreditCard, FileText, SlidersHorizontal, Compass,
 } from 'lucide-react';
+import { GuidedTour, TourStep } from '@/components/onboarding/GuidedTour';
 import { CompanySettingsTab } from './system-settings/CompanySettingsTab';
 import { CompanyRulesTab } from './system-settings/CompanyRulesTab';
 import { UserRolesTab } from './system-settings/UserRolesTab';
@@ -61,9 +63,22 @@ const SECTION_GROUPS: { group: string; items: SettingsSection[] }[] = [
 
 const ALL_SECTIONS = SECTION_GROUPS.flatMap(g => g.items);
 
+const TOUR_STEPS: TourStep[] = [
+  { title: 'Welcome to Company Settings 👋', body: "Let's set up the essentials in a couple of minutes. You can replay this tour anytime from the “Take a tour” button." },
+  { selector: '[data-tour="settings-nav"]', title: 'Your settings menu', body: 'Every area lives here — company profile, finances, team and payments. Click a section to open it.', placement: 'right' },
+  { selector: '[data-tour="settings-subtabs"]', title: 'Start with your Company Profile', body: 'Work through each tab: Business details, your logo, schedule & payroll, reminders, then advanced.', placement: 'bottom' },
+  { selector: '[data-tour="settings-save"]', title: 'Save your changes', body: 'One Save button saves every tab at once — edit across tabs, then save here.', placement: 'top' },
+  { selector: '[data-tour="settings-item-financial"]', title: 'Set your financial defaults', body: 'Tax rates and pay/invoice defaults that flow through the whole app.', placement: 'right' },
+  { selector: '[data-tour="settings-item-payments"]', title: 'Get paid online', body: 'Connect Stripe here so clients can pay your invoices by card.', placement: 'right' },
+  { title: "You're all set 🎉", body: 'That’s the tour. Work through each section and hit Save — and you’re ready to go.' },
+];
+
 const SystemSettings = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeId, setActiveId] = useState('company');
+  const [tourOpen, setTourOpen] = useState(false);
+
+  const startTour = () => { setActiveId('company'); setTourOpen(true); };
 
   // Auto-select Payments when returning from Stripe onboarding.
   useEffect(() => {
@@ -73,20 +88,44 @@ const SystemSettings = () => {
     }
   }, [searchParams]);
 
+  // Deep-link to a section via ?section= (used by the Getting Started checklist).
+  useEffect(() => {
+    const section = searchParams.get('section');
+    if (section && ALL_SECTIONS.some(s => s.id === section)) {
+      setActiveId(section);
+    }
+  }, [searchParams]);
+
+  // Auto-start the tour when arrived via ?tour=1 (e.g. from the Getting Started card).
+  useEffect(() => {
+    if (searchParams.get('tour') === '1') {
+      startTour();
+      const next = new URLSearchParams(searchParams);
+      next.delete('tour');
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const active = ALL_SECTIONS.find(s => s.id === activeId) ?? ALL_SECTIONS[0];
   const ActiveIcon = active.icon;
 
   return (
     <div className="max-w-6xl mx-auto">
       {/* Page header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 rounded-xl bg-orange-100">
-          <Settings className="h-6 w-6 text-orange-600" />
+      <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-orange-100">
+            <Settings className="h-6 w-6 text-orange-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Company Settings</h1>
+            <p className="text-slate-500 text-sm">Set up your company, finances, team and automations.</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Company Settings</h1>
-          <p className="text-slate-500 text-sm">Set up your company, finances, team and automations.</p>
-        </div>
+        <Button variant="outline" onClick={startTour} className="gap-2">
+          <Compass className="h-4 w-4 text-orange-600" /> Take a tour
+        </Button>
       </div>
 
       {/* Mobile section picker */}
@@ -109,7 +148,7 @@ const SystemSettings = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
         {/* Sidebar */}
-        <aside className="hidden lg:block">
+        <aside className="hidden lg:block" data-tour="settings-nav">
           <div className="sticky top-4 space-y-5">
             {SECTION_GROUPS.map(group => (
               <div key={group.group}>
@@ -121,6 +160,7 @@ const SystemSettings = () => {
                     return (
                       <button
                         key={item.id}
+                        data-tour={`settings-item-${item.id}`}
                         onClick={() => setActiveId(item.id)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
                           isActive ? 'bg-orange-50 text-orange-700 font-semibold' : 'text-slate-600 hover:bg-slate-100'
@@ -151,6 +191,8 @@ const SystemSettings = () => {
           {active.render()}
         </div>
       </div>
+
+      <GuidedTour steps={TOUR_STEPS} open={tourOpen} onClose={() => setTourOpen(false)} />
     </div>
   );
 };

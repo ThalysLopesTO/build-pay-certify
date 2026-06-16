@@ -31,6 +31,7 @@ import {
   SectionCard,
 } from '@/components/dashboard/primitives';
 import BirthdayWidget from '@/components/common/BirthdayWidget';
+import { GettingStartedCard } from '@/components/onboarding/GettingStartedCard';
 import LicenseWarningBanner from '../../common/LicenseWarningBanner';
 import EmployeeLimitCard from './EmployeeLimitCard';
 import LiveActiveEmployees from './LiveActiveEmployees';
@@ -93,6 +94,9 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = () => {
 
   return (
     <div className="space-y-5 max-w-7xl mx-auto animate-fade-in">
+
+      {/* First-run setup checklist (auto-hides once complete or dismissed) */}
+      <GettingStartedCard />
 
       {/* Hero band + stat cards */}
       <DashboardHeroBand
