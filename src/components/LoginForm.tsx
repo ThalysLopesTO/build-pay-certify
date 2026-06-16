@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/SupabaseAuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   Clock,
@@ -40,7 +40,7 @@ const LoginForm = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
 
-  const { login, logout, isAuthenticated, user } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,24 +50,14 @@ const LoginForm = () => {
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
-    if (user.role === 'employee') {
-      // Employee tried to sign in via the company portal — sign them out immediately
-      // then show the "wrong portal" error. RoleBasedRedirect is patched to not
-      // race here, so we have time to call logout before any navigation fires.
-      (async () => {
-        await logout();
-        setLoading(false);
-        setFieldError('employee-portal');
-      })();
-      return;
-    }
-
+    // Unified login: route every role to its own dashboard.
     setLoading(false);
     switch (user.role) {
       case 'super_admin': navigate('/super-admin/dashboard', { replace: true }); break;
       case 'admin':       navigate('/admin/dashboard',      { replace: true }); break;
       case 'management':  navigate('/management/dashboard', { replace: true }); break;
       case 'foreman':     navigate('/foreman/dashboard',    { replace: true }); break;
+      case 'employee':    navigate('/employee/dashboard',   { replace: true }); break;
       default:            navigate('/',                     { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
@@ -77,7 +67,7 @@ const LoginForm = () => {
     setFieldError('');
     setLoading(true);
     try {
-      const { error } = await login(email, password, 'admin');
+      const { error } = await login(email, password);
       if (error) {
         setFieldError(error.message || 'Invalid email or password');
         setLoading(false);
@@ -219,21 +209,7 @@ const LoginForm = () => {
                   </div>
 
                   {/* Inline error */}
-                  {fieldError === 'employee-portal' ? (
-                    <div className="mb-5 px-4 py-4 bg-amber-50 border border-amber-200 rounded-xl">
-                      <p className="text-amber-800 text-sm font-medium mb-1">Wrong portal</p>
-                      <p className="text-amber-700 text-sm leading-snug mb-3">
-                        This account is registered as an employee. Please sign in through the employee portal.
-                      </p>
-                      <Link
-                        to="/employee-login"
-                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-900 transition-colors"
-                      >
-                        Go to Employee Login
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
-                    </div>
-                  ) : fieldError ? (
+                  {fieldError ? (
                     <div className="mb-5 flex items-start gap-2.5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
                       <div className="mt-0.5 h-2 w-2 rounded-full bg-red-500 flex-shrink-0" />
                       <p className="text-red-700 text-sm leading-snug">{fieldError}</p>
@@ -327,24 +303,10 @@ const LoginForm = () => {
                   </form>
                 </div>
 
-                {/* Employee redirect */}
-                <div className="mt-5">
-                  <Link
-                    to="/employee-login"
-                    className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl border border-slate-200 bg-white/70 hover:border-orange-200 hover:bg-orange-50/40 transition-all duration-150 group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-slate-100 group-hover:bg-orange-100 flex items-center justify-center transition-colors">
-                        <HardHat className="h-4 w-4 text-slate-500 group-hover:text-orange-600 transition-colors" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">Are you an employee?</p>
-                        <p className="text-xs text-slate-400 mt-0.5">Access the employee portal</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-orange-500 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
-                  </Link>
-                </div>
+                {/* One login for the whole team */}
+                <p className="mt-5 text-center text-xs text-slate-400">
+                  Admins, managers, foremen and employees all sign in here.
+                </p>
 
                 {/* PWA install — only shows when installable */}
                 <div className="mt-5 flex justify-center">

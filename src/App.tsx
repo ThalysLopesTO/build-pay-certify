@@ -63,7 +63,8 @@ const AppInner: React.FC = () => {
           <Route path="/" element={<Navigate to="/admin-login" replace />} />
 
           <Route path="/admin-login" element={<AdminLogin />} />
-          <Route path="/employee-login" element={<EmployeeLogin />} />
+          {/* Unified login — employees use the same page; keep the old URL working */}
+          <Route path="/employee-login" element={<Navigate to="/admin-login" replace />} />
           <Route path="/subscription-plan" element={<SubscriptionPlanPage />} />
 
           {/* ── Admin ── */}

@@ -11,10 +11,12 @@ export const login = async (email: string, password: string, expectedRole?: 'emp
     return { error };
   }
 
-  // If role verification is requested, check the user's role
-  if (expectedRole && data.user) {
+  // Always verify the profile exists and is active. Role-vs-portal is only
+  // enforced when an expectedRole is passed (legacy split-login callers); the
+  // unified login page omits it so any role can sign in here.
+  if (data.user) {
     try {
-      console.log('🔍 Verifying user role for:', data.user.email, 'Expected role:', expectedRole);
+      console.log('🔍 Verifying profile for:', data.user.email, 'Expected role:', expectedRole ?? '(any)');
       
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')

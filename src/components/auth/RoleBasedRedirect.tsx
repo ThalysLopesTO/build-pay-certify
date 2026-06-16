@@ -48,10 +48,6 @@ const RoleBasedRedirect: React.FC<RoleBasedRedirectProps> = ({ children }) => {
 
     const expectedPath = getRoleDashboard(user.role || '');
 
-    // If an employee lands on the admin login page, let LoginForm show the
-    // "wrong portal" error and call logout — do NOT redirect here or we race.
-    if (user.role === 'employee' && location.pathname === '/admin-login') return;
-
     // Check if user is trying to access a dashboard route
     const isDashboardRoute = location.pathname.includes('/dashboard');
 
