@@ -36,8 +36,8 @@ const EmployeeLayout = () => {
       <ErrorBoundary fallbackMinimal>
         <EmployeeDesktopNav activeTab={activeTab} onTabChange={onTabChange} />
       </ErrorBoundary>
-      <div className={`flex-1 ${isMobile ? 'pb-20' : 'pb-6'} transition-all duration-300`}>
-        <div className="max-w-4xl mx-auto px-2 md:px-4 py-4 max-w-full">
+      <div className={`flex-1 ${isMobile ? 'pb-mobile-nav' : 'pb-6'} transition-all duration-300`}>
+        <div className="w-full max-w-4xl mx-auto px-3 md:px-4 py-4">
           <LicenseWarningBanner />
           <div className="space-y-6">
             <Suspense

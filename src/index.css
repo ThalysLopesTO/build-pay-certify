@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  /* PWA safe-area helpers — keep content clear of the notch & home indicator.
+     `safe-area-pb` was referenced by the mobile bottom nav but never defined,
+     which is why content sat under the home indicator on notched phones. */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .safe-area-pt {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  /* Bottom padding that clears the fixed mobile bottom nav (its height plus the
+     home-indicator inset). Used by the employee layout's scroll area. */
+  .pb-mobile-nav {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

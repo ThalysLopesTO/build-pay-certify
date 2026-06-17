@@ -54,7 +54,7 @@ const ChatWidget: React.FC = () => {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 md:bottom-5 right-4 md:right-5 z-50 h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-400/40 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] md:bottom-5 right-4 md:right-5 z-50 h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-400/40 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
         aria-label="Open team chat"
       >
         <MessageSquare className="h-6 w-6" />

@@ -32,14 +32,14 @@ const EmployeeBottomNav: React.FC<EmployeeBottomNavProps> = ({ activeTab, onTabC
     {
       id: 'time-tracker',
       title: 'Time Clock',
-      label: 'Time Clock',
+      label: 'Clock',
       icon: Clock,
       color: 'text-blue-600'
     },
     {
       id: 'missed-punch-requests',
       title: 'Missed Punch',
-      label: 'Missed Punch',
+      label: 'Punch',
       icon: AlertCircle,
       color: 'text-red-600'
     },
@@ -66,24 +66,25 @@ const EmployeeBottomNav: React.FC<EmployeeBottomNavProps> = ({ activeTab, onTabC
   );
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1 safe-area-pb shadow-lg">
-      <div className="flex justify-around items-center max-w-lg mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-1 pt-1 safe-area-pb shadow-lg">
+      <div className="flex justify-around items-center gap-0.5 max-w-lg mx-auto">
         {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
-          
+
           return (
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-all duration-200 min-w-0 flex-1 ${
-                isActive 
-                  ? `${item.color} bg-slate-50 scale-105 shadow-sm` 
+              title={item.title}
+              className={`flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-all duration-200 min-w-0 flex-1 ${
+                isActive
+                  ? `${item.color} bg-slate-50 shadow-sm`
                   : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <Icon className={`h-5 w-5 ${isActive ? 'animate-pulse' : ''}`} />
-              <span className="text-xs font-medium truncate">{item.label}</span>
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              <span className="text-[10px] font-medium leading-tight truncate max-w-full">{item.label}</span>
             </button>
           );
         })}
