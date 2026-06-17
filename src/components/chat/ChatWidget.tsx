@@ -36,6 +36,10 @@ const ChatWidget: React.FC = () => {
   // Hide on the dedicated full-page chat route to avoid a double chat UI.
   const onChatPage = location.pathname.endsWith('/chat');
 
+  // Employee pages have a fixed bottom nav to clear; other roles use a sidebar,
+  // so the bubble can sit lower at the bottom on those.
+  const onEmployee = location.pathname.startsWith('/employee');
+
   if (!user || !CHAT_ROLES.includes(user.role || '') || onChatPage) return null;
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
@@ -54,7 +58,7 @@ const ChatWidget: React.FC = () => {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] md:bottom-5 right-4 md:right-5 z-50 h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-400/40 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+        className={`fixed ${onEmployee ? 'bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))]' : 'bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))]'} md:bottom-5 right-4 md:right-5 z-50 h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-400/40 flex items-center justify-center transition-transform hover:scale-105 active:scale-95`}
         aria-label="Open team chat"
       >
         <MessageSquare className="h-6 w-6" />

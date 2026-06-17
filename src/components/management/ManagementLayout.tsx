@@ -34,8 +34,9 @@ const ManagementLayout = () => {
           <main className="flex-1 flex flex-col bg-background">
             <div className="flex-1 w-full">
               <div className="w-full p-3 md:p-6">
-                <div className="flex items-center mb-6 w-full">
-                  <SidebarTrigger className="mr-4 text-foreground hover:bg-muted transition-colors" />
+                <div className="flex items-center gap-2 mb-4 md:mb-6 w-full">
+                  <SidebarTrigger className="h-9 w-9 md:h-7 md:w-7 border border-slate-200 md:border-0 rounded-lg text-foreground hover:bg-muted transition-colors" />
+                  <span className="text-sm font-medium text-slate-500 md:hidden">Menu</span>
                 </div>
                 <div className="w-full mb-6">
                   <LicenseWarningBanner />
