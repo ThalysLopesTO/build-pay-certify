@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Clock } from 'lucide-react';
+import { Plus, AlertCircle } from 'lucide-react';
 import MissedPunchRequestForm from './MissedPunchRequestForm';
 import MissedPunchRequestsList from './MissedPunchRequestsList';
+import EmployeePageHeader from './EmployeePageHeader';
 
 const MissedPunchRequests = () => {
   const [activeTab, setActiveTab] = useState('list');
@@ -14,35 +13,30 @@ const MissedPunchRequests = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Clock className="h-6 w-6" />
-          Missed Punch Requests
-        </h1>
-      </div>
+    <div className="max-w-2xl mx-auto space-y-4 animate-fade-in">
+      <EmployeePageHeader
+        title="Missed Punch"
+        subtitle="Request a clock correction"
+        icon={AlertCircle}
+        tone="red"
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="list">My Requests</TabsTrigger>
-          <TabsTrigger value="new">
-            <Plus className="h-4 w-4 mr-2" />
-            New Request
+        <TabsList className="grid w-full grid-cols-2 h-11 rounded-xl bg-slate-100 p-1">
+          <TabsTrigger value="list" className="rounded-lg text-sm">My Requests</TabsTrigger>
+          <TabsTrigger value="new" className="rounded-lg text-sm">
+            <Plus className="h-4 w-4 mr-1.5" />
+            New
           </TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="list" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Missed Punch Requests</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MissedPunchRequestsList />
-            </CardContent>
-          </Card>
+
+        <TabsContent value="list" className="mt-4">
+          <section className="rounded-3xl bg-white border border-slate-200/70 shadow-sm p-4">
+            <MissedPunchRequestsList />
+          </section>
         </TabsContent>
-        
-        <TabsContent value="new" className="space-y-4">
+
+        <TabsContent value="new" className="mt-4">
           <MissedPunchRequestForm onSuccess={handleSubmitSuccess} />
         </TabsContent>
       </Tabs>

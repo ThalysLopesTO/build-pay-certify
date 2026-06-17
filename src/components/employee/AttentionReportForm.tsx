@@ -16,6 +16,7 @@ import { AlertTriangle, CalendarIcon, Upload, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import JobsiteSelect from '../foreman/JobsiteSelect';
 import { useAttentionReportSubmission } from '@/hooks/useAttentionReports';
+import EmployeePageHeader from './EmployeePageHeader';
 
 const formSchema = z.object({
   jobsiteId: z.string().min(1, 'Please select a jobsite'),
@@ -91,15 +92,15 @@ const AttentionReportForm = () => {
   }
 
   return (
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <AlertTriangle className="h-5 w-5 text-orange-600" />
-          <span>Submit Attention Report</span>
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent>
+    <div className="max-w-2xl mx-auto space-y-4 animate-fade-in">
+      <EmployeePageHeader
+        title="Report an Issue"
+        subtitle="Flag a problem for your team"
+        icon={AlertTriangle}
+        tone="orange"
+      />
+
+      <section className="rounded-3xl bg-white border border-slate-200/70 shadow-sm p-5">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -246,15 +247,15 @@ const AttentionReportForm = () => {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full h-12 rounded-xl text-base font-semibold bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition-transform"
               disabled={submitMutation.isPending}
             >
-              {submitMutation.isPending ? 'Submitting...' : 'Submit Report'}
+              {submitMutation.isPending ? 'Submitting…' : 'Submit Report'}
             </Button>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </section>
+    </div>
   );
 };
 

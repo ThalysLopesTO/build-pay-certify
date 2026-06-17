@@ -6,8 +6,8 @@ import { Form } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useTimesheetForm } from '@/hooks/useTimesheetForm';
-import TimesheetHeader from './timesheet/TimesheetHeader';
 import JobsiteSelector from './timesheet/JobsiteSelector';
+import EmployeePageHeader from './EmployeePageHeader';
 import DailyHoursGrid from './timesheet/DailyHoursGrid';
 import ExpenseField from './timesheet/ExpenseField';
 import NotesField from './timesheet/NotesField';
@@ -44,24 +44,25 @@ const TimesheetForm = () => {
 
   if (!workWeeks) {
     return (
-      <Card className="max-w-4xl mx-auto">
-        <CardContent className="p-6">
+      <div className="max-w-2xl mx-auto space-y-4 animate-fade-in">
+        <EmployeePageHeader title="Timesheet" subtitle="Submit your hours" icon={Calendar} tone="purple" />
+        <section className="rounded-3xl bg-white border border-slate-200/70 shadow-sm p-5">
           <Alert>
             <Calendar className="h-4 w-4" />
             <AlertDescription>
               Loading work week configuration. Please wait or contact your administrator if this persists.
             </AlertDescription>
           </Alert>
-        </CardContent>
-      </Card>
+        </section>
+      </div>
     );
   }
 
   return (
-    <Card className="max-w-4xl mx-auto">
-      <TimesheetHeader title={headerTitle} subtitle={headerSubtitle} />
-      
-      <CardContent className="p-6 space-y-6">
+    <div className="max-w-2xl mx-auto space-y-4 animate-fade-in">
+      <EmployeePageHeader title={headerTitle} subtitle={headerSubtitle} icon={Calendar} tone="purple" />
+
+      <section className="rounded-3xl bg-white border border-slate-200/70 shadow-sm p-5 space-y-5">
         {/* Week Selector */}
         <WeekSelector
           availableWeeks={workWeeks.availableWeeks}
@@ -124,19 +125,19 @@ const TimesheetForm = () => {
               workerType={user?.workerType}
             />
 
-            <Button 
-              type="submit" 
-              className={`w-full text-lg py-3 transition-all duration-200 ${
+            <Button
+              type="submit"
+              className={`w-full h-12 rounded-xl text-base font-semibold transition-transform active:scale-[0.98] ${
                 isFormDisabled
-                  ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
+                  ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed'
                   : 'bg-orange-600 hover:bg-orange-700'
               }`}
               disabled={isFormDisabled || !selectedWeek}
             >
-              {isWeekSubmitted 
-                ? 'Already Submitted ✅' 
-                : isSubmitting 
-                  ? 'Submitting...' 
+              {isWeekSubmitted
+                ? 'Already Submitted ✅'
+                : isSubmitting
+                  ? 'Submitting…'
                   : !isSubmissionOpen
                     ? 'In Progress – Submit after period ends'
                     : 'Submit Timesheet'
@@ -144,8 +145,8 @@ const TimesheetForm = () => {
             </Button>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </section>
+    </div>
   );
 };
 

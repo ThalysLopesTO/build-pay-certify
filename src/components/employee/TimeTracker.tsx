@@ -7,7 +7,8 @@ import { useTimesheets } from '@/hooks/useTimesheets';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
-import { Clock, MapPin, Play, Square, CheckCircle, Timer, Calendar, Target, TrendingUp } from 'lucide-react';
+import { Clock, MapPin, Play, Square, CheckCircle } from 'lucide-react';
+import EmployeePageHeader from './EmployeePageHeader';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -133,194 +134,141 @@ const TimeTracker = () => {
   const todayDate = format(new Date(), 'EEEE, MMMM dd, yyyy');
 
 
+  const paidPct = Math.min(100, ((totalPaidHours || 0) / 40) * 100);
+
   return (
-    <div className="space-y-8 max-w-6xl mx-auto p-4">
-      {/* Welcome Banner */}
-      <Card className="overflow-hidden shadow-lg bg-gradient-to-br from-primary/5 via-background to-secondary/5 border-2 border-primary/10">
-        <CardContent className="p-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-6">
-              <EmployeeAvatar 
-                photoUrl={userProfile?.photo_url}
-                firstName={userProfile?.first_name || user?.firstName}
-                lastName={userProfile?.last_name || user?.lastName}
-                size="lg"
-                className="ring-4 ring-primary/20 shadow-lg"
-              />
-              <div className="text-center md:text-left">
-                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-                  Welcome, {userProfile?.first_name || user?.firstName || 'Employee'}!
-                </h1>
-                <p className="text-lg text-muted-foreground mt-1">{todayDate}</p>
-              </div>
-            </div>
-            <div className="text-center md:text-right">
-              <div className="text-sm text-muted-foreground">Ready to clock in</div>
-              <div className="text-2xl font-bold text-primary">Let's get to work!</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-4 max-w-2xl mx-auto animate-fade-in">
+      <EmployeePageHeader title="Time Clock" subtitle={todayDate} icon={Clock} tone="emerald" />
 
-      {/* Time Clock Section */}
-      <Card className="shadow-xl border-2 border-primary/10 overflow-hidden">
-        <div className="bg-gradient-to-r from-primary/5 to-secondary/5 p-6 border-b border-primary/10">
-          <CardTitle className="flex items-center justify-center space-x-3 text-2xl font-bold">
-            <Clock className="h-7 w-7 text-primary animate-pulse" />
-            <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Time Clock</span>
-          </CardTitle>
+      {/* Primary clock card */}
+      <section className="rounded-3xl bg-white border border-slate-200/70 shadow-sm p-5">
+        <div className="flex justify-center pb-1">
+          <DigitalClock />
         </div>
-        <CardContent className="space-y-8 p-8">
-          {/* Digital Clock */}
-          <div className="flex justify-center">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl"></div>
-              <div className="relative">
-                <DigitalClock />
+
+        {isClockedIn ? (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <span className="relative grid h-6 w-6 place-items-center">
+                  <span className="absolute inline-flex h-3 w-3 rounded-full bg-emerald-400 opacity-60 animate-ping" />
+                  <CheckCircle className="h-5 w-5" />
+                </span>
+                <span className="font-bold">Currently clocked in</span>
+              </div>
+              <div className="mt-3 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Started</span>
+                  <span className="font-semibold text-slate-800">
+                    {todayActiveTimesheet.check_in_time ? format(new Date(todayActiveTimesheet.check_in_time), 'h:mm a') : '--:--'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-500 shrink-0">Location</span>
+                  <span className="flex items-center gap-1.5 font-medium text-slate-700 truncate">
+                    <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
+                    <span className="truncate">{todayActiveTimesheet.check_in_location || 'Not available'}</span>
+                  </span>
+                </div>
               </div>
             </div>
+
+            <Button
+              onClick={handleClockOut}
+              disabled={isLoading}
+              variant="destructive"
+              className="w-full h-14 text-base font-semibold rounded-2xl shadow-sm active:scale-[0.98] transition-transform"
+            >
+              <Square className="h-5 w-5 mr-2" />
+              {isLoading ? 'Clocking out…' : 'Clock Out'}
+            </Button>
           </div>
-
-          {isClockedIn ? (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200/50 rounded-2xl p-8 shadow-lg">
-                <div className="flex items-center justify-center space-x-4 text-green-700 mb-6">
-                  <div className="relative">
-                    <CheckCircle className="h-8 w-8 animate-pulse" />
-                    <div className="absolute inset-0 h-8 w-8 bg-green-400/30 rounded-full animate-ping"></div>
-                  </div>
-                  <span className="font-bold text-xl">Currently Clocked In</span>
-                </div>
-                <div className="text-center text-green-600 space-y-3">
-                  <p className="text-xl font-semibold">Started: {todayActiveTimesheet.check_in_time ? format(new Date(todayActiveTimesheet.check_in_time), 'h:mm a') : '--:--'}</p>
-                  <div className="flex items-center justify-center space-x-2 text-lg">
-                    <MapPin className="h-5 w-5" />
-                    <span className="font-medium">{todayActiveTimesheet.check_in_location || 'Location not available'}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <Button 
-                onClick={handleClockOut}
-                disabled={isLoading}
-                size="lg"
-                variant="destructive"
-                className="w-full h-16 text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
-              >
-                <Square className="h-6 w-6 mr-4" />
-                {isLoading ? 'Clocking Out...' : 'Clock Out'}
-              </Button>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Select jobsite</label>
+              <Select value={selectedJobsiteId} onValueChange={setSelectedJobsiteId}>
+                <SelectTrigger className="h-12 rounded-xl">
+                  <SelectValue placeholder="Choose a jobsite" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {jobsitesLoading ? (
+                    <SelectItem value="loading-placeholder" disabled>Loading jobsites...</SelectItem>
+                  ) : !user?.companyId ? (
+                    <SelectItem value="auth-loading-placeholder" disabled>Loading your profile...</SelectItem>
+                  ) : !jobsites || jobsites.length === 0 ? (
+                    <SelectItem value="empty-placeholder" disabled>No jobsites available</SelectItem>
+                  ) : (
+                    jobsites.map((jobsite) => (
+                      <SelectItem key={jobsite.id} value={jobsite.id}>
+                        {jobsite.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
-          ) : (
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <label className="block text-lg font-semibold text-foreground mb-4">
-                  Select Jobsite
-                </label>
-                <Select value={selectedJobsiteId} onValueChange={setSelectedJobsiteId}>
-                  <SelectTrigger className="h-14 text-lg rounded-xl border-2 border-primary/20 hover:border-primary/40 transition-colors shadow-sm">
-                    <SelectValue placeholder="Choose a jobsite" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    {jobsitesLoading ? (
-                      <SelectItem value="loading-placeholder" disabled>Loading jobsites...</SelectItem>
-                    ) : !user?.companyId ? (
-                      <SelectItem value="auth-loading-placeholder" disabled>Loading your profile...</SelectItem>
-                    ) : !jobsites || jobsites.length === 0 ? (
-                      <SelectItem value="empty-placeholder" disabled>No jobsites available</SelectItem>
-                    ) : (
-                      jobsites.map((jobsite) => (
-                        <SelectItem key={jobsite.id} value={jobsite.id}>
-                          {jobsite.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
 
-              <Button 
-                onClick={handleClockIn}
-                disabled={!selectedJobsiteId || isLoading}
-                size="lg"
-                className="w-full h-16 text-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:transform-none"
-              >
-                <Play className="h-6 w-6 mr-4" />
-                {isLoading ? 'Clocking In...' : 'Clock In'}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            <Button
+              onClick={handleClockIn}
+              disabled={!selectedJobsiteId || isLoading}
+              className="w-full h-14 text-base font-semibold rounded-2xl bg-emerald-600 hover:bg-emerald-700 shadow-sm active:scale-[0.98] transition-transform disabled:opacity-60"
+            >
+              <Play className="h-5 w-5 mr-2" />
+              {isLoading ? 'Clocking in…' : 'Clock In'}
+            </Button>
+          </div>
+        )}
+      </section>
 
       {/* Today's Status Box */}
       <ErrorBoundary fallbackMinimal>
-        <TodayStatusBox 
+        <TodayStatusBox
           weeklyTimesheets={weeklyTimesheets}
           todayActiveTimesheet={todayActiveTimesheet}
         />
       </ErrorBoundary>
 
-      {/* Weekly Hours Summary */}
+      {/* Weekly summary */}
       <ErrorBoundary fallbackMinimal>
-        <Card className="shadow-xl border-2 border-primary/10 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-primary/10">
-            <CardTitle className="flex items-center justify-center space-x-3 text-xl font-bold">
-              <Target className="h-6 w-6 text-blue-600" />
-              <span>This Week's Summary</span>
-            </CardTitle>
+        <section className="rounded-3xl bg-white border border-slate-200/70 shadow-sm p-5">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-slate-400">This week's summary</h2>
+          <div className="mt-3 grid grid-cols-3 gap-2.5">
+            {[
+              { label: 'Raw', value: isNaN(totalRawHours) ? '0.0' : totalRawHours.toFixed(1), chip: 'bg-slate-50', text: 'text-slate-800' },
+              { label: 'Breaks', value: totalBreakMinutes >= 60 ? `${(totalBreakMinutes / 60).toFixed(1)}h` : `${totalBreakMinutes || 0}m`, chip: 'bg-amber-50', text: 'text-amber-700' },
+              { label: 'Paid', value: isNaN(totalPaidHours) ? '0.0' : totalPaidHours.toFixed(1), chip: 'bg-orange-50', text: 'text-orange-700' },
+            ].map((s) => (
+              <div key={s.label} className={`rounded-2xl ${s.chip} p-3 text-center`}>
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{s.label}</div>
+                <div className={`mt-0.5 text-2xl font-bold tabular-nums ${s.text}`}>{s.value}</div>
+              </div>
+            ))}
           </div>
-          <CardContent className="p-8">
-            <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200">
-                  <div className="text-sm text-slate-500 font-semibold uppercase tracking-wide mb-1">Raw Hours</div>
-                  <div className="text-3xl font-black text-slate-700">{isNaN(totalRawHours) ? '0.0' : totalRawHours.toFixed(1)}</div>
-                </div>
-                <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl border border-orange-200">
-                  <div className="text-sm text-orange-600 font-semibold uppercase tracking-wide mb-1">Breaks</div>
-                  <div className="text-3xl font-black text-orange-800">
-                    {totalBreakMinutes >= 60 
-                      ? `${(totalBreakMinutes / 60).toFixed(1)}h` 
-                      : `${totalBreakMinutes || 0}m`}
-                  </div>
-                </div>
-                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl border border-blue-200">
-                  <div className="text-sm text-blue-600 font-semibold uppercase tracking-wide mb-1">Paid Hours</div>
-                  <div className="text-3xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{isNaN(totalPaidHours) ? '0.0' : totalPaidHours.toFixed(1)}</div>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm font-medium">
-                  <span>Paid hours toward 40h</span>
-                  <span>{Math.min(100, ((totalPaidHours || 0) / 40) * 100).toFixed(0)}%</span>
-                </div>
-                <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-1000 ease-out"
-                    style={{ width: `${Math.min(100, ((totalPaidHours || 0) / 40) * 100)}%` }}
-                  ></div>
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>0h</span>
-                  <span>40h</span>
-                </div>
-              </div>
+          <div className="mt-4">
+            <div className="flex justify-between text-xs font-medium text-slate-500">
+              <span>Paid hours toward 40h</span>
+              <span>{paidPct.toFixed(0)}%</span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-700"
+                style={{ width: `${paidPct}%` }}
+              />
+            </div>
+          </div>
+        </section>
       </ErrorBoundary>
 
       {/* Week Selector */}
-      <WeekSelector 
+      <WeekSelector
         selectedWeek={selectedWeek}
         onWeekChange={setSelectedWeek}
       />
 
       {/* Weekly History Section */}
       <ErrorBoundary fallbackMinimal>
-        <WeeklyHistorySection 
+        <WeeklyHistorySection
           weeklyTimesheets={weeklyTimesheets}
           selectedWeek={selectedWeek}
         />
@@ -328,16 +276,14 @@ const TimeTracker = () => {
 
       {/* Location Permission Info */}
       {!navigator.geolocation && (
-        <Card className="border-2 border-orange-200 bg-gradient-to-r from-orange-50 to-yellow-50 shadow-md">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3 text-orange-700">
-              <MapPin className="h-5 w-5 flex-shrink-0" />
-              <span className="text-sm font-medium">
-                Location services are not available on this device. Clock in/out will work without GPS tracking.
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+          <div className="flex items-center gap-3 text-orange-700">
+            <MapPin className="h-5 w-5 flex-shrink-0" />
+            <span className="text-sm font-medium">
+              Location services are not available on this device. Clock in/out will work without GPS tracking.
+            </span>
+          </div>
+        </div>
       )}
 
       <ClockOutNoteModal
