@@ -7,46 +7,52 @@ import PlanTab from './user-settings/PlanTab';
 import CertificatesTab from './user-settings/CertificatesTab';
 
 const UserSettings = () => {
+  const tabs = [
+    { value: 'profile', label: 'Profile', icon: User },
+    { value: 'password', label: 'Password', icon: Lock },
+    { value: 'certificates', label: 'Certs', icon: Award },
+    { value: 'plan', label: 'Plan', icon: CreditCard },
+  ];
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center space-x-2 mb-6">
-        <Settings className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Account Settings</h1>
-      </div>
+    <div className="max-w-2xl mx-auto space-y-4 animate-fade-in">
+      <header className="flex items-center gap-3 px-1">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-slate-100">
+          <Settings className="h-[22px] w-[22px] text-slate-600" />
+        </span>
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">Account Settings</h1>
+          <p className="text-sm text-slate-500">Manage your profile & security</p>
+        </div>
+      </header>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="profile" className="flex items-center space-x-2">
-            <User className="h-4 w-4" />
-            <span>Profile</span>
-          </TabsTrigger>
-          <TabsTrigger value="password" className="flex items-center space-x-2">
-            <Lock className="h-4 w-4" />
-            <span>Password</span>
-          </TabsTrigger>
-          <TabsTrigger value="certificates" className="flex items-center space-x-2">
-            <Award className="h-4 w-4" />
-            <span>Certificates</span>
-          </TabsTrigger>
-          <TabsTrigger value="plan" className="flex items-center space-x-2">
-            <CreditCard className="h-4 w-4" />
-            <span>Plan</span>
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 h-auto gap-1 rounded-xl bg-slate-100 p-1">
+          {tabs.map(({ value, label, icon: Icon }) => (
+            <TabsTrigger
+              key={value}
+              value={value}
+              className="flex-col gap-1 rounded-lg py-2 text-[11px] font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent value="profile">
+        <TabsContent value="profile" className="mt-4">
           <ProfileTab />
         </TabsContent>
 
-        <TabsContent value="password">
+        <TabsContent value="password" className="mt-4">
           <PasswordTab />
         </TabsContent>
 
-        <TabsContent value="certificates">
+        <TabsContent value="certificates" className="mt-4">
           <CertificatesTab />
         </TabsContent>
 
-        <TabsContent value="plan">
+        <TabsContent value="plan" className="mt-4">
           <PlanTab />
         </TabsContent>
       </Tabs>

@@ -68,7 +68,7 @@ const ProfileTab = () => {
   };
 
   return (
-    <Card>
+    <Card className="rounded-3xl border-slate-200/70 shadow-sm">
       <CardHeader>
         <CardTitle>Profile Information</CardTitle>
       </CardHeader>
@@ -207,8 +207,9 @@ const ProfileTab = () => {
               <Button
                 type="submit"
                 disabled={updateProfile.isPending}
+                className="w-full sm:w-auto h-11 rounded-xl px-6 font-semibold bg-orange-600 hover:bg-orange-700 active:scale-[0.98] transition-transform"
               >
-                {updateProfile.isPending ? 'Updating...' : 'Update Profile'}
+                {updateProfile.isPending ? 'Updating…' : 'Update Profile'}
               </Button>
             </div>
           </form>
