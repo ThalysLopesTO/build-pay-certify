@@ -201,6 +201,7 @@ export const useTimesheets = (selectedWeek?: Date) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['active-clock-session'] });
       toast({
         title: "Success",
         description: "Clocked in successfully!",
@@ -262,6 +263,7 @@ export const useTimesheets = (selectedWeek?: Date) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['active-clock-session'] });
       toast({
         title: "Success",
         description: "Clocked out successfully!",

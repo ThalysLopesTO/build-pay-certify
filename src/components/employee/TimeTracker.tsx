@@ -9,6 +9,9 @@ import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Clock, MapPin, Play, Square, CheckCircle } from 'lucide-react';
 import EmployeePageHeader from './EmployeePageHeader';
+import { useElapsedTime } from '@/hooks/useActiveClockSession';
+import { useClockSession } from '@/hooks/useOfflineClock';
+import { enqueueClockAction, newLocalId } from '@/lib/offline/clockQueue';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,17 +67,44 @@ const TimeTracker = () => {
     isClockingOut,
   } = useTimesheets(selectedWeek);
 
+  // Merged server + offline clock session (single source of truth for "clocked in").
+  const { session, isPending } = useClockSession();
+
+  const safeLocation = async (): Promise<string> => {
+    try {
+      return await getCurrentLocation();
+    } catch (error) {
+      console.error('Error getting location:', error);
+      return 'Location unavailable';
+    }
+  };
+
   const handleClockIn = async () => {
     if (!selectedJobsiteId) {
       return;
     }
 
-    try {
-      const location = await getCurrentLocation();
-      clockIn({ jobsiteId: selectedJobsiteId, location });
-    } catch (error) {
-      console.error('Error getting location for clock in:', error);
+    const location = await safeLocation();
+
+    // Offline → queue the punch; it syncs automatically on reconnect.
+    if (!navigator.onLine) {
+      if (!user?.id || !user?.companyId) return;
+      enqueueClockAction({
+        type: 'clock_in',
+        localId: newLocalId(),
+        createdAt: new Date().toISOString(),
+        userId: user.id,
+        companyId: user.companyId,
+        jobsiteId: selectedJobsiteId,
+        jobsiteName: jobsites?.find((j) => j.id === selectedJobsiteId)?.name ?? null,
+        location,
+        checkInTime: new Date().toISOString(),
+      });
+      toast({ title: 'Saved offline', description: "You're clocked in — this will sync when you're back online." });
+      return;
     }
+
+    clockIn({ jobsiteId: selectedJobsiteId, location });
   };
 
   const handleClockOut = () => {
@@ -82,13 +112,35 @@ const TimeTracker = () => {
   };
 
   const handleClockOutWithNote = async (breakMinutes: number, note: string, bill?: ClockOutBillPayload) => {
-    if (!todayActiveTimesheet) {
+    if (!session) {
+      return;
+    }
+
+    const location = await safeLocation();
+
+    // Offline, or clocking out a punch whose clock-in hasn't synced yet → queue it.
+    if (!navigator.onLine || isPending) {
+      enqueueClockAction({
+        type: 'clock_out',
+        localId: newLocalId(),
+        createdAt: new Date().toISOString(),
+        timesheetId: isPending ? null : session.id,
+        pendingClockInLocalId: isPending ? session.id : null,
+        location,
+        checkOutTime: new Date().toISOString(),
+        breakMinutes,
+        workNote: note,
+      });
+      toast({ title: 'Saved offline', description: "Your clock-out will sync when you're back online." });
+      setShowClockOutModal(false);
+      if (bill && bill.files.length > 0) {
+        toast({ title: 'Receipt not uploaded', description: 'Reimbursement receipts can only be sent while online — please resubmit later.', variant: 'destructive' });
+      }
       return;
     }
 
     try {
-      const location = await getCurrentLocation();
-      clockOut({ timesheetId: todayActiveTimesheet.id, location, workNote: note, breakMinutes });
+      clockOut({ timesheetId: session.id, location, workNote: note, breakMinutes });
 
       // Submit reimbursement bill (optional) after clocking out
       if (bill && bill.files.length > 0 && user?.id && user?.companyId) {
@@ -99,8 +151,8 @@ const TimeTracker = () => {
               files: bill.files,
               amount: bill.amount,
               description: bill.description,
-              jobsiteId: todayActiveTimesheet.jobsite_id,
-              timesheetId: todayActiveTimesheet.id,
+              jobsiteId: session.jobsite_id ?? undefined,
+              timesheetId: session.id,
             },
             user.id,
             user.companyId
@@ -128,7 +180,8 @@ const TimeTracker = () => {
   };
 
   const isLoading = isClockingIn || isClockingOut || isGettingLocation || isSubmittingBill;
-  const isClockedIn = !!todayActiveTimesheet;
+  const isClockedIn = !!session;
+  const elapsed = useElapsedTime(session?.check_in_time);
 
   // Get today's full date
   const todayDate = format(new Date(), 'EEEE, MMMM dd, yyyy');
@@ -155,19 +208,38 @@ const TimeTracker = () => {
                   <CheckCircle className="h-5 w-5" />
                 </span>
                 <span className="font-bold">Currently clocked in</span>
+                {isPending && (
+                  <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                    pending sync
+                  </span>
+                )}
               </div>
-              <div className="mt-3 space-y-2 text-sm">
+
+              <div className="mt-3 text-center">
+                <div className="text-4xl font-bold tabular-nums tracking-tight text-emerald-700">
+                  {elapsed?.long ?? '00:00:00'}
+                </div>
+                <div className="mt-0.5 text-xs font-medium uppercase tracking-wide text-emerald-600/80">elapsed</div>
+              </div>
+
+              <div className="mt-3 space-y-2 border-t border-emerald-100 pt-3 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Started</span>
                   <span className="font-semibold text-slate-800">
-                    {todayActiveTimesheet.check_in_time ? format(new Date(todayActiveTimesheet.check_in_time), 'h:mm a') : '--:--'}
+                    {session?.check_in_time ? format(new Date(session.check_in_time), 'h:mm a') : '--:--'}
                   </span>
                 </div>
+                {session?.jobsiteName && (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-slate-500 shrink-0">Jobsite</span>
+                    <span className="font-medium text-slate-700 truncate">{session.jobsiteName}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-slate-500 shrink-0">Location</span>
                   <span className="flex items-center gap-1.5 font-medium text-slate-700 truncate">
                     <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
-                    <span className="truncate">{todayActiveTimesheet.check_in_location || 'Not available'}</span>
+                    <span className="truncate">{session?.check_in_location || 'Not available'}</span>
                   </span>
                 </div>
               </div>

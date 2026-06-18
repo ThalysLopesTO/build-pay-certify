@@ -3,6 +3,9 @@ import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import EmployeeBottomNav from '@/components/employee/EmployeeBottomNav';
 import EmployeeDesktopNav from '@/components/employee/EmployeeDesktopNav';
+import EmployeeClockBar from '@/components/employee/EmployeeClockBar';
+import EmployeeOfflineBanner from '@/components/employee/EmployeeOfflineBanner';
+import { useOfflineClock } from '@/hooks/useOfflineClock';
 import LicenseWarningBanner from '@/components/common/LicenseWarningBanner';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import ChatWidget from '@/components/chat/ChatWidget';
@@ -21,6 +24,7 @@ const EmployeeLayout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { pendingCount, isOffline, isSyncing } = useOfflineClock();
 
   if (user?.role && user.role !== 'employee') {
     return <Navigate to={roleDashboards[user.role] ?? '/admin-login'} replace />;
@@ -35,6 +39,10 @@ const EmployeeLayout = () => {
       <ErrorBoundary fallbackMinimal><Header /></ErrorBoundary>
       <ErrorBoundary fallbackMinimal>
         <EmployeeDesktopNav activeTab={activeTab} onTabChange={onTabChange} />
+      </ErrorBoundary>
+      <EmployeeOfflineBanner isOffline={isOffline} pendingCount={pendingCount} isSyncing={isSyncing} />
+      <ErrorBoundary fallbackMinimal>
+        <EmployeeClockBar />
       </ErrorBoundary>
       <div className={`flex-1 ${isMobile ? 'pb-mobile-nav' : 'pb-6'} transition-all duration-300`}>
         <div className="w-full max-w-4xl mx-auto px-3 md:px-4 py-4">
