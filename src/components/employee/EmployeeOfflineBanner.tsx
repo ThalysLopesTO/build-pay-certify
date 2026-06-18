@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CloudOff, RefreshCw } from 'lucide-react';
 
 interface EmployeeOfflineBannerProps {
@@ -15,6 +16,7 @@ interface EmployeeOfflineBannerProps {
 const EmployeeOfflineBanner: React.FC<EmployeeOfflineBannerProps> = ({
   isOffline, pendingCount, isSyncing,
 }) => {
+  const { t } = useTranslation();
   if (!isOffline && pendingCount === 0) return null;
 
   if (isOffline) {
@@ -22,8 +24,8 @@ const EmployeeOfflineBanner: React.FC<EmployeeOfflineBannerProps> = ({
       <div className="flex items-center gap-2.5 bg-slate-800 px-4 py-2 text-white">
         <CloudOff className="h-4 w-4 shrink-0 text-amber-300" />
         <span className="text-xs font-medium">
-          You're offline — your clock punches are saved and will sync automatically.
-          {pendingCount > 0 && ` (${pendingCount} pending)`}
+          {t('offline.banner')}
+          {pendingCount > 0 && ` ${t('offline.pending', { count: pendingCount })}`}
         </span>
       </div>
     );
@@ -33,9 +35,7 @@ const EmployeeOfflineBanner: React.FC<EmployeeOfflineBannerProps> = ({
   return (
     <div className="flex items-center gap-2.5 bg-blue-600 px-4 py-2 text-white">
       <RefreshCw className={`h-4 w-4 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
-      <span className="text-xs font-medium">
-        Syncing {pendingCount} pending punch{pendingCount !== 1 ? 'es' : ''}…
-      </span>
+      <span className="text-xs font-medium">{t('offline.syncing', { count: pendingCount })}</span>
     </div>
   );
 };

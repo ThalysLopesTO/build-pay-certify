@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import {
   Building2, Briefcase, Clock, Timer, FileText, AlertTriangle, Award,
@@ -12,6 +13,7 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { isMenuItemVisible } from '@/utils/menuPermissions';
 import BirthdayWidget from '@/components/common/BirthdayWidget';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
+import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 
 interface EmployeeDashboardHomeProps {
   onNavigateToTab: (tab: string) => void;
@@ -28,14 +30,15 @@ const TONE: Record<Tone, { chip: string; icon: string }> = {
   slate:   { chip: 'bg-slate-100',  icon: 'text-slate-600' },
 };
 
-const greetingFor = (d = new Date()) => {
+const greetingKeyFor = (d = new Date()) => {
   const h = d.getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return 'home.goodMorning';
+  if (h < 18) return 'home.goodAfternoon';
+  return 'home.goodEvening';
 };
 
 const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigateToTab }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { totalWeeklyHours, isLoading: hoursLoading } = useTimesheets();
   const { data: permissions } = useRolePermissions();
@@ -63,18 +66,18 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
   const progress = Math.min((safeWeeklyHours / targetHours) * 100, 100);
 
   const primaryActions: { id: string; title: string; subtitle: string; icon: React.ElementType; tone: Tone; tab: string }[] = [
-    { id: 'time-tracker',          title: 'Clock In / Out', subtitle: 'Track your time',   icon: Timer,         tone: 'emerald', tab: 'time-tracker' },
-    { id: 'tasks',                 title: 'My Tasks',       subtitle: 'View & complete',   icon: CheckSquare,   tone: 'blue',    tab: 'tasks' },
-    { id: 'timesheet',             title: 'Timesheet',      subtitle: 'Submit your hours', icon: FileText,      tone: 'purple',  tab: 'timesheet' },
-    { id: 'attention-report',      title: 'Report Issue',   subtitle: 'Flag a problem',    icon: AlertTriangle, tone: 'orange',  tab: 'attention-report' },
-    { id: 'missed-punch-requests', title: 'Missed Punch',   subtitle: 'Request a fix',     icon: AlertCircle,   tone: 'red',     tab: 'missed-punch-requests' },
-    { id: 'certificates',          title: 'Certificates',   subtitle: 'Your credentials',  icon: Award,         tone: 'slate',   tab: 'certificates' },
+    { id: 'time-tracker',          title: t('home.actions.clockInOut'),   subtitle: t('home.actions.clockInOutDesc'),   icon: Timer,         tone: 'emerald', tab: 'time-tracker' },
+    { id: 'tasks',                 title: t('home.actions.myTasks'),      subtitle: t('home.actions.myTasksDesc'),      icon: CheckSquare,   tone: 'blue',    tab: 'tasks' },
+    { id: 'timesheet',             title: t('home.actions.timesheet'),    subtitle: t('home.actions.timesheetDesc'),    icon: FileText,      tone: 'purple',  tab: 'timesheet' },
+    { id: 'attention-report',      title: t('home.actions.reportIssue'),  subtitle: t('home.actions.reportIssueDesc'),  icon: AlertTriangle, tone: 'orange',  tab: 'attention-report' },
+    { id: 'missed-punch-requests', title: t('home.actions.missedPunch'),  subtitle: t('home.actions.missedPunchDesc'),  icon: AlertCircle,   tone: 'red',     tab: 'missed-punch-requests' },
+    { id: 'certificates',          title: t('home.actions.certificates'), subtitle: t('home.actions.certificatesDesc'), icon: Award,         tone: 'slate',   tab: 'certificates' },
   ].filter((a) => isMenuItemVisible(a.id, permissions, user?.role || 'employee'));
 
   const secondaryActions: { id: string; title: string; icon: React.ElementType; tab: string }[] = [
-    { id: 'my-reports',    title: 'My Reports',    icon: ScrollText, tab: 'my-reports' },
-    { id: 'company-rules', title: 'Company Rules', icon: Building2,  tab: 'company-rules' },
-    { id: 'settings',      title: 'Profile',       icon: Settings,   tab: 'settings' },
+    { id: 'my-reports',    title: t('home.myReports'),    icon: ScrollText, tab: 'my-reports' },
+    { id: 'company-rules', title: t('home.companyRules'), icon: Building2,  tab: 'company-rules' },
+    { id: 'settings',      title: t('home.profile'),      icon: Settings,   tab: 'settings' },
   ].filter((a) => isMenuItemVisible(a.id, permissions, user?.role || 'employee'));
 
   const firstName = userProfile?.first_name ?? user?.firstName ?? 'there';
@@ -98,13 +101,13 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
             />
           </button>
           <div className="min-w-0 flex-1">
-            <p className="text-sm text-slate-500">{greetingFor()},</p>
+            <p className="text-sm text-slate-500">{t(greetingKeyFor())},</p>
             <h1 className="text-2xl font-bold text-slate-900 leading-tight truncate">
               {firstName} <span className="inline-block">👋</span>
             </h1>
             <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Ready to work
+              {t('home.readyToWork')}
             </span>
           </div>
         </div>
@@ -132,13 +135,13 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-white/10">
               <Clock className="h-[18px] w-[18px] text-orange-400" />
             </div>
-            <span className="text-sm font-medium text-slate-300">This week's hours</span>
+            <span className="text-sm font-medium text-slate-300">{t('home.thisWeeksHours')}</span>
           </div>
           <button
             onClick={() => onNavigateToTab('timesheet')}
             className="text-xs font-semibold text-orange-300 active:text-orange-200"
           >
-            Timesheet
+            {t('home.timesheet')}
           </button>
         </div>
 
@@ -157,8 +160,8 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
             />
           </div>
           <div className="mt-1.5 flex justify-between text-[11px] text-slate-400">
-            <span>{progress.toFixed(0)}% of weekly goal</span>
-            <span>{Math.max(targetHours - safeWeeklyHours, 0).toFixed(1)}h to go</span>
+            <span>{t('home.ofWeeklyGoal', { pct: progress.toFixed(0) })}</span>
+            <span>{t('home.hoursToGo', { hours: Math.max(targetHours - safeWeeklyHours, 0).toFixed(1) })}</span>
           </div>
         </div>
       </section>
@@ -170,7 +173,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
       {/* Quick actions */}
       {primaryActions.length > 0 && (
         <section className="space-y-3">
-          <h2 className="px-1 text-sm font-bold uppercase tracking-wide text-slate-400">Quick actions</h2>
+          <h2 className="px-1 text-sm font-bold uppercase tracking-wide text-slate-400">{t('home.quickActions')}</h2>
           <div className="grid grid-cols-2 gap-3">
             {primaryActions.map((a) => {
               const Icon = a.icon;
@@ -216,6 +219,8 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
           })}
         </section>
       )}
+
+      <LanguageSwitcher className="pt-1" />
     </div>
   );
 };

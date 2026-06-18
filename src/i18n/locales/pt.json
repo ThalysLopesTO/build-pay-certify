@@ -1,0 +1,87 @@
+{
+  "language": { "label": "Idioma", "en": "English", "pt": "Português", "es": "Español" },
+  "common": {
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "loading": "Carregando…",
+    "viewProfile": "Ver perfil"
+  },
+  "nav": {
+    "home": "Início",
+    "tasks": "Tarefas",
+    "timeClock": "Ponto",
+    "missedPunch": "Ponto",
+    "report": "Relato",
+    "settings": "Ajustes"
+  },
+  "home": {
+    "goodMorning": "Bom dia",
+    "goodAfternoon": "Boa tarde",
+    "goodEvening": "Boa noite",
+    "readyToWork": "Pronto para o trabalho",
+    "thisWeeksHours": "Horas desta semana",
+    "timesheet": "Folha de horas",
+    "ofWeeklyGoal": "{{pct}}% da meta semanal",
+    "hoursToGo": "faltam {{hours}}h",
+    "quickActions": "Ações rápidas",
+    "actions": {
+      "clockInOut": "Bater Ponto",
+      "clockInOutDesc": "Registre seu tempo",
+      "myTasks": "Minhas Tarefas",
+      "myTasksDesc": "Ver e concluir",
+      "timesheet": "Folha de Horas",
+      "timesheetDesc": "Enviar suas horas",
+      "reportIssue": "Relatar Problema",
+      "reportIssueDesc": "Sinalizar algo",
+      "missedPunch": "Ponto Perdido",
+      "missedPunchDesc": "Pedir correção",
+      "certificates": "Certificados",
+      "certificatesDesc": "Suas credenciais"
+    },
+    "myReports": "Meus Relatórios",
+    "companyRules": "Regras da Empresa",
+    "profile": "Perfil"
+  },
+  "clock": {
+    "title": "Registro de Ponto",
+    "clockIn": "Entrar",
+    "clockOut": "Sair",
+    "clockingIn": "Registrando entrada…",
+    "clockingOut": "Registrando saída…",
+    "selectJobsite": "Selecione a obra",
+    "chooseJobsite": "Escolha uma obra",
+    "noJobsites": "Nenhuma obra disponível",
+    "clockedIn": "Ponto ativo",
+    "currentlyClockedIn": "Ponto ativo agora",
+    "pendingSync": "sincronização pendente",
+    "longShift": "Turno longo — bater a saída?",
+    "elapsed": "decorrido",
+    "started": "Início",
+    "jobsite": "Obra",
+    "location": "Local",
+    "notAvailable": "Indisponível",
+    "weekSummary": "Resumo da semana",
+    "raw": "Bruto",
+    "breaks": "Pausas",
+    "paid": "Pago",
+    "paidTowardGoal": "Horas pagas rumo às 40h",
+    "noGps": "A localização não está disponível neste dispositivo. O ponto funcionará sem rastreamento por GPS."
+  },
+  "offline": {
+    "banner": "Você está offline — suas batidas de ponto estão salvas e serão sincronizadas automaticamente.",
+    "pending": "({{count}} pendente)",
+    "syncing": "Sincronizando {{count}} ponto pendente…",
+    "syncing_plural": "Sincronizando {{count}} pontos pendentes…",
+    "savedOfflineIn": "Entrada registrada — será sincronizada quando você ficar online.",
+    "savedOfflineOut": "Sua saída será sincronizada quando você ficar online.",
+    "savedOfflineTitle": "Salvo offline"
+  },
+  "reminder": {
+    "enable": "Lembrar de bater a saída",
+    "enabled": "Lembretes de saída ativos",
+    "permissionBlocked": "As notificações estão bloqueadas nas configurações do navegador.",
+    "title": "Não esqueça de bater a saída",
+    "body": "Você está com o ponto ativo há {{hours}}h na obra {{jobsite}}."
+  }
+}

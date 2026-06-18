@@ -1,0 +1,87 @@
+{
+  "language": { "label": "Language", "en": "English", "pt": "Português", "es": "Español" },
+  "common": {
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "loading": "Loading…",
+    "viewProfile": "View profile"
+  },
+  "nav": {
+    "home": "Home",
+    "tasks": "Tasks",
+    "timeClock": "Clock",
+    "missedPunch": "Punch",
+    "report": "Report",
+    "settings": "Settings"
+  },
+  "home": {
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
+    "readyToWork": "Ready to work",
+    "thisWeeksHours": "This week's hours",
+    "timesheet": "Timesheet",
+    "ofWeeklyGoal": "{{pct}}% of weekly goal",
+    "hoursToGo": "{{hours}}h to go",
+    "quickActions": "Quick actions",
+    "actions": {
+      "clockInOut": "Clock In / Out",
+      "clockInOutDesc": "Track your time",
+      "myTasks": "My Tasks",
+      "myTasksDesc": "View & complete",
+      "timesheet": "Timesheet",
+      "timesheetDesc": "Submit your hours",
+      "reportIssue": "Report Issue",
+      "reportIssueDesc": "Flag a problem",
+      "missedPunch": "Missed Punch",
+      "missedPunchDesc": "Request a fix",
+      "certificates": "Certificates",
+      "certificatesDesc": "Your credentials"
+    },
+    "myReports": "My Reports",
+    "companyRules": "Company Rules",
+    "profile": "Profile"
+  },
+  "clock": {
+    "title": "Time Clock",
+    "clockIn": "Clock In",
+    "clockOut": "Clock Out",
+    "clockingIn": "Clocking in…",
+    "clockingOut": "Clocking out…",
+    "selectJobsite": "Select jobsite",
+    "chooseJobsite": "Choose a jobsite",
+    "noJobsites": "No jobsites available",
+    "clockedIn": "Clocked in",
+    "currentlyClockedIn": "Currently clocked in",
+    "pendingSync": "pending sync",
+    "longShift": "Long shift — clock out?",
+    "elapsed": "elapsed",
+    "started": "Started",
+    "jobsite": "Jobsite",
+    "location": "Location",
+    "notAvailable": "Not available",
+    "weekSummary": "This week's summary",
+    "raw": "Raw",
+    "breaks": "Breaks",
+    "paid": "Paid",
+    "paidTowardGoal": "Paid hours toward 40h",
+    "noGps": "Location services are not available on this device. Clock in/out will work without GPS tracking."
+  },
+  "offline": {
+    "banner": "You're offline — your clock punches are saved and will sync automatically.",
+    "pending": "({{count}} pending)",
+    "syncing": "Syncing {{count}} pending punch…",
+    "syncing_plural": "Syncing {{count}} pending punches…",
+    "savedOfflineIn": "You're clocked in — this will sync when you're back online.",
+    "savedOfflineOut": "Your clock-out will sync when you're back online.",
+    "savedOfflineTitle": "Saved offline"
+  },
+  "reminder": {
+    "enable": "Remind me to clock out",
+    "enabled": "Clock-out reminders on",
+    "permissionBlocked": "Notifications are blocked in your browser settings.",
+    "title": "Don't forget to clock out",
+    "body": "You've been clocked in for {{hours}}h at {{jobsite}}."
+  }
+}

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Clock, FileText, AlertTriangle, Settings, Home, AlertCircle, CheckSquare } from 'lucide-react';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { filterMenuByPermissions } from '@/utils/menuPermissions';
@@ -10,7 +11,17 @@ interface EmployeeBottomNavProps {
   onTabChange: (tab: string) => void;
 }
 
+const NAV_I18N: Record<string, string> = {
+  dashboard: 'nav.home',
+  tasks: 'nav.tasks',
+  'time-tracker': 'nav.timeClock',
+  'missed-punch-requests': 'nav.missedPunch',
+  'attention-report': 'nav.report',
+  settings: 'nav.settings',
+};
+
 const EmployeeBottomNav: React.FC<EmployeeBottomNavProps> = ({ activeTab, onTabChange }) => {
+  const { t } = useTranslation();
   const { data: permissions } = useRolePermissions();
   const { user } = useAuth();
 
@@ -84,7 +95,9 @@ const EmployeeBottomNav: React.FC<EmployeeBottomNavProps> = ({ activeTab, onTabC
               }`}
             >
               <Icon className="h-5 w-5 flex-shrink-0" />
-              <span className="text-[10px] font-medium leading-tight truncate max-w-full">{item.label}</span>
+              <span className="text-[10px] font-medium leading-tight truncate max-w-full">
+                {NAV_I18N[item.id] ? t(NAV_I18N[item.id]) : item.label}
+              </span>
             </button>
           );
         })}

@@ -1,0 +1,87 @@
+{
+  "language": { "label": "Idioma", "en": "English", "pt": "Português", "es": "Español" },
+  "common": {
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "loading": "Cargando…",
+    "viewProfile": "Ver perfil"
+  },
+  "nav": {
+    "home": "Inicio",
+    "tasks": "Tareas",
+    "timeClock": "Reloj",
+    "missedPunch": "Marca",
+    "report": "Reporte",
+    "settings": "Ajustes"
+  },
+  "home": {
+    "goodMorning": "Buenos días",
+    "goodAfternoon": "Buenas tardes",
+    "goodEvening": "Buenas noches",
+    "readyToWork": "Listo para trabajar",
+    "thisWeeksHours": "Horas de esta semana",
+    "timesheet": "Hoja de horas",
+    "ofWeeklyGoal": "{{pct}}% de la meta semanal",
+    "hoursToGo": "faltan {{hours}}h",
+    "quickActions": "Acciones rápidas",
+    "actions": {
+      "clockInOut": "Marcar Entrada/Salida",
+      "clockInOutDesc": "Registra tu tiempo",
+      "myTasks": "Mis Tareas",
+      "myTasksDesc": "Ver y completar",
+      "timesheet": "Hoja de Horas",
+      "timesheetDesc": "Enviar tus horas",
+      "reportIssue": "Reportar Problema",
+      "reportIssueDesc": "Señalar algo",
+      "missedPunch": "Marca Perdida",
+      "missedPunchDesc": "Pedir corrección",
+      "certificates": "Certificados",
+      "certificatesDesc": "Tus credenciales"
+    },
+    "myReports": "Mis Reportes",
+    "companyRules": "Reglas de la Empresa",
+    "profile": "Perfil"
+  },
+  "clock": {
+    "title": "Control de Horario",
+    "clockIn": "Entrar",
+    "clockOut": "Salir",
+    "clockingIn": "Marcando entrada…",
+    "clockingOut": "Marcando salida…",
+    "selectJobsite": "Selecciona la obra",
+    "chooseJobsite": "Elige una obra",
+    "noJobsites": "No hay obras disponibles",
+    "clockedIn": "Marcado",
+    "currentlyClockedIn": "Marcado actualmente",
+    "pendingSync": "sincronización pendiente",
+    "longShift": "Turno largo — ¿marcar salida?",
+    "elapsed": "transcurrido",
+    "started": "Inicio",
+    "jobsite": "Obra",
+    "location": "Ubicación",
+    "notAvailable": "No disponible",
+    "weekSummary": "Resumen de la semana",
+    "raw": "Bruto",
+    "breaks": "Descansos",
+    "paid": "Pagado",
+    "paidTowardGoal": "Horas pagadas hacia las 40h",
+    "noGps": "La ubicación no está disponible en este dispositivo. El marcaje funcionará sin rastreo por GPS."
+  },
+  "offline": {
+    "banner": "Estás sin conexión — tus marcas están guardadas y se sincronizarán automáticamente.",
+    "pending": "({{count}} pendiente)",
+    "syncing": "Sincronizando {{count}} marca pendiente…",
+    "syncing_plural": "Sincronizando {{count}} marcas pendientes…",
+    "savedOfflineIn": "Entrada marcada — se sincronizará cuando vuelvas a tener conexión.",
+    "savedOfflineOut": "Tu salida se sincronizará cuando vuelvas a tener conexión.",
+    "savedOfflineTitle": "Guardado sin conexión"
+  },
+  "reminder": {
+    "enable": "Recordarme marcar salida",
+    "enabled": "Recordatorios de salida activados",
+    "permissionBlocked": "Las notificaciones están bloqueadas en la configuración del navegador.",
+    "title": "No olvides marcar la salida",
+    "body": "Llevas {{hours}}h marcado en {{jobsite}}."
+  }
+}

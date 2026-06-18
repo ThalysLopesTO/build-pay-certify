@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { MapPin, ChevronRight } from 'lucide-react';
 import { useElapsedTime } from '@/hooks/useActiveClockSession';
 import { useClockSession } from '@/hooks/useOfflineClock';
@@ -11,6 +12,7 @@ import { useClockSession } from '@/hooks/useOfflineClock';
  */
 const EmployeeClockBar: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { session, isPending } = useClockSession();
   const elapsed = useElapsedTime(session?.check_in_time);
 
@@ -21,10 +23,10 @@ const EmployeeClockBar: React.FC = () => {
   const longShift = (elapsed?.hours ?? 0) >= LONG_SHIFT_HOURS;
 
   const label = longShift
-    ? 'Long shift — clock out?'
+    ? t('clock.longShift')
     : isPending
-      ? 'Clocked in · pending sync'
-      : 'Clocked in';
+      ? `${t('clock.clockedIn')} · ${t('clock.pendingSync')}`
+      : t('clock.clockedIn');
 
   return (
     <button

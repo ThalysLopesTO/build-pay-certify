@@ -6,6 +6,7 @@ import EmployeeDesktopNav from '@/components/employee/EmployeeDesktopNav';
 import EmployeeClockBar from '@/components/employee/EmployeeClockBar';
 import EmployeeOfflineBanner from '@/components/employee/EmployeeOfflineBanner';
 import { useOfflineClock } from '@/hooks/useOfflineClock';
+import { useClockOutReminderEngine } from '@/hooks/useClockOutReminder';
 import LicenseWarningBanner from '@/components/common/LicenseWarningBanner';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import ChatWidget from '@/components/chat/ChatWidget';
@@ -25,6 +26,7 @@ const EmployeeLayout = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const { pendingCount, isOffline, isSyncing } = useOfflineClock();
+  useClockOutReminderEngine();
 
   if (user?.role && user.role !== 'employee') {
     return <Navigate to={roleDashboards[user.role] ?? '/admin-login'} replace />;
