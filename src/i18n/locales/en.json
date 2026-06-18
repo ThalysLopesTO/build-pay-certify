@@ -89,6 +89,9 @@
     "enabled": "Notifications on",
     "enabling": "Enabling…",
     "denied": "Notifications are blocked in your browser settings.",
-    "desc": "Clock-out reminders and timesheet updates."
+    "desc": "Clock-out reminders and timesheet updates.",
+    "promptTitle": "Turn on notifications",
+    "promptBody": "Get instant alerts for messages, approvals, reports and more.",
+    "promptLater": "Not now"
   }
 }

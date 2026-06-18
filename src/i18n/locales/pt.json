@@ -89,6 +89,9 @@
     "enabled": "Notificações ativas",
     "enabling": "Ativando…",
     "denied": "As notificações estão bloqueadas nas configurações do navegador.",
-    "desc": "Lembretes de saída e atualizações de folha de horas."
+    "desc": "Lembretes de saída e atualizações de folha de horas.",
+    "promptTitle": "Ativar notificações",
+    "promptBody": "Receba alertas instantâneos de mensagens, aprovações, relatórios e mais.",
+    "promptLater": "Agora não"
   }
 }
