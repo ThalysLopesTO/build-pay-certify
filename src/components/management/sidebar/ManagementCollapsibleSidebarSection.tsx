@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { menuTitle, sectionTitle } from '@/i18n/menuT';
 import { ChevronDown } from 'lucide-react';
 import {
   SidebarGroup,
@@ -36,6 +38,7 @@ const ManagementCollapsibleSidebarSection = ({
   storageKey,
 }: ManagementCollapsibleSidebarSectionProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(() => {
     if (storageKey) {
       const stored = localStorage.getItem(storageKey);
@@ -71,7 +74,7 @@ const ManagementCollapsibleSidebarSection = ({
       >
         <div className="flex items-center gap-2">
           <Icon className={`h-3.5 w-3.5 ${hasActiveItem ? 'text-orange-500' : 'text-slate-400'}`} />
-          <span>{label}</span>
+          <span>{sectionTitle(t, label)}</span>
         </div>
         <ChevronDown
           className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'} ${hasActiveItem ? 'text-orange-400' : 'text-slate-300'}`}
@@ -106,7 +109,7 @@ const ManagementCollapsibleSidebarSection = ({
                     <span className={`flex items-center justify-center h-9 w-9 rounded-xl flex-shrink-0 transition-all ${isActive ? 'bg-gradient-to-br from-orange-500 to-amber-500 shadow-md shadow-orange-500/30' : 'bg-white shadow-sm'}`}>
                       <item.icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-orange-500'}`} />
                     </span>
-                    <span className="truncate">{item.title}</span>
+                    <span className="truncate">{menuTitle(t, item.id, item.title)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               );

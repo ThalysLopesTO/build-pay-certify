@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/sidebar';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useTranslation } from 'react-i18next';
+import { menuTitle, sectionTitle } from '@/i18n/menuT';
 import { MenuItem } from './types';
 
 interface CollapsibleSidebarSectionProps {
@@ -32,6 +34,7 @@ const CollapsibleSidebarSection = ({
   storageKey
 }: CollapsibleSidebarSectionProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   
   // Check if any item in this section is active
@@ -111,7 +114,7 @@ const CollapsibleSidebarSection = ({
           {SectionIcon && (
             <SectionIcon className={`h-3.5 w-3.5 ${hasActiveItem ? 'text-orange-500' : 'text-slate-400'}`} />
           )}
-          <span>{label}</span>
+          <span>{sectionTitle(t, label)}</span>
         </div>
         <ChevronDown
           className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'} ${hasActiveItem ? 'text-orange-400' : 'text-slate-300'}`}
@@ -152,7 +155,7 @@ const CollapsibleSidebarSection = ({
                   <span className={`flex items-center justify-center h-9 w-9 rounded-xl flex-shrink-0 transition-all ${isActive ? 'bg-gradient-to-br from-orange-500 to-amber-500 shadow-md shadow-orange-500/30' : 'bg-white shadow-sm group-hover:shadow'}`}>
                     <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-orange-500'}`} />
                   </span>
-                  <span className="truncate font-medium">{item.title}</span>
+                  <span className="truncate font-medium">{menuTitle(t, item.id, item.title)}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );

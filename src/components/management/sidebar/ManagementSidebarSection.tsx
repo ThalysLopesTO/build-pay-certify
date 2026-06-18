@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { menuTitle } from '@/i18n/menuT';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -22,6 +24,7 @@ interface ManagementSidebarSectionProps {
 
 const ManagementSidebarSection = ({ items, activeTab, setActiveTab }: ManagementSidebarSectionProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   return (
     <SidebarGroup className="mt-2 first:mt-0">
@@ -52,7 +55,7 @@ const ManagementSidebarSection = ({ items, activeTab, setActiveTab }: Management
                   <span className={`flex items-center justify-center h-9 w-9 rounded-xl flex-shrink-0 transition-all ${isActive ? 'bg-gradient-to-br from-orange-500 to-amber-500 shadow-md shadow-orange-500/30' : 'bg-white shadow-sm'}`}>
                     <item.icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-orange-500'}`} />
                   </span>
-                  <span className="truncate">{item.title}</span>
+                  <span className="truncate">{menuTitle(t, item.id, item.title)}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );

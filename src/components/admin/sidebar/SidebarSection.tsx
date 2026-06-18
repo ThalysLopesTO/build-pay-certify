@@ -10,6 +10,8 @@ import {
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useTranslation } from 'react-i18next';
+import { menuTitle, sectionTitle } from '@/i18n/menuT';
 import { MenuItem } from './types';
 
 interface SidebarSectionProps {
@@ -21,6 +23,7 @@ interface SidebarSectionProps {
 
 const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectionProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // Filter items based on user role
@@ -35,7 +38,7 @@ const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectio
     <SidebarGroup className="mt-4 first:mt-2">
       {label && (
         <SidebarGroupLabel className="text-sm font-bold text-slate-900 mb-2 px-2">
-          {label}
+          {sectionTitle(t, label)}
         </SidebarGroupLabel>
       )}
       <SidebarGroupContent>
@@ -67,7 +70,7 @@ const SidebarSection = ({ items, activeTab, setActiveTab, label }: SidebarSectio
                   <span className={`flex items-center justify-center h-9 w-9 rounded-xl flex-shrink-0 transition-all ${isActive ? 'bg-gradient-to-br from-orange-500 to-amber-500 shadow-md shadow-orange-500/30' : 'bg-white shadow-sm'}`}>
                     <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-orange-500'}`} />
                   </span>
-                  <span className="truncate">{item.title}</span>
+                  <span className="truncate">{menuTitle(t, item.id, item.title)}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );

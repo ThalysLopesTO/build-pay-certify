@@ -5,6 +5,7 @@ import ProfileTab from './user-settings/ProfileTab';
 import PasswordTab from './user-settings/PasswordTab';
 import PlanTab from './user-settings/PlanTab';
 import CertificatesTab from './user-settings/CertificatesTab';
+import LanguageSwitcher from '@/components/common/LanguageSwitcher';
 
 const UserSettings = () => {
   const tabs = [
@@ -25,6 +26,10 @@ const UserSettings = () => {
           <p className="text-sm text-slate-500">Manage your profile & security</p>
         </div>
       </header>
+
+      <div className="rounded-2xl bg-white border border-slate-200/70 shadow-sm p-4">
+        <LanguageSwitcher />
+      </div>
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="grid w-full grid-cols-4 h-auto gap-1 rounded-xl bg-slate-100 p-1">
