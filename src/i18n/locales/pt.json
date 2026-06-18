@@ -136,6 +136,34 @@
     "company-rules": "Regras da Empresa",
     "missed-punch-requests": "Pontos Perdidos"
   },
+  "dash": {
+    "invoicedThisMonth": "Faturado no mês",
+    "collectedThisMonth": "Recebido no mês",
+    "onClockNow": "No ponto agora",
+    "hoursLoggedToday": "Horas registradas hoje",
+    "noPriorMonth": "Sem dados do mês anterior",
+    "liveOnSite": "Ao vivo na obra",
+    "acrossAllSites": "Em todas as obras",
+    "needsAttention": "Precisa de Atenção",
+    "alerts": "Alertas",
+    "quickJump": "Acesso Rápido",
+    "noAlerts": "Nenhum alerta no momento",
+    "overdueInvoices": "Faturas vencidas",
+    "attentionReports": "Relatórios de atenção",
+    "timesheetsToApprove": "Folhas a aprovar",
+    "materialRequests": "Pedidos de material",
+    "timeRequests": "Solicitações de horas",
+    "certs7": "Certificados vencendo em 7 dias",
+    "certs30": "Certificados vencendo em 30 dias",
+    "qa": {
+      "livePunches": "Pontos ao Vivo",
+      "payroll": "Folha de Pagamento",
+      "dailyReports": "Relatórios Diários",
+      "jobsites": "Obras",
+      "invoices": "Faturas",
+      "jobCosting": "Custos de Obra"
+    }
+  },
   "menuSection": {
     "projectmanagement": "Gestão de Projetos",
     "employeemanagement": "Gestão de Funcionários",

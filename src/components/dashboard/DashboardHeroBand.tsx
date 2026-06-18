@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Building, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
@@ -38,9 +39,13 @@ export const DashboardHeroBand: React.FC<DashboardHeroBandProps> = ({
   onViewProfile,
   children,
 }) => {
+  const { t, i18n } = useTranslation();
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const greeting = t(hour < 12 ? 'home.goodMorning' : hour < 18 ? 'home.goodAfternoon' : 'home.goodEvening');
+  const localeMap: Record<string, string> = { en: 'en-US', pt: 'pt-BR', es: 'es-ES' };
+  const today = new Date().toLocaleDateString(localeMap[i18n.resolvedLanguage ?? 'en'] ?? 'en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+  });
 
   return (
     <div>
@@ -61,7 +66,7 @@ export const DashboardHeroBand: React.FC<DashboardHeroBandProps> = ({
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-wide text-white/70">{today}</p>
             <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
-              {greeting}, {firstName || 'there'} 👋
+              {greeting}, {firstName || t('common.there', { defaultValue: 'there' })} 👋
             </h1>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-white/20 text-white capitalize">
@@ -84,7 +89,7 @@ export const DashboardHeroBand: React.FC<DashboardHeroBandProps> = ({
               className="h-9 text-white bg-white/15 hover:bg-white/25 hover:text-white border border-white/25"
               onClick={onViewProfile}
             >
-              <Eye className="h-4 w-4 mr-2" /> Profile
+              <Eye className="h-4 w-4 mr-2" /> {t('home.profile')}
             </Button>
           </div>
         </div>

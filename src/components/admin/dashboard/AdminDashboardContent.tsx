@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   Clock,
@@ -42,15 +43,6 @@ interface AdminDashboardContentProps {
 
 const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
-const QUICK_ACTIONS: QuickAction[] = [
-  { label: 'Live Punches',  icon: Clock,      href: '/admin/live-punch-monitor', tone: 'emerald' },
-  { label: 'Payroll',       icon: Receipt,    href: '/admin/payroll-summary',    tone: 'blue' },
-  { label: 'Daily Reports', icon: FileText,   href: '/admin/daily-reports',      tone: 'purple' },
-  { label: 'Jobsites',      icon: MapPin,     href: '/admin/jobsites',           tone: 'orange' },
-  { label: 'Invoices',      icon: TrendingUp, href: '/admin/invoices',           tone: 'emerald' },
-  { label: 'Job Costing',   icon: Receipt,    href: '/admin/job-costing',        tone: 'blue' },
-];
-
 const pctChange = (cur: number, prev: number): number | null =>
   prev > 0 ? ((cur - prev) / prev) * 100 : null;
 
@@ -61,6 +53,16 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = () => {
   const { user } = useAuth();
   const { data: userProfile } = useUserProfile();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const quickActions: QuickAction[] = [
+    { label: t('dash.qa.livePunches',  { defaultValue: 'Live Punches' }),  icon: Clock,      href: '/admin/live-punch-monitor', tone: 'emerald' },
+    { label: t('dash.qa.payroll',      { defaultValue: 'Payroll' }),       icon: Receipt,    href: '/admin/payroll-summary',    tone: 'blue' },
+    { label: t('dash.qa.dailyReports', { defaultValue: 'Daily Reports' }), icon: FileText,   href: '/admin/daily-reports',      tone: 'purple' },
+    { label: t('dash.qa.jobsites',     { defaultValue: 'Jobsites' }),      icon: MapPin,     href: '/admin/jobsites',           tone: 'orange' },
+    { label: t('dash.qa.invoices',     { defaultValue: 'Invoices' }),      icon: TrendingUp, href: '/admin/invoices',           tone: 'emerald' },
+    { label: t('dash.qa.jobCosting',   { defaultValue: 'Job Costing' }),   icon: Receipt,    href: '/admin/job-costing',        tone: 'blue' },
+  ];
 
   const last = monthlyData[monthlyData.length - 1];
   const prev = monthlyData[monthlyData.length - 2];
@@ -81,15 +83,15 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = () => {
   const actionItems: ActionItemData[] = [
     {
       icon: Receipt,
-      label: `Overdue invoices${cc?.overdueInvoicesAmount ? ` · ${fmt.format(cc.overdueInvoicesAmount)}` : ''}`,
+      label: `${t('dash.overdueInvoices', { defaultValue: 'Overdue invoices' })}${cc?.overdueInvoicesAmount ? ` · ${fmt.format(cc.overdueInvoicesAmount)}` : ''}`,
       count: cc?.overdueInvoices ?? 0,
       href: '/admin/invoices',
       tone: 'urgent',
     },
-    { icon: AlertTriangle, label: 'Attention reports',     count: cc?.pendingAttentionReports ?? 0, href: '/admin/attention-reports', tone: 'urgent' },
-    { icon: Clock,         label: 'Timesheets to approve', count: cc?.pendingTimesheets ?? 0,       href: '/admin/timesheets',        tone: 'normal' },
-    { icon: FileText,      label: 'Material requests',      count: cc?.pendingMaterialRequests ?? 0, href: '/admin/material-requests', tone: 'normal' },
-    { icon: Clock,         label: 'Time requests',          count: cc?.pendingTimeRequests ?? 0,     href: '/admin/time-requests',     tone: 'normal' },
+    { icon: AlertTriangle, label: t('dash.attentionReports',   { defaultValue: 'Attention reports' }),     count: cc?.pendingAttentionReports ?? 0, href: '/admin/attention-reports', tone: 'urgent' },
+    { icon: Clock,         label: t('dash.timesheetsToApprove',{ defaultValue: 'Timesheets to approve' }), count: cc?.pendingTimesheets ?? 0,       href: '/admin/timesheets',        tone: 'normal' },
+    { icon: FileText,      label: t('dash.materialRequests',   { defaultValue: 'Material requests' }),      count: cc?.pendingMaterialRequests ?? 0, href: '/admin/material-requests', tone: 'normal' },
+    { icon: Clock,         label: t('dash.timeRequests',       { defaultValue: 'Time requests' }),          count: cc?.pendingTimeRequests ?? 0,     href: '/admin/time-requests',     tone: 'normal' },
   ];
 
   return (
@@ -108,10 +110,10 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = () => {
         accent="orange"
         onViewProfile={() => navigate('/admin/settings')}
       >
-        <StatCard loading={invoicesLoading} label="Invoiced this month" value={fmt.format(issuedThisMonth)} icon={FileText} accent="orange" delta={issuedDelta} sublabel="No prior month data" />
-        <StatCard loading={invoicesLoading} label="Collected this month" value={fmt.format(paidThisMonth)} icon={DollarSign} accent="emerald" delta={paidDelta} sublabel="No prior month data" />
-        <StatCard loading={isLoading} label="On clock now" value={cc?.workersOnClockNow ?? 0} icon={HardHat} accent="blue" pulse sublabel="Live on site" />
-        <StatCard loading={isLoading} label="Hours logged today" value={`${cc?.totalHoursToday ?? 0}h`} icon={Timer} accent="purple" sublabel="Across all sites" />
+        <StatCard loading={invoicesLoading} label={t('dash.invoicedThisMonth', { defaultValue: 'Invoiced this month' })} value={fmt.format(issuedThisMonth)} icon={FileText} accent="orange" delta={issuedDelta} sublabel={t('dash.noPriorMonth', { defaultValue: 'No prior month data' })} />
+        <StatCard loading={invoicesLoading} label={t('dash.collectedThisMonth', { defaultValue: 'Collected this month' })} value={fmt.format(paidThisMonth)} icon={DollarSign} accent="emerald" delta={paidDelta} sublabel={t('dash.noPriorMonth', { defaultValue: 'No prior month data' })} />
+        <StatCard loading={isLoading} label={t('dash.onClockNow', { defaultValue: 'On clock now' })} value={cc?.workersOnClockNow ?? 0} icon={HardHat} accent="blue" pulse sublabel={t('dash.liveOnSite', { defaultValue: 'Live on site' })} />
+        <StatCard loading={isLoading} label={t('dash.hoursLoggedToday', { defaultValue: 'Hours logged today' })} value={`${cc?.totalHoursToday ?? 0}h`} icon={Timer} accent="purple" sublabel={t('dash.acrossAllSites', { defaultValue: 'Across all sites' })} />
       </DashboardHeroBand>
 
       <LicenseWarningBanner />
@@ -130,7 +132,7 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = () => {
       {/* Command center */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <SectionCard
-          title="Needs Attention"
+          title={t('dash.needsAttention', { defaultValue: 'Needs Attention' })}
           icon={Inbox}
           iconTone="red"
           badge={totalActionCount}
@@ -155,7 +157,7 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = () => {
         </SectionCard>
 
         <div className="space-y-4">
-          <SectionCard title="Alerts" icon={ShieldAlert} iconTone="amber" badge={totalAlertCount} badgeTone="amber">
+          <SectionCard title={t('dash.alerts', { defaultValue: 'Alerts' })} icon={ShieldAlert} iconTone="amber" badge={totalAlertCount} badgeTone="amber">
             {isLoading ? (
               <div className="space-y-1 p-1">
                 {Array.from({ length: 2 }).map((_, i) => (
@@ -163,19 +165,19 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = () => {
                 ))}
               </div>
             ) : totalAlertCount === 0 ? (
-              <AllClear message="No alerts right now" />
+              <AllClear message={t('dash.noAlerts', { defaultValue: 'No alerts right now' })} />
             ) : (
               <div className="space-y-0.5">
                 <ActionItem
                   icon={ShieldAlert}
-                  label="Certs expiring within 7 days"
+                  label={t('dash.certs7', { defaultValue: 'Certs expiring within 7 days' })}
                   count={cc?.certsExpiringIn7Days ?? 0}
                   href="/admin/employees"
                   tone="urgent"
                 />
                 <ActionItem
                   icon={ShieldAlert}
-                  label="Certs expiring within 30 days"
+                  label={t('dash.certs30', { defaultValue: 'Certs expiring within 30 days' })}
                   count={Math.max((cc?.certsExpiringIn30Days ?? 0) - (cc?.certsExpiringIn7Days ?? 0), 0)}
                   href="/admin/employees"
                   tone="warning"
@@ -189,8 +191,8 @@ const AdminDashboardContent: React.FC<AdminDashboardContentProps> = () => {
       </div>
 
       {/* Quick jump */}
-      <SectionCard title="Quick Jump" icon={TrendingUp} iconTone="slate">
-        <QuickActions items={QUICK_ACTIONS} cols={3} />
+      <SectionCard title={t('dash.quickJump', { defaultValue: 'Quick Jump' })} icon={TrendingUp} iconTone="slate">
+        <QuickActions items={quickActions} cols={3} />
       </SectionCard>
 
       {/* Live activity */}
