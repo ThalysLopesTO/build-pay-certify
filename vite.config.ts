@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       workbox: {
         maximumFileSizeToCacheInBytes: 12 * 1024 * 1024, // 12MB limit
+        importScripts: ['/push-sw.js'], // Web Push + notificationclick handlers
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         globIgnores: [
           '**/lovable-uploads/**', // Exclude large user uploads

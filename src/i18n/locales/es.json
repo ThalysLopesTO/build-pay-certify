@@ -83,5 +83,12 @@
     "permissionBlocked": "Las notificaciones están bloqueadas en la configuración del navegador.",
     "title": "No olvides marcar la salida",
     "body": "Llevas {{hours}}h marcado en {{jobsite}}."
+  },
+  "notif": {
+    "enable": "Activar notificaciones",
+    "enabled": "Notificaciones activadas",
+    "enabling": "Activando…",
+    "denied": "Las notificaciones están bloqueadas en la configuración del navegador.",
+    "desc": "Recordatorios de salida y novedades de la hoja de horas."
   }
 }

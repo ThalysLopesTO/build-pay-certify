@@ -13,7 +13,7 @@ import { useElapsedTime } from '@/hooks/useActiveClockSession';
 import { useClockSession } from '@/hooks/useOfflineClock';
 import { enqueueClockAction, newLocalId } from '@/lib/offline/clockQueue';
 import { useTranslation } from 'react-i18next';
-import ClockOutReminderToggle from './ClockOutReminderToggle';
+import NotificationsToggle from './NotificationsToggle';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -296,7 +296,7 @@ const TimeTracker = () => {
         )}
       </section>
 
-      <ClockOutReminderToggle />
+      <NotificationsToggle />
 
       {/* Today's Status Box */}
       <ErrorBoundary fallbackMinimal>

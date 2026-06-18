@@ -83,5 +83,12 @@
     "permissionBlocked": "Notifications are blocked in your browser settings.",
     "title": "Don't forget to clock out",
     "body": "You've been clocked in for {{hours}}h at {{jobsite}}."
+  },
+  "notif": {
+    "enable": "Enable notifications",
+    "enabled": "Notifications on",
+    "enabling": "Enabling…",
+    "denied": "Notifications are blocked in your browser settings.",
+    "desc": "Clock-out reminders and timesheet updates."
   }
 }

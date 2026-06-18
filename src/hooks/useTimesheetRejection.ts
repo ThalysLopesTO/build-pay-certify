@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { notifyUsers } from '@/lib/push/notify';
 
 export const useTimesheetRejection = () => {
   const { user } = useAuth();
@@ -36,6 +37,16 @@ export const useTimesheetRejection = () => {
         title: "Timesheet Rejected",
         description: "The timesheet has been rejected successfully",
       });
+      const employeeId = (data as any)?.user_id;
+      if (employeeId) {
+        void notifyUsers(
+          [employeeId],
+          'Timesheet needs changes',
+          'Your timesheet was declined — please review and resubmit.',
+          '/employee/my-reports',
+          'timesheet',
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ['employee-timesheets'] });
     },
     onError: (error) => {

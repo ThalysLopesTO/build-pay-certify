@@ -83,5 +83,12 @@
     "permissionBlocked": "As notificações estão bloqueadas nas configurações do navegador.",
     "title": "Não esqueça de bater a saída",
     "body": "Você está com o ponto ativo há {{hours}}h na obra {{jobsite}}."
+  },
+  "notif": {
+    "enable": "Ativar notificações",
+    "enabled": "Notificações ativas",
+    "enabling": "Ativando…",
+    "denied": "As notificações estão bloqueadas nas configurações do navegador.",
+    "desc": "Lembretes de saída e atualizações de folha de horas."
   }
 }
