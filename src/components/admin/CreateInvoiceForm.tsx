@@ -106,12 +106,12 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
         },
   });
 
-  // Update tax when company settings load
+  // Update tax when company settings load (create mode only — don't override an edited invoice)
   useEffect(() => {
-    if (settings?.tax_percentage !== undefined) {
+    if (!isEditMode && settings?.tax_percentage !== undefined) {
       form.setValue('tax', settings.tax_percentage);
     }
-  }, [settings?.tax_percentage, form]);
+  }, [settings?.tax_percentage, form, isEditMode]);
 
   // Handle client selection
   const handleClientSelect = (clientId: string) => {
