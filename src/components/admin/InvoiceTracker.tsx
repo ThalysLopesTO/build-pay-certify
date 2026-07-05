@@ -15,7 +15,7 @@ import { generateBrandedInvoicePDF } from './BrandedInvoicePDF';
 import { useToast } from '@/hooks/use-toast';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
-import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2, CheckCircle2, X, MoreHorizontal } from 'lucide-react';
+import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2, CheckCircle2, X, MoreHorizontal, Pencil } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { InvoiceEmailSender } from './InvoiceEmailSender';
 import { InvoiceDeleteConfirmDialog } from './InvoiceDeleteConfirmDialog';
+import CreateInvoiceForm from './CreateInvoiceForm';
 import { MonthlyInvoiceAnalytics } from './invoices/MonthlyInvoiceAnalytics';
 import { useIsMobile } from '@/hooks/use-mobile';
 import InvoiceTrackerMobileCard from './invoices/InvoiceTrackerMobileCard';
@@ -56,6 +57,8 @@ const InvoiceTracker = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editInvoice, setEditInvoice] = useState<Invoice | null>(null);
+
 
   // Bulk selection state
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
@@ -628,6 +631,9 @@ const InvoiceTracker = () => {
                             <DropdownMenuItem onClick={() => handleViewDetails(invoice)}>
                               <Eye className="h-4 w-4 mr-2" /> View details
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditInvoice(invoice)}>
+                              <Pencil className="h-4 w-4 mr-2" /> Edit invoice
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDownloadPDF(invoice)}>
                               <Download className="h-4 w-4 mr-2" /> Download PDF
                             </DropdownMenuItem>
@@ -703,6 +709,7 @@ const InvoiceTracker = () => {
                 onEmail={handleSendEmail}
                 onStatusChange={handleStatusUpdate}
                 onDownload={handleDownloadPDF}
+                onEdit={setEditInvoice}
                 onDelete={canDeleteInvoices ? handleDeleteInvoice : undefined}
               />
             ))
@@ -729,6 +736,24 @@ const InvoiceTracker = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Invoice Edit Dialog */}
+      <Dialog open={!!editInvoice} onOpenChange={(o) => !o && setEditInvoice(null)}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Invoice</DialogTitle>
+            <DialogDescription>
+              {editInvoice ? `Editing invoice ${editInvoice.invoice_number}. Save changes or resend to the client.` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {editInvoice && (
+            <CreateInvoiceForm
+              invoice={editInvoice}
+              onSaved={() => setEditInvoice(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Invoice Email Dialog */}
       {emailInvoice && (
         <InvoiceEmailSender
@@ -746,6 +771,7 @@ const InvoiceTracker = () => {
         invoice={invoiceToDelete}
         isDeleting={isDeleting}
       />
+
     </div>
   );
 };

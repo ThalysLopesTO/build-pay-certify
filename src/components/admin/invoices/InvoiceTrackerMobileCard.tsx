@@ -8,7 +8,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Eye, Mail, Download, MoreVertical, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Eye, Mail, Download, MoreVertical, Trash2, CheckCircle, Clock, AlertCircle, Pencil } from 'lucide-react';
 import { Invoice } from '../types/invoice';
 import { format } from 'date-fns';
 
@@ -18,6 +18,7 @@ interface InvoiceTrackerMobileCardProps {
   onEmail: (invoice: Invoice) => void;
   onStatusChange: (id: string, status: 'pending' | 'paid' | 'expired') => void;
   onDownload: (invoice: Invoice) => void;
+  onEdit?: (invoice: Invoice) => void;
   onDelete?: (invoice: Invoice) => void;
 }
 
@@ -27,6 +28,7 @@ const InvoiceTrackerMobileCard: React.FC<InvoiceTrackerMobileCardProps> = ({
   onEmail,
   onStatusChange,
   onDownload,
+  onEdit,
   onDelete,
 }) => {
   const isOverdue = invoice.status === 'pending' && new Date(invoice.due_date) < new Date();
@@ -92,6 +94,12 @@ const InvoiceTrackerMobileCard: React.FC<InvoiceTrackerMobileCardProps> = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(invoice)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Invoice
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => onStatusChange(invoice.id, 'paid')}>
                 <CheckCircle className="h-4 w-4 mr-2 text-emerald-600" />
                 Mark as Paid

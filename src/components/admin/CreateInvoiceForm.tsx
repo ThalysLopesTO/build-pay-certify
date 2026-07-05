@@ -42,8 +42,20 @@ interface InvoiceFormData {
   }[];
 }
 
-const CreateInvoiceForm = () => {
-  const { createInvoiceMutation, isCreating } = useInvoices();
+interface CreateInvoiceFormProps {
+  invoice?: Invoice;
+  onSaved?: () => void;
+}
+
+const parseLineItemDescription = (raw: string) => {
+  const idx = raw.indexOf(' - ');
+  if (idx === -1) return { name: '', description: raw };
+  return { name: raw.slice(0, idx), description: raw.slice(idx + 3) };
+};
+
+const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) => {
+  const isEditMode = !!invoice;
+  const { createInvoiceMutation, isCreating, updateInvoiceMutation, isUpdatingInvoice } = useInvoices();
   const { data: jobsites } = useJobsites();
   const { settings } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
@@ -52,31 +64,54 @@ const CreateInvoiceForm = () => {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const isMobile = useIsMobile();
-  
+
   const form = useForm<InvoiceFormData>({
-    defaultValues: {
-      title: '',
-      client_id: '',
-      client_company: '',
-      client_email: '',
-      client_address: '',
-      client_phone: '',
-      jobsite_id: '',
-      po_number: '',
-      discount: 0,
-      tax: settings?.tax_percentage || 13,
-      due_date: '',
-      notes: '',
-      line_items: [{ name: '', description: '', quantity: 1, unit_price: 0 }],
-    },
+    defaultValues: invoice
+      ? {
+          title: invoice.title || '',
+          client_id: invoice.client_id || '',
+          client_company: invoice.client_company || '',
+          client_email: invoice.client_email || '',
+          client_address: invoice.client_address || '',
+          client_phone: invoice.client_phone || '',
+          jobsite_id: invoice.jobsite_id || '',
+          po_number: invoice.invoice_number || '',
+          discount: invoice.discount || 0,
+          tax: invoice.tax || 0,
+          due_date: invoice.due_date ? invoice.due_date.split('T')[0] : '',
+          notes: invoice.notes || '',
+          line_items:
+            invoice.invoice_line_items && invoice.invoice_line_items.length > 0
+              ? invoice.invoice_line_items.map((li) => ({
+                  ...parseLineItemDescription(li.description),
+                  quantity: li.quantity || 1,
+                  unit_price: li.unit_price || 0,
+                }))
+              : [{ name: '', description: '', quantity: 1, unit_price: 0 }],
+        }
+      : {
+          title: '',
+          client_id: '',
+          client_company: '',
+          client_email: '',
+          client_address: '',
+          client_phone: '',
+          jobsite_id: '',
+          po_number: '',
+          discount: 0,
+          tax: settings?.tax_percentage || 13,
+          due_date: '',
+          notes: '',
+          line_items: [{ name: '', description: '', quantity: 1, unit_price: 0 }],
+        },
   });
 
-  // Update tax when company settings load
+  // Update tax when company settings load (create mode only — don't override an edited invoice)
   useEffect(() => {
-    if (settings?.tax_percentage !== undefined) {
+    if (!isEditMode && settings?.tax_percentage !== undefined) {
       form.setValue('tax', settings.tax_percentage);
     }
-  }, [settings?.tax_percentage, form]);
+  }, [settings?.tax_percentage, form, isEditMode]);
 
   // Handle client selection
   const handleClientSelect = (clientId: string) => {
@@ -178,6 +213,81 @@ const CreateInvoiceForm = () => {
     setIsDraft(false);
     form.handleSubmit((data) => onSubmit(data, false, true))();
   };
+
+  // ── Edit mode: save / save & resend ──────────────────────────────────────────
+  const onEditSubmit = async (data: InvoiceFormData, resend: boolean) => {
+    if (!invoice) return;
+
+    if (!data.client_id) {
+      toast({
+        title: 'Client Required',
+        description: 'Please select a client before saving the invoice',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const invoiceData: CreateInvoiceData = {
+      ...data,
+      invoice_number: data.po_number?.trim() || undefined,
+      client_id: data.client_id,
+      notes: data.notes || null,
+      line_items: data.line_items
+        .filter((item) => item.description && item.quantity > 0 && item.unit_price > 0)
+        .map((item) => ({
+          description: `${item.name ? item.name + ' - ' : ''}${item.description}`,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          amount: item.quantity * item.unit_price,
+        })),
+    };
+
+    updateInvoiceMutation.mutate(
+      { id: invoice.id, data: invoiceData },
+      {
+        onSuccess: async (updatedInvoice: any) => {
+          if (resend) {
+            setIsSendingEmail(true);
+            toast({
+              title: 'Invoice Saved',
+              description: `Sending updated invoice to ${data.client_email}...`,
+            });
+
+            const emailResult = await autoSendInvoiceEmail(
+              updatedInvoice as Invoice,
+              settings,
+              logoUrl
+            );
+
+            setIsSendingEmail(false);
+
+            if (emailResult.success) {
+              toast({
+                title: 'Invoice Resent',
+                description: `Updated invoice #${updatedInvoice.invoice_number} was emailed to ${data.client_email}`,
+              });
+            } else {
+              toast({
+                title: 'Invoice Saved',
+                description: `Saved, but email failed: ${emailResult.error}. You can resend from Invoice Tracker.`,
+                variant: 'default',
+              });
+            }
+          }
+          onSaved?.();
+        },
+      }
+    );
+  };
+
+  const handleSaveEdit = () => {
+    form.handleSubmit((data) => onEditSubmit(data, false))();
+  };
+
+  const handleSaveAndResend = () => {
+    form.handleSubmit((data) => onEditSubmit(data, true))();
+  };
+
 
   const calculateSubtotal = () => {
     const lineItems = form.watch('line_items');
@@ -674,6 +784,29 @@ const CreateInvoiceForm = () => {
         <Card className="shadow-xl border-0 bg-gradient-to-r from-background to-muted/10 overflow-hidden">
           <CardContent className="p-8">
             <Form {...form}>
+              {isEditMode ? (
+                <div className="flex flex-col sm:flex-row gap-6 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSaveEdit}
+                    disabled={isUpdatingInvoice || isSendingEmail}
+                    className="flex-1 sm:max-w-xs h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
+                  >
+                    <Save className="h-5 w-5 mr-3" />
+                    {isUpdatingInvoice && !isSendingEmail ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSaveAndResend}
+                    disabled={isUpdatingInvoice || isSendingEmail}
+                    className="flex-1 sm:max-w-xs h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <Send className="h-5 w-5 mr-3" />
+                    {isSendingEmail ? 'Sending...' : 'Save & Resend'}
+                  </Button>
+                </div>
+              ) : (
               <div className="flex flex-col sm:flex-row gap-6">
                 {/* Secondary Actions */}
                 <div className="flex flex-col sm:flex-row gap-4 flex-1">
@@ -720,14 +853,39 @@ const CreateInvoiceForm = () => {
                   {isCreating ? 'Creating Invoice...' : isSendingEmail ? 'Sending Email...' : 'Send Invoice'}
                 </Button>
               </div>
+              )}
             </Form>
           </CardContent>
         </Card>
       )}
 
+
       {/* Mobile Sticky Action Buttons */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 z-20 bg-background border-t shadow-lg safe-bottom">
+        <div className={isEditMode ? 'sticky bottom-0 left-0 right-0 z-20 bg-background border-t shadow-lg safe-bottom' : 'fixed bottom-0 left-0 right-0 z-20 bg-background border-t shadow-lg safe-bottom'}>
+          {isEditMode ? (
+            <div className="px-4 py-3 grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveEdit}
+                disabled={isUpdatingInvoice || isSendingEmail}
+                className="h-12"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {isUpdatingInvoice && !isSendingEmail ? 'Saving...' : 'Save'}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSaveAndResend}
+                disabled={isUpdatingInvoice || isSendingEmail}
+                className="h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {isSendingEmail ? 'Sending...' : 'Save & Resend'}
+              </Button>
+            </div>
+          ) : (
           <div className="px-4 py-3 space-y-2">
             <Button
               type="button"
@@ -760,6 +918,7 @@ const CreateInvoiceForm = () => {
               </Button>
             </div>
           </div>
+          )}
         </div>
       )}
     </div>

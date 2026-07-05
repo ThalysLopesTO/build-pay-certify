@@ -304,6 +304,102 @@ export const useInvoices = () => {
     },
   });
 
+  // Update invoice (full edit, including line items)
+  const updateInvoiceMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: CreateInvoiceData }) => {
+      if (!user?.companyId) {
+        throw new Error('Company ID is required to update invoices');
+      }
+
+      const updatePayload = {
+        title: data.title,
+        invoice_number: data.invoice_number || undefined,
+        client_id: data.client_id || null,
+        client_company: data.client_company,
+        client_email: data.client_email,
+        client_address: data.client_address || null,
+        client_phone: data.client_phone || null,
+        jobsite_id: (data as any).jobsite_id || null,
+        discount: data.discount || 0,
+        tax: data.tax || 0,
+        due_date: data.due_date,
+        notes: data.notes,
+        updated_at: new Date().toISOString(),
+      } as any;
+
+      // Drop invoice_number if empty so the DB keeps the existing value
+      if (!updatePayload.invoice_number) delete updatePayload.invoice_number;
+
+      const { data: updated, error: updateError } = await supabase
+        .from('invoices')
+        .update(updatePayload)
+        .eq('id', id)
+        .eq('company_id', user.companyId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating invoice:', updateError);
+        throw updateError;
+      }
+
+      // Replace line items: remove existing, then insert the new set
+      await supabase.from('invoice_line_items').delete().eq('invoice_id', id);
+
+      const cleanItems = data.line_items.filter(
+        (item) => item.description && item.quantity > 0 && item.unit_price > 0
+      );
+
+      if (cleanItems.length > 0) {
+        const { error: itemsError } = await supabase
+          .from('invoice_line_items')
+          .insert(
+            cleanItems.map((item) => ({
+              invoice_id: id,
+              description: item.description,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              amount: item.quantity * item.unit_price,
+            }))
+          );
+
+        if (itemsError) {
+          console.error('Error updating line items:', itemsError);
+          throw itemsError;
+        }
+      }
+
+      // Return the complete, refreshed invoice (with line items) for resend
+      const { data: complete } = await supabase
+        .from('invoices')
+        .select(`
+          *,
+          jobsites(name, address),
+          invoice_line_items(*)
+        `)
+        .eq('id', id)
+        .single();
+
+      return (complete || updated) as Invoice;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices', user?.companyId] });
+      queryClient.invalidateQueries({ queryKey: ['invoice'] });
+      toast({
+        title: 'Invoice Updated',
+        description: 'Invoice has been updated successfully.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating invoice:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update invoice. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     invoices,
     isLoading,
@@ -314,6 +410,9 @@ export const useInvoices = () => {
     isCreating: createInvoiceMutation.isPending,
     updateInvoiceStatus: updateInvoiceStatusMutation.mutate,
     isUpdating: updateInvoiceStatusMutation.isPending,
+    updateInvoice: updateInvoiceMutation.mutate,
+    updateInvoiceMutation,
+    isUpdatingInvoice: updateInvoiceMutation.isPending,
     deleteInvoice: deleteInvoiceMutation.mutate,
     isDeleting: deleteInvoiceMutation.isPending,
   };
