@@ -709,6 +709,7 @@ const InvoiceTracker = () => {
                 onEmail={handleSendEmail}
                 onStatusChange={handleStatusUpdate}
                 onDownload={handleDownloadPDF}
+                onEdit={setEditInvoice}
                 onDelete={canDeleteInvoices ? handleDeleteInvoice : undefined}
               />
             ))
