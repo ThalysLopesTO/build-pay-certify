@@ -214,6 +214,81 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
     form.handleSubmit((data) => onSubmit(data, false, true))();
   };
 
+  // ── Edit mode: save / save & resend ──────────────────────────────────────────
+  const onEditSubmit = async (data: InvoiceFormData, resend: boolean) => {
+    if (!invoice) return;
+
+    if (!data.client_id) {
+      toast({
+        title: 'Client Required',
+        description: 'Please select a client before saving the invoice',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const invoiceData: CreateInvoiceData = {
+      ...data,
+      invoice_number: data.po_number?.trim() || undefined,
+      client_id: data.client_id,
+      notes: data.notes || null,
+      line_items: data.line_items
+        .filter((item) => item.description && item.quantity > 0 && item.unit_price > 0)
+        .map((item) => ({
+          description: `${item.name ? item.name + ' - ' : ''}${item.description}`,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          amount: item.quantity * item.unit_price,
+        })),
+    };
+
+    updateInvoiceMutation.mutate(
+      { id: invoice.id, data: invoiceData },
+      {
+        onSuccess: async (updatedInvoice: any) => {
+          if (resend) {
+            setIsSendingEmail(true);
+            toast({
+              title: 'Invoice Saved',
+              description: `Sending updated invoice to ${data.client_email}...`,
+            });
+
+            const emailResult = await autoSendInvoiceEmail(
+              updatedInvoice as Invoice,
+              settings,
+              logoUrl
+            );
+
+            setIsSendingEmail(false);
+
+            if (emailResult.success) {
+              toast({
+                title: 'Invoice Resent',
+                description: `Updated invoice #${updatedInvoice.invoice_number} was emailed to ${data.client_email}`,
+              });
+            } else {
+              toast({
+                title: 'Invoice Saved',
+                description: `Saved, but email failed: ${emailResult.error}. You can resend from Invoice Tracker.`,
+                variant: 'default',
+              });
+            }
+          }
+          onSaved?.();
+        },
+      }
+    );
+  };
+
+  const handleSaveEdit = () => {
+    form.handleSubmit((data) => onEditSubmit(data, false))();
+  };
+
+  const handleSaveAndResend = () => {
+    form.handleSubmit((data) => onEditSubmit(data, true))();
+  };
+
+
   const calculateSubtotal = () => {
     const lineItems = form.watch('line_items');
     return lineItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unit_price || 0)), 0);
