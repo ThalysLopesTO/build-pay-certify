@@ -65,14 +65,15 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
   const safeWeeklyHours = isNaN(totalWeeklyHours) ? 0 : totalWeeklyHours;
   const progress = Math.min((safeWeeklyHours / targetHours) * 100, 100);
 
-  const primaryActions: { id: string; title: string; subtitle: string; icon: React.ElementType; tone: Tone; tab: string }[] = [
+  const primaryActions = ([
     { id: 'time-tracker',          title: t('home.actions.clockInOut'),   subtitle: t('home.actions.clockInOutDesc'),   icon: Timer,         tone: 'emerald', tab: 'time-tracker' },
     { id: 'tasks',                 title: t('home.actions.myTasks'),      subtitle: t('home.actions.myTasksDesc'),      icon: CheckSquare,   tone: 'blue',    tab: 'tasks' },
     { id: 'timesheet',             title: t('home.actions.timesheet'),    subtitle: t('home.actions.timesheetDesc'),    icon: FileText,      tone: 'purple',  tab: 'timesheet' },
     { id: 'attention-report',      title: t('home.actions.reportIssue'),  subtitle: t('home.actions.reportIssueDesc'),  icon: AlertTriangle, tone: 'orange',  tab: 'attention-report' },
     { id: 'missed-punch-requests', title: t('home.actions.missedPunch'),  subtitle: t('home.actions.missedPunchDesc'),  icon: AlertCircle,   tone: 'red',     tab: 'missed-punch-requests' },
     { id: 'certificates',          title: t('home.actions.certificates'), subtitle: t('home.actions.certificatesDesc'), icon: Award,         tone: 'slate',   tab: 'certificates' },
-  ].filter((a) => isMenuItemVisible(a.id, permissions, user?.role || 'employee'));
+  ] as { id: string; title: string; subtitle: string; icon: React.ElementType; tone: Tone; tab: string }[])
+    .filter((a) => isMenuItemVisible(a.id, permissions, user?.role || 'employee'));
 
   const secondaryActions: { id: string; title: string; icon: React.ElementType; tab: string }[] = [
     { id: 'my-reports',    title: t('home.myReports'),    icon: ScrollText, tab: 'my-reports' },
