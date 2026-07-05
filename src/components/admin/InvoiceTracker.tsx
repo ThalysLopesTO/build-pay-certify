@@ -735,6 +735,24 @@ const InvoiceTracker = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Invoice Edit Dialog */}
+      <Dialog open={!!editInvoice} onOpenChange={(o) => !o && setEditInvoice(null)}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Invoice</DialogTitle>
+            <DialogDescription>
+              {editInvoice ? `Editing invoice ${editInvoice.invoice_number}. Save changes or resend to the client.` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {editInvoice && (
+            <CreateInvoiceForm
+              invoice={editInvoice}
+              onSaved={() => setEditInvoice(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Invoice Email Dialog */}
       {emailInvoice && (
         <InvoiceEmailSender
@@ -752,6 +770,7 @@ const InvoiceTracker = () => {
         invoice={invoiceToDelete}
         isDeleting={isDeleting}
       />
+
     </div>
   );
 };
