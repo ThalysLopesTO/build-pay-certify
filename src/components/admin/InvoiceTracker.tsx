@@ -57,6 +57,8 @@ const InvoiceTracker = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editInvoice, setEditInvoice] = useState<Invoice | null>(null);
+
 
   // Bulk selection state
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
