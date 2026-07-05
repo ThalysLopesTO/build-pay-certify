@@ -42,8 +42,20 @@ interface InvoiceFormData {
   }[];
 }
 
-const CreateInvoiceForm = () => {
-  const { createInvoiceMutation, isCreating } = useInvoices();
+interface CreateInvoiceFormProps {
+  invoice?: Invoice;
+  onSaved?: () => void;
+}
+
+const parseLineItemDescription = (raw: string) => {
+  const idx = raw.indexOf(' - ');
+  if (idx === -1) return { name: '', description: raw };
+  return { name: raw.slice(0, idx), description: raw.slice(idx + 3) };
+};
+
+const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) => {
+  const isEditMode = !!invoice;
+  const { createInvoiceMutation, isCreating, updateInvoiceMutation, isUpdatingInvoice } = useInvoices();
   const { data: jobsites } = useJobsites();
   const { settings } = useCompanySettings();
   const { logoUrl } = useCompanyLogo();
@@ -52,23 +64,46 @@ const CreateInvoiceForm = () => {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const isMobile = useIsMobile();
-  
+
   const form = useForm<InvoiceFormData>({
-    defaultValues: {
-      title: '',
-      client_id: '',
-      client_company: '',
-      client_email: '',
-      client_address: '',
-      client_phone: '',
-      jobsite_id: '',
-      po_number: '',
-      discount: 0,
-      tax: settings?.tax_percentage || 13,
-      due_date: '',
-      notes: '',
-      line_items: [{ name: '', description: '', quantity: 1, unit_price: 0 }],
-    },
+    defaultValues: invoice
+      ? {
+          title: invoice.title || '',
+          client_id: invoice.client_id || '',
+          client_company: invoice.client_company || '',
+          client_email: invoice.client_email || '',
+          client_address: invoice.client_address || '',
+          client_phone: invoice.client_phone || '',
+          jobsite_id: invoice.jobsite_id || '',
+          po_number: invoice.invoice_number || '',
+          discount: invoice.discount || 0,
+          tax: invoice.tax || 0,
+          due_date: invoice.due_date ? invoice.due_date.split('T')[0] : '',
+          notes: invoice.notes || '',
+          line_items:
+            invoice.invoice_line_items && invoice.invoice_line_items.length > 0
+              ? invoice.invoice_line_items.map((li) => ({
+                  ...parseLineItemDescription(li.description),
+                  quantity: li.quantity || 1,
+                  unit_price: li.unit_price || 0,
+                }))
+              : [{ name: '', description: '', quantity: 1, unit_price: 0 }],
+        }
+      : {
+          title: '',
+          client_id: '',
+          client_company: '',
+          client_email: '',
+          client_address: '',
+          client_phone: '',
+          jobsite_id: '',
+          po_number: '',
+          discount: 0,
+          tax: settings?.tax_percentage || 13,
+          due_date: '',
+          notes: '',
+          line_items: [{ name: '', description: '', quantity: 1, unit_price: 0 }],
+        },
   });
 
   // Update tax when company settings load
