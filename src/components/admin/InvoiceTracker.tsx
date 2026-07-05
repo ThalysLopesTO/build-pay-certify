@@ -15,7 +15,7 @@ import { generateBrandedInvoicePDF } from './BrandedInvoicePDF';
 import { useToast } from '@/hooks/use-toast';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
-import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2, CheckCircle2, X, MoreHorizontal } from 'lucide-react';
+import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2, CheckCircle2, X, MoreHorizontal, Pencil } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
