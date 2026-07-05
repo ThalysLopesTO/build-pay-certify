@@ -94,6 +94,12 @@ const InvoiceTrackerMobileCard: React.FC<InvoiceTrackerMobileCardProps> = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(invoice)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Invoice
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => onStatusChange(invoice.id, 'paid')}>
                 <CheckCircle className="h-4 w-4 mr-2 text-emerald-600" />
                 Mark as Paid
