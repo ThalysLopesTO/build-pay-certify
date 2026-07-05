@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { InvoiceEmailSender } from './InvoiceEmailSender';
 import { InvoiceDeleteConfirmDialog } from './InvoiceDeleteConfirmDialog';
+import CreateInvoiceForm from './CreateInvoiceForm';
 import { MonthlyInvoiceAnalytics } from './invoices/MonthlyInvoiceAnalytics';
 import { useIsMobile } from '@/hooks/use-mobile';
 import InvoiceTrackerMobileCard from './invoices/InvoiceTrackerMobileCard';
