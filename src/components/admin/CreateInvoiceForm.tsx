@@ -784,6 +784,29 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
         <Card className="shadow-xl border-0 bg-gradient-to-r from-background to-muted/10 overflow-hidden">
           <CardContent className="p-8">
             <Form {...form}>
+              {isEditMode ? (
+                <div className="flex flex-col sm:flex-row gap-6 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSaveEdit}
+                    disabled={isUpdatingInvoice || isSendingEmail}
+                    className="flex-1 sm:max-w-xs h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
+                  >
+                    <Save className="h-5 w-5 mr-3" />
+                    {isUpdatingInvoice && !isSendingEmail ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSaveAndResend}
+                    disabled={isUpdatingInvoice || isSendingEmail}
+                    className="flex-1 sm:max-w-xs h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <Send className="h-5 w-5 mr-3" />
+                    {isSendingEmail ? 'Sending...' : 'Save & Resend'}
+                  </Button>
+                </div>
+              ) : (
               <div className="flex flex-col sm:flex-row gap-6">
                 {/* Secondary Actions */}
                 <div className="flex flex-col sm:flex-row gap-4 flex-1">
@@ -830,10 +853,12 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
                   {isCreating ? 'Creating Invoice...' : isSendingEmail ? 'Sending Email...' : 'Send Invoice'}
                 </Button>
               </div>
+              )}
             </Form>
           </CardContent>
         </Card>
       )}
+
 
       {/* Mobile Sticky Action Buttons */}
       {isMobile && (
