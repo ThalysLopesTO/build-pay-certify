@@ -631,6 +631,9 @@ const InvoiceTracker = () => {
                             <DropdownMenuItem onClick={() => handleViewDetails(invoice)}>
                               <Eye className="h-4 w-4 mr-2" /> View details
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditInvoice(invoice)}>
+                              <Pencil className="h-4 w-4 mr-2" /> Edit invoice
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDownloadPDF(invoice)}>
                               <Download className="h-4 w-4 mr-2" /> Download PDF
                             </DropdownMenuItem>
