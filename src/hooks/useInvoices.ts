@@ -5,6 +5,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { Invoice, CreateInvoiceData } from '@/components/admin/types/invoice';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 
+// Build a user-friendly message, calling out duplicate invoice numbers explicitly
+const describeInvoiceError = (error: any, fallback: string): string => {
+  const msg = String(error?.message || '');
+  if (/already exists/i.test(msg) || error?.code === '23505') {
+    const match = msg.match(/Invoice number (.+?) already exists/i);
+    const num = match?.[1]?.trim();
+    return num
+      ? `Invoice number ${num} is already used in your company. Please pick a different number.`
+      : 'That invoice number is already used in your company. Please pick a different number.';
+  }
+  return fallback;
+};
+
+
 export const useInvoices = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
