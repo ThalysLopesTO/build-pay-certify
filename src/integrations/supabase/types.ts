@@ -4527,7 +4527,9 @@ export type Database = {
         }
         Returns: string
       }
-      generate_invoice_number: { Args: never; Returns: string }
+      generate_invoice_number:
+        | { Args: never; Returns: string }
+        | { Args: { company_id_param: string }; Returns: string }
       generate_quote_number: { Args: never; Returns: string }
       generate_recurring_bills: { Args: never; Returns: undefined }
       get_client_invoices: {
