@@ -179,7 +179,7 @@ export const useInvoices = () => {
       console.error('Error creating invoice:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create invoice. Please try again.',
+        description: describeInvoiceError(error, 'Failed to create invoice. Please try again.'),
         variant: 'destructive',
       });
     },
