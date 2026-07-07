@@ -1,41 +1,37 @@
-# Edit & Resend Invoices
+# Fix invoice save errors (create & edit)
 
-Enable editing any invoice — even after it's been sent — from the Invoice Tracker. The user can change everything (client, jobsite, title, PO/number, due date, line items, discount, tax, notes), then **Save**, or **Save & Resend** to re-email the updated invoice to the client.
+## What's happening
+Saving an invoice (new draft or editing an existing one) sometimes fails with a generic "Failed to create/update invoice" toast. The real cause is the database, not the UI.
 
-## What exists today
-- Invoices are created via `CreateInvoiceForm` (client, metadata, line items, totals).
-- `useInvoices` supports create, status-change (paid/pending/expired), and delete — but **no full edit**.
-- The Tracker row "…" menu offers View details, Download PDF, status changes, Delete. No Edit.
-- Resend already works through the existing email button (`InvoiceEmailSender` / `autoSendInvoiceEmail`).
+- `invoices.invoice_number` is `NOT NULL` with a **global** `UNIQUE` constraint.
+- The `set_invoice_number()` trigger raises `Invoice number "X" already exists` whenever a typed PO/Invoice number matches **any** invoice number in the whole database (all companies).
+- This company enters many free-form numbers (`teste`, client names, `DSS0391 | Shelly`, …), so collisions happen often → save fails.
+- Auto-generated `INV-0042` numbers rarely collide (the generator loops), which is why it usually "runs well" and only breaks intermittently.
 
-## Changes
+Two related problems found in the same code path:
+- Create never saves `subtotal` / `total_amount`, so new invoices are stored as `$0` totals.
+- Uniqueness isn't scoped per company, so a number another company used blocks you.
 
-### 1. Add an `updateInvoice` mutation (`src/hooks/useInvoices.ts`)
-- New mutation that updates the invoice row (title, client fields, jobsite_id, invoice_number, discount, tax, due_date, notes) scoped by `company_id`.
-- Replace line items: delete existing `invoice_line_items` for the invoice, then insert the new set (same shape as create).
-- On success: invalidate the `['invoices', companyId]` query and toast "Invoice updated".
-- Export `updateInvoice` / `updateInvoiceMutation` / `isUpdating`.
+## The fix
 
-### 2. Make the invoice form reusable for edit (`src/components/admin/CreateInvoiceForm.tsx`)
-- Accept optional props: `invoice?` (the invoice to edit), `onSaved?` (callback to close dialog).
-- When an `invoice` is passed (edit mode):
-  - Prefill all form fields from the invoice, including client selection and line items. Line-item descriptions currently stored as `"Name - Description"` are split back into `name` / `description` on load.
-  - Replace the footer buttons with **Save** and **Save & Resend** (instead of Save Draft / Send Invoice). No `form.reset()` after saving.
-  - **Save** → calls `updateInvoice`, then `onSaved()`.
-  - **Save & Resend** → calls `updateInvoice`, then re-emails via `autoSendInvoiceEmail` (reusing the create form's existing email logic), then `onSaved()`.
-- Create mode behavior is unchanged.
+### 1. Database migration — scope invoice numbers per company
+- Drop the global `invoices_invoice_number_key` unique constraint.
+- Add a composite unique constraint on `(company_id, invoice_number)` so numbers only need to be unique **within a company**.
+- Update `set_invoice_number()` to check duplicates scoped to `NEW.company_id`.
+- Update `generate_invoice_number()` to take/scope by `company_id` (max + loop within the company), so auto-numbers stay per-company.
 
-### 3. Wire "Edit" into the Tracker (`src/components/admin/InvoiceTracker.tsx`)
-- Add an **Edit** item to the row "…" dropdown (pencil icon), available for every invoice regardless of status.
-- Opens a dialog (`Dialog` with large content) rendering the form in edit mode; closing it refreshes the list.
-- Add the same Edit action to the mobile card (`src/components/admin/invoices/InvoiceTrackerMobileCard.tsx`) and its handler.
+### 2. `src/hooks/useInvoices.ts` — persist totals & clearer errors
+- In `createInvoiceMutation`, compute and include `subtotal` and `total_amount` (same math the form already shows: subtotal from line items, minus discount %, plus tax %). Do the same defensively in `updateInvoiceMutation`.
+- In both `onError` handlers, surface the actual DB message when it's a duplicate-number error (e.g. "Invoice number 'teste' is already used — pick a different number") instead of the generic text.
 
-## Notes
-- No database schema or RLS changes — the `invoices` and `invoice_line_items` tables and their update policies already support this; edits are company-scoped in the mutation.
-- Resend uses the existing email pipeline, so branding/PDF stay consistent.
-- Editing does not automatically change status; the user controls status separately as today.
+### 3. `src/components/admin/CreateInvoiceForm.tsx` — no functional change beyond passing totals
+- Ensure the computed `subtotal`/`total_amount` (already available via `calculateSubtotal`/`calculateTotal`) are passed through to the mutations.
 
-## Technical details
-- Line-item round-trip: split on the first `" - "` so an item saved as `"Framing - 2x4 lumber"` re-loads with name `Framing`, description `2x4 lumber`; items with no dash load with an empty name.
-- `updateInvoice` recomputes `amount = quantity * unit_price` per line item on insert, mirroring create.
-- Totals (subtotal/tax/total) continue to be derived the same way the create form and DB already handle them.
+## Result
+- Editing and re-saving an existing invoice keeps its number (same row) with no false collision.
+- Creating a draft with a custom PO only fails if that number is already used **in your own company**, and the message says exactly why.
+- New invoices store correct totals instead of `$0`.
+
+## Technical notes
+- Only additive/ئcorrective schema changes; no data loss. Existing rows keep their numbers.
+- No RLS change needed — the license/admin policies already allow these writes.
