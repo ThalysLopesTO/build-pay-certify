@@ -336,6 +336,15 @@ export const useInvoices = () => {
         throw new Error('Company ID is required to update invoices');
       }
 
+      // Compute totals so they stay in sync with the edited line items
+      const subtotal = data.line_items.reduce(
+        (sum, item) => sum + (Number(item.amount) || 0),
+        0
+      );
+      const discountAmount = subtotal * ((Number(data.discount) || 0) / 100);
+      const taxAmount = (subtotal - discountAmount) * ((Number(data.tax) || 0) / 100);
+      const totalAmount = subtotal - discountAmount + taxAmount;
+
       const updatePayload = {
         title: data.title,
         invoice_number: data.invoice_number || undefined,
@@ -347,6 +356,8 @@ export const useInvoices = () => {
         jobsite_id: (data as any).jobsite_id || null,
         discount: data.discount || 0,
         tax: data.tax || 0,
+        subtotal,
+        total_amount: totalAmount,
         due_date: data.due_date,
         notes: data.notes,
         updated_at: new Date().toISOString(),
