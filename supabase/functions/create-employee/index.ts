@@ -437,7 +437,7 @@ serve(async (req) => {
         console.log('Email already exists in auth, checking profile status...')
         
         // Check if this is an orphaned auth user (exists in auth but not in user_profiles)
-        const { data: existingProfile, error: profileCheckError } = await supabase
+        const { data: existingProfile, error: profileCheckError } = await supabaseAdmin
           .from('user_profiles')
           .select('user_id, is_active, email, first_name, last_name')
           .eq('email', employeeData.email)

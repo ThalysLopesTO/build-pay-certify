@@ -213,18 +213,18 @@ export const useEmployeeRegistrationForm = () => {
         certificatesCount: certificateUrls.length
       });
       
-      const { data: result, error } = await supabase.functions.invoke('create-employee', {
+      const { data: invokeData, error } = await supabase.functions.invoke('create-employee', {
         body: { employeeData: employeePayload }
       });
-      
-      console.log('📥 Edge function response received:', { 
-        hasResult: !!result, 
+      let result = invokeData;
+
+      console.log('📥 Edge function response received:', {
+        hasResult: !!result,
         hasError: !!error,
         resultSuccess: result?.success,
-        errorMessage: error?.message 
+        errorMessage: error?.message
       });
 
-      // Check if there was a network/connection error
       if (error) {
         console.error('❌ Edge Function connection error:', error);
         console.error('🔍 Error details:', {
@@ -232,7 +232,23 @@ export const useEmployeeRegistrationForm = () => {
           message: error.message,
           stack: error.stack?.substring(0, 500)
         });
-        throw new Error(`Failed to connect to employee registration service: ${error.message}`);
+
+        // The edge function returns structured JSON on non-2xx responses;
+        // read it so the user sees the real reason instead of a generic message
+        let errorBody: any = null;
+        if (error.context && typeof error.context.json === 'function') {
+          try {
+            errorBody = await error.context.json();
+          } catch (bodyError) {
+            console.error('⚠️ Could not parse edge function error body:', bodyError);
+          }
+        }
+
+        if (errorBody?.error) {
+          result = errorBody;
+        } else {
+          throw new Error(`Failed to connect to employee registration service: ${error.message}`);
+        }
       }
 
       // Check if we received a result
