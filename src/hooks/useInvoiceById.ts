@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchInvoiceAttachments } from '@/hooks/useInvoiceAttachments';
+import { InvoiceAttachment } from '@/components/admin/types/invoice';
 
 export interface Invoice {
   id: string;
@@ -26,6 +28,7 @@ export interface Invoice {
   }[];
   taxRate: number;
   taxAmount: number;
+  attachments?: InvoiceAttachment[];
 }
 
 export const useInvoiceById = (invoiceId: string | undefined) => {
@@ -62,11 +65,14 @@ export const useInvoiceById = (invoiceId: string | undefined) => {
       const taxRate = invoiceData.tax || 0;
       const taxAmount = (invoiceData.subtotal * taxRate) / 100;
 
+      const attachments = await fetchInvoiceAttachments(invoiceId);
+
       return {
         ...invoiceData,
         items,
         taxRate,
-        taxAmount
+        taxAmount,
+        attachments
       } as Invoice;
     },
     enabled: !!invoiceId,

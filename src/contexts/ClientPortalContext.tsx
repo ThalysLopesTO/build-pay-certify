@@ -32,6 +32,14 @@ interface PortalInvoiceLineItem {
   amount: number;
 }
 
+interface PortalInvoiceAttachment {
+  id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string | null;
+  file_size: number | null;
+}
+
 interface PortalInvoice {
   id: string;
   invoice_number: string;
@@ -47,6 +55,7 @@ interface PortalInvoice {
   tax_amount: number;
   discount: number | null;
   line_items: PortalInvoiceLineItem[];
+  attachments?: PortalInvoiceAttachment[];
 }
 
 interface ClientPortalContextType {

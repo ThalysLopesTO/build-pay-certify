@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,8 +18,17 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, X, Copy, Calendar, MapPin, User, Building, Mail, Phone, Hash, FileText, DollarSign, Save, Send, Download, Paperclip } from 'lucide-react';
 import ClientSelector from './quotes/editor/ClientSelector';
 import type { Client } from '@/hooks/useClients';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import {
+  uploadInvoiceAttachments,
+  useInvoiceAttachments,
+  useDeleteInvoiceAttachment,
+  MAX_ATTACHMENT_SIZE,
+  formatFileSize,
+} from '@/hooks/useInvoiceAttachments';
 import { useIsMobile } from '@/hooks/use-mobile';
 import InvoiceMobileLineItem from './invoices/InvoiceMobileLineItem';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface InvoiceFormData {
   title: string;
@@ -64,6 +73,52 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Invoice attachments: staged files upload after the invoice is saved
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: existingAttachments = [] } = useInvoiceAttachments(invoice?.id);
+  const deleteAttachmentMutation = useDeleteInvoiceAttachment();
+
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+
+    const tooBig = files.filter((f) => f.size > MAX_ATTACHMENT_SIZE);
+    if (tooBig.length > 0) {
+      toast({
+        title: 'File Too Large',
+        description: `${tooBig.map((f) => f.name).join(', ')} exceeds the 10MB limit per file.`,
+        variant: 'destructive',
+      });
+    }
+
+    const accepted = files.filter((f) => f.size <= MAX_ATTACHMENT_SIZE);
+    if (accepted.length > 0) {
+      setAttachedFiles((prev) => [...prev, ...accepted]);
+    }
+  };
+
+  const removeStagedFile = (index: number) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadStagedAttachments = async (invoiceId: string) => {
+    if (attachedFiles.length === 0 || !user?.companyId) return;
+    try {
+      await uploadInvoiceAttachments(attachedFiles, invoiceId, user.companyId);
+      setAttachedFiles([]);
+      queryClient.invalidateQueries({ queryKey: ['invoice-attachments', invoiceId] });
+    } catch (uploadError: any) {
+      toast({
+        title: 'Attachment Upload Failed',
+        description: `${uploadError.message || 'Some files could not be uploaded.'} The invoice was saved — you can try attaching the files again by editing it.`,
+        variant: 'destructive',
+      });
+    }
+  };
 
   const form = useForm<InvoiceFormData>({
     defaultValues: invoice
@@ -166,6 +221,9 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
     
     createInvoiceMutation.mutate(invoiceData as any, {
       onSuccess: async (createdInvoice: any) => {
+        // Upload attachments first so they're included in the emailed PDF
+        await uploadStagedAttachments(createdInvoice.id);
+
         // If this was a "Send Invoice" action, auto-send email
         if (sendEmailFlag && createdInvoice._shouldSendEmail) {
           setIsSendingEmail(true);
@@ -246,6 +304,9 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
       { id: invoice.id, data: invoiceData },
       {
         onSuccess: async (updatedInvoice: any) => {
+          // Upload any newly attached files before resending the PDF
+          await uploadStagedAttachments(invoice.id);
+
           if (resend) {
             setIsSendingEmail(true);
             toast({
@@ -734,6 +795,96 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
                     )}
                   />
                 </div>
+
+                {/* Attachments */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-foreground">Attachments</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-border/50 hover:border-amber-500 rounded-lg transition-all duration-200"
+                    >
+                      <Paperclip className="h-4 w-4 mr-2" />
+                      Attach Files
+                    </Button>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                    className="hidden"
+                    onChange={handleFilesSelected}
+                  />
+
+                  {existingAttachments.length === 0 && attachedFiles.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Attach photos or documents — your client will see them on their invoice, and photos are included in the PDF.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {existingAttachments.map((att) => (
+                        <div
+                          key={att.id}
+                          className="flex items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm"
+                        >
+                          <a
+                            href={att.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 min-w-0 hover:underline"
+                          >
+                            <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <span className="truncate">{att.file_name}</span>
+                            {att.file_size ? (
+                              <span className="shrink-0 text-xs text-muted-foreground">
+                                {formatFileSize(att.file_size)}
+                              </span>
+                            ) : null}
+                          </a>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            aria-label={`Remove ${att.file_name}`}
+                            disabled={deleteAttachmentMutation.isPending}
+                            onClick={() => deleteAttachmentMutation.mutate(att)}
+                            className="text-destructive hover:text-destructive shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      {attachedFiles.map((file, index) => (
+                        <div
+                          key={`${file.name}-${index}`}
+                          className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-amber-400/70 bg-amber-50/50 dark:bg-amber-900/10 px-3 py-2 text-sm"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Paperclip className="h-4 w-4 shrink-0 text-amber-600" />
+                            <span className="truncate">{file.name}</span>
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                              {formatFileSize(file.size)} — uploads on save
+                            </span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            aria-label={`Remove ${file.name}`}
+                            onClick={() => removeStagedFile(index)}
+                            className="text-destructive hover:text-destructive shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </Form>
           </CardContent>
@@ -834,11 +985,11 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
                   <Button
                     type="button"
                     variant="outline"
-                    disabled
+                    onClick={() => fileInputRef.current?.click()}
                     className="flex-1 h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
                   >
                     <Paperclip className="h-5 w-5 mr-3" />
-                    Attach Files
+                    {attachedFiles.length > 0 ? `Attach Files (${attachedFiles.length})` : 'Attach Files'}
                   </Button>
                 </div>
                 

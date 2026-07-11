@@ -2,6 +2,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Invoice } from '@/hooks/useInvoiceById';
 import { CompanySettings } from '@/hooks/useCompanySettings';
+import { attachmentsSectionHtml, appendAttachmentImagePages } from './invoiceAttachmentsPdf';
 
 export const generateInvoicePDF = async (
   invoice: Invoice,
@@ -84,6 +85,9 @@ export const generateInvoicePDF = async (
         { align: 'center', angle: 45 }
       );
     }
+
+    // Add photo attachments as extra pages
+    await appendAttachmentImagePages(pdf, invoice.attachments);
 
     // Save the PDF
     const filename = `Invoice-${invoice.invoice_number || invoice.id}.pdf`;
@@ -219,6 +223,8 @@ const generateInvoiceHTML = async (
           </table>
         </div>
       </div>
+
+      ${attachmentsSectionHtml(invoice.attachments)}
 
       <!-- Notes -->
       ${invoice.notes ? `

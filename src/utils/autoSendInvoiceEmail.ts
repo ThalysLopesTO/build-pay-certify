@@ -3,6 +3,7 @@ import { CompanySettings } from '@/hooks/useCompanySettings';
 import { sendEmail } from '@/utils/sendEmail';
 import { generateBrandedInvoicePDFBlob, blobToBase64 } from '@/components/admin/BrandedInvoicePDF';
 import { createInvoiceEmailHTML, getInvoiceEmailSubject } from '@/utils/invoiceEmailTemplate';
+import { fetchInvoiceAttachments } from '@/hooks/useInvoiceAttachments';
 import { format } from 'date-fns';
 
 interface AutoSendEmailResult {
@@ -85,6 +86,15 @@ Thank you for your business!
 Best regards,
 ${settings.company_name}
     `.trim();
+
+    // Include invoice file attachments in the PDF (listed + photos embedded)
+    if (!invoice.attachments) {
+      try {
+        invoice = { ...invoice, attachments: await fetchInvoiceAttachments(invoice.id) };
+      } catch (attachmentError) {
+        console.warn('Could not load invoice attachments for PDF:', attachmentError);
+      }
+    }
 
     // Generate PDF attachment using professional template
     const { blob, filename } = await generateBrandedInvoicePDFBlob(invoice, settings, logoUrl);

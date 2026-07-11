@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Calendar, MapPin, Download, Lock, Loader2, CreditCard, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Download, Lock, Loader2, CreditCard, CheckCircle, AlertTriangle, XCircle, Paperclip } from 'lucide-react';
+import { isImageAttachment, formatFileSize } from '@/hooks/useInvoiceAttachments';
 import { format } from 'date-fns';
 import { generatePortalInvoicePDF } from '@/utils/portalInvoicePDFGenerator';
 import { toast } from '@/hooks/use-toast';
@@ -572,6 +573,62 @@ export default function PortalInvoiceDetailPage() {
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                     {invoice.notes}
                   </p>
+                </div>
+              )}
+
+              {/* Attachments */}
+              {invoice.attachments && invoice.attachments.length > 0 && (
+                <div className="pt-4 border-t">
+                  <h3 className="font-semibold mb-3">
+                    Attachments ({invoice.attachments.length})
+                  </h3>
+
+                  {/* Photo attachments as thumbnails */}
+                  {invoice.attachments.some(isImageAttachment) && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+                      {invoice.attachments.filter(isImageAttachment).map((att) => (
+                        <a
+                          key={att.id}
+                          href={att.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group block rounded-lg border overflow-hidden hover:shadow-md transition-shadow"
+                        >
+                          <img
+                            src={att.file_url}
+                            alt={att.file_name}
+                            loading="lazy"
+                            className="w-full h-32 object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <div className="px-2 py-1.5 text-xs text-muted-foreground truncate bg-muted/30">
+                            {att.file_name}
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Other files as download rows */}
+                  {invoice.attachments.filter((att) => !isImageAttachment(att)).map((att) => (
+                    <a
+                      key={att.id}
+                      href={att.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2.5 mb-2 text-sm hover:bg-muted/40 transition-colors"
+                    >
+                      <span className="flex items-center gap-2 min-w-0">
+                        <Paperclip className="w-4 h-4 shrink-0 text-muted-foreground" />
+                        <span className="truncate font-medium">{att.file_name}</span>
+                        {att.file_size ? (
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {formatFileSize(att.file_size)}
+                          </span>
+                        ) : null}
+                      </span>
+                      <Download className="w-4 h-4 shrink-0 text-muted-foreground" />
+                    </a>
+                  ))}
                 </div>
               )}
             </CardContent>

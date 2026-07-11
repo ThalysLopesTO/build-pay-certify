@@ -4,6 +4,7 @@ import html2canvas from "html2canvas";
 import { Invoice } from "./types/invoice";
 import { CompanySettings } from "@/hooks/useCompanySettings";
 import { fetchLogoAsBase64 } from "@/utils/logoUtils";
+import { attachmentsSectionHtml, appendAttachmentImagePages } from "@/utils/invoiceAttachmentsPdf";
 
 // Helper function to generate the invoice HTML
 const generateInvoiceHTML = (
@@ -271,6 +272,8 @@ const generateInvoiceHTML = (
           </div>
         </div>
 
+        ${attachmentsSectionHtml(invoice.attachments)}
+
         ${invoice.notes ? `
         <!-- TERMS -->
         <div style="font-size:11px; color:#6B7280; margin-bottom:16px;">
@@ -333,6 +336,7 @@ export const generateBrandedInvoicePDF = async (
   const imgHeight = canvas.height * ratio;
 
   pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+  await appendAttachmentImagePages(pdf, invoice.attachments);
   pdf.save(`Invoice-${invoice.invoice_number}.pdf`);
 
   document.body.removeChild(container);
@@ -377,6 +381,7 @@ export const generateBrandedInvoicePDFBlob = async (
   const imgHeight = canvas.height * ratio;
 
   pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+  await appendAttachmentImagePages(pdf, invoice.attachments);
 
   const blob = pdf.output("blob");
   const filename = `Invoice-${invoice.invoice_number}.pdf`;

@@ -25,6 +25,7 @@ export interface Invoice {
     address: string | null;  
   } | null;
   invoice_line_items?: InvoiceLineItem[];
+  attachments?: InvoiceAttachment[];
   // Stripe payment breakdown fields
   stripe_payment_intent_id?: string | null;
   stripe_charge_id?: string | null;
@@ -36,6 +37,17 @@ export interface Invoice {
   payment_currency?: string | null;
   payment_method_type?: string | null;
   paid_at?: string | null;
+}
+
+export interface InvoiceAttachment {
+  id: string;
+  invoice_id: string;
+  company_id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string | null;
+  file_size: number | null;
+  created_at: string;
 }
 
 export interface InvoiceLineItem {
