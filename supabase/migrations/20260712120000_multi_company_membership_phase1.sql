@@ -10,14 +10,43 @@
 -- ----------------------------------------------------------------------------
 -- 1. Constraint swap: one profile row per (user, company) instead of per user
 -- ----------------------------------------------------------------------------
-ALTER TABLE public.jobsite_foremen
-  DROP CONSTRAINT IF EXISTS jobsite_foremen_foreman_id_fkey;
 
+-- Many tables reference user_profiles(user_id) as an FK target, which requires
+-- UNIQUE(user_id) and blocks dropping it. Those columns hold auth user IDs, so
+-- repoint every such FK at auth.users(id) first (same integrity guarantee, and
+-- the correct target for per-company profiles: removing one membership must not
+-- delete that user's timesheets/reports). Preserves each FK's ON DELETE/UPDATE.
+DO $$
+DECLARE
+  fk RECORD;
+  v_newdef text;
+BEGIN
+  FOR fk IN
+    SELECT con.conname,
+           con.conrelid::regclass AS child_table,
+           pg_get_constraintdef(con.oid) AS def
+    FROM pg_constraint con
+    WHERE con.contype = 'f'
+      AND con.confrelid = 'public.user_profiles'::regclass
+      AND array_length(con.confkey, 1) = 1
+      AND (SELECT attname FROM pg_attribute
+           WHERE attrelid = con.confrelid AND attnum = con.confkey[1]) = 'user_id'
+  LOOP
+    v_newdef := regexp_replace(
+      fk.def,
+      'REFERENCES (public\.)?user_profiles\s*\(\s*user_id\s*\)',
+      'REFERENCES auth.users(id)',
+      'gi'
+    );
+    EXECUTE format('ALTER TABLE %s DROP CONSTRAINT %I', fk.child_table, fk.conname);
+    EXECUTE format('ALTER TABLE %s ADD CONSTRAINT %I %s', fk.child_table, fk.conname, v_newdef);
+    RAISE NOTICE 'Repointed % on % to auth.users', fk.conname, fk.child_table;
+  END LOOP;
+END $$;
+
+-- Both the migration-added and the base-table auto-named UNIQUE(user_id) must go
 ALTER TABLE public.user_profiles
   DROP CONSTRAINT IF EXISTS user_profiles_user_id_unique;
-
--- Older auto-named UNIQUE(user_id) from the base table (not in earlier
--- migrations). It also enforces one-row-per-user and must go.
 ALTER TABLE public.user_profiles
   DROP CONSTRAINT IF EXISTS user_profiles_user_id_key;
 DROP INDEX IF EXISTS public.user_profiles_user_id_key;
@@ -26,11 +55,6 @@ ALTER TABLE public.user_profiles
   DROP CONSTRAINT IF EXISTS user_profiles_user_id_company_id_unique;
 ALTER TABLE public.user_profiles
   ADD CONSTRAINT user_profiles_user_id_company_id_unique UNIQUE (user_id, company_id);
-
--- Repoint the foreman FK at the auth account (profile rows are now per-company)
-ALTER TABLE public.jobsite_foremen
-  ADD CONSTRAINT jobsite_foremen_foreman_id_fkey
-  FOREIGN KEY (foreman_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 -- ----------------------------------------------------------------------------
 -- 2. Active-company pointer (written ONLY through set_active_company)
