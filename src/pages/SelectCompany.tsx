@@ -46,6 +46,17 @@ const SelectCompany = () => {
     return <Navigate to={dashboardPathForRole(user.role)} replace />;
   }
 
+  const handleSignOut = async () => {
+    try {
+      await logout();
+    } finally {
+      // Hard redirect — the auth listener doesn't clear state on SIGNED_OUT,
+      // so a full navigation is what reliably leaves this page (same pattern
+      // as UserProfileMenu).
+      window.location.replace('/admin-login');
+    }
+  };
+
   const handleSelect = async (companyId: string, role: string) => {
     if (selectingId) return;
     setSelectingId(companyId);
@@ -115,7 +126,7 @@ const SelectCompany = () => {
           <Button
             variant="ghost"
             className="text-slate-400 hover:text-white"
-            onClick={() => logout()}
+            onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4 mr-2" />
             Sign out
