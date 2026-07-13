@@ -16,6 +16,12 @@ ALTER TABLE public.jobsite_foremen
 ALTER TABLE public.user_profiles
   DROP CONSTRAINT IF EXISTS user_profiles_user_id_unique;
 
+-- Older auto-named UNIQUE(user_id) from the base table (not in earlier
+-- migrations). It also enforces one-row-per-user and must go.
+ALTER TABLE public.user_profiles
+  DROP CONSTRAINT IF EXISTS user_profiles_user_id_key;
+DROP INDEX IF EXISTS public.user_profiles_user_id_key;
+
 ALTER TABLE public.user_profiles
   DROP CONSTRAINT IF EXISTS user_profiles_user_id_company_id_unique;
 ALTER TABLE public.user_profiles

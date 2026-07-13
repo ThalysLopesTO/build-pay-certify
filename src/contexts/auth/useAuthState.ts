@@ -67,10 +67,12 @@ export const useAuthState = () => {
           console.log('👤 Fetching user profile for:', session!.user!.id);
 
           try {
-            // "Always ask": a fresh SIGNED_IN ignores the stored company pointer
-            // so multi-company users pick a company on every login; page
-            // refreshes (INITIAL_SESSION) and user updates keep the selection.
-            const honorActivePointer = event !== 'SIGNED_IN';
+            // "Always ask" without over-prompting: supabase fires SIGNED_IN on
+            // tab refocus and token refresh too, so we can't key the picker on
+            // the event. Instead honor the company the user picked in THIS
+            // browser session (sessionStorage, cleared on logout). Fresh login
+            // has no marker -> picker shows; navigation/refocus keeps the choice.
+            const honorActivePointer = !!sessionStorage.getItem('sb-active-company');
             const { profile, company, error, memberships, needsCompanySelection } =
               await fetchUserProfile(session!.user!.id, { honorActivePointer });
 
