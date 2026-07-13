@@ -67,12 +67,11 @@ export const useAuthState = () => {
           console.log('👤 Fetching user profile for:', session!.user!.id);
 
           try {
-            // "Always ask" without over-prompting: supabase fires SIGNED_IN on
-            // tab refocus and token refresh too, so we can't key the picker on
-            // the event. Instead honor the company the user picked in THIS
-            // browser session (sessionStorage, cleared on logout). Fresh login
-            // has no marker -> picker shows; navigation/refocus keeps the choice.
-            const honorActivePointer = !!sessionStorage.getItem('sb-active-company');
+            // The active-company pointer in the DB is the source of truth:
+            // once a company is chosen it sticks across navigation, reload, tab
+            // refocus and token refresh. The picker only shows when there is no
+            // valid pointer (first login, or after logout which clears it).
+            const honorActivePointer = true;
             const { profile, company, error, memberships, needsCompanySelection } =
               await fetchUserProfile(session!.user!.id, { honorActivePointer });
 

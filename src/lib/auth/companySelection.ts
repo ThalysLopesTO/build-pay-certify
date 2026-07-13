@@ -1,9 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 
-// Marks that the user actively picked a company in this browser session.
-// Used to decide whether to re-show the picker (see useAuthState).
-export const ACTIVE_COMPANY_SESSION_KEY = 'sb-active-company';
-
 export const dashboardPathForRole = (role?: string): string => {
   switch (role) {
     case 'super_admin':
@@ -31,13 +27,7 @@ export const activateCompany = async (companyId: string, role?: string): Promise
   if (error) {
     throw new Error(error.message || 'Could not switch company');
   }
-  // Remember the choice for THIS browser session so navigation, tab refocus,
-  // and token refresh don't re-prompt. Cleared on logout (sessionStorage.clear()),
-  // so a genuinely new login asks again ("always ask").
-  try {
-    sessionStorage.setItem(ACTIVE_COMPANY_SESSION_KEY, companyId);
-  } catch {
-    /* sessionStorage unavailable — fall back to prompting again, which is safe */
-  }
+  // set_active_company persisted the choice server-side; a full navigation
+  // then resolves the app cleanly inside the selected company.
   window.location.assign(dashboardPathForRole(role));
 };

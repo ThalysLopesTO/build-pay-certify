@@ -177,12 +177,23 @@ export const logout = async () => {
     
     // Check if we have a session first
     const { data: { session } } = await supabase.auth.getSession();
-    
+
     if (!session) {
       console.log('📝 No active session found, treating as successful logout');
       // Clear any lingering storage
       localStorage.removeItem('supabase.auth.token');
       return { error: null };
+    }
+
+    // Clear the active-company pointer so the next login re-shows the picker
+    // for multi-company users (must run while still authenticated).
+    try {
+      const uid = session.user?.id;
+      if (uid) {
+        await supabase.from('user_active_company' as any).delete().eq('user_id', uid);
+      }
+    } catch (pointerError) {
+      console.warn('Could not clear active-company pointer on logout:', pointerError);
     }
     
     // Sign out from Supabase with timeout
