@@ -42,6 +42,7 @@ const CompanyHandbook = React.lazy(() => import("@/pages/CompanyHandbook"));
 const InvoicePreview = React.lazy(() => import("@/pages/InvoicePreview"));
 const PublicQuotePage = React.lazy(() => import("@/pages/PublicQuotePage"));
 const SubscriptionPlanPage = React.lazy(() => import("@/pages/SubscriptionPlanPage"));
+const SelectCompany = React.lazy(() => import("@/pages/SelectCompany"));
 const StartTrialEmbedPage = React.lazy(() => import("@/pages/StartTrialEmbedPage"));
 const PortalDashboard = React.lazy(() => import("@/pages/client-portal/PortalDashboard"));
 const PortalQuotesPage = React.lazy(() => import("@/pages/client-portal/PortalQuotesPage"));
@@ -67,6 +68,7 @@ const AppInner: React.FC = () => {
           {/* Unified login — employees use the same page; keep the old URL working */}
           <Route path="/employee-login" element={<Navigate to="/admin-login" replace />} />
           <Route path="/subscription-plan" element={<SubscriptionPlanPage />} />
+          <Route path="/select-company" element={<SelectCompany />} />
 
           {/* ── Admin ── */}
           <Route

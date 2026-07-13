@@ -67,7 +67,12 @@ export const useAuthState = () => {
           console.log('👤 Fetching user profile for:', session!.user!.id);
 
           try {
-            const { profile, company, error } = await fetchUserProfile(session!.user!.id);
+            // "Always ask": a fresh SIGNED_IN ignores the stored company pointer
+            // so multi-company users pick a company on every login; page
+            // refreshes (INITIAL_SESSION) and user updates keep the selection.
+            const honorActivePointer = event !== 'SIGNED_IN';
+            const { profile, company, error, memberships, needsCompanySelection } =
+              await fetchUserProfile(session!.user!.id, { honorActivePointer });
 
             if (!isMounted) return;
 
@@ -75,6 +80,14 @@ export const useAuthState = () => {
               console.warn('⚠️ Profile fetch error:', error);
               setUser(null);
               setCompanyError(error);
+          } else if (needsCompanySelection) {
+            console.log('🏢 User must select a company');
+            setUser({
+              ...session!.user!,
+              memberships,
+              needsCompanySelection: true,
+            } as AuthUser);
+            setCompanyError(null);
           } else if (profile) {
             const authUser: AuthUser = {
               ...session!.user!,
@@ -89,7 +102,9 @@ export const useAuthState = () => {
                 pendingApproval: profile.pending_approval || false,
                 workerType: (profile.worker_type as 'employee' | 'subcontractor') || 'subcontractor',
                 photo_url: profile.photo_url || null,
-                dateOfBirth: profile.date_of_birth || null
+                dateOfBirth: profile.date_of_birth || null,
+                memberships,
+                needsCompanySelection: false
               };
 
               console.log('✅ Setting auth user:', {

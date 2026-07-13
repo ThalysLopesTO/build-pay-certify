@@ -50,6 +50,13 @@ const LoginForm = () => {
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
+    // Multi-company users pick a company before landing on a dashboard
+    if (user.needsCompanySelection) {
+      setLoading(false);
+      navigate('/select-company', { replace: true });
+      return;
+    }
+
     // Unified login: route every role to its own dashboard.
     setLoading(false);
     switch (user.role) {

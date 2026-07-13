@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getActiveCompanyId } from '@/lib/auth/activeCompany';
 import { useToast } from '@/hooks/use-toast';
 import { Quote } from './types';
 import { v4 as uuidv4 } from 'uuid';
@@ -39,11 +40,7 @@ export const useCreateQuote = () => {
   return useMutation({
     mutationFn: async (quoteData: Omit<Quote, 'id' | 'created_at' | 'updated_at' | 'company_id' | 'created_by'>) => {
       const user = await supabase.auth.getUser();
-      const userProfile = await supabase
-        .from('user_profiles')
-        .select('company_id')
-        .eq('user_id', user.data.user?.id)
-        .single();
+      const activeCompanyId = await getActiveCompanyId();
 
       const { data, error } = await supabase
         .from('quotes')
@@ -51,7 +48,7 @@ export const useCreateQuote = () => {
           ...quoteData,
           public_token: quoteData.public_token || uuidv4(), // Ensure token exists
           created_by: user.data.user?.id!,
-          company_id: userProfile.data?.company_id!
+          company_id: activeCompanyId!
         }])
         .select()
         .single();

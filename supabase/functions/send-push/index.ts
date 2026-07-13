@@ -40,11 +40,17 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await admin.auth.getUser(token)
     if (authError || !user) return json({ error: 'Unauthorized' }, 401)
 
-    const { data: caller } = await admin
+    // Multi-company aware: evaluate the caller's role in their ACTIVE company
+    const { data: callerRows } = await admin
       .from('user_profiles')
       .select('role, company_id')
       .eq('user_id', user.id)
-      .single()
+    const { data: callerActiveCompanyId } = await admin
+      .rpc('get_active_company_id_for', { p_user_id: user.id })
+    const caller =
+      (callerRows ?? []).find((r) => r.role === 'super_admin') ||
+      (callerRows ?? []).find((r) => r.company_id === callerActiveCompanyId) ||
+      (callerRows ?? [])[0]
     if (!caller || !NOTIFIER_ROLES.includes(caller.role)) {
       return json({ error: 'Forbidden' }, 403)
     }

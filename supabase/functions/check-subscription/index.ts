@@ -36,11 +36,15 @@ serve(async (req)=>{
       userId: user.id,
       email: user.email
     });
-    // Get user's company with trial info
-    const { data: profile } = await supabaseClient.from('user_profiles').select('company_id, role').eq('user_id', user.id).single();
-    
+    // Get the user's memberships (a user may belong to multiple companies)
+    const { data: profiles } = await supabaseClient
+      .from('user_profiles')
+      .select('company_id, role, is_active, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true });
+
     // Super admins don't need subscription checks
-    if (profile?.role === 'super_admin') {
+    if (profiles?.some((p)=>p.role === 'super_admin')) {
       logStep("Super admin detected - bypassing subscription check");
       return new Response(JSON.stringify({
         subscribed: true,
@@ -57,15 +61,31 @@ serve(async (req)=>{
       });
     }
     
-    if (!profile?.company_id) {
+    // Resolve the ACTIVE company: pointer from user_active_company when it is
+    // still a valid active membership, else the earliest membership (matches
+    // the DB-side get_user_company_id() resolver)
+    let activeCompanyId: string | null = null;
+    if (profiles && profiles.length > 0) {
+      const { data: pointer } = await supabaseClient
+        .from('user_active_company')
+        .select('company_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const pointerValid = pointer?.company_id
+        ? profiles.find((p)=>p.company_id === pointer.company_id && p.is_active !== false)
+        : null;
+      activeCompanyId = pointerValid ? pointer!.company_id : profiles[0].company_id;
+    }
+
+    if (!activeCompanyId) {
       throw new Error("User not associated with a company");
     }
-    
+
     // Get company subscription details including trial info and super admin flag
     const { data: company } = await supabaseClient
       .from('companies')
       .select('stripe_customer_id, subscription_status, trial_end_date, grace_period_end_date, created_by_super_admin, plan')
-      .eq('id', profile.company_id)
+      .eq('id', activeCompanyId)
       .single();
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16"
@@ -81,7 +101,7 @@ serve(async (req)=>{
         stripe_subscription_id: null,
         plan: 'free',
         expiration_date: null
-      }).eq('id', profile.company_id);
+      }).eq('id', activeCompanyId);
       return new Response(JSON.stringify({
         subscribed: false,
         plan: 'free',
@@ -145,7 +165,7 @@ serve(async (req)=>{
       plan: plan,
       expiration_date: subscriptionEnd ? subscriptionEnd.split('T')[0] : null,
       status: hasActiveSub ? 'active' : 'inactive'
-    }).eq('id', profile.company_id);
+    }).eq('id', activeCompanyId);
     logStep("Updated company with subscription info", {
       subscribed: hasActiveSub,
       plan

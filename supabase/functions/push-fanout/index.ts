@@ -61,6 +61,7 @@ serve(async (req) => {
         .from('user_profiles')
         .select('first_name, last_name')
         .eq('user_id', record.sender_id)
+        .limit(1)
         .single()
       title = [sender?.first_name, sender?.last_name].filter(Boolean).join(' ') || 'New message'
       body = String(record.content ?? '').slice(0, 140)

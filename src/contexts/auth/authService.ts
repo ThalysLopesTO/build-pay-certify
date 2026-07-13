@@ -18,65 +18,66 @@ export const login = async (email: string, password: string, expectedRole?: 'emp
     try {
       console.log('🔍 Verifying profile for:', data.user.email, 'Expected role:', expectedRole ?? '(any)');
       
-      const { data: profile, error: profileError } = await supabase
+      // A user may hold profiles in multiple companies — verify against all of them
+      const { data: profiles, error: profileError } = await supabase
         .from('user_profiles')
         .select('role, company_id, is_active')
-        .eq('user_id', data.user.id)
-        .single();
+        .eq('user_id', data.user.id);
 
-      console.log('📊 Profile query result:', { profile, profileError });
+      console.log('📊 Profile query result:', { count: profiles?.length, profileError });
 
       if (profileError) {
         console.error('❌ Profile error details:', profileError);
         // Sign out the user since they shouldn't be logged in
         await supabase.auth.signOut();
-        return { 
-          error: { 
-            message: `Profile access error: ${profileError.message}. Please contact your administrator.` 
-          } 
+        return {
+          error: {
+            message: `Profile access error: ${profileError.message}. Please contact your administrator.`
+          }
         };
       }
 
-      if (!profile) {
+      if (!profiles || profiles.length === 0) {
         console.error('❌ No profile found for user');
         // Sign out the user since they shouldn't be logged in
         await supabase.auth.signOut();
-        return { 
-          error: { 
-            message: "User profile not found. Please contact your administrator." 
-          } 
+        return {
+          error: {
+            message: "User profile not found. Please contact your administrator."
+          }
         };
       }
 
-      console.log('✅ User profile found:', profile);
+      console.log('✅ User profile(s) found:', profiles.length);
 
-      // Check if account is active
-      if (profile.is_active === false) {
-        console.error('❌ Account is archived/inactive');
+      // Check that at least one membership is active
+      const activeProfiles = profiles.filter((p) => p.is_active !== false);
+      if (activeProfiles.length === 0) {
+        console.error('❌ All memberships are archived/inactive');
         await supabase.auth.signOut();
-        return { 
-          error: { 
-            message: "Your account has been deactivated. Please contact your administrator for assistance." 
-          } 
+        return {
+          error: {
+            message: "Your account has been deactivated. Please contact your administrator for assistance."
+          }
         };
       }
 
-      // Check role compatibility
-      if (expectedRole === 'employee' && profile.role !== 'employee') {
+      // Check role compatibility (legacy split-login callers)
+      if (expectedRole === 'employee' && !activeProfiles.some((p) => p.role === 'employee')) {
         await supabase.auth.signOut();
-        return { 
-          error: { 
-            message: "This login page is for employees only. Please use the Company Login page." 
-          } 
+        return {
+          error: {
+            message: "This login page is for employees only. Please use the Company Login page."
+          }
         };
       }
 
-      if (expectedRole === 'admin' && profile.role === 'employee') {
+      if (expectedRole === 'admin' && activeProfiles.every((p) => p.role === 'employee')) {
         await supabase.auth.signOut();
-        return { 
-          error: { 
-            message: "This login page is for company/admin users only. Please use the Employee Login page." 
-          } 
+        return {
+          error: {
+            message: "This login page is for company/admin users only. Please use the Employee Login page."
+          }
         };
       }
     } catch (err) {

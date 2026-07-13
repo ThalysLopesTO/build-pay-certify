@@ -59,12 +59,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if user is super admin
-    const { data: profile, error: profileError } = await supabaseAdmin
+    // Check if user is super admin (multi-company aware: any membership row)
+    const { data: profileRows, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('role')
-      .eq('user_id', user.id)
-      .single();
+      .eq('user_id', user.id);
+    const profile = (profileRows ?? []).find((r) => r.role === 'super_admin');
 
     if (profileError || profile?.role !== 'super_admin') {
       console.error('Not a super admin:', profileError);

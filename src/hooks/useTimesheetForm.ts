@@ -155,11 +155,14 @@ export const useTimesheetForm = (selectedWeek?:any) => {
     queryFn: async () => {
       if (!user?.id) return null;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('user_profiles')
         .select('hourly_rate')
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', user.id);
+      if (user.companyId) {
+        query = query.eq('company_id', user.companyId);
+      }
+      const { data, error } = await query.limit(1).maybeSingle();
 
       if (error) {
         console.error('Error fetching current hourly rate:', error);

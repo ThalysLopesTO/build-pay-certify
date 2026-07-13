@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateClient } from '@/hooks/useClients';
-import { supabase } from '@/integrations/supabase/client';
+import { getActiveCompanyId } from '@/lib/auth/activeCompany';
 
 interface Client {
   id: string;
@@ -45,16 +45,11 @@ const QuickClientModal: React.FC<QuickClientModalProps> = ({
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('company_id')
-        .eq('user_id', user?.id)
-        .single();
+      const activeCompanyId = await getActiveCompanyId();
 
       const newClient = await createClient.mutateAsync({
         ...formData,
-        company_id: profile?.company_id!,
+        company_id: activeCompanyId!,
       });
       onClientCreated(newClient as Client);
       setFormData({

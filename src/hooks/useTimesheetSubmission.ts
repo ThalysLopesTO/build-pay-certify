@@ -28,11 +28,14 @@ export const useTimesheetSubmission = () => {
       // Fetch user profile data for worker type and tax rates
       let userProfile: any = null;
       if (user?.id) {
-        const { data: profileData } = await supabase
+        let profileQuery = supabase
           .from('user_profiles')
           .select('worker_type, income_tax_rate, cpp_rate, ei_rate')
-          .eq('user_id', user.id)
-          .single();
+          .eq('user_id', user.id);
+        if (user.companyId) {
+          profileQuery = profileQuery.eq('company_id', user.companyId);
+        }
+        const { data: profileData } = await profileQuery.limit(1).maybeSingle();
         userProfile = profileData;
       }
 

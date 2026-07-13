@@ -137,6 +137,82 @@ const sendEmployeeWelcomeEmail = async (params: {
   }
 }
 
+// Notification for existing users being added to an additional company —
+// no temporary password: they keep their current login credentials.
+const sendAddedToCompanyEmail = async (params: {
+  email: string
+  firstName: string
+  lastName: string
+  companyName: string
+  companyLogoUrl: string | null
+  companyEmail: string | null
+}) => {
+  const resendApiKey = Deno.env.get('RESEND_API_KEY')
+  if (!resendApiKey) {
+    console.warn('⚠️ RESEND_API_KEY not configured, skipping added-to-company email')
+    return
+  }
+
+  const resend = new Resend(resendApiKey)
+  const employeeName = `${params.firstName} ${params.lastName}`.trim() || 'there'
+
+  const html = `
+  <div style="background-color:#f8f9fb;font-family:'Helvetica Neue',Arial,sans-serif;color:#333;margin:0;padding:0;">
+    <div style="max-width:600px;margin:40px auto;background-color:#fff;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.08);overflow:hidden;">
+      <div style="text-align:center;padding:30px 20px 10px 20px;">
+        ${params.companyLogoUrl
+          ? `<img src="${params.companyLogoUrl}" alt="${params.companyName} Logo" style="max-width:140px;border-radius:8px;" />`
+          : `<h2 style="margin:0;color:#10b981;font-size:24px;">${params.companyName}</h2>`
+        }
+      </div>
+      <div style="padding:30px 40px;text-align:left;line-height:1.6;">
+        <h1 style="font-size:22px;color:#0f172a;">You've been added to ${params.companyName} 🎉</h1>
+        <p>Hi <strong>${employeeName}</strong>,</p>
+        <p>
+          Your existing <strong>StackBuild</strong> account has been added to the
+          <strong>${params.companyName}</strong> team.
+        </p>
+        <p>
+          👉 Simply log in at
+          <a href="https://app.stackbuild.ca" target="_blank" style="color:#10b981;font-weight:bold;">app.stackbuild.ca</a>
+          with your <strong>existing email and password</strong>. After logging in you'll be able to choose
+          which company you want to work in.
+        </p>
+        <div style="text-align:center;margin:25px 0;">
+          <a href="https://app.stackbuild.ca" target="_blank" style="display:inline-block;background-color:#10b981;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:600;">
+            Log In to Your Account
+          </a>
+        </div>
+        <p>
+          If you have any questions, please contact your company administrator${params.companyEmail ? ` or reach out to <a href="mailto:${params.companyEmail}" style="color:#10b981;text-decoration:none;">${params.companyEmail}</a>` : ''}.
+        </p>
+        <p><strong>— The ${params.companyName} Team</strong></p>
+      </div>
+      <div style="text-align:center;font-size:12px;color:#777;padding:25px;background-color:#f8f9fb;">
+        © ${new Date().getFullYear()} ${params.companyName}<br />
+        <span style="font-size:11px;color:#999;">This email was sent via StackBuild</span>
+      </div>
+    </div>
+  </div>
+  `
+
+  try {
+    const { error } = await resend.emails.send({
+      from: `${params.companyName} <no-reply@stackbuild.ca>`,
+      to: [params.email],
+      subject: `You've been added to ${params.companyName} on StackBuild`,
+      html,
+    })
+    if (error) {
+      console.error('❌ Failed to send added-to-company email:', error)
+      throw error
+    }
+    console.log('✅ Added-to-company email sent successfully to:', params.email)
+  } catch (error) {
+    console.error('❌ Error sending added-to-company email (non-blocking):', error)
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -245,11 +321,13 @@ serve(async (req) => {
       )
     }
 
-    // Check user's role and company
+    // Check user's role IN THE TARGET COMPANY (a user may belong to several
+    // companies; their role can differ per company)
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('role, company_id')
       .eq('user_id', user.id)
+      .eq('company_id', employeeData.companyId)
       .single()
 
     if (profileError || !profile) {
@@ -374,15 +452,27 @@ serve(async (req) => {
       )
     }
 
-    // Check if a user with this email already exists
-    const { data: existingUser, error: userCheckError } = await supabaseAdmin.auth.admin.listUsers()
-    
-    if (userCheckError) {
-      console.error('Error checking existing users:', userCheckError)
+    // Look for an existing auth account with this email (paginated — the
+    // default listUsers() only returns the first page)
+    const targetEmail = String(employeeData.email || '').toLowerCase()
+    let existingAuthUser: any = null
+    let userLookupError: any = null
+    for (let page = 1; page <= 20; page++) {
+      const { data: userPage, error: pageError } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 })
+      if (pageError) {
+        userLookupError = pageError
+        break
+      }
+      existingAuthUser = userPage.users.find((u: any) => (u.email || '').toLowerCase() === targetEmail)
+      if (existingAuthUser || userPage.users.length < 1000) break
+    }
+
+    if (userLookupError) {
+      console.error('Error checking existing users:', userLookupError)
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           success: false,
-          error: 'Failed to verify user uniqueness: ' + userCheckError.message
+          error: 'Failed to verify user uniqueness: ' + userLookupError.message
         }),
         {
           headers: corsHeaders,
@@ -391,18 +481,167 @@ serve(async (req) => {
       )
     }
 
-    // Check if user with this email already exists
-    const emailExists = existingUser.users.some(user => user.email === employeeData.email)
-    if (emailExists) {
-      console.log('User with email already exists:', employeeData.email)
+    // Email already has an account: attach them to THIS company instead of
+    // rejecting (multi-company membership), unless they're already a member.
+    if (existingAuthUser) {
+      console.log('📎 Email already registered — evaluating attach flow:', employeeData.email)
+
+      const { data: existingMembership, error: membershipError } = await supabaseAdmin
+        .from('user_profiles')
+        .select('user_id, is_active, first_name, last_name')
+        .eq('user_id', existingAuthUser.id)
+        .eq('company_id', employeeData.companyId)
+        .maybeSingle()
+
+      if (membershipError) {
+        console.error('Error checking existing membership:', membershipError)
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Failed to verify existing membership: ' + membershipError.message
+          }),
+          {
+            headers: corsHeaders,
+            status: 500,
+          },
+        )
+      }
+
+      if (existingMembership && existingMembership.is_active !== false) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `An active employee with email ${employeeData.email} (${existingMembership.first_name} ${existingMembership.last_name}) already exists in the system. Please use a different email address.`,
+            errorCode: 'ACTIVE_EMPLOYEE_EXISTS',
+            employeeName: `${existingMembership.first_name} ${existingMembership.last_name}`
+          }),
+          {
+            headers: corsHeaders,
+            status: 400,
+          },
+        )
+      }
+
+      if (existingMembership) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `An employee with email ${employeeData.email} (${existingMembership.first_name} ${existingMembership.last_name}) already exists but is archived. Please go to Employee Management and reactivate this employee instead of creating a new one.`,
+            errorCode: 'ARCHIVED_EMPLOYEE_EXISTS',
+            existingUserId: existingMembership.user_id,
+            employeeName: `${existingMembership.first_name} ${existingMembership.last_name}`
+          }),
+          {
+            headers: corsHeaders,
+            status: 400,
+          },
+        )
+      }
+
+      // No membership in this company yet → attach: add a profile row for this
+      // company. The person keeps their existing login and password.
+      console.log('✅ Attaching existing user to company:', existingAuthUser.id, '→', employeeData.companyId)
+
+      const attachDefaultRates = employeeData.workerType === 'employee' ? {
+        income_tax_rate: 12.00,
+        cpp_rate: 5.95,
+        ei_rate: 1.63
+      } : {};
+
+      const { data: attachedProfile, error: attachError } = await supabaseAdmin
+        .from('user_profiles')
+        .insert({
+          user_id: existingAuthUser.id,
+          company_id: employeeData.companyId,
+          email: employeeData.email,
+          first_name: employeeData.firstName,
+          last_name: employeeData.lastName,
+          role: employeeData.role,
+          trade: employeeData.trade || 'General',
+          position: employeeData.position || 'Worker',
+          hourly_rate: parseFloat(employeeData.hourlyRate) || null,
+          photo_url: employeeData.photoUrl || null,
+          phone: employeeData.phoneNumber || null,
+          date_of_birth: employeeData.dateOfBirth || null,
+          pending_approval: false,
+          worker_type: employeeData.workerType || 'subcontractor',
+          is_active: true,
+          ...attachDefaultRates
+        })
+        .select()
+        .single()
+
+      if (attachError) {
+        console.error('Error attaching user to company:', attachError)
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Failed to add employee to this company: ' + attachError.message
+          }),
+          {
+            headers: corsHeaders,
+            status: 500,
+          },
+        )
+      }
+
+      // Certificates for this company (same handling as the create path)
+      if (employeeData.certificates && employeeData.certificates.length > 0) {
+        for (const certificate of employeeData.certificates) {
+          const certRow = {
+            employee_id: existingAuthUser.id,
+            company_id: employeeData.companyId,
+            certificate_name: certificate.name,
+            file_url: certificate.fileUrl,
+            uploaded_by: existingAuthUser.id,
+            status: 'valid'
+          }
+          if (!certificate.noExpiry && certificate.expiryDate) {
+            const { error: certError } = await supabaseAdmin
+              .from('employee_certificates')
+              .insert({ ...certRow, certificate_type: 'custom', expiry_date: certificate.expiryDate })
+            if (certError) console.error('Error creating certificate:', certError)
+          } else if (certificate.noExpiry) {
+            const farFutureDate = new Date('2099-12-31').toISOString().split('T')[0]
+            const { error: certError } = await supabaseAdmin
+              .from('employee_certificates')
+              .insert({ ...certRow, certificate_type: 'no-expiry', expiry_date: farFutureDate })
+            if (certError) console.error('Error creating no-expiry certificate:', certError)
+          }
+        }
+      }
+
+      // Notify the employee (no password — they log in with existing credentials)
+      try {
+        const { data: companySettings } = await supabaseAdmin
+          .from('company_settings')
+          .select('company_name, company_logo_url, company_email')
+          .eq('company_id', employeeData.companyId)
+          .single()
+
+        await sendAddedToCompanyEmail({
+          email: employeeData.email,
+          firstName: employeeData.firstName,
+          lastName: employeeData.lastName,
+          companyName: companySettings?.company_name || 'Your Company',
+          companyLogoUrl: companySettings?.company_logo_url || null,
+          companyEmail: companySettings?.company_email || null,
+        })
+      } catch (emailError) {
+        console.error('⚠️ Failed to send added-to-company email (non-blocking):', emailError)
+      }
+
+      console.log('🎉 Existing user attached to company successfully!')
       return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: `An account with email ${employeeData.email} already exists. Please use a different email address.` 
+        JSON.stringify({
+          success: true,
+          attached: true,
+          user: { id: existingAuthUser.id, email: existingAuthUser.email },
+          message: 'Existing user added to this company. They can log in with their existing password.'
         }),
         {
           headers: corsHeaders,
-          status: 400,
+          status: 200,
         },
       )
     }
@@ -441,6 +680,7 @@ serve(async (req) => {
           .from('user_profiles')
           .select('user_id, is_active, email, first_name, last_name')
           .eq('email', employeeData.email)
+          .eq('company_id', employeeData.companyId)
           .maybeSingle()
         
         if (profileCheckError) {
@@ -549,9 +789,9 @@ serve(async (req) => {
     // Use UPSERT to handle the case where trigger already created a basic profile
     const { data: profileData_result, error: upsertProfileError } = await supabaseAdmin
       .from('user_profiles')
-      .upsert(profileData, { 
-        onConflict: 'user_id',
-        ignoreDuplicates: false 
+      .upsert(profileData, {
+        onConflict: 'user_id,company_id',
+        ignoreDuplicates: false
       })
       .select()
 

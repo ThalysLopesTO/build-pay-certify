@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { getSupabase } from '@/integrations/supabase/client';
+import { getActiveCompanyId } from '@/lib/auth/activeCompany';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -198,14 +199,10 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
       return;
     }
     
-    // Get user profile to find company ID
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('company_id')
-      .eq('user_id', session.user.id)
-      .single();
-      
-    if (!profile?.company_id) {
+    // Resolve the user's ACTIVE company (multi-company aware)
+    const activeCompanyId = await getActiveCompanyId();
+
+    if (!activeCompanyId) {
       console.log('No company ID found for user');
       return;
     }
@@ -222,7 +219,7 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children }) 
             name
           )
         `)
-        .eq('company_id', profile.company_id)
+        .eq('company_id', activeCompanyId)
         .in('role', ['employee', 'foreman', 'admin', 'management'])
         .order('created_at', { ascending: false });
 

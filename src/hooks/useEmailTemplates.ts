@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getActiveCompanyId } from '@/lib/auth/activeCompany';
 import { useToast } from '@/hooks/use-toast';
 import { getDefaultPlainTextTemplate } from '@/utils/emailTemplate';
 
@@ -58,18 +59,13 @@ export const useCreateEmailTemplate = () => {
 
   return useMutation({
     mutationFn: async (templateData: Omit<EmailTemplate, 'id' | 'created_at' | 'updated_at' | 'company_id'>) => {
-      const user = await supabase.auth.getUser();
-      const userProfile = await supabase
-        .from('user_profiles')
-        .select('company_id')
-        .eq('user_id', user.data.user?.id)
-        .single();
+      const activeCompanyId = await getActiveCompanyId();
 
       const { data, error } = await supabase
         .from('email_templates')
         .insert([{
           ...templateData,
-          company_id: userProfile.data?.company_id!
+          company_id: activeCompanyId!
         }])
         .select()
         .single();

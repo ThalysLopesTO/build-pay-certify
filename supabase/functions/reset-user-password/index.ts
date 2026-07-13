@@ -30,19 +30,25 @@ serve(async (req) => {
       )
     }
 
-    // Get the admin's profile to check permissions
-    const { data: adminProfile, error: adminError } = await supabaseClient
+    // Get the admin's profile in their ACTIVE company (multi-company aware)
+    const { data: adminRows, error: adminError } = await supabaseClient
       .from('user_profiles')
       .select('role, company_id')
       .eq('user_id', user.id)
-      .single()
 
-    if (adminError || !adminProfile) {
+    if (adminError || !adminRows || adminRows.length === 0) {
       return new Response(
         JSON.stringify({ error: 'Admin profile not found' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
       )
     }
+
+    const { data: callerActiveCompanyId } = await supabaseClient
+      .rpc('get_active_company_id_for', { p_user_id: user.id })
+    const adminProfile =
+      adminRows.find((r) => r.role === 'super_admin') ||
+      adminRows.find((r) => r.company_id === callerActiveCompanyId) ||
+      adminRows[0]
 
     const { targetUserId, newPassword, targetUserEmail, targetUserName } = await req.json()
 
@@ -53,14 +59,13 @@ serve(async (req) => {
       )
     }
 
-    // Get target user's profile to check if reset is allowed
-    const { data: targetProfile, error: targetError } = await supabaseClient
+    // Get target user's profile(s) — they may belong to multiple companies
+    const { data: targetRows, error: targetError } = await supabaseClient
       .from('user_profiles')
       .select('role, company_id')
       .eq('user_id', targetUserId)
-      .single()
 
-    if (targetError || !targetProfile) {
+    if (targetError || !targetRows || targetRows.length === 0) {
       return new Response(
         JSON.stringify({ error: 'Target user not found' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
@@ -69,11 +74,12 @@ serve(async (req) => {
 
     // Check if the requesting user is a super_admin
     const isSuperAdmin = adminProfile.role === 'super_admin';
+    let targetProfile = targetRows[0]
 
     // Super admins can reset ANY user's password (including other admins, but not other super_admins)
     if (isSuperAdmin) {
       // Super admins cannot reset other super admin passwords
-      if (targetProfile.role === 'super_admin') {
+      if (targetRows.some((r) => r.role === 'super_admin')) {
         return new Response(
           JSON.stringify({ error: 'Cannot reset password for other Super Admins' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
@@ -81,13 +87,16 @@ serve(async (req) => {
       }
       // Super admin can proceed - skip company and role checks
     } else {
-      // For regular admins: enforce same-company restriction
-      if (adminProfile.company_id !== targetProfile.company_id) {
+      // For regular admins: the target must be a member of the admin's company,
+      // and their role IN THAT COMPANY is what gets checked
+      const targetInCompany = targetRows.find((r) => r.company_id === adminProfile.company_id)
+      if (!targetInCompany) {
         return new Response(
           JSON.stringify({ error: 'Cannot reset password for users from different companies' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
         )
       }
+      targetProfile = targetInCompany
 
       // Check permissions based on roles for non-super admins
       const canReset = (adminRole: string, targetRole: string): boolean => {

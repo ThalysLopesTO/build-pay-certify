@@ -9,6 +9,7 @@ import ManagementNotificationBell from '@/components/management/ManagementNotifi
 import PWAInstallButton from '@/components/common/PWAInstallButton';
 import MobileTopBar from '@/components/mobile/MobileTopBar';
 import UserProfileMenu from '@/components/common/UserProfileMenu';
+import CompanySwitcher from '@/components/common/CompanySwitcher';
 
 const Header = () => {
   const { user } = useAuth();
@@ -50,6 +51,7 @@ const Header = () => {
 
             {/* Right: PWA Install, Notifications & User Profile Menu */}
             <div className="flex items-center gap-2 flex-shrink-0">
+              <CompanySwitcher variant="desktop" />
               <PWAInstallButton />
 
               {user?.role === 'management' ? (

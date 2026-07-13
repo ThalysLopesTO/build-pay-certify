@@ -27,6 +27,7 @@ const SuperAdminUserChecker = () => {
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
+        .limit(1)
         .single();
 
       console.log('Profile query result:', { profile, error });

@@ -49,12 +49,18 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Get the current user's profile to check permissions
-    const { data: currentUserProfile, error: profileError } = await supabaseAdmin
+    // Get the current user's profile in their ACTIVE company (multi-company aware)
+    const { data: callerRows, error: profileError } = await supabaseAdmin
       .from("user_profiles")
       .select("role, company_id")
-      .eq("user_id", user.id)
-      .single();
+      .eq("user_id", user.id);
+
+    const { data: callerActiveCompanyId } = await supabaseAdmin
+      .rpc('get_active_company_id_for', { p_user_id: user.id });
+    const currentUserProfile =
+      (callerRows ?? []).find((r) => r.role === 'super_admin') ||
+      (callerRows ?? []).find((r) => r.company_id === callerActiveCompanyId) ||
+      (callerRows ?? [])[0];
 
     if (profileError || !currentUserProfile) {
       return new Response(JSON.stringify({ error: "Could not verify user profile" }), {
@@ -80,23 +86,23 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Get the target user's profile to verify same company
-    const { data: targetUserProfile, error: targetProfileError } = await supabaseAdmin
+    // Get the target user's profile(s) — they may belong to multiple companies
+    const { data: targetRows, error: targetProfileError } = await supabaseAdmin
       .from("user_profiles")
       .select("company_id")
-      .eq("user_id", userId)
-      .single();
+      .eq("user_id", userId);
 
-    if (targetProfileError || !targetUserProfile) {
+    if (targetProfileError || !targetRows || targetRows.length === 0) {
       return new Response(JSON.stringify({ error: "Target user not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Verify same company (unless super_admin)
-    if (currentUserProfile.role !== "super_admin" && 
-        currentUserProfile.company_id !== targetUserProfile.company_id) {
+    // Verify same company (unless super_admin). Note: email lives on the auth
+    // account, so this change is visible in every company they belong to.
+    if (currentUserProfile.role !== "super_admin" &&
+        !targetRows.some((r) => r.company_id === currentUserProfile.company_id)) {
       return new Response(JSON.stringify({ error: "Can only update users in your company" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

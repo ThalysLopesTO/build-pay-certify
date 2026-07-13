@@ -28,6 +28,19 @@ const RoleBasedRedirect: React.FC<RoleBasedRedirectProps> = ({ children }) => {
       return;
     }
 
+    // Multi-company users must pick a company before any role-based routing
+    if (user.needsCompanySelection) {
+      if (location.pathname !== '/select-company') {
+        navigate('/select-company', { replace: true });
+      }
+      return;
+    }
+
+    // The picker page manages its own redirects
+    if (location.pathname === '/select-company') {
+      return;
+    }
+
     // Get the correct dashboard path for user's role
     const getRoleDashboard = (role: string): string => {
       switch (role) {

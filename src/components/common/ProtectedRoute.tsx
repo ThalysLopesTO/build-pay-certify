@@ -38,6 +38,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/admin-login" replace />;
   }
 
+  // Multi-company users must pick a company before entering any workspace
+  if (user.needsCompanySelection) {
+    return <Navigate to="/select-company" replace />;
+  }
+
   // If subscription is required, check subscription status
   if (requireSubscription && licenseStatus) {
     const hasActiveSubscription = licenseStatus.subscriptionStatus?.subscribed || licenseStatus.isActive;

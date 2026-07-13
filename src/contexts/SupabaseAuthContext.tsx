@@ -45,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isCompanyAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isSuperAdmin = user?.role === 'super_admin';
   const isAuthenticated = !!session && !!user && !companyError;
+  const needsCompanySelection = !!user?.needsCompanySelection;
 
   return (
     <AuthContext.Provider value={{
@@ -58,7 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loading,
       isCompanyAdmin,
       isSuperAdmin,
-      companyError
+      companyError,
+      needsCompanySelection
     }}>
       {children}
     </AuthContext.Provider>

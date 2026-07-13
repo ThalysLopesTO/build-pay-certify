@@ -59,7 +59,8 @@ const handler = async (req: Request): Promise<Response> => {
       .from('user_profiles')
       .select('first_name, last_name, company_id')
       .eq('user_id', authUser.id)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     // Use auth user ID and profile data for the reset
     const userId = authUser.id;

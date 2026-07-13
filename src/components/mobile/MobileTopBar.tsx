@@ -6,6 +6,7 @@ import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import ManagementNotificationBell from '@/components/management/ManagementNotificationBell';
 import UserProfileMenu from '@/components/common/UserProfileMenu';
+import CompanySwitcher from '@/components/common/CompanySwitcher';
 
 interface MobileTopBarProps {
   onToggleSidebar?: () => void;
@@ -56,6 +57,8 @@ const MobileTopBar = ({ onToggleSidebar }: MobileTopBarProps) => {
         
         {/* Right: Notifications + User Profile */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          <CompanySwitcher variant="mobile" />
+
           {/* Notification Bell - role-specific */}
           {user?.role === 'management' ? (
             <ManagementNotificationBell />

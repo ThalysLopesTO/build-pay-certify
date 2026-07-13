@@ -329,10 +329,18 @@ export const useEmployeeRegistrationForm = () => {
 
       console.log('🎊 Registration process completed successfully!');
       
-      toast({
-        title: "Employee Registered Successfully",
-        description: `${data.firstName} ${data.lastName} has been added to the system. They will be required to change their password on first login.`,
-      });
+      if (result.attached) {
+        // Existing StackBuild user added to this company (multi-company)
+        toast({
+          title: "Employee Added to Your Company",
+          description: `${data.firstName} ${data.lastName} already had a StackBuild account and was added to your company. They can log in with their existing password and choose your company after logging in.`,
+        });
+      } else {
+        toast({
+          title: "Employee Registered Successfully",
+          description: `${data.firstName} ${data.lastName} has been added to the system. They will be required to change their password on first login.`,
+        });
+      }
 
       // Reset form
       form.reset();

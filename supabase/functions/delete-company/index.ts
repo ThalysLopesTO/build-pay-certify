@@ -31,13 +31,12 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await admin.auth.getUser(token)
     if (authError || !user) return json({ error: 'Unauthorized' }, 401)
 
-    const { data: caller } = await admin
+    const { data: callerRows } = await admin
       .from('user_profiles')
       .select('role')
       .eq('user_id', user.id)
-      .single()
 
-    if (!caller || caller.role !== 'super_admin') {
+    if (!callerRows || !callerRows.some((r: any) => r.role === 'super_admin')) {
       return json({ error: 'Forbidden — super admin only' }, 403)
     }
 

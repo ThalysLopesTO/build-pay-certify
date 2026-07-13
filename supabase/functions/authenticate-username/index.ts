@@ -125,20 +125,20 @@ serve(async (req) => {
       )
     }
 
-    // Verify user role if specified
+    // Verify user role if specified (a user may hold profiles in multiple
+    // companies — evaluate against all active memberships)
     if (loginData.expectedRole) {
-      const { data: profile, error: profileError } = await supabaseAdmin
+      const { data: profiles, error: profileError } = await supabaseAdmin
         .from('user_profiles')
         .select('role, is_active')
         .eq('user_id', user.id)
-        .single()
 
-      if (profileError || !profile) {
+      if (profileError || !profiles || profiles.length === 0) {
         console.error('Error fetching user profile:', profileError)
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             success: false,
-            error: 'Unable to verify user role. Please contact your administrator.' 
+            error: 'Unable to verify user role. Please contact your administrator.'
           }),
           {
             headers: corsHeaders,
@@ -147,13 +147,15 @@ serve(async (req) => {
         )
       }
 
-      // Check if account is active
-      if (profile.is_active === false) {
-        console.log('Account is archived/inactive for user:', user.id)
+      const activeProfiles = profiles.filter((p) => p.is_active !== false)
+
+      // Check that at least one membership is active
+      if (activeProfiles.length === 0) {
+        console.log('All memberships are archived/inactive for user:', user.id)
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             success: false,
-            error: 'Your account has been deactivated. Please contact your administrator for assistance.' 
+            error: 'Your account has been deactivated. Please contact your administrator for assistance.'
           }),
           {
             headers: corsHeaders,
@@ -163,11 +165,11 @@ serve(async (req) => {
       }
 
       // Check role compatibility
-      if (loginData.expectedRole === 'employee' && profile.role !== 'employee') {
+      if (loginData.expectedRole === 'employee' && !activeProfiles.some((p) => p.role === 'employee')) {
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             success: false,
-            error: 'This login page is for employees only. Please use the Company Login page.' 
+            error: 'This login page is for employees only. Please use the Company Login page.'
           }),
           {
             headers: corsHeaders,
@@ -176,11 +178,11 @@ serve(async (req) => {
         )
       }
 
-      if (loginData.expectedRole === 'admin' && profile.role === 'employee') {
+      if (loginData.expectedRole === 'admin' && activeProfiles.every((p) => p.role === 'employee')) {
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             success: false,
-            error: 'This login page is for company/admin users only. Please use the Employee Login page.' 
+            error: 'This login page is for company/admin users only. Please use the Employee Login page.'
           }),
           {
             headers: corsHeaders,

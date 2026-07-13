@@ -35,11 +35,16 @@ export function useUserProfile() {
     queryFn: async () => {
       if (!user?.id) return null;
 
-      const { data, error } = await supabase
+      // Scope to the active company (a user may belong to several companies);
+      // super_admins have no companyId, so fall back to their single row
+      let query = supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', user.id);
+      if (user.companyId) {
+        query = query.eq('company_id', user.companyId);
+      }
+      const { data, error } = await query.limit(1).maybeSingle();
 
       if (error) {
         console.error('Error fetching user profile:', error);

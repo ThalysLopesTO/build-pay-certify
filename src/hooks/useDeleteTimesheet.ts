@@ -19,6 +19,7 @@ export const useDeleteTimesheet = () => {
         .from('user_profiles')
         .select('role')
         .eq('user_id', user.id)
+        .eq('company_id', user.companyId)
         .single();
 
       if (profileError) {

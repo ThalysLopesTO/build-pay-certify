@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getActiveCompanyId } from '@/lib/auth/activeCompany';
 import { useToast } from '@/hooks/use-toast';
 
 export interface CompanyPhone {
@@ -51,19 +52,15 @@ export const useCompanyPhones = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const { data: userProfile } = await supabase
-        .from('user_profiles')
-        .select('company_id')
-        .eq('user_id', user.id)
-        .single();
+      const activeCompanyId = await getActiveCompanyId();
 
-      if (!userProfile) throw new Error('User profile not found');
+      if (!activeCompanyId) throw new Error('User profile not found');
 
       const { data, error } = await supabase
         .from('company_phones')
         .insert({
           ...phoneData,
-          company_id: userProfile.company_id,
+          company_id: activeCompanyId,
           created_by: user.id,
         })
         .select()

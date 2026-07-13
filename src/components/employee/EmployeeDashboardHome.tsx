@@ -47,11 +47,14 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data, error } = await supabase
+      let profileQuery = supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .eq('user_id', user.id);
+      if (user.companyId) {
+        profileQuery = profileQuery.eq('company_id', user.companyId);
+      }
+      const { data, error } = await profileQuery.limit(1).maybeSingle();
       if (error) {
         console.warn('User profile fetch error (non-fatal):', error.message);
         return null;

@@ -71,10 +71,16 @@ export const useUpdateProfile = () => {
         updatePayload.photo_url = photoUrl;
       }
 
-      const { error } = await supabase
+      // Scope to the active company: a user may hold profiles in several
+      // companies and must only edit the one they're working in
+      let updateQuery = supabase
         .from('user_profiles')
         .update(updatePayload)
         .eq('user_id', user.id);
+      if (user.companyId) {
+        updateQuery = updateQuery.eq('company_id', user.companyId);
+      }
+      const { error } = await updateQuery;
 
       if (error) throw error;
     },
