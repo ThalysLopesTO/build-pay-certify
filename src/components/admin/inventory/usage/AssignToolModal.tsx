@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
@@ -83,12 +84,18 @@ export const AssignToolModal: React.FC<AssignToolModalProps> = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('equipment_usage_log')
-        .select('equipment_id, employee:user_profiles!employee_id(first_name, last_name)')
+        .select('equipment_id, employee_id')
         .eq('company_id', user?.companyId)
         .eq('status', 'in_use');
-      
+
       if (error) throw error;
-      return data || [];
+      const map = await fetchProfilesByUserIds((data || []).map((u: any) => u.employee_id));
+      return (data || []).map((u: any) => ({
+        ...u,
+        employee: u.employee_id && map[u.employee_id]
+          ? { first_name: map[u.employee_id].first_name, last_name: map[u.employee_id].last_name }
+          : null,
+      }));
     },
     enabled: !!user?.companyId && open,
   });

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
 
 interface UseLivePunchDataOptions {
   selectedDate: Date;
@@ -43,10 +44,6 @@ export const useLivePunchData = ({
           work_note,
           status,
           created_at,
-          user_profiles!inner(
-            first_name,
-            last_name
-          ),
           jobsites(
             name,
             latitude,
@@ -89,8 +86,17 @@ export const useLivePunchData = ({
         throw error;
       }
 
-      console.log(`Fetched ${data?.length || 0} punch entries for ${selectedDate.toDateString()}`);
-      return data || [];
+      // Attach employee profiles (user_id FK no longer embeds)
+      const profileMap = await fetchProfilesByUserIds((data || []).map((t: any) => t.user_id));
+      const withProfiles = (data || []).map((t: any) => ({
+        ...t,
+        user_profiles: t.user_id && profileMap[t.user_id]
+          ? { first_name: profileMap[t.user_id].first_name, last_name: profileMap[t.user_id].last_name }
+          : null,
+      }));
+
+      console.log(`Fetched ${withProfiles.length} punch entries for ${selectedDate.toDateString()}`);
+      return withProfiles;
     },
     enabled: !!user?.companyId,
     refetchOnMount: true,

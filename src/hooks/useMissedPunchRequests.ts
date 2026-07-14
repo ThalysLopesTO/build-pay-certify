@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
 import { toast } from 'sonner';
 
 export interface MissedPunchRequest {
@@ -66,12 +67,6 @@ export const useMissedPunchRequests = () => {
           deleted,
           edited_by,
           edited_at,
-          employee_profiles:user_profiles!fk_missed_punch_requests_employee(
-            first_name,
-            last_name,
-            user_id,
-            photo_url
-          ),
           jobsites(name)
         `)
         .eq('company_id', user.companyId)
@@ -82,9 +77,21 @@ export const useMissedPunchRequests = () => {
         console.error('Error fetching missed punch requests:', error);
         throw error;
       }
-      
-      console.log('Fetched missed punch requests for admin:', data);
-      return data as any[];
+
+      // Employee profiles fetched separately (employee_id FK no longer embeds)
+      const profileMap = await fetchProfilesByUserIds((data || []).map((r) => r.employee_id));
+      const withProfiles = (data || []).map((r) => {
+        const p = profileMap[r.employee_id];
+        return {
+          ...r,
+          employee_profiles: p
+            ? { first_name: p.first_name, last_name: p.last_name, user_id: p.user_id, photo_url: p.photo_url }
+            : null,
+        };
+      });
+
+      console.log('Fetched missed punch requests for admin:', withProfiles);
+      return withProfiles as any[];
     },
     enabled: !!user?.companyId,
   });

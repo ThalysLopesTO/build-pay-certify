@@ -11,6 +11,25 @@ import {
 } from '@/types/equipment-usage';
 import { fromCompanyTimezone } from '@/utils/timezone';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
+
+// Attach employee/assigner profiles to usage rows. Fetched separately because
+// employee_id / assigned_by no longer embed user_profiles after multi-company
+// FK repointing.
+const attachUsageProfiles = async <T extends { employee_id?: string | null; assigned_by?: string | null }>(
+  rows: T[]
+): Promise<T[]> => {
+  const map = await fetchProfilesByUserIds(rows.flatMap((r) => [r.employee_id, r.assigned_by]));
+  return rows.map((r) => ({
+    ...r,
+    employee: r.employee_id && map[r.employee_id]
+      ? { first_name: map[r.employee_id].first_name, last_name: map[r.employee_id].last_name, photo_url: map[r.employee_id].photo_url }
+      : null,
+    assigner: r.assigned_by && map[r.assigned_by]
+      ? { first_name: map[r.assigned_by].first_name, last_name: map[r.assigned_by].last_name }
+      : null,
+  }));
+};
 
 export const useEquipmentUsage = (filters?: UsageFilters) => {
   const { user } = useAuth();
@@ -26,9 +45,7 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
         .select(`
           *,
           equipment:inventory!equipment_id(equipment_name, brand, sku),
-          employee:user_profiles!employee_id(first_name, last_name, photo_url),
-          jobsite:jobsites!jobsite_id(name),
-          assigner:user_profiles!assigned_by(first_name, last_name)
+          jobsite:jobsites!jobsite_id(name)
         `)
         .eq('company_id', user?.companyId)
         .order('start_time', { ascending: false });
@@ -52,8 +69,9 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
       const { data, error } = await query;
       if (error) throw error;
 
-      let filteredData = data || [];
-      
+      // Attach employee/assigner profiles before filtering (search uses them)
+      let filteredData = await attachUsageProfiles(data || []);
+
       // Apply search filter
       if (filters?.search) {
         const searchLower = filters.search.toLowerCase();
@@ -131,7 +149,7 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
       // Check if equipment is already assigned to someone
       const { data: existing, error: checkError } = await supabase
         .from('equipment_usage_log')
-        .select('*, employee:user_profiles!employee_id(first_name, last_name)')
+        .select('*')
         .eq('equipment_id', input.equipment_id)
         .eq('status', 'in_use')
         .maybeSingle();
@@ -139,9 +157,9 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
       if (checkError) throw checkError;
 
       if (existing) {
-        const employeeName = existing.employee 
-          ? `${existing.employee.first_name} ${existing.employee.last_name}`
-          : 'another employee';
+        const map = await fetchProfilesByUserIds([existing.employee_id]);
+        const p = existing.employee_id ? map[existing.employee_id] : null;
+        const employeeName = p ? `${p.first_name} ${p.last_name}` : 'another employee';
         throw new Error(`This equipment is already assigned to ${employeeName}`);
       }
 
@@ -165,14 +183,12 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
         .select(`
           *,
           equipment:inventory!equipment_id(equipment_name, brand, sku),
-          employee:user_profiles!employee_id(first_name, last_name, photo_url),
-          jobsite:jobsites!jobsite_id(name),
-          assigner:user_profiles!assigned_by(first_name, last_name)
+          jobsite:jobsites!jobsite_id(name)
         `)
         .single();
 
       if (error) throw error;
-      return data;
+      return (await attachUsageProfiles([data]))[0];
     },
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: ['equipment-usage', user?.companyId, filters] });
@@ -277,14 +293,12 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
         .select(`
           *,
           equipment:inventory!equipment_id(equipment_name, brand, sku),
-          employee:user_profiles!employee_id(first_name, last_name, photo_url),
-          jobsite:jobsites!jobsite_id(name),
-          assigner:user_profiles!assigned_by(first_name, last_name)
+          jobsite:jobsites!jobsite_id(name)
         `)
         .single();
-      
+
       if (error) throw error;
-      return data;
+      return (await attachUsageProfiles([data]))[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment-usage'] });
@@ -335,7 +349,6 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
       .from('equipment_usage_log')
       .select(`
         *,
-        employee:user_profiles!employee_id(first_name, last_name, photo_url),
         jobsite:jobsites!jobsite_id(name)
       `)
       .eq('equipment_id', equipmentId)
@@ -343,7 +356,7 @@ export const useEquipmentUsage = (filters?: UsageFilters) => {
       .order('start_time', { ascending: false });
 
     if (error) throw error;
-    return data as EquipmentUsageLog[];
+    return (await attachUsageProfiles(data || [])) as EquipmentUsageLog[];
   };
 
   return {

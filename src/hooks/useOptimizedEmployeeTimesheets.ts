@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { queryKeys } from '@/lib/queryKeyFactory';
 import { CACHE_STRATEGIES } from '@/lib/optimizedQueryClient';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
 
 interface TimesheetFilters {
   employeeName?: string;
@@ -21,21 +22,36 @@ export const useOptimizedEmployeeTimesheets = (filters: TimesheetFilters = {}) =
     queryFn: async () => {
       if (!user?.companyId) return { data: [], total: 0 };
 
-      // Single optimized query with joins instead of N+1 queries
+      // Employee profiles are fetched separately (the user_id FK no longer
+      // embeds after multi-company repointing). To filter by name we first
+      // resolve matching user_ids, then filter timesheets by them so DB-level
+      // pagination and count stay correct.
+      let nameFilterUserIds: string[] | null = null;
+      if (otherFilters.employeeName) {
+        const term = `%${otherFilters.employeeName}%`;
+        const { data: matches } = await supabase
+          .from('user_profiles')
+          .select('user_id')
+          .eq('company_id', user.companyId)
+          .or(`first_name.ilike.${term},last_name.ilike.${term}`);
+        nameFilterUserIds = Array.from(new Set((matches || []).map((m) => m.user_id)));
+        if (nameFilterUserIds.length === 0) {
+          return { data: [], total: 0, hasMore: false };
+        }
+      }
+
       let query = supabase
         .from('timesheets')
         .select(`
           *,
-          jobsites(name),
-          user_profiles!inner(user_id, first_name, last_name)
+          jobsites(name)
         `, { count: 'exact' })
         .eq('company_id', user.companyId)
         .order('check_in_time', { ascending: false })
         .range(offset, offset + limit - 1);
 
-      // Apply filters efficiently at database level
-      if (otherFilters.employeeName) {
-        query = query.ilike('user_profiles.first_name', `%${otherFilters.employeeName}%`);
+      if (nameFilterUserIds) {
+        query = query.in('user_id', nameFilterUserIds);
       }
 
       if (otherFilters.weekEndingDate) {
@@ -61,16 +77,20 @@ export const useOptimizedEmployeeTimesheets = (filters: TimesheetFilters = {}) =
 
       if (!timesheets) return { data: [], total: 0 };
 
+      // Attach employee profiles fetched separately
+      const profileMap = await fetchProfilesByUserIds(timesheets.map((t: any) => t.user_id));
+
       // Transform data with calculated fields
       const transformedData = timesheets.map(timesheet => {
-        const profile = timesheet.user_profiles;
-        const hoursWorked = timesheet.check_in_time && timesheet.check_out_time 
+        const profile = profileMap[(timesheet as any).user_id] || null;
+        const hoursWorked = timesheet.check_in_time && timesheet.check_out_time
           ? (new Date(timesheet.check_out_time).getTime() - new Date(timesheet.check_in_time).getTime()) / (1000 * 60 * 60)
           : 0;
 
         return {
           ...timesheet,
-          employee_name: profile 
+          user_profiles: profile,
+          employee_name: profile
             ? `${profile.first_name} ${profile.last_name}`
             : 'Former Employee',
           jobsite_name: timesheet.jobsites?.name || 'Unknown Jobsite',

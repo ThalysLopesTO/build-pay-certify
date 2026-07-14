@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
 import { format } from 'date-fns';
 
 export const useTasksCSVExport = () => {
@@ -29,7 +30,7 @@ export const useTasksCSVExport = () => {
         .select(`
           *,
           assignees:task_assignees(
-            user_profiles(first_name, last_name, user_id)
+            user_id
           ),
           tags:task_tag_links(
             task_tags(label)
@@ -41,13 +42,12 @@ export const useTasksCSVExport = () => {
             due_time,
             notes,
             assignees:subtask_assignees(
-              user_profiles(first_name, last_name, user_id)
+              user_id
             ),
             tags:subtask_tag_links(
               task_tags(label)
             )
-          ),
-          created_by_profile:user_profiles!tasks_created_by_fkey(first_name, last_name, user_id)
+          )
         `)
         .eq('company_id', user.companyId)
         .eq('jobsite_id', jobsiteId)
@@ -66,6 +66,25 @@ export const useTasksCSVExport = () => {
           variant: 'destructive',
         });
         return;
+      }
+
+      // Attach submitter/assignee profiles (fetched separately; the FK embeds
+      // no longer resolve after multi-company repointing).
+      const csvUserIds: (string | null | undefined)[] = [];
+      for (const task of tasks as any[]) {
+        csvUserIds.push(task.created_by);
+        (task.assignees || []).forEach((a: any) => csvUserIds.push(a.user_id));
+        (task.subtasks || []).forEach((s: any) =>
+          (s.assignees || []).forEach((a: any) => csvUserIds.push(a.user_id))
+        );
+      }
+      const csvProfileMap = await fetchProfilesByUserIds(csvUserIds);
+      for (const task of tasks as any[]) {
+        task.created_by_profile = task.created_by ? csvProfileMap[task.created_by] || null : null;
+        (task.assignees || []).forEach((a: any) => { a.user_profiles = csvProfileMap[a.user_id] || null; });
+        (task.subtasks || []).forEach((s: any) =>
+          (s.assignees || []).forEach((a: any) => { a.user_profiles = csvProfileMap[a.user_id] || null; })
+        );
       }
 
       // 2. Flatten task + subtask rows

@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Users, Clock, ChevronRight, LogIn, LogOut } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { DashboardCardHeader } from '@/components/common/DashboardCardHeader';
 interface PunchEntry {
@@ -55,8 +56,7 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({
           check_in_time,
           check_out_time,
           jobsite_id,
-          jobsites!inner(name),
-          user_profiles!inner(first_name, last_name, photo_url)
+          jobsites!inner(name)
         `).eq('company_id', user.companyId).gte('check_in_time', `${today}T00:00:00`).lte('check_in_time', `${today}T23:59:59`).order('check_in_time', {
         ascending: false
       });
@@ -68,9 +68,11 @@ const TodayPunchesCard: React.FC<TodayPunchesCardProps> = ({
         error
       } = await query;
       if (error) throw error;
+      // Employee profiles fetched separately (user_id FK no longer embeds)
+      const profileMap = await fetchProfilesByUserIds((timesheets || []).map((t: any) => t.user_id));
       const entries: PunchEntry[] = [];
       timesheets?.forEach((timesheet: any) => {
-        const profile = Array.isArray(timesheet.user_profiles) ? timesheet.user_profiles[0] : timesheet.user_profiles;
+        const profile = profileMap[timesheet.user_id] || null;
         const jobsite = Array.isArray(timesheet.jobsites) ? timesheet.jobsites[0] : timesheet.jobsites;
         const employeeName = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim();
         const jobsiteName = jobsite?.name || '';

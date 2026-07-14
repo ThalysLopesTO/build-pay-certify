@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
 
 export interface JobsiteForeman {
   id: string;
@@ -23,14 +24,7 @@ export const useJobsiteForemen = (jobsiteId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('jobsite_foremen')
-        .select(`
-          *,
-          user_profiles!inner(
-            user_id,
-            first_name,
-            last_name
-          )
-        `)
+        .select('*')
         .eq('jobsite_id', jobsiteId);
 
       if (error) {
@@ -38,7 +32,18 @@ export const useJobsiteForemen = (jobsiteId: string) => {
         throw error;
       }
 
-      return data;
+      // Foreman profiles fetched separately (foreman_id FK now points at auth.users)
+      const profileMap = await fetchProfilesByUserIds((data || []).map((r: any) => r.foreman_id));
+      return (data || []).map((r: any) => ({
+        ...r,
+        user_profiles: r.foreman_id && profileMap[r.foreman_id]
+          ? {
+              user_id: profileMap[r.foreman_id].user_id,
+              first_name: profileMap[r.foreman_id].first_name,
+              last_name: profileMap[r.foreman_id].last_name,
+            }
+          : null,
+      }));
     },
     enabled: !!jobsiteId,
   });

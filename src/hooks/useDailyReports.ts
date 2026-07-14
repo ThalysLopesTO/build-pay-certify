@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
 
 export interface DailyReport {
   id: string;
@@ -79,7 +80,9 @@ export const useDailyReports = (
         throw countError;
       }
 
-      // Now get the paginated data
+      // Now get the paginated data. Submitter profiles are fetched separately
+      // (see fetchProfilesByUserIds) because the submitted_by FK no longer
+      // points at user_profiles after multi-company repointing.
       let query = supabase
         .from('daily_reports')
         .select(`
@@ -87,11 +90,6 @@ export const useDailyReports = (
           jobsites (
             name,
             address
-          ),
-          user_profiles!daily_reports_submitted_by_fkey (
-            first_name,
-            last_name,
-            photo_url
           )
         `)
         .eq('company_id', user.companyId)
@@ -126,19 +124,26 @@ export const useDailyReports = (
         throw error;
       }
       
+      // Attach submitter profiles (name/photo) fetched separately
+      const profileMap = await fetchProfilesByUserIds((data || []).map((r) => r.submitted_by));
+
       // Add canEdit field based on 24-hour window and ownership
       const reportsWithCanEdit = (data || []).map(report => {
         const createdAt = new Date(report.created_at);
         const now = new Date();
         const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
         const canEdit = report.submitted_by === user.id && hoursSinceCreation < 24;
-        
+
+        const profile = profileMap[report.submitted_by];
         return {
           ...report,
+          user_profiles: profile
+            ? { first_name: profile.first_name, last_name: profile.last_name, photo_url: profile.photo_url }
+            : null,
           canEdit
         };
       });
-      
+
       return { data: reportsWithCanEdit, totalCount: totalCount || 0 };
     },
     enabled: !!user?.companyId,

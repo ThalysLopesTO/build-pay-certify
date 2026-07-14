@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
 import { AttentionReport } from './types';
 
 export const useAttentionReportsQuery = () => {
@@ -17,14 +18,16 @@ export const useAttentionReportsQuery = () => {
         .select(`
           *,
           jobsites(name),
-          user_profiles!attention_reports_submitted_by_fkey(first_name, last_name),
           attention_report_attachments(*)
         `)
         .eq('company_id', user.companyId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
+      // Submitter profiles fetched separately (submitted_by FK no longer embeds)
+      const profileMap = await fetchProfilesByUserIds((data || []).map((r) => r.submitted_by));
+
       // Transform the data to match our interface
       return (data || []).map(report => ({
         id: report.id,
@@ -39,7 +42,9 @@ export const useAttentionReportsQuery = () => {
         reviewed_at: report.reviewed_at,
         created_at: report.created_at,
         jobsites: report.jobsites,
-        user_profiles: Array.isArray(report.user_profiles) ? report.user_profiles[0] : report.user_profiles,
+        user_profiles: profileMap[report.submitted_by]
+          ? { first_name: profileMap[report.submitted_by].first_name, last_name: profileMap[report.submitted_by].last_name }
+          : null,
         attachments: report.attention_report_attachments || []
       })) as AttentionReport[];
     },

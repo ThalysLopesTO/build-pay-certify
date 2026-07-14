@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { queryKeys } from '@/lib/queryKeyFactory';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
 import { format, addDays } from 'date-fns';
 
 // ============================================================================
@@ -152,28 +153,17 @@ export const useJobsiteTasksAdvanced = (jobsiteId?: string, filters?: TaskFilter
       }
 
       // Build the base query with all relations
+      // NOTE: user_profiles is fetched separately and attached below — its FKs
+      // (completed_by, assignee user_id) no longer embed after multi-company
+      // repointing to auth.users.
       let query = supabase
         .from('tasks')
         .select(`
           *,
-          completed_by_profile:user_profiles!tasks_completed_by_fkey(
-            user_id,
-            first_name,
-            last_name,
-            photo_url
-          ),
           assignees:task_assignees(
             task_id,
             user_id,
-            assigned_at,
-            user_profiles!inner(
-              user_id,
-              first_name,
-              last_name,
-              trade,
-              position,
-              photo_url
-            )
+            assigned_at
           ),
           tags:task_tag_links(
             task_tags!inner(
@@ -196,24 +186,10 @@ export const useJobsiteTasksAdvanced = (jobsiteId?: string, filters?: TaskFilter
             updated_at,
             completed_at,
             completed_by,
-            completed_by_profile:user_profiles!subtasks_completed_by_fkey(
-              user_id,
-              first_name,
-              last_name,
-              photo_url
-            ),
             assignees:subtask_assignees(
               subtask_id,
               user_id,
-              assigned_at,
-              user_profiles!inner(
-                user_id,
-                first_name,
-                last_name,
-                trade,
-                position,
-                photo_url
-              )
+              assigned_at
             ),
             tags:subtask_tag_links(
               task_tags!inner(
@@ -259,14 +235,30 @@ export const useJobsiteTasksAdvanced = (jobsiteId?: string, filters?: TaskFilter
 
       console.log('Raw task data from Supabase:', data);
 
+      // Collect every referenced user id and fetch their profiles in one query
+      const userIds: (string | null | undefined)[] = [];
+      for (const task of data || []) {
+        userIds.push(task.completed_by);
+        (task.assignees || []).forEach((a: any) => userIds.push(a.user_id));
+        (task.subtasks || []).forEach((s: any) => {
+          userIds.push(s.completed_by);
+          (s.assignees || []).forEach((a: any) => userIds.push(a.user_id));
+        });
+      }
+      const profileMap = await fetchProfilesByUserIds(userIds);
+      const profileOf = (uid: string | null | undefined) => (uid && profileMap[uid]) || null;
+      const attachAssignee = (a: any) => ({ ...a, user_profiles: profileOf(a.user_id) });
+
       // Transform the nested data structure
       const transformedTasks: Task[] = (data || []).map((task: any) => ({
         ...task,
-        assignees: task.assignees || [],
+        completed_by_profile: profileOf(task.completed_by),
+        assignees: (task.assignees || []).map(attachAssignee),
         tags: (task.tags || []).map((link: any) => link.task_tags).filter(Boolean),
         subtasks: (task.subtasks || []).map((subtask: any) => ({
           ...subtask,
-          assignees: subtask.assignees || [],
+          completed_by_profile: profileOf(subtask.completed_by),
+          assignees: (subtask.assignees || []).map(attachAssignee),
           tags: (subtask.tags || []).map((link: any) => link.task_tags).filter(Boolean),
         })).sort((a: any, b: any) => a.sort_order - b.sort_order),
       }));

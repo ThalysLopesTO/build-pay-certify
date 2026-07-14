@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { fetchProfilesByUserIds } from '@/lib/users/fetchProfiles';
 
 interface CancellationRequest {
   id: string;
@@ -28,13 +29,24 @@ export const useCancellationRequests = () => {
         .from('cancellation_requests')
         .select(`
           *,
-          companies!inner(name),
-          user_profiles!inner(first_name, last_name, role)
+          companies!inner(name)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      // Requester profiles fetched separately (requested_by FK no longer embeds)
+      const profileMap = await fetchProfilesByUserIds((data || []).map((r: any) => r.requested_by));
+      return (data || []).map((r: any) => ({
+        ...r,
+        user_profiles: r.requested_by && profileMap[r.requested_by]
+          ? {
+              first_name: profileMap[r.requested_by].first_name,
+              last_name: profileMap[r.requested_by].last_name,
+              role: profileMap[r.requested_by].role,
+            }
+          : null,
+      }));
     },
     enabled: !!user
   });
