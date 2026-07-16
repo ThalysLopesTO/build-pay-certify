@@ -32,6 +32,7 @@ const TimeTracker = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [selectedJobsiteId, setSelectedJobsiteId] = useState<string>('');
   const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
   const [showClockOutModal, setShowClockOutModal] = useState(false);
