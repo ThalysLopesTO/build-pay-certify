@@ -7,6 +7,7 @@ import { useTimesheets } from '@/hooks/useTimesheets';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Clock, MapPin, Play, Square, CheckCircle } from 'lucide-react';
 import EmployeePageHeader from './EmployeePageHeader';
 import { useElapsedTime } from '@/hooks/useActiveClockSession';
