@@ -7,6 +7,7 @@ import { useTimesheets } from '@/hooks/useTimesheets';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useActiveJobsites } from '@/hooks/useJobsites';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Clock, MapPin, Play, Square, CheckCircle } from 'lucide-react';
 import EmployeePageHeader from './EmployeePageHeader';
 import { useElapsedTime } from '@/hooks/useActiveClockSession';
@@ -31,6 +32,7 @@ const TimeTracker = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [selectedJobsiteId, setSelectedJobsiteId] = useState<string>('');
   const [selectedWeek, setSelectedWeek] = useState<Date>(new Date());
   const [showClockOutModal, setShowClockOutModal] = useState(false);
@@ -265,26 +267,49 @@ const TimeTracker = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-slate-700">{t('clock.selectJobsite')}</label>
-              <Select value={selectedJobsiteId} onValueChange={setSelectedJobsiteId}>
-                <SelectTrigger className="h-12 rounded-xl">
-                  <SelectValue placeholder={t('clock.chooseJobsite')} />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {jobsitesLoading ? (
-                    <SelectItem value="loading-placeholder" disabled>{t('common.loading')}</SelectItem>
-                  ) : !user?.companyId ? (
-                    <SelectItem value="auth-loading-placeholder" disabled>{t('common.loading')}</SelectItem>
-                  ) : !jobsites || jobsites.length === 0 ? (
-                    <SelectItem value="empty-placeholder" disabled>{t('clock.noJobsites')}</SelectItem>
-                  ) : (
-                    jobsites.map((jobsite) => (
-                      <SelectItem key={jobsite.id} value={jobsite.id}>
-                        {jobsite.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              {isMobile ? (
+                <select
+                  value={selectedJobsiteId}
+                  onChange={(e) => setSelectedJobsiteId(e.target.value)}
+                  disabled={jobsitesLoading || !user?.companyId}
+                  className="w-full h-12 rounded-xl border border-input bg-background px-3 text-base text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60 appearance-none"
+                  aria-label={t('clock.selectJobsite')}
+                >
+                  <option value="" disabled>
+                    {jobsitesLoading || !user?.companyId
+                      ? t('common.loading')
+                      : !jobsites || jobsites.length === 0
+                        ? t('clock.noJobsites')
+                        : t('clock.chooseJobsite')}
+                  </option>
+                  {(jobsites ?? []).map((jobsite) => (
+                    <option key={jobsite.id} value={jobsite.id}>
+                      {jobsite.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Select value={selectedJobsiteId} onValueChange={setSelectedJobsiteId}>
+                  <SelectTrigger className="h-12 rounded-xl">
+                    <SelectValue placeholder={t('clock.chooseJobsite')} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {jobsitesLoading ? (
+                      <SelectItem value="loading-placeholder" disabled>{t('common.loading')}</SelectItem>
+                    ) : !user?.companyId ? (
+                      <SelectItem value="auth-loading-placeholder" disabled>{t('common.loading')}</SelectItem>
+                    ) : !jobsites || jobsites.length === 0 ? (
+                      <SelectItem value="empty-placeholder" disabled>{t('clock.noJobsites')}</SelectItem>
+                    ) : (
+                      jobsites.map((jobsite) => (
+                        <SelectItem key={jobsite.id} value={jobsite.id}>
+                          {jobsite.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <Button

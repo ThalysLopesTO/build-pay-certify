@@ -1,37 +1,41 @@
-# Fix invoice save errors (create & edit)
+## Diagnosis
 
-## What's happening
-Saving an invoice (new draft or editing an existing one) sometimes fails with a generic "Failed to create/update invoice" toast. The real cause is the database, not the UI.
+Backend is healthy for Christiane (chris@avena.com.br):
+- Profile is active, single company (7 Star Family), employee role, license active
+- 9 active jobsites available to her, RLS permits SELECT/INSERT on timesheets
+- No DB errors or failed inserts logged for her account
+- She signed in successfully today at 16:29 UTC but has zero timesheets ever
 
-- `invoices.invoice_number` is `NOT NULL` with a **global** `UNIQUE` constraint.
-- The `set_invoice_number()` trigger raises `Invoice number "X" already exists` whenever a typed PO/Invoice number matches **any** invoice number in the whole database (all companies).
-- This company enters many free-form numbers (`teste`, client names, `DSS0391 | Shelly`, …), so collisions happen often → save fails.
-- Auto-generated `INV-0042` numbers rarely collide (the generator loops), which is why it usually "runs well" and only breaks intermittently.
+She reports the jobsite dropdown won't let her select — she can't pick a jobsite to punch in. Only she is affected.
 
-Two related problems found in the same code path:
-- Create never saves `subtotal` / `total_amount`, so new invoices are stored as `$0` totals.
-- Uniqueness isn't scoped per company, so a number another company used blocks you.
+The Time Tracker uses a Radix UI `<Select>` (shadcn) for the jobsite picker. On mobile Safari there is a well-known Radix Select touch bug where the dropdown items don't reliably respond to tap on some iOS/browser combinations — the sheet either dismisses on tap or the value never commits. Since everything server-side is fine and only this one user (on phone browser) is affected, the fix is on the client for that picker.
 
-## The fix
+## Fix
 
-### 1. Database migration — scope invoice numbers per company
-- Drop the global `invoices_invoice_number_key` unique constraint.
-- Add a composite unique constraint on `(company_id, invoice_number)` so numbers only need to be unique **within a company**.
-- Update `set_invoice_number()` to check duplicates scoped to `NEW.company_id`.
-- Update `generate_invoice_number()` to take/scope by `company_id` (max + loop within the company), so auto-numbers stay per-company.
+Replace the Radix `<Select>` used for jobsite selection in `src/components/employee/TimeTracker.tsx` with a mobile-friendly picker that iOS Safari renders natively and reliably. On small viewports, render a native HTML `<select>` (styled to match); on desktop, keep the current Radix Select (which works well with a mouse). This is a UI-only change.
 
-### 2. `src/hooks/useInvoices.ts` — persist totals & clearer errors
-- In `createInvoiceMutation`, compute and include `subtotal` and `total_amount` (same math the form already shows: subtotal from line items, minus discount %, plus tax %). Do the same defensively in `updateInvoiceMutation`.
-- In both `onError` handlers, surface the actual DB message when it's a duplicate-number error (e.g. "Invoice number 'teste' is already used — pick a different number") instead of the generic text.
+### Steps
 
-### 3. `src/components/admin/CreateInvoiceForm.tsx` — no functional change beyond passing totals
-- Ensure the computed `subtotal`/`total_amount` (already available via `calculateSubtotal`/`calculateTotal`) are passed through to the mutations.
+1. In `src/components/employee/TimeTracker.tsx`:
+   - Detect mobile via existing `useIsMobile` hook.
+   - When mobile: render a native `<select>` bound to `selectedJobsiteId`/`setSelectedJobsiteId`, styled with the same rounded/h-12 look. Options: same jobsites list, plus the "loading" / "no jobsites" fallbacks the current code shows.
+   - When not mobile: keep the existing Radix `<Select>` code path unchanged.
+   - Keep the placeholder, disabled Clock In button until a jobsite is chosen, and all other logic (offline queue, geolocation) untouched.
 
-## Result
-- Editing and re-saving an existing invoice keeps its number (same row) with no false collision.
-- Creating a draft with a custom PO only fails if that number is already used **in your own company**, and the message says exactly why.
-- New invoices store correct totals instead of `$0`.
+2. No changes to backend, RLS, database, hooks, or the clock-in mutation.
+
+### Why this is enough
+
+- Native `<select>` on iOS opens the system wheel picker, which is bulletproof for touch selection.
+- Change is scoped to one component and one dropdown, so nothing else in the employee flow is disturbed.
+- Desktop UX stays identical.
+
+### Follow-up if the issue persists after this change
+
+If Christiane still cannot punch in after this update, next steps (not in this plan) would be to (a) have her clear Safari site data / hard refresh in case a stale cached bundle is served, and (b) capture a screenshot/console error from her device.
 
 ## Technical notes
-- Only additive/ئcorrective schema changes; no data loss. Existing rows keep their numbers.
-- No RLS change needed — the license/admin policies already allow these writes.
+
+- File touched: `src/components/employee/TimeTracker.tsx` only.
+- Reuses `useIsMobile` from `src/hooks/use-mobile`.
+- No new dependencies. No migrations. No edge functions.
