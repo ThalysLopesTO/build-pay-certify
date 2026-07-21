@@ -1,27 +1,27 @@
-# Create Manual Timesheets — Marcos Baggio
+# Single 14-day Manual Timesheets — Jul 3 to Jul 16, 2026
 
-Insert 2 weekly manual timesheets (matching the existing 7-day pattern in the DB) for Marcos Baggio at Ground Zero.
+Going forward every employee you send will get **one** manual timesheet spanning Jul 3 – Jul 16, 2026 (14 days) instead of two weekly rows.
 
-## Employee & project
-- Employee: Marcos Baggio (`bde63e76-b0dd-4166-8b88-dc188559c430`, user `bffbbd7c-52ee-47f1-82d9-e5f3e24ca1a4`)
-- Company: Ground Zero (`1c58ddd5-63fb-4cfc-8e82-d6cd4d646d33`)
-- Jobsite: Equitable Bank (`71156898-7d32-485e-9643-e40c4f86a08e`)
+## Cleanup for Marcos Baggio
+Delete the two weekly rows I just inserted (Jul 3–9 and Jul 10–16) and replace them with one 14-day timesheet.
+
+## Marcos Baggio — Jul 3–16, 2026
+- Company: Ground Zero
+- Employee: Marcos Baggio
+- Jobsite: Equitable Bank
 - Role: Framer
-- Hourly rate: $45.00 (override of profile rate)
-- Tax: 0%
-- Approval status: `pending`
-- `created_by`: Marcos's own user_id (no admin session available server-side)
+- Rate: $45.00/hr, Tax: 0%
+- `daily_hours` jsonb: 14 entries, one per day
+  - Jul 3 Fri 8, Jul 4 Sat 0, Jul 5 Sun 0, Jul 6 Mon 8, Jul 7 Tue 14, Jul 8 Wed 8, Jul 9 Thu 8,
+  - Jul 10 Fri 8, Jul 11 Sat 8, Jul 12 Sun 0, Jul 13 Mon 8, Jul 14 Tue 10, Jul 15 Wed 8, Jul 16 Thu 0
+- Total: **88 hrs**, Subtotal / Total payment: **$3,960.00**
+- Status: `pending`
 
-## Week 1 — Jul 3–9, 2026 (46 hrs)
-Fri 8, Sat 0, Sun 0, Mon 8, Tue 14, Wed 8, Thu 8 → 46h × $45 = **$2,070.00**
-
-## Week 2 — Jul 10–16, 2026 (42 hrs)
-Fri 8, Sat 8, Sun 0, Mon 8, Tue 10, Wed 8, Thu 0 → 42h × $45 = **$1,890.00**
-
-Combined: **88 hrs / $3,960.00** ✓
-
-## Technical
-Two `INSERT INTO public.manual_timesheets` rows via `supabase--insert`, populating `daily_hours` jsonb (`[{date, day, hours}, …]`), `pay_period_start/end`, `total_hours`, `hourly_rate`, `subtotal`, `total_payment`, `employee_role='Framer'`, `project_name='Equitable Bank'`, and the IDs above.
+## Process for the rest of the list
+When you send the employee list, for each employee I'll:
+1. Look up the `user_profiles` row and confirm company + jobsite match.
+2. Insert one `manual_timesheets` row with `pay_period_start = 2026-07-03`, `pay_period_end = 2026-07-16`, and the 14-day `daily_hours` array.
+3. Reply with a confirmation of hours and payment.
 
 ## Assumption
-Year = **2026** (current). Confirm if you meant 2025.
+Year = **2026**. Say the word if it should be 2025 and I'll adjust before inserting.
