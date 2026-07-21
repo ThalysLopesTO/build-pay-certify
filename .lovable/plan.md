@@ -1,41 +1,27 @@
-## Diagnosis
+# Create Manual Timesheets — Marcos Baggio
 
-Backend is healthy for Christiane (chris@avena.com.br):
-- Profile is active, single company (7 Star Family), employee role, license active
-- 9 active jobsites available to her, RLS permits SELECT/INSERT on timesheets
-- No DB errors or failed inserts logged for her account
-- She signed in successfully today at 16:29 UTC but has zero timesheets ever
+Insert 2 weekly manual timesheets (matching the existing 7-day pattern in the DB) for Marcos Baggio at Ground Zero.
 
-She reports the jobsite dropdown won't let her select — she can't pick a jobsite to punch in. Only she is affected.
+## Employee & project
+- Employee: Marcos Baggio (`bde63e76-b0dd-4166-8b88-dc188559c430`, user `bffbbd7c-52ee-47f1-82d9-e5f3e24ca1a4`)
+- Company: Ground Zero (`1c58ddd5-63fb-4cfc-8e82-d6cd4d646d33`)
+- Jobsite: Equitable Bank (`71156898-7d32-485e-9643-e40c4f86a08e`)
+- Role: Framer
+- Hourly rate: $45.00 (override of profile rate)
+- Tax: 0%
+- Approval status: `pending`
+- `created_by`: Marcos's own user_id (no admin session available server-side)
 
-The Time Tracker uses a Radix UI `<Select>` (shadcn) for the jobsite picker. On mobile Safari there is a well-known Radix Select touch bug where the dropdown items don't reliably respond to tap on some iOS/browser combinations — the sheet either dismisses on tap or the value never commits. Since everything server-side is fine and only this one user (on phone browser) is affected, the fix is on the client for that picker.
+## Week 1 — Jul 3–9, 2026 (46 hrs)
+Fri 8, Sat 0, Sun 0, Mon 8, Tue 14, Wed 8, Thu 8 → 46h × $45 = **$2,070.00**
 
-## Fix
+## Week 2 — Jul 10–16, 2026 (42 hrs)
+Fri 8, Sat 8, Sun 0, Mon 8, Tue 10, Wed 8, Thu 0 → 42h × $45 = **$1,890.00**
 
-Replace the Radix `<Select>` used for jobsite selection in `src/components/employee/TimeTracker.tsx` with a mobile-friendly picker that iOS Safari renders natively and reliably. On small viewports, render a native HTML `<select>` (styled to match); on desktop, keep the current Radix Select (which works well with a mouse). This is a UI-only change.
+Combined: **88 hrs / $3,960.00** ✓
 
-### Steps
+## Technical
+Two `INSERT INTO public.manual_timesheets` rows via `supabase--insert`, populating `daily_hours` jsonb (`[{date, day, hours}, …]`), `pay_period_start/end`, `total_hours`, `hourly_rate`, `subtotal`, `total_payment`, `employee_role='Framer'`, `project_name='Equitable Bank'`, and the IDs above.
 
-1. In `src/components/employee/TimeTracker.tsx`:
-   - Detect mobile via existing `useIsMobile` hook.
-   - When mobile: render a native `<select>` bound to `selectedJobsiteId`/`setSelectedJobsiteId`, styled with the same rounded/h-12 look. Options: same jobsites list, plus the "loading" / "no jobsites" fallbacks the current code shows.
-   - When not mobile: keep the existing Radix `<Select>` code path unchanged.
-   - Keep the placeholder, disabled Clock In button until a jobsite is chosen, and all other logic (offline queue, geolocation) untouched.
-
-2. No changes to backend, RLS, database, hooks, or the clock-in mutation.
-
-### Why this is enough
-
-- Native `<select>` on iOS opens the system wheel picker, which is bulletproof for touch selection.
-- Change is scoped to one component and one dropdown, so nothing else in the employee flow is disturbed.
-- Desktop UX stays identical.
-
-### Follow-up if the issue persists after this change
-
-If Christiane still cannot punch in after this update, next steps (not in this plan) would be to (a) have her clear Safari site data / hard refresh in case a stale cached bundle is served, and (b) capture a screenshot/console error from her device.
-
-## Technical notes
-
-- File touched: `src/components/employee/TimeTracker.tsx` only.
-- Reuses `useIsMobile` from `src/hooks/use-mobile`.
-- No new dependencies. No migrations. No edge functions.
+## Assumption
+Year = **2026** (current). Confirm if you meant 2025.
