@@ -17,6 +17,7 @@ import { Mail, AlertTriangle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClient } from '@/hooks/useClient';
 import { createInvoiceEmailHTML } from '@/utils/invoiceEmailTemplate';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InvoiceEmailSenderProps {
   invoice: Invoice;
