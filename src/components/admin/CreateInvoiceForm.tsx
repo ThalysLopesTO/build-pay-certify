@@ -300,7 +300,10 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
           unit_price: item.unit_price,
           amount: item.quantity * item.unit_price,
         })),
-    };
+      // Resending an invoice takes it out of draft
+      markAsSent: resend,
+    } as any;
+
 
     updateInvoiceMutation.mutate(
       { id: invoice.id, data: invoiceData },
