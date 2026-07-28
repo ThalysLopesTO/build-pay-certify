@@ -365,8 +365,15 @@ export const useInvoices = () => {
         updated_at: new Date().toISOString(),
       } as any;
 
+      // Sending an edited invoice promotes it out of draft so reminders resume
+      if ((data as any).markAsSent) {
+        updatePayload.status = 'pending';
+        updatePayload.sent_date = new Date().toISOString();
+      }
+
       // Drop invoice_number if empty so the DB keeps the existing value
       if (!updatePayload.invoice_number) delete updatePayload.invoice_number;
+
 
       const { data: updated, error: updateError } = await supabase
         .from('invoices')
