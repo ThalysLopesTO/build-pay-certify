@@ -58,6 +58,12 @@ const InvoiceTrackerMobileCard: React.FC<InvoiceTrackerMobileCardProps> = ({
             Pending
           </Badge>
         );
+      case 'draft':
+        return (
+          <Badge className="bg-muted text-muted-foreground border-border text-xs">
+            Draft
+          </Badge>
+        );
       case 'expired':
         return (
           <Badge className="bg-gray-100 text-gray-700 border-gray-200 text-xs">

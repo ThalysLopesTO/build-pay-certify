@@ -17,6 +17,7 @@ import { Mail, AlertTriangle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClient } from '@/hooks/useClient';
 import { createInvoiceEmailHTML } from '@/utils/invoiceEmailTemplate';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InvoiceEmailSenderProps {
   invoice: Invoice;
@@ -134,6 +135,14 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
       });
 
       if (emailResult.success) {
+        // A draft becomes a real, sent invoice once it reaches the client
+        if (invoice.status === 'draft') {
+          await supabase
+            .from('invoices')
+            .update({ status: 'pending', sent_date: new Date().toISOString() })
+            .eq('id', invoice.id);
+        }
+
         toast({
           title: 'Email Sent Successfully',
           description: `Invoice #${invoice.invoice_number} has been sent to ${invoice.client_email} with PDF attachment`,

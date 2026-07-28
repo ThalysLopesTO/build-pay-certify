@@ -14,6 +14,7 @@ export interface Invoice {
   subtotal: number;
   total_amount: number;
   status: 'pending' | 'paid' | 'expired' | 'sent' | 'draft' | 'overdue';
+
   due_date: string;
   sent_date: string;
   notes: string | null;

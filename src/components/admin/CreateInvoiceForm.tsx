@@ -217,7 +217,9 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
         amount: item.quantity * item.unit_price
       })),
       sendEmail: sendEmailFlag,
-    };
+      saveAsDraft,
+    } as any;
+
     
     createInvoiceMutation.mutate(invoiceData as any, {
       onSuccess: async (createdInvoice: any) => {
@@ -298,7 +300,10 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
           unit_price: item.unit_price,
           amount: item.quantity * item.unit_price,
         })),
-    };
+      // Resending an invoice takes it out of draft
+      markAsSent: resend,
+    } as any;
+
 
     updateInvoiceMutation.mutate(
       { id: invoice.id, data: invoiceData },
