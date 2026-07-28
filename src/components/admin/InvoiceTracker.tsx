@@ -70,6 +70,7 @@ const InvoiceTracker = () => {
       case 'pending': return 'invoice-status-pending';
       case 'paid': return 'invoice-status-paid';
       case 'expired': return 'invoice-status-overdue';
+      case 'draft': return 'bg-muted text-muted-foreground border-border';
       default: return 'bg-muted text-muted-foreground border-border';
     }
   };
