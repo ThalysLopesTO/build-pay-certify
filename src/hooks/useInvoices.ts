@@ -112,6 +112,8 @@ export const useInvoices = () => {
         due_date: invoiceData.due_date,
         notes: invoiceData.notes,
         company_id: user.companyId,
+        // Drafts stay internal: never emailed and skipped by reminders
+        status: (invoiceData as any).saveAsDraft ? 'draft' : 'pending',
       } as any; // Type assertion to work around TypeScript schema mismatch
 
       const { data: invoice, error: invoiceError } = await supabase
