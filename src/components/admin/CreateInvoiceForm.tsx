@@ -217,7 +217,9 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
         amount: item.quantity * item.unit_price
       })),
       sendEmail: sendEmailFlag,
-    };
+      saveAsDraft,
+    } as any;
+
     
     createInvoiceMutation.mutate(invoiceData as any, {
       onSuccess: async (createdInvoice: any) => {
