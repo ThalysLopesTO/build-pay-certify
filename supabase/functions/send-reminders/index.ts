@@ -718,6 +718,7 @@ async function processInvoiceReminders(company: Company, settings: any) {
     .select('*, client_id')
     .eq('company_id', company.id)
     .in('status', ['pending', 'sent'])
+    .neq('status', 'draft')
     .or(`due_date.eq.${beforeDueDate.toISOString().split('T')[0]},due_date.eq.${overdueDateCheck.toISOString().split('T')[0]}`);
 
   if (error) {
