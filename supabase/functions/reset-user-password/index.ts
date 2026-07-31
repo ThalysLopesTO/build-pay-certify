@@ -49,11 +49,13 @@ serve(async (req) => {
       .eq('user_id', user.id)
 
     if (adminError || !adminRows || adminRows.length === 0) {
+      console.error('Admin profile lookup failed:', adminError?.message, 'user:', user.id)
       return new Response(
-        JSON.stringify({ error: 'Admin profile not found' }),
+        JSON.stringify({ error: `Admin profile not found${adminError ? `: ${adminError.message}` : ''}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
       )
     }
+
 
     const { data: callerActiveCompanyId } = await supabaseClient
       .rpc('get_active_company_id_for', { p_user_id: user.id })
