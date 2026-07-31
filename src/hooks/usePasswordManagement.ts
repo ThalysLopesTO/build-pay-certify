@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { getEdgeFunctionError } from '@/lib/edgeError';
 
 interface ResetPasswordData {
   targetUserId: string;
@@ -55,7 +56,8 @@ export const useResetUserPassword = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) throw new Error(await getEdgeFunctionError(error, 'Failed to reset password. Please try again.'));
+      if (result?.error) throw new Error(result.error);
       return result;
     },
     onSuccess: (_, variables) => {
@@ -68,7 +70,7 @@ export const useResetUserPassword = () => {
       console.error('Password reset error:', error);
       toast({
         title: "Reset Failed",
-        description: "Failed to reset password. Please try again.",
+        description: (error as Error)?.message || "Failed to reset password. Please try again.",
         variant: "destructive"
       });
     }

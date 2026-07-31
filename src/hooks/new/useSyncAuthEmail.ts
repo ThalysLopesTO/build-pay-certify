@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getEdgeFunctionError } from '@/lib/edgeError';
 
 interface SyncAuthEmailParams {
   userId: string;
@@ -17,7 +18,7 @@ export function useSyncAuthEmail() {
         { body: { userId, newEmail: email } }
       );
 
-      if (error) throw error;
+      if (error) throw new Error(await getEdgeFunctionError(error, 'Failed to sync login email.'));
       if (!data?.success) throw new Error(data?.error || 'Failed to sync email');
       
       return data;
