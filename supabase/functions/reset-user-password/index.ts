@@ -12,23 +12,35 @@ serve(async (req) => {
   }
 
   try {
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    if (!serviceKey) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY is not set')
+      return new Response(
+        JSON.stringify({ error: 'Server misconfigured: missing service role key' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      serviceKey,
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const authHeader = req.headers.get('Authorization')!
+    const authHeader = req.headers.get('Authorization') ?? ''
     const token = authHeader.replace('Bearer ', '')
-    
+
     // Get the current user from the token
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
-    
+
     if (authError || !user) {
+      console.error('Auth failed:', authError?.message)
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: `Unauthorized: ${authError?.message ?? 'no user'}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       )
     }
+
 
     // Get the admin's profile in their ACTIVE company (multi-company aware)
     const { data: adminRows, error: adminError } = await supabaseClient
@@ -37,11 +49,13 @@ serve(async (req) => {
       .eq('user_id', user.id)
 
     if (adminError || !adminRows || adminRows.length === 0) {
+      console.error('Admin profile lookup failed:', adminError?.message, 'user:', user.id)
       return new Response(
-        JSON.stringify({ error: 'Admin profile not found' }),
+        JSON.stringify({ error: `Admin profile not found${adminError ? `: ${adminError.message}` : ''}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
       )
     }
+
 
     const { data: callerActiveCompanyId } = await supabaseClient
       .rpc('get_active_company_id_for', { p_user_id: user.id })
@@ -114,12 +128,15 @@ serve(async (req) => {
       }
 
       if (!canReset(adminProfile.role, targetProfile.role)) {
+        console.error('Permission denied:', adminProfile.role, '->', targetProfile.role)
         return new Response(
-          JSON.stringify({ error: 'Insufficient permissions to reset this user\'s password' }),
+          JSON.stringify({ error: `Insufficient permissions: a ${adminProfile.role} cannot reset a ${targetProfile.role}'s password` }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
         )
       }
     }
+
+
 
     // Update the user's password using admin API
     const { error: updateError } = await supabaseClient.auth.admin.updateUserById(
@@ -130,10 +147,11 @@ serve(async (req) => {
     if (updateError) {
       console.error('Password update error:', updateError)
       return new Response(
-        JSON.stringify({ error: 'Failed to update password' }),
+        JSON.stringify({ error: `Failed to update password: ${updateError.message}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
+
 
     // Log the password reset for accountability
     const { error: logError } = await supabaseClient
@@ -159,8 +177,9 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: `Internal server error: ${(error as Error)?.message ?? 'unknown'}` }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
+
   }
 })

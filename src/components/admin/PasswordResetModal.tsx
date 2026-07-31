@@ -58,8 +58,9 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({
     resetPassword.mutate({
       targetUserId: employee.user_id,
       newPassword: data.newPassword,
-      targetUserEmail: employee.first_name + '@company.com', // Adjust based on your email field
+      targetUserEmail: (employee as { email?: string }).email || 'unknown',
       targetUserName: `${employee.first_name} ${employee.last_name}`
+
     }, {
       onSuccess: () => {
         form.reset();

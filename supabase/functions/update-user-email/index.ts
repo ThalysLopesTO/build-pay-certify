@@ -18,9 +18,17 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+      return new Response(JSON.stringify({ error: "Server misconfigured: missing Supabase service credentials" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Create admin client
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -41,13 +49,15 @@ const handler = async (req: Request): Promise<Response> => {
     // Verify the JWT and get the user
     const jwt = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(jwt);
-    
+
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid authorization" }), {
+      console.error("Auth failed:", authError?.message);
+      return new Response(JSON.stringify({ error: `Invalid authorization: ${authError?.message ?? "no user"}` }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     // Get the current user's profile in their ACTIVE company (multi-company aware)
     const { data: callerRows, error: profileError } = await supabaseAdmin
@@ -63,7 +73,8 @@ const handler = async (req: Request): Promise<Response> => {
       (callerRows ?? [])[0];
 
     if (profileError || !currentUserProfile) {
-      return new Response(JSON.stringify({ error: "Could not verify user profile" }), {
+      console.error("Caller profile lookup failed:", profileError?.message, "user:", user.id);
+      return new Response(JSON.stringify({ error: `Could not verify user profile${profileError ? `: ${profileError.message}` : ""}` }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -71,11 +82,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Check if user is admin/super_admin/management
     if (!["admin", "super_admin", "management"].includes(currentUserProfile.role)) {
-      return new Response(JSON.stringify({ error: "Insufficient permissions" }), {
+      console.error("Permission denied for role:", currentUserProfile.role);
+      return new Response(JSON.stringify({ error: `Insufficient permissions: role "${currentUserProfile.role}" cannot change login emails` }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     const { userId, newEmail }: UpdateEmailRequest = await req.json();
 
