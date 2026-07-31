@@ -12,23 +12,35 @@ serve(async (req) => {
   }
 
   try {
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    if (!serviceKey) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY is not set')
+      return new Response(
+        JSON.stringify({ error: 'Server misconfigured: missing service role key' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      serviceKey,
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const authHeader = req.headers.get('Authorization')!
+    const authHeader = req.headers.get('Authorization') ?? ''
     const token = authHeader.replace('Bearer ', '')
-    
+
     // Get the current user from the token
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
-    
+
     if (authError || !user) {
+      console.error('Auth failed:', authError?.message)
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: `Unauthorized: ${authError?.message ?? 'no user'}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       )
     }
+
 
     // Get the admin's profile in their ACTIVE company (multi-company aware)
     const { data: adminRows, error: adminError } = await supabaseClient
