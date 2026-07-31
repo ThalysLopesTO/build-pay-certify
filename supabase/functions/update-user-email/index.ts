@@ -18,9 +18,17 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+      return new Response(JSON.stringify({ error: "Server misconfigured: missing Supabase service credentials" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Create admin client
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -41,13 +49,15 @@ const handler = async (req: Request): Promise<Response> => {
     // Verify the JWT and get the user
     const jwt = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(jwt);
-    
+
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid authorization" }), {
+      console.error("Auth failed:", authError?.message);
+      return new Response(JSON.stringify({ error: `Invalid authorization: ${authError?.message ?? "no user"}` }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     // Get the current user's profile in their ACTIVE company (multi-company aware)
     const { data: callerRows, error: profileError } = await supabaseAdmin
