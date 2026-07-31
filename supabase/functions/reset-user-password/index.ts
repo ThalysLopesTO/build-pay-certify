@@ -128,12 +128,15 @@ serve(async (req) => {
       }
 
       if (!canReset(adminProfile.role, targetProfile.role)) {
+        console.error('Permission denied:', adminProfile.role, '->', targetProfile.role)
         return new Response(
-          JSON.stringify({ error: 'Insufficient permissions to reset this user\'s password' }),
+          JSON.stringify({ error: `Insufficient permissions: a ${adminProfile.role} cannot reset a ${targetProfile.role}'s password` }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
         )
       }
     }
+
+
 
     // Update the user's password using admin API
     const { error: updateError } = await supabaseClient.auth.admin.updateUserById(
