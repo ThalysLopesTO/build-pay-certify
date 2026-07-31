@@ -73,7 +73,8 @@ const handler = async (req: Request): Promise<Response> => {
       (callerRows ?? [])[0];
 
     if (profileError || !currentUserProfile) {
-      return new Response(JSON.stringify({ error: "Could not verify user profile" }), {
+      console.error("Caller profile lookup failed:", profileError?.message, "user:", user.id);
+      return new Response(JSON.stringify({ error: `Could not verify user profile${profileError ? `: ${profileError.message}` : ""}` }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -81,11 +82,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Check if user is admin/super_admin/management
     if (!["admin", "super_admin", "management"].includes(currentUserProfile.role)) {
-      return new Response(JSON.stringify({ error: "Insufficient permissions" }), {
+      console.error("Permission denied for role:", currentUserProfile.role);
+      return new Response(JSON.stringify({ error: `Insufficient permissions: role "${currentUserProfile.role}" cannot change login emails` }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     const { userId, newEmail }: UpdateEmailRequest = await req.json();
 
