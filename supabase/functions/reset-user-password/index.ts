@@ -147,10 +147,11 @@ serve(async (req) => {
     if (updateError) {
       console.error('Password update error:', updateError)
       return new Response(
-        JSON.stringify({ error: 'Failed to update password' }),
+        JSON.stringify({ error: `Failed to update password: ${updateError.message}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
+
 
     // Log the password reset for accountability
     const { error: logError } = await supabaseClient
