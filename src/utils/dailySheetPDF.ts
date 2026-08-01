@@ -242,9 +242,9 @@ export const generateDailySheetPDF = async (
       const bx = vx + i * step;
       checkbox(bx, vy - 1, data.weather === key);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
+      doc.setFontSize(7);
       doc.setTextColor(...TEXT);
-      doc.text(text, bx + 13, vy);
+      doc.text(text, bx + 11.5, vy);
     });
   });
 
@@ -253,16 +253,16 @@ export const generateDailySheetPDF = async (
   drawInfoCell(margin + colW, y + ROW_H * 3, colW, 'Safety Meeting', '', (vx, vy, vw) => {
     checkbox(vx, vy - 1, data.safetyMeeting === 'yes');
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setTextColor(...TEXT);
-    doc.text('YES', vx + 13, vy);
-    const nx = vx + vw / 2;
+    doc.text('YES', vx + 11.5, vy);
+    const nx = vx + 46;
     checkbox(nx, vy - 1, data.safetyMeeting === 'no');
-    doc.text('NO', nx + 13, vy);
+    doc.text('NO', nx + 11.5, vy);
     if (data.meetingTime) {
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setTextColor(90, 88, 84);
-      doc.text(`Time: ${formatTime12h(data.meetingTime)}`, vx + vw, vy, { align: 'right' });
+      doc.text(`MEETING: ${formatTime12h(data.meetingTime)}`, vx + vw, vy, { align: 'right' });
     }
   });
 
