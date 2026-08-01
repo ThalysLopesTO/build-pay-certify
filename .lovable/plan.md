@@ -1,31 +1,33 @@
-## What I found
+# Daily Sheet — Group Timesheet with PDF Export
 
-**Quotes are fine.** Quotes have a real `draft` status, emails only go out when someone explicitly clicks "Save & Send" (which opens the email modal), and the reminder job filters `status = 'sent'`. Drafts never email a client.
+Replace the placeholder "Project" tab in Time Sheet with a new **Daily Sheet** tab that lets an admin/manager log a whole crew for one day and export a clean, client-ready PDF.
 
-**Invoices are the problem.** There is no `draft` status for invoices:
-- The database `invoices.status` column defaults to `'pending'`, and the only statuses that exist in the data today are `pending` and `paid`.
-- `useInvoices.ts` never sends a status on insert, so "Save as Draft" in the invoice form creates a **pending** invoice — identical to a sent one.
-- The `send-reminders` edge function pulls invoices with `status IN ('pending','sent')` and emails the client due-soon / overdue reminders. So every "draft" invoice starts emailing clients automatically.
-- The `check_invoices_due_soon` / `check_invoices_overdue` database functions also generate notifications for those same drafts.
+## How it works
 
-## Plan
+1. Pick a **Project** (jobsite dropdown, with a "custom name" option like the Hourly form).
+2. Pick a **Day** — defaults to today, any date can be chosen.
+3. Set a **crew default start / end time** (e.g. 7:00 AM – 3:30 PM).
+4. **Select multiple employees** from the company directory (searchable multi-select checkbox list, plus an "add custom name" row for workers without an account).
+5. Each selected employee appears as a row pre-filled with the crew times; start, end, and break minutes can be edited per row. Hours per row are calculated automatically, with a crew total at the bottom.
+6. Optional notes field (weather, scope of work, etc.).
+7. **Download PDF** — generates the report. Nothing is stored in the database; the form is a one-off export tool.
 
-**1. Add a real draft status for invoices**
-- Persist `status: 'draft'` when the user clicks "Save as Draft" in the invoice form, and `status: 'pending'` when they use "Send Invoice".
-- Add `'draft'` to the invoice status type in `src/components/admin/types/invoice.ts`.
+## PDF layout
 
-**2. Stop all automated emails/notifications for drafts**
-- `send-reminders`: only consider invoices with `status IN ('pending','sent')` — drafts are excluded automatically once they carry the `draft` status. Add an explicit `.neq('status','draft')` guard as a belt-and-braces measure.
-- Migration to update `check_invoices_due_soon` and `check_invoices_overdue` so they skip drafts.
+- Company logo + name header band (same branding helper as the existing timesheet PDF).
+- Title "Daily Sheet", project name, and the date.
+- Table: `#`, Employee, Role/Trade, Start, End, Break, Total Hours.
+- Footer row with total workers and total crew hours.
+- Notes block underneath if notes were entered.
+- No rates, pay, or money anywhere — safe to send to a client.
+- File name: `Daily-Sheet_<Project>_<YYYY-MM-DD>.pdf`.
 
-**3. Promote a draft when it is actually sent**
-- When an invoice is emailed (via the Invoice Tracker "Send email" action, or "Save & Resend" in edit mode), flip its status from `draft` to `pending` and stamp `sent_date`, so reminders resume normally from that point.
+## Technical notes
 
-**4. UI**
-- Invoice Tracker: show a grey "Draft" badge, add "Draft" to the status filter dropdown, and exclude drafts from the "Pending" / "Overdue" money totals so the dashboard numbers stay accurate.
-- Mobile card gets the same badge treatment.
-
-### Technical notes
-- Files touched: `src/hooks/useInvoices.ts`, `src/components/admin/CreateInvoiceForm.tsx`, `src/components/admin/types/invoice.ts`, `src/components/admin/InvoiceTracker.tsx`, `src/components/admin/invoices/InvoiceTrackerMobileCard.tsx`, `supabase/functions/send-reminders/index.ts`, plus one migration for the two reminder DB functions.
-- `invoices.status` is a plain `text` column, so no enum change is needed.
-- Existing invoices are untouched — nothing currently marked pending gets retroactively converted to draft.
+- New `src/components/admin/manual-timesheets/DailySheetForm.tsx` (form + crew rows), with a small `DailySheetCrewTable.tsx` for the editable rows.
+- New `src/utils/dailySheetPDF.ts` using `jsPDF` + `jspdf-autotable`, reusing the header/branding and image-loading patterns from `src/utils/manualTimesheetPDF.ts`.
+- New `src/utils/dailySheetTime.ts` for `HH:mm` parsing and hours math (handles overnight shifts, subtracts break minutes).
+- `ManualTimesheetForm.tsx`: swap the `project` tab for `daily` labelled "Daily Sheet" (calendar icon) and render `DailySheetForm`.
+- Employees come from the existing `useEmployeeDirectory` hook; projects from `useJobsites('all')`.
+- Date parsed at noon local time per project convention; mobile-friendly responsive layout (rows stack as cards under `md`).
+- No database migration and no schema changes.
