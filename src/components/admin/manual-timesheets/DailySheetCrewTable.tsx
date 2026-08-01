@@ -32,6 +32,7 @@ export const DailySheetCrewTable: React.FC<DailySheetCrewTableProps> = ({
               <th className="px-3 py-2 font-medium w-[120px]">End</th>
               <th className="px-3 py-2 font-medium w-[100px]">Break (min)</th>
               <th className="px-3 py-2 font-medium w-[90px] text-right">Hours</th>
+              <th className="px-3 py-2 font-medium w-[160px]">Notes</th>
               <th className="px-3 py-2 w-[48px]" />
             </tr>
           </thead>
@@ -78,6 +79,14 @@ export const DailySheetCrewTable: React.FC<DailySheetCrewTableProps> = ({
                   {calcHours(m.start, m.end, m.breakMinutes).toFixed(2)}
                 </td>
                 <td className="px-3 py-2">
+                  <Input
+                    value={m.notes ?? ''}
+                    placeholder="—"
+                    onChange={e => onChange(m.id, { notes: e.target.value })}
+                    className="h-9"
+                  />
+                </td>
+                <td className="px-3 py-2">
                   <Button
                     type="button"
                     variant="ghost"
@@ -98,6 +107,7 @@ export const DailySheetCrewTable: React.FC<DailySheetCrewTableProps> = ({
                 Total — {crew.length} worker{crew.length === 1 ? '' : 's'}
               </td>
               <td className="px-3 py-2 text-right font-bold tabular-nums">{total.toFixed(2)}</td>
+              <td />
               <td />
             </tr>
           </tfoot>
@@ -163,6 +173,15 @@ export const DailySheetCrewTable: React.FC<DailySheetCrewTableProps> = ({
                   value={m.role ?? ''}
                   placeholder="—"
                   onChange={e => onChange(m.id, { role: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div className="col-span-2">
+                <Label className="text-xs">Notes</Label>
+                <Input
+                  value={m.notes ?? ''}
+                  placeholder="—"
+                  onChange={e => onChange(m.id, { notes: e.target.value })}
                   className="h-9"
                 />
               </div>
