@@ -303,7 +303,85 @@ export const DailySheetForm: React.FC = () => {
             </Button>
           </div>
         </div>
+
+        {/* Optional job details for the PDF header */}
+        <div className="rounded-lg border">
+          <button
+            type="button"
+            onClick={() => setShowDetails(v => !v)}
+            className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium"
+          >
+            Optional job details (PDF header)
+            <ChevronsUpDown className="h-4 w-4 opacity-50" />
+          </button>
+          {showDetails && (
+            <div className="grid gap-3 border-t p-3 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">PO / Builder</Label>
+                <Input value={poBuilder} onChange={e => setPoBuilder(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Job name</Label>
+                <Input
+                  value={jobName}
+                  onChange={e => setJobName(e.target.value)}
+                  placeholder={projectName || 'Job name'}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Site address</Label>
+                <Input value={siteAddress} onChange={e => setSiteAddress(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Supervisor</Label>
+                <Input value={supervisor} onChange={e => setSupervisor(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Weather</Label>
+                <Select value={weather || 'none'} onValueChange={v => setWeather(v === 'none' ? '' : (v as typeof weather))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Not set" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Not set</SelectItem>
+                    <SelectItem value="sunny">Sunny</SelectItem>
+                    <SelectItem value="partly">Partly cloudy</SelectItem>
+                    <SelectItem value="cloudy">Cloudy</SelectItem>
+                    <SelectItem value="rain">Rain</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Safety meeting</Label>
+                  <Select
+                    value={safetyMeeting || 'none'}
+                    onValueChange={v => setSafetyMeeting(v === 'none' ? '' : (v as 'yes' | 'no'))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Not set" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Not set</SelectItem>
+                      <SelectItem value="yes">Yes</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Meeting time</Label>
+                  <Input
+                    type="time"
+                    value={meetingTime}
+                    onChange={e => setMeetingTime(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </Card>
+
 
       {/* ===== Employee selection */}
       <Card className="p-4 md:p-5 space-y-3">
