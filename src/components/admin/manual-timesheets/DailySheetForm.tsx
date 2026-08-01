@@ -171,12 +171,27 @@ export const DailySheetForm: React.FC = () => {
     setGenerating(true);
     try {
       await generateDailySheetPDF(
-        { projectName, date, crew, notes },
+        {
+          projectName,
+          date,
+          crew,
+          notes,
+          poBuilder,
+          jobName,
+          siteAddress,
+          supervisor,
+          weather,
+          safetyMeeting,
+          meetingTime,
+        },
         {
           companyName: companySettings?.company_name ?? 'Company',
           logoUrl,
+          phone: companySettings?.company_phone ?? null,
+          email: companySettings?.company_email ?? null,
         }
       );
+
       toast.success('Daily sheet PDF downloaded');
     } catch (e: any) {
       toast.error('Failed to generate PDF', { description: e?.message });
