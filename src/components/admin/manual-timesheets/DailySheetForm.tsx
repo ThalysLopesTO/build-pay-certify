@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, Download, Loader2, Plus, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CalendarIcon, ChevronsUpDown, Download, Loader2, Plus, Users, X } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
@@ -64,6 +66,8 @@ export const DailySheetForm: React.FC = () => {
   const [crewBreak, setCrewBreak] = useState(30);
   const [crew, setCrew] = useState<CrewMember[]>([]);
   const [search, setSearch] = useState('');
+  const [employeeOpen, setEmployeeOpen] = useState(false);
+
   const [customName, setCustomName] = useState('');
   const [notes, setNotes] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -280,44 +284,87 @@ export const DailySheetForm: React.FC = () => {
           <span className="text-xs text-muted-foreground">{crew.length} selected</span>
         </div>
 
-        <Input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search employees…"
-        />
-
-        <div className="max-h-64 overflow-y-auto rounded-lg border divide-y">
-          {employeesLoading && (
-            <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading employees…
+        <Popover open={employeeOpen} onOpenChange={setEmployeeOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={employeeOpen}
+              className="w-full justify-between font-normal"
+            >
+              <span className={cn('truncate', !crew.length && 'text-muted-foreground')}>
+                {crew.length
+                  ? `${crew.length} employee${crew.length === 1 ? '' : 's'} selected`
+                  : 'Choose employees'}
+              </span>
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-[--radix-popover-trigger-width] p-0 pointer-events-auto"
+            align="start"
+          >
+            <div className="p-2 border-b">
+              <Input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search employees…"
+                className="h-9"
+              />
             </div>
-          )}
-          {!employeesLoading && filteredEmployees.length === 0 && (
-            <div className="p-4 text-sm text-muted-foreground">No employees found.</div>
-          )}
-          {filteredEmployees.map((emp: any) => {
-            const name = `${emp.first_name ?? ''} ${emp.last_name ?? ''}`.trim() || 'Unknown';
-            const checked = selectedIds.has(emp.user_id);
-            return (
-              <label
-                key={emp.user_id}
-                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/50"
-              >
-                <Checkbox checked={checked} onCheckedChange={() => toggleEmployee(emp)} />
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={emp.profile_photo_url ?? undefined} alt={name} />
-                  <AvatarFallback className="text-xs">
-                    {initials(emp.first_name, emp.last_name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{name}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{emp.role}</p>
+            <div className="max-h-64 overflow-y-auto divide-y">
+              {employeesLoading && (
+                <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading employees…
                 </div>
-              </label>
-            );
-          })}
-        </div>
+              )}
+              {!employeesLoading && filteredEmployees.length === 0 && (
+                <div className="p-4 text-sm text-muted-foreground">No employees found.</div>
+              )}
+              {filteredEmployees.map((emp: any) => {
+                const name = `${emp.first_name ?? ''} ${emp.last_name ?? ''}`.trim() || 'Unknown';
+                const checked = selectedIds.has(emp.user_id);
+                return (
+                  <label
+                    key={emp.user_id}
+                    className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/50"
+                  >
+                    <Checkbox checked={checked} onCheckedChange={() => toggleEmployee(emp)} />
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={emp.profile_photo_url ?? undefined} alt={name} />
+                      <AvatarFallback className="text-xs">
+                        {initials(emp.first_name, emp.last_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{emp.role}</p>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {crew.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {crew.map(m => (
+              <Badge key={m.id} variant="secondary" className="gap-1 pr-1">
+                {m.name}
+                <button
+                  type="button"
+                  onClick={() => removeMember(m.id)}
+                  className="rounded-full p-0.5 hover:bg-background/70"
+                  aria-label={`Remove ${m.name}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+
 
         <div className="flex flex-col sm:flex-row gap-2">
           <Input
