@@ -2,17 +2,19 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Clock, Briefcase, List, FolderCheck } from 'lucide-react';
+import { Clock, CalendarDays, List, FolderCheck } from 'lucide-react';
 import { HourlyTimesheetForm } from './HourlyTimesheetForm';
+import { DailySheetForm } from './DailySheetForm';
 import { ManualTimesheetsTable } from './ManualTimesheetsTable';
 import { ApprovedTimesheetsTab } from './ApprovedTimesheetsTab';
 import { useManualTimesheets } from '@/hooks/useManualTimesheets';
 import { useTimesheetFolders } from '@/hooks/useTimesheetFolders';
 
-type TabValue = 'hourly' | 'project' | 'all' | 'approved';
+type TabValue = 'hourly' | 'daily' | 'all' | 'approved';
 
 export const ManualTimesheetForm: React.FC = () => {
   const [type, setType] = useState<TabValue>('hourly');
+
   const { list } = useManualTimesheets();
   const { list: foldersList } = useTimesheetFolders();
   const count = list.data?.length ?? 0;
@@ -29,9 +31,10 @@ export const ManualTimesheetForm: React.FC = () => {
             <TabsTrigger value="hourly" className="gap-2">
               <Clock className="h-4 w-4" /> Hourly
             </TabsTrigger>
-            <TabsTrigger value="project" className="gap-2">
-              <Briefcase className="h-4 w-4" /> Project
+            <TabsTrigger value="daily" className="gap-2">
+              <CalendarDays className="h-4 w-4" /> Daily Sheet
             </TabsTrigger>
+
             <TabsTrigger value="all" className="gap-2">
               <List className="h-4 w-4" /> All Timesheets
               {count > 0 && (
@@ -54,15 +57,10 @@ export const ManualTimesheetForm: React.FC = () => {
             <HourlyTimesheetForm />
           </TabsContent>
 
-          <TabsContent value="project" className="mt-6">
-            <Card className="p-10 text-center bg-muted/30 border-dashed">
-              <Briefcase className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-40" />
-              <h3 className="font-semibold mb-1">Project Timesheets — Coming Soon</h3>
-              <p className="text-sm text-muted-foreground">
-                Project-based timesheet creation will be available in an upcoming release.
-              </p>
-            </Card>
+          <TabsContent value="daily" className="mt-6">
+            <DailySheetForm />
           </TabsContent>
+
 
           <TabsContent value="all" className="mt-6">
             <ManualTimesheetsTable />
