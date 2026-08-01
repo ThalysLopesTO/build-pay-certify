@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, Download, Loader2, Plus, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CalendarIcon, ChevronsUpDown, Download, Loader2, Plus, Users, X } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
@@ -64,6 +66,8 @@ export const DailySheetForm: React.FC = () => {
   const [crewBreak, setCrewBreak] = useState(30);
   const [crew, setCrew] = useState<CrewMember[]>([]);
   const [search, setSearch] = useState('');
+  const [employeeOpen, setEmployeeOpen] = useState(false);
+
   const [customName, setCustomName] = useState('');
   const [notes, setNotes] = useState('');
   const [generating, setGenerating] = useState(false);
