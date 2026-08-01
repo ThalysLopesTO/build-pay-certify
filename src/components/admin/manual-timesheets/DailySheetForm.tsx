@@ -29,7 +29,9 @@ export interface CrewMember {
   start: string;
   end: string;
   breakMinutes: number;
+  notes?: string | null;
 }
+
 
 const initials = (first?: string | null, last?: string | null) => {
   const f = (first ?? '').trim().charAt(0);
