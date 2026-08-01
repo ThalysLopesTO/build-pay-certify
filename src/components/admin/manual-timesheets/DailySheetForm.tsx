@@ -74,6 +74,18 @@ export const DailySheetForm: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [generating, setGenerating] = useState(false);
 
+  // Optional job details for the PDF header
+  const [showDetails, setShowDetails] = useState(false);
+  const [poBuilder, setPoBuilder] = useState('');
+  const [jobName, setJobName] = useState('');
+  const [siteAddress, setSiteAddress] = useState('');
+  const [supervisor, setSupervisor] = useState('');
+  const [weather, setWeather] = useState<'sunny' | 'partly' | 'cloudy' | 'rain' | ''>('');
+  const [safetyMeeting, setSafetyMeeting] = useState<'yes' | 'no' | ''>('');
+  const [meetingTime, setMeetingTime] = useState('');
+
+
+
   const projectName = useCustomProject
     ? customProject.trim()
     : (jobsites as any[]).find(j => j.id === jobsiteId)?.name ?? '';
