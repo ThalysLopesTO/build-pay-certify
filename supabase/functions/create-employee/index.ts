@@ -236,11 +236,10 @@ serve(async (req) => {
       }
     )
 
-    // Create client for getting auth header for permission checking
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    )
+    // Validate the caller's JWT with the service client. SUPABASE_ANON_KEY is not
+    // guaranteed to be present in the runtime env, which made this fail with a 401.
+    const supabaseClient = supabaseAdmin
+
 
     // Get the authorization header
     const authHeader = req.headers.get('Authorization')
