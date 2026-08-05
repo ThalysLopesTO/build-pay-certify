@@ -52,7 +52,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.update-user-email]
-verify_jwt = true
+verify_jwt = false
 
 [functions.weather]
 verify_jwt = false
