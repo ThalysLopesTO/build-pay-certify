@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { attachmentsSectionHtml, appendAttachmentImagePages, AttachmentForPdf } from './invoiceAttachmentsPdf';
+import { attachmentsSectionHtml, saveInvoicePdfWithAttachments, AttachmentForPdf } from './invoiceAttachmentsPdf';
 
 interface PortalInvoiceLineItem {
   id: string;
@@ -260,8 +260,7 @@ export const generatePortalInvoicePDF = async (
     const imgY = 0;
 
     pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-    await appendAttachmentImagePages(pdf, invoice.attachments);
-    pdf.save(`${invoice.invoice_number}.pdf`);
+    await saveInvoicePdfWithAttachments(pdf, invoice.attachments, `${invoice.invoice_number}.pdf`);
   } finally {
     document.body.removeChild(container);
   }

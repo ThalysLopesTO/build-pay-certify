@@ -8,8 +8,11 @@ export interface AttachmentForPdf {
   file_size?: number | null;
 }
 
+export const isPdfAttachment = (att: AttachmentForPdf) =>
+  (att.file_type || '').includes('pdf') || /\.pdf$/i.test(att.file_name);
+
 // HTML snippet listing the attached files, rendered inside the invoice page.
-// Photos are additionally embedded on extra PDF pages (see appendAttachmentImagePages);
+// Photos and PDFs are additionally appended as extra pages after the invoice;
 // other file types are noted as available online.
 export const attachmentsSectionHtml = (attachments: AttachmentForPdf[] | undefined): string => {
   if (!attachments || attachments.length === 0) return '';
@@ -19,7 +22,9 @@ export const attachmentsSectionHtml = (attachments: AttachmentForPdf[] | undefin
       const size = formatFileSize(att.file_size);
       const hint = isImageAttachment(att)
         ? 'photo — included on the following pages'
-        : 'file — available via your invoice link';
+        : isPdfAttachment(att)
+          ? 'document — included on the following pages'
+          : 'file — available via your invoice link';
       return `
         <div style="padding:4px 0; font-size:12px; color:#374151;">
           &#128206; <span style="font-weight:600;">${att.file_name}</span>
@@ -111,4 +116,79 @@ export const appendAttachmentImagePages = async (
 
     pdf.addImage(image.dataUrl, 'JPEG', x, y, drawWidth, drawHeight);
   }
+};
+
+// ---------------------------------------------------------------------------
+// PDF attachments: merged as real pages after the invoice using pdf-lib
+// ---------------------------------------------------------------------------
+
+const fetchAttachmentBytes = async (url: string): Promise<ArrayBuffer | null> => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.arrayBuffer();
+  } catch (err) {
+    console.warn('Could not download attachment for PDF merge:', url, err);
+    return null;
+  }
+};
+
+// Merge every PDF attachment into the generated invoice PDF (invoice first,
+// attachment pages after). Returns the merged bytes, or the original on failure.
+export const mergePdfAttachments = async (
+  invoicePdfBytes: ArrayBuffer,
+  attachments: AttachmentForPdf[] | undefined
+): Promise<Uint8Array> => {
+  const pdfAttachments = (attachments || []).filter(isPdfAttachment);
+  if (pdfAttachments.length === 0) return new Uint8Array(invoicePdfBytes);
+
+  try {
+    const { PDFDocument } = await import('pdf-lib');
+    const merged = await PDFDocument.load(invoicePdfBytes);
+
+    for (const att of pdfAttachments) {
+      const bytes = await fetchAttachmentBytes(att.file_url);
+      if (!bytes) continue;
+      try {
+        const donor = await PDFDocument.load(bytes, { ignoreEncryption: true });
+        const pages = await merged.copyPages(donor, donor.getPageIndices());
+        pages.forEach((page) => merged.addPage(page));
+      } catch (err) {
+        console.warn('Skipping unreadable PDF attachment:', att.file_name, err);
+      }
+    }
+
+    return await merged.save();
+  } catch (err) {
+    console.warn('PDF attachment merge failed, returning invoice only:', err);
+    return new Uint8Array(invoicePdfBytes);
+  }
+};
+
+// Finalize a jsPDF invoice: photo pages + merged PDF attachment pages -> Blob
+export const buildInvoicePdfBlob = async (
+  pdf: jsPDF,
+  attachments: AttachmentForPdf[] | undefined
+): Promise<Blob> => {
+  await appendAttachmentImagePages(pdf, attachments);
+  const baseBytes = pdf.output('arraybuffer');
+  const mergedBytes = await mergePdfAttachments(baseBytes, attachments);
+  return new Blob([mergedBytes as unknown as BlobPart], { type: 'application/pdf' });
+};
+
+// Same as buildInvoicePdfBlob, but triggers a browser download
+export const saveInvoicePdfWithAttachments = async (
+  pdf: jsPDF,
+  attachments: AttachmentForPdf[] | undefined,
+  filename: string
+): Promise<void> => {
+  const blob = await buildInvoicePdfBlob(pdf, attachments);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
