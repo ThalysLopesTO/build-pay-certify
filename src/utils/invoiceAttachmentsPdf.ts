@@ -8,8 +8,11 @@ export interface AttachmentForPdf {
   file_size?: number | null;
 }
 
+export const isPdfAttachment = (att: AttachmentForPdf) =>
+  (att.file_type || '').includes('pdf') || /\.pdf$/i.test(att.file_name);
+
 // HTML snippet listing the attached files, rendered inside the invoice page.
-// Photos are additionally embedded on extra PDF pages (see appendAttachmentImagePages);
+// Photos and PDFs are additionally appended as extra pages after the invoice;
 // other file types are noted as available online.
 export const attachmentsSectionHtml = (attachments: AttachmentForPdf[] | undefined): string => {
   if (!attachments || attachments.length === 0) return '';
@@ -19,7 +22,9 @@ export const attachmentsSectionHtml = (attachments: AttachmentForPdf[] | undefin
       const size = formatFileSize(att.file_size);
       const hint = isImageAttachment(att)
         ? 'photo — included on the following pages'
-        : 'file — available via your invoice link';
+        : isPdfAttachment(att)
+          ? 'document — included on the following pages'
+          : 'file — available via your invoice link';
       return `
         <div style="padding:4px 0; font-size:12px; color:#374151;">
           &#128206; <span style="font-weight:600;">${att.file_name}</span>
