@@ -279,7 +279,19 @@ export const DailySheetForm: React.FC<DailySheetFormProps> = ({ editingSheet, on
 
   return (
     <div className="space-y-5">
+      {editingId && (
+        <Card className="p-3 md:p-4 flex items-center justify-between gap-3 bg-primary/5 border-primary/20">
+          <p className="text-sm">
+            Editing saved daily sheet — <span className="font-medium">{projectName || 'Untitled'}</span>
+          </p>
+          <Button type="button" size="sm" variant="outline" onClick={resetForm}>
+            Start new sheet
+          </Button>
+        </Card>
+      )}
+
       {/* ===== Project & Day */}
+
       <Card className="p-4 md:p-5 space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
