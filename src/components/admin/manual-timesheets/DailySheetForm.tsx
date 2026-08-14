@@ -54,12 +54,19 @@ const formatISO = (d: Date) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-export const DailySheetForm: React.FC = () => {
+interface DailySheetFormProps {
+  editingSheet?: DailySheet | null;
+  onSaved?: () => void;
+}
+
+export const DailySheetForm: React.FC<DailySheetFormProps> = ({ editingSheet, onSaved }) => {
   const { data: employees = [], isLoading: employeesLoading } = useEmployeeDirectory();
   const { data: jobsites = [], isLoading: jobsitesLoading } = useJobsites('all');
   const { logoUrl } = useCompanyLogo();
   const { settings: companySettings } = useCompanySettings();
+  const { create, update } = useDailySheets();
 
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [jobsiteId, setJobsiteId] = useState('');
   const [useCustomProject, setUseCustomProject] = useState(false);
   const [customProject, setCustomProject] = useState('');
@@ -85,6 +92,47 @@ export const DailySheetForm: React.FC = () => {
   const [weather, setWeather] = useState<'sunny' | 'partly' | 'cloudy' | 'rain' | ''>('');
   const [safetyMeeting, setSafetyMeeting] = useState<'yes' | 'no' | ''>('');
   const [meetingTime, setMeetingTime] = useState('');
+
+  // Prefill when a saved sheet is opened for editing
+  useEffect(() => {
+    if (!editingSheet) return;
+    const d = editingSheet.job_details ?? {};
+    setEditingId(editingSheet.id);
+    setJobsiteId(editingSheet.jobsite_id ?? '');
+    setUseCustomProject(!editingSheet.jobsite_id);
+    setCustomProject(editingSheet.jobsite_id ? '' : editingSheet.project_name);
+    setDate(editingSheet.sheet_date);
+    setCrew((editingSheet.crew ?? []) as CrewMember[]);
+    setNotes(editingSheet.notes ?? '');
+    setPoBuilder(d.poBuilder ?? '');
+    setJobName(d.jobName ?? '');
+    setSiteAddress(d.siteAddress ?? '');
+    setSupervisor(d.supervisor ?? '');
+    setWeather((d.weather ?? '') as any);
+    setSafetyMeeting((d.safetyMeeting ?? '') as any);
+    setMeetingTime(d.meetingTime ?? '');
+    setShowDetails(
+      Boolean(d.poBuilder || d.jobName || d.siteAddress || d.supervisor || d.weather || d.safetyMeeting)
+    );
+  }, [editingSheet]);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setJobsiteId('');
+    setUseCustomProject(false);
+    setCustomProject('');
+    setDate(todayLocalISO());
+    setCrew([]);
+    setNotes('');
+    setPoBuilder('');
+    setJobName('');
+    setSiteAddress('');
+    setSupervisor('');
+    setWeather('');
+    setSafetyMeeting('');
+    setMeetingTime('');
+  };
+
 
 
 
