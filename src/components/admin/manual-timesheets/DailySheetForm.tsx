@@ -242,7 +242,34 @@ export const DailySheetForm: React.FC<DailySheetFormProps> = ({ editingSheet, on
         }
       );
 
-      toast.success('Daily sheet PDF downloaded');
+      // Persist so the sheet shows up under "Saved Sheets"
+      const payload = {
+        jobsite_id: useCustomProject ? null : jobsiteId || null,
+        project_name: projectName,
+        sheet_date: date,
+        crew,
+        total_hours: Number(totalHours.toFixed(2)),
+        notes: notes || null,
+        job_details: {
+          poBuilder,
+          jobName,
+          siteAddress,
+          supervisor,
+          weather,
+          safetyMeeting,
+          meetingTime,
+        },
+      };
+
+      if (editingId) {
+        await update.mutateAsync({ id: editingId, input: payload });
+        toast.success('Daily sheet updated & PDF downloaded');
+      } else {
+        await create.mutateAsync(payload);
+        toast.success('Daily sheet saved & PDF downloaded');
+      }
+      onSaved?.();
+
     } catch (e: any) {
       toast.error('Failed to generate PDF', { description: e?.message });
     } finally {
