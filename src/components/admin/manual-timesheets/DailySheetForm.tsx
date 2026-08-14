@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,9 +18,11 @@ import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useDailySheets, type DailySheet } from '@/hooks/useDailySheets';
 import { calcHours, formatDateLongLocal, todayLocalISO } from '@/utils/dailySheetTime';
 import { generateDailySheetPDF } from '@/utils/dailySheetPDF';
 import { DailySheetCrewTable } from './DailySheetCrewTable';
+
 
 export interface CrewMember {
   id: string;
@@ -52,12 +54,19 @@ const formatISO = (d: Date) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-export const DailySheetForm: React.FC = () => {
+interface DailySheetFormProps {
+  editingSheet?: DailySheet | null;
+  onSaved?: () => void;
+}
+
+export const DailySheetForm: React.FC<DailySheetFormProps> = ({ editingSheet, onSaved }) => {
   const { data: employees = [], isLoading: employeesLoading } = useEmployeeDirectory();
   const { data: jobsites = [], isLoading: jobsitesLoading } = useJobsites('all');
   const { logoUrl } = useCompanyLogo();
   const { settings: companySettings } = useCompanySettings();
+  const { create, update } = useDailySheets();
 
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [jobsiteId, setJobsiteId] = useState('');
   const [useCustomProject, setUseCustomProject] = useState(false);
   const [customProject, setCustomProject] = useState('');
@@ -83,6 +92,47 @@ export const DailySheetForm: React.FC = () => {
   const [weather, setWeather] = useState<'sunny' | 'partly' | 'cloudy' | 'rain' | ''>('');
   const [safetyMeeting, setSafetyMeeting] = useState<'yes' | 'no' | ''>('');
   const [meetingTime, setMeetingTime] = useState('');
+
+  // Prefill when a saved sheet is opened for editing
+  useEffect(() => {
+    if (!editingSheet) return;
+    const d = editingSheet.job_details ?? {};
+    setEditingId(editingSheet.id);
+    setJobsiteId(editingSheet.jobsite_id ?? '');
+    setUseCustomProject(!editingSheet.jobsite_id);
+    setCustomProject(editingSheet.jobsite_id ? '' : editingSheet.project_name);
+    setDate(editingSheet.sheet_date);
+    setCrew((editingSheet.crew ?? []) as CrewMember[]);
+    setNotes(editingSheet.notes ?? '');
+    setPoBuilder(d.poBuilder ?? '');
+    setJobName(d.jobName ?? '');
+    setSiteAddress(d.siteAddress ?? '');
+    setSupervisor(d.supervisor ?? '');
+    setWeather((d.weather ?? '') as any);
+    setSafetyMeeting((d.safetyMeeting ?? '') as any);
+    setMeetingTime(d.meetingTime ?? '');
+    setShowDetails(
+      Boolean(d.poBuilder || d.jobName || d.siteAddress || d.supervisor || d.weather || d.safetyMeeting)
+    );
+  }, [editingSheet]);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setJobsiteId('');
+    setUseCustomProject(false);
+    setCustomProject('');
+    setDate(todayLocalISO());
+    setCrew([]);
+    setNotes('');
+    setPoBuilder('');
+    setJobName('');
+    setSiteAddress('');
+    setSupervisor('');
+    setWeather('');
+    setSafetyMeeting('');
+    setMeetingTime('');
+  };
+
 
 
 
@@ -192,7 +242,34 @@ export const DailySheetForm: React.FC = () => {
         }
       );
 
-      toast.success('Daily sheet PDF downloaded');
+      // Persist so the sheet shows up under "Saved Sheets"
+      const payload = {
+        jobsite_id: useCustomProject ? null : jobsiteId || null,
+        project_name: projectName,
+        sheet_date: date,
+        crew,
+        total_hours: Number(totalHours.toFixed(2)),
+        notes: notes || null,
+        job_details: {
+          poBuilder,
+          jobName,
+          siteAddress,
+          supervisor,
+          weather,
+          safetyMeeting,
+          meetingTime,
+        },
+      };
+
+      if (editingId) {
+        await update.mutateAsync({ id: editingId, input: payload });
+        toast.success('Daily sheet updated & PDF downloaded');
+      } else {
+        await create.mutateAsync(payload);
+        toast.success('Daily sheet saved & PDF downloaded');
+      }
+      onSaved?.();
+
     } catch (e: any) {
       toast.error('Failed to generate PDF', { description: e?.message });
     } finally {
@@ -202,7 +279,19 @@ export const DailySheetForm: React.FC = () => {
 
   return (
     <div className="space-y-5">
+      {editingId && (
+        <Card className="p-3 md:p-4 flex items-center justify-between gap-3 bg-primary/5 border-primary/20">
+          <p className="text-sm">
+            Editing saved daily sheet — <span className="font-medium">{projectName || 'Untitled'}</span>
+          </p>
+          <Button type="button" size="sm" variant="outline" onClick={resetForm}>
+            Start new sheet
+          </Button>
+        </Card>
+      )}
+
       {/* ===== Project & Day */}
+
       <Card className="p-4 md:p-5 space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">

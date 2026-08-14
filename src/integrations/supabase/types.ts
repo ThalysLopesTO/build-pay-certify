@@ -1061,6 +1061,54 @@ export type Database = {
           },
         ]
       }
+      daily_sheets: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          created_by_name: string | null
+          crew: Json
+          id: string
+          job_details: Json
+          jobsite_id: string | null
+          notes: string | null
+          project_name: string
+          sheet_date: string
+          total_hours: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          created_by_name?: string | null
+          crew?: Json
+          id?: string
+          job_details?: Json
+          jobsite_id?: string | null
+          notes?: string | null
+          project_name?: string
+          sheet_date: string
+          total_hours?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          created_by_name?: string | null
+          crew?: Json
+          id?: string
+          job_details?: Json
+          jobsite_id?: string | null
+          notes?: string | null
+          project_name?: string
+          sheet_date?: string
+          total_hours?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       default_rules: {
         Row: {
           content: string | null
