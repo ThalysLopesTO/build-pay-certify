@@ -18,9 +18,11 @@ import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
 import { useJobsites } from '@/hooks/useJobsites';
 import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useDailySheets, type DailySheet } from '@/hooks/useDailySheets';
 import { calcHours, formatDateLongLocal, todayLocalISO } from '@/utils/dailySheetTime';
 import { generateDailySheetPDF } from '@/utils/dailySheetPDF';
 import { DailySheetCrewTable } from './DailySheetCrewTable';
+
 
 export interface CrewMember {
   id: string;
