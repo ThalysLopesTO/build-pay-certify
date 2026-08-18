@@ -9,6 +9,7 @@ import ManagementSidebarSection from './sidebar/ManagementSidebarSection';
 import ManagementCollapsibleSidebarSection from './sidebar/ManagementCollapsibleSidebarSection';
 import { managementMenuItems, sectionConfigs } from './sidebar/managementMenuData';
 import { useScrollToActiveSection } from '@/hooks/useScrollToActiveSection';
+import { useIsSevenStars } from '@/hooks/useSevenStarsFeature';
 
 interface ManagementSidebarProps {
   activeTab: string;
@@ -18,6 +19,10 @@ interface ManagementSidebarProps {
 const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) => {
   // Auto-scroll to active section
   useScrollToActiveSection(activeTab);
+  const isSevenStars = useIsSevenStars();
+  const gate = <T extends { id: string }>(items: T[]) =>
+    items.filter(i => i.id !== 'site-inspections' || isSevenStars);
+
 
   return (
     <Sidebar variant="floating" className="transition-colors">
@@ -38,14 +43,14 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
         
         {/* Dashboard - Always visible */}
         <ManagementSidebarSection
-          items={managementMenuItems.main}
+          items={gate(managementMenuItems.main)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
         />
 
         {/* Collapsible Sections — mirrors the Admin sidebar order */}
         <ManagementCollapsibleSidebarSection
-          items={managementMenuItems.projects}
+          items={gate(managementMenuItems.projects)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.projects.label}
@@ -55,7 +60,7 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
         />
 
         <ManagementCollapsibleSidebarSection
-          items={managementMenuItems.employees}
+          items={gate(managementMenuItems.employees)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.employees.label}
@@ -65,7 +70,7 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
         />
 
         <ManagementCollapsibleSidebarSection
-          items={managementMenuItems.operations}
+          items={gate(managementMenuItems.operations)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.operations.label}
@@ -75,7 +80,7 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
         />
 
         <ManagementCollapsibleSidebarSection
-          items={managementMenuItems.financial}
+          items={gate(managementMenuItems.financial)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.financial.label}
@@ -85,7 +90,7 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
         />
 
         <ManagementCollapsibleSidebarSection
-          items={managementMenuItems.reports}
+          items={gate(managementMenuItems.reports)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.reports.label}
@@ -95,7 +100,7 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
         />
 
         <ManagementCollapsibleSidebarSection
-          items={managementMenuItems.personal}
+          items={gate(managementMenuItems.personal)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.personal.label}
@@ -105,7 +110,7 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
         />
 
         <ManagementCollapsibleSidebarSection
-          items={managementMenuItems.system}
+          items={gate(managementMenuItems.system)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.system.label}
