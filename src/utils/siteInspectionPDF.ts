@@ -146,6 +146,14 @@ export const generateSiteInspectionPDF = async (
   doc.rect(0, HEADER_H, pageW, 4, 'F');
 
   const logoBoxW = 132;
+  // white plate behind the logo so it never gets lost on the dark band
+  const plateX = margin;
+  const plateY = 12;
+  const plateW = logoBoxW - 18;
+  const plateH = HEADER_H - 24;
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(plateX, plateY, plateW, plateH, 5, 5, 'F');
+
   let logoDrawn = false;
   if (branding.logoUrl) {
     const dataUrl = await loadImageAsDataUrl(branding.logoUrl);
@@ -153,10 +161,17 @@ export const generateSiteInspectionPDF = async (
       try {
         const { w, h } = await getImageSize(dataUrl);
         if (w > 0 && h > 0) {
-          const ratio = Math.min((logoBoxW - 18) / w, 72 / h);
+          const ratio = Math.min((plateW - 16) / w, (plateH - 14) / h);
           const dw = w * ratio;
           const dh = h * ratio;
-          doc.addImage(dataUrl, detectFormat(dataUrl), margin + (logoBoxW - 18 - dw) / 2, (HEADER_H - dh) / 2, dw, dh);
+          doc.addImage(
+            dataUrl,
+            detectFormat(dataUrl),
+            plateX + (plateW - dw) / 2,
+            plateY + (plateH - dh) / 2,
+            dw,
+            dh
+          );
           logoDrawn = true;
         }
       } catch {
@@ -166,10 +181,13 @@ export const generateSiteInspectionPDF = async (
   }
   if (!logoDrawn) {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.setTextColor(...GOLD);
-    const nameLines = doc.splitTextToSize((branding.companyName ?? 'COMPANY').toUpperCase(), logoBoxW - 20);
-    doc.text(nameLines, margin, HEADER_H / 2 - (nameLines.length - 1) * 6, { baseline: 'middle' });
+    doc.setFontSize(12);
+    doc.setTextColor(...DARK);
+    const nameLines = doc.splitTextToSize((branding.companyName ?? 'COMPANY').toUpperCase(), plateW - 16);
+    doc.text(nameLines, plateX + plateW / 2, plateY + plateH / 2, {
+      align: 'center',
+      baseline: 'middle',
+    });
   }
 
   const titleX = margin + logoBoxW + 4;
@@ -177,7 +195,8 @@ export const generateSiteInspectionPDF = async (
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(25);
   doc.setTextColor(255, 255, 255);
-  doc.text('FINAL SITE INSPECTION REPORT', titleX + titleW / 2, 40, { align: 'center', maxWidth: titleW });
+  doc.text('FINAL SITE INSPECTION', titleX + titleW / 2, 40, { align: 'center', maxWidth: titleW });
+
 
   doc.setFontSize(11.5);
   doc.setTextColor(...GOLD);
