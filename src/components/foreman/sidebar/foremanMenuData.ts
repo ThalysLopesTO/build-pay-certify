@@ -18,6 +18,7 @@ import {
   ClipboardList,
   UserPlus,
   CheckSquare
+  ClipboardCheck,
 } from 'lucide-react';
 
 export const foremanMenuItems = [

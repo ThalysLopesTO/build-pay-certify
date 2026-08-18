@@ -17,6 +17,7 @@ import {
   Target,
   PieChart,
   Cog,
+  ClipboardCheck,
 } from 'lucide-react';
 
 // Organised to mirror the Admin sidebar structure (Project Management,

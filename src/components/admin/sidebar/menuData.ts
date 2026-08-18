@@ -29,6 +29,7 @@ import {
   Cog,
   ClipboardList,
   TrendingUp,
+  ClipboardCheck,
 } from 'lucide-react';
 import { MenuItem } from './types';
 
