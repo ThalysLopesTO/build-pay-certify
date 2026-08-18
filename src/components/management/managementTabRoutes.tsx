@@ -31,6 +31,7 @@ const JobsiteSelectionScreen = lazy(() =>
 const DailyTaskScreen = lazy(() =>
   import('@/components/admin/tasks/DailyTaskScreen').then((m) => ({ default: m.DailyTaskScreen }))
 );
+const SiteInspectionsPage = lazy(() => import('@/components/admin/site-inspections/SiteInspectionsPage'));
 
 const DashboardRoute = () => {
   const navigate = useNavigate();
@@ -58,6 +59,7 @@ export const managementTabRoutes: ManagementTabRoute[] = [
   { slug: 'time-tracker', title: 'Time Clock', element: <TimeTracker /> },
   { slug: 'live-punch-monitor', title: 'Live Punch Monitor', element: <LivePunchMonitor /> },
   { slug: 'manual-timesheets', title: 'Time Sheet', element: <ManualTimesheetsPage /> },
+  { slug: 'site-inspections', title: 'Site Inspections', element: <SiteInspectionsPage /> },
   { slug: 'employee-bills', title: 'Employee Bills', element: <EmployeeBillsManagement /> },
   { slug: 'time-summary', title: 'Time Summary', element: <TimeSummaryPage /> },
   { slug: 'daily-tasks', title: 'Daily Tasks', element: <DailyTasksRoute /> },

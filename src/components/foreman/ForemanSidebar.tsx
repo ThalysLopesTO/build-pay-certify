@@ -10,6 +10,7 @@ import ForemanSidebarSection from './sidebar/ForemanSidebarSection';
 import ForemanCollapsibleSidebarSection from './sidebar/ForemanCollapsibleSidebarSection';
 import { groupedForemanItems, sectionConfigs } from './sidebar/foremanMenuData';
 import { useScrollToActiveSection } from '@/hooks/useScrollToActiveSection';
+import { useIsSevenStars } from '@/hooks/useSevenStarsFeature';
 
 interface ForemanSidebarProps {
   activeTab: string;
@@ -19,6 +20,11 @@ interface ForemanSidebarProps {
 const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
   // Auto-scroll to active section
   useScrollToActiveSection(activeTab);
+
+  const isSevenStars = useIsSevenStars();
+  const gate = <T extends { id?: string }>(items: T[]) =>
+    items.filter(i => i.id !== 'site-inspections' || isSevenStars);
+
 
   return (
     <Sidebar variant="floating" className="transition-colors">
@@ -39,21 +45,21 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
         
         {/* Dashboard - Always visible at top */}
         <ForemanSidebarSection
-          items={groupedForemanItems.dashboard}
+          items={gate(groupedForemanItems.dashboard)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
         />
 
         {/* Timesheet - Always visible */}
         <ForemanSidebarSection
-          items={groupedForemanItems.timesheet}
+          items={gate(groupedForemanItems.timesheet)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
         />
 
         {/* Collapsible Sections */}
         <ForemanCollapsibleSidebarSection
-          items={groupedForemanItems.materials}
+          items={gate(groupedForemanItems.materials)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.materials.label}
@@ -63,7 +69,7 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
         />
 
         <ForemanCollapsibleSidebarSection
-          items={groupedForemanItems.team}
+          items={gate(groupedForemanItems.team)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.team.label}
@@ -73,7 +79,7 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
         />
 
         <ForemanCollapsibleSidebarSection
-          items={groupedForemanItems.reports}
+          items={gate(groupedForemanItems.reports)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.reports.label}
@@ -83,7 +89,7 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
         />
 
         <ForemanCollapsibleSidebarSection
-          items={groupedForemanItems.company}
+          items={gate(groupedForemanItems.company)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.company.label}
@@ -93,7 +99,7 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
         />
 
         <ForemanCollapsibleSidebarSection
-          items={groupedForemanItems.account}
+          items={gate(groupedForemanItems.account)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.account.label}

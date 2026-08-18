@@ -10,10 +10,15 @@ import CollapsibleSidebarSection from './sidebar/CollapsibleSidebarSection';
 import { groupedMenuItems, sectionConfigs } from './sidebar/menuData';
 import { AdminSidebarProps } from './sidebar/types';
 import { useScrollToActiveSection } from '@/hooks/useScrollToActiveSection';
+import { useIsSevenStars } from '@/hooks/useSevenStarsFeature';
 
 const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
   // Auto-scroll to active section
   useScrollToActiveSection(activeTab);
+  const isSevenStars = useIsSevenStars();
+  const gate = <T extends { id?: string }>(items: T[]) =>
+    items.filter(i => i.id !== 'site-inspections' || isSevenStars);
+
 
   return (
     <Sidebar variant="floating" className="transition-colors">
@@ -37,14 +42,14 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
         
         {/* Dashboard - Always visible */}
         <SidebarSection
-          items={groupedMenuItems.main}
+          items={gate(groupedMenuItems.main)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
         />
 
         {/* Collapsible Sections */}
         <CollapsibleSidebarSection
-          items={groupedMenuItems.management}
+          items={gate(groupedMenuItems.management)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.management.label}
@@ -54,7 +59,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
         />
 
         <CollapsibleSidebarSection
-          items={groupedMenuItems.employees}
+          items={gate(groupedMenuItems.employees)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.employees.label}
@@ -64,7 +69,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
         />
 
         <CollapsibleSidebarSection
-          items={groupedMenuItems.managementOps}
+          items={gate(groupedMenuItems.managementOps)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.managementOps.label}
@@ -74,7 +79,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
         />
 
         <CollapsibleSidebarSection
-          items={groupedMenuItems.invoices}
+          items={gate(groupedMenuItems.invoices)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.invoices.label}
@@ -84,7 +89,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
         />
 
         <CollapsibleSidebarSection
-          items={groupedMenuItems.reports}
+          items={gate(groupedMenuItems.reports)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.reports.label}
@@ -94,7 +99,7 @@ const AdminSidebar = ({ activeTab, setActiveTab }: AdminSidebarProps) => {
         />
 
         <CollapsibleSidebarSection
-          items={groupedMenuItems.system}
+          items={gate(groupedMenuItems.system)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           label={sectionConfigs.system.label}

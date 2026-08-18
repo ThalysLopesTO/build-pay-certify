@@ -17,7 +17,8 @@ import {
   Home,
   ClipboardList,
   UserPlus,
-  CheckSquare
+  CheckSquare,
+  ClipboardCheck,
 } from 'lucide-react';
 
 export const foremanMenuItems = [
@@ -111,6 +112,11 @@ export const groupedForemanItems = {
       title: 'Missed Punch Requests',
       icon: Clock,
       id: 'missed-punch-requests',
+    },
+    {
+      title: 'Site Inspections',
+      icon: ClipboardCheck,
+      id: 'site-inspections',
     },
   ],
   materials: [
