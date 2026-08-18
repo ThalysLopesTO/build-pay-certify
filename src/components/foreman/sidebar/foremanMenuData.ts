@@ -17,7 +17,7 @@ import {
   Home,
   ClipboardList,
   UserPlus,
-  CheckSquare
+  CheckSquare,
   ClipboardCheck,
 } from 'lucide-react';
 
