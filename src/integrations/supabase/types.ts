@@ -3205,6 +3205,122 @@ export type Database = {
         }
         Relationships: []
       }
+      site_inspection_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          inspection_id: string
+          sort_order: number
+          uploaded_by: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          inspection_id: string
+          sort_order?: number
+          uploaded_by?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          inspection_id?: string
+          sort_order?: number
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_inspection_photos_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "site_inspections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_inspections: {
+        Row: {
+          adjuster: string | null
+          builder_company: string | null
+          checklist: Json
+          claim_number: string | null
+          client_name: string | null
+          comments: string | null
+          company_id: string
+          created_at: string
+          created_by: string
+          created_by_name: string | null
+          crew_members: string | null
+          id: string
+          inspection_date: string
+          insurance_company: string | null
+          job_number: string | null
+          jobsite_id: string | null
+          property_address: string | null
+          quality_control: Json
+          signatures: Json
+          status: string
+          supervisor: string | null
+          updated_at: string
+        }
+        Insert: {
+          adjuster?: string | null
+          builder_company?: string | null
+          checklist?: Json
+          claim_number?: string | null
+          client_name?: string | null
+          comments?: string | null
+          company_id: string
+          created_at?: string
+          created_by: string
+          created_by_name?: string | null
+          crew_members?: string | null
+          id?: string
+          inspection_date?: string
+          insurance_company?: string | null
+          job_number?: string | null
+          jobsite_id?: string | null
+          property_address?: string | null
+          quality_control?: Json
+          signatures?: Json
+          status?: string
+          supervisor?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adjuster?: string | null
+          builder_company?: string | null
+          checklist?: Json
+          claim_number?: string | null
+          client_name?: string | null
+          comments?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          created_by_name?: string | null
+          crew_members?: string | null
+          id?: string
+          inspection_date?: string
+          insurance_company?: string | null
+          job_number?: string | null
+          jobsite_id?: string | null
+          property_address?: string | null
+          quality_control?: Json
+          signatures?: Json
+          status?: string
+          supervisor?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stripe_webhook_events: {
         Row: {
           created_at: string | null
