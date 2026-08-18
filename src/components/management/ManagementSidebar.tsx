@@ -20,7 +20,7 @@ const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) 
   // Auto-scroll to active section
   useScrollToActiveSection(activeTab);
   const isSevenStars = useIsSevenStars();
-  const gate = <T extends { id: string }>(items: T[]) =>
+  const gate = <T extends { id?: string }>(items: T[]) =>
     items.filter(i => i.id !== 'site-inspections' || isSevenStars);
 
 

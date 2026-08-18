@@ -22,7 +22,7 @@ const ForemanSidebar = ({ activeTab, setActiveTab }: ForemanSidebarProps) => {
   useScrollToActiveSection(activeTab);
 
   const isSevenStars = useIsSevenStars();
-  const gate = <T extends { id: string }>(items: T[]) =>
+  const gate = <T extends { id?: string }>(items: T[]) =>
     items.filter(i => i.id !== 'site-inspections' || isSevenStars);
 
 
