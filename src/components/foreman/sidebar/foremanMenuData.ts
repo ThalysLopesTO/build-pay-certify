@@ -112,6 +112,11 @@ export const groupedForemanItems = {
       icon: Clock,
       id: 'missed-punch-requests',
     },
+    {
+      title: 'Site Inspections',
+      icon: ClipboardCheck,
+      id: 'site-inspections',
+    },
   ],
   materials: [
     {

@@ -42,6 +42,7 @@ export const managementMenuItems = {
     { title: 'Live Punch Monitor', icon: Clock,           id: 'live-punch-monitor' },
     { title: 'Time Sheet',         icon: FileSpreadsheet, id: 'manual-timesheets' },
     { title: 'Employee Bills',     icon: Receipt,         id: 'employee-bills' },
+    { title: 'Site Inspections',   icon: ClipboardCheck,  id: 'site-inspections' },
     { title: 'Time Summary',       icon: BarChart3,       id: 'time-summary' },
   ],
   financial: [
