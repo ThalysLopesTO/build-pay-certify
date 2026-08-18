@@ -28,6 +28,7 @@ const JobsiteSelectionScreen = lazy(() =>
 const DailyTaskScreen = lazy(() =>
   import('@/components/admin/tasks/DailyTaskScreen').then((m) => ({ default: m.DailyTaskScreen }))
 );
+const SiteInspectionsPage = lazy(() => import('@/components/admin/site-inspections/SiteInspectionsPage'));
 
 const DashboardRoute = () => {
   const navigate = useNavigate();
@@ -51,6 +52,7 @@ export const foremanTabRoutes: ForemanTabRoute[] = [
   { slug: 'timesheet', title: 'Timesheet', element: <ForemanTimesheetForm /> },
   { slug: 'missed-punch-requests', title: 'Missed Punch', element: <MissedPunchRequests /> },
   { slug: 'manual-timesheets', title: 'Time Sheet', element: <ManualTimesheetsPage /> },
+  { slug: 'site-inspections', title: 'Site Inspections', element: <SiteInspectionsPage /> },
   { slug: 'material-request', title: 'New Material Request', element: <MaterialRequestForm /> },
   { slug: 'my-requests', title: 'My Requests', element: <MyMaterialRequests /> },
   { slug: 'inventory', title: 'Inventory', element: <EquipmentManagement /> },
