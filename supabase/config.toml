@@ -16,7 +16,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-trial-company]
-verify_jwt = true
+verify_jwt = false
 
 [functions.create-user-admin]
 verify_jwt = true
