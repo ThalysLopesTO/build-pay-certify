@@ -65,9 +65,12 @@ export function CreateTrialCompanyDialog() {
 
       const { data, error } = await supabase.functions.invoke('create-trial-company', {
         body: values,
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(await getEdgeFunctionError(error, 'Failed to create trial company'));
+      }
 
       if (data?.error) {
         throw new Error(data.error);
