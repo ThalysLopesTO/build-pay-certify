@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Building2, Loader2 } from 'lucide-react';
+import { getEdgeFunctionError } from '@/lib/edgeError';
 
 const formSchema = z.object({
   companyName: z.string().min(2, 'Company name must be at least 2 characters'),
