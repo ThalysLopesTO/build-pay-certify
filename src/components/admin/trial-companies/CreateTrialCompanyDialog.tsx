@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Building2, Loader2 } from 'lucide-react';
+import { getEdgeFunctionError } from '@/lib/edgeError';
 
 const formSchema = z.object({
   companyName: z.string().min(2, 'Company name must be at least 2 characters'),
@@ -65,9 +66,12 @@ export function CreateTrialCompanyDialog() {
 
       const { data, error } = await supabase.functions.invoke('create-trial-company', {
         body: values,
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(await getEdgeFunctionError(error, 'Failed to create trial company'));
+      }
 
       if (data?.error) {
         throw new Error(data.error);
