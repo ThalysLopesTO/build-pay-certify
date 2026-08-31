@@ -8,7 +8,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Eye, Mail, Download, MoreVertical, Trash2, CheckCircle, Clock, AlertCircle, Pencil } from 'lucide-react';
+import { Eye, Mail, Download, MoreVertical, Trash2, CheckCircle, Clock, AlertCircle, Pencil, Loader2 } from 'lucide-react';
 import { Invoice } from '../types/invoice';
 import { format } from 'date-fns';
 
@@ -20,6 +20,7 @@ interface InvoiceTrackerMobileCardProps {
   onDownload: (invoice: Invoice) => void;
   onEdit?: (invoice: Invoice) => void;
   onDelete?: (invoice: Invoice) => void;
+  isDownloading?: boolean;
 }
 
 const InvoiceTrackerMobileCard: React.FC<InvoiceTrackerMobileCardProps> = ({
@@ -30,6 +31,7 @@ const InvoiceTrackerMobileCard: React.FC<InvoiceTrackerMobileCardProps> = ({
   onDownload,
   onEdit,
   onDelete,
+  isDownloading = false,
 }) => {
   const isOverdue = invoice.status === 'pending' && new Date(invoice.due_date) < new Date();
 
@@ -164,9 +166,11 @@ const InvoiceTrackerMobileCard: React.FC<InvoiceTrackerMobileCardProps> = ({
             variant="outline"
             size="sm"
             onClick={() => onDownload(invoice)}
+            disabled={isDownloading}
+            aria-label={isDownloading ? 'Generating invoice PDF' : 'Download invoice PDF'}
             className="h-9 px-3"
           >
-            <Download className="h-4 w-4" />
+            {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           </Button>
         </div>
       </div>

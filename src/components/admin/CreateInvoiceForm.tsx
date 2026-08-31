@@ -71,6 +71,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
   const { toast } = useToast();
   const [isDraft, setIsDraft] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const isMobile = useIsMobile();
   const { user } = useAuth();
@@ -195,6 +196,8 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
   });
 
   const onSubmit = async (data: InvoiceFormData, saveAsDraft = false, sendEmailFlag = false) => {
+    if (isProcessing) return;
+
     // Validate client selection
     if (!data.client_id) {
       toast({
@@ -221,46 +224,40 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
     } as any;
 
     
-    createInvoiceMutation.mutate(invoiceData as any, {
-      onSuccess: async (createdInvoice: any) => {
-        // Upload attachments first so they're included in the emailed PDF
-        await uploadStagedAttachments(createdInvoice.id);
+    setIsProcessing(true);
+    try {
+      const createdInvoice = await createInvoiceMutation.mutateAsync(invoiceData as any) as any;
+      form.reset();
+      onSaved?.();
 
-        // If this was a "Send Invoice" action, auto-send email
-        if (sendEmailFlag && createdInvoice._shouldSendEmail) {
-          setIsSendingEmail(true);
-          
+      // Attachments and email are follow-up work: the invoice is already safely saved.
+      await uploadStagedAttachments(createdInvoice.id);
+
+      if (sendEmailFlag && createdInvoice._shouldSendEmail) {
+        setIsSendingEmail(true);
+        toast({
+          title: 'Invoice Created',
+          description: `Preparing the PDF and sending it to ${data.client_email}...`,
+        });
+
+        const emailResult = await autoSendInvoiceEmail(createdInvoice as Invoice, settings, logoUrl);
+        if (emailResult.success) {
           toast({
-            title: 'Invoice Created',
-            description: `Sending email to ${data.client_email}...`,
+            title: 'Invoice Sent Successfully',
+            description: `Invoice #${createdInvoice.invoice_number} was emailed to ${data.client_email}`,
           });
-
-          const emailResult = await autoSendInvoiceEmail(
-            createdInvoice as Invoice,
-            settings,
-            logoUrl
-          );
-
-          setIsSendingEmail(false);
-
-          if (emailResult.success) {
-            toast({
-              title: 'Invoice Sent Successfully',
-              description: `Invoice #${createdInvoice.invoice_number} has been created and emailed to ${data.client_email}`,
-            });
-          } else {
-            toast({
-              title: 'Invoice Created',
-              description: `Invoice #${createdInvoice.invoice_number} created but email failed: ${emailResult.error}. You can resend from Invoice Tracker.`,
-              variant: 'default',
-            });
-          }
+        } else {
+          toast({
+            title: 'Invoice Saved',
+            description: `The email failed: ${emailResult.error}. You can resend it from Invoice Tracker.`,
+          });
         }
       }
-    });
-    
-    if (!saveAsDraft) {
-      form.reset();
+    } catch {
+      // The mutation already presents the specific error message.
+    } finally {
+      setIsSendingEmail(false);
+      setIsProcessing(false);
     }
   };
 
@@ -276,7 +273,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
 
   // ── Edit mode: save / save & resend ──────────────────────────────────────────
   const onEditSubmit = async (data: InvoiceFormData, resend: boolean) => {
-    if (!invoice) return;
+    if (!invoice || isProcessing) return;
 
     if (!data.client_id) {
       toast({
@@ -305,45 +302,38 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
     } as any;
 
 
-    updateInvoiceMutation.mutate(
-      { id: invoice.id, data: invoiceData },
-      {
-        onSuccess: async (updatedInvoice: any) => {
-          // Upload any newly attached files before resending the PDF
-          await uploadStagedAttachments(invoice.id);
+    setIsProcessing(true);
+    try {
+      const updatedInvoice = await updateInvoiceMutation.mutateAsync({ id: invoice.id, data: invoiceData }) as any;
+      onSaved?.();
 
-          if (resend) {
-            setIsSendingEmail(true);
-            toast({
-              title: 'Invoice Saved',
-              description: `Sending updated invoice to ${data.client_email}...`,
-            });
+      await uploadStagedAttachments(invoice.id);
+      if (resend) {
+        setIsSendingEmail(true);
+        toast({
+          title: 'Invoice Saved',
+          description: `Preparing the updated PDF for ${data.client_email}...`,
+        });
 
-            const emailResult = await autoSendInvoiceEmail(
-              updatedInvoice as Invoice,
-              settings,
-              logoUrl
-            );
-
-            setIsSendingEmail(false);
-
-            if (emailResult.success) {
-              toast({
-                title: 'Invoice Resent',
-                description: `Updated invoice #${updatedInvoice.invoice_number} was emailed to ${data.client_email}`,
-              });
-            } else {
-              toast({
-                title: 'Invoice Saved',
-                description: `Saved, but email failed: ${emailResult.error}. You can resend from Invoice Tracker.`,
-                variant: 'default',
-              });
-            }
-          }
-          onSaved?.();
-        },
+        const emailResult = await autoSendInvoiceEmail(updatedInvoice as Invoice, settings, logoUrl);
+        if (emailResult.success) {
+          toast({
+            title: 'Invoice Resent',
+            description: `Updated invoice #${updatedInvoice.invoice_number} was emailed to ${data.client_email}`,
+          });
+        } else {
+          toast({
+            title: 'Invoice Saved',
+            description: `The email failed: ${emailResult.error}. You can resend it from Invoice Tracker.`,
+          });
+        }
       }
-    );
+    } catch {
+      // The mutation already presents the specific error message.
+    } finally {
+      setIsSendingEmail(false);
+      setIsProcessing(false);
+    }
   };
 
   const handleSaveEdit = () => {
@@ -946,7 +936,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
                     type="button"
                     variant="outline"
                     onClick={handleSaveEdit}
-                    disabled={isUpdatingInvoice || isSendingEmail}
+                    disabled={isProcessing || isUpdatingInvoice || isSendingEmail}
                     className="flex-1 sm:max-w-xs h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
                   >
                     <Save className="h-5 w-5 mr-3" />
@@ -955,7 +945,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
                   <Button
                     type="button"
                     onClick={handleSaveAndResend}
-                    disabled={isUpdatingInvoice || isSendingEmail}
+                    disabled={isProcessing || isUpdatingInvoice || isSendingEmail}
                     className="flex-1 sm:max-w-xs h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                   >
                     <Send className="h-5 w-5 mr-3" />
@@ -970,7 +960,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
                     type="button"
                     variant="outline"
                     onClick={handleSaveAsDraft}
-                    disabled={isCreating}
+                    disabled={isProcessing || isCreating}
                     className="flex-1 h-14 text-base font-medium border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-xl transition-all duration-200 shadow-md"
                   >
                     <Save className="h-5 w-5 mr-3" />
@@ -1002,7 +992,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
                 <Button
                   type="button"
                   onClick={handleSendInvoice}
-                  disabled={isCreating || isSendingEmail}
+                  disabled={isProcessing || isCreating || isSendingEmail}
                   className="sm:flex-1 sm:max-w-xs h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                 >
                   <Send className="h-5 w-5 mr-3" />
@@ -1025,7 +1015,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
                 type="button"
                 variant="outline"
                 onClick={handleSaveEdit}
-                disabled={isUpdatingInvoice || isSendingEmail}
+                disabled={isProcessing || isUpdatingInvoice || isSendingEmail}
                 className="h-12"
               >
                 <Save className="h-4 w-4 mr-2" />
@@ -1034,7 +1024,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
               <Button
                 type="button"
                 onClick={handleSaveAndResend}
-                disabled={isUpdatingInvoice || isSendingEmail}
+                disabled={isProcessing || isUpdatingInvoice || isSendingEmail}
                 className="h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
               >
                 <Send className="h-4 w-4 mr-2" />
@@ -1046,7 +1036,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
             <Button
               type="button"
               onClick={handleSendInvoice}
-              disabled={isCreating || isSendingEmail}
+              disabled={isProcessing || isCreating || isSendingEmail}
               className="w-full h-12 text-base font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white"
             >
               <Send className="h-5 w-5 mr-2" />
@@ -1057,7 +1047,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
                 type="button"
                 variant="outline"
                 onClick={handleSaveAsDraft}
-                disabled={isCreating}
+                disabled={isProcessing || isCreating}
                 className="h-11"
               >
                 <Save className="h-4 w-4 mr-2" />

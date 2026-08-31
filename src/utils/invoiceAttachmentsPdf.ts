@@ -54,17 +54,19 @@ const loadImageAsJpeg = (
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
+        const maxDimension = 1600;
+        const resizeRatio = Math.min(1, maxDimension / Math.max(img.naturalWidth, img.naturalHeight));
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * resizeRatio));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * resizeRatio));
         const ctx = canvas.getContext('2d');
         if (!ctx) return resolve(null);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         resolve({
           dataUrl: canvas.toDataURL('image/jpeg', 0.85),
-          width: img.naturalWidth,
-          height: img.naturalHeight,
+          width: canvas.width,
+          height: canvas.height,
         });
       } catch (err) {
         console.warn('Could not convert attachment image for PDF:', err);
@@ -92,6 +94,7 @@ export const appendAttachmentImagePages = async (
   const captionSpace = pageWidth * 0.06;
 
   for (const att of imageAttachments) {
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
     const image = await loadImageAsJpeg(att.file_url);
     if (!image) {
       console.warn('Skipping attachment image that failed to load:', att.file_name);

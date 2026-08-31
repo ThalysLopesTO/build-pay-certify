@@ -9,9 +9,11 @@ export const generateInvoicePDF = async (
   companySettings?: CompanySettings | null,
   logoUrl?: string | null
 ) => {
+  let tempDiv: HTMLDivElement | null = null;
+  let canvas: HTMLCanvasElement | null = null;
   try {
     // Create a temporary div to render the invoice HTML
-    const tempDiv = document.createElement('div');
+    tempDiv = document.createElement('div');
     tempDiv.style.position = 'absolute';
     tempDiv.style.left = '-9999px';
     tempDiv.style.top = '-9999px';
@@ -41,7 +43,8 @@ export const generateInvoicePDF = async (
     );
 
     // Generate canvas from HTML
-    const canvas = await html2canvas(tempDiv, {
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+    canvas = await html2canvas(tempDiv, {
       scale: 2,
       useCORS: true,
       allowTaint: true,
@@ -49,9 +52,6 @@ export const generateInvoicePDF = async (
       width: 794,
       height: tempDiv.scrollHeight,
     });
-
-    // Remove temporary div
-    document.body.removeChild(tempDiv);
 
     // Create PDF
     const pdf = new jsPDF('p', 'pt', 'a4');
@@ -93,6 +93,12 @@ export const generateInvoicePDF = async (
   } catch (error) {
     console.error('Error generating invoice PDF:', error);
     throw error;
+  } finally {
+    if (tempDiv?.isConnected) tempDiv.remove();
+    if (canvas) {
+      canvas.width = 1;
+      canvas.height = 1;
+    }
   }
 };
 
