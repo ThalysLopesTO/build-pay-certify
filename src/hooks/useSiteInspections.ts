@@ -45,6 +45,7 @@ export interface SiteInspection {
   jobsite_id: string | null;
   inspection_date: string;
   client_name: string | null;
+  client_email: string | null;
   insurance_company: string | null;
   adjuster: string | null;
   claim_number: string | null;
@@ -69,6 +70,7 @@ export interface SiteInspectionInput {
   jobsite_id?: string | null;
   inspection_date: string;
   client_name?: string | null;
+  client_email?: string | null;
   insurance_company?: string | null;
   adjuster?: string | null;
   claim_number?: string | null;
