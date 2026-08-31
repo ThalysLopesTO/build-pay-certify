@@ -98,8 +98,9 @@ const formatDateLong = (iso?: string | null) => {
 
 export const generateSiteInspectionPDF = async (
   data: SiteInspectionPdfData,
-  branding: SiteInspectionBranding
-) => {
+  branding: SiteInspectionBranding,
+  options?: { output?: 'save' | 'blob' }
+): Promise<{ blob: Blob; filename: string }> => {
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
