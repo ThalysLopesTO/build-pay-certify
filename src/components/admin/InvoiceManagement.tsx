@@ -82,7 +82,7 @@ const InvoiceManagement = () => {
           )}
 
           <TabsContent value="create" className="space-y-0">
-            <CreateInvoiceForm />
+            <CreateInvoiceForm onSaved={() => setActiveTab('tracker')} />
           </TabsContent>
 
           <TabsContent value="tracker" className="space-y-0">

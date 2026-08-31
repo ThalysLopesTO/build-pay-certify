@@ -303,6 +303,10 @@ export const generateBrandedInvoicePDF = async (
   companySettings: CompanySettings,
   logoUrl?: string | null,
 ) => {
+  let container: HTMLDivElement | null = null;
+  let canvas: HTMLCanvasElement | null = null;
+
+  try {
   // Convert logo to base64 to avoid CORS issues with html2canvas
   let logoBase64 = "";
   if (logoUrl) {
@@ -310,7 +314,7 @@ export const generateBrandedInvoicePDF = async (
   }
 
   // Create a hidden div to render the invoice content as HTML
-  const container = document.createElement("div");
+  container = document.createElement("div");
   container.style.position = "fixed";
   container.style.top = "-9999px";
   container.style.left = "-9999px";
@@ -320,7 +324,8 @@ export const generateBrandedInvoicePDF = async (
   document.body.appendChild(container);
 
   // Render HTML to canvas then to PDF (reduced scale for smaller file size)
-  const canvas = await html2canvas(container, {
+  await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+  canvas = await html2canvas(container, {
     scale: 1.5,
     logging: false,
     useCORS: true,
@@ -337,8 +342,13 @@ export const generateBrandedInvoicePDF = async (
 
   pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
   await saveInvoicePdfWithAttachments(pdf, invoice.attachments, `Invoice-${invoice.invoice_number}.pdf`);
-
-  document.body.removeChild(container);
+  } finally {
+    if (container?.isConnected) container.remove();
+    if (canvas) {
+      canvas.width = 1;
+      canvas.height = 1;
+    }
+  }
 };
 
 // Generate PDF as Blob for email attachments
@@ -347,6 +357,10 @@ export const generateBrandedInvoicePDFBlob = async (
   companySettings: CompanySettings,
   logoUrl?: string | null,
 ): Promise<{ blob: Blob; filename: string }> => {
+  let container: HTMLDivElement | null = null;
+  let canvas: HTMLCanvasElement | null = null;
+
+  try {
   // Convert logo to base64 to avoid CORS issues with html2canvas
   let logoBase64 = "";
   if (logoUrl) {
@@ -354,7 +368,7 @@ export const generateBrandedInvoicePDFBlob = async (
   }
 
   // Create a hidden div to render the invoice content as HTML
-  const container = document.createElement("div");
+  container = document.createElement("div");
   container.style.position = "fixed";
   container.style.top = "-9999px";
   container.style.left = "-9999px";
@@ -364,7 +378,8 @@ export const generateBrandedInvoicePDFBlob = async (
   document.body.appendChild(container);
 
   // Render HTML to canvas then to PDF (reduced scale for smaller file size)
-  const canvas = await html2canvas(container, {
+  await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+  canvas = await html2canvas(container, {
     scale: 1.5,
     logging: false,
     useCORS: true,
@@ -383,9 +398,14 @@ export const generateBrandedInvoicePDFBlob = async (
   const blob = await buildInvoicePdfBlob(pdf, invoice.attachments);
   const filename = `Invoice-${invoice.invoice_number}.pdf`;
 
-  document.body.removeChild(container);
-
   return { blob, filename };
+  } finally {
+    if (container?.isConnected) container.remove();
+    if (canvas) {
+      canvas.width = 1;
+      canvas.height = 1;
+    }
+  }
 };
 
 // Helper function to convert Blob to Base64

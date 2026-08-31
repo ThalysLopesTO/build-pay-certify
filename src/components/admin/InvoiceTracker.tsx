@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import { generateBrandedInvoicePDF } from './BrandedInvoicePDF';
 import { useToast } from '@/hooks/use-toast';
 import { Invoice } from './types/invoice';
 import { format } from 'date-fns';
-import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2, CheckCircle2, X, MoreHorizontal, Pencil } from 'lucide-react';
+import { Search, Filter, Upload, Mail, Eye, FileText, Download, Calendar, Building, DollarSign, FileSpreadsheet, SlidersHorizontal, Bell, Clock, Trash2, CheckCircle2, X, MoreHorizontal, Pencil, Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
@@ -53,11 +53,21 @@ const InvoiceTracker = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [emailInvoice, setEmailInvoice] = useState<Invoice | null>(null);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editInvoice, setEditInvoice] = useState<Invoice | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
+  const cleanupTimers = useRef<number[]>([]);
+
+  useEffect(() => () => cleanupTimers.current.forEach(window.clearTimeout), []);
+
+  const clearAfterDialogClose = (clear: () => void) => {
+    cleanupTimers.current.push(window.setTimeout(clear, 200));
+  };
 
 
   // Bulk selection state
@@ -126,6 +136,7 @@ const InvoiceTracker = () => {
   };
 
   const handleDownloadPDF = async (invoice: Invoice) => {
+    if (downloadingInvoiceId) return;
     try {
       if (!companySettings) {
         toast({
@@ -136,6 +147,8 @@ const InvoiceTracker = () => {
         return;
       }
 
+      setDownloadingInvoiceId(invoice.id);
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
       await generateBrandedInvoicePDF(invoice, companySettings, logoUrl);
       
       toast({
@@ -149,11 +162,29 @@ const InvoiceTracker = () => {
         description: "Failed to generate PDF. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setDownloadingInvoiceId(null);
     }
   };
 
   const handleViewDetails = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
+    setIsDetailsDialogOpen(true);
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setEditInvoice(invoice);
+    setIsEditDialogOpen(true);
+  };
+
+  const closeDetailsDialog = () => {
+    setIsDetailsDialogOpen(false);
+    clearAfterDialogClose(() => setSelectedInvoice(null));
+  };
+
+  const closeEditDialog = () => {
+    setIsEditDialogOpen(false);
+    clearAfterDialogClose(() => setEditInvoice(null));
   };
 
   const handleSendEmail = (invoice: Invoice) => {
@@ -163,7 +194,7 @@ const InvoiceTracker = () => {
 
   const handleCloseEmailDialog = () => {
     setIsEmailDialogOpen(false);
-    setEmailInvoice(null);
+    clearAfterDialogClose(() => setEmailInvoice(null));
   };
 
   const exportToCSV = () => {
@@ -633,11 +664,11 @@ const InvoiceTracker = () => {
                             <DropdownMenuItem onClick={() => handleViewDetails(invoice)}>
                               <Eye className="h-4 w-4 mr-2" /> View details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setEditInvoice(invoice)}>
+                            <DropdownMenuItem onClick={() => handleEditInvoice(invoice)}>
                               <Pencil className="h-4 w-4 mr-2" /> Edit invoice
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDownloadPDF(invoice)}>
-                              <Download className="h-4 w-4 mr-2" /> Download PDF
+                            <DropdownMenuItem disabled={!!downloadingInvoiceId} onClick={() => handleDownloadPDF(invoice)}>
+                              {downloadingInvoiceId === invoice.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />} Download PDF
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {invoice.status !== 'paid' && (
@@ -711,8 +742,9 @@ const InvoiceTracker = () => {
                 onEmail={handleSendEmail}
                 onStatusChange={handleStatusUpdate}
                 onDownload={handleDownloadPDF}
-                onEdit={setEditInvoice}
+                onEdit={handleEditInvoice}
                 onDelete={canDeleteInvoices ? handleDeleteInvoice : undefined}
+                isDownloading={downloadingInvoiceId === invoice.id}
               />
             ))
           )}
@@ -720,7 +752,7 @@ const InvoiceTracker = () => {
       )}
 
       {/* Invoice Details Dialog (opened by clicking a row or the menu) */}
-      <Dialog open={!!selectedInvoice} onOpenChange={(o) => !o && setSelectedInvoice(null)}>
+      <Dialog open={isDetailsDialogOpen} onOpenChange={(open) => !open && closeDetailsDialog()}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Invoice Details</DialogTitle>
@@ -739,7 +771,7 @@ const InvoiceTracker = () => {
       </Dialog>
 
       {/* Invoice Edit Dialog */}
-      <Dialog open={!!editInvoice} onOpenChange={(o) => !o && setEditInvoice(null)}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => !open && closeEditDialog()}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Invoice</DialogTitle>
@@ -750,7 +782,7 @@ const InvoiceTracker = () => {
           {editInvoice && (
             <CreateInvoiceForm
               invoice={editInvoice}
-              onSaved={() => setEditInvoice(null)}
+              onSaved={closeEditDialog}
             />
           )}
         </DialogContent>
