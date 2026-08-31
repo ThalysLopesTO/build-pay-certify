@@ -591,5 +591,7 @@ export const generateSiteInspectionPDF = async (
     .toString()
     .replace(/[^a-z0-9]+/gi, '-')
     .replace(/^-|-$/g, '');
-  doc.save(`Final-Site-Inspection_${nameBit}_${data.inspectionDate}.pdf`);
+  const filename = `Final-Site-Inspection_${nameBit}_${data.inspectionDate}.pdf`;
+  if (options?.output !== 'blob') doc.save(filename);
+  return { blob: doc.output('blob') as Blob, filename };
 };
