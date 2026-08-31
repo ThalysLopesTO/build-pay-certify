@@ -43,7 +43,20 @@ import {
   countChecked,
 } from '@/utils/siteInspectionChecklist';
 import { generateSiteInspectionPDF } from '@/utils/siteInspectionPDF';
+import { createSiteInspectionEmailHTML } from '@/utils/siteInspectionEmailTemplate';
+import { sendEmail } from '@/utils/sendEmail';
 import { SignaturePad } from './SignaturePad';
+
+const blobToBase64 = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1] ?? '');
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 
 const todayISO = () => {
   const d = new Date();
@@ -67,6 +80,7 @@ export const SiteInspectionForm: React.FC<SiteInspectionFormProps> = ({ inspecti
   const [jobsiteId, setJobsiteId] = useState(inspection?.jobsite_id ?? '');
   const [date, setDate] = useState(inspection?.inspection_date ?? todayISO());
   const [clientName, setClientName] = useState(inspection?.client_name ?? '');
+  const [clientEmail, setClientEmail] = useState(inspection?.client_email ?? '');
   const [insuranceCompany, setInsuranceCompany] = useState(inspection?.insurance_company ?? '');
   const [adjuster, setAdjuster] = useState(inspection?.adjuster ?? '');
   const [claimNumber, setClaimNumber] = useState(inspection?.claim_number ?? '');
@@ -105,6 +119,7 @@ export const SiteInspectionForm: React.FC<SiteInspectionFormProps> = ({ inspecti
     if (site) {
       if (!propertyAddress) setPropertyAddress(site.address ?? '');
       if (!clientName) setClientName(site.client_name ?? '');
+      if (!clientEmail) setClientEmail(site.client_email ?? '');
     }
   };
 
@@ -129,6 +144,7 @@ export const SiteInspectionForm: React.FC<SiteInspectionFormProps> = ({ inspecti
     jobsite_id: jobsiteId || null,
     inspection_date: date,
     client_name: clientName || null,
+    client_email: clientEmail.trim() || null,
     insurance_company: insuranceCompany || null,
     adjuster: adjuster || null,
     claim_number: claimNumber || null,
@@ -194,7 +210,7 @@ export const SiteInspectionForm: React.FC<SiteInspectionFormProps> = ({ inspecti
         ...photos.map(p => ({ url: getInspectionPhotoUrl(p.file_path), caption: p.caption })),
       ];
 
-      await generateSiteInspectionPDF(
+      const { blob, filename } = await generateSiteInspectionPDF(
         {
           inspectionDate: date,
           clientName,
@@ -221,7 +237,49 @@ export const SiteInspectionForm: React.FC<SiteInspectionFormProps> = ({ inspecti
         }
       );
 
-      toast.success('Inspection saved & PDF downloaded');
+      const email = clientEmail.trim();
+      if (email) {
+        try {
+          const base64 = await blobToBase64(blob);
+          const html = createSiteInspectionEmailHTML({
+            clientName,
+            companyName: settings?.company_name ?? '7 Stars Family',
+            companyLogoUrl: logoUrl,
+            companyPhone: settings?.company_phone ?? null,
+            companyEmail: settings?.company_email ?? null,
+            inspectionDate: date,
+            propertyAddress,
+            jobNumber,
+            claimNumber,
+            supervisor,
+            itemsChecked: `${totalChecked} of ${totalItems} items`,
+          });
+
+          const result = await sendEmail({
+            to: email,
+            subject: `Final Site Inspection Report${jobNumber ? ` – Job #${jobNumber}` : ''}`,
+            bodyText: 'Your final site inspection report is attached as a PDF.',
+            customHtml: html,
+            companyData: {
+              name: settings?.company_name ?? '7 Stars Family',
+              address: settings?.company_address ?? '',
+              phone: settings?.company_phone ?? '',
+              logoUrl: logoUrl ?? '',
+            },
+            attachments: [{ filename, content: base64, type: 'application/pdf' }],
+          });
+
+          if (result.success) {
+            toast.success(`Inspection saved, PDF downloaded & emailed to ${email}`);
+          } else {
+            toast.error(result.error ?? 'Report saved, but the email failed to send');
+          }
+        } catch (err: any) {
+          toast.error(err?.message ?? 'Report saved, but the email failed to send');
+        }
+      } else {
+        toast.success('Inspection saved & PDF downloaded');
+      }
       onDone();
     } catch (e: any) {
       toast.error(e?.message ?? 'Failed to submit inspection');
@@ -286,6 +344,7 @@ export const SiteInspectionForm: React.FC<SiteInspectionFormProps> = ({ inspecti
           </div>
           {field('Date', date, setDate, 'date')}
           {field('Client', clientName, setClientName)}
+          {field('Client Email', clientEmail, setClientEmail, 'email')}
           {field('Insurance Company', insuranceCompany, setInsuranceCompany)}
           {field('Adjuster', adjuster, setAdjuster)}
           {field('Claim #', claimNumber, setClaimNumber)}
@@ -572,7 +631,11 @@ export const SiteInspectionForm: React.FC<SiteInspectionFormProps> = ({ inspecti
             ) : (
               <CheckCircle2 className="mr-1.5 h-4 w-4" />
             )}
-            {isLocked ? 'Download PDF' : 'Submit & download PDF'}
+            {isLocked
+              ? 'Download PDF'
+              : clientEmail.trim()
+                ? 'Submit & email client'
+                : 'Submit & download PDF'}
           </Button>
         </div>
       </div>

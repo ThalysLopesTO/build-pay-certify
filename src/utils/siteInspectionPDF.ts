@@ -98,8 +98,9 @@ const formatDateLong = (iso?: string | null) => {
 
 export const generateSiteInspectionPDF = async (
   data: SiteInspectionPdfData,
-  branding: SiteInspectionBranding
-) => {
+  branding: SiteInspectionBranding,
+  options?: { output?: 'save' | 'blob' }
+): Promise<{ blob: Blob; filename: string }> => {
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -590,5 +591,7 @@ export const generateSiteInspectionPDF = async (
     .toString()
     .replace(/[^a-z0-9]+/gi, '-')
     .replace(/^-|-$/g, '');
-  doc.save(`Final-Site-Inspection_${nameBit}_${data.inspectionDate}.pdf`);
+  const filename = `Final-Site-Inspection_${nameBit}_${data.inspectionDate}.pdf`;
+  if (options?.output !== 'blob') doc.save(filename);
+  return { blob: doc.output('blob') as Blob, filename };
 };

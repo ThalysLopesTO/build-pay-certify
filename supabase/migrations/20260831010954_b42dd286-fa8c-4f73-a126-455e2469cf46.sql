@@ -1,0 +1,1 @@
+ALTER TABLE public.site_inspections ADD COLUMN IF NOT EXISTS client_email text;

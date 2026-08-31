@@ -3252,6 +3252,7 @@ export type Database = {
           builder_company: string | null
           checklist: Json
           claim_number: string | null
+          client_email: string | null
           client_name: string | null
           comments: string | null
           company_id: string
@@ -3276,6 +3277,7 @@ export type Database = {
           builder_company?: string | null
           checklist?: Json
           claim_number?: string | null
+          client_email?: string | null
           client_name?: string | null
           comments?: string | null
           company_id: string
@@ -3300,6 +3302,7 @@ export type Database = {
           builder_company?: string | null
           checklist?: Json
           claim_number?: string | null
+          client_email?: string | null
           client_name?: string | null
           comments?: string | null
           company_id?: string
