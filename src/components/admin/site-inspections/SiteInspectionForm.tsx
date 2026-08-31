@@ -631,7 +631,11 @@ export const SiteInspectionForm: React.FC<SiteInspectionFormProps> = ({ inspecti
             ) : (
               <CheckCircle2 className="mr-1.5 h-4 w-4" />
             )}
-            {isLocked ? 'Download PDF' : 'Submit & download PDF'}
+            {isLocked
+              ? 'Download PDF'
+              : clientEmail.trim()
+                ? 'Submit & email client'
+                : 'Submit & download PDF'}
           </Button>
         </div>
       </div>
