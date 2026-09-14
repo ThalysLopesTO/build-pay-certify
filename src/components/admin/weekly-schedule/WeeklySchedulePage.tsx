@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CopyPlus,
@@ -21,6 +23,7 @@ import {
   Loader2,
   Pencil,
   Plus,
+  Search,
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -29,7 +32,6 @@ import { useCompanyLogo } from '@/hooks/useCompanyLogo';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import {
   buildWeekEntries,
-  countScheduledDays,
   entryIsFilled,
   useWeeklySchedules,
   type WeeklySchedule,
@@ -53,12 +55,29 @@ export const WeeklySchedulePage: React.FC = () => {
   const [editing, setEditing] = useState<WeeklySchedule | null>(null);
   const [toDelete, setToDelete] = useState<WeeklySchedule | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const { list, remove, copyWeek } = useWeeklySchedules(weekStart);
   const { logoUrl } = useCompanyLogo();
   const { settings } = useCompanySettings();
 
-  const schedules = list.data ?? [];
+  const schedules = useMemo(() => list.data ?? [], [list.data]);
+  const publishedCount = schedules.filter(s => s.status === 'published').length;
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return schedules;
+    return schedules.filter(s => s.assignee_name.toLowerCase().includes(term));
+  }, [schedules, search]);
+
+  const toggleRow = (id: string) =>
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const branding = {
     companyName: settings?.company_name ?? '7 Star Family',
@@ -201,87 +220,154 @@ export const WeeklySchedulePage: React.FC = () => {
           </div>
         </Card>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {schedules.map(schedule => {
-            const entries = buildWeekEntries(schedule.week_start, schedule.entries);
-            const filled = entries.filter(entryIsFilled);
-            return (
-              <Card key={schedule.id} className="flex flex-col gap-3 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{schedule.assignee_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {countScheduledDays(schedule.entries)} day
-                      {countScheduledDays(schedule.entries) === 1 ? '' : 's'} scheduled
-                      {!schedule.assignee_user_id && ' · team sheet'}
-                    </p>
-                  </div>
-                  <Badge variant={schedule.status === 'published' ? 'default' : 'secondary'}>
-                    {schedule.status === 'published' ? 'Published' : 'Draft'}
-                  </Badge>
-                </div>
+        <>
+          {schedules.length > 3 && (
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search employee or team…"
+                className="pl-9"
+              />
+            </div>
+          )}
 
-                <ul className="space-y-1 text-sm">
-                  {filled.slice(0, 4).map(entry => (
-                    <li key={entry.date} className="flex gap-2">
-                      <span className="w-10 shrink-0 font-medium text-muted-foreground">
-                        {dayName(entry.date)}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate">
-                        {entry.client_name || '—'}
-                        {entry.start_time && (
-                          <span className="text-muted-foreground">
-                            {' · '}
-                            {formatScheduleTime(entry.start_time)}
-                          </span>
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                  {filled.length > 4 && (
-                    <li className="text-xs text-muted-foreground">
-                      +{filled.length - 4} more day{filled.length - 4 === 1 ? '' : 's'}
-                    </li>
-                  )}
-                </ul>
+          <Card className="overflow-hidden">
+            <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              <span>
+                {schedules.length} schedule{schedules.length === 1 ? '' : 's'} · {publishedCount}{' '}
+                published
+              </span>
+              <span className="hidden sm:inline">Tap a row to open the week</span>
+            </div>
 
-                <div className="mt-auto flex gap-2 pt-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => {
-                      setEditing(schedule);
-                      setMode('form');
-                    }}
-                  >
-                    <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => download([schedule], schedule.id)}
-                    disabled={downloadingId === schedule.id}
-                  >
-                    {downloadingId === schedule.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Download className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => setToDelete(schedule)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+            {filtered.length === 0 ? (
+              <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+                Nobody matches “{search.trim()}”.
+              </p>
+            ) : (
+              <div className="divide-y">
+                {filtered.map(schedule => {
+                  const days = buildWeekEntries(schedule.week_start, schedule.entries).filter(
+                    entryIsFilled
+                  );
+                  const isOpen = expanded.has(schedule.id);
+                  const isPublished = schedule.status === 'published';
+
+                  return (
+                    <div key={schedule.id}>
+                      <button
+                        type="button"
+                        onClick={() => toggleRow(schedule.id)}
+                        aria-expanded={isOpen}
+                        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+                      >
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                            isOpen ? '' : '-rotate-90'
+                          }`}
+                        />
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                          {schedule.assignee_name}
+                          {!schedule.assignee_user_id && (
+                            <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                              team
+                            </span>
+                          )}
+                        </span>
+                        {/* Tight screens get a status dot; the full chip returns at sm+ */}
+                        <span
+                          aria-hidden
+                          className={`h-2 w-2 shrink-0 rounded-full sm:hidden ${
+                            isPublished ? 'bg-emerald-500' : 'bg-muted-foreground/40'
+                          }`}
+                        />
+                        <Badge
+                          variant={isPublished ? 'default' : 'secondary'}
+                          className="hidden shrink-0 sm:inline-flex"
+                        >
+                          {isPublished ? 'Published' : 'Draft'}
+                        </Badge>
+                        <span className="w-7 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                          {days.length}d
+                        </span>
+                      </button>
+
+                      {isOpen && (
+                        <div className="space-y-3 bg-muted/25 px-3 pb-3 pt-1">
+                          {days.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No days filled in yet.</p>
+                          ) : (
+                            <ul className="space-y-1.5">
+                              {days.map(entry => (
+                                <li key={entry.date} className="flex gap-2.5 text-sm">
+                                  <span className="w-9 shrink-0 pt-0.5 text-xs font-semibold uppercase text-muted-foreground">
+                                    {dayName(entry.date)}
+                                  </span>
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block truncate">
+                                      {entry.client_name || '—'}
+                                      {entry.start_time && (
+                                        <span className="text-muted-foreground">
+                                          {' · '}
+                                          {formatScheduleTime(entry.start_time)}
+                                        </span>
+                                      )}
+                                    </span>
+                                    {entry.address && (
+                                      <span className="block truncate text-xs text-muted-foreground">
+                                        {entry.address}
+                                      </span>
+                                    )}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => {
+                                setEditing(schedule);
+                                setMode('form');
+                              }}
+                            >
+                              <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => download([schedule], schedule.id)}
+                              disabled={downloadingId === schedule.id}
+                            >
+                              {downloadingId === schedule.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Download className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setToDelete(schedule)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </>
       )}
 
       <AlertDialog open={!!toDelete} onOpenChange={open => !open && setToDelete(null)}>
