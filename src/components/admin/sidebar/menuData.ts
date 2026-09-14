@@ -133,6 +133,11 @@ export const menuData: MenuItem[] = [
     icon: ClipboardCheck,
   },
   {
+    id: 'weekly-schedule',
+    title: 'Weekly Schedule',
+    icon: CalendarDays,
+  },
+  {
     id: 'timesheets',
     title: 'Timesheets',
     icon: Calendar,
@@ -220,6 +225,7 @@ export const groupedMenuItems = {
     menuData.find(item => item.id === 'manual-timesheets')!,
     menuData.find(item => item.id === 'employee-bills')!,
     menuData.find(item => item.id === 'site-inspections')!,
+    menuData.find(item => item.id === 'weekly-schedule')!,
   ],
   invoices: [
     menuData.find(item => item.id === 'job-costing')!,

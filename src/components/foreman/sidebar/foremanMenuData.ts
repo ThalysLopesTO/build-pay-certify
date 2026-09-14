@@ -19,6 +19,7 @@ import {
   UserPlus,
   CheckSquare,
   ClipboardCheck,
+  CalendarDays,
 } from 'lucide-react';
 
 export const foremanMenuItems = [
@@ -117,6 +118,11 @@ export const groupedForemanItems = {
       title: 'Site Inspections',
       icon: ClipboardCheck,
       id: 'site-inspections',
+    },
+    {
+      title: 'Weekly Schedule',
+      icon: CalendarDays,
+      id: 'weekly-schedule',
     },
   ],
   materials: [

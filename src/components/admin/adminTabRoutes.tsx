@@ -42,6 +42,7 @@ const EmployeeBillsManagement = lazy(() => import('@/components/admin/EmployeeBi
 const JobCostingPage = lazy(() => import('@/components/admin/JobCostingPage'));
 const ChatPage = lazy(() => import('@/components/chat/ChatPage'));
 const SiteInspectionsPage = lazy(() => import('@/components/admin/site-inspections/SiteInspectionsPage'));
+const WeeklySchedulePage = lazy(() => import('@/components/admin/weekly-schedule/WeeklySchedulePage'));
 
 const DashboardRoute = () => {
   const navigate = useNavigate();
@@ -77,6 +78,7 @@ export const adminTabRoutes: AdminTabRoute[] = [
   { slug: 'manual-timesheets', title: 'Time Sheet', element: <ManualTimesheetsPage /> },
   { slug: 'employee-bills', title: 'Employee Bills', element: <EmployeeBillsManagement /> },
   { slug: 'site-inspections', title: 'Site Inspections', element: <SiteInspectionsPage /> },
+  { slug: 'weekly-schedule', title: 'Weekly Schedule', element: <WeeklySchedulePage /> },
   { slug: 'time-summary', title: 'Time Summary', element: <TimeSummaryPage /> },
   { slug: 'timesheets', title: 'Timesheets', element: <EmployeeTimesheets /> },
   { slug: 'payroll-summary', title: 'Payroll Summary', element: <PayrollSummary /> },

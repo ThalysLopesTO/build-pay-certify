@@ -18,6 +18,7 @@ import {
   PieChart,
   Cog,
   ClipboardCheck,
+  CalendarDays,
 } from 'lucide-react';
 
 // Organised to mirror the Admin sidebar structure (Project Management,
@@ -44,6 +45,7 @@ export const managementMenuItems = {
     { title: 'Time Sheet',         icon: FileSpreadsheet, id: 'manual-timesheets' },
     { title: 'Employee Bills',     icon: Receipt,         id: 'employee-bills' },
     { title: 'Site Inspections',   icon: ClipboardCheck,  id: 'site-inspections' },
+    { title: 'Weekly Schedule',    icon: CalendarDays,    id: 'weekly-schedule' },
     { title: 'Time Summary',       icon: BarChart3,       id: 'time-summary' },
   ],
   financial: [

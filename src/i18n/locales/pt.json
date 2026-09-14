@@ -37,7 +37,9 @@
       "missedPunch": "Ponto Perdido",
       "missedPunchDesc": "Pedir correção",
       "certificates": "Certificados",
-      "certificatesDesc": "Suas credenciais"
+      "certificatesDesc": "Suas credenciais",
+      "mySchedule": "Minha Agenda",
+      "myScheduleDesc": "Trabalhos da semana"
     },
     "myReports": "Meus Relatórios",
     "companyRules": "Regras da Empresa",

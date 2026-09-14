@@ -37,7 +37,9 @@
       "missedPunch": "Marca Perdida",
       "missedPunchDesc": "Pedir corrección",
       "certificates": "Certificados",
-      "certificatesDesc": "Tus credenciales"
+      "certificatesDesc": "Tus credenciales",
+      "mySchedule": "Mi Agenda",
+      "myScheduleDesc": "Trabajos de la semana"
     },
     "myReports": "Mis Reportes",
     "companyRules": "Reglas de la Empresa",

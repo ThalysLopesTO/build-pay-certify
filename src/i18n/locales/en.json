@@ -37,7 +37,9 @@
       "missedPunch": "Missed Punch",
       "missedPunchDesc": "Request a fix",
       "certificates": "Certificates",
-      "certificatesDesc": "Your credentials"
+      "certificatesDesc": "Your credentials",
+      "mySchedule": "My Schedule",
+      "myScheduleDesc": "This week's jobs"
     },
     "myReports": "My Reports",
     "companyRules": "Company Rules",

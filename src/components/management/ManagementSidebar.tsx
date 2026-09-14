@@ -9,7 +9,7 @@ import ManagementSidebarSection from './sidebar/ManagementSidebarSection';
 import ManagementCollapsibleSidebarSection from './sidebar/ManagementCollapsibleSidebarSection';
 import { managementMenuItems, sectionConfigs } from './sidebar/managementMenuData';
 import { useScrollToActiveSection } from '@/hooks/useScrollToActiveSection';
-import { useIsSevenStars } from '@/hooks/useSevenStarsFeature';
+import { useSevenStarsGate } from '@/hooks/useSevenStarsFeature';
 
 interface ManagementSidebarProps {
   activeTab: string;
@@ -19,9 +19,7 @@ interface ManagementSidebarProps {
 const ManagementSidebar = ({ activeTab, setActiveTab }: ManagementSidebarProps) => {
   // Auto-scroll to active section
   useScrollToActiveSection(activeTab);
-  const isSevenStars = useIsSevenStars();
-  const gate = <T extends { id?: string }>(items: T[]) =>
-    items.filter(i => i.id !== 'site-inspections' || isSevenStars);
+  const gate = useSevenStarsGate();
 
 
   return (

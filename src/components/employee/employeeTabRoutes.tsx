@@ -7,6 +7,7 @@ const TimesheetForm = lazy(() => import('@/components/employee/TimesheetForm'));
 const MissedPunchRequests = lazy(() => import('@/components/employee/MissedPunchRequests'));
 const AttentionReportForm = lazy(() => import('@/components/employee/AttentionReportForm'));
 const MyReports = lazy(() => import('@/components/employee/MyReports'));
+const MyWeeklySchedule = lazy(() => import('@/components/employee/MyWeeklySchedule'));
 const CertificateStatus = lazy(() => import('@/components/employee/CertificateStatus'));
 const CompanyRules = lazy(() => import('@/components/common/CompanyRules'));
 const UserSettings = lazy(() => import('@/components/common/UserSettings'));
@@ -41,6 +42,7 @@ export const employeeTabRoutes: EmployeeTabRoute[] = [
   { slug: 'missed-punch-requests', title: 'Missed Punch', element: <MissedPunchRequests /> },
   { slug: 'attention-report', title: 'Report Issue', element: <AttentionReportForm /> },
   { slug: 'my-reports', title: 'My Reports', element: <MyReports /> },
+  { slug: 'my-schedule', title: 'My Schedule', element: <MyWeeklySchedule /> },
   { slug: 'certificates', title: 'Certificates', element: <CertificateStatus /> },
   { slug: 'company-rules', title: 'Company Rules', element: <CompanyRules /> },
   { slug: 'settings', title: 'Profile', element: <UserSettings /> },

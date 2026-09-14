@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import {
   Building2, Briefcase, Clock, Timer, FileText, AlertTriangle, Award,
-  Settings, AlertCircle, CheckSquare, ChevronRight, ScrollText,
+  Settings, AlertCircle, CheckSquare, ChevronRight, ScrollText, CalendarDays,
 } from 'lucide-react';
 import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTimesheets } from '@/hooks/useTimesheets';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useIsSevenStars } from '@/hooks/useSevenStarsFeature';
 import { isMenuItemVisible } from '@/utils/menuPermissions';
 import BirthdayWidget from '@/components/common/BirthdayWidget';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
@@ -42,6 +43,7 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
   const { user } = useAuth();
   const { totalWeeklyHours, isLoading: hoursLoading } = useTimesheets();
   const { data: permissions } = useRolePermissions();
+  const isSevenStars = useIsSevenStars();
 
   const { data: userProfile } = useQuery({
     queryKey: ['user-profile', user?.id],
@@ -70,6 +72,10 @@ const EmployeeDashboardHome: React.FC<EmployeeDashboardHomeProps> = ({ onNavigat
 
   const primaryActions = ([
     { id: 'time-tracker',          title: t('home.actions.clockInOut'),   subtitle: t('home.actions.clockInOutDesc'),   icon: Timer,         tone: 'emerald', tab: 'time-tracker' },
+    // 7 Star Family build their crews' week in the admin panel; everyone else has no schedule to show.
+    ...(isSevenStars
+      ? [{ id: 'my-schedule',      title: t('home.actions.mySchedule'),   subtitle: t('home.actions.myScheduleDesc'),   icon: CalendarDays,  tone: 'orange' as Tone, tab: 'my-schedule' }]
+      : []),
     { id: 'tasks',                 title: t('home.actions.myTasks'),      subtitle: t('home.actions.myTasksDesc'),      icon: CheckSquare,   tone: 'blue',    tab: 'tasks' },
     { id: 'timesheet',             title: t('home.actions.timesheet'),    subtitle: t('home.actions.timesheetDesc'),    icon: FileText,      tone: 'purple',  tab: 'timesheet' },
     { id: 'attention-report',      title: t('home.actions.reportIssue'),  subtitle: t('home.actions.reportIssueDesc'),  icon: AlertTriangle, tone: 'orange',  tab: 'attention-report' },
