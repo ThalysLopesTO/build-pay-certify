@@ -5,14 +5,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ArrowLeft, ArrowUpToLine, Download, Loader2, Save, Send, X } from 'lucide-react';
+  ArrowLeft,
+  ArrowUpToLine,
+  ChevronsUpDown,
+  Download,
+  Loader2,
+  Save,
+  Send,
+  Users,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
@@ -41,7 +47,14 @@ const SERVICE_SUGGESTIONS = [
   'Move In / Move Out',
 ];
 
-const TEAM_OPTION = '__team__';
+const initials = (first?: string | null, last?: string | null) => {
+  const f = (first ?? '').trim().charAt(0);
+  const l = (last ?? '').trim().charAt(0);
+  return (f + l).toUpperCase() || '?';
+};
+
+const employeeName = (emp: any): string =>
+  `${emp?.first_name ?? ''} ${emp?.last_name ?? ''}`.trim() || emp?.email || 'Unknown';
 
 interface Props {
   /** Existing schedule to edit, or null for a new one. */
@@ -55,11 +68,13 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
   const { data: clients = [] } = useClients();
   const { logoUrl } = useCompanyLogo();
   const { settings } = useCompanySettings();
-  const { create, update } = useWeeklySchedules(weekStart);
+  const { list, createMany, update } = useWeeklySchedules(weekStart);
 
-  const [assigneeUserId, setAssigneeUserId] = useState<string>(
-    schedule?.assignee_user_id ?? ''
+  const [selectedIds, setSelectedIds] = useState<string[]>(
+    schedule?.assignee_user_id ? [schedule.assignee_user_id] : []
   );
+  const [employeeOpen, setEmployeeOpen] = useState(false);
+  const [employeeSearch, setEmployeeSearch] = useState('');
   const [isTeam, setIsTeam] = useState<boolean>(
     !!schedule && !schedule.assignee_user_id
   );
@@ -79,11 +94,44 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
     return map;
   }, [clients]);
 
-  const assigneeName = useMemo(() => {
-    if (isTeam) return teamName.trim();
-    const emp = (employees as any[]).find(e => e.user_id === assigneeUserId);
-    return emp ? `${emp.first_name ?? ''} ${emp.last_name ?? ''}`.trim() : '';
-  }, [isTeam, teamName, employees, assigneeUserId]);
+  /** Employees already holding a sheet this week — they cannot take a second one. */
+  const alreadyScheduled = useMemo(() => {
+    const taken = new Set<string>();
+    (list.data ?? []).forEach(s => {
+      if (s.assignee_user_id && s.id !== schedule?.id) taken.add(s.assignee_user_id);
+    });
+    return taken;
+  }, [list.data, schedule?.id]);
+
+  const filteredEmployees = useMemo(() => {
+    const term = employeeSearch.trim().toLowerCase();
+    if (!term) return employees as any[];
+    return (employees as any[]).filter(e =>
+      `${employeeName(e)} ${e.role ?? ''}`.toLowerCase().includes(term)
+    );
+  }, [employees, employeeSearch]);
+
+  const selectedEmployees = useMemo(
+    () =>
+      selectedIds
+        .map(id => (employees as any[]).find(e => e.user_id === id))
+        .filter(Boolean) as any[],
+    [selectedIds, employees]
+  );
+
+  /** What goes on the sheet header: the team name, or the chosen employees. */
+  const assigneeNames = useMemo(() => {
+    if (isTeam) {
+      const name = teamName.trim();
+      return name ? [name] : [];
+    }
+    return selectedEmployees.map(employeeName);
+  }, [isTeam, teamName, selectedEmployees]);
+
+  const toggleEmployee = (userId: string) =>
+    setSelectedIds(prev =>
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
 
   const patchEntry = (date: string, patch: Partial<WeeklyScheduleEntry>) =>
     setEntries(prev => prev.map(e => (e.date === date ? { ...e, ...patch } : e)));
@@ -115,7 +163,9 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
   };
 
   const validate = (): string | null => {
-    if (!assigneeName) return 'Choose an employee or type a team name first.';
+    if (assigneeNames.length === 0) {
+      return isTeam ? 'Type a team name first.' : 'Choose at least one employee.';
+    }
     if (!entries.some(entryIsFilled)) return 'Add at least one day to the schedule.';
     return null;
   };
@@ -129,26 +179,49 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
 
     setSaving(status);
     try {
-      const input = {
+      const base = {
         week_start: schedule?.week_start ?? weekStart,
-        assignee_user_id: isTeam ? null : assigneeUserId || null,
-        assignee_name: assigneeName,
         entries,
         notes,
         status,
       };
 
       if (schedule) {
-        await update.mutateAsync({ id: schedule.id, input });
+        await update.mutateAsync({
+          id: schedule.id,
+          input: {
+            ...base,
+            assignee_user_id: isTeam ? null : selectedIds[0] ?? null,
+            assignee_name: assigneeNames[0],
+          },
+        });
+        toast.success(
+          status === 'published'
+            ? `Schedule published — ${assigneeNames[0]} can see it in the app`
+            : 'Schedule saved as draft'
+        );
       } else {
-        await create.mutateAsync(input);
-      }
+        const assignees = isTeam
+          ? [{ user_id: null, name: assigneeNames[0] }]
+          : selectedEmployees.map(emp => ({
+              user_id: emp.user_id as string,
+              name: employeeName(emp),
+            }));
 
-      toast.success(
-        status === 'published'
-          ? `Schedule published — ${assigneeName} can see it in the app`
-          : 'Schedule saved as draft'
-      );
+        const count = await createMany.mutateAsync({ ...base, assignees });
+
+        if (count > 1) {
+          toast.success(
+            `${count} schedules ${status === 'published' ? 'published' : 'saved as draft'} — one per employee`
+          );
+        } else {
+          toast.success(
+            status === 'published'
+              ? `Schedule published — ${assignees[0].name} can see it in the app`
+              : 'Schedule saved as draft'
+          );
+        }
+      }
       onDone();
     } catch {
       // the mutation already surfaced the error toast
@@ -166,14 +239,13 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
     setGenerating(true);
     try {
       await generateWeeklySchedulePDF(
-        [
-          {
-            assigneeName,
-            weekStart: schedule?.week_start ?? weekStart,
-            entries,
-            notes,
-          },
-        ],
+        // One page per person, all with the same days
+        assigneeNames.map(name => ({
+          assigneeName: name,
+          weekStart: schedule?.week_start ?? weekStart,
+          entries,
+          notes,
+        })),
         {
           companyName: settings?.company_name ?? '7 Star Family',
           logoUrl,
@@ -234,6 +306,7 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
               <Send className="mr-1.5 h-4 w-4" />
             )}
             Publish
+            {!schedule && assigneeNames.length > 1 ? ` (${assigneeNames.length})` : ''}
           </Button>
         </div>
       </div>
@@ -242,36 +315,101 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
       <Card className="p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label>Employee or team</Label>
-            <Select
-              value={isTeam ? TEAM_OPTION : assigneeUserId}
-              onValueChange={value => {
-                if (value === TEAM_OPTION) {
-                  setIsTeam(true);
-                  setAssigneeUserId('');
-                } else {
-                  setIsTeam(false);
-                  setAssigneeUserId(value);
-                }
-              }}
-              disabled={!!schedule}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select who this week is for" />
-              </SelectTrigger>
-              <SelectContent>
-                {(employees as any[]).map(e => (
-                  <SelectItem key={e.user_id} value={e.user_id}>
-                    {`${e.first_name ?? ''} ${e.last_name ?? ''}`.trim() || e.email}
-                  </SelectItem>
-                ))}
-                <SelectItem value={TEAM_OPTION}>Team / other name…</SelectItem>
-              </SelectContent>
-            </Select>
-            {!!schedule && (
+            <Label>{schedule ? 'Employee' : 'Employees'}</Label>
+
+            {schedule ? (
+              <p className="flex h-10 items-center text-sm">{schedule.assignee_name}</p>
+            ) : isTeam ? (
+              <p className="flex h-10 items-center text-sm text-muted-foreground">
+                Team sheet — type the name beside it.
+              </p>
+            ) : (
+              <Popover open={employeeOpen} onOpenChange={setEmployeeOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={employeeOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    <span
+                      className={`truncate ${selectedIds.length ? '' : 'text-muted-foreground'}`}
+                    >
+                      {selectedIds.length
+                        ? `${selectedIds.length} employee${selectedIds.length === 1 ? '' : 's'} selected`
+                        : 'Choose employees'}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="pointer-events-auto w-[--radix-popover-trigger-width] p-0"
+                  align="start"
+                >
+                  <div className="border-b p-2">
+                    <Input
+                      value={employeeSearch}
+                      onChange={e => setEmployeeSearch(e.target.value)}
+                      placeholder="Search employees…"
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="max-h-64 divide-y overflow-y-auto">
+                    {filteredEmployees.length === 0 && (
+                      <p className="p-4 text-sm text-muted-foreground">No employees found.</p>
+                    )}
+                    {filteredEmployees.map(emp => {
+                      const taken = alreadyScheduled.has(emp.user_id);
+                      return (
+                        <label
+                          key={emp.user_id}
+                          className={`flex items-center gap-3 px-3 py-2 ${
+                            taken ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-muted/50'
+                          }`}
+                        >
+                          <Checkbox
+                            checked={selectedIds.includes(emp.user_id)}
+                            disabled={taken}
+                            onCheckedChange={() => toggleEmployee(emp.user_id)}
+                          />
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage
+                              src={emp.photo_url ?? emp.profile_photo_url ?? undefined}
+                              alt={employeeName(emp)}
+                            />
+                            <AvatarFallback className="text-xs">
+                              {initials(emp.first_name, emp.last_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">{employeeName(emp)}</p>
+                            <p className="text-xs capitalize text-muted-foreground">
+                              {taken ? 'already scheduled this week' : emp.role}
+                            </p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+
+            {schedule ? (
               <p className="text-xs text-muted-foreground">
                 Delete and recreate the schedule to move it to someone else.
               </p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTeam(v => !v);
+                  setSelectedIds([]);
+                }}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              >
+                {isTeam ? '← Pick employees instead' : 'Use a team / custom name instead'}
+              </button>
             )}
           </div>
 
@@ -290,12 +428,40 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
             </div>
           ) : (
             <div className="space-y-1.5">
-              <Label>Visible to</Label>
-              <div className="flex h-10 items-center text-sm text-muted-foreground">
-                {assigneeName
-                  ? `${assigneeName} sees this week once published`
-                  : 'Pick an employee to publish it to their app'}
-              </div>
+              <Label>Who gets this week</Label>
+              {selectedEmployees.length === 0 ? (
+                <p className="flex h-10 items-center text-sm text-muted-foreground">
+                  {schedule
+                    ? 'Nobody linked — this sheet does not reach the employee app.'
+                    : 'Pick one or more — each gets their own copy of these days.'}
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedEmployees.map(emp => (
+                      <Badge key={emp.user_id} variant="secondary" className="gap-1 font-normal">
+                        {employeeName(emp)}
+                        {!schedule && (
+                          <button
+                            type="button"
+                            onClick={() => toggleEmployee(emp.user_id)}
+                            aria-label={`Remove ${employeeName(emp)}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                  {selectedEmployees.length > 1 && (
+                    <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <Users className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      {selectedEmployees.length} separate sheets with these same days — you can edit
+                      any of them later without touching the others.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

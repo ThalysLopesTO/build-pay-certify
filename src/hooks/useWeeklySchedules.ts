@@ -92,35 +92,46 @@ export const useWeeklySchedules = (weekStart: string) => {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
 
-  const create = useMutation({
-    mutationFn: async (input: WeeklyScheduleInput): Promise<WeeklySchedule> => {
+  /**
+   * Same week handed to several employees at once — each one gets their own
+   * sheet, so the office can tweak a person's days later without touching the
+   * others. Inserted in one statement: if anybody in the batch already has a
+   * sheet that week, nothing is written (the picker greys those people out).
+   */
+  const createMany = useMutation({
+    mutationFn: async ({
+      assignees,
+      ...input
+    }: Omit<WeeklyScheduleInput, 'assignee_user_id' | 'assignee_name'> & {
+      assignees: { user_id: string | null; name: string }[];
+    }): Promise<number> => {
       if (!user?.companyId || !user?.id) throw new Error('Not authenticated');
+      if (assignees.length === 0) throw new Error('Select at least one employee');
       const createdByName =
         [(user as any)?.firstName, (user as any)?.lastName].filter(Boolean).join(' ').trim() || null;
 
-      const { data, error } = await supabase
-        .from('weekly_schedules' as any)
-        .insert({
-          ...input,
-          notes: input.notes?.trim() ? input.notes : null,
-          published_at: input.status === 'published' ? new Date().toISOString() : null,
-          company_id: user.companyId,
-          created_by: user.id,
-          created_by_name: createdByName,
-        } as any)
-        .select()
-        .single();
+      const rows = assignees.map(a => ({
+        ...input,
+        notes: input.notes?.trim() ? input.notes : null,
+        published_at: input.status === 'published' ? new Date().toISOString() : null,
+        assignee_user_id: a.user_id,
+        assignee_name: a.name,
+        company_id: user.companyId,
+        created_by: user.id,
+        created_by_name: createdByName,
+      }));
 
+      const { error } = await supabase.from('weekly_schedules' as any).insert(rows as any);
       if (error) {
         if (error.code === '23505') {
-          throw new Error('This employee already has a schedule for that week — open it to edit instead.');
+          throw new Error('One of those employees already has a schedule for this week.');
         }
         throw error;
       }
-      return data as unknown as WeeklySchedule;
+      return rows.length;
     },
     onSuccess: invalidate,
-    onError: (e: any) => toast.error(e?.message ?? 'Failed to save schedule'),
+    onError: (e: any) => toast.error(e?.message ?? 'Failed to save schedules'),
   });
 
   const update = useMutation({
@@ -201,7 +212,7 @@ export const useWeeklySchedules = (weekStart: string) => {
     onError: (e: any) => toast.error(e?.message ?? 'Failed to copy week'),
   });
 
-  return { list, create, update, remove, copyWeek };
+  return { list, createMany, update, remove, copyWeek };
 };
 
 /**
