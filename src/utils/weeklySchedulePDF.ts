@@ -17,6 +17,7 @@ export interface WeeklySchedulePdfEntry {
   address?: string | null;
   service?: string | null;
   notes?: string | null;
+  employee_names?: string[] | null;
 }
 
 export interface WeeklySchedulePdfSheet {
@@ -154,7 +155,7 @@ export const generateWeeklySchedulePDF = async (
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(...TEXT);
-    doc.text('EMPLOYEE NAME OR TEAM', margin + contentW / 2, y + BAND_H / 2 + 3.5, {
+    doc.text('SCHEDULE', margin + contentW / 2, y + BAND_H / 2 + 3.5, {
       align: 'center',
       charSpace: 0.4,
     });
@@ -182,12 +183,13 @@ export const generateWeeklySchedulePDF = async (
       formatScheduleTime(e.start_time),
       (e.address ?? '').trim(),
       (e.service ?? '').trim(),
+      (e.employee_names ?? []).join(', '),
       (e.notes ?? '').trim(),
     ]);
 
     autoTable(doc, {
       startY: y,
-      head: [['DATE', 'CLIENT / JOB SITE', 'START TIME', 'ADDRESS', 'SERVICE', 'NOTES']],
+      head: [['DATE', 'CLIENT / JOB SITE', 'START TIME', 'ADDRESS', 'SERVICE', 'TEAM', 'NOTES']],
       body,
       theme: 'grid',
       styles: {
@@ -208,12 +210,13 @@ export const generateWeeklySchedulePDF = async (
         halign: 'center',
       },
       columnStyles: {
-        0: { cellWidth: 118, fillColor: GREEN, fontStyle: 'bold', halign: 'center' },
-        1: { cellWidth: 130 },
-        2: { cellWidth: 76, halign: 'center' },
-        3: { cellWidth: 168 },
-        4: { cellWidth: 84, halign: 'center' },
-        5: { cellWidth: 'auto' },
+        0: { cellWidth: 110, fillColor: GREEN, fontStyle: 'bold', halign: 'center' },
+        1: { cellWidth: 118 },
+        2: { cellWidth: 68, halign: 'center' },
+        3: { cellWidth: 146 },
+        4: { cellWidth: 72, halign: 'center' },
+        5: { cellWidth: 104 },
+        6: { cellWidth: 'auto' },
       },
       margin: { left: margin, right: margin, bottom: 52 },
     });

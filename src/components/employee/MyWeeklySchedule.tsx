@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Clock, Loader2, MapPin, StickyNote } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Loader2,
+  MapPin,
+  StickyNote,
+  Users,
+} from 'lucide-react';
 
-import { useMyWeeklySchedule, buildWeekEntries, entryIsFilled } from '@/hooks/useWeeklySchedules';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useMyWeeklySchedule, entryIsFilled } from '@/hooks/useWeeklySchedules';
 import {
   addWeeks,
   formatDayLabel,
@@ -19,10 +29,17 @@ const mapsUrl = (address: string) =>
 export const MyWeeklySchedule: React.FC = () => {
   const [weekStart, setWeekStart] = useState(getWeekStart());
   const { data: schedule, isLoading } = useMyWeeklySchedule(weekStart);
+  const { user } = useAuth();
 
-  const entries = schedule ? buildWeekEntries(schedule.week_start, schedule.entries) : [];
-  const days = entries.filter(entryIsFilled);
+  // The RPC already hands back only the days this employee is crewed on
+  const days = (schedule?.entries ?? [])
+    .filter(entryIsFilled)
+    .sort((a, b) => a.date.localeCompare(b.date));
   const today = todayISO();
+
+  const myName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim().toLowerCase();
+  const coworkers = (names: string[] = []) =>
+    names.filter(n => n.trim().toLowerCase() !== myName);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 animate-fade-in">
@@ -123,6 +140,13 @@ export const MyWeeklySchedule: React.FC = () => {
                       <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
                       {entry.address}
                     </a>
+                  )}
+
+                  {coworkers(entry.employee_names).length > 0 && (
+                    <p className="flex items-start gap-2 text-sm text-slate-600">
+                      <Users className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                      With {coworkers(entry.employee_names).join(', ')}
+                    </p>
                   )}
 
                   {entry.notes && (

@@ -252,6 +252,7 @@ export const WeeklySchedulePage: React.FC = () => {
                   const days = buildWeekEntries(schedule.week_start, schedule.entries).filter(
                     entryIsFilled
                   );
+                  const crewCount = new Set(days.flatMap(d => d.employee_ids ?? [])).size;
                   const isOpen = expanded.has(schedule.id);
                   const isPublished = schedule.status === 'published';
 
@@ -269,10 +270,10 @@ export const WeeklySchedulePage: React.FC = () => {
                           }`}
                         />
                         <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                          {schedule.assignee_name}
-                          {!schedule.assignee_user_id && (
+                          {schedule.assignee_name || 'Weekly schedule'}
+                          {crewCount > 0 && (
                             <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                              team
+                              {crewCount} on the crew
                             </span>
                           )}
                         </span>
@@ -320,6 +321,15 @@ export const WeeklySchedulePage: React.FC = () => {
                                         {entry.address}
                                       </span>
                                     )}
+                                    <span className="block truncate text-xs">
+                                      {entry.employee_names?.length ? (
+                                        <span className="text-emerald-700">
+                                          {entry.employee_names.join(', ')}
+                                        </span>
+                                      ) : (
+                                        <span className="text-amber-600">nobody assigned</span>
+                                      )}
+                                    </span>
                                   </span>
                                 </li>
                               ))}

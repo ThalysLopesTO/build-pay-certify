@@ -1,24 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  ArrowLeft,
-  ArrowUpToLine,
-  ChevronsUpDown,
-  Download,
-  Loader2,
-  Save,
-  Send,
-  Users,
-  X,
-} from 'lucide-react';
+import { ArrowLeft, Clock, Download, Loader2, MapPin, Pencil, Save, Send, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useEmployeeDirectory } from '@/hooks/useEmployeeDirectory';
@@ -32,32 +18,17 @@ import {
   type WeeklySchedule,
   type WeeklyScheduleEntry,
 } from '@/hooks/useWeeklySchedules';
-import { formatDayLabel, formatWeekRange } from '@/utils/weeklyScheduleWeek';
+import { formatDayLabel, formatScheduleTime, formatWeekRange } from '@/utils/weeklyScheduleWeek';
 import { generateWeeklySchedulePDF } from '@/utils/weeklySchedulePDF';
+import {
+  SERVICE_SUGGESTIONS,
+  WeeklyScheduleDayDialog,
+} from './WeeklyScheduleDayDialog';
 
-/** Start time the office writes when the job is not locked in yet. */
-export const TBC = 'To be confirmed';
-
-const SERVICE_SUGGESTIONS = [
-  'Insurance',
-  'Residential',
-  'Commercial',
-  'Deep Clean',
-  'Post Construction',
-  'Move In / Move Out',
-];
-
-const initials = (first?: string | null, last?: string | null) => {
-  const f = (first ?? '').trim().charAt(0);
-  const l = (last ?? '').trim().charAt(0);
-  return (f + l).toUpperCase() || '?';
-};
-
-const employeeName = (emp: any): string =>
-  `${emp?.first_name ?? ''} ${emp?.last_name ?? ''}`.trim() || emp?.email || 'Unknown';
+const DEFAULT_TITLE = 'Weekly schedule';
 
 interface Props {
-  /** Existing schedule to edit, or null for a new one. */
+  /** Existing sheet to edit, or null for a new one. */
   schedule?: WeeklySchedule | null;
   weekStart: string;
   onDone: () => void;
@@ -68,104 +39,25 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
   const { data: clients = [] } = useClients();
   const { logoUrl } = useCompanyLogo();
   const { settings } = useCompanySettings();
-  const { list, createMany, update } = useWeeklySchedules(weekStart);
+  const { create, update } = useWeeklySchedules(weekStart);
 
-  const [selectedIds, setSelectedIds] = useState<string[]>(
-    schedule?.assignee_user_id ? [schedule.assignee_user_id] : []
-  );
-  const [employeeOpen, setEmployeeOpen] = useState(false);
-  const [employeeSearch, setEmployeeSearch] = useState('');
-  const [isTeam, setIsTeam] = useState<boolean>(
-    !!schedule && !schedule.assignee_user_id
-  );
-  const [teamName, setTeamName] = useState<string>(
-    schedule && !schedule.assignee_user_id ? schedule.assignee_name : ''
-  );
+  const activeWeek = schedule?.week_start ?? weekStart;
+
+  const [title, setTitle] = useState(schedule?.assignee_name ?? '');
   const [entries, setEntries] = useState<WeeklyScheduleEntry[]>(
-    buildWeekEntries(schedule?.week_start ?? weekStart, schedule?.entries ?? [])
+    buildWeekEntries(activeWeek, schedule?.entries ?? [])
   );
   const [notes, setNotes] = useState(schedule?.notes ?? '');
+  const [editingDate, setEditingDate] = useState<string | null>(null);
   const [saving, setSaving] = useState<'draft' | 'published' | null>(null);
   const [generating, setGenerating] = useState(false);
 
-  const clientsByName = useMemo(() => {
-    const map = new Map<string, (typeof clients)[number]>();
-    (clients ?? []).forEach(c => map.set((c.client_name ?? '').trim().toLowerCase(), c));
-    return map;
-  }, [clients]);
+  const editingIndex = entries.findIndex(e => e.date === editingDate);
 
-  /** Employees already holding a sheet this week — they cannot take a second one. */
-  const alreadyScheduled = useMemo(() => {
-    const taken = new Set<string>();
-    (list.data ?? []).forEach(s => {
-      if (s.assignee_user_id && s.id !== schedule?.id) taken.add(s.assignee_user_id);
-    });
-    return taken;
-  }, [list.data, schedule?.id]);
-
-  const filteredEmployees = useMemo(() => {
-    const term = employeeSearch.trim().toLowerCase();
-    if (!term) return employees as any[];
-    return (employees as any[]).filter(e =>
-      `${employeeName(e)} ${e.role ?? ''}`.toLowerCase().includes(term)
-    );
-  }, [employees, employeeSearch]);
-
-  const selectedEmployees = useMemo(
-    () =>
-      selectedIds
-        .map(id => (employees as any[]).find(e => e.user_id === id))
-        .filter(Boolean) as any[],
-    [selectedIds, employees]
-  );
-
-  /** What goes on the sheet header: the team name, or the chosen employees. */
-  const assigneeNames = useMemo(() => {
-    if (isTeam) {
-      const name = teamName.trim();
-      return name ? [name] : [];
-    }
-    return selectedEmployees.map(employeeName);
-  }, [isTeam, teamName, selectedEmployees]);
-
-  const toggleEmployee = (userId: string) =>
-    setSelectedIds(prev =>
-      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
-    );
-
-  const patchEntry = (date: string, patch: Partial<WeeklyScheduleEntry>) =>
-    setEntries(prev => prev.map(e => (e.date === date ? { ...e, ...patch } : e)));
-
-  /**
-   * Typing a client name that matches the client list links the row and, when the
-   * address is still blank, fills it from the client record.
-   */
-  const handleClientChange = (entry: WeeklyScheduleEntry, value: string) => {
-    const match = clientsByName.get(value.trim().toLowerCase());
-    patchEntry(entry.date, {
-      client_name: value,
-      client_id: match?.id ?? null,
-      address:
-        match?.client_address && !entry.address.trim() ? match.client_address : entry.address,
-    });
-  };
-
-  const copyFromRowAbove = (index: number) => {
-    if (index === 0) return;
-    const above = entries[index - 1];
-    patchEntry(entries[index].date, {
-      client_name: above.client_name,
-      client_id: above.client_id,
-      start_time: above.start_time,
-      address: above.address,
-      service: above.service,
-    });
-  };
+  const saveDay = (updated: WeeklyScheduleEntry) =>
+    setEntries(prev => prev.map(e => (e.date === updated.date ? updated : e)));
 
   const validate = (): string | null => {
-    if (assigneeNames.length === 0) {
-      return isTeam ? 'Type a team name first.' : 'Choose at least one employee.';
-    }
     if (!entries.some(entryIsFilled)) return 'Add at least one day to the schedule.';
     return null;
   };
@@ -179,49 +71,28 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
 
     setSaving(status);
     try {
-      const base = {
-        week_start: schedule?.week_start ?? weekStart,
+      const input = {
+        week_start: activeWeek,
+        title: title.trim() || DEFAULT_TITLE,
         entries,
         notes,
         status,
       };
 
       if (schedule) {
-        await update.mutateAsync({
-          id: schedule.id,
-          input: {
-            ...base,
-            assignee_user_id: isTeam ? null : selectedIds[0] ?? null,
-            assignee_name: assigneeNames[0],
-          },
-        });
-        toast.success(
-          status === 'published'
-            ? `Schedule published — ${assigneeNames[0]} can see it in the app`
-            : 'Schedule saved as draft'
-        );
+        await update.mutateAsync({ id: schedule.id, input });
       } else {
-        const assignees = isTeam
-          ? [{ user_id: null, name: assigneeNames[0] }]
-          : selectedEmployees.map(emp => ({
-              user_id: emp.user_id as string,
-              name: employeeName(emp),
-            }));
-
-        const count = await createMany.mutateAsync({ ...base, assignees });
-
-        if (count > 1) {
-          toast.success(
-            `${count} schedules ${status === 'published' ? 'published' : 'saved as draft'} — one per employee`
-          );
-        } else {
-          toast.success(
-            status === 'published'
-              ? `Schedule published — ${assignees[0].name} can see it in the app`
-              : 'Schedule saved as draft'
-          );
-        }
+        await create.mutateAsync(input);
       }
+
+      const crewCount = new Set(entries.flatMap(e => e.employee_ids)).size;
+      toast.success(
+        status === 'published'
+          ? crewCount > 0
+            ? `Published — ${crewCount} employee${crewCount === 1 ? '' : 's'} can see their days`
+            : 'Published, but no employee is on any day yet'
+          : 'Schedule saved as draft'
+      );
       onDone();
     } catch {
       // the mutation already surfaced the error toast
@@ -239,13 +110,7 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
     setGenerating(true);
     try {
       await generateWeeklySchedulePDF(
-        // One page per person, all with the same days
-        assigneeNames.map(name => ({
-          assigneeName: name,
-          weekStart: schedule?.week_start ?? weekStart,
-          entries,
-          notes,
-        })),
+        [{ assigneeName: title.trim() || DEFAULT_TITLE, weekStart: activeWeek, entries, notes }],
         {
           companyName: settings?.company_name ?? '7 Star Family',
           logoUrl,
@@ -260,7 +125,6 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
     }
   };
 
-  const activeWeek = schedule?.week_start ?? weekStart;
   const busy = saving !== null;
 
   return (
@@ -306,359 +170,100 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
               <Send className="mr-1.5 h-4 w-4" />
             )}
             Publish
-            {!schedule && assigneeNames.length > 1 ? ` (${assigneeNames.length})` : ''}
           </Button>
         </div>
       </div>
 
-      {/* Assignee */}
-      <Card className="p-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label>{schedule ? 'Employee' : 'Employees'}</Label>
-
-            {schedule ? (
-              <p className="flex h-10 items-center text-sm">{schedule.assignee_name}</p>
-            ) : isTeam ? (
-              <p className="flex h-10 items-center text-sm text-muted-foreground">
-                Team sheet — type the name beside it.
-              </p>
-            ) : (
-              <Popover open={employeeOpen} onOpenChange={setEmployeeOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={employeeOpen}
-                    className="w-full justify-between font-normal"
-                  >
-                    <span
-                      className={`truncate ${selectedIds.length ? '' : 'text-muted-foreground'}`}
-                    >
-                      {selectedIds.length
-                        ? `${selectedIds.length} employee${selectedIds.length === 1 ? '' : 's'} selected`
-                        : 'Choose employees'}
-                    </span>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="pointer-events-auto w-[--radix-popover-trigger-width] p-0"
-                  align="start"
-                >
-                  <div className="border-b p-2">
-                    <Input
-                      value={employeeSearch}
-                      onChange={e => setEmployeeSearch(e.target.value)}
-                      placeholder="Search employees…"
-                      className="h-9"
-                    />
-                  </div>
-                  <div className="max-h-64 divide-y overflow-y-auto">
-                    {filteredEmployees.length === 0 && (
-                      <p className="p-4 text-sm text-muted-foreground">No employees found.</p>
-                    )}
-                    {filteredEmployees.map(emp => {
-                      const taken = alreadyScheduled.has(emp.user_id);
-                      return (
-                        <label
-                          key={emp.user_id}
-                          className={`flex items-center gap-3 px-3 py-2 ${
-                            taken ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-muted/50'
-                          }`}
-                        >
-                          <Checkbox
-                            checked={selectedIds.includes(emp.user_id)}
-                            disabled={taken}
-                            onCheckedChange={() => toggleEmployee(emp.user_id)}
-                          />
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage
-                              src={emp.photo_url ?? emp.profile_photo_url ?? undefined}
-                              alt={employeeName(emp)}
-                            />
-                            <AvatarFallback className="text-xs">
-                              {initials(emp.first_name, emp.last_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium">{employeeName(emp)}</p>
-                            <p className="text-xs capitalize text-muted-foreground">
-                              {taken ? 'already scheduled this week' : emp.role}
-                            </p>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-
-            {schedule ? (
-              <p className="text-xs text-muted-foreground">
-                Delete and recreate the schedule to move it to someone else.
-              </p>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsTeam(v => !v);
-                  setSelectedIds([]);
-                }}
-                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-              >
-                {isTeam ? '← Pick employees instead' : 'Use a team / custom name instead'}
-              </button>
-            )}
-          </div>
-
-          {isTeam ? (
-            <div className="space-y-1.5">
-              <Label htmlFor="team-name">Team name</Label>
-              <Input
-                id="team-name"
-                value={teamName}
-                onChange={e => setTeamName(e.target.value)}
-                placeholder="e.g. Team Luan"
-              />
-              <p className="text-xs text-muted-foreground">
-                A team sheet prints and saves normally, but nobody sees it in the employee app.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              <Label>Who gets this week</Label>
-              {selectedEmployees.length === 0 ? (
-                <p className="flex h-10 items-center text-sm text-muted-foreground">
-                  {schedule
-                    ? 'Nobody linked — this sheet does not reach the employee app.'
-                    : 'Pick one or more — each gets their own copy of these days.'}
-                </p>
-              ) : (
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedEmployees.map(emp => (
-                      <Badge key={emp.user_id} variant="secondary" className="gap-1 font-normal">
-                        {employeeName(emp)}
-                        {!schedule && (
-                          <button
-                            type="button"
-                            onClick={() => toggleEmployee(emp.user_id)}
-                            aria-label={`Remove ${employeeName(emp)}`}
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                  {selectedEmployees.length > 1 && (
-                    <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                      <Users className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                      {selectedEmployees.length} separate sheets with these same days — you can edit
-                      any of them later without touching the others.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+      {/* Sheet name */}
+      <Card className="space-y-1.5 p-4">
+        <Label htmlFor="sheet-title">Schedule name (optional)</Label>
+        <Input
+          id="sheet-title"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder={DEFAULT_TITLE}
+          className="max-w-sm"
+        />
+        <p className="text-xs text-muted-foreground">
+          Only needed when a week has more than one schedule — "Edmonton crew", for example.
+        </p>
       </Card>
 
-      {/* Day rows — desktop */}
-      <Card className="hidden overflow-hidden md:block">
-        <table className="w-full text-sm">
-          <thead className="bg-amber-100/70">
-            <tr className="text-left">
-              <th className="px-3 py-2 font-semibold w-[150px]">Date</th>
-              <th className="px-3 py-2 font-semibold w-[180px]">Client / Job site</th>
-              <th className="px-3 py-2 font-semibold w-[130px]">Start time</th>
-              <th className="px-3 py-2 font-semibold">Address</th>
-              <th className="px-3 py-2 font-semibold w-[150px]">Service</th>
-              <th className="px-3 py-2 font-semibold w-[160px]">Notes</th>
-              <th className="px-2 py-2 w-[40px]" />
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((entry, index) => (
-              <tr key={entry.date} className="border-t align-top">
-                <td className="bg-emerald-50/80 px-3 py-2 font-medium">
-                  {formatDayLabel(entry.date)}
-                </td>
-                <td className="px-3 py-2">
-                  <Input
-                    list="weekly-schedule-clients"
-                    value={entry.client_name}
-                    onChange={e => handleClientChange(entry, e.target.value)}
-                    placeholder="Client or job site"
-                    className="h-9"
-                  />
-                </td>
-                <td className="px-3 py-2">
-                  {entry.start_time === TBC ? (
-                    <Badge
-                      variant="secondary"
-                      className="h-9 w-full cursor-pointer justify-center gap-1 font-normal"
-                      onClick={() => patchEntry(entry.date, { start_time: '' })}
-                    >
-                      To be confirmed <X className="h-3 w-3" />
-                    </Badge>
-                  ) : (
-                    <div className="flex items-center gap-1">
-                      <Input
-                        type="time"
-                        value={entry.start_time}
-                        onChange={e => patchEntry(entry.date, { start_time: e.target.value })}
-                        className="h-9"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 px-1.5 text-[11px] text-muted-foreground"
-                        onClick={() => patchEntry(entry.date, { start_time: TBC })}
-                        title="Mark start time as to be confirmed"
-                      >
-                        TBC
-                      </Button>
-                    </div>
-                  )}
-                </td>
-                <td className="px-3 py-2">
-                  <Input
-                    value={entry.address}
-                    onChange={e => patchEntry(entry.date, { address: e.target.value })}
-                    placeholder="Street, city"
-                    className="h-9"
-                  />
-                </td>
-                <td className="px-3 py-2">
-                  <Input
-                    list="weekly-schedule-services"
-                    value={entry.service}
-                    onChange={e => patchEntry(entry.date, { service: e.target.value })}
-                    placeholder="Insurance"
-                    className="h-9"
-                  />
-                </td>
-                <td className="px-3 py-2">
-                  <Input
-                    value={entry.notes}
-                    onChange={e => patchEntry(entry.date, { notes: e.target.value })}
-                    placeholder="Lockbox, keys…"
-                    className="h-9"
-                  />
-                </td>
-                <td className="px-2 py-2">
-                  {index > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 text-muted-foreground"
-                      onClick={() => copyFromRowAbove(index)}
-                      title="Copy the day above"
-                    >
-                      <ArrowUpToLine className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
-
-      {/* Day rows — mobile */}
-      <div className="space-y-3 md:hidden">
-        {entries.map((entry, index) => (
-          <Card key={entry.date} className="space-y-3 p-3">
-            <div className="flex items-center justify-between">
-              <span className="rounded-md bg-emerald-50 px-2 py-1 text-sm font-semibold">
+      {/* The week — one row per day, same on every device */}
+      <Card className="divide-y overflow-hidden">
+        {entries.map(entry => {
+          const filled = entryIsFilled(entry);
+          return (
+            <button
+              key={entry.date}
+              type="button"
+              onClick={() => setEditingDate(entry.date)}
+              className="flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/40 sm:px-4"
+            >
+              <span className="w-[108px] shrink-0 text-sm font-semibold sm:w-[150px]">
                 {formatDayLabel(entry.date)}
               </span>
-              {index > 0 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs text-muted-foreground"
-                  onClick={() => copyFromRowAbove(index)}
-                >
-                  <ArrowUpToLine className="mr-1 h-3.5 w-3.5" /> Copy above
-                </Button>
-              )}
-            </div>
 
-            <Input
-              list="weekly-schedule-clients"
-              value={entry.client_name}
-              onChange={e => handleClientChange(entry, e.target.value)}
-              placeholder="Client or job site"
-            />
+              <span className="min-w-0 flex-1 space-y-1">
+                {filled ? (
+                  <>
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span className="font-medium">{entry.client_name || '—'}</span>
+                      {entry.start_time && (
+                        <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" />
+                          {formatScheduleTime(entry.start_time)}
+                        </span>
+                      )}
+                      {entry.service && (
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                          {entry.service}
+                        </span>
+                      )}
+                    </span>
 
-            <div className="grid grid-cols-2 gap-2">
-              {entry.start_time === TBC ? (
-                <Badge
-                  variant="secondary"
-                  className="h-10 cursor-pointer justify-center gap-1 font-normal"
-                  onClick={() => patchEntry(entry.date, { start_time: '' })}
-                >
-                  TBC <X className="h-3 w-3" />
-                </Badge>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="time"
-                    value={entry.start_time}
-                    onChange={e => patchEntry(entry.date, { start_time: e.target.value })}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="px-1.5 text-[11px] text-muted-foreground"
-                    onClick={() => patchEntry(entry.date, { start_time: TBC })}
-                  >
-                    TBC
-                  </Button>
-                </div>
-              )}
-              <Input
-                list="weekly-schedule-services"
-                value={entry.service}
-                onChange={e => patchEntry(entry.date, { service: e.target.value })}
-                placeholder="Service"
-              />
-            </div>
+                    {entry.address && (
+                      <span className="flex items-start gap-1 text-sm text-muted-foreground">
+                        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span className="min-w-0 truncate">{entry.address}</span>
+                      </span>
+                    )}
 
-            <Input
-              value={entry.address}
-              onChange={e => patchEntry(entry.date, { address: e.target.value })}
-              placeholder="Address"
-            />
-            <Input
-              value={entry.notes}
-              onChange={e => patchEntry(entry.date, { notes: e.target.value })}
-              placeholder="Notes (lockbox, keys…)"
-            />
-          </Card>
-        ))}
-      </div>
+                    <span className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                      {entry.employee_names.length > 0 ? (
+                        entry.employee_names.map(name => (
+                          <span
+                            key={name}
+                            className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700"
+                          >
+                            {name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="flex items-center gap-1 text-xs text-amber-600">
+                          <Users className="h-3.5 w-3.5" /> nobody assigned yet
+                        </span>
+                      )}
+                    </span>
 
-      {/* Shared suggestion lists */}
-      <datalist id="weekly-schedule-clients">
-        {(clients ?? []).map(c => (
-          <option key={c.id} value={c.client_name} />
-        ))}
-      </datalist>
-      <datalist id="weekly-schedule-services">
-        {SERVICE_SUGGESTIONS.map(s => (
-          <option key={s} value={s} />
-        ))}
-      </datalist>
+                    {entry.notes && (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {entry.notes}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Nothing scheduled — tap to add</span>
+                )}
+              </span>
+
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border text-muted-foreground">
+                <Pencil className="h-3.5 w-3.5" />
+              </span>
+            </button>
+          );
+        })}
+      </Card>
 
       {/* Week notes */}
       <Card className="space-y-1.5 p-4">
@@ -671,6 +276,28 @@ export const WeeklyScheduleForm: React.FC<Props> = ({ schedule, weekStart, onDon
           placeholder="Anything the crew should know about this week"
         />
       </Card>
+
+      {/* Suggestion lists shared by the dialog */}
+      <datalist id="weekly-schedule-clients">
+        {(clients ?? []).map(c => (
+          <option key={c.id} value={c.client_name} />
+        ))}
+      </datalist>
+      <datalist id="weekly-schedule-services">
+        {SERVICE_SUGGESTIONS.map(s => (
+          <option key={s} value={s} />
+        ))}
+      </datalist>
+
+      <WeeklyScheduleDayDialog
+        open={editingIndex >= 0}
+        entry={editingIndex >= 0 ? entries[editingIndex] : null}
+        previous={editingIndex > 0 ? entries[editingIndex - 1] : null}
+        employees={employees as any[]}
+        clients={(clients ?? []) as any[]}
+        onSave={saveDay}
+        onClose={() => setEditingDate(null)}
+      />
     </div>
   );
 };
