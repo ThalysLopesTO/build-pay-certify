@@ -86,6 +86,7 @@ const generateInvoiceHTML = (
               #${invoice.invoice_number}
             </div>
             <div style="font-size:12px; color:#6B7280;">
+              ${invoice.po_number ? `<div>PO: <strong>${invoice.po_number}</strong></div>` : ''}
               <div>Date: <strong>${format(new Date(invoice.created_at), "MMM dd, yyyy")}</strong></div>
               <div>Due: <strong>${format(new Date(invoice.due_date), "MMM dd, yyyy")}</strong></div>
             </div>

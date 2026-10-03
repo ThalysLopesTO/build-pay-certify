@@ -131,7 +131,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
           client_address: invoice.client_address || '',
           client_phone: invoice.client_phone || '',
           jobsite_id: invoice.jobsite_id || '',
-          po_number: invoice.invoice_number || '',
+          po_number: invoice.po_number || '',
           discount: invoice.discount || 0,
           tax: invoice.tax || 0,
           due_date: invoice.due_date ? invoice.due_date.split('T')[0] : '',
@@ -210,7 +210,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
 
     const invoiceData: CreateInvoiceData & { sendEmail?: boolean } = {
       ...data,
-      invoice_number: data.po_number?.trim() || undefined,
+      po_number: data.po_number?.trim() || null,
       client_id: data.client_id,
       notes: data.notes || null,
       line_items: data.line_items.filter(item => item.description && item.quantity > 0 && item.unit_price > 0).map(item => ({
@@ -286,7 +286,7 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
 
     const invoiceData: CreateInvoiceData = {
       ...data,
-      invoice_number: data.po_number?.trim() || undefined,
+      po_number: data.po_number?.trim() || null,
       client_id: data.client_id,
       notes: data.notes || null,
       line_items: data.line_items
@@ -463,11 +463,11 @@ const CreateInvoiceForm = ({ invoice, onSaved }: CreateInvoiceFormProps = {}) =>
                   <FormItem>
                     <FormLabel className="flex items-center space-x-2 text-sm font-medium text-foreground">
                       <Hash className="h-4 w-4 text-green-500" />
-                      <span>PO / Invoice Number (Optional)</span>
+                      <span>PO Number (Optional)</span>
                     </FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="Purchase order number" 
+                      <Input
+                        placeholder="Client purchase order / reference"
                         className="h-12 border-2 border-border/50 focus:border-green-500 rounded-xl transition-all duration-200 bg-background/50" 
                         {...field} 
                       />

@@ -6,6 +6,8 @@ import { InvoiceAttachment } from '@/components/admin/types/invoice';
 export interface Invoice {
   id: string;
   invoice_number: string;
+  /** Client purchase order / reference — separate from the invoice number. */
+  po_number?: string | null;
   title: string;
   client_company: string;
   client_email: string;

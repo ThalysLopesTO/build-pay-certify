@@ -1668,6 +1668,7 @@ export type Database = {
           paid_at: string | null
           payment_currency: string | null
           payment_method_type: string | null
+          po_number: string | null
           receipt_file_url: string | null
           sent_date: string | null
           stackbuild_fee_cents: number | null
@@ -1701,6 +1702,7 @@ export type Database = {
           paid_at?: string | null
           payment_currency?: string | null
           payment_method_type?: string | null
+          po_number?: string | null
           receipt_file_url?: string | null
           sent_date?: string | null
           stackbuild_fee_cents?: number | null
@@ -1734,6 +1736,7 @@ export type Database = {
           paid_at?: string | null
           payment_currency?: string | null
           payment_method_type?: string | null
+          po_number?: string | null
           receipt_file_url?: string | null
           sent_date?: string | null
           stackbuild_fee_cents?: number | null

@@ -149,6 +149,7 @@ const generateInvoiceHTML = async (
         <div style="text-align: right;">
           <h1 style="font-size: 36px; font-weight: bold; color: #1f2937; margin: 0 0 10px 0;">INVOICE</h1>
           <div style="font-size: 18px; font-weight: 600; color: #374151;">#${invoice.invoice_number}</div>
+          ${invoice.po_number ? `<div style="font-size: 13px; color: #6b7280; margin-top: 4px;">PO: ${invoice.po_number}</div>` : ''}
         </div>
       </div>
 
