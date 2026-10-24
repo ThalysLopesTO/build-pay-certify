@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { toast } from 'sonner';
 import type { DayEntry } from '@/utils/manualTimesheetDays';
+import { fetchAllTimesheetPages } from '@/utils/manualTimesheetPayroll';
 
 export interface ManualTimesheet {
   id: string;
@@ -67,18 +68,22 @@ export const useManualTimesheets = () => {
     queryKey: [...QUERY_KEY, user?.companyId],
     queryFn: async (): Promise<ManualTimesheet[]> => {
       if (!user?.companyId) return [];
-      const { data, error } = await supabase
+      const companyId = user.companyId;
+      const data = await fetchAllTimesheetPages<ManualTimesheet>((from, to) => supabase
         .from('manual_timesheets' as any)
         .select('*')
-        .eq('company_id', user.companyId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(from, to));
 
       // Exclude timesheets that already belong to a folder
-      const { data: folderItems } = await supabase
+      const folderItems = await fetchAllTimesheetPages<{ timesheet_id: string }>((from, to) => supabase
         .from('manual_timesheet_folder_items' as any)
         .select('timesheet_id')
-        .eq('company_id', user.companyId);
+        .eq('company_id', companyId)
+        .order('id', { ascending: true })
+        .range(from, to));
       const inFolder = new Set(((folderItems ?? []) as any[]).map((r) => r.timesheet_id));
 
       return ((data ?? []) as unknown as ManualTimesheet[]).filter((r) => !inFolder.has(r.id));
