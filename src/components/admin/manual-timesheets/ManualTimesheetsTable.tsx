@@ -68,6 +68,7 @@ import { ManualTimesheetViewModal } from './ManualTimesheetViewModal';
 import { ManualTimesheetEditModal } from './ManualTimesheetEditModal';
 import { MoveToFolderDialog } from './MoveToFolderDialog';
 import { EmptyState } from './EmptyState';
+import EmployeeAvatar from '@/components/ui/employee-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { totalTimesheetPayroll } from '@/utils/manualTimesheetPayroll';
 
