@@ -65,6 +65,7 @@ import { ManualTimesheetEditModal } from './ManualTimesheetEditModal';
 import { MoveToFolderDialog } from './MoveToFolderDialog';
 import { EmptyState } from './EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
+import { totalTimesheetPayroll } from '@/utils/manualTimesheetPayroll';
 
 const formatCurrency = (n: number) =>
   Number(n).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -139,6 +140,8 @@ export const ManualTimesheetsTable: React.FC = () => {
       return true;
     });
   }, [items, search, employeeFilter, projectFilter, roleFilter, fromDate, toDate]);
+
+  const payrollTotal = useMemo(() => totalTimesheetPayroll(filtered), [filtered]);
 
   // Pagination
   const [pageSize, setPageSize] = useState<number>(20);
@@ -425,6 +428,18 @@ export const ManualTimesheetsTable: React.FC = () => {
           {items.length} timesheets
         </div>
       </Card>
+
+      <section aria-label="Payroll summary" className="mb-4 flex flex-wrap items-center justify-between gap-3 border-y border-border bg-muted/30 px-4 py-4">
+        <div className="min-w-0">
+          <h2 className="text-sm font-medium text-muted-foreground">Total Payroll</h2>
+          <p className="mt-1 break-words text-2xl font-semibold tabular-nums text-foreground" aria-live="polite">
+            {list.isError ? 'Unavailable' : formatCurrency(payrollTotal)}
+          </p>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {filtered.length} timesheet{filtered.length === 1 ? '' : 's'} · {hasFilters ? 'Filtered total' : 'All pay periods'}
+        </p>
+      </section>
 
       {/* Bulk actions bar */}
       {selectedCount > 0 && (
