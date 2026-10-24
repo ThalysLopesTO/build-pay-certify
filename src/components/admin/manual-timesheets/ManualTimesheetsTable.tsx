@@ -570,9 +570,12 @@ export const ManualTimesheetsTable: React.FC = () => {
                     </TableCell>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
-                        <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold text-muted-foreground">
-                          {ts.employee_name.split(' ').filter(Boolean).slice(0, 2).map((name) => name[0]).join('')}
-                        </span>
+                        <EmployeeAvatar
+                          photoUrl={ts.employee_photo_url}
+                          firstName={ts.employee_name.split(' ').filter(Boolean)[0] ?? ''}
+                          lastName={ts.employee_name.split(' ').filter(Boolean)[1] ?? ''}
+                          size="sm"
+                        />
                         <div className="min-w-[130px] space-y-1">
                         <div>{ts.employee_name}</div>
                         {ts.employee_role && (
@@ -646,6 +649,13 @@ export const ManualTimesheetsTable: React.FC = () => {
                       onCheckedChange={(v) => toggleOne(ts.id, !!v)}
                       aria-label={`Select ${ts.employee_name}`}
                       className="mt-1"
+                    />
+                    <EmployeeAvatar
+                      photoUrl={ts.employee_photo_url}
+                      firstName={ts.employee_name.split(' ').filter(Boolean)[0] ?? ''}
+                      lastName={ts.employee_name.split(' ').filter(Boolean)[1] ?? ''}
+                      size="sm"
+                      className="shrink-0"
                     />
                     <div className="min-w-0 break-words">
                       <p className="font-semibold">{ts.employee_name}</p>
