@@ -86,7 +86,34 @@ export const useManualTimesheets = () => {
         .range(from, to));
       const inFolder = new Set(((folderItems ?? []) as any[]).map((r) => r.timesheet_id));
 
-      return ((data ?? []) as unknown as ManualTimesheet[]).filter((r) => !inFolder.has(r.id));
+      const rows = ((data ?? []) as unknown as ManualTimesheet[]).filter((r) => !inFolder.has(r.id));
+
+      // Fill in employee profile photos for rows linked to an account
+      const employeeIds = Array.from(new Set(rows.map((r) => r.employee_id).filter(Boolean))) as string[];
+      const photoMap = new Map<string, string>();
+      for (let i = 0; i < employeeIds.length; i += 200) {
+        const chunk = employeeIds.slice(i, i + 200);
+        const { data: profiles, error: profilesError } = await supabase
+          .from('user_profiles')
+          .select('user_id, photo_url')
+          .in('user_id', chunk);
+        if (profilesError) {
+          console.error('Error fetching employee photos:', profilesError);
+          continue;
+        }
+        for (const p of (profiles ?? []) as { user_id: string; photo_url: string | null }[]) {
+          if (p.photo_url && !photoMap.has(p.user_id)) photoMap.set(p.user_id, p.photo_url);
+        }
+      }
+      if (photoMap.size > 0) {
+        for (const r of rows) {
+          if (r.employee_id && !r.employee_photo_url) {
+            r.employee_photo_url = photoMap.get(r.employee_id) ?? null;
+          }
+        }
+      }
+
+      return rows;
     },
     enabled: !!user?.companyId,
   });
