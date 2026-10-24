@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { TableCard } from '@/components/ui/table-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -46,6 +47,9 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Wallet,
+  Building2,
+  ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useManualTimesheets, type ManualTimesheet } from '@/hooks/useManualTimesheets';
@@ -279,24 +283,54 @@ export const ManualTimesheetsTable: React.FC = () => {
 
   return (
     <>
+      <section aria-label="Payroll summary" className="mb-6 grid gap-5 border-b border-border pb-6 sm:grid-cols-[1fr_auto] sm:items-end">
+        <div className="min-w-0">
+          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Wallet className="h-4 w-4" /> Total Payroll
+          </div>
+          <p className="break-words text-3xl font-semibold tabular-nums text-foreground" aria-live="polite">
+            {list.isError ? 'Unavailable' : formatCurrency(payrollTotal)}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/5 px-2 py-1 font-medium text-primary">
+              <CalendarIcon className="h-3.5 w-3.5" />
+              {fromDate || toDate
+                ? `${fromDate ? formatDateLong(fromDate) : 'Any start'} – ${toDate ? formatDateLong(toDate) : 'Any end'}`
+                : 'All pay periods'}
+            </span>
+            {hasFilters && <span>Filtered total</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-4 sm:border-l sm:border-border sm:pl-6">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40">
+            <FileText className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="text-2xl font-semibold tabular-nums">{filtered.length}</p>
+            <p className="text-xs text-muted-foreground">{hasFilters ? 'Matching timesheets' : 'Total timesheets'}</p>
+          </div>
+        </div>
+      </section>
+
       {/* Filters toolbar */}
-      <Card className="p-4 mb-3 space-y-3">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+      <section aria-label="Timesheet filters" className="mb-5 space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
           <Filter className="h-3.5 w-3.5" />
-          Filters
+          Filter timesheets
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
           {/* Search */}
-          <div className="space-y-1.5 lg:col-span-3">
-            <Label className="text-xs">Search</Label>
+          <div className="space-y-1.5 col-span-2 lg:col-span-6">
+            <Label htmlFor="timesheet-search" className="sr-only">Search timesheets</Label>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                id="timesheet-search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by employee, project, or role…"
-                className="pl-8 h-9"
+                className="pl-9 h-10 bg-background"
               />
             </div>
           </div>
@@ -423,31 +457,15 @@ export const ManualTimesheetsTable: React.FC = () => {
           </div>
         </div>
 
-        <div className="text-xs text-muted-foreground">
-          Showing <span className="font-medium text-foreground">{filtered.length}</span> of{' '}
-          {items.length} timesheets
-        </div>
-      </Card>
-
-      <section aria-label="Payroll summary" className="mb-4 flex flex-wrap items-center justify-between gap-3 border-y border-border bg-muted/30 px-4 py-4">
-        <div className="min-w-0">
-          <h2 className="text-sm font-medium text-muted-foreground">Total Payroll</h2>
-          <p className="mt-1 break-words text-2xl font-semibold tabular-nums text-foreground" aria-live="polite">
-            {list.isError ? 'Unavailable' : formatCurrency(payrollTotal)}
-          </p>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {filtered.length} timesheet{filtered.length === 1 ? '' : 's'} · {hasFilters ? 'Filtered total' : 'All pay periods'}
-        </p>
       </section>
 
       {/* Bulk actions bar */}
       {selectedCount > 0 && (
-        <Card className="p-3 mb-3 flex flex-wrap items-center gap-3 border-primary/30 bg-primary/5">
+        <div role="region" aria-label="Selected timesheet actions" className="p-3 mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-primary/20 bg-primary/5">
           <span className="text-sm font-medium">
             {selectedCount} selected
           </span>
-          <div className="ml-auto flex gap-2">
+          <div className="flex flex-wrap gap-2 sm:ml-auto">
             <Button
               size="sm"
               variant="ghost"
@@ -485,7 +503,7 @@ export const ManualTimesheetsTable: React.FC = () => {
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="sm" className="rounded-l-none border-l border-primary-foreground/20 px-2">
+                    <Button size="sm" aria-label="More download options" className="rounded-l-none border-l border-primary-foreground/20 px-2">
                       <ChevronDown className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -503,7 +521,7 @@ export const ManualTimesheetsTable: React.FC = () => {
               </div>
             )}
           </div>
-        </Card>
+        </div>
       )}
 
       {filtered.length === 0 ? (
@@ -511,10 +529,11 @@ export const ManualTimesheetsTable: React.FC = () => {
           No timesheets match the selected filters.
         </Card>
       ) : (
-        <>
+        <TableCard.Root className="overflow-hidden rounded-lg shadow-none">
+          <TableCard.Header title="All Timesheets" badge={filtered.length} className="px-4 py-4 sm:px-5" />
           {/* Desktop table */}
-          <Card className="hidden md:block overflow-hidden">
-            <Table>
+          <div className="hidden md:block">
+            <Table size="sm" className="[&_th]:whitespace-nowrap [&_td]:px-4 [&_th]:px-4">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10">
@@ -550,34 +569,40 @@ export const ManualTimesheetsTable: React.FC = () => {
                       />
                     </TableCell>
                     <TableCell className="font-medium">
-                      <div className="leading-tight">
+                      <div className="flex items-center gap-3">
+                        <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold text-muted-foreground">
+                          {ts.employee_name.split(' ').filter(Boolean).slice(0, 2).map((name) => name[0]).join('')}
+                        </span>
+                        <div className="min-w-[130px] space-y-1">
                         <div>{ts.employee_name}</div>
                         {ts.employee_role && (
                           <div className="text-xs text-muted-foreground font-normal">
                             {ts.employee_role}
                           </div>
                         )}
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell>{ts.project_name}</TableCell>
+                    <TableCell><div className="flex items-center gap-2"><Building2 className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-[100px] max-w-[180px] break-words">{ts.project_name}</span></div></TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {formatDateLong(ts.pay_period_start)} – {formatDateLong(ts.pay_period_end)}
+                      <div className="whitespace-nowrap text-foreground">{formatDateLong(ts.pay_period_start)}</div>
+                      <div className="mt-1 flex items-center gap-1 text-xs"><ArrowRight className="h-3 w-3" />{formatDateLong(ts.pay_period_end)}</div>
                     </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {Number(ts.total_hours).toFixed(2)}
+                    <TableCell className="text-right tabular-nums whitespace-nowrap">
+                      {Number(ts.total_hours).toFixed(2)} <span className="text-xs text-muted-foreground">hrs</span>
                     </TableCell>
-                    <TableCell className="text-right font-semibold">
+                    <TableCell className="text-right font-semibold tabular-nums whitespace-nowrap">
                       {formatCurrency(Number(ts.total_payment))}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(ts.created_at).toLocaleDateString('en-US')}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => setViewing(ts)} title="View">
+                      <div className="flex justify-end gap-0.5 text-muted-foreground [&_button]:h-8 [&_button]:w-8">
+                        <Button size="icon" variant="ghost" onClick={() => setViewing(ts)} title="View timesheet" aria-label="View timesheet">
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => setEditing(ts)} title="Edit">
+                        <Button size="icon" variant="ghost" onClick={() => setEditing(ts)} title="Edit timesheet" aria-label="Edit timesheet">
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
@@ -585,7 +610,7 @@ export const ManualTimesheetsTable: React.FC = () => {
                           variant="ghost"
                           onClick={() => handleDownload(ts)}
                           disabled={downloadingId === ts.id}
-                          title="Download PDF"
+                          title="Download PDF" aria-label="Download PDF"
                         >
                           {downloadingId === ts.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -597,7 +622,7 @@ export const ManualTimesheetsTable: React.FC = () => {
                           size="icon"
                           variant="ghost"
                           onClick={() => setDeleting(ts)}
-                          title="Delete"
+                          title="Delete timesheet" aria-label="Delete timesheet"
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -608,21 +633,21 @@ export const ManualTimesheetsTable: React.FC = () => {
                 ))}
               </TableBody>
             </Table>
-          </Card>
+          </div>
 
           {/* Mobile cards */}
-          <div className="md:hidden space-y-3">
+          <div className="md:hidden divide-y divide-border border-t border-border">
             {paginated.map((ts) => (
-              <Card key={ts.id} className="p-4 space-y-2">
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex items-start gap-2">
+              <article key={ts.id} className={cn("p-4 space-y-3", selectedIds.has(ts.id) && "bg-muted/50")}>
+                <div className="flex flex-wrap justify-between items-start gap-3">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
                     <Checkbox
                       checked={selectedIds.has(ts.id)}
                       onCheckedChange={(v) => toggleOne(ts.id, !!v)}
                       aria-label={`Select ${ts.employee_name}`}
                       className="mt-1"
                     />
-                    <div>
+                    <div className="min-w-0 break-words">
                       <p className="font-semibold">{ts.employee_name}</p>
                       {ts.employee_role && (
                         <p className="text-xs text-muted-foreground">{ts.employee_role}</p>
@@ -630,7 +655,7 @@ export const ManualTimesheetsTable: React.FC = () => {
                       <p className="text-sm text-muted-foreground">{ts.project_name}</p>
                     </div>
                   </div>
-                  <p className="font-bold text-primary">
+                  <p className="font-semibold tabular-nums text-foreground">
                     {formatCurrency(Number(ts.total_payment))}
                   </p>
                 </div>
@@ -642,16 +667,17 @@ export const ManualTimesheetsTable: React.FC = () => {
                     {Number(ts.total_hours).toFixed(2)} hrs
                   </span>
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setViewing(ts)}>
+                    <Button size="icon" variant="ghost" className="h-9 w-9" title="View timesheet" aria-label="View timesheet" onClick={() => setViewing(ts)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditing(ts)}>
+                    <Button size="icon" variant="ghost" className="h-9 w-9" title="Edit timesheet" aria-label="Edit timesheet" onClick={() => setEditing(ts)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8"
+                      className="h-9 w-9"
+                      title="Download PDF" aria-label="Download PDF"
                       onClick={() => handleDownload(ts)}
                       disabled={downloadingId === ts.id}
                     >
@@ -664,22 +690,23 @@ export const ManualTimesheetsTable: React.FC = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8 text-destructive"
+                      className="h-9 w-9 text-destructive"
+                      title="Delete timesheet" aria-label="Delete timesheet"
                       onClick={() => setDeleting(ts)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-              </Card>
+              </article>
             ))}
           </div>
 
           {/* Pagination footer */}
-          <Card className="mt-3 px-4 py-3">
+          <TableCard.Footer className="px-4 py-4 bg-muted/20">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <div className="text-xs text-muted-foreground">
                   Showing <span className="font-medium text-foreground">{startItem}</span> to{' '}
                   <span className="font-medium text-foreground">{endItem}</span> of{' '}
                   <span className="font-medium text-foreground">{filtered.length}</span> timesheets
@@ -756,8 +783,8 @@ export const ManualTimesheetsTable: React.FC = () => {
                 </div>
               )}
             </div>
-          </Card>
-        </>
+          </TableCard.Footer>
+        </TableCard.Root>
       )}
 
       <ManualTimesheetViewModal timesheet={viewing} onClose={() => setViewing(null)} />
