@@ -72,11 +72,12 @@ const LivePunchMonitor = () => {
   const [showBulkNote, setShowBulkNote] = useState(false);
 
   // Role-based permissions
-  // - Admins/Managers can change hours (punch in/out, breaks, jobsite, notes)
-  // - Foremen can only edit notes on a punch
-  const canEditHours = ['admin', 'super_admin', 'management'].includes(user?.role || '');
-  const canEditNotes = canEditHours || user?.role === 'foreman';
-  const canBulkEdit = canEditHours;
+  // - Admins/Managers/Foremen can change hours (punch in/out, breaks, jobsite, notes)
+  // - Delete and bulk edits stay admin/management only
+  const isAdminOrManager = ['admin', 'super_admin', 'management'].includes(user?.role || '');
+  const canEditHours = isAdminOrManager || user?.role === 'foreman';
+  const canEditNotes = canEditHours;
+  const canBulkEdit = isAdminOrManager;
   const canCreatePunch = ['admin', 'super_admin'].includes(user?.role || '');
   const [showCreatePunch, setShowCreatePunch] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -699,7 +700,7 @@ const LivePunchMonitor = () => {
         onToggleFlag={toggleFlag}
         onViewLocation={handleViewLocation}
         onEdit={canEditNotes ? handleEdit : undefined}
-        onDelete={canEditHours ? handleDelete : undefined}
+        onDelete={isAdminOrManager ? handleDelete : undefined}
         isLoading={isLoading}
         currentPage={currentPage}
         totalPages={totalPages}
