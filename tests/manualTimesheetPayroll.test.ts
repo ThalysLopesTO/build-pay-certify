@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { fetchAllTimesheetPages, totalTimesheetPayroll } from './manualTimesheetPayroll';
+import { fetchAllTimesheetPages, totalTimesheetPayroll } from '../src/utils/manualTimesheetPayroll';
 
 describe('All Timesheets payroll', () => {
   test('includes every payment regardless of 10 or 20 row display limits', () => {
