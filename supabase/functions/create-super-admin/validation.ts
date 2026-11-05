@@ -30,6 +30,8 @@ export function getDefaultNames(firstName?: string, lastName?: string) {
   };
 }
 
-export function determineUserRole(email: string): 'super_admin' | 'admin' {
-  return (email.includes('thalyslopesdev') || email.includes('thalysadmin')) ? 'super_admin' : 'admin';
+// Roles are never granted from an email address (anyone can type one).
+// Super admins are created only through create-super-admin-user.
+export function determineUserRole(_email: string): 'super_admin' | 'admin' {
+  return 'admin';
 }

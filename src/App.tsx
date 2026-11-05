@@ -37,7 +37,6 @@ import { employeeTabRoutes, EmployeeDashboardWithLegacyRedirect } from "@/compon
 // Lazy-loaded pages
 const AttentionReportDetails = React.lazy(() => import("@/components/admin/AttentionReportDetails"));
 const SuperAdminDashboard = React.lazy(() => import("@/pages/SuperAdminDashboard"));
-const SuperAdminSetup = React.lazy(() => import("@/pages/setup/SuperAdminSetup"));
 const CompanyRegistration = React.lazy(() => import("@/pages/CompanyRegistration"));
 const CompanyHandbook = React.lazy(() => import("@/pages/CompanyHandbook"));
 const InvoicePreview = React.lazy(() => import("@/pages/InvoicePreview"));
@@ -123,7 +122,6 @@ const AppInner: React.FC = () => {
           {/* ── Super Admin ── */}
           <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
           <Route path="/super-admin/login" element={<SuperAdminLogin />} />
-          <Route path="/setup/super-admin" element={<SuperAdminSetup />} />
 
           {/* ── Public / Misc ── */}
           <Route path="/company/registration" element={<CompanyRegistration />} />
