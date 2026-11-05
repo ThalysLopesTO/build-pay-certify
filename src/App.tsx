@@ -7,6 +7,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
 import { AppProviders } from "@/providers/AppProviders";
 import { GlobalToasts } from "@/components/common/GlobalToasts";
+import { StuckPageGuard } from "@/components/common/StuckPageGuard";
 import IOSInstallTip from "@/components/common/IOSInstallTip";
 import NotificationPermissionPrompt from "@/components/common/NotificationPermissionPrompt";
 import RoleBasedRedirect from "@/components/auth/RoleBasedRedirect";
@@ -161,6 +162,7 @@ const App: React.FC = () => {
           <AppInner />
         </ErrorBoundary>
         <GlobalToasts />
+        <StuckPageGuard />
         <Toaster />
         <SonnerToaster />
         <NotificationPermissionPrompt />
