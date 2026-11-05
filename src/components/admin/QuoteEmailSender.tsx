@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -35,6 +35,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
   const { data: client } = useClient(quote.client_id);
   const updateQuote = useUpdateQuote();
   const [isLoading, setIsLoading] = useState(false);
+  const sendingRef = useRef(false);
   const [customMessage, setCustomMessage] = useState('');
 
   const generatePublicQuoteUrl = (): string => {
@@ -73,6 +74,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
   };
 
   const handleSendEmail = async () => {
+    if (sendingRef.current) return;
     if (!isSettingsComplete()) {
       toast({
         title: 'Company Settings Incomplete',
@@ -82,8 +84,10 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
       return;
     }
 
+    sendingRef.current = true;
     setIsLoading(true);
     try {
+      await new Promise<void>(resolve => window.setTimeout(resolve, 0));
       // Step 1: Ensure quote has public_token and update status
       const tokenToUse = quote.public_token || uuidv4();
       
@@ -150,6 +154,7 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
         variant: 'destructive',
       });
     } finally {
+      sendingRef.current = false;
       setIsLoading(false);
     }
   };
@@ -157,8 +162,10 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
   const emailContent = generateEmailContent();
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={open => { if (!open && !sendingRef.current) onClose(); }}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto"
+        onEscapeKeyDown={event => { if (sendingRef.current) event.preventDefault(); }}
+        onPointerDownOutside={event => { if (sendingRef.current) event.preventDefault(); }}>
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Mail className="h-5 w-5" />
