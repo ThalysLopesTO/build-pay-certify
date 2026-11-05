@@ -61,12 +61,21 @@ const InvoiceTracker = () => {
   const [editInvoice, setEditInvoice] = useState<Invoice | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
-  const cleanupTimers = useRef<number[]>([]);
+  const cleanupTimers = useRef<Partial<Record<'details' | 'edit' | 'email', number>>>({});
 
-  useEffect(() => () => cleanupTimers.current.forEach(window.clearTimeout), []);
+  useEffect(() => () => Object.values(cleanupTimers.current).forEach(window.clearTimeout), []);
 
-  const clearAfterDialogClose = (clear: () => void) => {
-    cleanupTimers.current.push(window.setTimeout(clear, 200));
+  const cancelDialogCleanup = (key: 'details' | 'edit' | 'email') => {
+    window.clearTimeout(cleanupTimers.current[key]);
+    delete cleanupTimers.current[key];
+  };
+
+  const clearAfterDialogClose = (key: 'details' | 'edit' | 'email', clear: () => void) => {
+    cancelDialogCleanup(key);
+    cleanupTimers.current[key] = window.setTimeout(() => {
+      delete cleanupTimers.current[key];
+      clear();
+    }, 200);
   };
 
 
@@ -168,33 +177,36 @@ const InvoiceTracker = () => {
   };
 
   const handleViewDetails = (invoice: Invoice) => {
+    cancelDialogCleanup('details');
     setSelectedInvoice(invoice);
     setIsDetailsDialogOpen(true);
   };
 
   const handleEditInvoice = (invoice: Invoice) => {
+    cancelDialogCleanup('edit');
     setEditInvoice(invoice);
     setIsEditDialogOpen(true);
   };
 
   const closeDetailsDialog = () => {
     setIsDetailsDialogOpen(false);
-    clearAfterDialogClose(() => setSelectedInvoice(null));
+    clearAfterDialogClose('details', () => setSelectedInvoice(null));
   };
 
   const closeEditDialog = () => {
     setIsEditDialogOpen(false);
-    clearAfterDialogClose(() => setEditInvoice(null));
+    clearAfterDialogClose('edit', () => setEditInvoice(null));
   };
 
   const handleSendEmail = (invoice: Invoice) => {
+    cancelDialogCleanup('email');
     setEmailInvoice(invoice);
     setIsEmailDialogOpen(true);
   };
 
   const handleCloseEmailDialog = () => {
     setIsEmailDialogOpen(false);
-    clearAfterDialogClose(() => setEmailInvoice(null));
+    clearAfterDialogClose('email', () => setEmailInvoice(null));
   };
 
   const exportToCSV = () => {
@@ -654,7 +666,7 @@ const InvoiceTracker = () => {
                         </Button>
 
                         {/* More actions */}
-                        <DropdownMenu>
+                        <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
                             <Button size="sm" variant="outline" title="More actions" className="h-8 w-8 p-0">
                               <MoreHorizontal className="h-4 w-4" />

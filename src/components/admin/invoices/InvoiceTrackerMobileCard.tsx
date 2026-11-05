@@ -95,7 +95,7 @@ const InvoiceTrackerMobileCard: React.FC<InvoiceTrackerMobileCardProps> = ({
               {invoice.client_company}
             </p>
           </div>
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                 <MoreVertical className="h-4 w-4" />
