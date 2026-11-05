@@ -71,9 +71,8 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
     setIsEmailModalOpen(true);
   };
 
-  const handleEmailSent = async () => {
+  const handleCloseEmail = () => {
     setIsEmailModalOpen(false);
-    await handleStatusChange('sent');
   };
 
   const handleConvertToInvoice = async () => {
@@ -110,7 +109,7 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
       {/* Quick actions */}
       <QuotePDFGenerator quote={quote} />
       
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
             <MoreHorizontal className="h-4 w-4" />
@@ -212,7 +211,7 @@ const QuoteActions: React.FC<QuoteActionsProps> = ({ quote, onEdit, onRefresh })
       <QuoteEmailSender
         quote={quote}
         isOpen={isEmailModalOpen}
-        onClose={handleEmailSent}
+        onClose={handleCloseEmail}
       />
     </div>
   );

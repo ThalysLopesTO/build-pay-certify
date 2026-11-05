@@ -1,5 +1,5 @@
 // ✅ FINAL CLEAN VERSION
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -36,6 +36,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
   const { template } = useEmailTemplate('invoice');
   const { data: client, isLoading: isClientLoading } = useClient(invoice.client_id);
   const [isLoading, setIsLoading] = useState(false);
+  const sendingRef = useRef(false);
   const [customMessage, setCustomMessage] = useState('');
 
   // Check if client portal URL is available (needed for Pay button)
@@ -92,6 +93,7 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
   }, [settings, template, client, customMessage, invoice, logoUrl]);
 
   const handleSendEmail = async () => {
+    if (sendingRef.current) return;
     if (!isSettingsComplete()) {
       toast({
         title: 'Company Settings Incomplete',
@@ -107,8 +109,10 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
       timestamp: new Date().toISOString()
     });
 
+    sendingRef.current = true;
     setIsLoading(true);
     try {
+      await new Promise<void>(resolve => window.setTimeout(resolve, 0));
       // ✅ Generate PDF attachment using professional template
       const { blob, filename } = await generateBrandedInvoicePDFBlob(invoice, settings, logoUrl);
       const base64Content = await blobToBase64(blob);
@@ -159,13 +163,16 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
         variant: 'destructive',
       });
     } finally {
+      sendingRef.current = false;
       setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={open => { if (!open && !sendingRef.current) onClose(); }}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto"
+        onEscapeKeyDown={event => { if (sendingRef.current) event.preventDefault(); }}
+        onPointerDownOutside={event => { if (sendingRef.current) event.preventDefault(); }}>
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Mail className="h-5 w-5" />

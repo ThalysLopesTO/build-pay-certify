@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save, Send, MessageSquare } from 'lucide-react';
 import { 
@@ -76,6 +76,10 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [savedQuote, setSavedQuote] = useState<Quote | null>(null);
+  const emailCloseTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => {
+    if (emailCloseTimer.current !== undefined) clearTimeout(emailCloseTimer.current);
+  }, []);
 
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
@@ -339,7 +343,9 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onClose }) => {
 
   const handleEmailSent = () => {
     setIsEmailModalOpen(false);
-    onClose();
+    // Keep the editor mounted until the email dialog releases its focus/scroll lock.
+    if (emailCloseTimer.current !== undefined) clearTimeout(emailCloseTimer.current);
+    emailCloseTimer.current = setTimeout(onClose, 200);
   };
 
   return (

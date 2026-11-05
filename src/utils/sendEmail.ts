@@ -1,5 +1,6 @@
 import { createEmailWrapper, EmailWrapperData } from './emailTemplate';
 import { supabase } from '@/integrations/supabase/client';
+import { OperationTimeoutError, withDeadline } from './withDeadline';
 
 interface Attachment {
   filename: string;
@@ -80,7 +81,6 @@ export const sendEmail = async ({
         apiKeyConfigured: true,
         functionsUrl: 'https://qsqjwpajvcmahoamwwww.supabase.co/functions/v1/send-email',
         timestamp: new Date().toISOString(),
-        payloadSize: JSON.stringify(payload).length,
         payloadKeys: Object.keys(payload),
         supabaseClient: !!supabase,
         clientType: supabase.constructor.name,
@@ -89,10 +89,8 @@ export const sendEmail = async ({
 
       console.log('🔗 AGGRESSIVE DEBUG - Pre-invocation checks:', {
         functionName: 'send-email',
-        payload: payload,
         supabaseInstance: supabase.constructor.name,
         hasAuth: !!supabase.auth,
-        authUser: await supabase.auth.getUser().then(r => r.data.user?.id || 'none').catch(() => 'error-getting-user')
       });
 
       // METHOD 1: Try simplified Supabase client invocation
@@ -103,11 +101,14 @@ export const sendEmail = async ({
       
       try {
         // Simplest possible invocation - no extra headers
-        invokeResult = await supabase.functions.invoke('send-email', {
-          body: payload
-        });
+        invokeResult = await withDeadline(
+          supabase.functions.invoke('send-email', { body: payload }),
+          60000,
+          'Email delivery could not be confirmed. Your document is saved. Check whether the client received it before sending again.'
+        );
         console.log('✅ METHOD 1 SUCCESS - Function invoke returned:', invokeResult);
       } catch (error) {
+        if (error instanceof OperationTimeoutError) throw error;
         invokeError = error;
         console.error('❌ METHOD 1 FAILED - Function invoke error:', {
           error,
@@ -185,6 +186,9 @@ export const sendEmail = async ({
 
     } catch (error) {
       lastError = error instanceof Error ? error : new Error('Unknown error occurred');
+      if (error instanceof OperationTimeoutError) {
+        return { success: false, error: error.message };
+      }
       
       console.error(`❌ Email send attempt ${attempt} failed:`, {
         error: lastError.message,
