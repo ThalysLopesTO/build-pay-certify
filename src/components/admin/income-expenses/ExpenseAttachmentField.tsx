@@ -1,8 +1,11 @@
 import React, { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
-import { Camera, Upload, X, FileText, Image as ImageIcon } from 'lucide-react';
+import { Camera, Upload, X, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { isImageFile, isPdfFile, prepareReceiptImage } from '@/utils/receiptImage';
 
 interface ExpenseAttachmentFieldProps {
   value: File | null;
@@ -10,6 +13,10 @@ interface ExpenseAttachmentFieldProps {
   onChange: (file: File | null) => void;
   disabled?: boolean;
 }
+
+// Photos are shrunk before upload, so the raw limit can be generous.
+const MAX_PHOTO_BYTES = 40 * 1024 * 1024;
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
 
 const ExpenseAttachmentField: React.FC<ExpenseAttachmentFieldProps> = ({
   value,
@@ -20,8 +27,10 @@ const ExpenseAttachmentField: React.FC<ExpenseAttachmentFieldProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [existingPreview, setExistingPreview] = useState<string | null>(null);
+  const [isPreparing, setIsPreparing] = useState(false);
 
   // Load existing file preview
   React.useEffect(() => {
@@ -48,27 +57,39 @@ const ExpenseAttachmentField: React.FC<ExpenseAttachmentFieldProps> = ({
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    // Reset so taking/choosing the same photo again still fires onChange
+    event.target.value = '';
     if (file) {
-      validateAndSetFile(file);
+      void validateAndSetFile(file);
     }
   };
 
-  const validateAndSetFile = (file: File) => {
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      alert('File size must be less than 10MB');
+  const validateAndSetFile = async (file: File) => {
+    const isPdf = isPdfFile(file);
+    if (!isPdf && !isImageFile(file)) {
+      toast({
+        title: 'File not supported',
+        description: 'Please attach a photo or a PDF of the bill.',
+        variant: 'destructive',
+      });
       return;
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
-      alert('Only JPG, PNG, and PDF files are allowed');
+    if (file.size > (isPdf ? MAX_PDF_BYTES : MAX_PHOTO_BYTES)) {
+      toast({
+        title: 'File too large',
+        description: isPdf ? 'PDFs must be under 10 MB.' : 'This photo is too large to attach.',
+        variant: 'destructive',
+      });
       return;
     }
 
-    onChange(file);
+    setIsPreparing(true);
+    try {
+      onChange(isPdf ? file : await prepareReceiptImage(file));
+    } finally {
+      setIsPreparing(false);
+    }
   };
 
   const handleRemove = () => {
@@ -87,7 +108,7 @@ const ExpenseAttachmentField: React.FC<ExpenseAttachmentFieldProps> = ({
     e.stopPropagation();
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      validateAndSetFile(file);
+      void validateAndSetFile(file);
     }
   };
 
@@ -100,10 +121,43 @@ const ExpenseAttachmentField: React.FC<ExpenseAttachmentFieldProps> = ({
 
   const displayUrl = previewUrl || existingPreview;
   const displayFile = value || (existingUrl ? { name: existingUrl.split('/').pop() || 'attachment' } as File : null);
+  const isBusy = disabled || isPreparing;
+
+  // The file pickers live outside the dialog (portaled to <body>). On iPhone,
+  // returning from the camera into a picker that sits inside a modal dialog
+  // can leave the dialog frozen, which is what made "Take Photo" fail.
+  const pickers = createPortal(
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        onChange={handleFileSelect}
+        className="hidden"
+        disabled={isBusy}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileSelect}
+        className="hidden"
+        disabled={isBusy}
+      />
+    </>,
+    document.body,
+  );
 
   return (
     <div className="space-y-3">
-      {!displayFile ? (
+      {pickers}
+      {isPreparing ? (
+        <div className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2 text-center">
+          <Loader2 className="h-8 w-8 text-primary animate-spin" />
+          <p className="text-sm font-medium text-foreground">Preparing photo...</p>
+        </div>
+      ) : !displayFile ? (
         <div
           onDragOver={handleDragOver}
           onDrop={handleDrop}
@@ -113,65 +167,49 @@ const ExpenseAttachmentField: React.FC<ExpenseAttachmentFieldProps> = ({
             <Upload className="h-10 w-10 text-muted-foreground" />
             <div>
               <p className="text-sm font-medium text-foreground">
-                Drop your file here, or click to browse
+                {isMobile ? 'Take a photo of the bill, or choose a file' : 'Drop your file here, or click to browse'}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                PDF, JPG, PNG up to 10MB
+                Photo or PDF
               </p>
             </div>
             <div className="flex gap-2 mt-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={disabled}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Choose File
-              </Button>
               {isMobile && (
                 <Button
                   type="button"
-                  variant="outline"
                   size="sm"
                   onClick={() => cameraInputRef.current?.click()}
-                  disabled={disabled}
+                  disabled={isBusy}
                 >
                   <Camera className="h-4 w-4 mr-2" />
                   Take Photo
                 </Button>
               )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isBusy}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Choose File
+              </Button>
             </div>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/jpg,application/pdf"
-            onChange={handleFileSelect}
-            className="hidden"
-            disabled={disabled}
-          />
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleFileSelect}
-            className="hidden"
-            disabled={disabled}
-          />
         </div>
       ) : (
         <div className="border border-border rounded-lg p-4">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
               {displayUrl && !displayFile.name.toLowerCase().endsWith('.pdf') ? (
-                <img
-                  src={displayUrl}
-                  alt="Preview"
-                  className="h-20 w-20 object-cover rounded border border-border"
-                />
+                <a href={displayUrl} target="_blank" rel="noopener noreferrer" title="Open full size">
+                  <img
+                    src={displayUrl}
+                    alt="Bill photo"
+                    className="h-20 w-20 object-cover rounded border border-border"
+                  />
+                </a>
               ) : (
                 <div className="h-20 w-20 flex items-center justify-center bg-muted rounded border border-border">
                   {getFileIcon(displayFile.name)}
@@ -187,10 +225,15 @@ const ExpenseAttachmentField: React.FC<ExpenseAttachmentFieldProps> = ({
                   {(value.size / 1024).toFixed(1)} KB
                 </p>
               )}
-              {existingUrl && !value && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Existing attachment
-                </p>
+              {existingUrl && !value && displayUrl && (
+                <a
+                  href={displayUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary underline mt-1 inline-block"
+                >
+                  Open attachment
+                </a>
               )}
             </div>
             <Button
@@ -198,7 +241,7 @@ const ExpenseAttachmentField: React.FC<ExpenseAttachmentFieldProps> = ({
               variant="ghost"
               size="sm"
               onClick={handleRemove}
-              disabled={disabled}
+              disabled={isBusy}
               className="flex-shrink-0"
             >
               <X className="h-4 w-4" />

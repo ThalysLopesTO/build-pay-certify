@@ -19,6 +19,7 @@ import { parseLocalDate, formatDateForDB } from '@/utils/dateUtils';
 import { DuplicateWarningPanel } from './DuplicateWarningPanel';
 import { DuplicateCandidate, DuplicateDecision, DuplicateInfo, ExtractionResultWithDetected } from '@/types/duplicate-detection';
 import { computeFileHash, calculateDuplicateScore, DUPLICATE_SCORE_THRESHOLD, BLOCKING_SCORE_THRESHOLD } from '@/utils/duplicateDetection';
+import { isImageFile, prepareReceiptImage, attachmentPathFor } from '@/utils/receiptImage';
 
 interface FormData {
   expense_title: string;
@@ -291,7 +292,8 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
   }, [activeTab, formData.amount, formData.expense_date, formData.vendor_payee, receiptHash, extractionResult, checkForDuplicates]);
 
   const handleFileUpload = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
+    // Phone photos can be HEIC or have no MIME type, so check the name too
+    if (!isImageFile(file)) {
       toast({
         title: 'Invalid File',
         description: 'Please upload an image file (JPG, PNG, etc.)',
@@ -303,17 +305,18 @@ export const ScanReceiptModal: React.FC<ScanReceiptModalProps> = ({
     setIsUploading(true);
 
     try {
-      // Compute file hash for duplicate detection
+      // Hash the original photo for duplicate detection
       const hash = await computeFileHash(file);
       setReceiptHash(hash);
 
-      // Upload to storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${companyId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      // Shrink big phone photos and turn HEIC into JPEG: faster upload,
+      // and a format the receipt reader can open
+      const photo = await prepareReceiptImage(file);
+      const fileName = attachmentPathFor(companyId, photo);
 
       const { error: uploadError } = await supabase.storage
         .from('expense-attachments')
-        .upload(fileName, file);
+        .upload(fileName, photo, { contentType: photo.type || undefined });
 
       if (uploadError) throw uploadError;
 

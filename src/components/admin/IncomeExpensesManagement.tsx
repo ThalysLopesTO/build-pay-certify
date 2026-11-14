@@ -29,6 +29,7 @@ import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { Plus, Search, Calendar as CalendarIcon, Edit, Trash2, Receipt, TrendingUp, TrendingDown, DollarSign, Settings, Search as SearchIcon, Download, CheckCircle, AlertCircle, Clock, CreditCard, Banknote, ArrowRightLeft, Printer, ChevronDown, Paperclip, Eye, RefreshCw, Camera, X, Filter } from 'lucide-react';
 import ExpenseAttachmentField from './income-expenses/ExpenseAttachmentField';
 import { ScanReceiptModal } from './income-expenses/ScanReceiptModal';
+import { attachmentPathFor } from '@/utils/receiptImage';
 import { IncomeExpensesSkeleton } from './income-expenses/IncomeExpensesSkeleton';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -144,14 +145,23 @@ const IncomeExpensesManagement = () => {
 
       // Upload file to storage if present
       if (formData.attachmentFile) {
-        const fileExt = formData.attachmentFile.name.split('.').pop();
-        const fileName = `${user?.companyId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const fileName = attachmentPathFor(user?.companyId, formData.attachmentFile);
+
+        const { error: uploadError } = await supabase.storage
           .from('expense-attachments')
-          .upload(fileName, formData.attachmentFile);
-        
-        if (uploadError) throw uploadError;
+          .upload(fileName, formData.attachmentFile, {
+            contentType: formData.attachmentFile.type || undefined,
+          });
+
+        if (uploadError) {
+          // Keep the form open with everything filled in, and say what failed
+          toast({
+            title: 'Photo upload failed',
+            description: `The bill photo couldn't be uploaded (${uploadError.message}). Check your connection and tap Save again.`,
+            variant: 'destructive',
+          });
+          return;
+        }
         
         attachmentUrl = fileName;
         
