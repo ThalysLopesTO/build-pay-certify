@@ -22,6 +22,7 @@ import { useDailySheets, type DailySheet } from '@/hooks/useDailySheets';
 import { calcHours, formatDateLongLocal, todayLocalISO } from '@/utils/dailySheetTime';
 import { generateDailySheetPDF } from '@/utils/dailySheetPDF';
 import { DailySheetCrewTable } from './DailySheetCrewTable';
+import { matchesEmployeeSearch, normalizeForSearch, sortEmployeesByName } from '@/utils/employeeSearch';
 
 
 export interface CrewMember {
@@ -142,13 +143,12 @@ export const DailySheetForm: React.FC<DailySheetFormProps> = ({ editingSheet, on
 
   const selectedIds = useMemo(() => new Set(crew.map(c => c.id)), [crew]);
 
+  // A–Z, and search ignores accents ("conceicao" finds "Conceição")
   const filteredEmployees = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return (employees as any[]).filter(e => {
-      if (!term) return true;
-      const full = `${e.first_name ?? ''} ${e.last_name ?? ''}`.toLowerCase();
-      return full.includes(term) || (e.role ?? '').toLowerCase().includes(term);
-    });
+    const term = normalizeForSearch(search);
+    return sortEmployeesByName(employees as any[]).filter(e =>
+      matchesEmployeeSearch(e, search) || (!!term && normalizeForSearch(e.role ?? '').includes(term))
+    );
   }, [employees, search]);
 
   const totalHours = crew.reduce((acc, r) => acc + calcHours(r.start, r.end, r.breakMinutes), 0);
