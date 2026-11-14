@@ -8,6 +8,7 @@ import { formatDurationFromMinutes } from '@/hooks/useDailyHoursSummary';
 import { useDeleteTimesheet } from '@/hooks/useDeleteTimesheet';
 import type { EmployeeBreakdown, PunchRecord } from '@/hooks/useEmployeeHoursBreakdown';
 import PunchEditModal from './PunchEditModal';
+import CreateTimesheetFromPunches from './CreateTimesheetFromPunches';
 import {
   Table,
   TableBody,
@@ -31,9 +32,18 @@ interface EmployeeHoursBreakdownProps {
   employees: EmployeeBreakdown[];
   incompleteCount: number;
   canEdit?: boolean;
+  // The summary's date range; needed for "Create Timesheet"
+  startDate?: Date | null;
+  endDate?: Date | null;
 }
 
-const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employees, incompleteCount, canEdit = false }) => {
+const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({
+  employees,
+  incompleteCount,
+  canEdit = false,
+  startDate,
+  endDate,
+}) => {
   const [editingPunch, setEditingPunch] = useState<PunchRecord | null>(null);
   const [editingEmployee, setEditingEmployee] = useState('');
   const [deletingPunch, setDeletingPunch] = useState<PunchRecord | null>(null);
@@ -60,7 +70,7 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
       {employees.map((emp) => (
         <div key={emp.userId} className="rounded-lg border bg-card overflow-hidden">
           {/* Employee header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-b">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-muted/40 border-b">
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
                 {emp.photoUrl && <AvatarImage src={emp.photoUrl} alt={`${emp.firstName} ${emp.lastName}`} />}
@@ -72,7 +82,10 @@ const EmployeeHoursBreakdown: React.FC<EmployeeHoursBreakdownProps> = ({ employe
                 {emp.firstName} {emp.lastName}
               </span>
             </div>
-            <div className="flex items-center gap-4 text-right">
+            <div className="flex flex-wrap items-center gap-4 text-right">
+              {canEdit && startDate && endDate && (
+                <CreateTimesheetFromPunches employee={emp} startDate={startDate} endDate={endDate} />
+              )}
               <div className="flex items-center gap-1.5" title="Paid Hours">
                 <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-sm font-bold text-foreground">{formatDurationFromMinutes(emp.totalNetMinutes)}</span>

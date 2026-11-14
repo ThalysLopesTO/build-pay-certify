@@ -251,6 +251,8 @@ const DailyHoursSummary: React.FC<DailyHoursSummaryProps> = ({ jobsites }) => {
                   employees={breakdownEmployees}
                   incompleteCount={incompleteCount}
                   canEdit={canEdit}
+                  startDate={startDate}
+                  endDate={endDate}
                 />
 
                 {/* Grand Totals */}
