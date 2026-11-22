@@ -8,10 +8,13 @@ import { Edit, FileText, Download, Trash2, Plus, Eye, AlertCircle } from 'lucide
 import { useMaterialTakeoffNotes, MaterialTakeoffNote } from '@/hooks/useMaterialTakeoffNotes';
 import { useJobsites } from '@/hooks/useJobsites';
 import MaterialTakeoffNotesEditor from './MaterialTakeoffNotesEditor';
+import { useMaterialTakeoffItems } from '@/hooks/useMaterialTakeoffItems';
+import { takeoffText } from '@/utils/takeoffItems';
 import { useQueryClient } from '@tanstack/react-query';
 
 const MaterialTakeoffNotesTable: React.FC = () => {
   const { notes, isLoading, deleteNote, error } = useMaterialTakeoffNotes();
+  const { getItemsByJobsite, saveItems } = useMaterialTakeoffItems();
   const { data: jobsites = [], isLoading: jobsitesLoading, error: jobsitesError } = useJobsites('active');
   const [selectedJobsite, setSelectedJobsite] = useState<{ id: string; name: string } | null>(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -51,18 +54,27 @@ const MaterialTakeoffNotesTable: React.FC = () => {
   };
 
   const handleDelete = async (note: MaterialTakeoffNote) => {
-    if (confirm(`Are you sure you want to delete the material takeoff notes for "${note.jobsite_name}"?`)) {
+    const count = getItemsByJobsite(note.jobsite_id).length;
+    const what = count > 0 ? `material takeoff (${count} materials and the notes)` : 'material takeoff notes';
+    if (confirm(`Are you sure you want to delete the ${what} for "${note.jobsite_name}"?`)) {
+      if (count > 0) {
+        try {
+          // Clear the list first; if that fails the notes are kept too
+          await saveItems.mutateAsync({ jobsiteId: note.jobsite_id, items: [] });
+        } catch (e) {
+          console.error('Error deleting material list:', e);
+          return;
+        }
+      }
       deleteNote.mutate(note.id);
     }
   };
 
   const handleExportTxt = (note: MaterialTakeoffNote) => {
-    const content = `Material Takeoff Notes - ${note.jobsite_name}
-Address: ${note.jobsite_address || 'N/A'}
-Created: ${new Date(note.created_at).toLocaleDateString()}
-Last Updated: ${new Date(note.updated_at).toLocaleDateString()}
-
-${note.takeoff_notes}`;
+    const content = takeoffText(note.jobsite_name, getItemsByJobsite(note.jobsite_id), note.takeoff_notes || '', {
+      created: new Date(note.created_at).toLocaleDateString(),
+      updated: new Date(note.updated_at).toLocaleDateString(),
+    }).replace('\n', `\nAddress: ${note.jobsite_address || 'N/A'}\n`);
 
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -167,6 +179,7 @@ ${note.takeoff_notes}`;
                   <TableRow>
                     <TableHead>Jobsite</TableHead>
                     <TableHead>Address</TableHead>
+                    <TableHead>Materials</TableHead>
                     <TableHead>Notes Preview</TableHead>
                     <TableHead>Last Updated</TableHead>
                     <TableHead className="w-40">Actions</TableHead>
@@ -180,6 +193,12 @@ ${note.takeoff_notes}`;
                       </TableCell>
                       <TableCell>
                         {note.jobsite_address || 'N/A'}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {(() => {
+                          const n = getItemsByJobsite(note.jobsite_id).length;
+                          return n > 0 ? `${n} item${n === 1 ? '' : 's'}` : <span className="text-muted-foreground">—</span>;
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div className="max-w-xs">
