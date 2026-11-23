@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Download, AlertCircle, Loader2, CheckCircle2, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { generateQuotePDF } from '@/utils/quotePDFGenerator';
+import { withDocumentBranding } from '@/utils/documentBranding';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import QuoteStatusBadge from '@/components/admin/quotes/QuoteStatusBadge';
 import { ApproveQuoteModal } from '@/components/public/ApproveQuoteModal';
@@ -165,7 +166,9 @@ const PublicQuotePage: React.FC = () => {
     );
   }
 
-  const { quote, line_items, company_settings, company_logo } = data;
+  const { quote, line_items, company_logo } = data;
+  // New quotes can be issued under another business name (see documentBranding)
+  const company_settings = withDocumentBranding(data.company_settings, quote);
   const subtotal = line_items.reduce((sum, item) => sum + item.amount, 0);
   const discountType = (quote as any).discount_type || 'fixed';
   const discountAmount = discountType === 'percentage'

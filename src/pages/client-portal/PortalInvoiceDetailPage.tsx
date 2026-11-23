@@ -164,7 +164,20 @@ export default function PortalInvoiceDetailPage() {
     
     setIsDownloading(true);
     try {
-      await generatePortalInvoicePDF(invoice, company_settings);
+      // The business name this invoice was issued under (new invoices may use
+      // a different name). If the lookup is unavailable, the PDF is made as before.
+      let branding: { issuer_name?: string | null; issuer_payment_details?: string | null } = {};
+      try {
+        const { data } = await supabase.rpc('get_portal_invoice_branding' as never, {
+          p_portal_token: token,
+          p_invoice_id: invoice.id,
+        } as never);
+        const row = (Array.isArray(data) ? data[0] : data) as typeof branding | null;
+        if (row) branding = row;
+      } catch (e) {
+        console.warn('Invoice branding lookup failed, using company name:', e);
+      }
+      await generatePortalInvoicePDF({ ...invoice, ...branding }, company_settings);
       toast({
         title: "PDF Downloaded",
         description: `Invoice ${invoice.invoice_number} has been downloaded.`,

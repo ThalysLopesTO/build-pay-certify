@@ -3,6 +3,7 @@ import { CompanySettings } from '@/hooks/useCompanySettings';
 import { generateBrandedInvoicePDFBlob, blobToBase64 } from '@/components/admin/BrandedInvoicePDF';
 import { sendEmail } from './sendEmail';
 import { format } from 'date-fns';
+import { withDocumentBranding } from './documentBranding';
 
 export interface AutoSendPaidReceiptResult {
   success: boolean;
@@ -11,9 +12,11 @@ export interface AutoSendPaidReceiptResult {
 
 export const autoSendPaidReceiptEmail = async (
   invoice: Invoice,
-  settings: CompanySettings | null,
+  ownSettings: CompanySettings | null,
   logoUrl: string | null
 ): Promise<AutoSendPaidReceiptResult> => {
+  // New invoices can be issued under another business name (see documentBranding)
+  const settings = ownSettings ? withDocumentBranding(ownSettings, invoice) : ownSettings;
   try {
     // Validate required data
     if (!invoice.client_email) {

@@ -34,6 +34,10 @@ export interface Quote {
   discount_type?: 'percentage' | 'fixed';
   total_amount: number;
   notes?: string;
+  /** Business name this quote was issued under (set by the database for new quotes). */
+  issuer_name?: string | null;
+  /** Payment / business details printed on this quote (set by the database for new quotes). */
+  issuer_payment_details?: string | null;
   sent_date?: string;
   accepted_date?: string;
   declined_date?: string;

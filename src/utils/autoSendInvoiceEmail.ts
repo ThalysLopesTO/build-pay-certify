@@ -5,6 +5,7 @@ import { generateBrandedInvoicePDFBlob, blobToBase64 } from '@/components/admin/
 import { createInvoiceEmailHTML, getInvoiceEmailSubject } from '@/utils/invoiceEmailTemplate';
 import { fetchInvoiceAttachments } from '@/hooks/useInvoiceAttachments';
 import { format } from 'date-fns';
+import { withDocumentBranding } from '@/utils/documentBranding';
 
 interface AutoSendEmailResult {
   success: boolean;
@@ -13,10 +14,12 @@ interface AutoSendEmailResult {
 
 export const autoSendInvoiceEmail = async (
   invoice: Invoice,
-  settings: CompanySettings | null,
+  ownSettings: CompanySettings | null,
   logoUrl: string | null,
   portalUrl?: string
 ): Promise<AutoSendEmailResult> => {
+  // New invoices can be issued under another business name (see documentBranding)
+  const settings = ownSettings ? withDocumentBranding(ownSettings, invoice) : ownSettings;
   try {
     console.log('📧 Auto-sending invoice email:', {
       invoiceNumber: invoice.invoice_number,

@@ -19,6 +19,8 @@ export interface Invoice {
   total_amount: number;
   status: string;
   notes: string | null;
+  issuer_name?: string | null;
+  issuer_payment_details?: string | null;
   jobsites?: {
     name: string;
   };

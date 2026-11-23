@@ -21,6 +21,10 @@ export interface Invoice {
   due_date: string;
   sent_date: string;
   notes: string | null;
+  /** Business name this invoice was issued under (set by the database for new invoices). */
+  issuer_name?: string | null;
+  /** Payment / business details printed on this invoice (set by the database for new invoices). */
+  issuer_payment_details?: string | null;
   receipt_file_url: string | null;
   created_at: string;
   updated_at: string;

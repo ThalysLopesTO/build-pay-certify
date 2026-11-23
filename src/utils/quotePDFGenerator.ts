@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { Quote, QuoteLineItem } from "@/hooks/quotes";
 import { CompanySettings } from "@/hooks/useCompanySettings";
 import { fetchLogoAsBase64 } from "@/utils/logoUtils";
+import { documentCompanyName, documentPaymentDetails } from "@/utils/documentBranding";
 
 interface ExtendedJsPDF extends jsPDF {
   lastAutoTable: {
@@ -74,6 +75,11 @@ export const generateQuotePDF = async (
     currentY = addTextSection(pdf, "Payment Schedule", paymentScheduleText, currentY, pageWidth, margin, pageHeight);
   }
 
+  const paymentDetails = documentPaymentDetails(quote);
+  if (paymentDetails) {
+    currentY = addTextSection(pdf, "Payment Details", paymentDetails, currentY, pageWidth, margin, pageHeight);
+  }
+
   if (contractDisclaimer && contractDisclaimer.trim().length > 0) {
     currentY = addTextSection(
       pdf,
@@ -126,7 +132,8 @@ const addHeaderSection = async (
   pdf.setTextColor(15, 23, 42);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(14);
-  pdf.text(settings?.company_name || "Company Name", margin, y);
+  // New quotes can be issued under another business name (see documentBranding)
+  pdf.text(documentCompanyName(quote, settings?.company_name) || "Company Name", margin, y);
   y += 6;
 
   pdf.setFont("helvetica", "normal");
@@ -569,6 +576,11 @@ export const generateQuotePDFBlob = async (
 
   if (paymentScheduleText && paymentScheduleText.trim().length > 0) {
     currentY = addTextSection(pdf, "Payment Schedule", paymentScheduleText, currentY, pageWidth, margin, pageHeight);
+  }
+
+  const paymentDetails = documentPaymentDetails(quote);
+  if (paymentDetails) {
+    currentY = addTextSection(pdf, "Payment Details", paymentDetails, currentY, pageWidth, margin, pageHeight);
   }
 
   if (contractDisclaimer && contractDisclaimer.trim().length > 0) {

@@ -5,13 +5,17 @@ import { Invoice } from "./types/invoice";
 import { CompanySettings } from "@/hooks/useCompanySettings";
 import { fetchLogoAsBase64 } from "@/utils/logoUtils";
 import { attachmentsSectionHtml, buildInvoicePdfBlob, saveInvoicePdfWithAttachments } from "@/utils/invoiceAttachmentsPdf";
+import { paymentDetailsHtml, withDocumentBranding } from "@/utils/documentBranding";
 
 // Helper function to generate the invoice HTML
 const generateInvoiceHTML = (
   invoice: Invoice,
-  companySettings: CompanySettings,
+  ownSettings: CompanySettings,
   logoBase64?: string | null,
 ): string => {
+  // New invoices can be issued under another business name (see documentBranding)
+  const companySettings = withDocumentBranding(ownSettings, invoice);
+  const paymentDetails = paymentDetailsHtml(invoice);
   const subtotal = invoice.subtotal ?? 0;
   const discountPercent = invoice.discount ?? 0;
   const taxPercent = invoice.tax ?? 0;
@@ -221,6 +225,7 @@ const generateInvoiceHTML = (
             <div style="font-weight:600;">${companySettings.company_name}</div>
             <div>${companySettings.company_email || ""}</div>
             <div>${companySettings.company_phone || ""}</div>
+            ${paymentDetails ? `<div style="margin-top:8px; padding-top:8px; border-top:1px solid #E5E7EB; line-height:1.5;">${paymentDetails}</div>` : ""}
           </div>
 
           <div style="flex:0.9; min-width:0;">

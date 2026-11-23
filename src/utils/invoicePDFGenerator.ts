@@ -3,6 +3,7 @@ import jsPDF from 'jspdf';
 import { Invoice } from '@/hooks/useInvoiceById';
 import { CompanySettings } from '@/hooks/useCompanySettings';
 import { attachmentsSectionHtml, saveInvoicePdfWithAttachments } from './invoiceAttachmentsPdf';
+import { paymentDetailsHtml, withDocumentBranding } from './documentBranding';
 
 export const generateInvoicePDF = async (
   invoice: Invoice,
@@ -104,9 +105,12 @@ export const generateInvoicePDF = async (
 
 const generateInvoiceHTML = async (
   invoice: Invoice,
-  companySettings?: CompanySettings | null,
+  ownSettings?: CompanySettings | null,
   logoUrl?: string | null
 ): Promise<string> => {
+  // New invoices can be issued under another business name (see documentBranding)
+  const companySettings = ownSettings ? withDocumentBranding(ownSettings, invoice) : ownSettings;
+  const paymentDetails = paymentDetailsHtml(invoice);
   const formatCurrency = (amount: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
@@ -227,6 +231,15 @@ const generateInvoiceHTML = async (
           </table>
         </div>
       </div>
+
+      ${paymentDetails ? `
+        <div style="margin-bottom: 40px;">
+          <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;">Payment Details</h3>
+          <div style="color: #374151; font-size: 14px; line-height: 1.6; background: #f9fafb; padding: 20px; border-radius: 8px;">
+            ${paymentDetails}
+          </div>
+        </div>
+      ` : ''}
 
       ${attachmentsSectionHtml(invoice.attachments)}
 

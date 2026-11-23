@@ -7,6 +7,7 @@ import { useAuth } from "../contexts/SupabaseAuthContext";
 import { formatCurrency, formatDate } from "../utils/formatters";
 import { generateInvoicePDF } from "../utils/invoicePDFGenerator";
 import { useToast } from "@/hooks/use-toast";
+import { documentCompanyName } from "@/utils/documentBranding";
 const InvoicePreview = () => {
   const { invoiceId } = useParams();
   const { user } = useAuth();
@@ -114,7 +115,7 @@ const InvoicePreview = () => {
               )}
               <div>
                 <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                  {company.company_name || 'Company Name'}
+                  {documentCompanyName(invoice, company.company_name) || 'Company Name'}
                 </h1>
                 <div className="text-sm text-gray-600 space-y-1">
                   {company.company_address && <p>{company.company_address}</p>}

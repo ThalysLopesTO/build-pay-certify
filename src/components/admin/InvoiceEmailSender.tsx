@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClient } from '@/hooks/useClient';
 import { createInvoiceEmailHTML } from '@/utils/invoiceEmailTemplate';
 import { supabase } from '@/integrations/supabase/client';
+import { withDocumentBranding } from '@/utils/documentBranding';
 
 interface InvoiceEmailSenderProps {
   invoice: Invoice;
@@ -31,7 +32,12 @@ export const InvoiceEmailSender: React.FC<InvoiceEmailSenderProps> = ({
   onClose,
 }) => {
   const { toast } = useToast();
-  const { settings, isSettingsComplete } = useCompanySettings();
+  const { settings: ownSettings, isSettingsComplete } = useCompanySettings();
+  // New invoices can be issued under another business name (see documentBranding)
+  const settings = useMemo(
+    () => (ownSettings ? withDocumentBranding(ownSettings, invoice) : ownSettings),
+    [ownSettings, invoice],
+  );
   const { logoUrl } = useCompanyLogo();
   const { template } = useEmailTemplate('invoice');
   const { data: client, isLoading: isClientLoading } = useClient(invoice.client_id);

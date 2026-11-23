@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { createQuoteEmailHTML, getQuoteEmailSubject } from '@/utils/quoteEmailTemplate';
 import { v4 as uuidv4 } from 'uuid';
 import { useClient } from '@/hooks/useClient';
+import { withDocumentBranding } from '@/utils/documentBranding';
 
 interface QuoteEmailSenderProps {
   quote: Quote;
@@ -29,7 +30,12 @@ export const QuoteEmailSender: React.FC<QuoteEmailSenderProps> = ({
   onClose,
 }) => {
   const { toast } = useToast();
-  const { settings, isSettingsComplete } = useCompanySettings();
+  const { settings: ownSettings, isSettingsComplete } = useCompanySettings();
+  // New quotes can be issued under another business name (see documentBranding)
+  const settings = useMemo(
+    () => (ownSettings ? withDocumentBranding(ownSettings, quote) : ownSettings),
+    [ownSettings, quote],
+  );
   const { logoUrl } = useCompanyLogo();
   const { data: lineItems = [] } = useQuoteLineItems(quote.id);
   const { data: client } = useClient(quote.client_id);

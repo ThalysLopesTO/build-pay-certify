@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { attachmentsSectionHtml, saveInvoicePdfWithAttachments, AttachmentForPdf } from './invoiceAttachmentsPdf';
+import { paymentDetailsHtml, withDocumentBranding } from './documentBranding';
 
 interface PortalInvoiceLineItem {
   id: string;
@@ -24,6 +25,8 @@ interface PortalInvoice {
   tax_amount: number;
   total_amount: number;
   notes: string | null;
+  issuer_name?: string | null;
+  issuer_payment_details?: string | null;
   line_items: PortalInvoiceLineItem[];
   attachments?: AttachmentForPdf[];
 }
@@ -68,8 +71,11 @@ const getStatusColor = (status: string): string => {
 
 export const generatePortalInvoicePDF = async (
   invoice: PortalInvoice,
-  companySettings?: CompanySettings | null
+  ownSettings?: CompanySettings | null
 ): Promise<void> => {
+  // New invoices can be issued under another business name (see documentBranding)
+  const companySettings = ownSettings ? withDocumentBranding(ownSettings, invoice) : ownSettings;
+  const paymentDetails = paymentDetailsHtml(invoice);
   const container = document.createElement('div');
   container.style.position = 'absolute';
   container.style.left = '-9999px';
@@ -200,6 +206,13 @@ export const generatePortalInvoicePDF = async (
           </div>
         </div>
       </div>
+
+      ${paymentDetails ? `
+        <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+          <h3 style="margin: 0 0 10px 0; color: #374151; font-size: 14px; font-weight: 600;">Payment Details</h3>
+          <p style="margin: 0; color: #374151; font-size: 14px;">${paymentDetails}</p>
+        </div>
+      ` : ''}
 
       <!-- Notes -->
       ${

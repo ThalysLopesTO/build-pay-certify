@@ -45,6 +45,8 @@ interface Invoice {
   due_date: string;
   status: string;
   company_id: string;
+  /** Business name this invoice was issued under (new invoices may use another name). */
+  issuer_name?: string | null;
 }
 
 interface Quote {
@@ -61,6 +63,8 @@ interface Quote {
   public_status?: string;
   public_token?: string;
   company_id: string;
+  /** Business name this quote was issued under (new quotes may use another name). */
+  issuer_name?: string | null;
 }
 
 // ============= PROFESSIONAL EMAIL TEMPLATES =============
@@ -844,8 +848,8 @@ async function sendInvoiceReminder(company: Company, invoice: Invoice, reminderT
     const dueDate = new Date(invoice.due_date);
     const diffTime = dueDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    const companyName = settings.company_name || company.name;
+
+    const companyName = invoice.issuer_name?.trim() || settings.company_name || company.name;
     
     let html: string;
     let subject: string;
@@ -902,7 +906,7 @@ async function sendQuoteReminder(company: Company, quote: Quote, settings: any) 
     const portalToken = quote.client_id ? await getClientPortalToken(quote.client_id) : null;
     const portalUrl = getPortalUrl(portalToken);
     
-    const companyName = settings.company_name || company.name;
+    const companyName = quote.issuer_name?.trim() || settings.company_name || company.name;
     const quoteDate = new Date(quote.quote_date);
     const daysSinceSent = settings.quote_reminder_days;
 
@@ -942,7 +946,7 @@ async function sendQuoteExpiryReminder(company: Company, quote: Quote, settings:
     const portalToken = quote.client_id ? await getClientPortalToken(quote.client_id) : null;
     const portalUrl = getPortalUrl(portalToken);
     
-    const companyName = settings.company_name || company.name;
+    const companyName = quote.issuer_name?.trim() || settings.company_name || company.name;
     const expiryDate = quote.expiry_date ? new Date(quote.expiry_date) : null;
     const daysUntilExpiry = settings.quote_expiry_reminder_days_before;
 
